@@ -57,8 +57,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             jfieldID objectField = NULL;
 
             NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
-            if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-                    NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -66,8 +65,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Find static field: %s\n", OBJECT_FIELD_NAME);
             if (!NSK_JNI_VERIFY(jni, (objectField =
-                    NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                    OBJECT_FIELD_NAME, OBJECT_CLASS_SIG)) != NULL)) {
+                    jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, OBJECT_CLASS_SIG)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -75,16 +73,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get object from static field: %s\n", OBJECT_FIELD_NAME);
             if (!NSK_JNI_VERIFY(jni, (testedObject =
-                    NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                                            objectField)) != NULL)) {
+                    jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
             NSK_DISPLAY1("  ... got object: 0x%p\n", (void*)testedObject);
 
             NSK_DISPLAY1("Create global reference for object: 0x%p\n", (void*)testedObject);
-            if (!NSK_JNI_VERIFY(jni, (testedObject =
-                    NSK_CPP_STUB2(NewGlobalRef, jni, testedObject)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewGlobalRef(testedObject)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -94,8 +90,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0(">>> Testcase #1: get initial size of the object\n");
         {
             NSK_DISPLAY1("Get size for object: 0x%p\n", (void*)testedObject);
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetObjectSize, jvmti, testedObject, &objectSize))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetObjectSize(testedObject, &objectSize))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -113,8 +108,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             jlong size = 0;
 
             NSK_DISPLAY1("Get size for object: 0x%p\n", (void*)testedObject);
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetObjectSize, jvmti, testedObject, &size))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetObjectSize(testedObject, &size))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -142,8 +136,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                 return;
 
             NSK_DISPLAY1("Get size for object: 0x%p\n", (void*)testedObject);
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetObjectSize, jvmti, testedObject, &size))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetObjectSize(testedObject, &size))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -163,7 +156,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0(">>> Clean used data\n");
         {
             NSK_DISPLAY1("Delete object reference: 0x%p\n", (void*)testedObject);
-            NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedObject));
+            NSK_TRACE(jni->DeleteGlobalRef(testedObject));
         }
     }
 

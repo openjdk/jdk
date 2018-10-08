@@ -63,17 +63,13 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
 
     NSK_DISPLAY2("Allocate memory for lists: %d objects for %d tags\n",
                                                             objectsCount, tagsCount);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (size * sizeof(jobject)),
-                                                    (unsigned char**)objects))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((size * sizeof(jobject)), (unsigned char**)objects))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... allocated objects list: 0x%p\n", (void*)objects);
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (tagsCount * sizeof(jlong)),
-                                                    (unsigned char**)tags))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((tagsCount * sizeof(jlong)), (unsigned char**)tags))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -91,8 +87,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
     }
 
     NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -100,8 +95,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
 
     NSK_DISPLAY1("Find static field: %s\n", OBJECTS_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (objectField =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                            OBJECTS_FIELD_NAME, OBJECTS_FIELD_SIG)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, OBJECTS_FIELD_NAME, OBJECTS_FIELD_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -109,8 +103,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
 
     NSK_DISPLAY1("Get objects array from static field: %s\n", OBJECTS_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (arrayObject = (jobjectArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                                    objectField)) != NULL)) {
+            jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -120,8 +113,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
         jsize arrayLen = 0;
         jsize k;
 
-        if (!NSK_JNI_VERIFY(jni, (arrayLen =
-                NSK_CPP_STUB2(GetArrayLength, jni, arrayObject)) == size)) {
+        if (!NSK_JNI_VERIFY(jni, (arrayLen = jni->GetArrayLength(arrayObject)) == size)) {
             NSK_DISPLAY1("  ... got array length: %d\n", (int)size);
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
@@ -131,13 +123,11 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int obj
         for (k = 0; k < size; k++) {
             jobject object = NULL;
 
-            if (!NSK_JNI_VERIFY(jni, (object =
-                NSK_CPP_STUB3(GetObjectArrayElement, jni, arrayObject, k)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (object = jni->GetObjectArrayElement(arrayObject, k)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return NSK_FALSE;
             }
-            if (!NSK_JNI_VERIFY(jni, (object =
-                NSK_CPP_STUB2(NewGlobalRef, jni, object)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (object = jni->NewGlobalRef(object)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return NSK_FALSE;
             }
@@ -162,14 +152,14 @@ static int releaseTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int
     NSK_DISPLAY1("Release objects references: %d objects\n", size);
     for (k = 0; k < size; k++) {
         if (objects[k] != NULL) {
-            NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, objects[k]));
+            NSK_TRACE(jni->DeleteGlobalRef(objects[k]));
         }
     }
     NSK_DISPLAY1("  ... object references released: %d objects\n", size);
 
     NSK_DISPLAY1("Deallocate objects list: 0x%p\n", (void*)objects);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objects))) {
+            jvmti->Deallocate((unsigned char*)objects))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -178,7 +168,7 @@ static int releaseTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int
 
     NSK_DISPLAY1("Deallocate tags list: 0x%p\n", (void*)tags);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)tags))) {
+            jvmti->Deallocate((unsigned char*)tags))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -197,8 +187,7 @@ static int checkTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int o
 
     NSK_DISPLAY1("Get tagged objects: %d tags\n", tagsCount);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB6(GetObjectsWithTags, jvmti, tagsCount, tags,
-                &taggedObjectsCount, &taggedObjectsList, &taggedObjectsTags))) {
+            jvmti->GetObjectsWithTags(tagsCount, tags, &taggedObjectsCount, &taggedObjectsList, &taggedObjectsTags))) {
         nsk_jvmti_setFailStatus();
         return NSK_TRUE;
     }
@@ -258,7 +247,7 @@ static int checkTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int o
             for (j = 0; j < objectsCount; j++) {
                 jobject foundObject = ITEM(objects, i, j);
 
-                if (NSK_CPP_STUB3(IsSameObject, jni, object, foundObject)) {
+                if (jni->IsSameObject(object, foundObject)) {
                     objectsFound++;
 
                     if (expectedCount > 0)
@@ -295,12 +284,12 @@ static int checkTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int o
 
     NSK_DISPLAY1("Deallocate got objects list: 0x%p\n", (void*)taggedObjectsList);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)taggedObjectsList))) {
+            jvmti->Deallocate((unsigned char*)taggedObjectsList))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY1("Deallocate got tags list: 0x%p\n", (void*)taggedObjectsTags);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)taggedObjectsTags))) {
+            jvmti->Deallocate((unsigned char*)taggedObjectsTags))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -338,8 +327,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
                     NSK_DISPLAY3("    #%d: object: 0x%p, tag: %ld\n",
                                             j, (void*)object, (long)tags[i]);
-                    if (!NSK_JVMTI_VERIFY(
-                            NSK_CPP_STUB3(SetTag, jvmti, object, tags[i]))) {
+                    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(object, tags[i]))) {
                         nsk_jvmti_setFailStatus();
                         return;
                     }
@@ -384,8 +372,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
                     NSK_DISPLAY3("    #%d: object: 0x%p, tag: %ld\n",
                                             j, (void*)object, (long)tag);
-                    if (!NSK_JVMTI_VERIFY(
-                            NSK_CPP_STUB3(SetTag, jvmti, object, tag))) {
+                    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(object, tag))) {
                         nsk_jvmti_setFailStatus();
                         return;
                     }
@@ -455,8 +442,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

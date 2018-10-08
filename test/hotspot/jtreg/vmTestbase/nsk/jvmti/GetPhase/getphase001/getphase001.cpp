@@ -45,14 +45,14 @@ static void JNICALL
 VMStart(jvmtiEnv *jvmti, JNIEnv* jni) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY0("VMStart\n");
 
     /* testcase #2: check JVMTI_PHASE_START */
     NSK_DISPLAY0("Testcase #2: check if GetPhase returns JVMTI_PHASE_START\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_START))
@@ -60,7 +60,7 @@ VMStart(jvmtiEnv *jvmti, JNIEnv* jni) {
 
     was_VMStart = JNI_TRUE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -68,14 +68,14 @@ static void JNICALL
 VMInit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY0("VMInit\n");
 
     /* testcase #3: check JVMTI_PHASE_LIVE */
     NSK_DISPLAY0("Testcase #3: check if GetPhase returns JVMTI_PHASE_LIVE\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_LIVE))
@@ -83,7 +83,7 @@ VMInit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
     was_VMInit = JNI_TRUE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -93,7 +93,7 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
                  void* address, void** new_address_ptr) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY0("NativeMethodBind\n");
@@ -102,7 +102,7 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
 
         /* testcase #5: check JVMTI_PHASE_PRIMORDIAL */
         NSK_DISPLAY0("Testcase #2: check if GetPhase returns JVMTI_PHASE_PRIMORDIAL\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_PRIMORDIAL))
@@ -112,7 +112,7 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
 
         /* testcase #2: check JVMTI_PHASE_START */
         NSK_DISPLAY0("Testcase #2: check if GetPhase returns JVMTI_PHASE_START\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_START))
@@ -122,7 +122,7 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
 
         /* testcase #3: check JVMTI_PHASE_LIVE */
         NSK_DISPLAY0("Testcase #3: check if GetPhase returns JVMTI_PHASE_LIVE\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_LIVE))
@@ -132,14 +132,14 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
 
         /* testcase #4: check JVMTI_PHASE_DEAD */
         NSK_DISPLAY0("Testcase #4: check if GetPhase returns JVMTI_PHASE_DEAD\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_DEAD))
             nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -154,7 +154,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
                   unsigned char** new_class_data) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("ClassFileLoadHook: %s\n", name);
@@ -163,7 +163,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         /* testcase #5: check JVMTI_PHASE_PRIMORDIAL */
         NSK_DISPLAY0("Testcase #2: check if GetPhase returns JVMTI_PHASE_PRIMORDIAL\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_PRIMORDIAL))
@@ -173,7 +173,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         /* testcase #2: check JVMTI_PHASE_START */
         NSK_DISPLAY0("Testcase #2: check if GetPhase returns JVMTI_PHASE_START\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_START))
@@ -183,7 +183,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         /* testcase #3: check JVMTI_PHASE_LIVE */
         NSK_DISPLAY0("Testcase #3: check if GetPhase returns JVMTI_PHASE_LIVE\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_LIVE))
@@ -193,14 +193,14 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         /* testcase #4: check JVMTI_PHASE_DEAD */
         NSK_DISPLAY0("Testcase #4: check if GetPhase returns JVMTI_PHASE_DEAD\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
             nsk_jvmti_setFailStatus();
 
         if (!NSK_VERIFY(phase == JVMTI_PHASE_DEAD))
             nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -208,14 +208,14 @@ static void JNICALL
 VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY0("VMDeath\n");
 
     /* testcase #3: check JVMTI_PHASE_LIVE */
     NSK_DISPLAY0("Testcase #3: check if GetPhase returns JVMTI_PHASE_LIVE\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_LIVE))
@@ -223,7 +223,7 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
 
     was_VMDeath = JNI_TRUE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -242,7 +242,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
 
     /* testcase #3: check JVMTI_PHASE_LIVE */
     NSK_DISPLAY0("Testcase #3: check if GetPhase returns JVMTI_PHASE_LIVE\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_LIVE))
@@ -289,13 +289,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* Create data access lock */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti,
-                "_access_lock", &access_lock)))
+            jvmti->CreateRawMonitor("_access_lock", &access_lock)))
         return JNI_ERR;
 
     /* testcase #1: check JVMTI_PHASE_ONLOAD */
     NSK_DISPLAY0("Testcase #1: check if GetPhase returns JVMTI_PHASE_ONLOAD\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_ONLOAD))
@@ -305,7 +304,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_all_class_hook_events = 1;
     caps.can_generate_native_method_bind_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
@@ -315,38 +314,32 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.NativeMethodBind = &NativeMethodBind;
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+            jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable VMStart event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_START, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
         return JNI_ERR;
 
     /* enable VMInit event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_INIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
 
     /* enable NativeMethodBind event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
         return JNI_ERR;
 
     /* enable ClassFileLoadHook event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
 
     /* enable VMDeath event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_DEATH, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */
@@ -373,7 +366,7 @@ Agent_OnUnload(JavaVM *jvm)
 
     /* testcase #4: check JVMTI_PHASE_DEAD */
     NSK_DISPLAY0("Testcase #4: check if GetPhase returns JVMTI_PHASE_DEAD\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         exit(97);
 
     if (!NSK_VERIFY(phase == JVMTI_PHASE_DEAD))

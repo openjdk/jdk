@@ -99,13 +99,9 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
 /* get the JNI method ID for a method with name m_name and
    signature m_sign */
         if (methInfo[i].inst) /* an instance method */
-            methInfo[i].mid = NSK_CPP_STUB4(GetMethodID,
-                jni_env, testedCls,
-                methInfo[i].m_name, methInfo[i].m_sign);
+            methInfo[i].mid = jni_env->GetMethodID(testedCls, methInfo[i].m_name, methInfo[i].m_sign);
         else                   /* a static method */
-            methInfo[i].mid = NSK_CPP_STUB4(GetStaticMethodID,
-                jni_env, testedCls,
-                methInfo[i].m_name, methInfo[i].m_sign);
+            methInfo[i].mid = jni_env->GetStaticMethodID(testedCls, methInfo[i].m_name, methInfo[i].m_sign);
         if (methInfo[i].mid == NULL) {
             NSK_COMPLAIN3("TEST FAILURE: unable to get the method ID for the %s method \"%s\", signature \"%s\"\n\n",
                 methInfo[i].inst?"instance":"static",
@@ -114,8 +110,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
         }
 
 /* get the LocalVariableTable attribute */
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetLocalVariableTable,
-                jvmti, methInfo[i].mid, &count, &lv_table))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetLocalVariableTable(methInfo[i].mid, &count, &lv_table))) {
             NSK_COMPLAIN3("TEST FAILED: unable to get local variable table\n\tfor the %s method \"%s\", signature \"%s\"\n\n",
                 methInfo[i].inst?"instance":"static",
                 methInfo[i].m_name, methInfo[i].m_sign);
@@ -175,8 +170,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetLocalVariableTable_localtab004_check(
         JNIEnv *env, jobject obj, jobject testedObj) {
-    jclass testedCls = NSK_CPP_STUB2(GetObjectClass,
-        env, testedObj);
+    jclass testedCls = env->GetObjectClass(testedObj);
 
     if (!caps.can_access_local_variables)
         return PASSED;
@@ -208,12 +202,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     /* add capability to access local variables */
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_access_local_variables = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_access_local_variables)

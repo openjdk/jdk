@@ -70,8 +70,7 @@ static int checkCpuTime(jvmtiEnv* jvmti, jthread thread, julong* time,
     int success = NSK_TRUE;
 
     NSK_DISPLAY1("GetCurrentThreadCpuTime() for current thread: 0x%p\n", (void*)thread);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTime, jvmti, (jlong *)time))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCurrentThreadCpuTime((jlong *)time))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got cpu time: %s\n", julong_to_string(*time, buf));
@@ -260,8 +259,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
     jvmtiThreadInfo threadInfo;
     {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &threadInfo))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &threadInfo))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -284,8 +282,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
     jvmtiThreadInfo threadInfo;
     {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &threadInfo))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &threadInfo))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -337,8 +334,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_get_current_thread_cpu_time = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }
@@ -353,9 +349,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMDeath = callbackVMDeath;
         eventCallbacks.ThreadStart = callbackThreadStart;
         eventCallbacks.ThreadEnd = callbackThreadEnd;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
     }

@@ -65,9 +65,7 @@ heapObjectCallbackForFirstIteration(jlong class_tag,
     *tag_ptr = (jlong)++objectDescCount;
 
     /* Allocate memory for next list element*/
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (sizeof(ObjectDesc)),
-                                               (unsigned char**)&objectDescBuf))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("heapObjectCallbackForFirstIteration: Allocation failed. Iteration aborted.\n");
@@ -97,7 +95,7 @@ heapObjectCallbackForSecondIteration(jlong class_tag,
 
     /* Deallocate memory of list element*/
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+            jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("heapObjectCallbackForSecondIteration: Deallocation failed. Iteration aborted.\n");
@@ -133,9 +131,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_UNTAGGED\n");
             {
                 if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB4(IterateOverHeap, jvmti,
-                            JVMTI_HEAP_OBJECT_UNTAGGED, heapObjectCallbackForFirstIteration,
-                            &fakeUserData))) {
+                        jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_UNTAGGED, heapObjectCallbackForFirstIteration, &fakeUserData))) {
                     nsk_jvmti_setFailStatus();
                     break;
                 }
@@ -151,17 +147,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
 
             /* Allocate memory for array to save pointers to ObjectDescList elements */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(Allocate, jvmti, (objectDescCount * sizeof(ObjectDesc*)),
-                                      (unsigned char**)&objectDescArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectDescCount * sizeof(ObjectDesc*)), (unsigned char**)&objectDescArr))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
 
             /* Allocate memory for flags array and fill with false values */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(Allocate, jvmti, (objectDescCount * sizeof(unsigned char)),
-                                      &deallocatedFlagsArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectDescCount * sizeof(unsigned char)), &deallocatedFlagsArr))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
@@ -186,9 +178,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_TAGGED\n");
             {
                 if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB4(IterateOverHeap, jvmti,
-                            JVMTI_HEAP_OBJECT_TAGGED, heapObjectCallbackForSecondIteration,
-                            &fakeUserData))) {
+                        jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_TAGGED, heapObjectCallbackForSecondIteration, &fakeUserData))) {
                     nsk_jvmti_setFailStatus();
                 }
             }
@@ -202,7 +192,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             for (ind = 0; ind < objectDescCount; ind++) {
                 if (!deallocatedFlagsArr[ind]) {
                     if (!NSK_JVMTI_VERIFY(
-                           NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+                           jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
                         NSK_COMPLAIN1("Unable to deallocate descriptor. Index = %d \n", ind);
                         nsk_jvmti_setFailStatus();
                         return;
@@ -211,12 +201,12 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
 
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr))) {
+                    jvmti->Deallocate((unsigned char*)objectDescArr))) {
                 nsk_jvmti_setFailStatus();
             }
 
          if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)deallocatedFlagsArr))) {
+                    jvmti->Deallocate((unsigned char*)deallocatedFlagsArr))) {
                 nsk_jvmti_setFailStatus();
          }
 
@@ -258,12 +248,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+            jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)

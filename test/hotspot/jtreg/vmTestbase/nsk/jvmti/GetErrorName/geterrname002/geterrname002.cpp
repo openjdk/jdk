@@ -48,12 +48,12 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #1: check on JVMTI_ERROR_ILLEGAL_ARGUMENT\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_ILLEGAL_ARGUMENT,
-            NSK_CPP_STUB3(GetErrorName, jvmti, (jvmtiError)(-1), &name)))
+                               jvmti->GetErrorName((jvmtiError)(-1), &name)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY0("Testcase #2: check on JVMTI_ERROR_NULL_POINTER\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_NULL_POINTER,
-            NSK_CPP_STUB3(GetErrorName, jvmti, JVMTI_ERROR_NONE, NULL)))
+                               jvmti->GetErrorName(JVMTI_ERROR_NONE, NULL)))
         nsk_jvmti_setFailStatus();
 
     /* resume debugee after last sync */

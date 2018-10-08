@@ -46,8 +46,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY0("Check if GetJLocationFormat(NULL) returns JVMTI_ERROR_NULL_POINTER\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_NULL_POINTER,
-            NSK_CPP_STUB2(GetJLocationFormat, jvmti, NULL)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_NULL_POINTER, jvmti->GetJLocationFormat(NULL)))
         nsk_jvmti_setFailStatus();
 
     /* resume debugee after last sync */

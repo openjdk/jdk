@@ -59,7 +59,7 @@ static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
 
     NSK_DISPLAY0("GetTimerInfo() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTimerInfo, jvmti, info))) {
+            jvmti->GetTimerInfo(info))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("Got timer info:\n");
@@ -203,8 +203,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.VMDeath = callbackVMDeath;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+                jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 

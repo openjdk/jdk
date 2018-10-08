@@ -60,7 +60,7 @@ static void checkMethodObsolete(jvmtiEnv* jvmti, jmethodID method, const char na
 
     NSK_DISPLAY3("Call IsObsolete() for %s method: %p (%s)\n", kind, (void*)method, name);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(IsMethodObsolete, jvmti, method, &obsolete))) {
+            jvmti->IsMethodObsolete(method, &obsolete))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY1("  ... got obsolete: %d\n", (int)obsolete);
@@ -83,8 +83,7 @@ static void checkStackMethodsObsolete(jvmtiEnv* jvmti, jthread thread,
 
     NSK_DISPLAY1("Get stack frames for thread: %p\n", (void*)thread);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB6(GetStackTrace, jvmti, thread, 0, MAX_STACK_DEPTH,
-                                                    frameStack, &frameCount))) {
+            jvmti->GetStackTrace(thread, 0, MAX_STACK_DEPTH, frameStack, &frameCount))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -104,8 +103,7 @@ static void checkStackMethodsObsolete(jvmtiEnv* jvmti, jthread thread,
             NSK_DISPLAY1("  frame #%i:\n", i);
             NSK_DISPLAY1("     methodID:  %p\n", (void*)frameStack[i].method);
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB5(GetMethodName, jvmti, frameStack[i].method,
-                                                        &name, &signature, &generic))) {
+                    jvmti->GetMethodName(frameStack[i].method, &name, &signature, &generic))) {
                 nsk_jvmti_setFailStatus();
                 continue;
             }
@@ -122,15 +120,15 @@ static void checkStackMethodsObsolete(jvmtiEnv* jvmti, jthread thread,
             }
 
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name))) {
+                    jvmti->Deallocate((unsigned char*)name))) {
                 nsk_jvmti_setFailStatus();
             }
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature))) {
+                    jvmti->Deallocate((unsigned char*)signature))) {
                 nsk_jvmti_setFailStatus();
             }
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic))) {
+                    jvmti->Deallocate((unsigned char*)generic))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -156,7 +154,7 @@ static int redefineClass(jvmtiEnv* jvmti, jclass klass, const char className[],
 
     NSK_DISPLAY1("Redefine class: %s\n", className);
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(RedefineClasses, jvmti, 1, &classDef))) {
+            jvmti->RedefineClasses(1, &classDef))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -176,7 +174,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
 
     NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
     if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL)) {
+            jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -184,8 +182,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
 
     NSK_DISPLAY1("Find static field: %s\n", CLASSFILE_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (fieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                            CLASSFILE_FIELD_NAME, CLASSFILE_FIELD_SIG)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, CLASSFILE_FIELD_NAME, CLASSFILE_FIELD_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -193,15 +190,14 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
 
     NSK_DISPLAY1("Get classfile bytes array from static field: %s\n", CLASSFILE_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (array = (jbyteArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                                    fieldID)) != NULL)) {
+            jni->GetStaticObjectField(debugeeClass, fieldID)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got array object: %p\n", (void*)array);
 
     if (!NSK_JNI_VERIFY(jni, (*size =
-            NSK_CPP_STUB2(GetArrayLength, jni, array)) > 0)) {
+            jni->GetArrayLength(array)) > 0)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -210,8 +206,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
     {
         jboolean isCopy;
         if (!NSK_JNI_VERIFY(jni, (elements =
-                NSK_CPP_STUB3(GetByteArrayElements, jni, array,
-                                                            &isCopy)) != NULL)) {
+                jni->GetByteArrayElements(array, &isCopy)) != NULL)) {
             nsk_jvmti_setFailStatus();
         return NSK_FALSE;
         }
@@ -219,7 +214,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
     NSK_DISPLAY1("  ... got elements list: %p\n", (void*)elements);
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, *size, bytes))) {
+            jvmti->Allocate(*size, bytes))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -231,7 +226,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
     NSK_DISPLAY1("  ... copied bytecode: %d bytes\n", (int)*size);
 
     NSK_DISPLAY1("Release elements list: %p\n", (void*)elements);
-    NSK_TRACE(NSK_CPP_STUB4(ReleaseByteArrayElements, jni, array, elements, JNI_ABORT));
+    NSK_TRACE(jni->ReleaseByteArrayElements(array, elements, JNI_ABORT));
     NSK_DISPLAY0("  ... released\n");
 
     return NSK_TRUE;
@@ -264,7 +259,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         {
             NSK_DISPLAY1("Find tested class: %s\n", TESTED_CLASS_NAME);
             if (!NSK_JNI_VERIFY(jni, (testedClass =
-                    NSK_CPP_STUB2(FindClass, jni, TESTED_CLASS_NAME)) != NULL)) {
+                    jni->FindClass(TESTED_CLASS_NAME)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -272,7 +267,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Make global reference for class object: %p\n", (void*)testedClass);
             if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)
-                    NSK_CPP_STUB2(NewGlobalRef, jni, testedClass)) != NULL)) {
+                    jni->NewGlobalRef(testedClass)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -280,8 +275,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get static methodID: %s\n", STATIC_METHOD_NAME);
             if (!NSK_JNI_VERIFY(jni, (staticMethodID =
-                    NSK_CPP_STUB4(GetStaticMethodID, jni, testedClass,
-                                    STATIC_METHOD_NAME, STATIC_METHOD_SIG)) != NULL)) {
+                    jni->GetStaticMethodID(testedClass, STATIC_METHOD_NAME, STATIC_METHOD_SIG)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -289,8 +283,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get instance methodID: %s\n", INSTANCE_METHOD_NAME);
             if (!NSK_JNI_VERIFY(jni, (instanceMethodID =
-                    NSK_CPP_STUB4(GetMethodID, jni, testedClass,
-                                    INSTANCE_METHOD_NAME, INSTANCE_METHOD_SIG)) != NULL)) {
+                    jni->GetMethodID(testedClass, INSTANCE_METHOD_NAME, INSTANCE_METHOD_SIG)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -342,15 +335,15 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         {
             NSK_DISPLAY1("Deallocate classfile bytes array: %p\n", (void*)classfileBytes);
             if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB2(Deallocate, jvmti, classfileBytes))) {
+                        jvmti->Deallocate(classfileBytes))) {
                 nsk_jvmti_setFailStatus();
             }
 
             NSK_DISPLAY1("Delete global eference to thread: %p\n", (void*)testedThread);
-            NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedThread));
+            NSK_TRACE(jni->DeleteGlobalRef(testedThread));
 
             NSK_DISPLAY1("Delete global reference to class: %p\n", (void*)testedClass);
-            NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedClass));
+            NSK_TRACE(jni->DeleteGlobalRef(testedClass));
         }
     }
 
@@ -394,7 +387,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
         caps.can_redefine_classes = 1;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+                jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

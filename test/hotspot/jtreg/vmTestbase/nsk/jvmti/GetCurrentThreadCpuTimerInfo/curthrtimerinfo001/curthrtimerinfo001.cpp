@@ -66,7 +66,7 @@ static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
 
     NSK_DISPLAY0("GetCurrentThreadCpuTimerInfo() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTimerInfo, jvmti, info))) {
+            jvmti->GetCurrentThreadCpuTimerInfo(info))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("Got timer info:\n");
@@ -260,7 +260,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
         caps.can_get_current_thread_cpu_time = 1;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+                jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }
@@ -276,8 +276,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.ThreadStart = callbackThreadStart;
         eventCallbacks.ThreadEnd = callbackThreadEnd;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+                jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
     }
