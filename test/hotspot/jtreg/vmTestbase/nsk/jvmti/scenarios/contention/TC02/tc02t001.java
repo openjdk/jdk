@@ -71,7 +71,7 @@ public class tc02t001 extends DebugeeClass {
 
             thread.waitingBarrier1.unlock();
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000); // Wait for contended "synchronized (M)"
                 thread.M.wait(timeout);
             } catch (InterruptedException e) {
                 throw new Failure(e);
@@ -79,7 +79,7 @@ public class tc02t001 extends DebugeeClass {
 
             thread.waitingBarrier2.unlock();
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000); // Wait for contended "synchronized (M)"
                 thread.M.wait(timeout);
             } catch (InterruptedException e) {
                 throw new Failure(e);
@@ -87,7 +87,7 @@ public class tc02t001 extends DebugeeClass {
 
             thread.waitingBarrier3.unlock();
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000); // Wait for contended "synchronized (M)"
                 thread.M.wait(timeout);
             } catch (InterruptedException e) {
                 throw new Failure(e);
