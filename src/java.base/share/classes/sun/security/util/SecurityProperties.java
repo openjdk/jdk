@@ -32,6 +32,9 @@ import java.security.Security;
 
 public class SecurityProperties {
 
+    public static final boolean INCLUDE_JAR_NAME_IN_EXCEPTIONS
+        = includedInExceptions("jar");
+
     /**
      * Returns the value of the security property propName, which can be overridden
      * by a system property of the same name

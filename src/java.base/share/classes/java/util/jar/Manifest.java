@@ -49,9 +49,6 @@ import sun.security.util.SecurityProperties;
  */
 public class Manifest implements Cloneable {
 
-    private static final boolean jarInfoInExceptionText =
-        SecurityProperties.includedInExceptions("jar");
-
     // manifest main attributes
     private Attributes attr = new Attributes();
 
@@ -203,10 +200,10 @@ public class Manifest implements Cloneable {
     }
 
     static String getErrorPosition(String filename, final int lineNumber) {
-        if (filename == null || !jarInfoInExceptionText) {
+        if (filename == null ||
+                !SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS) {
             return "line " + lineNumber;
         }
-
         return "manifest of " + filename + ":" + lineNumber;
     }
 
