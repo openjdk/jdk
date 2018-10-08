@@ -62,7 +62,7 @@ classLoadHandler(jvmtiEnv *jvmti,
         if (!nsk_jvmti_aod_disableEvent(jvmti, JVMTI_EVENT_CLASS_LOAD))
             success = 0;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB1(DisposeEnvironment, jvmti))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->DisposeEnvironment())) {
             success = 0;
             NSK_COMPLAIN1("%s: failed to dispose environment\n", agentName);
         } else {
@@ -104,7 +104,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ClassLoad = classLoadHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

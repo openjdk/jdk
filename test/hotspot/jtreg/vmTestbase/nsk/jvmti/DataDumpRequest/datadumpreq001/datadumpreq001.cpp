@@ -118,13 +118,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("setting event callbacks ...\n");
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.DataDumpRequest = &DataDumpRequest;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

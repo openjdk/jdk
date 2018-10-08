@@ -119,7 +119,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ThreadEnd = threadEndHandler;
     eventCallbacks.ThreadStart = threadStartHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

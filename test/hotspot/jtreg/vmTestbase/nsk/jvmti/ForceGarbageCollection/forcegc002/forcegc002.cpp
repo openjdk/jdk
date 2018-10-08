@@ -54,8 +54,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY0("Call ForceGarbageCollection()\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB1(ForceGarbageCollection, jvmti))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->ForceGarbageCollection())) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -114,7 +113,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities caps;
         memset(&caps, 0, sizeof(caps));
         caps.can_generate_garbage_collection_events = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 
@@ -122,9 +121,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiEventCallbacks eventCallbacks;
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.GarbageCollectionStart = callbackGarbageCollectionStart;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
             return JNI_ERR;
     }
 

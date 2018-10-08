@@ -45,16 +45,14 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY0("Disable VM_DEATH event in VM_DEATH callback\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_DISABLE,
-                                JVMTI_EVENT_VM_DEATH, NULL))) {
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VM_DEATH, NULL))) {
         success = NSK_FALSE;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
     }
 
     NSK_DISPLAY0(">>> Testcase #1: Dispose JVMTI environment in VM_DEATH callback\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB1(DisposeEnvironment, jvmti))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->DisposeEnvironment())) {
         success = NSK_FALSE;
     } else {
         NSK_DISPLAY0("  ... disposed\n");
@@ -95,16 +93,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.VMDeath = callbackVMDeath;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 
         NSK_DISPLAY0("Enable VM_DEATH event in JVM_OnLoad()\n");
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                                    JVMTI_EVENT_VM_DEATH, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL))) {
             return JNI_ERR;
         }
         NSK_DISPLAY0("  ... enabled\n");

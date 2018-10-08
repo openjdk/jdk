@@ -65,7 +65,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPotentialCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPotentialCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 
@@ -75,7 +75,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     NSK_DISPLAY1("%s: trying to get all potential capabilities:\n", agentName);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 

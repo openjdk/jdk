@@ -62,7 +62,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
         int i;
         int startedThreadWasFound = 0;
 
-        if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetAllThreads, jvmti, &threadsCount, &threads))) {
+        if(!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadsCount, &threads))) {
             NSK_COMPLAIN1("%s: failed to get all threads\n", agentName);
             nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, 0, jvmti, jni);
             return;
@@ -85,7 +85,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
                 startedThreadWasFound = 1;
             }
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadState, jvmti, threads[i], &threadState))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threads[i], &threadState))) {
                 NSK_COMPLAIN2("%s: failed to get status of thread '%s'\n", agentName, threadName);
                 nsk_jvmti_aod_deallocate(jvmti, (unsigned char*)threads);
                 nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, 0, jvmti, jni);
@@ -136,7 +136,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ThreadStart = threadStartHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

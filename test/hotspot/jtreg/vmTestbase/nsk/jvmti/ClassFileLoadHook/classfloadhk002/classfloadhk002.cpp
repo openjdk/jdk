@@ -122,7 +122,7 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
 
     NSK_DISPLAY1("Find static field: %s\n", fieldName);
     if (!NSK_JNI_VERIFY(jni, (fieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, cls, fieldName, fieldSig)) != NULL)) {
+            jni->GetStaticFieldID(cls, fieldName, fieldSig)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -130,14 +130,13 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
 
     NSK_DISPLAY1("Get classfile bytes array from static field: %s\n", fieldName);
     if (!NSK_JNI_VERIFY(jni, (array = (jbyteArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, cls, fieldID)) != NULL)) {
+            jni->GetStaticObjectField(cls, fieldID)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got array object: 0x%p\n", (void*)array);
 
-    if (!NSK_JNI_VERIFY(jni, (*size =
-            NSK_CPP_STUB2(GetArrayLength, jni, array)) > 0)) {
+    if (!NSK_JNI_VERIFY(jni, (*size = jni->GetArrayLength(array)) > 0)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -145,17 +144,14 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
 
     {
         jboolean isCopy;
-        if (!NSK_JNI_VERIFY(jni, (elements =
-                NSK_CPP_STUB3(GetByteArrayElements, jni, array,
-                                                            &isCopy)) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni, (elements = jni->GetByteArrayElements(array, &isCopy)) != NULL)) {
             nsk_jvmti_setFailStatus();
         return NSK_FALSE;
         }
     }
     NSK_DISPLAY1("  ... got elements list: 0x%p\n", (void*)elements);
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, *size, bytes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate(*size, bytes))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -167,7 +163,7 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
     NSK_DISPLAY1("  ... copied bytecode: %d bytes\n", (int)*size);
 
     NSK_DISPLAY1("Release elements list: 0x%p\n", (void*)elements);
-    NSK_TRACE(NSK_CPP_STUB4(ReleaseByteArrayElements, jni, array, elements, JNI_ABORT));
+    NSK_TRACE(jni->ReleaseByteArrayElements(array, elements, JNI_ABORT));
     NSK_DISPLAY0("  ... released\n");
 
     return NSK_TRUE;
@@ -190,7 +186,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
             if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-                    NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL)) {
+                    jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -240,8 +236,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0(">>> Clean used data\n");
         {
             NSK_DISPLAY1("Deallocate bytecode array: 0x%p\n", (void*)origClassBytes);
-            if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB2(Deallocate, jvmti, origClassBytes))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(origClassBytes))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -318,8 +313,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_generate_all_class_hook_events = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }
@@ -332,8 +326,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&callbacks, 0, sizeof(callbacks));
         callbacks.ClassFileLoadHook = callbackClassFileLoadHook;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti, &callbacks, size))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, size))) {
             return JNI_ERR;
         }
     }

@@ -45,11 +45,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_suspendThread (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    SuspendThread
-                    , jvmti
-                    , earlyReturnThread
-                )
+                jvmti                    ->SuspendThread                    (earlyReturnThread                )
             )
         )
          return JNI_FALSE;
@@ -67,11 +63,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_resumeThread (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    ResumeThread
-                    , jvmti
-                    , earlyReturnThread
-                )
+                jvmti                    ->ResumeThread                    (earlyReturnThread                )
             )
         )
          return JNI_FALSE;
@@ -90,12 +82,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnObject (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    ForceEarlyReturnObject
-                    , jvmti
-                    , earlyReturnThread
-                    , valueToReturn
-                    )
+                jvmti                    ->ForceEarlyReturnObject                    (earlyReturnThread                    , valueToReturn                    )
                 )
        )
         return JNI_FALSE;
@@ -114,12 +101,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnInt(
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    ForceEarlyReturnInt
-                    , jvmti
-                    , earlyReturnThread
-                    , valueToReturn
-                    )
+                jvmti                    ->ForceEarlyReturnInt                    (earlyReturnThread                    , valueToReturn                    )
                 )
        )
         return JNI_FALSE;
@@ -138,12 +120,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnLong (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    ForceEarlyReturnLong
-                    , jvmti
-                    , earlyReturnThread
-                    , valueToReturn
-                    )
+                jvmti                    ->ForceEarlyReturnLong                    (earlyReturnThread                    , valueToReturn                    )
                 )
        )
         return JNI_FALSE;
@@ -162,12 +139,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnFloat (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    ForceEarlyReturnFloat
-                    , jvmti
-                    , earlyReturnThread
-                    , valueToReturn
-                    )
+                jvmti                    ->ForceEarlyReturnFloat                    (earlyReturnThread                    , valueToReturn                    )
                 )
        )
         return JNI_FALSE;
@@ -186,12 +158,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnDouble (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    ForceEarlyReturnDouble
-                    , jvmti
-                    , earlyReturnThread
-                    , valueToReturn
-                    )
+                jvmti                    ->ForceEarlyReturnDouble                    (earlyReturnThread                    , valueToReturn                    )
                 )
        )
         return JNI_FALSE;
@@ -209,11 +176,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnVoid (
         )
 {
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    ForceEarlyReturnVoid
-                    , jvmti
-                    , earlyReturnThread
-                    )
+                jvmti                    ->ForceEarlyReturnVoid                    (earlyReturnThread                    )
                 )
        )
         return JNI_FALSE;
@@ -245,11 +208,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
        )
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    GetCapabilities
-                    , jvmti
-                    , &caps)
+    if (!NSK_JVMTI_VERIFY(jvmti                    ->GetCapabilities                    (&caps)
                 )
        )
         return JNI_ERR;
@@ -258,11 +217,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     caps.can_force_early_return = 1;
     caps.can_suspend = 1;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    AddCapabilities
-                    , jvmti
-                    , &caps)
+    if (!NSK_JVMTI_VERIFY(jvmti                    ->AddCapabilities                    (&caps)
                 )
        )
         return JNI_ERR;

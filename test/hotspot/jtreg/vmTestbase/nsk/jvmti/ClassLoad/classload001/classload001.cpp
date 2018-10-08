@@ -98,17 +98,13 @@ static int findSig(char *sig, int expected) {
 }
 
 static void lock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-                "failed to enter a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(countLock)))
+        jni_env->FatalError("failed to enter a raw monitor\n");
 }
 
 static void unlock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-        jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-                "failed to exit a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(countLock)))
+        jni_env->FatalError("failed to exit a raw monitor\n");
 }
 
 /** callback functions **/
@@ -119,8 +115,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
 
     lock(jvmti_env, env);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-            jvmti_env, klass, &sig, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &sig, &generic))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILURE: unable to obtain a class signature\n");
     }
@@ -185,20 +180,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     initCounters();
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti, "_counter_lock", &countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_counter_lock", &countLock)))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks ...\n");
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.ClassLoad = &ClassLoad;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling ClassLoad event ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("the event enabled\n");
 

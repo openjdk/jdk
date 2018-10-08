@@ -45,8 +45,7 @@ void JNICALL
 VMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr) {
     NSK_DISPLAY0("VMInit event received\n\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GenerateEvents,
-            jvmti_env, JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GenerateEvents(JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
         NSK_COMPLAIN0("TEST FAILED: unable to generate events to represent the current state of the VM\n");
         result = STATUS_FAILED;
     }
@@ -63,8 +62,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
 
     NSK_DISPLAY0("CompiledMethodLoad event received for:\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &sig, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, &generic))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILURE: unable to obtain method info\n");
         return;
@@ -72,8 +70,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
     NSK_DISPLAY4("\tmethod: name=\"%s\" signature=\"%s\"\n\tcompiled code size=%d\n\tnumber of address location map entries=%d\n",
         name, sig, code_size, map_length);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase,
-            jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILURE: unable to obtain phase of the VM execution\n");
         return;
@@ -122,12 +119,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     /* add capability to generate compiled method events */
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_compiled_method_load_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_compiled_method_load_events)
@@ -138,16 +133,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMInit = &VMInit;
     callbacks.CompiledMethodLoad = &CompiledMethodLoad;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling VMInit, CompiledMethodLoad event ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

@@ -62,7 +62,7 @@ void eventHandler(jvmtiEnv *jvmti,
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetAllThreads, jvmti, &threadsCount, &threads))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadsCount, &threads))) {
         NSK_COMPLAIN1("%s: failed to get all threads\n", agentName);
         nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, 0, jvmti, jni);
         return;
@@ -70,8 +70,7 @@ void eventHandler(jvmtiEnv *jvmti,
 
     nsk_jvmti_aod_deallocate(jvmti, (unsigned char*)threads);
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, eventsCounterMonitor))) {
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventsCounterMonitor))) {
 
         eventsCounter++;
 
@@ -86,7 +85,7 @@ void eventHandler(jvmtiEnv *jvmti,
             nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, success, jvmti, jni);
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, eventsCounterMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
             success = 0;
         }
     } else {
@@ -140,14 +139,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "attach045-agent02-eventsCounterMonitor", &eventsCounterMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("attach045-agent02-eventsCounterMonitor", &eventsCounterMonitor))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ThreadStart = threadStartHandler;
     eventCallbacks.ThreadEnd = threadEndHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 
