@@ -866,6 +866,8 @@ com/sun/jndi/ldap/LdapTimeoutTest.java                          8151678 linux-al
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
+javax/naming/module/RunBasic.java                               8211850 generic-all
+
 ############################################################################
 
 ###########################################################################
