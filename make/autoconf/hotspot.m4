@@ -252,14 +252,6 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_CDS],
     AC_MSG_ERROR([Invalid value for --enable-cds: $enable_cds])
   fi
 
-  # Disable CDS on AIX.
-  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
-    ENABLE_CDS="false"
-    if test "x$enable_cds" = "xyes"; then
-      AC_MSG_ERROR([CDS is currently not supported on AIX. Remove --enable-cds.])
-    fi
-  fi
-
   AC_SUBST(ENABLE_CDS)
 ])
 
@@ -488,6 +480,34 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc jni-check jvmti management nmt services vm-structs"
+
+  # Disable CDS on AIX.
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    ENABLE_CDS="false"
+    if test "x$enable_cds" = "xyes"; then
+      AC_MSG_ERROR([CDS is currently not supported on AIX. Remove --enable-cds.])
+    fi
+  fi
+
+  # Disable CDS if user requested it with --with-jvm-features=-cds.
+  DISABLE_CDS=`$ECHO $DISABLED_JVM_FEATURES | $GREP cds`
+  if test "x$DISABLE_CDS" = "xcds"; then
+    ENABLE_CDS="false"
+    if test "x$enable_cds" = "xyes"; then
+      AC_MSG_ERROR([CDS was disabled by --with-jvm-features=-cds. Remove --enable-cds.])
+    fi
+  fi
+
+  # Disable CDS for zero, minimal, core..
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(minimal) || HOTSPOT_CHECK_JVM_VARIANT(core); then
+    # ..except when the user explicitely requested it with --enable-jvm-features
+    if ! HOTSPOT_CHECK_JVM_FEATURE(cds); then
+      ENABLE_CDS="false"
+      if test "x$enable_cds" = "xyes"; then
+        AC_MSG_ERROR([CDS not implemented for variants zero, minimal, core. Remove --enable-cds.])
+      fi
+    fi
+  fi
 
   AC_MSG_CHECKING([if cds should be enabled])
   if test "x$ENABLE_CDS" = "xtrue"; then

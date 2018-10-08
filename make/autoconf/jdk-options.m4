@@ -527,7 +527,7 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
 
   # Check if it's likely that it's possible to generate the classlist. Depending
   # on exact jvm configuration it could be possible anyway.
-  if test "x$ENABLE_CDS" = "xtrue" && (HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client)); then
+  if test "x$ENABLE_CDS" = "xtrue" && (HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) || HOTSPOT_CHECK_JVM_FEATURE(cds)); then
     ENABLE_GENERATE_CLASSLIST_POSSIBLE="true"
   else
     ENABLE_GENERATE_CLASSLIST_POSSIBLE="false"
@@ -610,7 +610,6 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
 #
 # Disable the default CDS archive generation
 #   cross compilation - disabled
-#   zero              - off by default (not a tested configuration)
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 [
@@ -618,15 +617,15 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
       [Set to disable generation of a default CDS archive in the product image @<:@enabled@:>@])])
 
   AC_MSG_CHECKING([if a default CDS archive should be generated])
-  if test "x$COMPILE_TYPE" = "xcross"; then
+  if test "x$ENABLE_CDS" = "xfalse"; then
+    AC_MSG_RESULT([no, because CDS is disabled])
+    BUILD_CDS_ARCHIVE="false"
+  elif test "x$COMPILE_TYPE" = "xcross"; then
     AC_MSG_RESULT([no, not possible with cross compilation])
     BUILD_CDS_ARCHIVE="false"
   elif test "x$enable_cds_archive" = "xyes"; then
     AC_MSG_RESULT([yes, forced])
     BUILD_CDS_ARCHIVE="true"
-  elif HOTSPOT_CHECK_JVM_VARIANT(zero); then
-    AC_MSG_RESULT([no])
-    BUILD_CDS_ARCHIVE="false"
   elif test "x$enable_cds_archive" = "x"; then
     AC_MSG_RESULT([yes])
     BUILD_CDS_ARCHIVE="true"
