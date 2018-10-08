@@ -220,7 +220,7 @@ private:
   mutable SingleWriterSynchronizer _protect_active;
 
   // mutable because this gets set even for const iteration.
-  mutable bool _concurrent_iteration_active;
+  mutable int _concurrent_iteration_count;
 
   Block* find_block_or_null(const oop* ptr) const;
   void delete_empty_block(const Block& block);
