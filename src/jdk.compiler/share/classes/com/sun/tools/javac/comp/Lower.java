@@ -1130,10 +1130,14 @@ public class Lower extends TreeTranslator {
                 make.at(tree.pos);
                 return makeLit(sym.type, cv);
             }
-            // Otherwise replace the variable by its proxy.
-            sym = proxies.get(sym);
-            Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
-            tree = make.at(tree.pos).Ident(sym);
+            if (lambdaTranslationMap != null && lambdaTranslationMap.get(sym) != null) {
+                return make.at(tree.pos).Ident(lambdaTranslationMap.get(sym));
+            } else {
+                // Otherwise replace the variable by its proxy.
+                sym = proxies.get(sym);
+                Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
+                tree = make.at(tree.pos).Ident(sym);
+            }
         }
         JCExpression base = (tree.hasTag(SELECT)) ? ((JCFieldAccess) tree).selected : null;
         switch (sym.kind) {
