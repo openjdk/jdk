@@ -819,18 +819,9 @@ oop StringTable::create_archived_string(oop s, Thread* THREAD) {
   return new_s;
 }
 
-class CompactStringTableWriter: public CompactHashtableWriter {
-public:
-  CompactStringTableWriter(int num_entries, CompactHashtableStats* stats) :
-    CompactHashtableWriter(num_entries, stats) {}
-  void add(unsigned int hash, oop string) {
-    CompactHashtableWriter::add(hash, CompressedOops::encode(string));
-  }
-};
-
 struct CopyToArchive : StackObj {
-  CompactStringTableWriter* _writer;
-  CopyToArchive(CompactStringTableWriter* writer) : _writer(writer) {}
+  CompactHashtableWriter* _writer;
+  CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
   bool operator()(WeakHandle<vm_string_table_data>* val) {
     oop s = val->peek();
     if (s == NULL) {
@@ -838,6 +829,7 @@ struct CopyToArchive : StackObj {
     }
     unsigned int hash = java_lang_String::hash_code(s);
     if (hash == 0) {
+      // We do not archive Strings with a 0 hashcode because ......
       return true;
     }
 
@@ -849,12 +841,12 @@ struct CopyToArchive : StackObj {
 
     val->replace(new_s);
     // add to the compact table
-    _writer->add(hash, new_s);
+    _writer->add(hash, CompressedOops::encode(new_s));
     return true;
   }
 };
 
-void StringTable::copy_shared_string_table(CompactStringTableWriter* writer) {
+void StringTable::copy_shared_string_table(CompactHashtableWriter* writer) {
   assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
   CopyToArchive copy(writer);
@@ -865,18 +857,18 @@ void StringTable::write_to_archive() {
   assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
-  int num_buckets = the_table()->_items_count / SharedSymbolTableBucketSize;
-  // calculation of num_buckets can result in zero buckets, we need at least one
-  CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
-                                  &MetaspaceShared::stats()->string);
+  int num_buckets = CompactHashtableWriter::default_num_buckets(
+      StringTable::the_table()->_items_count);
+  CompactHashtableWriter writer(num_buckets,
+                                &MetaspaceShared::stats()->string);
 
   // Copy the interned strings into the "string space" within the java heap
   copy_shared_string_table(&writer);
   writer.dump(&_shared_table, "string");
 }
 
-void StringTable::serialize(SerializeClosure* soc) {
-  _shared_table.serialize(soc);
+void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
+  _shared_table.serialize_header(soc);
 
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time

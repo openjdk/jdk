@@ -420,10 +420,10 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   vmSymbols::serialize(soc);
   soc->do_tag(--tag);
 
-  // Dump/restore the symbol and string tables
-  SymbolTable::serialize(soc);
-  StringTable::serialize(soc);
-  soc->do_tag(--tag);
+  // Dump/restore the symbol/string/subgraph_info tables
+  SymbolTable::serialize_shared_table_header(soc);
+  StringTable::serialize_shared_table_header(soc);
+  HeapShared::serialize_subgraph_info_table_header(soc);
 
   JavaClasses::serialize_offsets(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -1098,6 +1098,21 @@ public:
     return _alloc_stats;
   }
 
+  // Use this when you allocate space with MetaspaceShare::read_only_space_alloc()
+  // outside of ArchiveCompactor::allocate(). These are usually for misc tables
+  // that are allocated in the RO space.
+  class OtherROAllocMark {
+    char* _oldtop;
+  public:
+    OtherROAllocMark() {
+      _oldtop = _ro_region.top();
+    }
+    ~OtherROAllocMark() {
+      char* newtop = _ro_region.top();
+      ArchiveCompactor::alloc_stats()->record_other_type(int(newtop - _oldtop), true);
+    }
+  };
+
   static void allocate(MetaspaceClosure::Ref* ref, bool read_only) {
     address obj = ref->obj();
     int bytes = ref->size() * BytesPerWord;
@@ -1308,7 +1323,7 @@ void VM_PopulateDumpSharedSpace::dump_symbols() {
 }
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
-  char* oldtop = _ro_region.top();
+  ArchiveCompactor::OtherROAllocMark mark;
   // Reorder the system dictionary. Moving the symbols affects
   // how the hash table indices are calculated.
   SystemDictionary::reorder_dictionary_for_sharing();
@@ -1329,11 +1344,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   char* table_top = _ro_region.allocate(table_bytes, sizeof(intptr_t));
   SystemDictionary::copy_table(table_top, _ro_region.top());
 
-  // Write the archived object sub-graph infos. For each klass with sub-graphs,
-  // the info includes the static fields (sub-graph entry points) and Klasses
-  // of objects included in the sub-graph.
-  HeapShared::write_archived_subgraph_infos();
-
   // Write the other data to the output array.
   WriteClosure wc(&_ro_region);
   MetaspaceShared::serialize(&wc);
@@ -1341,8 +1351,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Write the bitmaps for patching the archive heap regions
   dump_archive_heap_oopmaps();
 
-  char* newtop = _ro_region.top();
-  ArchiveCompactor::alloc_stats()->record_other_type(int(newtop - oldtop), true);
   return buckets_top;
 }
 
@@ -1822,6 +1830,11 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   }
 
   G1HeapVerifier::verify_archive_regions();
+
+  {
+    ArchiveCompactor::OtherROAllocMark mark;
+    HeapShared::write_subgraph_info_table();
+  }
 }
 
 void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps() {
@@ -1889,7 +1902,7 @@ void MetaspaceShared::dump_open_archive_heap_objects(
 
 unsigned MetaspaceShared::obj_hash(oop const& p) {
   assert(!p->mark()->has_bias_pattern(),
-         "this object should never have been locked");  // so identity_hash won't safepoin
+         "this object should never have been locked");  // so identity_hash won't safepoint
   unsigned hash = (unsigned)p->identity_hash();
   return hash;
 }
@@ -2144,9 +2157,6 @@ void MetaspaceShared::initialize_shared_spaces() {
   int len = *(intptr_t*)buffer;     // skip over shared dictionary entries
   buffer += sizeof(intptr_t);
   buffer += len;
-
-  // The table of archived java heap object sub-graph infos
-  buffer = HeapShared::read_archived_subgraph_infos(buffer);
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables

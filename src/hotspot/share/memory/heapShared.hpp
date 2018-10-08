@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_MEMORY_HEAPSHARED_HPP
 #define SHARE_VM_MEMORY_HEAPSHARED_HPP
 
+#include "classfile/compactHashtable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
@@ -42,7 +43,6 @@
 // within the sub-graphs.
 class KlassSubGraphInfo: public CHeapObj<mtClass> {
  private:
-  KlassSubGraphInfo* _next;
   // The class that contains the static field(s) as the entry point(s)
   // of archived object sub-graph(s).
   Klass* _k;
@@ -54,8 +54,8 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   GrowableArray<juint>*  _subgraph_entry_fields;
 
  public:
-  KlassSubGraphInfo(Klass* k, KlassSubGraphInfo* next) :
-    _next(next), _k(k),  _subgraph_object_klasses(NULL),
+  KlassSubGraphInfo(Klass* k) :
+    _k(k),  _subgraph_object_klasses(NULL),
     _subgraph_entry_fields(NULL) {}
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != NULL) {
@@ -66,7 +66,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     }
   };
 
-  KlassSubGraphInfo* next() { return _next; }
   Klass* klass()            { return _k; }
   GrowableArray<Klass*>* subgraph_object_klasses() {
     return _subgraph_object_klasses;
@@ -87,7 +86,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
 // at runtime.
 class ArchivedKlassSubGraphInfoRecord {
  private:
-  ArchivedKlassSubGraphInfoRecord* _next;
   Klass* _k;
 
   // contains pairs of field offset and value for each subgraph entry field
@@ -98,11 +96,9 @@ class ArchivedKlassSubGraphInfoRecord {
   Array<Klass*>* _subgraph_object_klasses;
  public:
   ArchivedKlassSubGraphInfoRecord() :
-    _next(NULL), _k(NULL), _entry_field_records(NULL), _subgraph_object_klasses(NULL) {}
+    _k(NULL), _entry_field_records(NULL), _subgraph_object_klasses(NULL) {}
   void init(KlassSubGraphInfo* info);
   Klass* klass() { return _k; }
-  ArchivedKlassSubGraphInfoRecord* next() { return _next; }
-  void set_next(ArchivedKlassSubGraphInfoRecord* next) { _next = next; }
   Array<juint>*  entry_field_records() { return _entry_field_records; }
   Array<Klass*>* subgraph_object_klasses() { return _subgraph_object_klasses; }
 };
@@ -112,14 +108,42 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
  private:
 #if INCLUDE_CDS_JAVA_HEAP
-  // This is a list of subgraph infos built at dump time while
-  // archiving object subgraphs.
-  static KlassSubGraphInfo* _subgraph_info_list;
 
-  // Contains a list of ArchivedKlassSubGraphInfoRecords that is stored
-  // in the archive file and reloaded at runtime.
-  static int _num_archived_subgraph_info_records;
-  static Array<ArchivedKlassSubGraphInfoRecord>* _archived_subgraph_info_records;
+  static bool klass_equals(Klass* const& p1, Klass* const& p2) {
+    return primitive_equals<Klass*>(p1, p2);
+  }
+
+  static unsigned klass_hash(Klass* const& klass) {
+    return primitive_hash<address>((address)klass);
+  }
+
+  class DumpTimeKlassSubGraphInfoTable
+    : public ResourceHashtable<Klass*, KlassSubGraphInfo,
+                               HeapShared::klass_hash,
+                               HeapShared::klass_equals,
+                               137, // prime number
+                               ResourceObj::C_HEAP> {
+  public:
+    int _count;
+  };
+
+  inline static ArchivedKlassSubGraphInfoRecord* read_record_from_compact_hashtable(address base_address, u4 offset) {
+    return (ArchivedKlassSubGraphInfoRecord*)(base_address + offset);
+  }
+
+  inline static bool record_equals_compact_hashtable_entry(ArchivedKlassSubGraphInfoRecord* value, const Klass* key, int len_unused) {
+    return (value->klass() == key);
+  }
+
+  typedef CompactHashtable<
+    const Klass*,
+    ArchivedKlassSubGraphInfoRecord*,
+    read_record_from_compact_hashtable,
+    record_equals_compact_hashtable_entry
+    > RunTimeKlassSubGraphInfoTable;
+
+  static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
+  static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
   // Archive object sub-graph starting from the given static field
   // in Klass k's mirror.
@@ -131,11 +155,10 @@ class HeapShared: AllStatic {
 
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
 
-  static KlassSubGraphInfo* find_subgraph_info(Klass *k);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
   static int num_of_subgraph_infos();
 
-  static size_t build_archived_subgraph_info_records(int num_records);
+  static void build_archived_subgraph_info_records(int num_records);
 
   // Used by decode_from_archive
   static address _narrow_oop_base;
@@ -203,6 +226,8 @@ class HeapShared: AllStatic {
 
   static void init_archivable_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
   static ResourceBitMap calculate_oopmap(MemRegion region);

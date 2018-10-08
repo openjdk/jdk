@@ -84,7 +84,7 @@ public:
   operator Symbol*()                             { return _temp; }
 };
 
-class CompactSymbolTableWriter;
+class CompactHashtableWriter;
 class SerializeClosure;
 
 class SymbolTableConfig;
@@ -240,10 +240,10 @@ public:
 
   // Sharing
 private:
-  static void copy_shared_symbol_table(CompactSymbolTableWriter* ch_table);
+  static void copy_shared_symbol_table(CompactHashtableWriter* ch_table);
 public:
   static void write_to_archive() NOT_CDS_RETURN;
-  static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
+  static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Jcmd

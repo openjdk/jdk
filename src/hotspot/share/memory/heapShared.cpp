@@ -41,47 +41,24 @@
 #include "utilities/bitMap.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
-KlassSubGraphInfo* HeapShared::_subgraph_info_list = NULL;
-int HeapShared::_num_archived_subgraph_info_records = 0;
-Array<ArchivedKlassSubGraphInfoRecord>* HeapShared::_archived_subgraph_info_records = NULL;
-
-KlassSubGraphInfo* HeapShared::find_subgraph_info(Klass* k) {
-  KlassSubGraphInfo* info = _subgraph_info_list;
-  while (info != NULL) {
-    if (info->klass() == k) {
-      return info;
-    }
-    info = info->next();
-  }
-  return NULL;
-}
+address   HeapShared::_narrow_oop_base;
+int       HeapShared::_narrow_oop_shift;
+HeapShared::DumpTimeKlassSubGraphInfoTable* HeapShared::_dump_time_subgraph_info_table = NULL;
+HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_table;
 
 // Get the subgraph_info for Klass k. A new subgraph_info is created if
 // there is no existing one for k. The subgraph_info records the relocated
 // Klass* of the original k.
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
+  assert(DumpSharedSpaces, "dump time only");
   Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
-  KlassSubGraphInfo* info = find_subgraph_info(relocated_k);
-  if (info != NULL) {
-    return info;
+  KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(relocated_k);
+  if (info == NULL) {
+    _dump_time_subgraph_info_table->put(relocated_k, KlassSubGraphInfo(relocated_k));
+    info = _dump_time_subgraph_info_table->get(relocated_k);
+    ++ _dump_time_subgraph_info_table->_count;
   }
-
-  info = new KlassSubGraphInfo(relocated_k, _subgraph_info_list);
-  _subgraph_info_list = info;
   return info;
-}
-
-address   HeapShared::_narrow_oop_base;
-int       HeapShared::_narrow_oop_shift;
-
-int HeapShared::num_of_subgraph_infos() {
-  int num = 0;
-  KlassSubGraphInfo* info = _subgraph_info_list;
-  while (info != NULL) {
-    num ++;
-    info = info->next();
-  }
-  return num;
 }
 
 // Add an entry field to the current KlassSubGraphInfo.
@@ -156,7 +133,6 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _k = info->klass();
-  _next = NULL;
   _entry_field_records = NULL;
   _subgraph_object_klasses = NULL;
 
@@ -191,6 +167,26 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   }
 }
 
+struct CopyKlassSubGraphInfoToArchive : StackObj {
+  CompactHashtableWriter* _writer;
+  CopyKlassSubGraphInfoToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
+
+  bool do_entry(Klass* klass, KlassSubGraphInfo& info) {
+    if (info.subgraph_object_klasses() != NULL || info.subgraph_entry_fields() != NULL) {
+      ArchivedKlassSubGraphInfoRecord* record =
+        (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
+      record->init(&info);
+
+      unsigned int hash = primitive_hash<Klass*>(klass);
+      uintx deltax = MetaspaceShared::object_delta(record);
+      guarantee(deltax <= MAX_SHARED_DELTA, "must not be");
+      u4 delta = u4(deltax);
+      _writer->add(hash, delta);
+    }
+    return true; // keep on iterating
+  }
+};
+
 // Build the records of archived subgraph infos, which include:
 // - Entry points to all subgraphs from the containing class mirror. The entry
 //   points are static fields in the mirror. For each entry point, the field
@@ -198,144 +194,96 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
 //   back to the corresponding field at runtime.
 // - A list of klasses that need to be loaded/initialized before archived
 //   java object sub-graph can be accessed at runtime.
-//
-// The records are saved in the archive file and reloaded at runtime.
-//
-// Layout of the archived subgraph info records:
-//
-// records_size | num_records | records*
-// ArchivedKlassSubGraphInfoRecord | entry_fields | subgraph_object_klasses
-size_t HeapShared::build_archived_subgraph_info_records(int num_records) {
-  // remember the start address
-  char* start_p = MetaspaceShared::read_only_space_top();
+void HeapShared::write_subgraph_info_table() {
+  // Allocate the contents of the hashtable(s) inside the RO region of the CDS archive.
+  DumpTimeKlassSubGraphInfoTable* d_table = _dump_time_subgraph_info_table;
+  CompactHashtableStats stats;
 
-  // now populate the archived subgraph infos, which will be saved in the
-  // archive file
-  _archived_subgraph_info_records =
-    MetaspaceShared::new_ro_array<ArchivedKlassSubGraphInfoRecord>(num_records);
-  KlassSubGraphInfo* info = _subgraph_info_list;
-  int i = 0;
-  while (info != NULL) {
-    assert(i < _archived_subgraph_info_records->length(), "sanity");
-    ArchivedKlassSubGraphInfoRecord* record =
-      _archived_subgraph_info_records->adr_at(i);
-    record->init(info);
-    info = info->next();
-    i ++;
-  }
+  _run_time_subgraph_info_table.reset();
 
-  // _subgraph_info_list is no longer needed
-  delete _subgraph_info_list;
-  _subgraph_info_list = NULL;
+  int num_buckets = CompactHashtableWriter::default_num_buckets(d_table->_count);
+  CompactHashtableWriter writer(num_buckets, &stats);
+  CopyKlassSubGraphInfoToArchive copy(&writer);
+  _dump_time_subgraph_info_table->iterate(&copy);
 
-  char* end_p = MetaspaceShared::read_only_space_top();
-  size_t records_size = end_p - start_p;
-  return records_size;
+  writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
 
-// Write the subgraph info records in the shared _ro region
-void HeapShared::write_archived_subgraph_infos() {
-  assert(DumpSharedSpaces, "dump time only");
-
-  Array<intptr_t>* records_header = MetaspaceShared::new_ro_array<intptr_t>(3);
-
-  _num_archived_subgraph_info_records = num_of_subgraph_infos();
-  size_t records_size = build_archived_subgraph_info_records(
-                             _num_archived_subgraph_info_records);
-
-  // Now write the header information:
-  // records_size, num_records, _archived_subgraph_info_records
-  assert(records_header != NULL, "sanity");
-  intptr_t* p = (intptr_t*)(records_header->data());
-  *p = (intptr_t)records_size;
-  p ++;
-  *p = (intptr_t)_num_archived_subgraph_info_records;
-  p ++;
-  *p = (intptr_t)_archived_subgraph_info_records;
-}
-
-char* HeapShared::read_archived_subgraph_infos(char* buffer) {
-  Array<intptr_t>* records_header = (Array<intptr_t>*)buffer;
-  intptr_t* p = (intptr_t*)(records_header->data());
-  size_t records_size = (size_t)(*p);
-  p ++;
-  _num_archived_subgraph_info_records = *p;
-  p ++;
-  _archived_subgraph_info_records =
-    (Array<ArchivedKlassSubGraphInfoRecord>*)(*p);
-
-  buffer = (char*)_archived_subgraph_info_records + records_size;
-  return buffer;
+void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
+  _run_time_subgraph_info_table.serialize_header(soc);
 }
 
 void HeapShared::initialize_from_archived_subgraph(Klass* k) {
   if (!MetaspaceShared::open_archive_heap_region_mapped()) {
     return; // nothing to do
   }
+  assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
-  if (_num_archived_subgraph_info_records == 0) {
-    return; // no subgraph info records
-  }
+  unsigned int hash = primitive_hash<Klass*>(k);
+  ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.
-  Thread* THREAD = Thread::current();
-  for (int i = 0; i < _archived_subgraph_info_records->length(); i++) {
-    ArchivedKlassSubGraphInfoRecord* record = _archived_subgraph_info_records->adr_at(i);
-    if (record->klass() == k) {
-      int i;
-      // Found the archived subgraph info record for the requesting klass.
-      // Load/link/initialize the klasses of the objects in the subgraph.
-      // NULL class loader is used.
-      Array<Klass*>* klasses = record->subgraph_object_klasses();
-      if (klasses != NULL) {
-        for (i = 0; i < klasses->length(); i++) {
-          Klass* obj_k = klasses->at(i);
-          Klass* resolved_k = SystemDictionary::resolve_or_null(
-                                                (obj_k)->name(), THREAD);
-          if (resolved_k != obj_k) {
-            return;
-          }
-          if ((obj_k)->is_instance_klass()) {
-            InstanceKlass* ik = InstanceKlass::cast(obj_k);
-            ik->initialize(THREAD);
-          } else if ((obj_k)->is_objArray_klass()) {
-            ObjArrayKlass* oak = ObjArrayKlass::cast(obj_k);
-            oak->initialize(THREAD);
-          }
+  if (record != NULL) {
+    Thread* THREAD = Thread::current();
+    if (log_is_enabled(Info, cds, heap)) {
+      ResourceMark rm;
+      log_info(cds, heap)("initialize_from_archived_subgraph " PTR_FORMAT " %s", p2i(k),
+                          k->external_name());
+    }
+
+    int i;
+    // Load/link/initialize the klasses of the objects in the subgraph.
+    // NULL class loader is used.
+    Array<Klass*>* klasses = record->subgraph_object_klasses();
+    if (klasses != NULL) {
+      for (i = 0; i < klasses->length(); i++) {
+        Klass* obj_k = klasses->at(i);
+        Klass* resolved_k = SystemDictionary::resolve_or_null(
+                                              (obj_k)->name(), THREAD);
+        if (resolved_k != obj_k) {
+          return;
+        }
+        if ((obj_k)->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(obj_k);
+          ik->initialize(THREAD);
+        } else if ((obj_k)->is_objArray_klass()) {
+          ObjArrayKlass* oak = ObjArrayKlass::cast(obj_k);
+          oak->initialize(THREAD);
         }
       }
+    }
 
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-        // None of the field value will be set if there was an exception.
-        // The java code will not see any of the archived objects in the
-        // subgraphs referenced from k in this case.
-        return;
-      }
-
-      // Load the subgraph entry fields from the record and store them back to
-      // the corresponding fields within the mirror.
-      oop m = k->java_mirror();
-      Array<juint>* entry_field_records = record->entry_field_records();
-      if (entry_field_records != NULL) {
-        int efr_len = entry_field_records->length();
-        assert(efr_len % 2 == 0, "sanity");
-        for (i = 0; i < efr_len;) {
-          int field_offset = entry_field_records->at(i);
-          // The object refereced by the field becomes 'known' by GC from this
-          // point. All objects in the subgraph reachable from the object are
-          // also 'known' by GC.
-          oop v = MetaspaceShared::materialize_archived_object(
-            entry_field_records->at(i+1));
-          m->obj_field_put(field_offset, v);
-          i += 2;
-        }
-      }
-
-      // Done. Java code can see the archived sub-graphs referenced from k's
-      // mirror after this point.
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+      // None of the field value will be set if there was an exception.
+      // The java code will not see any of the archived objects in the
+      // subgraphs referenced from k in this case.
       return;
+    }
+
+    // Load the subgraph entry fields from the record and store them back to
+    // the corresponding fields within the mirror.
+    oop m = k->java_mirror();
+    Array<juint>* entry_field_records = record->entry_field_records();
+    if (entry_field_records != NULL) {
+      int efr_len = entry_field_records->length();
+      assert(efr_len % 2 == 0, "sanity");
+      for (i = 0; i < efr_len;) {
+        int field_offset = entry_field_records->at(i);
+        // The object refereced by the field becomes 'known' by GC from this
+        // point. All objects in the subgraph reachable from the object are
+        // also 'known' by GC.
+        oop v = MetaspaceShared::materialize_archived_object(
+            entry_field_records->at(i+1));
+        m->obj_field_put(field_offset, v);
+        i += 2;
+
+        log_debug(cds, heap)("  " PTR_FORMAT " init field @ %2d = " PTR_FORMAT, p2i(k), field_offset, p2i(v));
+      }
+
+    // Done. Java code can see the archived sub-graphs referenced from k's
+    // mirror after this point.
     }
   }
 }
@@ -702,6 +650,8 @@ public:
 };
 
 void HeapShared::init_archivable_static_fields(Thread* THREAD) {
+  _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
+
   for (int i = 0; i < num_archivable_static_fields; i++) {
     ArchivableStaticFieldInfo* info = &archivable_static_fields[i];
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name, THREAD);
