@@ -5254,7 +5254,7 @@ void Parker::unpark() {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(char* cmd) {
+int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;

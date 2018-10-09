@@ -543,7 +543,7 @@ class os: AllStatic {
   static char* do_you_want_to_debug(const char* message);
 
   // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd);
+  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
 
   // Call ::exit() on all platforms but Windows
   static void exit(int num);
