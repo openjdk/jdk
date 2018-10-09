@@ -491,9 +491,12 @@
   static int interpreter_frame_interpreterstate_size_in_bytes();
   static int interpreter_frame_monitor_size_in_bytes();
 
- private:
 
   // template interpreter state
+  inline z_ijava_state* ijava_state_unchecked() const;
+
+ private:
+
   inline z_ijava_state* ijava_state() const;
 
   // Where z_ijava_state.monitors is saved.

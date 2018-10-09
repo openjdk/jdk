@@ -77,8 +77,13 @@ inline frame::frame(void* sp, void* pc, void* unextended_sp) :
 #endif
 
 // template interpreter state
-inline frame::z_ijava_state* frame::ijava_state() const {
+inline frame::z_ijava_state* frame::ijava_state_unchecked() const {
   z_ijava_state* state = (z_ijava_state*) ((uintptr_t)fp() - z_ijava_state_size);
+  return state;
+}
+
+inline frame::z_ijava_state* frame::ijava_state() const {
+  z_ijava_state* state = ijava_state_unchecked();
   assert(state->magic == (intptr_t) frame::z_istate_magic_number,
          "wrong z_ijava_state in interpreter frame (no magic found)");
   return state;
