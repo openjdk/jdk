@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,7 +477,7 @@ public final class Module implements AnnotatedElement {
      *
      * @see ModuleDescriptor#opens()
      * @see #addOpens(String,Module)
-     * @see AccessibleObject#setAccessible(boolean)
+     * @see java.lang.reflect.AccessibleObject#setAccessible(boolean)
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
     public boolean isOpen(String pn, Module other) {
@@ -747,7 +747,7 @@ public final class Module implements AnnotatedElement {
      *         package to at least the caller's module
      *
      * @see #isOpen(String,Module)
-     * @see AccessibleObject#setAccessible(boolean)
+     * @see java.lang.reflect.AccessibleObject#setAccessible(boolean)
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
     @CallerSensitive
@@ -1061,7 +1061,10 @@ public final class Module implements AnnotatedElement {
      * @return a map of module name to runtime {@code Module}
      *
      * @throws IllegalArgumentException
-     *         If defining any of the modules to the VM fails
+     *         If the function maps a module to the null or platform class loader
+     * @throws IllegalStateException
+     *         If the module cannot be defined to the VM or its packages overlap
+     *         with another module mapped to the same class loader
      */
     static Map<String, Module> defineModules(Configuration cf,
                                              Function<String, ClassLoader> clf,
