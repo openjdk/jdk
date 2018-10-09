@@ -73,8 +73,7 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
         return;
     }
 
-    jclassName = (jstring) (jstring) (jstring) (jstring) (jstring) (jstring) (jstring) (jstring) (jstring) NSK_CPP_STUB3(CallObjectMethod, jni_env, klass,
-                        methodID);
+    jclassName = (jstring) NSK_CPP_STUB3(CallObjectMethod, jni_env, klass, methodID);
 
     className = NSK_CPP_STUB3(GetStringUTFChars, jni_env, jclassName, 0);
 
