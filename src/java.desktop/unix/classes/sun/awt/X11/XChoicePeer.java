@@ -25,9 +25,29 @@
 
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.FontMetrics;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Choice;
+import java.awt.Toolkit;
+import java.awt.Graphics;
+import java.awt.Component;
+import java.awt.AWTEvent;
+import java.awt.Insets;
+import java.awt.Font;
+
+import java.awt.peer.ChoicePeer;
+
+import java.awt.event.FocusEvent;
+import java.awt.event.InvocationEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.ItemEvent;
+
 import sun.util.logging.PlatformLogger;
 
 // FIXME: tab traversal should be disabled when mouse is captured (4816336)
@@ -228,12 +248,14 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                   helper.down();
                   int newIdx = helper.getSelectedIndex();
 
-                  ((Choice)target).select(newIdx);
-                  postEvent(new ItemEvent((Choice)target,
-                                          ItemEvent.ITEM_STATE_CHANGED,
-                                          ((Choice)target).getItem(newIdx),
-                                          ItemEvent.SELECTED));
-                  repaint();
+                  if (((Choice)target).getSelectedIndex() != newIdx) {
+                        ((Choice)target).select(newIdx);
+                        postEvent(new ItemEvent((Choice)target,
+                                                ItemEvent.ITEM_STATE_CHANGED,
+                                                ((Choice)target).getItem(newIdx),
+                                                ItemEvent.SELECTED));
+                        repaint();
+                  }
               }
               break;
           }
@@ -243,12 +265,14 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                   helper.up();
                   int newIdx = helper.getSelectedIndex();
 
-                  ((Choice)target).select(newIdx);
-                  postEvent(new ItemEvent((Choice)target,
-                                          ItemEvent.ITEM_STATE_CHANGED,
-                                          ((Choice)target).getItem(newIdx),
-                                          ItemEvent.SELECTED));
-                  repaint();
+                  if (((Choice)target).getSelectedIndex() != newIdx) {
+                        ((Choice)target).select(newIdx);
+                        postEvent(new ItemEvent((Choice)target,
+                                                ItemEvent.ITEM_STATE_CHANGED,
+                                                ((Choice)target).getItem(newIdx),
+                                                ItemEvent.SELECTED));
+                        repaint();
+                  }
               }
               break;
           }
@@ -293,11 +317,13 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                           helper.select(dragStartIdx);
                       } else { //KeyEvent.VK_ENTER:
                           int newIdx = helper.getSelectedIndex();
-                          ((Choice)target).select(newIdx);
-                          postEvent(new ItemEvent((Choice)target,
-                                                  ItemEvent.ITEM_STATE_CHANGED,
-                                                  ((Choice)target).getItem(newIdx),
-                                                  ItemEvent.SELECTED));
+                          if (newIdx != (((Choice)target).getSelectedIndex())) {
+                            ((Choice)target).select(newIdx);
+                            postEvent(new ItemEvent((Choice)target,
+                                                    ItemEvent.ITEM_STATE_CHANGED,
+                                                    ((Choice)target).getItem(newIdx),
+                                                    ItemEvent.SELECTED));
+                          }
                       }
                   }
                   hidePopdownMenu();
@@ -457,8 +483,10 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                             * We should generate ItemEvent if only
                             * LeftMouseButton used */
                             if (e.getButton() == MouseEvent.BUTTON1 &&
-                                (!firstPress || wasDragged ))
+                                (!firstPress || wasDragged ) &&
+                                ((Choice)target).getSelectedIndex() != newIdx)
                             {
+                                ((Choice)target).select(newIdx);
                                 postEvent(new ItemEvent((Choice)target,
                                                         ItemEvent.ITEM_STATE_CHANGED,
                                                         ((Choice)target).getItem(newIdx),

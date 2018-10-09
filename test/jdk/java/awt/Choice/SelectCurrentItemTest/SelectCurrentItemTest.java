@@ -108,7 +108,7 @@ public class SelectCurrentItemTest implements ItemListener, WindowListener {
 
         robot.delay(1000);
 
-        robot.mouseMove(loc.x + size.width / 2, loc.y + size.height + size.height / 2);
+        robot.mouseMove(loc.x + size.width / 2, loc.y + size.height);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
