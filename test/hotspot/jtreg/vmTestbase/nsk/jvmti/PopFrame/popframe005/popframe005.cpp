@@ -33,12 +33,7 @@ extern "C" {
 // Deallocate memory region allocated by VM
 #define DEALLOCATE(p) \
     if (p != NULL)                 \
-        if (!NSK_JVMTI_VERIFY(     \
-                    NSK_CPP_STUB2( \
-                        Deallocate \
-                        , jvmti    \
-                        , p        \
-                        )))        \
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(p)))        \
         {                          \
             NSK_COMPLAIN0("Failed to deallocate: ##p##\n"); \
         }
@@ -101,49 +96,22 @@ MethodExit(
         int failure = 1;
 
         do {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(
-                        GetThreadInfo
-                        , jvmti
-                        , thread
-                        , &thr_info
-                        )))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &thr_info)))
             {
                 break;
             }
 
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(
-                        GetMethodDeclaringClass
-                        , jvmti
-                        , method
-                        , &klass
-                        )))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetMethodDeclaringClass(method, &klass)))
             {
                 break;
             }
 
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(
-                        GetClassSignature
-                        , jvmti
-                        , klass
-                        , &class_signature
-                        , NULL
-                        )))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &class_signature, NULL)))
             {
                 break;
             }
 
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB5(
-                        GetMethodName
-                        , jvmti
-                        , method
-                        , &entry_name
-                        , &entry_sig
-                        , NULL
-                        )))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &entry_name, &entry_sig, NULL)))
             {
                 break;
             }
@@ -181,12 +149,7 @@ jboolean suspendThread(jobject suspendedThread) {
 
     NSK_DISPLAY0(">>>>>>>> Invoke SuspendThread()\n");
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                SuspendThread
-                , jvmti
-                , suspendedThread
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(suspendedThread)))
     {
         return JNI_FALSE;
     }
@@ -203,12 +166,7 @@ jboolean resThread(jobject suspendedThread) {
 
     NSK_DISPLAY0(">>>>>>>> Invoke ResumeThread()\n");
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                ResumeThread
-                , jvmti
-                , suspendedThread
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(suspendedThread)))
     {
         return JNI_FALSE;
     }
@@ -234,25 +192,13 @@ Java_nsk_jvmti_PopFrame_popframe005_doPopFrame(
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(
-                SetEventNotificationMode
-                , jvmti
-                , JVMTI_ENABLE
-                , JVMTI_EVENT_METHOD_EXIT
-                , frameThr
-                )))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, frameThr)))
     {
         result = JNI_FALSE;
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(
-                SetEventNotificationMode
-                , jvmti
-                , JVMTI_ENABLE
-                , JVMTI_EVENT_FRAME_POP
-                , frameThr
-                )))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, frameThr)))
     {
         result = JNI_FALSE;
     }
@@ -261,12 +207,7 @@ Java_nsk_jvmti_PopFrame_popframe005_doPopFrame(
 
     set_watch_jvmti_events(1); /* watch JVMTI events */
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                PopFrame
-                , jvmti
-                , frameThr
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->PopFrame(frameThr)))
     {
         result = JNI_FALSE;
     } else {
@@ -319,32 +260,17 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                GetPotentialCapabilities
-                , jvmti
-                , &caps
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPotentialCapabilities(&caps)))
     {
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                AddCapabilities
-                , jvmti
-                , &caps
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
     {
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                GetCapabilities
-                , jvmti
-                , &caps
-                )))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
     {
         return JNI_ERR;
     }
@@ -365,12 +291,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
         callbacks.MethodExit = &MethodExit;
         callbacks.FramePop = &FramePop;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    SetEventCallbacks
-                    , jvmti
-                    , &callbacks
-                    , sizeof(callbacks)
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks)
                     )))
         {
             return JNI_ERR;

@@ -63,15 +63,7 @@ Java_nsk_jvmti_RetransformClasses_retransform003_forceLoadedClassesRetransformat
         , jclass class_for_retransformation
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    RetransformClasses
-                    , jvmti
-                    , 1
-                    , &class_for_retransformation
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->RetransformClasses(1, &class_for_retransformation)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -107,88 +99,28 @@ ClassFileLoadHook (
     }
 
     // Get ant the invoke callback function
-    if (!NSK_VERIFY(
-                (loader_class = NSK_CPP_STUB2(
-                    GetObjectClass
-                    , jni
-                    , loader
-                    )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((loader_class = jni->GetObjectClass(loader)) != NULL))
         return;
 
-    if (!NSK_VERIFY(
-                (method_id = NSK_CPP_STUB4(
-                    GetMethodID
-                    , jni
-                    , loader_class
-                    , "loadClass"
-                    , "(Ljava/lang/String;)Ljava/lang/Class;"
-                    )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((method_id = jni->GetMethodID(
+            loader_class, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;")) != NULL))
         return;
 
-    if (!NSK_VERIFY(
-                (class_name_string =
-                 NSK_CPP_STUB2(
-                     NewStringUTF
-                     , jni
-                     , CALLBACK_CLASS_NAME
-                     )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(CALLBACK_CLASS_NAME)) != NULL))
         return;
 
-    if (!NSK_VERIFY(
-                (callback_class = (jclass) NSK_CPP_STUB4(
-                        CallObjectMethod
-                        , jni
-                        , loader
-                        , method_id
-                        , class_name_string
-                        )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((callback_class = (jclass) jni->CallObjectMethod(
+            loader, method_id, class_name_string)) != NULL))
         return;
 
-    if (!NSK_VERIFY(
-                (method_id = NSK_CPP_STUB4(
-                    GetStaticMethodID
-                    , jni
-                    , callback_class
-                    , "callback"
-                    , "(Ljava/lang/String;I)V"
-                    )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((method_id = jni->GetStaticMethodID(
+            callback_class, "callback", "(Ljava/lang/String;I)V")) != NULL))
         return;
 
-    if (!NSK_VERIFY(
-                (class_name_string =
-                 NSK_CPP_STUB2(
-                     NewStringUTF
-                     , jni
-                     , name
-                     )
-                ) != NULL
-            )
-       )
+    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(name)) != NULL))
         return;
 
-    NSK_CPP_STUB5(
-        CallStaticObjectMethod
-        , jni
-        , callback_class
-        , method_id
-        , class_name_string
-        , agent_id
-        );
+    jni->CallStaticObjectMethod(callback_class, method_id, class_name_string, agent_id);
 }
 
 
@@ -219,19 +151,10 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
 
     agent_id= nsk_jvmti_findOptionIntValue("id", -1);
 
-    if (!NSK_VERIFY(
-                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL
-                )
-       )
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    GetCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if(nsk_jvmti_findOptionIntValue("can_retransform_classes", 1)) {
@@ -242,41 +165,21 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
 
 
     // Register all necessary JVM capabilities
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    AddCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     // Register all necessary event callbacks
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    SetEventCallbacks
-                    , jvmti
-                    , &callbacks
-                    , sizeof(callbacks)
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     // Enable class retransformation
     if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(
-                    SetEventNotificationMode
-                    , jvmti
-                    , JVMTI_ENABLE
-                    , JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
-                    , NULL
-                    )
-                )
-       )
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                                                NULL)))
         return JNI_ERR;
 
     return JNI_OK;

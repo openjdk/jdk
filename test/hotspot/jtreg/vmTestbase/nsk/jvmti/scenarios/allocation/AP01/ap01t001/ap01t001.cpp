@@ -146,20 +146,13 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_newObject( JNIEnv* jni, jclass
     jmethodID cid;
     jobject result;
 
-    if (!NSK_JNI_VERIFY(jni, (cid =
-            NSK_CPP_STUB4(GetMethodID, jni,
-                                       cls,
-                                       "<init>",
-                                       "()V" )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V" )) != NULL)) {
          NSK_COMPLAIN0("newObject: GetMethodID returned NULL\n\n");
          nsk_jvmti_setFailStatus();
          return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, ( result =
-            NSK_CPP_STUB3(NewObject, jni,
-                                     cls,
-                                     cid )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, ( result = jni->NewObject(cls, cid)) != NULL)) {
 
          NSK_COMPLAIN0("newObject: NewObject returned NULL\n\n");
          nsk_jvmti_setFailStatus();
@@ -174,31 +167,21 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_allocObject( JNIEnv* jni, jcla
     jmethodID cid;
     jobject result;
 
-    if (!NSK_JNI_VERIFY(jni, ( cid =
-            NSK_CPP_STUB4(GetMethodID, jni,
-                                       cls,
-                                       "<init>",
-                                       "()V" )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, ( cid = jni->GetMethodID(cls, "<init>", "()V" )) != NULL)) {
 
          NSK_COMPLAIN0("allocObject: GetMethodID returned NULL\n\n");
          nsk_jvmti_setFailStatus();
          return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, ( result =
-            NSK_CPP_STUB2(AllocObject, jni,
-                                       cls )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, ( result = jni->AllocObject(cls)) != NULL)) {
 
          NSK_COMPLAIN0("allocObject: AllocObject returned NULL\n\n");
          nsk_jvmti_setFailStatus();
          return NULL;
     }
 
-    if (!NSK_JNI_VERIFY_VOID(jni,
-            NSK_CPP_STUB4(CallNonvirtualVoidMethod, jni,
-                                                    result,
-                                                    cls,
-                                                    cid))) {
+    if (!NSK_JNI_VERIFY_VOID(jni,jni->CallNonvirtualVoidMethod(result, cls, cid))) {
 
          NSK_COMPLAIN0("newObject: CallNonvirtualVoidMethod failed\n\n");
          nsk_jvmti_setFailStatus();
@@ -225,10 +208,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Set tag for debugee class\n\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetTag, jvmti,
-                                  debugeeClass,
-                                  DEBUGEE_CLASS_TAG ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(debugeeClass, DEBUGEE_CLASS_TAG))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -236,13 +216,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Calling IterateOverInstancesOfClass with filter JVMTI_HEAP_OBJECT_UNTAGGED\n");
     obj_count = 0;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(IterateOverInstancesOfClass,
-                              jvmti,
-                              debugeeClass,
-                              JVMTI_HEAP_OBJECT_UNTAGGED,
-                              heapObjectCallback,
-                              &user_data))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverInstancesOfClass(debugeeClass,
+                                                             JVMTI_HEAP_OBJECT_UNTAGGED,
+                                                             heapObjectCallback,
+                                                             &user_data))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -261,11 +238,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_UNTAGGED\n");
     obj_count = 0;
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(IterateOverHeap,
-                              jvmti,
-                              JVMTI_HEAP_OBJECT_UNTAGGED,
-                              heapObjectCallback,
-                              &user_data))) {
+            jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_UNTAGGED, heapObjectCallback, &user_data))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -282,12 +255,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Calling IterateOverReachableObjects\n");
     obj_count = 0;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                                                       heapRootCallback,
-                                                       stackReferenceCallback,
-                                                       objectReferenceCallback,
-                                                       &user_data))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                             stackReferenceCallback,
+                                                             objectReferenceCallback,
+                                                             &user_data))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -338,12 +309,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_object_free_events = 1;
     caps.can_tag_objects = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_object_free_events)
@@ -358,16 +327,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.ObjectFree = &ObjectFree;
     callbacks.VMDeath = &VMDeath;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_VM_DEATH,
+                                                          NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

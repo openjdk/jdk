@@ -54,14 +54,12 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
     *tag_ptr = (jlong)++objCounter;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, st_jvmti, storage_data ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->SetEnvironmentLocalStorage(storage_data))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, st_jvmti, &storage_ptr))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetEnvironmentLocalStorage(&storage_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
@@ -100,14 +98,12 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
     *tag_ptr = (jlong)++objCounter;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, st_jvmti, storage_data ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->SetEnvironmentLocalStorage(storage_data))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, st_jvmti, &storage_ptr))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetEnvironmentLocalStorage(&storage_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
@@ -145,14 +141,12 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 
     *tag_ptr = (jlong)++objCounter;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, st_jvmti, storage_data ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->SetEnvironmentLocalStorage(storage_data))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, st_jvmti, &storage_ptr))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetEnvironmentLocalStorage(&storage_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
@@ -190,12 +184,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             NSK_DISPLAY0("Calling IterateOverReachableObjects\n");
             {
                 if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB5(IterateOverReachableObjects,
-                                      jvmti,
-                                      heapRootCallback,
-                                      stackReferenceCallback,
-                                      objectReferenceCallback,
-                                      &userData))) {
+                        jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                           stackReferenceCallback,
+                                                           objectReferenceCallback,
+                                                           &userData))) {
                     nsk_jvmti_setFailStatus();
                     break;
                 }
@@ -253,8 +245,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

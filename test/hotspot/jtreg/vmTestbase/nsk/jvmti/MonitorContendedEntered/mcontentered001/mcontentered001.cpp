@@ -57,8 +57,8 @@ MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) 
     }
 
     /* check if event is for tested thread and for tested object */
-    if (NSK_CPP_STUB3(IsSameObject, jni, thread, thr) &&
-        NSK_CPP_STUB3(IsSameObject, jni, object, obj))
+    if (jni->IsSameObject(thread, thr) &&
+        jni->IsSameObject(object, obj))
             eventsCount++;
 }
 
@@ -74,8 +74,8 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
     }
 
     /* check if event is for tested thread and for tested object */
-    if (NSK_CPP_STUB3(IsSameObject, jni, thread, thr) &&
-        NSK_CPP_STUB3(IsSameObject, jni, object, obj))
+    if (jni->IsSameObject(thread, thr) &&
+        jni->IsSameObject(object, obj))
             eventsCount++;
 }
 
@@ -94,8 +94,7 @@ static int prepare() {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -107,8 +106,7 @@ static int prepare() {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -120,8 +118,7 @@ static int prepare() {
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (thread == NULL) {
@@ -130,41 +127,36 @@ static int prepare() {
     }
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (thread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'endingMonitor' */
     if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass,
-                "endingMonitor", "Ljava/lang/Object;")) != NULL))
+            jni->GetFieldID(klass, "endingMonitor", "Ljava/lang/Object;")) != NULL))
         return NSK_FALSE;
 
     /* get 'endingMonitor' object */
-    if (!NSK_JNI_VERIFY(jni, (object =
-            NSK_CPP_STUB3(GetObjectField, jni, thread, field)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object = jni->GetObjectField(thread, field)) != NULL))
         return NSK_FALSE;
 
     /* make object accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (object =
-            NSK_CPP_STUB2(NewGlobalRef, jni, object)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object = jni->NewGlobalRef(object)) != NULL))
         return NSK_FALSE;
 
     /* enable MonitorContendedEntered event */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_MONITOR_CONTENDED_ENTERED,
+                                                          NULL)))
         return NSK_FALSE;
 
     /* enable MonitorContendedEnter event */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_MONITOR_CONTENDED_ENTER,
+                                                          NULL)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -173,9 +165,9 @@ static int prepare() {
 static int clean() {
 
     /* disable MonitorContendedEntered event */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_DISABLE,
-                JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE,
+                                                          JVMTI_EVENT_MONITOR_CONTENDED_ENTERED,
+                                                          NULL)))
         nsk_jvmti_setFailStatus();
 
     return NSK_TRUE;
@@ -254,14 +246,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetPotentialCapabilities, jvmti,&caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPotentialCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!NSK_VERIFY(caps.can_generate_monitor_events))
@@ -271,9 +262,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.MonitorContendedEntered = &MonitorContendedEntered;
     callbacks.MonitorContendedEnter = &MonitorContendedEnter;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* register agent proc and arg */
