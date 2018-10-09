@@ -71,7 +71,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private final String path;
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Object closeLock = new Object();
+
+    private volatile boolean closed;
 
     private static final int O_RDONLY = 1;
     private static final int O_RDWR =   2;
@@ -301,7 +303,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                 if (fc == null) {
                     this.channel = fc = FileChannelImpl.open(fd, path, true,
                         rw, false, this);
-                    if (closed.get()) {
+                    if (closed) {
                         try {
                             fc.close();
                         } catch (IOException ioe) {
@@ -638,14 +640,21 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public void close() throws IOException {
-        if (!closed.compareAndSet(false, true)) {
-            // if compareAndSet() returns false closed was already true
+        if (closed) {
             return;
+        }
+        synchronized (closeLock) {
+            if (closed) {
+                return;
+            }
+            closed = true;
         }
 
         FileChannel fc = channel;
         if (fc != null) {
-           fc.close();
+            // possible race with getChannel(), benign since
+            // FileChannel.close is final and idempotent
+            fc.close();
         }
 
         fd.closeAll(new Closeable() {
