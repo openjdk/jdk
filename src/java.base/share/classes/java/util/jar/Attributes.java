@@ -550,7 +550,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * {@code Name} object for {@code Manifest-Version}
          * manifest attribute. This attribute indicates the version number
          * of the manifest standard to which a JAR file's manifest conforms.
-         * @see <a href="{@docRoot}/../specs/jar/jar.html#JAR_Manifest">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">
          *      Manifest and Signature Specification</a>
          */
         public static final Name MANIFEST_VERSION = new Name("Manifest-Version");
@@ -558,7 +558,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Signature-Version}
          * manifest attribute used when signing JAR files.
-         * @see <a href="{@docRoot}/../specs/jar/jar.html#JAR_Manifest">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">
          *      Manifest and Signature Specification</a>
          */
         public static final Name SIGNATURE_VERSION = new Name("Signature-Version");
@@ -572,7 +572,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Class-Path}
          * manifest attribute.
-         * @see <a href="{@docRoot}/../specs/jar/jar.html#classpath">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#class-path-attribute">
          *      JAR file specification</a>
          */
         public static final Name CLASS_PATH = new Name("Class-Path");
