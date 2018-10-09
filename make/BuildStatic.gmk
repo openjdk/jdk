@@ -42,7 +42,7 @@ MODULES_SYMBOLS_FILES := $(foreach module, $(EXPORTED_SYMBOLS_MODULES), \
 
 $(GLOBAL_SYMBOLS_FILE): $(MODULES_SYMBOLS_FILES)
 	$(call LogInfo, Generating global exported.symbols file)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(CAT) $^ > $@
 
 TARGETS += $(GLOBAL_SYMBOLS_FILE)

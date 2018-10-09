@@ -45,7 +45,7 @@ $(eval $(call SetupBuildLauncher, java, \
 ))
 
 $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs/java$(EXE_SUFFIX) $@
 

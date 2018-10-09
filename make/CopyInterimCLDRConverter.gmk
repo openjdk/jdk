@@ -33,7 +33,7 @@ include MakeBase.gmk
 ### CLDRConverter needs the JRE time zone names from the java.base source.
 
 define cldrconverter_copytznames
-	$(MKDIR) -p '$(@D)'
+	$(call MakeTargetDir)
 	$(RM) '$@'
 	$(SED) -e "s/package sun.util.resources/package build.tools.cldrconverter/" \
         -e "s/extends TimeZoneNamesBundle//" \
@@ -46,7 +46,7 @@ $(eval $(call SetupCopyFiles,COPY_INTERIM_CLDRCONVERTER, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes/build/tools/cldrconverter, \
     FILES := TimeZoneNames.java, \
     MACRO := cldrconverter_copytznames))
-    
+
 ##########################################################################################
 
 all: $(COPY_INTERIM_CLDRCONVERTER)

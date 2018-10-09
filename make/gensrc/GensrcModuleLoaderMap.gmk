@@ -46,7 +46,7 @@ VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: \
     $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java \
     $(VARDEPS_FILE) $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
 	$(TOOL_GENCLASSLOADERMAP) -boot $(BOOT_MODULES_LIST) \
 	     -platform $(PLATFORM_MODULES_LIST) -o $@.tmp $<

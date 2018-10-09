@@ -32,7 +32,7 @@ NIMBUS_SKIN_FILE = $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nim
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus: $(NIMBUS_SKIN_FILE) $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating Nimbus source files)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(TOOL_GENERATENIMBUS) $(LOG_DEBUG) \
 	    -skinFile $(NIMBUS_SKIN_FILE) -buildDir $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop \
 	    -packagePrefix $(NIMBUS_PACKAGE).nimbus -lafName Nimbus

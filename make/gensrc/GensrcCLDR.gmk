@@ -50,7 +50,7 @@ $(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/supplemental/*.xml) \
     $(ZONENAME_TEMPLATE) \
     $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(GENSRC_BASEDIR)
+	$(call MakeDir, $(GENSRC_BASEDIR))
 	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) \
 	    -baselocales $(CLDR_BASE_LOCALES) \
 	    -o $(GENSRC_BASEDIR) \
@@ -62,7 +62,7 @@ $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/main/*.xml) \
     $(wildcard $(CLDRSRCDIR)/supplemental/*.xml) \
     $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(GENSRC_DIR)
+	$(call MakeDir, $(GENSRC_DIR))
 	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) \
 	    -baselocales $(CLDR_BASE_LOCALES) \
 	    -o $(GENSRC_DIR)

@@ -35,18 +35,18 @@ SPEC_DOTFILES_DIR := $(GENGRAPHS_DIR)/spec-dotfiles
 TOOLS_MODULE_SRCDIR := $(TOPDIR)/make/jdk/src/classes/build/tools/jigsaw
 
 $(GENGRAPHS_DIR)/jdk.dot: $(BUILD_JIGSAW_TOOLS)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(TOOL_GENGRAPHS) --output $(GENGRAPHS_DIR)
 
 $(SPEC_DOTFILES_DIR)/java.se.dot: $(BUILD_JIGSAW_TOOLS)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(TOOL_GENGRAPHS) --spec --output $(SPEC_DOTFILES_DIR)
 
 $(GENGRAPHS_DIR)/technology-summary.html: $(TOOLS_MODULE_SRCDIR)/technology-summary.html
 	$(install-file)
 
 $(GENGRAPHS_DIR)/module-summary.html: $(BUILD_JIGSAW_TOOLS) $(GENGRAPHS_DIR)/technology-summary.html
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(TOOL_MODULESUMMARY) -o $@ --module-path $(IMAGES_OUTPUTDIR)/jmods
 
 all: $(GENGRAPHS_DIR)/jdk.dot $(GENGRAPHS_DIR)/module-summary.html $(SPEC_DOTFILES_DIR)/java.se.dot

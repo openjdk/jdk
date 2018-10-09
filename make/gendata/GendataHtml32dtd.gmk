@@ -28,7 +28,7 @@ GENDATA_HTML32DTD :=
 HTML32DTD = $(JDK_OUTPUTDIR)/modules/java.desktop/javax/swing/text/html/parser/html32.bdtd
 $(HTML32DTD): $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating HTML DTD file)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	($(TOOL_DTDBUILDER) html32 > $@) || exit 1
 

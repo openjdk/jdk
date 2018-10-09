@@ -79,7 +79,7 @@ ifneq ($(MOD_FILES), )
       $(BUILD_TOOLS_JDK) \
       $(MOD_FILES) \
       $(call DependOnVariable, ALL_MODULES)
-		$(MKDIR) -p $(@D)
+		$(call MakeTargetDir)
 		$(RM) $@ $@.tmp
 		$(TOOL_GENMODULEINFOSOURCE) -o $@.tmp \
 		    --source-file $< \

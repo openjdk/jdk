@@ -131,7 +131,7 @@ SED_NONBASEARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_NON
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java: \
     $(TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(call LogInfo, Creating sun/util/locale/provider/BaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
 	    > $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_the.locale_resources
 	$(SED) $(SED_BASEARGS) $< > $@
@@ -139,7 +139,7 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMet
 $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java: \
     $(TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(call LogInfo, Creating sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
 	    > $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/_the.locale_resources
 	$(SED) $(SED_NONBASEARGS) $< > $@

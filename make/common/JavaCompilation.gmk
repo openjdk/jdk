@@ -423,7 +423,7 @@ define SetupJavaCompilationBody
         $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
         $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
-		$(MKDIR) -p $$(@D)
+		$$(call MakeTargetDir)
 		if [ -d "$$($1_HEADERS).$1.tmp" ]; then \
 		  for f in `$(CD) $$($1_HEADERS).$1.tmp && $(FIND) . -type f`; do \
 		    if [ ! -f "$$($1_HEADERS)/$$$$f" ] \

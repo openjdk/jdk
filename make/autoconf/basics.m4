@@ -569,7 +569,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(GZIP, pigz gzip)
   BASIC_REQUIRE_PROGS(LN, ln)
   BASIC_REQUIRE_PROGS(LS, ls)
-  BASIC_REQUIRE_PROGS(MKDIR, mkdir)
+  # gmkdir is known to be safe for concurrent invocations with -p flag.
+  BASIC_REQUIRE_PROGS(MKDIR, [gmkdir mkdir])
   BASIC_REQUIRE_PROGS(MKTEMP, mktemp)
   BASIC_REQUIRE_PROGS(MV, mv)
   BASIC_REQUIRE_PROGS(NAWK, [nawk gawk awk])

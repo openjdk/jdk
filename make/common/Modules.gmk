@@ -321,7 +321,7 @@ MODULE_INFOS := $(call FindAllModuleInfos, *)
 
 $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
     $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
 	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \

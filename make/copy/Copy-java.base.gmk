@@ -128,7 +128,7 @@ POLICY_DST := $(CONF_DST_DIR)/security/java.policy
 POLICY_SRC_LIST := $(POLICY_SRC)
 
 $(POLICY_DST): $(POLICY_SRC_LIST)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
 	$(foreach f,$(POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
 	$(MV) $@.tmp $@
@@ -153,7 +153,7 @@ ifneq ($(IMPORT_MODULES_CONF), )
 endif
 
 $(DEF_POLICY_DST): $(DEF_POLICY_SRC_LIST)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
 	$(foreach f,$(DEF_POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
 	$(MV) $@.tmp $@

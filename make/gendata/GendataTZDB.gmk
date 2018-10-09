@@ -35,8 +35,8 @@ TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 GENDATA_TZDB_DAT := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/tzdb.dat
 
 $(GENDATA_TZDB_DAT): $(TZDATA_TZFILES)
+	$(call MakeTargetDir)
 	$(RM) $(GENDATA_TZDB_DAT)
-	$(MKDIR) -p $(@D)
 	$(TOOL_TZDB) -srcdir $(TZDATA_DIR) -dstfile $(GENDATA_TZDB_DAT) $(TZDATA_TZFILE)
 
 TARGETS += $(GENDATA_TZDB_DAT)
