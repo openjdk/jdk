@@ -30,6 +30,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -777,7 +778,7 @@ oop ConstantPoolCache::archived_references() {
   if (CompressedOops::is_null(_archived_references)) {
     return NULL;
   }
-  return MetaspaceShared::materialize_archived_object(_archived_references);
+  return HeapShared::materialize_archived_object(_archived_references);
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {

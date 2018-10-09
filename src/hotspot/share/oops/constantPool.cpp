@@ -33,6 +33,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -295,7 +296,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
       }
     }
 
-    oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
+    oop archived = HeapShared::archive_heap_object(rr, THREAD);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
     // the return value of archive_heap_object here. At runtime, the
@@ -340,7 +341,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (SystemDictionary::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (MetaspaceShared::open_archive_heap_region_mapped() &&
+    if (HeapShared::open_archive_heap_region_mapped() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -373,7 +374,7 @@ void ConstantPool::remove_unshareable_info() {
   // If archiving heap objects is not allowed, clear the resolved references.
   // Otherwise, it is cleared after the resolved references array is cached
   // (see archive_resolved_references()).
-  if (!MetaspaceShared::is_heap_object_archiving_allowed()) {
+  if (!HeapShared::is_heap_object_archiving_allowed()) {
     set_resolved_references(NULL);
   }
 

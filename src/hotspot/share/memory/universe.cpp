@@ -39,6 +39,7 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -242,8 +243,15 @@ void Universe::serialize(SerializeClosure* f) {
 
   f->do_ptr((void**)&_objectArrayKlassObj);
 #if INCLUDE_CDS_JAVA_HEAP
-  // The mirrors are NULL if MetaspaceShared::is_heap_object_archiving_allowed
-  // is false.
+#ifdef ASSERT
+  if (DumpSharedSpaces && !HeapShared::is_heap_object_archiving_allowed()) {
+    assert(_int_mirror == NULL    && _float_mirror == NULL &&
+           _double_mirror == NULL && _byte_mirror == NULL  &&
+           _bool_mirror == NULL   && _char_mirror == NULL  &&
+           _long_mirror == NULL   && _short_mirror == NULL &&
+           _void_mirror == NULL, "mirrors should be NULL");
+  }
+#endif
   f->do_oop(&_int_mirror);
   f->do_oop(&_float_mirror);
   f->do_oop(&_double_mirror);
@@ -422,9 +430,9 @@ void Universe::genesis(TRAPS) {
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
-        MetaspaceShared::open_archive_heap_region_mapped() &&
+        HeapShared::open_archive_heap_region_mapped() &&
         _int_mirror != NULL) {
-      assert(MetaspaceShared::is_heap_object_archiving_allowed(), "Sanity");
+      assert(HeapShared::is_heap_object_archiving_allowed(), "Sanity");
       assert(_float_mirror != NULL && _double_mirror != NULL &&
              _byte_mirror  != NULL && _byte_mirror   != NULL &&
              _bool_mirror  != NULL && _char_mirror   != NULL &&

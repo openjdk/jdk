@@ -27,8 +27,15 @@
 
 #include "oops/compressedOops.inline.hpp"
 #include "memory/heapShared.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1Allocator.inline.hpp"
+#endif
 
 #if INCLUDE_CDS_JAVA_HEAP
+
+bool HeapShared::is_archived_object(oop p) {
+  return (p == NULL) ? false : G1ArchiveAllocator::is_archived_object(p);
+}
 
 inline oop HeapShared::decode_from_archive(narrowOop v) {
   assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");

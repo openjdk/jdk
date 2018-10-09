@@ -107,7 +107,22 @@ class ArchivedKlassSubGraphInfoRecord {
 class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
  private:
+
 #if INCLUDE_CDS_JAVA_HEAP
+  static bool _open_archive_heap_region_mapped;
+  static bool _archive_heap_region_fixed;
+
+  static bool oop_equals(oop const& p1, oop const& p2) {
+    return oopDesc::equals(p1, p2);
+  }
+  static unsigned oop_hash(oop const& p);
+
+  typedef ResourceHashtable<oop, oop,
+      HeapShared::oop_hash,
+      HeapShared::oop_equals,
+      15889, // prime number
+      ResourceObj::C_HEAP> ArchivedObjectCache;
+  static ArchivedObjectCache* _archived_object_cache;
 
   static bool klass_equals(Klass* const& p1, Klass* const& p2) {
     return primitive_equals<Klass*>(p1, p2);
@@ -164,14 +179,6 @@ class HeapShared: AllStatic {
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
 
-  static bool oop_equals(oop const& p1, oop const& p2) {
-    return primitive_equals<oop>(p1, p2);
-  }
-
-  static unsigned oop_hash(oop const& p) {
-    return primitive_hash<address>((address)p);
-  }
-
   typedef ResourceHashtable<oop, bool,
       HeapShared::oop_hash,
       HeapShared::oop_equals,
@@ -207,8 +214,60 @@ class HeapShared: AllStatic {
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-#endif // INCLUDE_CDS_JAVA_HEAP
+
  public:
+  static void create_archived_object_cache() {
+    _archived_object_cache =
+      new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
+  }
+  static void destroy_archived_object_cache() {
+    delete _archived_object_cache;
+    _archived_object_cache = NULL;
+  }
+  static ArchivedObjectCache* archived_object_cache() {
+    return _archived_object_cache;
+  }
+
+  static oop find_archived_heap_object(oop obj);
+  static oop archive_heap_object(oop obj, Thread* THREAD);
+  static oop materialize_archived_object(narrowOop v);
+
+  static void archive_klass_objects(Thread* THREAD);
+
+  static void set_archive_heap_region_fixed() {
+    _archive_heap_region_fixed = true;
+  }
+  static bool archive_heap_region_fixed() {
+    return _archive_heap_region_fixed;
+  }
+
+  static void archive_java_heap_objects(GrowableArray<MemRegion> *closed,
+                                        GrowableArray<MemRegion> *open);
+  static void copy_closed_archive_heap_objects(GrowableArray<MemRegion> * closed_archive);
+  static void copy_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive);
+#endif // INCLUDE_CDS_JAVA_HEAP
+
+ public:
+  static bool is_heap_object_archiving_allowed() {
+    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
+    NOT_CDS_JAVA_HEAP(return false;)
+  }
+
+  static void set_open_archive_heap_region_mapped() {
+    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true);
+    NOT_CDS_JAVA_HEAP_RETURN;
+  }
+  static bool open_archive_heap_region_mapped() {
+    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped);
+    NOT_CDS_JAVA_HEAP_RETURN_(false);
+  }
+
+  static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+
+  inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
+
+  static void archive_java_heap_objects() NOT_CDS_JAVA_HEAP_RETURN;
+
   static char* read_archived_subgraph_infos(char* buffer) NOT_CDS_JAVA_HEAP_RETURN_(buffer);
   static void write_archived_subgraph_infos() NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
@@ -225,7 +284,7 @@ class HeapShared: AllStatic {
                                                     size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void init_archivable_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
-  static void archive_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void archive_object_subgraphs(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

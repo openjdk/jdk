@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "memory/metaspaceShared.inline.hpp"
+#include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -144,8 +144,8 @@ bool oopDesc::is_unlocked_oop() const {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-bool oopDesc::is_archive_object(oop p) {
-  return MetaspaceShared::is_archive_object(p);
+bool oopDesc::is_archived_object(oop p) {
+  return HeapShared::is_archived_object(p);
 }
 #endif
 #endif // PRODUCT

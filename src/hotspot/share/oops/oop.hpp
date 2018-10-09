@@ -255,7 +255,7 @@ class oopDesc {
   static bool is_oop_or_null(oop obj, bool ignore_mark_word = false);
 #ifndef PRODUCT
   inline bool is_unlocked_oop() const;
-  static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 #endif
 
   // garbage collection

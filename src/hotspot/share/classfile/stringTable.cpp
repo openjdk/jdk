@@ -36,7 +36,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -798,18 +797,17 @@ oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
 oop StringTable::create_archived_string(oop s, Thread* THREAD) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
 
-  if (MetaspaceShared::is_archive_object(s)) {
+  if (HeapShared::is_archived_object(s)) {
     return s;
   }
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v =
-    (typeArrayOop)MetaspaceShared::archive_heap_object(v, THREAD);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v, THREAD);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = MetaspaceShared::archive_heap_object(s, THREAD);
+  new_s = HeapShared::archive_heap_object(s, THREAD);
   if (new_s == NULL) {
     return NULL;
   }
@@ -847,14 +845,14 @@ struct CopyToArchive : StackObj {
 };
 
 void StringTable::copy_shared_string_table(CompactHashtableWriter* writer) {
-  assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
+  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   CopyToArchive copy(writer);
   StringTable::the_table()->_local_table->do_scan(Thread::current(), copy);
 }
 
 void StringTable::write_to_archive() {
-  assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
+  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
   int num_buckets = CompactHashtableWriter::default_num_buckets(

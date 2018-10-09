@@ -58,8 +58,6 @@ class MetaspaceShared : AllStatic {
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
-  static bool _open_archive_heap_region_mapped;
-  static bool _archive_heap_region_fixed;
   static address _cds_i2i_entry_code_buffers;
   static size_t  _cds_i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
@@ -93,63 +91,7 @@ class MetaspaceShared : AllStatic {
   static int preload_classes(const char * class_list_path,
                              TRAPS) NOT_CDS_RETURN_(0);
 
-#if INCLUDE_CDS_JAVA_HEAP
- private:
-  static bool obj_equals(oop const& p1, oop const& p2) {
-    return p1 == p2;
-  }
-  static unsigned obj_hash(oop const& p);
-
-  typedef ResourceHashtable<oop, oop,
-      MetaspaceShared::obj_hash,
-      MetaspaceShared::obj_equals,
-      15889, // prime number
-      ResourceObj::C_HEAP> ArchivedObjectCache;
-  static ArchivedObjectCache* _archive_object_cache;
-
- public:
-  static ArchivedObjectCache* archive_object_cache() {
-    return _archive_object_cache;
-  }
-  static oop find_archived_heap_object(oop obj);
-  static oop archive_heap_object(oop obj, Thread* THREAD);
-  static oop materialize_archived_object(narrowOop v);
-  static void archive_klass_objects(Thread* THREAD);
-
-  static void set_archive_heap_region_fixed() {
-    _archive_heap_region_fixed = true;
-  }
-
-  static bool archive_heap_region_fixed() {
-    return _archive_heap_region_fixed;
-  }
-#endif
-
-  inline static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
-
-  static bool is_heap_object_archiving_allowed() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
-    NOT_CDS_JAVA_HEAP(return false;)
-  }
-  static void create_archive_object_cache() {
-    CDS_JAVA_HEAP_ONLY(_archive_object_cache = new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache(););
-  }
-  static void destroy_archive_object_cache() {
-    CDS_JAVA_HEAP_ONLY(delete _archive_object_cache; _archive_object_cache = NULL;);
-  }
-  static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-
-  static void dump_closed_archive_heap_objects(GrowableArray<MemRegion> * closed_archive) NOT_CDS_JAVA_HEAP_RETURN;
-
-  static void dump_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive) NOT_CDS_JAVA_HEAP_RETURN;
-  static void set_open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true);
-    NOT_CDS_JAVA_HEAP_RETURN;
-  }
-  static bool open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped);
-    NOT_CDS_JAVA_HEAP_RETURN_(false);
-  }
+  static GrowableArray<Klass*>* collected_klasses();
 
   static ReservedSpace* shared_rs() {
     CDS_ONLY(return &_shared_rs);

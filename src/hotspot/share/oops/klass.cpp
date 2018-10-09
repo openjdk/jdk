@@ -32,6 +32,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -542,7 +543,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_raw_archived_mirror()) {
     ResourceMark rm;
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (MetaspaceShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

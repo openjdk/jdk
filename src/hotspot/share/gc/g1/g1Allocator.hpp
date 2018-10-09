@@ -270,7 +270,7 @@ public:
   // Check if the object is in open archive
   static inline bool is_open_archive_object(oop object);
   // Check if the object is either in closed archive or open archive
-  static inline bool is_archive_object(oop object);
+  static inline bool is_archived_object(oop object);
 
 private:
   static bool _archive_check_enabled;
