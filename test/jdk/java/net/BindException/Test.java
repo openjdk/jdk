@@ -26,9 +26,15 @@
  * @bug 4417734
  * @key intermittent
  * @summary Test that we get a BindException in all expected combinations
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ * @run main Test -d
  */
+
 import java.net.*;
 import java.util.Enumeration;
+import jdk.test.lib.NetworkConfiguration;
 
 public class Test {
 
@@ -106,6 +112,7 @@ public class Test {
 
         } catch (BindException be) {
             gotBindException = true;
+            failed_exc = be;
         } catch (Exception e) {
             failed = true;
             failed_exc = e;
@@ -152,6 +159,7 @@ public class Test {
             if (!failed) {
                 if (gotBindException) {
                     System.out.println("Got expected BindException - test passed!");
+                    failed_exc.printStackTrace(System.out);
                 } else {
                     System.out.println("No BindException as expected - test passed!");
                 }
@@ -160,6 +168,7 @@ public class Test {
         }
         if (gotBindException) {
             System.out.println("BindException unexpected - test failed!!!");
+            failed_exc.printStackTrace(System.out);
         } else {
             System.out.println("No bind failure as expected - test failed!!!");
         }
@@ -206,6 +215,11 @@ public class Test {
          */
         InetAddress addrs[] = { ia4_this, ia6_this };
 
+        if (!silent) {
+            System.out.println("Using ia4_this:" + ia4_this);
+            System.out.println("Using ia6_this:" + ia6_this);
+        }
+
         Object tests[][] = getTestCombinations();
 
         for (int i=0; i<tests.length; i++) {
@@ -227,6 +241,9 @@ public class Test {
         System.out.println(count + " test(s) executed. " + failures + " failure(s).");
 
         if (failures > 0) {
+            System.err.println("********************************");
+            NetworkConfiguration.printSystemConfiguration(System.err);
+            System.out.println("********************************");
             throw new Exception(failures + " tests(s) failed - see log");
         }
     }
