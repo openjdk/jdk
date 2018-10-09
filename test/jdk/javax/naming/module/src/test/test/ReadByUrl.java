@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 package test;
 
+import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import javax.naming.*;
@@ -36,11 +37,17 @@ import javax.naming.ldap.*;
 
 public class ReadByUrl {
 
+    static {
+        final PrintStream out = new PrintStream(System.out, true);
+        final PrintStream err = new PrintStream(System.err, true);
+
+        System.setOut(out);
+        System.setErr(err);
+    }
+
     // LDAP capture file
     private static final String LDAP_CAPTURE_FILE =
         System.getProperty("test.src") + "/src/test/test/ReadByUrl.ldap";
-    // LDAPServer socket
-    private static ServerSocket serverSocket;
 
     public static void main(String[] args) throws Exception {
 
@@ -63,50 +70,52 @@ public class ReadByUrl {
          * Launch the LDAP server with the ReadByUrl.ldap capture file
          */
 
-        serverSocket = new ServerSocket(0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
-               } catch (Exception e) {
-                   System.out.println("ERROR: unable to launch LDAP server");
-                   e.printStackTrace();
-               }
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
+                    } catch (Exception e) {
+                        System.out.println("ERROR: unable to launch LDAP server");
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            /*
+             * Connect to the LDAP directory
+             */
+
+            Hashtable<String,Object> env = new Hashtable<>();
+            URI ldapUri = new URI(args[0]);
+            if (ldapUri.getPort() == -1) {
+                ldapUri = new URI("ldapv4", null, ldapUri.getHost(),
+                        serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
             }
-        }).start();
+            env.put(Context.PROVIDER_URL, ldapUri.toString());
+            if (args[args.length - 1].equalsIgnoreCase("-trace")) {
+                env.put("com.sun.jndi.ldap.trace.ber", System.out);
+            }
 
-        /*
-         * Connect to the LDAP directory
-         */
+            // URL context factory location for 'ldapv4://'
+            env.put(Context.URL_PKG_PREFIXES, "org.example");
 
-        Hashtable<String,Object> env = new Hashtable<>();
-        URI ldapUri = new URI(args[0]);
-        if (ldapUri.getPort() == -1) {
-            ldapUri = new URI("ldapv4", null, ldapUri.getHost(),
-                serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
-        }
-        env.put(Context.PROVIDER_URL, ldapUri.toString());
-        if (args[args.length - 1].equalsIgnoreCase("-trace")) {
-            env.put("com.sun.jndi.ldap.trace.ber", System.out);
-        }
+            System.out.println("ReadByUrl: connecting to " + ldapUri);
+            DirContext ctx = null;
 
-        // URL context factory location for 'ldapv4://'
-        env.put(Context.URL_PKG_PREFIXES, "org.example");
-
-        System.out.println("ReadByUrl: connecting to " + ldapUri);
-        DirContext ctx = null;
-
-        try {
-            ctx = new InitialDirContext(env);
-            System.out.println("ReadByUrl: connected");
-            DirContext entry = (DirContext) ctx.lookup(ldapUri.toString());
-            entry.close();
-        } catch (NamingException e) {
-            System.err.println("ReadByUrl: error connecting " + e);
-        } finally {
-            if (ctx != null) {
-                ctx.close();
+            try {
+                ctx = new InitialDirContext(env);
+                System.out.println("ReadByUrl: connected");
+                DirContext entry = (DirContext) ctx.lookup(ldapUri.toString());
+                entry.close();
+            } catch (NamingException e) {
+                System.err.println("ReadByUrl: error connecting " + e);
+            } finally {
+                if (ctx != null) {
+                    ctx.close();
+                }
             }
         }
     }

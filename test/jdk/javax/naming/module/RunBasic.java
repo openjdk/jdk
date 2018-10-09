@@ -27,8 +27,10 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +67,8 @@ public class RunBasic {
 
     private static final List<String> JAVA_CMDS;
 
+    static final String HOST_NAME = InetAddress.getLoopbackAddress().getHostName();
+
     static {
         String javaPath = JDKToolFinder.getJDKTool("java");
 
@@ -85,6 +89,8 @@ public class RunBasic {
         prepareModule("test", "--module-source-path",
                 Path.of(TEST_SRC, "src").toString());
 
+        System.out.println("Hostname: [" + HOST_NAME + "]");
+
         // run tests
         runTest("java.desktop", "test.StoreObject");
         runTest("person", "test.StorePerson");
@@ -98,9 +104,12 @@ public class RunBasic {
     private static void prepareModule(String mod, String... opts)
             throws IOException {
         System.out.println("Preparing the '" + mod + "' module...");
+        long start = System.nanoTime();
         makeDir("mods", mod);
         CompilerUtils.compile(Path.of(TEST_SRC, "src", mod),
                 Path.of("mods", (mod.equals("test") ? "" : mod)), opts);
+        Duration duration = Duration.ofNanos(System.nanoTime() - start);
+        System.out.println("completed: duration - " + duration );
     }
 
     private static void makeDir(String first, String... more)
@@ -111,7 +120,7 @@ public class RunBasic {
     private static void runTest(String desc, String clsName) throws Throwable {
         System.out.println("Running with the '" + desc + "' module...");
         runJava("-Dtest.src=" + TEST_SRC, "-p", "mods", "-m", "test/" + clsName,
-                "ldap://localhost/dc=ie,dc=oracle,dc=com");
+                "ldap://" + HOST_NAME + "/dc=ie,dc=oracle,dc=com");
     }
 
     private static void runJava(String... opts) throws Throwable {

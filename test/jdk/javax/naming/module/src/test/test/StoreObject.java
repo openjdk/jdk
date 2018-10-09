@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 package test;
 
 import java.awt.event.ActionEvent;
+import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import javax.naming.*;
@@ -37,11 +38,17 @@ import javax.naming.directory.*;
 
 public class StoreObject {
 
+    static {
+        final PrintStream out = new PrintStream(System.out, true);
+        final PrintStream err = new PrintStream(System.err, true);
+
+        System.setOut(out);
+        System.setErr(err);
+    }
+
     // LDAP capture file
     private static final String LDAP_CAPTURE_FILE =
         System.getProperty("test.src") + "/src/test/test/StoreObject.ldap";
-    // LDAPServer socket
-    private static ServerSocket serverSocket;
 
     public static void main(String[] args) throws Exception {
 
@@ -64,89 +71,91 @@ public class StoreObject {
          * Launch the LDAP server with the StoreObject.ldap capture file
          */
 
-        serverSocket = new ServerSocket(0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
-               } catch (Exception e) {
-                   System.out.println("ERROR: unable to launch LDAP server");
-                   e.printStackTrace();
-               }
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
+                    } catch (Exception e) {
+                        System.out.println("ERROR: unable to launch LDAP server");
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            /*
+             * Store objects in the LDAP directory
+             */
+
+            Hashtable<String,Object> env = new Hashtable<>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.ldap.LdapCtxFactory");
+            URI ldapUri = new URI(args[0]);
+            if (ldapUri.getPort() == -1) {
+                ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
+                        serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
             }
-        }).start();
+            env.put(Context.PROVIDER_URL, ldapUri.toString());
+            if (args[args.length - 1].equalsIgnoreCase("-trace")) {
+                env.put("com.sun.jndi.ldap.trace.ber", System.out);
+            }
 
-        /*
-         * Store objects in the LDAP directory
-         */
+            System.out.println("StoreObject: connecting to " + ldapUri);
+            DirContext ctx = new InitialDirContext(env);
+            String dn = "cn=myevent";
+            String dn2 = "cn=myevent2";
 
-        Hashtable<String,Object> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
-        URI ldapUri = new URI(args[0]);
-        if (ldapUri.getPort() == -1) {
-            ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
-                serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
-        }
-        env.put(Context.PROVIDER_URL, ldapUri.toString());
-        if (args[args.length - 1].equalsIgnoreCase("-trace")) {
-            env.put("com.sun.jndi.ldap.trace.ber", System.out);
-        }
+            try {
+                ctx.bind(dn, new ActionEvent("", 1, "Hello1"));
+                System.out.println("StoreObject: created entry '" + dn + "'");
+            } catch (NameAlreadyBoundException e) {
+                System.err.println("StoreObject: entry '" + dn +
+                        "' already exists");
+                cleanup(ctx, (String)null);
+                return;
+            }
 
-        System.out.println("StoreObject: connecting to " + ldapUri);
-        DirContext ctx = new InitialDirContext(env);
-        String dn = "cn=myevent";
-        String dn2 = "cn=myevent2";
+            try {
+                ctx.bind(dn2, new ActionEvent("", 2, "Hello2"));
+                System.out.println("StoreObject: created entry '" + dn2 + "'");
+            } catch (NameAlreadyBoundException e) {
+                System.err.println("StoreObject: entry '" + dn2 +
+                        "' already exists");
+                cleanup(ctx, dn);
+                return;
+            }
 
-        try {
-            ctx.bind(dn, new ActionEvent("", 1, "Hello1"));
-            System.out.println("StoreObject: created entry '" + dn + "'");
-        } catch (NameAlreadyBoundException e) {
-            System.err.println("StoreObject: entry '" + dn +
-                "' already exists");
-            cleanup(ctx, (String)null);
-            return;
-        }
+            /*
+             * Retrieve objects from the LDAP directory
+             */
 
-        try {
-            ctx.bind(dn2, new ActionEvent("", 2, "Hello2"));
-            System.out.println("StoreObject: created entry '" + dn2 + "'");
-        } catch (NameAlreadyBoundException e) {
-            System.err.println("StoreObject: entry '" + dn2 +
-                "' already exists");
-            cleanup(ctx, dn);
-            return;
-        }
+            try {
+                ActionEvent b = (ActionEvent) ctx.lookup(dn);
+                System.out.println("StoreObject: retrieved object: " + b);
+            } catch (NamingException e) {
+                System.err.println("StoreObject: error retrieving entry '" +
+                        dn + "' " + e);
+                e.printStackTrace();
+                cleanup(ctx, dn, dn2);
+                return;
+            }
 
-        /*
-         * Retrieve objects from the LDAP directory
-         */
+            try {
+                ActionEvent t = (ActionEvent) ctx.lookup(dn2);
+                System.out.println("StoreObject: retrieved object: " + t);
+            } catch (NamingException e) {
+                System.err.println("StoreObject: error retrieving entry '" +
+                        dn2 + "' " + e);
+                e.printStackTrace();
+                cleanup(ctx, dn, dn2);
+                return;
+            }
 
-        try {
-            ActionEvent b = (ActionEvent) ctx.lookup(dn);
-            System.out.println("StoreObject: retrieved object: " + b);
-        } catch (NamingException e) {
-            System.err.println("StoreObject: error retrieving entry '" +
-                dn + "' " + e);
-            e.printStackTrace();
             cleanup(ctx, dn, dn2);
-            return;
+            ctx.close();
         }
-
-        try {
-            ActionEvent t = (ActionEvent) ctx.lookup(dn2);
-            System.out.println("StoreObject: retrieved object: " + t);
-        } catch (NamingException e) {
-            System.err.println("StoreObject: error retrieving entry '" +
-                dn2 + "' " + e);
-            e.printStackTrace();
-            cleanup(ctx, dn, dn2);
-            return;
-        }
-
-        cleanup(ctx, dn, dn2);
-        ctx.close();
     }
 
     /*

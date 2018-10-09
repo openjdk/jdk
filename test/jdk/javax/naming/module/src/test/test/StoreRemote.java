@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,17 @@ import org.example.hello.*;
 
 public class StoreRemote {
 
+    static {
+        final PrintStream out = new PrintStream(System.out, true);
+        final PrintStream err = new PrintStream(System.err, true);
+
+        System.setOut(out);
+        System.setErr(err);
+    }
+
     // LDAP capture file
     private static final String LDAP_CAPTURE_FILE =
         System.getProperty("test.src") + "/src/test/test/StoreRemote.ldap";
-    // LDAPServer socket
-    private static ServerSocket serverSocket;
 
     public static void main(String[] args) throws Exception {
 
@@ -67,77 +73,79 @@ public class StoreRemote {
          * Launch the LDAP server with the StoreRemote.ldap capture file
          */
 
-        serverSocket = new ServerSocket(0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
-               } catch (Exception e) {
-                   System.out.println("ERROR: unable to launch LDAP server");
-                   e.printStackTrace();
-               }
+        try (ServerSocket serverSocket = new ServerSocket()){
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
+                    } catch (Exception e) {
+                        System.out.println("ERROR: unable to launch LDAP server");
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            /*
+             * Store a Remote object in the LDAP directory
+             */
+
+            Hashtable<String,Object> env = new Hashtable<>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.ldap.LdapCtxFactory");
+            URI ldapUri = new URI(args[0]);
+            if (ldapUri.getPort() == -1) {
+                ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
+                        serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
             }
-        }).start();
+            env.put(Context.PROVIDER_URL, ldapUri.toString());
+            if (args[args.length - 1].equalsIgnoreCase("-trace")) {
+                env.put("com.sun.jndi.ldap.trace.ber", System.out);
+            }
 
-        /*
-         * Store a Remote object in the LDAP directory
-         */
+            System.out.println("StoreRemote: connecting to " + ldapUri);
+            DirContext ctx = new InitialDirContext(env);
+            String dn = "cn=myremote";
 
-        Hashtable<String,Object> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
-        URI ldapUri = new URI(args[0]);
-        if (ldapUri.getPort() == -1) {
-            ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
-                serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
-        }
-        env.put(Context.PROVIDER_URL, ldapUri.toString());
-        if (args[args.length - 1].equalsIgnoreCase("-trace")) {
-            env.put("com.sun.jndi.ldap.trace.ber", System.out);
-        }
+            try {
+                Hello hello = new HelloImpl();
+                ctx.bind(dn, hello);
+                System.out.println("StoreRemote: created entry '" + dn + "'");
 
-        System.out.println("StoreRemote: connecting to " + ldapUri);
-        DirContext ctx = new InitialDirContext(env);
-        String dn = "cn=myremote";
+                // Explicitly release the RMI object
+                UnicastRemoteObject.unexportObject(hello, true);
 
-        try {
-            Hello hello = new HelloImpl();
-            ctx.bind(dn, hello);
-            System.out.println("StoreRemote: created entry '" + dn + "'");
+            } catch (NameAlreadyBoundException e) {
+                System.err.println("StoreRemote: entry '" + dn +
+                        "' already exists");
+                cleanup(ctx, (String)null);
+                return;
+            }
 
-            // Explicitly release the RMI object
-            UnicastRemoteObject.unexportObject(hello, true);
+            /*
+             * Retrieve the Remote object from the LDAP directory
+             */
 
-        } catch (NameAlreadyBoundException e) {
-            System.err.println("StoreRemote: entry '" + dn +
-                "' already exists");
-            cleanup(ctx, (String)null);
-            return;
-        }
+            try {
+                Hello obj = (Hello) ctx.lookup(dn);
+                System.out.println("StoreRemote: retrieved object: " + obj);
+                System.out.println("StoreRemote: calling Hello.sayHello()...\n" +
+                        obj.sayHello());
 
-        /*
-         * Retrieve the Remote object from the LDAP directory
-         */
+                // Explicitly release the RMI object
+                UnicastRemoteObject.unexportObject(obj, true);
 
-        try {
-            Hello obj = (Hello) ctx.lookup(dn);
-            System.out.println("StoreRemote: retrieved object: " + obj);
-            System.out.println("StoreRemote: calling Hello.sayHello()...\n" +
-                obj.sayHello());
+            } catch (NamingException e) {
+                System.err.println("StoreRemote: error retrieving entry '" +
+                        dn + "' " + e);
+                e.printStackTrace();
+                cleanup(ctx, dn);
+                return;
+            }
 
-            // Explicitly release the RMI object
-            UnicastRemoteObject.unexportObject(obj, true);
-
-        } catch (NamingException e) {
-            System.err.println("StoreRemote: error retrieving entry '" +
-                dn + "' " + e);
-            e.printStackTrace();
             cleanup(ctx, dn);
-            return;
         }
-
-        cleanup(ctx, dn);
     }
 
     /*
