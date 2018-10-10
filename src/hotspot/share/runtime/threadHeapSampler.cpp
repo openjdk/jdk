@@ -171,20 +171,3 @@ int ThreadHeapSampler::get_sampling_interval() {
 void ThreadHeapSampler::set_sampling_interval(int sampling_interval) {
   OrderAccess::release_store(&_sampling_interval, sampling_interval);
 }
-
-// Methods used in assertion mode to check if a collector is present or not at
-// the moment of TLAB sampling, ie a slow allocation path.
-bool ThreadHeapSampler::sampling_collector_present() const {
-  return _collectors_present > 0;
-}
-
-bool ThreadHeapSampler::remove_sampling_collector() {
-  assert(_collectors_present > 0, "Problem with collector counter.");
-  _collectors_present--;
-  return true;
-}
-
-bool ThreadHeapSampler::add_sampling_collector() {
-  _collectors_present++;
-  return true;
-}

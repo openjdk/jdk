@@ -66,10 +66,6 @@ class ThreadHeapSampler {
 
   static void set_sampling_interval(int sampling_interval);
   static int get_sampling_interval();
-
-  bool sampling_collector_present() const;
-  bool remove_sampling_collector();
-  bool add_sampling_collector();
 };
 
 #endif // SHARE_RUNTIME_THREADHEAPSAMPLER_HPP

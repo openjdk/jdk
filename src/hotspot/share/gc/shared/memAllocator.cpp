@@ -198,15 +198,6 @@ void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
     return;
   }
 
-  assert(JavaThread::current()->heap_sampler().add_sampling_collector(),
-         "Should never return false.");
-
-  // Only check if the sampler could actually sample something in this path.
-  assert(!JvmtiExport::should_post_sampled_object_alloc() ||
-         !JvmtiSampledObjectAllocEventCollector::object_alloc_is_safe_to_sample() ||
-         _thread->heap_sampler().sampling_collector_present(),
-         "Sampling collector not present.");
-
   if (JvmtiExport::should_post_sampled_object_alloc()) {
     // If we want to be sampling, protect the allocated object with a Handle
     // before doing the callback. The callback is done in the destructor of
@@ -218,8 +209,6 @@ void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
     size_t bytes_since_last = _allocated_outside_tlab ? 0 : tlab.bytes_since_last_sample_point();
     _thread->heap_sampler().check_for_sampling(obj_h(), size_in_bytes, bytes_since_last);
   }
-
-  assert(JavaThread::current()->heap_sampler().remove_sampling_collector(), "Should never return false.");
 
   if (_tlab_end_reset_for_sample || _allocated_tlab_size != 0) {
     _thread->tlab().set_sample_end();
