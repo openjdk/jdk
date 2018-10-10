@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 import static sun.reflect.annotation.TypeAnnotation.*;
 
@@ -202,6 +204,68 @@ public final class AnnotatedTypeFactory {
 
         }
 
+        @Override // java.lang.Object
+        public String toString() {
+            // Reusable toString implementation, but needs to be
+            // specialized for quirks of arrays.
+            return annotationsToString(getAnnotations(), false) + type.toString();
+        }
+
+        protected String annotationsToString(Annotation[] annotations, boolean leadingSpace) {
+            if (annotations != null && annotations.length > 0) {
+                StringJoiner sj = new StringJoiner(" ");
+                if (leadingSpace) {
+                    sj.add(""); // Add a space
+                }
+
+                for (Annotation annotation : annotations) {
+                    sj.add(annotation.toString());
+                }
+
+                if (!leadingSpace) {
+                    sj.add("");
+                }
+                return sj.toString();
+            } else {
+                return "";
+            }
+        }
+
+        protected boolean equalsTypeAndAnnotations(AnnotatedType that) {
+            return getType().equals(that.getType()) &&
+                // Treat ordering of annotations as significant
+                Arrays.equals(getAnnotations(), that.getAnnotations()) &&
+                Objects.equals(getAnnotatedOwnerType(), that.getAnnotatedOwnerType());
+        }
+
+        int baseHashCode() {
+            return type.hashCode() ^
+                // Acceptable to use Objects.hash rather than
+                // Arrays.deepHashCode since the elements of the array
+                // are not themselves arrays.
+                Objects.hash((Object[])getAnnotations()) ^
+                Objects.hash(getAnnotatedOwnerType());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof AnnotatedType &&
+                !(o instanceof AnnotatedArrayType) &&
+                !(o instanceof AnnotatedTypeVariable) &&
+                !(o instanceof AnnotatedParameterizedType) &&
+                !(o instanceof AnnotatedWildcardType)) {
+                AnnotatedType that = (AnnotatedType) o;
+                return equalsTypeAndAnnotations(that);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return baseHashCode();
+        }
+
         // Implementation details
         final LocationInfo getLocation() {
             return location;
@@ -244,6 +308,52 @@ public final class AnnotatedTypeFactory {
             }
             return ((GenericArrayType)t).getGenericComponentType();
         }
+
+        @Override
+        public String toString() {
+            // To annotate the full type of an array, the annotations
+            // are placed between the type and the brackets. For
+            // example, to annotate an array of Strings, the syntax used is
+            //
+            // String @TypeAnnotation []
+            //
+            // and *not*
+            //
+            // @TypeAnnotation String[].
+            //
+            // The toString output should strive to be reusable in
+            // source code. Therefore, the general logic of putting
+            // the annotations before a textual representation of the
+            // type need to be overridden for arrays.
+            StringBuilder sb = new StringBuilder();
+
+            AnnotatedType componentType = this;
+            while (componentType instanceof AnnotatedArrayType) {
+                AnnotatedArrayType annotatedArrayType = (AnnotatedArrayType) componentType;
+                sb.append(annotationsToString(annotatedArrayType.getAnnotations(), true) + "[]");
+                componentType = annotatedArrayType.getAnnotatedGenericComponentType();
+            }
+
+            sb.insert(0, componentType.toString());
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof AnnotatedArrayType) {
+                AnnotatedArrayType that = (AnnotatedArrayType) o;
+                return equalsTypeAndAnnotations(that) &&
+                    Objects.equals(getAnnotatedGenericComponentType(),
+                                   that.getAnnotatedGenericComponentType());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return baseHashCode() ^ getAnnotatedGenericComponentType().hashCode();
+        }
     }
 
     private static final class AnnotatedTypeVariableImpl extends AnnotatedTypeBaseImpl implements AnnotatedTypeVariable {
@@ -265,6 +375,23 @@ public final class AnnotatedTypeFactory {
 
         private TypeVariable<?> getTypeVariable() {
             return (TypeVariable)getType();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof AnnotatedTypeVariable) {
+                AnnotatedTypeVariable that = (AnnotatedTypeVariable) o;
+                return equalsTypeAndAnnotations(that) &&
+                    Arrays.equals(getAnnotatedBounds(), that.getAnnotatedBounds());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return baseHashCode() ^
+                Objects.hash((Object[])getAnnotatedBounds());
         }
     }
 
@@ -315,6 +442,23 @@ public final class AnnotatedTypeFactory {
 
         private ParameterizedType getParameterizedType() {
             return (ParameterizedType)getType();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof AnnotatedParameterizedType) {
+                AnnotatedParameterizedType that = (AnnotatedParameterizedType) o;
+                return equalsTypeAndAnnotations(that) &&
+                    Arrays.equals(getAnnotatedActualTypeArguments(), that.getAnnotatedActualTypeArguments());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return baseHashCode() ^
+                Objects.hash((Object[])getAnnotatedActualTypeArguments());
         }
     }
 
@@ -377,6 +521,27 @@ public final class AnnotatedTypeFactory {
 
         private boolean hasUpperBounds() {
             return hasUpperBounds;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof AnnotatedWildcardType) {
+                AnnotatedWildcardType that = (AnnotatedWildcardType) o;
+                return equalsTypeAndAnnotations(that) &&
+                    // Treats ordering as significant
+                    Arrays.equals(getAnnotatedLowerBounds(), that.getAnnotatedLowerBounds()) &&
+                    // Treats ordering as significant
+                    Arrays.equals(getAnnotatedUpperBounds(), that.getAnnotatedUpperBounds());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return baseHashCode() ^
+                Objects.hash((Object[])getAnnotatedLowerBounds()) ^
+                Objects.hash((Object[])getAnnotatedUpperBounds());
         }
     }
 }
