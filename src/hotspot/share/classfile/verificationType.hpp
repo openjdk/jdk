@@ -312,7 +312,7 @@ class VerificationType {
         case Short:
           return false;
         default:
-          return is_assignable_from(from, context, from_field_is_protected, CHECK_false);
+          return is_assignable_from(from, context, from_field_is_protected, THREAD);
       }
     }
   }

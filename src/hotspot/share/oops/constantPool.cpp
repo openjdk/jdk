@@ -472,7 +472,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     // or any internal exception fields such as cause or stacktrace.  But since the
     // detail message is often a class name or other literal string, we will repeat it
     // if we can find it in the symbol table.
-    throw_resolution_error(this_cp, which, CHECK_0);
+    throw_resolution_error(this_cp, which, CHECK_NULL);
     ShouldNotReachHere();
   }
 

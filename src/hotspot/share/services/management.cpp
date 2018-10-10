@@ -178,7 +178,7 @@ void Management::get_optional_support(jmmOptionalSupport* support) {
 
 InstanceKlass* Management::load_and_initialize_klass(Symbol* sh, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
-  return initialize_klass(k, CHECK_NULL);
+  return initialize_klass(k, THREAD);
 }
 
 InstanceKlass* Management::load_and_initialize_klass_or_null(Symbol* sh, TRAPS) {
@@ -186,7 +186,7 @@ InstanceKlass* Management::load_and_initialize_klass_or_null(Symbol* sh, TRAPS) 
   if (k == NULL) {
      return NULL;
   }
-  return initialize_klass(k, CHECK_NULL);
+  return initialize_klass(k, THREAD);
 }
 
 InstanceKlass* Management::initialize_klass(Klass* k, TRAPS) {
