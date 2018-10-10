@@ -969,9 +969,6 @@ public class MethodHandles {
             ProtectionDomain pd = (loader != null) ? lookupClassProtectionDomain() : null;
             String source = "__Lookup_defineClass__";
             Class<?> clazz = SharedSecrets.getJavaLangAccess().defineClass(loader, cn, bytes, pd, source);
-            assert clazz.getClassLoader() == lookupClass.getClassLoader()
-                    && clazz.getPackageName().equals(lookupClass.getPackageName())
-                    && protectionDomain(clazz) == lookupClassProtectionDomain();
             return clazz;
         }
 
