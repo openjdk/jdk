@@ -29,8 +29,6 @@ NATIVE_TEST_PATH := jdk/jtreg/native
 
 USE_FAILURE_HANDLER := true
 
-TREAT_EXIT_CODE_1_AS_0 := true
-
 include ../TestCommon.gmk
 
 # Default make rule (runs default jdk tests)

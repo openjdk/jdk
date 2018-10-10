@@ -24,8 +24,6 @@
 
 NATIVE_TEST_PATH := hotspot/jtreg/native
 
-TREAT_EXIT_CODE_1_AS_0 := true
-
 CLEAN_BEFORE_PREP := true
 
 USE_JTREG_VERSION := 4.1
