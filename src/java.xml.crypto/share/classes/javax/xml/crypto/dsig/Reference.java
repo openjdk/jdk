@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public interface Reference extends URIReference, XMLStructure {
 
     /**
      * Returns the dereferenced data, if
-     * <a href="XMLSignContext.html#Supported%20Properties">reference caching</a>
+     * <a href="XMLSignContext.html#SupportedProperties">reference caching</a>
      * is enabled. This is the result of dereferencing the URI of this
      * reference during a validation or generation operation.
      *
@@ -156,7 +156,7 @@ public interface Reference extends URIReference, XMLStructure {
 
     /**
      * Returns the pre-digested input stream, if
-     * <a href="XMLSignContext.html#Supported%20Properties">reference caching</a>
+     * <a href="XMLSignContext.html#SupportedProperties">reference caching</a>
      * is enabled. This is the input to the digest operation during a
      * validation or signing operation.
      *
