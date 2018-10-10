@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -149,19 +149,19 @@ public class TabbedPaneDemo extends DemoModule implements ActionListener {
     class HeadSpin extends JComponent implements ActionListener {
         javax.swing.Timer animator;
 
-        ImageIcon icon[] = new ImageIcon[6];
+        ImageIcon[] icon = new ImageIcon[6];
 
         int tmpScale;
 
         static final int numImages = 6;
 
-        double x[] = new double[numImages];
-        double y[] = new double[numImages];
+        double[] x = new double[numImages];
+        double[] y = new double[numImages];
 
-        int xh[] = new int[numImages];
-        int yh[] = new int[numImages];
+        int[] xh = new int[numImages];
+        int[] yh = new int[numImages];
 
-        double scale[] = new double[numImages];
+        double[] scale = new double[numImages];
 
         public HeadSpin() {
             setBackground(Color.black);

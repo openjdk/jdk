@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,7 +76,7 @@ public class DemoGroup extends JPanel
     private final EmptyBorder emptyB = new EmptyBorder(5, 5, 5, 5);
     private final BevelBorder bevelB = new BevelBorder(BevelBorder.LOWERED);
     private String groupName;
-    public JPanel clonePanels[];
+    public JPanel[] clonePanels;
     public JTabbedPane tabbedPane;
 
     public DemoGroup(String name, DemoInstVarsAccessor demoInstVars) {
@@ -234,9 +234,9 @@ public class DemoGroup extends JPanel
                 Tools t = dp.tools;
                 t.setVisible(isValid());
                 t.issueRepaint = issueRepaint;
-                JToggleButton b[] = { t.toggleB, t.aliasB, t.renderB,
+                JToggleButton[] b = { t.toggleB, t.aliasB, t.renderB,
                     t.textureB, t.compositeB };
-                JCheckBox cb[] = { c.toolBarCB, c.aliasCB, c.renderCB,
+                JCheckBox[] cb = { c.toolBarCB, c.aliasCB, c.renderCB,
                     c.textureCB, c.compositeCB };
                 for (int j = 0; j < b.length; j++) {
                     if (c.obj != null && c.obj.equals(cb[j])) {
@@ -334,7 +334,7 @@ public class DemoGroup extends JPanel
         panel.revalidate();
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         class DemoInstVarsAccessorImpl extends DemoInstVarsAccessorImplBase {
             private volatile JCheckBoxMenuItem ccthreadCB;
 

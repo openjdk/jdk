@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -161,7 +161,7 @@ public final class CloningFeature extends JPanel implements Runnable {
             return;
         }
 
-        Component cmps[] = dg.clonePanels[0].getComponents();
+        Component[] cmps = dg.clonePanels[0].getComponents();
         for (int i = 0; i < cmps.length && thread != null; i++) {
             if ((dp = (DemoPanel) cmps[i]).tools == null) {
                 continue;

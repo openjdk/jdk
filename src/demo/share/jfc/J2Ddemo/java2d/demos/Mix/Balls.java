@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,11 +65,11 @@ import javax.swing.JToolBar;
 @SuppressWarnings("serial")
 public class Balls extends AnimatingControlsSurface {
 
-    private static Color colors[] = { RED, ORANGE, YELLOW, GREEN.darker(), BLUE,
+    private static Color[] colors = { RED, ORANGE, YELLOW, GREEN.darker(), BLUE,
         new Color(75, 00, 82), new Color(238, 130, 238) };
     private long now, deltaT, lasttime;
     private boolean active;
-    protected Ball balls[] = new Ball[colors.length];
+    protected Ball[] balls = new Ball[colors.length];
     protected boolean clearToggle;
     protected JComboBox combo;
 
@@ -129,7 +129,7 @@ public class Balls extends AnimatingControlsSurface {
         lasttime = now;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Balls());
     }
 
@@ -141,7 +141,7 @@ public class Balls extends AnimatingControlsSurface {
         public float x, y;
         public float Vx = 0.1f;
         public float Vy = 0.05f;
-        public BufferedImage imgs[];
+        public BufferedImage[] imgs;
         // Pick a random starting image index, but not the last: we're going UP
         // and that would throw us off the end.
         public int index = (int) (random() * (nImgs - 1));
@@ -182,11 +182,11 @@ public class Balls extends AnimatingControlsSurface {
             imgs = new BufferedImage[nImgs];
 
             int bg = 255;
-            byte red[] = new byte[256];
+            byte[] red = new byte[256];
             red[0] = (byte) bg;
-            byte green[] = new byte[256];
+            byte[] green = new byte[256];
             green[0] = (byte) bg;
-            byte blue[] = new byte[256];
+            byte[] blue = new byte[256];
             blue[0] = (byte) bg;
 
             for (int r = 0; r < imgs.length; r++) {
@@ -202,7 +202,7 @@ public class Balls extends AnimatingControlsSurface {
                 IndexColorModel icm = new IndexColorModel(8, maxr + 1,
                         red, green, blue, 0);
                 DataBufferByte dbb = new DataBufferByte(data, data.length);
-                int bandOffsets[] = { 0 };
+                int[] bandOffsets = { 0 };
                 WritableRaster wr = Raster.createInterleavedRaster(dbb,
                         R * 2, R * 2, R * 2, 1, bandOffsets, null);
                 imgs[r] = new BufferedImage(icm, wr, icm.isAlphaPremultiplied(),

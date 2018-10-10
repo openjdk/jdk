@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,8 +83,8 @@ public abstract class RenderTests extends GraphicsTests {
 
     static final int NUM_RANDOMCOLORS = 4096;
     static final int NUM_RANDOMCOLORMASK = (NUM_RANDOMCOLORS - 1);
-    static Color randAlphaColors[];
-    static Color randOpaqueColors[];
+    static Color[] randAlphaColors;
+    static Color[] randOpaqueColors;
 
     static {
         randOpaqueColors = new Color[NUM_RANDOMCOLORS];
@@ -161,7 +161,7 @@ public abstract class RenderTests extends GraphicsTests {
                 new Option.Toggle(renderoptroot, "antialias",
                                   "Render shapes antialiased",
                                   Option.Toggle.Off);
-            String strokeStrings[] = {
+            String[] strokeStrings = {
                 "width0",
                 "width1",
                 "width5",
@@ -171,7 +171,7 @@ public abstract class RenderTests extends GraphicsTests {
                 "dash5_20",
                 "dash20_50",
             };
-            String strokeDescriptions[] = {
+            String[] strokeDescriptions = {
                 "Solid Thin lines",
                 "Solid Width 1 lines",
                 "Solid Width 5 lines",
@@ -181,7 +181,7 @@ public abstract class RenderTests extends GraphicsTests {
                 "Dashed Width 5 lines",
                 "Dashed Width 20 lines",
             };
-            BasicStroke strokeObjects[] = {
+            BasicStroke[] strokeObjects = {
                 new BasicStroke(0f),
                 new BasicStroke(1f),
                 new BasicStroke(5f),
@@ -272,7 +272,7 @@ public abstract class RenderTests extends GraphicsTests {
 
     public static class Context extends GraphicsTests.Context {
         int colorindex;
-        Color colorlist[];
+        Color[] colorlist;
     }
 
     public RenderTests(Group parent, String nodeName, String description) {
@@ -410,7 +410,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -455,7 +455,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -500,7 +500,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -536,7 +536,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -583,7 +583,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -626,7 +626,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -680,7 +680,7 @@ public abstract class RenderTests extends GraphicsTests {
             int y = rctx.initY;
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             if (rctx.animate) {
                 do {
@@ -733,11 +733,11 @@ public abstract class RenderTests extends GraphicsTests {
             int size = rctx.size;
             int x = rctx.initX;
             int y = rctx.initY;
-            int hexaX[] = new int[6];
-            int hexaY[] = new int[6];
+            int[] hexaX = new int[6];
+            int[] hexaY = new int[6];
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             do {
                 hexaX[0] = x;
@@ -798,11 +798,11 @@ public abstract class RenderTests extends GraphicsTests {
             int size = rctx.size - 1;
             int x = rctx.initX;
             int y = rctx.initY;
-            int hexaX[] = new int[6];
-            int hexaY[] = new int[6];
+            int[] hexaX = new int[6];
+            int[] hexaY = new int[6];
             Graphics g = rctx.graphics;
             g.translate(rctx.orgX, rctx.orgY);
-            Color rCArray[] = rctx.colorlist;
+            Color[] rCArray = rctx.colorlist;
             int ci = rctx.colorindex;
             do {
                 hexaX[0] = x;
@@ -868,7 +868,7 @@ public abstract class RenderTests extends GraphicsTests {
             CubicCurve2D curve = cctx.curve;
             Graphics2D g2d = (Graphics2D) cctx.graphics;
             g2d.translate(cctx.orgX, cctx.orgY);
-            Color rCArray[] = cctx.colorlist;
+            Color[] rCArray = cctx.colorlist;
             int ci = cctx.colorindex;
             do {
                 curve.setCurve(x, y+size/2.0,
@@ -922,7 +922,7 @@ public abstract class RenderTests extends GraphicsTests {
             CubicCurve2D curve = cctx.curve;
             Graphics2D g2d = (Graphics2D) cctx.graphics;
             g2d.translate(cctx.orgX, cctx.orgY);
-            Color rCArray[] = cctx.colorlist;
+            Color[] rCArray = cctx.colorlist;
             int ci = cctx.colorindex;
             do {
                 curve.setCurve(x, y+size/2.0,
@@ -970,7 +970,7 @@ public abstract class RenderTests extends GraphicsTests {
             Ellipse2D ellipse = cctx.ellipse;
             Graphics2D g2d = (Graphics2D) cctx.graphics;
             g2d.translate(cctx.orgX, cctx.orgY);
-            Color rCArray[] = cctx.colorlist;
+            Color[] rCArray = cctx.colorlist;
             int ci = cctx.colorindex;
             do {
                 if (rCArray != null) {
@@ -1012,7 +1012,7 @@ public abstract class RenderTests extends GraphicsTests {
             Ellipse2D ellipse = cctx.ellipse;
             Graphics2D g2d = (Graphics2D) cctx.graphics;
             g2d.translate(cctx.orgX, cctx.orgY);
-            Color rCArray[] = cctx.colorlist;
+            Color[] rCArray = cctx.colorlist;
             int ci = cctx.colorindex;
             do {
                 if (rCArray != null) {

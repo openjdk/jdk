@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,9 +291,9 @@ final public class AccessBridge {
      * map an HWND to an AWT Component
      */
     private void initHWNDcalls() {
-        Class<?> integerParemter[] = new Class<?>[1];
+        Class<?>[] integerParemter = new Class<?>[1];
         integerParemter[0] = Integer.TYPE;
-        Class<?> componentParemter[] = new Class<?>[1];
+        Class<?>[] componentParemter = new Class<?>[1];
         try {
             componentParemter[0] = Class.forName("java.awt.Component");
         } catch (ClassNotFoundException e) {

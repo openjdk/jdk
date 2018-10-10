@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -116,16 +116,16 @@ public final class Font2DTest extends JPanel
     private JTextArea userTextArea;
     private JDialog printDialog;
     private JDialog fontInfoDialog;
-    private LabelV2 fontInfos[] = new LabelV2[2];
+    private LabelV2[] fontInfos = new LabelV2[2];
     private JFileChooser filePromptDialog = null;
 
     private ButtonGroup printCBGroup;
-    private JRadioButton printModeCBs[] = new JRadioButton[3];
+    private JRadioButton[] printModeCBs = new JRadioButton[3];
 
     /// Status bar
     private final LabelV2 statusBar;
 
-    private int fontStyles [] = {Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC};
+    private int[] fontStyles  = {Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC};
 
     /// Text filename
     private String tFileName;
@@ -289,7 +289,7 @@ public final class Font2DTest extends JPanel
 
         parent.setJMenuBar( mb );
 
-        String fontList[] =
+        String[] fontList =
           GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
         for ( int i = 0; i < fontList.length; i++ )
@@ -422,7 +422,7 @@ public final class Font2DTest extends JPanel
     /// RangeMenu object signals using this function
     /// when Unicode range has been changed and text needs to be redrawn
     public void fireRangeChanged() {
-        int range[] = rm.getSelectedRange();
+        int[] range = rm.getSelectedRange();
         fp.setTextToDraw( fp.RANGE_TEXT, range, null, null );
         if(canDisplayCheck) {
             setupFontList(range[0], range[1]);
@@ -445,7 +445,7 @@ public final class Font2DTest extends JPanel
     /// Updates the information about the selected font
     public void fireUpdateFontInfo() {
         if ( showFontInfoCBMI.getState() ) {
-            String infos[] = fp.getFontInfo();
+            String[] infos = fp.getFontInfo();
             for ( int i = 0; i < fontInfos.length; i++ )
               fontInfos[i].setText( infos[i] );
             fontInfoDialog.pack();
@@ -533,7 +533,7 @@ public final class Font2DTest extends JPanel
     private String[] parseUserText( String orig ) {
         int length = orig.length();
         StringTokenizer perLine = new StringTokenizer( orig, "\n" );
-        String textLines[] = new String[ perLine.countTokens() ];
+        String[] textLines = new String[ perLine.countTokens() ];
         int lineNumber = 0;
 
         while ( perLine.hasMoreElements() ) {
@@ -583,14 +583,15 @@ public final class Font2DTest extends JPanel
     /// Then breaks the text into String array, delimited at every line break
     private void readTextFile( String fileName ) {
         try {
-            String fileText, textLines[];
+            String fileText;
+            String[] textLines;
             BufferedInputStream bis =
               new BufferedInputStream( new FileInputStream( fileName ));
             int numBytes = bis.available();
             if (numBytes == 0) {
                 throw new Exception("Text file " + fileName + " is empty");
             }
-            byte byteData[] = new byte[ numBytes ];
+            byte[] byteData = new byte[ numBytes ];
             bis.read( byteData, 0, numBytes );
             bis.close();
 
@@ -648,7 +649,7 @@ public final class Font2DTest extends JPanel
             BufferedOutputStream bos =
               new BufferedOutputStream( new FileOutputStream( fileName ));
             /// Prepend title and the option that is only obtainable here
-            int range[] = rm.getSelectedRange();
+            int[] range = rm.getSelectedRange();
             String completeOptions =
               ( "Font2DTest Option File\n" +
                 displayGridCBMI.getState() + "\n" +
@@ -656,7 +657,7 @@ public final class Font2DTest extends JPanel
                 showFontInfoCBMI.getState() + "\n" +
                 rm.getSelectedItem() + "\n" +
                 range[0] + "\n" + range[1] + "\n" + curOptions + tFileName);
-            byte toBeWritten[] = completeOptions.getBytes( "UTF-16" );
+            byte[] toBeWritten = completeOptions.getBytes( "UTF-16" );
             bos.write( toBeWritten, 0, toBeWritten.length );
             bos.close();
         }
@@ -714,7 +715,7 @@ public final class Font2DTest extends JPanel
             BufferedInputStream bis =
               new BufferedInputStream( new FileInputStream( fileName ));
             int numBytes = bis.available();
-            byte byteData[] = new byte[ numBytes ];
+            byte[] byteData = new byte[ numBytes ];
             bis.read( byteData, 0, numBytes );
             bis.close();
             if ( numBytes < 2 ||
@@ -744,7 +745,7 @@ public final class Font2DTest extends JPanel
             int antialiasOpt = Integer.parseInt(perLine.nextToken());
             int fractionalOpt = Integer.parseInt(perLine.nextToken());
             int lcdContrast = Integer.parseInt(perLine.nextToken());
-            String userTextOpt[] = { "Font2DTest!" };
+            String[] userTextOpt = { "Font2DTest!" };
             String dialogEntry = "Font2DTest!";
             if (textToUseOpt == fp.USER_TEXT )  {
                 int numLines = perLine.countTokens(), lineNumber = 0;
@@ -1016,7 +1017,7 @@ public final class Font2DTest extends JPanel
     }
 
     /// Main function
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
 
         if(argv.length > 0) {
             if(argv[0].equalsIgnoreCase("-disablecandisplaycheck") ||

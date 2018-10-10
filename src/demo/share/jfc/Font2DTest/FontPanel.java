@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -95,14 +95,14 @@ import static java.awt.RenderingHints.*;
 public final class FontPanel extends JPanel implements AdjustmentListener {
 
     /// Drawing Option Constants
-    private final String STYLES[] =
+    private final String[] STYLES =
       { "plain", "bold", "italic", "bold italic" };
 
     private final int NONE = 0;
     private final int SCALE = 1;
     private final int SHEAR = 2;
     private final int ROTATE = 3;
-    private final String TRANSFORMS[] =
+    private final String[] TRANSFORMS =
       { "with no transforms", "with scaling", "with Shearing", "with rotation" };
 
     private final int DRAW_STRING = 0;
@@ -112,7 +112,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
     private final int TL_DRAW = 4;
     private final int GV_OUTLINE = 5;
     private final int TL_OUTLINE = 6;
-    private final String METHODS[] = {
+    private final String[] METHODS = {
         "drawString", "drawChars", "drawBytes", "drawGlyphVector",
         "TextLayout.draw", "GlyphVector.getOutline", "TextLayout.getOutline" };
 
@@ -120,9 +120,9 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
     public final int ALL_GLYPHS = 1;
     public final int USER_TEXT = 2;
     public final int FILE_TEXT = 3;
-    private final String MS_OPENING[] =
+    private final String[] MS_OPENING =
       { " Unicode ", " Glyph Code ", " lines ", " lines " };
-    private final String MS_CLOSING[] =
+    private final String[] MS_CLOSING =
       { "", "", " of User Text ", " of LineBreakMeasurer-reformatted Text " };
 
     /// General Graphics Variable
@@ -153,10 +153,10 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
     private Object lcdContrast = getDefaultLCDContrast();
     private int drawMethod = DRAW_STRING;
     private int textToUse = RANGE_TEXT;
-    private String userText[] = null;
-    private String fileText[] = null;
-    private int drawRange[] = { 0x0000, 0x007f };
-    private String fontInfos[] = new String[2];
+    private String[] userText = null;
+    private String[] fileText = null;
+    private int[] drawRange = { 0x0000, 0x007f };
+    private String[] fontInfos = new String[2];
     private boolean showGrid = true;
 
     /// Parent Font2DTest panel
@@ -271,8 +271,8 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         fc.repaint();
     }
 
-    public void setTextToDraw( int i, int range[],
-                               String textSet[], String fileData[] ) {
+    public void setTextToDraw( int i, int[] range,
+                               String[] textSet, String[] fileData ) {
         textToUse = i;
 
         if ( textToUse == RANGE_TEXT )
@@ -377,8 +377,8 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                              String name, float size, int style,
                              int transform, int g2transform,
                              int text, int method, int aa, int fm,
-                             int contrast, String user[] ) {
-        int range[] = { start, end };
+                             int contrast, String[] user ) {
+        int[] range = { start, end };
 
         /// Since repaint call has a low priority, these functions will finish
         /// before the actual repainting is done
@@ -458,7 +458,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         private String backupStatusString = null;
 
         /// Error constants
-        private final String ERRORS[] = {
+        private final String[] ERRORS = {
             "ERROR: drawBytes cannot handle characters beyond 0x00FF. Select different range or draw methods.",
             "ERROR: Cannot fit text with the current font size. Resize the window or use smaller font size.",
             "ERROR: Cannot print with the current font size. Use smaller font size.",
@@ -480,7 +480,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
             /// Creates an invisble pointer by giving it bogus image
             /// Possibly find a workaround for this...
             Toolkit tk = Toolkit.getDefaultToolkit();
-            byte bogus[] = { (byte) 0 };
+            byte[] bogus = { (byte) 0 };
             blankCursor =
               tk.createCustomCursor( tk.createImage( bogus ), new Point(0, 0), "" );
 
@@ -545,8 +545,8 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         public void modeSpecificDrawChar( Graphics2D g2, int charCode,
                                           int baseX, int baseY ) {
             GlyphVector gv;
-            int oneGlyph[] = { charCode };
-            char charArray[] = Character.toChars( charCode );
+            int[] oneGlyph = { charCode };
+            char[] charArray = Character.toChars( charCode );
 
             FontRenderContext frc = g2.getFontRenderContext();
             AffineTransform oldTX = g2.getTransform();
@@ -563,7 +563,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
             // we need to convert back to user space to be able to
             // calculate the shift as baseX is in user space.
             try {
-                 double pt[] = new double[4];
+                 double[] pt = new double[4];
                  pt[0] = r2d2.getX();
                  pt[1] = r2d2.getY();
                  pt[2] = r2d2.getX()+r2d2.getWidth();
@@ -597,7 +597,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                   case DRAW_BYTES:
                     if ( charCode > 0xff )
                       throw new CannotDrawException( DRAW_BYTES_ERROR );
-                    byte oneByte[] = { (byte) charCode };
+                    byte[] oneByte = { (byte) charCode };
                     g2.drawBytes( oneByte, 0, 1, 0, 0 );
                     break;
                   case DRAW_GLYPHV:
@@ -644,7 +644,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                 break;
               case DRAW_BYTES:
                 try {
-                    byte lineBytes[] = line.getBytes( "ISO-8859-1" );
+                    byte[] lineBytes = line.getBytes( "ISO-8859-1" );
                     g2.drawBytes( lineBytes, 0, lineBytes.length, 0, 0 );
                 }
                 catch ( Exception e ) {
@@ -934,7 +934,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                       oneLine.isLeftToRight() ?
                       canvasInset_X : ( (float) w - oneLine.getAdvance() - canvasInset_X );
 
-                    float fmData[] = {0, oneLine.getAscent(), 0, oneLine.getDescent(), 0, oneLine.getLeading()};
+                    float[] fmData = {0, oneLine.getAscent(), 0, oneLine.getDescent(), 0, oneLine.getLeading()};
                     if (g2Transform != NONE) {
                         AffineTransform at = getAffineTransform(g2Transform);
                         at.transform( fmData, 0, fmData, 0, 3);

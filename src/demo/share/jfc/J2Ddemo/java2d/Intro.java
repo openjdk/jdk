@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -157,7 +157,7 @@ public class Intro extends JPanel {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         final Intro intro = new Intro();
         WindowListener l = new WindowAdapter() {
 
@@ -497,7 +497,7 @@ public class Intro extends JPanel {
             Font f3 = new Font(Font.SERIF, Font.PLAIN, 72);
 
             public Director(Surface surf) {
-                Object partsInfo[][][] = {
+                Object[][][] partsInfo = {
                 { { "J  -  scale text on gradient", "0" },
                     { new GpE(GpE.BURI, myBlack, myBlue, 0, 20),
                         new TxE("J", f1, TxE.SCI, myYellow, 2, 20) } },
@@ -677,7 +677,7 @@ public class Intro extends JPanel {
             private int type;
             private double rIncr, sIncr;
             private double sx, sy, rotate;
-            private Shape shapes[], txShapes[];
+            private Shape[] shapes, txShapes;
             private int sw;
             private int numRev;
             private Paint paint;
@@ -1610,7 +1610,7 @@ public class Intro extends JPanel {
             static final Font font2 = new Font(Font.SERIF, Font.PLAIN, 24);
             private final FontMetrics fm1;
             private final FontMetrics fm2;
-            private static final String table[][] = { { "Graphics", "Antialiased rendering",
+            private static final String[][] table = { { "Graphics", "Antialiased rendering",
                     "Bezier paths",
                     "Transforms", "Compositing", "Stroking parameters" },
                 { "Text", "Extended font support",
@@ -1622,7 +1622,7 @@ public class Intro extends JPanel {
                     "RenderableImage interface" },
                 { "Color", "ICC profile support", "Color conversion",
                     "Arbitrary color spaces" } };
-            private String list[];
+            private String[] list;
             private int beginning, ending;
             private int strH;
             private int endIndex, listIndex;
@@ -1687,7 +1687,7 @@ public class Intro extends JPanel {
          */
         static class Contributors implements Part {
 
-            private static final String members[] = {
+            private static final String[] members = {
                 "Brian Lichtenwalter", "Jeannette Hung",
                 "Thanh Nguyen", "Jim Graham", "Jerry Evans",
                 "John Raley", "Michael Peirce", "Robert Kim",

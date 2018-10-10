@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -232,7 +232,7 @@ public class SelectTx extends AnimatingControlsSurface {
 
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new SelectTx());
     }
 

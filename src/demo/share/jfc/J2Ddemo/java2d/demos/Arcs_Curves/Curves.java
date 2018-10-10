@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,7 +52,7 @@ import static java.awt.geom.PathIterator.*;
 @SuppressWarnings("serial")
 public class Curves extends Surface {
 
-    private static Color colors[] = { BLUE, GREEN, RED };
+    private static Color[] colors = { BLUE, GREEN, RED };
 
     public Curves() {
         setBackground(WHITE);
@@ -136,7 +136,7 @@ public class Curves extends Surface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Curves());
     }
 }

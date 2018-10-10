@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,7 +80,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
     private boolean sheary = false;
     private boolean showanchor = true;
     private AnimVal w, h, x, y, rot, shx, shy;
-    private static Image img[] = new Image[2];
+    private static Image[] img = new Image[2];
 
     public TextureAnim() {
         img[0] = getImage("duke.gif");   // 8 bit gif
@@ -218,7 +218,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new TextureAnim());
     }
 
@@ -301,7 +301,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
         JToolBar toolbar;
         JComboBox combo;
         JMenu menu;
-        JMenuItem menuitems[];
+        JMenuItem[] menuitems;
         int iconSize = 20;
         ButtonBorder buttonBorder = new ButtonBorder();
 

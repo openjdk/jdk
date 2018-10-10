@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,8 +55,8 @@ import java2d.AnimatingSurface;
 @SuppressWarnings("serial")
 public class Highlighting extends AnimatingSurface {
 
-    private static String text[] = { "HIGHLIGHTING", "OpenJDK" };
-    private static Color colors[] = { CYAN, LIGHT_GRAY };
+    private static String[] text = { "HIGHLIGHTING", "OpenJDK" };
+    private static Color[] colors = { CYAN, LIGHT_GRAY };
     private static Font smallF = new Font("Monospaced", Font.PLAIN, 8);
     private int[] curPos;
     private TextLayout[] layouts;
@@ -129,7 +129,7 @@ public class Highlighting extends AnimatingSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Highlighting());
     }
 }

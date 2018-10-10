@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,12 +44,12 @@ import static java.awt.Color.*;
 @SuppressWarnings("serial")
 public final class Ellipses extends AnimatingSurface {
 
-    private static Color colors[] = {
+    private static Color[] colors = {
         BLUE, CYAN, GREEN, MAGENTA, ORANGE, PINK, RED,
         YELLOW, LIGHT_GRAY, WHITE };
     private Ellipse2D.Float[] ellipses;
-    private double esize[];
-    private float estroke[];
+    private double[] esize;
+    private float[] estroke;
     private double maxSize;
 
     public Ellipses() {
@@ -102,7 +102,7 @@ public final class Ellipses extends AnimatingSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Ellipses());
     }
 }

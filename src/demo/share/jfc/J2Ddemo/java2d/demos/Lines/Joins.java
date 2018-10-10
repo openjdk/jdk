@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -113,7 +113,7 @@ public class Joins extends ControlsSurface {
         g2.draw(bs.createStrokedShape(p));
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new Joins());
     }
 
@@ -121,12 +121,12 @@ public class Joins extends ControlsSurface {
     class DemoControls extends CustomControls implements ActionListener {
 
         Joins demo;
-        int joinType[] = { BasicStroke.JOIN_MITER,
+        int[] joinType = { BasicStroke.JOIN_MITER,
             BasicStroke.JOIN_ROUND, BasicStroke.JOIN_BEVEL };
-        String joinName[] = { "Mitered Join", "Rounded Join", "Beveled Join" };
+        String[] joinName = { "Mitered Join", "Rounded Join", "Beveled Join" };
         JMenu menu;
-        JMenuItem menuitem[] = new JMenuItem[joinType.length];
-        JoinIcon icons[] = new JoinIcon[joinType.length];
+        JMenuItem[] menuitem = new JMenuItem[joinType.length];
+        JoinIcon[] icons = new JoinIcon[joinType.length];
         JToolBar toolbar;
 
         @SuppressWarnings("LeakingThisInConstructor")

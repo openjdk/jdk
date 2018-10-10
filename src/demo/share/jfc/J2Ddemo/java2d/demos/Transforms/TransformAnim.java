@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -107,16 +107,16 @@ public final class TransformAnim extends AnimatingControlsSurface {
     }
 
     private static BasicStroke bs = new BasicStroke(6);
-    private static Font fonts[] = {
+    private static Font[] fonts = {
                 new Font(Font.SERIF,      PLAIN,       48),
                 new Font(Font.SERIF,      BOLD|ITALIC, 24),
                 new Font(Font.MONOSPACED, BOLD,        36),
                 new Font(Font.SANS_SERIF, BOLD|ITALIC, 64),
                 new Font(Font.SANS_SERIF, PLAIN,       52)};
-    private static String strings[] = {
+    private static String[] strings = {
                 "Transformation", "Rotate", "Translate", "Shear", "Scale" };
-    private static String imgs[] = { "duke.png" };
-    private static Paint paints[] = {
+    private static String[] imgs = { "duke.png" };
+    private static Paint[] paints = {
                 RED, BLUE, texturePaint, GREEN, MAGENTA, ORANGE, PINK, CYAN,
                 new Color(0, 255, 0, 128), new Color(0, 0, 255, 128),
                 YELLOW, LIGHT_GRAY, WHITE};
@@ -253,7 +253,7 @@ public final class TransformAnim extends AnimatingControlsSurface {
     }
 
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new TransformAnim());
     }
 

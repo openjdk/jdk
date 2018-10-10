@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -126,7 +126,7 @@ public abstract class GraphicsTests extends Test {
                                           "Huge Shapes (4000x4000)",
                                       }, 0xa);
         if (hasGraphics2D) {
-            String rulenames[] = {
+            String[] rulenames = {
                 "Clear",
                 "Src",
                 "Dst",
@@ -140,8 +140,8 @@ public abstract class GraphicsTests extends Test {
                 "DstAtop",
                 "Xor",
             };
-            String ruledescs[] = new String[rulenames.length];
-            Object rules[] = new Object[rulenames.length];
+            String[] ruledescs = new String[rulenames.length];
+            Object[] rules = new Object[rulenames.length];
             int j = 0;
             int defrule = 0;
             for (int i = 0; i < rulenames.length; i++) {
@@ -181,7 +181,7 @@ public abstract class GraphicsTests extends Test {
                                       ruledescs, (1 << defrule));
             ((Option.ObjectList) compRules).setNumRows(4);
 
-            Transform xforms[] = {
+            Transform[] xforms = {
                 Identity.instance,
                 FTranslate.instance,
                 Scale2x2.instance,
@@ -189,8 +189,8 @@ public abstract class GraphicsTests extends Test {
                 ShearX.instance,
                 ShearY.instance,
             };
-            String xformnames[] = new String[xforms.length];
-            String xformdescs[] = new String[xforms.length];
+            String[] xformnames = new String[xforms.length];
+            String[] xformdescs = new String[xforms.length];
             for (int i = 0; i < xforms.length; i++) {
                 xformnames[i] = xforms[i].getShortName();
                 xformdescs[i] = xforms[i].getDescription();
@@ -214,7 +214,7 @@ public abstract class GraphicsTests extends Test {
                 new Option.Toggle(groptroot, "clip",
                                   "Render through a complex clip shape",
                                   Option.Toggle.Off);
-            String rhintnames[] = {
+            String[] rhintnames = {
                 "Default", "Speed", "Quality",
             };
             renderHint =

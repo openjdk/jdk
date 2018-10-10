@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -91,12 +91,12 @@ public class J2DAnalyzer {
                     "are best of all result sets in that group");
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         boolean gavehelp = false;
         boolean graph = false;
         boolean ignoreuncontested = true;
         if (argv.length > 0 && argv[0].equalsIgnoreCase("-html")) {
-            String newargs[] = new String[argv.length-1];
+            String[] newargs = new String[argv.length-1];
             System.arraycopy(argv, 1, newargs, 0, newargs.length);
             HTMLSeriesReporter.main(newargs);
             return;
@@ -144,15 +144,15 @@ public class J2DAnalyzer {
         }
 
         int numsets = results.size();
-        double totalscore[] = new double[numsets];
-        int numwins[] = new int[numsets];
-        int numties[] = new int[numsets];
-        int numloss[] = new int[numsets];
-        int numtests[] = new int[numsets];
-        double bestscore[] = new double[numsets];
-        double worstscore[] = new double[numsets];
-        double bestspread[] = new double[numsets];
-        double worstspread[] = new double[numsets];
+        double[] totalscore = new double[numsets];
+        int[] numwins = new int[numsets];
+        int[] numties = new int[numsets];
+        int[] numloss = new int[numsets];
+        int[] numtests = new int[numsets];
+        double[] bestscore = new double[numsets];
+        double[] worstscore = new double[numsets];
+        double[] bestspread = new double[numsets];
+        double[] worstspread = new double[numsets];
         for (int i = 0; i < numsets; i++) {
             bestscore[i] = Double.NEGATIVE_INFINITY;
             worstscore[i] = Double.POSITIVE_INFINITY;
@@ -166,7 +166,7 @@ public class J2DAnalyzer {
         while (enum_.hasMoreElements()) {
             keyvector.add(enum_.nextElement());
         }
-        String keys[] = new String[keyvector.size()];
+        String[] keys = new String[keyvector.size()];
         keyvector.copyInto(keys);
         sort(keys);
         enum_ = ResultHolder.commonkeys.keys();
@@ -647,7 +647,7 @@ public class J2DAnalyzer {
         }
 
         private String makeKey(boolean prunecommon) {
-            String keys[] = new String[options.size()];
+            String[] keys = new String[options.size()];
             Enumeration enum_ = options.keys();
             int i = 0;
             while (enum_.hasMoreElements()) {
@@ -811,7 +811,7 @@ public class J2DAnalyzer {
         return ret;
     }
 
-    public static void sort(String strs[]) {
+    public static void sort(String[] strs) {
         for (int i = 1; i < strs.length; i++) {
             for (int j = i; j > 0; j--) {
                 if (strs[j].compareTo(strs[j-1]) >= 0) {

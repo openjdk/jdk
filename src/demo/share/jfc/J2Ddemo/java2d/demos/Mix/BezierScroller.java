@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -72,7 +72,7 @@ import javax.swing.JToolBar;
 @SuppressWarnings("serial")
 public class BezierScroller extends AnimatingControlsSurface {
 
-    private static String appletStrs[] = { " ", "J2Ddemo",
+    private static String[] appletStrs = { " ", "J2Ddemo",
         "BezierScroller - Animated Bezier Curve shape with images",
         "For README.txt file scrolling run in application mode", " " };
     private static final int NUMPTS = 6;
@@ -84,8 +84,8 @@ public class BezierScroller extends AnimatingControlsSurface {
     private static BufferedImage img;
     private static final int UP = 0;
     private static final int DOWN = 1;
-    private float animpts[] = new float[NUMPTS * 2];
-    private float deltas[] = new float[NUMPTS * 2];
+    private float[] animpts = new float[NUMPTS * 2];
+    private float[] deltas = new float[NUMPTS * 2];
     private BufferedReader reader;
     private int nStrs;
     private int strH;
@@ -293,7 +293,7 @@ public class BezierScroller extends AnimatingControlsSurface {
             g2.fill(gp);
 
             PathIterator pi = gp.getPathIterator(null);
-            float pts[] = new float[6];
+            float[] pts = new float[6];
             while (!pi.isDone()) {
                 if (pi.currentSegment(pts) == PathIterator.SEG_CUBICTO) {
                     g2.drawImage(hotj_img, (int) pts[0], (int) pts[1], this);
@@ -310,7 +310,7 @@ public class BezierScroller extends AnimatingControlsSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new BezierScroller());
     }
 

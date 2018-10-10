@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -125,7 +125,7 @@ public class AllFonts extends AnimatingControlsSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new AllFonts());
     }
 
@@ -135,9 +135,9 @@ public class AllFonts extends AnimatingControlsSurface {
 
         AllFonts demo;
         JSlider slider;
-        int fsize[] = { 8, 14, 18, 24 };
-        JMenuItem menuitem[] = new JMenuItem[fsize.length];
-        Font font[] = new Font[fsize.length];
+        int[] fsize = { 8, 14, 18, 24 };
+        JMenuItem[] menuitem = new JMenuItem[fsize.length];
+        Font[] font = new Font[fsize.length];
 
         @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(AllFonts demo) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -116,11 +116,11 @@ public abstract class ImageTests extends GraphicsTests {
     static Option doTouchSrc;
     static Option interpolation;
 
-    static String transNodeNames[] = {
+    static String[] transNodeNames = {
         null, "opaque", "bitmask", "translucent",
     };
 
-    static String transDescriptions[] = {
+    static String[] transDescriptions = {
         null, "Opaque", "Bitmask", "Translucent",
     };
 
@@ -220,7 +220,7 @@ public abstract class ImageTests extends GraphicsTests {
             new RasterOpFilter(false);
             new RasterOpFilter(true);
 
-            String interpolationnames[] = {"Nearest neighbor", "Bilinear",
+            String[] interpolationnames = {"Nearest neighbor", "Bilinear",
                                            "Bicubic",};
             interpolation =
                     new ObjectList(imgtestOptRoot, "interpolation",
@@ -369,7 +369,7 @@ public abstract class ImageTests extends GraphicsTests {
         int type;
         boolean unmanaged;
 
-        static int Transparencies[] = {
+        static int[] Transparencies = {
             Transparency.TRANSLUCENT, // "custom",
             Transparency.OPAQUE,      // "IntXrgb",
             Transparency.TRANSLUCENT, // "IntArgb",
@@ -433,7 +433,7 @@ public abstract class ImageTests extends GraphicsTests {
 
         public Image makeImage(TestEnvironment env, int w, int h) {
             if (icm == null) {
-                int cmap[] = new int[256];
+                int[] cmap = new int[256];
                 // Workaround for transparency rendering bug in earlier VMs
                 // Can only render transparency if first cmap entry is 0x0
                 // This bug is fixed in 1.4.2 (Mantis)
@@ -462,7 +462,7 @@ public abstract class ImageTests extends GraphicsTests {
         static Color translucentGreen  = makeAlphaColor(Color.green, 128);
         static Color translucentYellow = makeAlphaColor(Color.yellow, 64);
 
-        static Color colorsets[][] = new Color[][] {
+        static Color[][] colorsets = new Color[][] {
             null,
             {
                 Color.blue,       Color.red,
@@ -838,8 +838,8 @@ public abstract class ImageTests extends GraphicsTests {
                 ictx.bufImgOp = new ConvolveOp(kernel, edge, null);
             } else if (op.startsWith("lookup")) {
                 if (op.endsWith("byte")) {
-                    byte invert[] = new byte[256];
-                    byte ordered[] = new byte[256];
+                    byte[] invert = new byte[256];
+                    byte[] ordered = new byte[256];
                     for (int j = 0; j < 256 ; j++) {
                         invert[j] = (byte)(255-j);
                         ordered[j] = (byte)j;
@@ -856,8 +856,8 @@ public abstract class ImageTests extends GraphicsTests {
                                          null);
                     }
                 } else { // (op.endsWith("short"))
-                    short invert[] = new short[256];
-                    short ordered[] = new short[256];
+                    short[] invert = new short[256];
+                    short[] ordered = new short[256];
                     for (int j = 0; j < 256 ; j++) {
                         invert[j] = (short)((255-j) * 255);
                         ordered[j] = (short)(j * 255);

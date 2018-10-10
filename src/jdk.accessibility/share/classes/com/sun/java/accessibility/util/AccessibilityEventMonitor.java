@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class AccessibilityEventMonitor {
          * @see AWTEventMonitor
          */
         protected void installListeners() {
-            Window topLevelWindows[] = EventQueueMonitor.getTopLevelWindows();
+            Window[] topLevelWindows = EventQueueMonitor.getTopLevelWindows();
             if (topLevelWindows != null) {
                 for (int i = 0; i < topLevelWindows.length; i++) {
                     if (topLevelWindows[i] instanceof Accessible) {
@@ -206,7 +206,7 @@ public class AccessibilityEventMonitor {
          * @see EventID
          */
         protected void removeListeners() {
-            Window topLevelWindows[] = EventQueueMonitor.getTopLevelWindows();
+            Window[] topLevelWindows = EventQueueMonitor.getTopLevelWindows();
             if (topLevelWindows != null) {
                 for (int i = 0; i < topLevelWindows.length; i++) {
                     if (topLevelWindows[i] instanceof Accessible) {

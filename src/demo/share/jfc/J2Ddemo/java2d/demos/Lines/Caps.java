@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,8 +53,8 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class Caps extends Surface {
 
-    private static int cap[] = { CAP_BUTT, CAP_ROUND, CAP_SQUARE };
-    private static String desc[] = { "Butt Cap", "Round Cap", "Square Cap" };
+    private static int[] cap = { CAP_BUTT, CAP_ROUND, CAP_SQUARE };
+    private static String[] desc = { "Butt Cap", "Round Cap", "Square Cap" };
 
     public Caps() {
         setBackground(WHITE);
@@ -75,7 +75,7 @@ public class Caps extends Surface {
         }
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new Caps());
     }
 }

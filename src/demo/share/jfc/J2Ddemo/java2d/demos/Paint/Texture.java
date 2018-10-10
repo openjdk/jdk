@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -166,7 +166,7 @@ public class Texture extends Surface {
         g2.fill(sha);
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new Texture());
     }
 }

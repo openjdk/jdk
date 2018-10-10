@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,7 +65,7 @@ import java2d.Surface;
 public class ColorConvert extends Surface {
 
     private static Image img;
-    private static Color colors[] = { red, pink, orange,
+    private static Color[] colors = { red, pink, orange,
         yellow, green, magenta, cyan, blue };
 
     public ColorConvert() {
@@ -123,7 +123,7 @@ public class ColorConvert extends Surface {
         g2.drawImage(dstImg, w / 2 + 10, 20, w / 2 - 20, h - 30, null);
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new ColorConvert());
     }
 }

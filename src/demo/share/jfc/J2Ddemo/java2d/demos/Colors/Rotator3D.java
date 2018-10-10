@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,7 +50,7 @@ import java2d.AnimatingSurface;
 @SuppressWarnings("serial")
 public class Rotator3D extends AnimatingSurface {
 
-    private Objects3D objs[] = new Objects3D[3];
+    private Objects3D[] objs = new Objects3D[3];
     private static final int[][][] polygons = {
         // Solid cube
         { { 5, 1, 15, 13, 21, 23, 15 },
@@ -142,7 +142,7 @@ public class Rotator3D extends AnimatingSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Rotator3D());
     }
 
@@ -170,8 +170,8 @@ public class Rotator3D extends AnimatingSurface {
         private double ix = 3.0, iy = 3.0;
         private double[][] rotPts;
         private int[][] scrPts;
-        private int xx[] = new int[20];
-        private int yy[] = new int[20];
+        private int[] xx = new int[20];
+        private int[] yy = new int[20];
         private double x, y;
         private int p, j;
         private int colour;

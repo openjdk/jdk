@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -133,7 +133,7 @@ public abstract class PixelTests extends Test {
         BufferedImage bimg;
         WritableRaster ras;
         DataBuffer db;
-        int pixeldata[];
+        int[] pixeldata;
         Object elemdata;
     }
 
@@ -172,14 +172,14 @@ public abstract class PixelTests extends Test {
     }
 
     public static class BufImg extends Option.Enable {
-        public static int rgbvals[] = {
+        public static int[] rgbvals = {
             0x00000000,
             0xff0000ff,
             0x8000ff00,
             0xffffffff
         };
 
-        static int cmap[] = {
+        static int[] cmap = {
             0xff000000,  // 0: opaque black
             0xffffffff,  // 1: opaque white
 
@@ -333,7 +333,7 @@ public abstract class PixelTests extends Test {
 
             public void runTest(Object context, int numReps) {
                 Raster ras = ((Context) context).ras;
-                int pixeldata[] = ((Context) context).pixeldata;
+                int[] pixeldata = ((Context) context).pixeldata;
                 do {
                     ras.getPixel(numReps&7, 0, pixeldata);
                 } while (--numReps > 0);
@@ -347,7 +347,7 @@ public abstract class PixelTests extends Test {
 
             public void runTest(Object context, int numReps) {
                 WritableRaster ras = ((Context) context).ras;
-                int pixeldata[] = ((Context) context).pixeldata;
+                int[] pixeldata = ((Context) context).pixeldata;
                 do {
                     ras.setPixel(numReps&7, 0, pixeldata);
                 } while (--numReps > 0);

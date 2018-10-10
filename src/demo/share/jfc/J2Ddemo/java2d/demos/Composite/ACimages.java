@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,11 +61,11 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class ACimages extends Surface {
 
-    private static final String s[] = { "box", "fight", "magnify",
+    private static final String[] s = { "box", "fight", "magnify",
         "boxwave", "globe", "snooze",
         "tip", "thumbsup", "dukeplug" };
-    private static Image imgs[] = new Image[s.length];
-    private static Color colors[] = { BLUE, CYAN, GREEN,
+    private static Image[] imgs = new Image[s.length];
+    private static Color[] colors = { BLUE, CYAN, GREEN,
         MAGENTA, ORANGE, PINK, RED, YELLOW, LIGHT_GRAY };
 
     public ACimages() {
@@ -121,7 +121,7 @@ public class ACimages extends Surface {
         }
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new ACimages());
     }
 }

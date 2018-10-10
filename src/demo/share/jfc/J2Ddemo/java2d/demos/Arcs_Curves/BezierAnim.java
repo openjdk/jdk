@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,8 +74,8 @@ public class BezierAnim extends AnimatingControlsSurface {
     protected BasicStroke dashed = new BasicStroke(10.0f,
             BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10, new float[] { 5 },
             0);
-    private float animpts[] = new float[NUMPTS * 2];
-    private float deltas[] = new float[NUMPTS * 2];
+    private float[] animpts = new float[NUMPTS * 2];
+    private float[] deltas = new float[NUMPTS * 2];
     protected Paint fillPaint, drawPaint;
     protected boolean doFill = true;
     protected boolean doDraw = true;
@@ -173,7 +173,7 @@ public class BezierAnim extends AnimatingControlsSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new BezierAnim());
     }
 
@@ -194,21 +194,21 @@ public class BezierAnim extends AnimatingControlsSurface {
             tp2 = new TexturePaint(bi, new Rectangle(0, 0, 2, 1));
         }
         BezierAnim demo;
-        static Paint drawPaints[] = { new Color(0, 0, 0, 0), BLUE, new Color(0,
+        static Paint[] drawPaints = { new Color(0, 0, 0, 0), BLUE, new Color(0,
             0, 255, 126),
             BLUE, tp2 };
-        static String drawName[] = { "No Draw", "Blue", "Blue w/ Alpha",
+        static String[] drawName = { "No Draw", "Blue", "Blue w/ Alpha",
             "Blue Dash", "Texture" };
-        static Paint fillPaints[] = { new Color(0, 0, 0, 0), GREEN, new Color(0,
+        static Paint[] fillPaints = { new Color(0, 0, 0, 0), GREEN, new Color(0,
             255, 0, 126),
             tp1, new GradientPaint(0, 0, RED, 30, 30, YELLOW) };
-        String fillName[] = { "No Fill", "Green", "Green w/ Alpha", "Texture",
+        String[] fillName = { "No Fill", "Green", "Green w/ Alpha", "Texture",
             "Gradient" };
         JMenu fillMenu, drawMenu;
-        JMenuItem fillMI[] = new JMenuItem[fillPaints.length];
-        JMenuItem drawMI[] = new JMenuItem[drawPaints.length];
-        PaintedIcon fillIcons[] = new PaintedIcon[fillPaints.length];
-        PaintedIcon drawIcons[] = new PaintedIcon[drawPaints.length];
+        JMenuItem[] fillMI = new JMenuItem[fillPaints.length];
+        JMenuItem[] drawMI = new JMenuItem[drawPaints.length];
+        PaintedIcon[] fillIcons = new PaintedIcon[fillPaints.length];
+        PaintedIcon[] drawIcons = new PaintedIcon[drawPaints.length];
         Font font = new Font(Font.SERIF, Font.PLAIN, 10);
 
         @SuppressWarnings("LeakingThisInConstructor")

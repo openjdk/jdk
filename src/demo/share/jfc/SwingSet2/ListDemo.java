@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -350,7 +350,7 @@ public class ListDemo extends DemoModule {
         }
     }
 
-    ImageIcon images[] = new ImageIcon[7];
+    ImageIcon[] images = new ImageIcon[7];
     void loadImages() {
             images[0] = createImageIcon("list/red.gif",  getString("ListDemo.red"));
             images[1] = createImageIcon("list/blue.gif",  getString("ListDemo.blue"));

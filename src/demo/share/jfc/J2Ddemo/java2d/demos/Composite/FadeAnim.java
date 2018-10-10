@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -107,18 +107,18 @@ public final class FadeAnim extends AnimatingControlsSurface {
         texturePaint = new TexturePaint(bi, new Rectangle(0, 0, w, h));
     }
     private static BasicStroke bs = new BasicStroke(6);
-    private static Font fonts[] = {
+    private static Font[] fonts = {
         new Font(Font.SERIF, Font.PLAIN, 64),
         new Font(Font.SERIF, Font.BOLD | Font.ITALIC, 24),
         new Font(Font.MONOSPACED, Font.BOLD, 36),
         new Font(Font.SANS_SERIF, Font.BOLD | Font.ITALIC, 48),
         new Font(Font.SANS_SERIF, Font.PLAIN, 52) };
-    private static String strings[] = {
+    private static String[] strings = {
         "Alpha", "Composite", "Src", "SrcOver",
         "SrcIn", "SrcOut", "Clear", "DstOver", "DstIn" };
-    private static String imgs[] = {
+    private static String[] imgs = {
         "jumptojavastrip.png", "duke.png", "star7.png" };
-    private static Paint paints[] = {
+    private static Paint[] paints = {
         RED, BLUE, GREEN, MAGENTA,
         ORANGE, PINK, CYAN, texturePaint,
         YELLOW, LIGHT_GRAY, WHITE };
@@ -276,7 +276,7 @@ public final class FadeAnim extends AnimatingControlsSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new FadeAnim());
     }
 

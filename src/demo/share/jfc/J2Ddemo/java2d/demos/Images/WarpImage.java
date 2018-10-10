@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,7 +51,7 @@ public class WarpImage extends AnimatingSurface {
     private static Image img;
     private static final int FORWARD = 0;
     private static final int BACK = 1;
-    private Point2D pts[];
+    private Point2D[] pts;
     private int direction = FORWARD;
     private int pNum;
     private int x, y;
@@ -73,7 +73,7 @@ public class WarpImage extends AnimatingSurface {
         CubicCurve2D cc = new CubicCurve2D.Float(
                 w * .2f, h * .5f, w * .4f, 0, w * .6f, h, w * .8f, h * .5f);
         PathIterator pi = cc.getPathIterator(null, 0.1);
-        Point2D tmp[] = new Point2D[200];
+        Point2D[] tmp = new Point2D[200];
         int i = 0;
         while (!pi.isDone()) {
             float[] coords = new float[6];
@@ -128,7 +128,7 @@ public class WarpImage extends AnimatingSurface {
                 this);
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new WarpImage());
     }
 }

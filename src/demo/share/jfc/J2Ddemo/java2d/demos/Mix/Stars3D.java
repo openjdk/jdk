@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,7 +67,7 @@ import javax.swing.JTextField;
 @SuppressWarnings("serial")
 public class Stars3D extends ControlsSurface {
 
-    private static Color colors[] = { RED, GREEN, WHITE };
+    private static Color[] colors = { RED, GREEN, WHITE };
     private static AffineTransform at = AffineTransform.getTranslateInstance(-5,
             -5);
     private Shape shape, tshape;
@@ -99,8 +99,8 @@ public class Stars3D extends ControlsSurface {
         tshape = at.createTransformedShape(shape);
         PathIterator pi = shape.getPathIterator(null);
 
-        float seg[] = new float[6];
-        float tseg[] = new float[6];
+        float[] seg = new float[6];
+        float[] tseg = new float[6];
 
         GeneralPath working = new GeneralPath(Path2D.WIND_NON_ZERO);
         float x = 0, y = 0; // Current point on the path
@@ -247,7 +247,7 @@ public class Stars3D extends ControlsSurface {
         g2.draw(shape);
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Stars3D());
     }
 
@@ -306,8 +306,8 @@ public class Stars3D extends ControlsSurface {
                 return;
             }
             int length = getSize().width / 4;
-            int size[] = { length, length };
-            String str[] = { "OpenJDK", "J2D" };
+            int[] size = { length, length };
+            String[] str = { "OpenJDK", "J2D" };
             while (thread == me) {
                 for (int i = 0; i < str.length; i++) {
                     demo.fontSize = size[i];

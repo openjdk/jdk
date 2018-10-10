@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,12 +66,12 @@ import javax.swing.event.ChangeListener;
 public class ImageOps extends ControlsSurface implements ChangeListener {
 
     protected JSlider slider1, slider2;
-    private static final String imgName[] = { "bld.jpg", "boat.png" };
-    private static final BufferedImage img[] = new BufferedImage[imgName.length];
-    private static final String opsName[] = {
+    private static final String[] imgName = { "bld.jpg", "boat.png" };
+    private static final BufferedImage[] img = new BufferedImage[imgName.length];
+    private static final String[] opsName = {
         "Threshold", "RescaleOp", "Invert", "Yellow Invert", "3x3 Blur",
         "3x3 Sharpen", "3x3 Edge", "5x5 Edge" };
-    private static final BufferedImageOp biop[] =
+    private static final BufferedImageOp[] biop =
             new BufferedImageOp[opsName.length];
     private static int rescaleFactor = 128;
     private static float rescaleOffset = 0;
@@ -82,8 +82,8 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         thresholdOp(low, high);
         int i = 1;
         biop[i++] = new RescaleOp(1.0f, 0, null);
-        byte invert[] = new byte[256];
-        byte ordered[] = new byte[256];
+        byte[] invert = new byte[256];
+        byte[] ordered = new byte[256];
         for (int j = 0; j < 256; j++) {
             invert[j] = (byte) (256 - j);
             ordered[j] = (byte) j;
@@ -91,8 +91,8 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         biop[i++] = new LookupOp(new ByteLookupTable(0, invert), null);
         byte[][] yellowInvert = new byte[][] { invert, invert, ordered };
         biop[i++] = new LookupOp(new ByteLookupTable(0, yellowInvert), null);
-        int dim[][] = { { 3, 3 }, { 3, 3 }, { 3, 3 }, { 5, 5 } };
-        float data[][] = { { 0.1f, 0.1f, 0.1f, // 3x3 blur
+        int[][] dim = { { 3, 3 }, { 3, 3 }, { 3, 3 }, { 5, 5 } };
+        float[][] data = { { 0.1f, 0.1f, 0.1f, // 3x3 blur
                 0.1f, 0.2f, 0.1f,
                 0.1f, 0.1f, 0.1f },
             { -1.0f, -1.0f, -1.0f, // 3x3 sharpen
@@ -134,7 +134,7 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
     }
 
     public static void thresholdOp(int low, int high) {
-        byte threshold[] = new byte[256];
+        byte[] threshold = new byte[256];
         for (int j = 0; j < 256; j++) {
             if (j > high) {
                 threshold[j] = (byte) 255;
@@ -180,7 +180,7 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         repaint();
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         createDemoFrame(new ImageOps());
     }
 

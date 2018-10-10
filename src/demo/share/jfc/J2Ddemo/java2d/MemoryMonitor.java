@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -125,7 +125,7 @@ public class MemoryMonitor extends JPanel {
         private Font font = new Font(Font.SERIF, Font.PLAIN, 11);
         private Runtime r = Runtime.getRuntime();
         private int columnInc;
-        private int pts[];
+        private int[] pts;
         private int ptNum;
         private int ascent, descent;
         private Rectangle graphOutlineRect = new Rectangle();
@@ -247,7 +247,7 @@ public class MemoryMonitor extends JPanel {
                 pts = new int[graphW];
                 ptNum = 0;
             } else if (pts.length != graphW) {
-                int tmp[] = null;
+                int[] tmp = null;
                 if (ptNum < graphW) {
                     tmp = new int[ptNum];
                     System.arraycopy(pts, 0, tmp, 0, tmp.length);
@@ -337,7 +337,7 @@ public class MemoryMonitor extends JPanel {
         }
     }
 
-    public static void main(String s[]) {
+    public static void main(String[] s) {
         final MemoryMonitor demo = new MemoryMonitor();
         WindowListener l = new WindowAdapter() {
 

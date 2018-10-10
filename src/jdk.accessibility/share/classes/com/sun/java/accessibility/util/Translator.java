@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ public class Translator extends AccessibleContext
         if (source instanceof Component) {
             Container parent = ((Component) source).getParent();
             if (parent != null) {
-                Component ca[] = parent.getComponents();
+                Component[] ca = parent.getComponents();
                 for (int i = 0; i < ca.length; i++) {
                     if (source.equals(ca[i])) {
                         return i;

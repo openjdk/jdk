@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -102,7 +102,7 @@ public class XMLHTMLReporter {
      */
     private static void addGroup(String testName) {
 
-        String testNameSplit[] = testName.replace('.', '_').split("_");
+        String[] testNameSplit = testName.replace('.', '_').split("_");
         String group = testNameSplit[0];
         for(int i=1; i<LEVEL; i++) {
             group = group + "." + testNameSplit[i];
@@ -119,7 +119,7 @@ public class XMLHTMLReporter {
      */
     private static String getDisplayGroupName(String group) {
 
-        String groupSplit[] = group.replace('.', '_').split("_");
+        String[] groupSplit = group.replace('.', '_').split("_");
 
         StringBuffer groupName = new StringBuffer();
         String tempName = null;
@@ -142,7 +142,7 @@ public class XMLHTMLReporter {
      */
     private static String getGroup(String testName) {
 
-        String testNameSplit[] = testName.replace('.', '_').split("_");
+        String[] testNameSplit = testName.replace('.', '_').split("_");
         String group = testNameSplit[0];
         for(int i=1; i<LEVEL; i++) {
             group = group + "." + testNameSplit[i];
@@ -200,7 +200,7 @@ public class XMLHTMLReporter {
             while (enum_.hasMoreElements()) {
                 keyvector.add(enum_.nextElement());
             }
-            String keys[] = new String[keyvector.size()];
+            String[] keys = new String[keyvector.size()];
             keyvector.copyInto(keys);
             J2DAnalyzer.sort(keys);
 
@@ -323,7 +323,7 @@ public class XMLHTMLReporter {
         while (baseEnum_.hasMoreElements()) {
             baseKeyvector.add(baseEnum_.nextElement());
         }
-        String baseKeys[] = new String[baseKeyvector.size()];
+        String[] baseKeys = new String[baseKeyvector.size()];
         baseKeyvector.copyInto(baseKeys);
         J2DAnalyzer.sort(baseKeys);
 
@@ -337,7 +337,7 @@ public class XMLHTMLReporter {
         while (targetEnum_.hasMoreElements()) {
             targetKeyvector.add(targetEnum_.nextElement());
         }
-        String targetKeys[] = new String[targetKeyvector.size()];
+        String[] targetKeys = new String[targetKeyvector.size()];
         targetKeyvector.copyInto(targetKeys);
         J2DAnalyzer.sort(targetKeys);
 
@@ -797,7 +797,7 @@ public class XMLHTMLReporter {
                                           "</font></td></tr>");
             testResultsScoreBuffer.append(testResultsStartBuffer);
 
-            String tableTags[] = null;
+            String[] tableTags = null;
 
             for(int i=0; i<testCaseList.length; i++) {
 
@@ -1350,7 +1350,7 @@ public class XMLHTMLReporter {
     /**
      * main
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         String resDir = ".";
         String baseXML = null;

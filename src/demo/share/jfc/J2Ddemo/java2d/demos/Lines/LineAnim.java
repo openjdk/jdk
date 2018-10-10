@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,18 +55,18 @@ import java2d.AnimatingSurface;
 @SuppressWarnings("serial")
 public class LineAnim extends AnimatingSurface {
 
-    private static int caps[] = { BasicStroke.CAP_BUTT,
+    private static int[] caps = { BasicStroke.CAP_BUTT,
         BasicStroke.CAP_SQUARE, BasicStroke.CAP_ROUND };
-    private static int joins[] = { BasicStroke.JOIN_MITER,
+    private static int[] joins = { BasicStroke.JOIN_MITER,
         BasicStroke.JOIN_BEVEL, BasicStroke.JOIN_ROUND };
-    private static Color colors[] = { GRAY, PINK, LIGHT_GRAY };
+    private static Color[] colors = { GRAY, PINK, LIGHT_GRAY };
     private static BasicStroke bs1 = new BasicStroke(1.0f);
     private static final int CLOCKWISE = 0;
-    private Line2D lines[] = new Line2D[3];
-    private int rAmt[] = new int[lines.length];
-    private int direction[] = new int[lines.length];
-    private int speed[] = new int[lines.length];
-    private BasicStroke strokes[] = new BasicStroke[lines.length];
+    private Line2D[] lines = new Line2D[3];
+    private int[] rAmt = new int[lines.length];
+    private int[] direction = new int[lines.length];
+    private int[] speed = new int[lines.length];
+    private BasicStroke[] strokes = new BasicStroke[lines.length];
     private GeneralPath path;
     private Point2D[] pts;
     private float size;
@@ -158,7 +158,7 @@ public class LineAnim extends AnimatingSurface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new LineAnim());
     }
 }

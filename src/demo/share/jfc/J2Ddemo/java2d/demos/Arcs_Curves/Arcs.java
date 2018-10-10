@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,7 +45,7 @@ import static java.awt.Color.*;
 @SuppressWarnings("serial")
 public class Arcs extends AnimatingSurface {
 
-    private static String types[] = { "Arc2D.OPEN", "Arc2D.CHORD", "Arc2D.PIE" };
+    private static String[] types = { "Arc2D.OPEN", "Arc2D.CHORD", "Arc2D.PIE" };
     private static final int CLOSE = 0;
     private static final int OPEN = 1;
     private static final int FORWARD = 0;
@@ -159,7 +159,7 @@ public class Arcs extends AnimatingSurface {
         g2.fill(at.createTransformedShape(pieArc));
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Arcs());
     }
 }

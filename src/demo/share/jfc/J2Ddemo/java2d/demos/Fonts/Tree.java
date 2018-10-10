@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -90,7 +90,7 @@ public class Tree extends AnimatingSurface {
     static double Twidth = 0.6;
     static double Rwidth = 0.6;
     static double FontHeight = 0.75;
-    static Color colors[] = { BLUE,
+    static Color[] colors = { BLUE,
         RED.darker(),
         GREEN.darker() };
 
@@ -123,7 +123,7 @@ public class Tree extends AnimatingSurface {
         g2d.setTransform(new AffineTransform());
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Tree());
     }
 }

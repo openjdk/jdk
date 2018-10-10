@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -160,28 +160,28 @@ public abstract class Destinations extends Option.Enable {
     public static class CompatImg extends Destinations {
         int transparency;
 
-        public static String ShortNames[] = {
+        public static String[] ShortNames = {
             "compatimg",
             "opqcompatimg",
             "bmcompatimg",
             "transcompatimg",
         };
 
-        public static String ShortDescriptions[] = {
+        public static String[] ShortDescriptions = {
             "Default",
             "Opaque",
             "Bitmask",
             "Translucent",
         };
 
-        public static String LongDescriptions[] = {
+        public static String[] LongDescriptions = {
             "Default Compatible Image",
             "Opaque Compatible Image",
             "Bitmask Compatible Image",
             "Translucent Compatible Image",
         };
 
-        public static String ModifierNames[] = {
+        public static String[] ModifierNames = {
             "CompatImage()",
             "CompatImage(Opaque)",
             "CompatImage(Bitmask)",
@@ -282,7 +282,7 @@ public abstract class Destinations extends Option.Enable {
         int type;
         Image img;
 
-        public static String ShortNames[] = {
+        public static String[] ShortNames = {
             "custom",
             "IntXrgb",
             "IntArgb",
@@ -299,7 +299,7 @@ public abstract class Destinations extends Option.Enable {
             "ByteIndexed",
         };
 
-        public static String Descriptions[] = {
+        public static String[] Descriptions = {
             "Custom Image",
             "32-bit XRGB Packed Image",
             "32-bit ARGB Packed Image",

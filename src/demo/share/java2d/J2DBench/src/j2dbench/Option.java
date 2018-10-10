@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -123,8 +123,8 @@ public abstract class Option extends Node implements Modifier {
         public static final int On = 1;
         public static final int Both = 2;
 
-        private static final String valnames[] = {"Off", "On", "Both"};
-        private static final Boolean valuelist[][] = {
+        private static final String[] valnames = {"Off", "On", "Both"};
+        private static final Boolean[][] valuelist = {
             BooleanIterator.FalseList,
             BooleanIterator.TrueList,
             BooleanIterator.FalseTrueList,
@@ -420,10 +420,10 @@ public abstract class Option extends Node implements Modifier {
 
     public static class ObjectList extends Option {
         int size;
-        String optionnames[];
-        Object optionvalues[];
-        String abbrevnames[];
-        String descnames[];
+        String[] optionnames;
+        Object[] optionvalues;
+        String[] abbrevnames;
+        String[] descnames;
         int defaultenabled;
         int enabled;
         JPanel jp;
@@ -431,10 +431,10 @@ public abstract class Option extends Node implements Modifier {
         int numrows;
 
         public ObjectList(Group parent, String nodeName, String description,
-                          String optionnames[],
-                          Object optionvalues[],
-                          String abbrevnames[],
-                          String descnames[],
+                          String[] optionnames,
+                          Object[] optionvalues,
+                          String[] abbrevnames,
+                          String[] descnames,
                           int defaultenabled)
         {
             this(parent, nodeName, description,
@@ -448,10 +448,10 @@ public abstract class Option extends Node implements Modifier {
 
         public ObjectList(Group parent, String nodeName, String description,
                           int size,
-                          String optionnames[],
-                          Object optionvalues[],
-                          String abbrevnames[],
-                          String descnames[],
+                          String[] optionnames,
+                          Object[] optionvalues,
+                          String[] abbrevnames,
+                          String[] descnames,
                           int defaultenabled)
         {
             super(parent, nodeName, description);
@@ -463,20 +463,20 @@ public abstract class Option extends Node implements Modifier {
             this.enabled = this.defaultenabled = defaultenabled;
         }
 
-        private static String[] trim(String list[], int size) {
+        private static String[] trim(String[] list, int size) {
             if (list.length == size) {
                 return list;
             }
-            String newlist[] = new String[size];
+            String[] newlist = new String[size];
             System.arraycopy(list, 0, newlist, 0, size);
             return newlist;
         }
 
-        private static Object[] trim(Object list[], int size) {
+        private static Object[] trim(Object[] list, int size) {
             if (list.length == size) {
                 return list;
             }
-            Object newlist[] = new Object[size];
+            Object[] newlist = new Object[size];
             System.arraycopy(list, 0, newlist, 0, size);
             return newlist;
         }
@@ -604,7 +604,7 @@ public abstract class Option extends Node implements Modifier {
 
     public static class IntList extends ObjectList {
         public IntList(Group parent, String nodeName, String description,
-                       int values[], String abbrevnames[], String descnames[],
+                       int[] values, String[] abbrevnames, String[] descnames,
                        int defaultenabled)
         {
             super(parent, nodeName, description,
@@ -612,16 +612,16 @@ public abstract class Option extends Node implements Modifier {
                   abbrevnames, descnames, defaultenabled);
         }
 
-        private static String[] makeNames(int intvalues[]) {
-            String names[] = new String[intvalues.length];
+        private static String[] makeNames(int[] intvalues) {
+            String[] names = new String[intvalues.length];
             for (int i = 0; i < intvalues.length; i++) {
                 names[i] = Integer.toString(intvalues[i]);
             }
             return names;
         }
 
-        private static Object[] makeValues(int intvalues[]) {
-            Object values[] = new Object[intvalues.length];
+        private static Object[] makeValues(int[] intvalues) {
+            Object[] values = new Object[intvalues.length];
             for (int i = 0; i < intvalues.length; i++) {
                 values[i] = new Integer(intvalues[i]);
             }
@@ -631,20 +631,20 @@ public abstract class Option extends Node implements Modifier {
 
     public static class ObjectChoice extends Option {
          int size;
-         String optionnames[];
-         Object optionvalues[];
-         String abbrevnames[];
-         String descnames[];
+         String[] optionnames;
+         Object[] optionvalues;
+         String[] abbrevnames;
+         String[] descnames;
          int defaultselected;
          int selected;
          JPanel jp;
          JComboBox jcombo;
 
          public ObjectChoice(Group parent, String nodeName, String description,
-                             String optionnames[],
-                             Object optionvalues[],
-                             String abbrevnames[],
-                             String descnames[],
+                             String[] optionnames,
+                             Object[] optionvalues,
+                             String[] abbrevnames,
+                             String[] descnames,
                              int defaultselected)
          {
              this(parent, nodeName, description,
@@ -658,10 +658,10 @@ public abstract class Option extends Node implements Modifier {
 
          public ObjectChoice(Group parent, String nodeName, String description,
                              int size,
-                             String optionnames[],
-                             Object optionvalues[],
-                             String abbrevnames[],
-                             String descnames[],
+                             String[] optionnames,
+                             Object[] optionvalues,
+                             String[] abbrevnames,
+                             String[] descnames,
                              int defaultselected)
          {
              super(parent, nodeName, description);
@@ -673,20 +673,20 @@ public abstract class Option extends Node implements Modifier {
              this.selected = this.defaultselected = defaultselected;
          }
 
-         private static String[] trim(String list[], int size) {
+         private static String[] trim(String[] list, int size) {
              if (list.length == size) {
                  return list;
              }
-             String newlist[] = new String[size];
+             String[] newlist = new String[size];
              System.arraycopy(list, 0, newlist, 0, size);
              return newlist;
          }
 
-         private static Object[] trim(Object list[], int size) {
+         private static Object[] trim(Object[] list, int size) {
              if (list.length == size) {
                  return list;
              }
-             Object newlist[] = new Object[size];
+             Object[] newlist = new Object[size];
              System.arraycopy(list, 0, newlist, 0, size);
              return newlist;
          }
@@ -799,21 +799,21 @@ public abstract class Option extends Node implements Modifier {
     }
 
     public static class BooleanIterator implements Modifier.Iterator {
-        private Boolean list[];
+        private Boolean[] list;
         private int index;
 
-        public static final Boolean FalseList[] = { Boolean.FALSE };
-        public static final Boolean TrueList[] = { Boolean.TRUE };
-        public static final Boolean
-            FalseTrueList[] = { Boolean.FALSE, Boolean.TRUE };
-        public static final Boolean
-            TrueFalseList[] = { Boolean.TRUE, Boolean.FALSE };
+        public static final Boolean[] FalseList = { Boolean.FALSE };
+        public static final Boolean[] TrueList = { Boolean.TRUE };
+        public static final Boolean[]
+            FalseTrueList = { Boolean.FALSE, Boolean.TRUE };
+        public static final Boolean[]
+            TrueFalseList = { Boolean.TRUE, Boolean.FALSE };
 
         public BooleanIterator(boolean v) {
             this(v ? TrueList : FalseList);
         }
 
-        public BooleanIterator(Boolean list[]) {
+        public BooleanIterator(Boolean[] list) {
             this.list = list;
         }
 
@@ -834,7 +834,7 @@ public abstract class Option extends Node implements Modifier {
     }
 
     public static class SwitchIterator implements Modifier.Iterator {
-        private Object list[];
+        private Object[] list;
         private int enabled;
         private int index;
 

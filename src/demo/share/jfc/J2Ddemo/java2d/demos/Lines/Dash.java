@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,11 +76,11 @@ public class Dash extends Surface {
 
         int x = 0;
         int y = h - 34;
-        BasicStroke bs[] = new BasicStroke[6];
+        BasicStroke[] bs = new BasicStroke[6];
 
         float j = 1.1f;
         for (int i = 0; i < bs.length; i++, j += 1.0f) {
-            float dash[] = { j };
+            float[] dash = { j };
             BasicStroke b = new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
                     BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
             g2.setStroke(b);
@@ -128,7 +128,7 @@ public class Dash extends Surface {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new Dash());
     }
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -64,7 +64,7 @@ import java2d.AnimatingSurface;
 @SuppressWarnings("serial")
 public class ACrules extends AnimatingSurface {
 
-    private static String compNames[] = {
+    private static String[] compNames = {
         "Src",
         "SrcOver",
         "SrcIn",
@@ -77,17 +77,17 @@ public class ACrules extends AnimatingSurface {
         "DstOut",
         "DstAtop",
         "Xor", };
-    private static final AlphaComposite compObjs[] = {
+    private static final AlphaComposite[] compObjs = {
         Src, SrcOver, SrcIn, SrcOut, SrcAtop, Clear,
         Dst, DstOver, DstIn, DstOut, DstAtop, Xor, };
     private static final int NUM_RULES = compObjs.length;
     private static final int HALF_NUM_RULES = NUM_RULES / 2;
     private int fadeIndex;
-    private static float fadeValues[][] = {
+    private static float[][] fadeValues = {
         { 1.0f, -0.1f, 0.0f, 1.0f, 0.0f, 1.0f },
         { 0.0f, 0.1f, 1.0f, 1.0f, -0.1f, 0.0f },
         { 1.0f, 0.0f, 1.0f, 0.0f, 0.1f, 1.0f }, };
-    private static String fadeNames[] = {
+    private static String[] fadeNames = {
         "Src => transparent, Dest opaque",
         "Src => opaque, Dest => transparent",
         "Src opaque, Dest => opaque", };
@@ -257,7 +257,7 @@ public class ACrules extends AnimatingSurface {
         return bi;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         createDemoFrame(new ACrules());
     }
 }

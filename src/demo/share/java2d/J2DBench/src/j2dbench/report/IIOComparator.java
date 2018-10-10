@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -284,7 +284,7 @@ public class IIOComparator {
             String key = (String)e.nextElement();
             keylist.add(key);
         }
-        String keys[] = new String[keylist.size()];
+        String[] keys = new String[keylist.size()];
         keylist.copyInto(keys);
         if (special) {
             sort2(keys);
@@ -294,7 +294,7 @@ public class IIOComparator {
         return keys;
     }
 
-    public static void sort(String strs[]) {
+    public static void sort(String[] strs) {
         for (int i = 1; i < strs.length; i++) {
             for (int j = i; j > 0; j--) {
                 if (strs[j].compareTo(strs[j-1]) >= 0) {
@@ -307,7 +307,7 @@ public class IIOComparator {
         }
     }
 
-    public static void sort2(String strs[]) {
+    public static void sort2(String[] strs) {
         for (int i = 1; i < strs.length; i++) {
             for (int j = i; j > 0; j--) {
                 if (compare(strs[j-1], strs[j])) {
