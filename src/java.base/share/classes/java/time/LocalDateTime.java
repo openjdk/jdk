@@ -1975,12 +1975,12 @@ public final class LocalDateTime
     //-----------------------------------------------------------------------
     /**
      * Writes the object using a
-     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * <a href="{@docRoot}/serialized-form.html#java.time.Ser">dedicated serialized form</a>.
      * @serialData
      * <pre>
      *  out.writeByte(5);  // identifies a LocalDateTime
-     *  // the <a href="../../serialized-form.html#java.time.LocalDate">date</a> excluding the one byte header
-     *  // the <a href="../../serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
+     *  // the <a href="{@docRoot}/serialized-form.html#java.time.LocalDate">date</a> excluding the one byte header
+     *  // the <a href="{@docRoot}/serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
      * </pre>
      *
      * @return the instance of {@code Ser}, not null

@@ -1400,12 +1400,12 @@ public final class OffsetTime
     //-----------------------------------------------------------------------
     /**
      * Writes the object using a
-     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * <a href="{@docRoot}/serialized-form.html#java.time.Ser">dedicated serialized form</a>.
      * @serialData
      * <pre>
      *  out.writeByte(9);  // identifies an OffsetTime
-     *  // the <a href="../../serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
-     *  // the <a href="../../serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
+     *  // the <a href="{@docRoot}/serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
+     *  // the <a href="{@docRoot}/serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
