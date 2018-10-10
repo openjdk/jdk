@@ -1346,7 +1346,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     if (prob <= PROB_MIN)  prob_str = (prob == PROB_MIN) ? "min" : "never";
     char prob_str_buf[30];
     if (prob_str == NULL) {
-      sprintf(prob_str_buf, "%g", prob);
+      jio_snprintf(prob_str_buf, sizeof(prob_str_buf), "%20.2f", prob);
       prob_str = prob_str_buf;
     }
     C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d' cnt='%f' prob='%s'",
@@ -2854,7 +2854,7 @@ void Parse::do_one_bytecode() {
   IdealGraphPrinter *printer = C->printer();
   if (printer && printer->should_print(1)) {
     char buffer[256];
-    sprintf(buffer, "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
+    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
     printer->print_method(buffer, 4);
