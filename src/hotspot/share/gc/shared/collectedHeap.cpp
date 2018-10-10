@@ -586,3 +586,7 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 void CollectedHeap::deduplicate_string(oop str) {
   // Do nothing, unless overridden in subclass.
 }
+
+size_t CollectedHeap::obj_size(oop obj) const {
+  return obj->size();
+}

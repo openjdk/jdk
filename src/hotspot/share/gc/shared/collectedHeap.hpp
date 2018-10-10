@@ -576,6 +576,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual bool is_oop(oop object) const;
 
+  virtual size_t obj_size(oop obj) const;
+
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a

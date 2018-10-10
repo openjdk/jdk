@@ -470,7 +470,7 @@ jvmtiError
 JvmtiEnv::GetObjectSize(jobject object, jlong* size_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
-  *size_ptr = (jlong)mirror->size() * wordSize;
+  *size_ptr = (jlong)Universe::heap()->obj_size(mirror) * wordSize;
   return JVMTI_ERROR_NONE;
 } /* end GetObjectSize */
 
