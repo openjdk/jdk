@@ -1546,7 +1546,7 @@ NET_Bind(int fd, SOCKETADDRESS *sa, int len)
  * It returns the time left from the timeout (possibly 0), or -1 if it expired.
  */
 
-JNIEXPORT jint JNICALL
+jint
 NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 {
     jlong prevNanoTime = JVM_NanoTime(env, 0);

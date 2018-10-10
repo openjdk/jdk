@@ -62,5 +62,4 @@ jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading);
 
 /* Defined in Net.c */
 
-JNIEXPORT jint JNICALL
-handleSocketError(JNIEnv *env, jint errorValue);
+jint handleSocketError(JNIEnv *env, jint errorValue);
