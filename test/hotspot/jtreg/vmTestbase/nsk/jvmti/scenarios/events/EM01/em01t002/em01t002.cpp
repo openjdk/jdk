@@ -65,22 +65,20 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_loadClass(JNIEnv *jni_env,
     jmethodID methodID;
     jclass loadedClass;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, loader)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(loader)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            NSK_CPP_STUB4(GetMethodID, jni_env, klass, "loadClass",
-                        "(Ljava/lang/String;)Ljava/lang/Class;")) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env,
+            (methodID = jni_env->GetMethodID(
+                klass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (loadedClass = (jclass)
-            NSK_CPP_STUB4(CallObjectMethod, jni_env, loader, methodID,
-                                    className)) != NULL)) {
+            jni_env->CallObjectMethod(loader, methodID, className)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -99,8 +97,7 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_prepareClass(JNIEnv *jni_env,
     jfieldID fieldID;
 
     if (!NSK_JNI_VERIFY(jni_env, (fieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni_env, klass,
-                        "toProvokePreparation", "I")) != NULL)) {
+            jni_env->GetStaticFieldID(klass, "toProvokePreparation", "I")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -119,20 +116,18 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_startThread(JNIEnv *jni_env,
     jclass klass;
     jmethodID methodID;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(thread)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            NSK_CPP_STUB4(GetMethodID, jni_env, klass, "start", "()V")) != NULL)) {
+            jni_env->GetMethodID(klass, "start", "()V")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY_VOID(jni_env,
-            NSK_CPP_STUB3(CallVoidMethod, jni_env, thread, methodID)) ) {
+    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID)) ) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -146,12 +141,12 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_startThread(JNIEnv *jni_env,
 static void
 changeCount(jvmtiEvent event) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
         nsk_jvmti_setFailStatus();
 
     eventCount[event - JVMTI_MIN_EVENT_TYPE_VAL]++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -184,9 +179,7 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     char *generic;
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(GetClassSignature, jvmti_env, klass,
-                                &className, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, &generic))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -199,7 +192,7 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
                             className);
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -217,13 +210,11 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, (unsigned char*)className))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
         nsk_jvmti_setFailStatus();
     }
     if (generic != NULL)
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti_env, (unsigned char*)generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
 }
@@ -237,15 +228,12 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     jvmtiPhase phase;
 
 
-    if (!NSK_JNI_VERIFY(jni_env, (classObject =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(thread)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(GetClassSignature, jvmti_env, classObject,
-                                &className, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(classObject, &className, &generic))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -258,7 +246,7 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
                             className);
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -276,13 +264,11 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, (unsigned char*)className))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
         nsk_jvmti_setFailStatus();
     }
     if (generic != NULL)
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti_env, (unsigned char*)generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
 }
@@ -292,7 +278,7 @@ cbVMStart(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
 
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -313,7 +299,7 @@ cbVMInit(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread) {
 
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -334,7 +320,7 @@ cbVMDeath(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
 
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -349,8 +335,7 @@ cbVMDeath(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
     currentPhase = JVMTI_PHASE_DEAD;
     changeCount(JVMTI_EVENT_VM_DEATH);
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -393,9 +378,7 @@ enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
     }
 
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, enable,
-                                            event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -468,10 +451,7 @@ setCallBacks() {
     eventCallbacks.ThreadStart  = cbThreadStart;
     eventCallbacks.ThreadEnd    = cbThreadEnd;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -544,8 +524,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return JNI_ERR;
     }

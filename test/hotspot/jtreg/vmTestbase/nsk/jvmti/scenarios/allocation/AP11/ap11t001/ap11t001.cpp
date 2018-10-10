@@ -43,8 +43,7 @@ static int lookup(jvmtiEnv* jvmti,
     jint i;
 
     for (i = 0; i < classCount && !found; i++) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti,
-                classes[i], &signature, &generic)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(classes[i], &signature, &generic)))
             break;
 
         if (signature != NULL && strcmp(signature, exp_sig) == 0) {
@@ -52,10 +51,10 @@ static int lookup(jvmtiEnv* jvmti,
         }
 
         if (signature != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+            jvmti->Deallocate((unsigned char*)signature);
 
         if (generic != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic);
+            jvmti->Deallocate((unsigned char*)generic);
     }
 
     return found;
@@ -74,7 +73,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
     */
     {
         jvmtiPhase phase;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase ))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -85,14 +84,12 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
     }
 
     do {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti,
-                object_klass, &signature, &generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(object_klass, &signature, &generic))) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti,
-                thread, &threadInfo))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &threadInfo))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -108,14 +105,13 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
         jint i;
         jboolean found = JNI_FALSE;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetAllThreads, jvmti,
-                 &threadCount, &threads))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadCount, &threads))) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         for (i = 0; i < threadCount && !found; i++) {
-            found = NSK_CPP_STUB3(IsSameObject, jni, threads[i], thread);
+            found = jni->IsSameObject(threads[i], thread);
             if (found == JNI_TRUE) {
                 break;
             }
@@ -134,8 +130,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
         jint classCount;
         jclass *classes;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetLoadedClasses, jvmti,
-                 &classCount, &classes))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetLoadedClasses(&classCount, &classes))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -147,7 +142,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
         }
 
         if (classes != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)classes);
+            jvmti->Deallocate((unsigned char*)classes);
     } while(0);
 
 
@@ -155,8 +150,8 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
     */
     {
         jclass klass;
-        klass = NSK_CPP_STUB2(GetObjectClass, jni, object);
-        if (!(NSK_CPP_STUB3(IsSameObject, jni, object_klass, klass))) {
+        klass = jni->GetObjectClass(object);
+        if (!(jni->IsSameObject(object_klass, klass))) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN1("VMObjectAlloc: unexpected object_klass : \"%s\"\n\n", signature);
         }
@@ -167,8 +162,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
 
     do {
         jlong objSize;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetObjectSize, jvmti,
-                 object, &objSize))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetObjectSize(object, &objSize))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -181,10 +175,10 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
     } while(0);
 
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
     if (generic != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic);
+        jvmti->Deallocate((unsigned char*)generic);
 }
 
 /* ========================================================================== */
@@ -234,21 +228,18 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_vm_object_alloc_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMObjectAlloc= &VMObjectAlloc;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable VMObjectAlloc event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */

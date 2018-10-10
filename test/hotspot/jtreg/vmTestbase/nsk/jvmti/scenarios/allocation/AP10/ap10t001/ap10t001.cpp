@@ -61,8 +61,7 @@ static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY2("%s: setting an environment local storage 0x%p ...\n",
         msg, (void*) &stor);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(SetEnvironmentLocalStorage,
-            jvmti_env, (const void*) &stor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->SetEnvironmentLocalStorage((const void*) &stor))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: unable to set an environment local storage\n\n",
             msg);
@@ -71,8 +70,7 @@ static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY1("%s: getting an environment local storage ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetEnvironmentLocalStorage,
-            jvmti_env, (void**) &obtainedData))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetEnvironmentLocalStorage((void**) &obtainedData))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: unable to get an environment local storage\n\n",
             msg);
@@ -90,8 +88,7 @@ static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
 }
 
 static void timerFunc(jvmtiEnv *jvmti_env, const char *msg) {
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTimerInfo, jvmti_env, &timer_info1 ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetCurrentThreadCpuTimerInfo(&timer_info1))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: GetCurrentThreadCpuTimerInfo returned unexpected error code\n\n",
             msg);
@@ -114,8 +111,7 @@ static void timerFunc(jvmtiEnv *jvmti_env, const char *msg) {
     }
     /* ---------------------------------------------------------------------- */
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTime, jvmti_env, &nanos ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetCurrentThreadCpuTime(&nanos))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: GetCurrentThreadCpuTime returned unexpected error code\n\n",
             msg);
@@ -123,8 +119,7 @@ static void timerFunc(jvmtiEnv *jvmti_env, const char *msg) {
     /* ---------------------------------------------------------------------- */
 
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTimerInfo, jvmti_env, &timer_info2 ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetTimerInfo(&timer_info2))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: GetTimerInfo returned unexpected error code\n\n",
             msg);
@@ -148,8 +143,7 @@ static void timerFunc(jvmtiEnv *jvmti_env, const char *msg) {
     /* ---------------------------------------------------------------------- */
 
     nanos = 0;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTime, jvmti_env, &nanos ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetTime(&nanos))) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("%s: GetTime returned unexpected error code\n\n",
             msg);
@@ -223,10 +217,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Call IterateOverHeap to tag random objects for ObjectFree evnts\n\n");
     {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(IterateOverHeap, jvmti,
-                    JVMTI_HEAP_OBJECT_UNTAGGED, heapObjectCallback,
-                    &user_data))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_UNTAGGED,
+                                                     heapObjectCallback,
+                                                     &user_data))) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -276,12 +269,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     caps.can_get_thread_cpu_time = 1;
     caps.can_generate_object_free_events = 1;
     caps.can_generate_garbage_collection_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_garbage_collection_events)
@@ -299,19 +290,21 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.GarbageCollectionFinish = &GarbageCollectionFinish;
     callbacks.ObjectFree = &ObjectFree;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_GARBAGE_COLLECTION_START,
+                                                          NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_GARBAGE_COLLECTION_FINISH,
+                                                          NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

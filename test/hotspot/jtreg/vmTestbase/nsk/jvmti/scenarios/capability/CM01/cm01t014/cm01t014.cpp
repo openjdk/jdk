@@ -74,8 +74,7 @@ static int prepare() {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -87,8 +86,7 @@ static int prepare() {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -100,24 +98,20 @@ static int prepare() {
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'run' */
-    if (!NSK_JNI_VERIFY(jni, (method =
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "run", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "run", "()V")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingMonitor' */
     if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass,
-                "waitingMonitor", "Ljava/lang/Object;")) != NULL))
+            jni->GetFieldID(klass, "waitingMonitor", "Ljava/lang/Object;")) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -130,7 +124,7 @@ static int prepare() {
 static int checkGetPotentialCapabilities() {
     jvmtiCapabilities caps;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPotentialCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPotentialCapabilities(&caps)))
         return NSK_FALSE;
     if (!caps.CAPABILITY) {
         NSK_COMPLAIN1("GetPotentialCapabilities does not return \"%s\" capability\n",
@@ -148,7 +142,7 @@ static int checkAddCapabilities() {
 
     memset(&caps, 0, sizeof(caps));
     caps.CAPABILITY = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -160,7 +154,7 @@ static int checkGetCapabilities(int owe) {
     jvmtiCapabilities caps;
 
     memset(&caps, 0, sizeof(caps));
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return NSK_FALSE;
     if (owe && !caps.CAPABILITY) {
         NSK_COMPLAIN1("GetCapabilities does not return \"%s\" capability\n",
@@ -182,7 +176,7 @@ static int checkRelinquishCapabilities() {
 
     memset(&caps, 0, sizeof(caps));
     caps.CAPABILITY = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RelinquishCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RelinquishCapabilities(&caps)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -196,23 +190,21 @@ static int checkSuspend() {
     jvmtiError err;
 
     NSK_DISPLAY0("Checking negative: SuspendThread\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(SuspendThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY, jvmti->SuspendThread(thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: ResumeThread\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(ResumeThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY, jvmti->ResumeThread(thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SuspendThreadList\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(SuspendThreadList, jvmti, 1, &thread, &err)))
+            jvmti->SuspendThreadList(1, &thread, &err)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: ResumeThreadList\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(ResumeThreadList, jvmti, 1, &thread, &err)))
+            jvmti->ResumeThreadList(1, &thread, &err)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -228,27 +220,23 @@ static int checkSignalThread() {
     jmethodID ctor = NULL;
     jobject exception = NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (cls =
-            NSK_CPP_STUB2(FindClass, jni, THREAD_DEATH_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (ctor =
-            NSK_CPP_STUB4(GetMethodID, jni, cls,
-                THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
+            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (exception =
-            NSK_CPP_STUB3(NewObject, jni, cls, ctor)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: StopThread\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(StopThread, jvmti, thread, exception)))
+            jvmti->StopThread(thread, exception)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: InterruptThread\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(InterruptThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY, jvmti->InterruptThread(thread)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -262,7 +250,7 @@ static int checkGetOwnedMonitorInfo() {
 
     NSK_DISPLAY0("Checking negative: GetOwnedMonitorInfo\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(GetOwnedMonitorInfo, jvmti, thread, &count, &monitors)))
+            jvmti->GetOwnedMonitorInfo(thread, &count, &monitors)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -275,7 +263,7 @@ static int checkGetCurrentContendedMonitor() {
 
     NSK_DISPLAY0("Checking negative: GetCurrentContendedMonitor\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetCurrentContendedMonitor, jvmti, thread, &monitor)))
+            jvmti->GetCurrentContendedMonitor(thread, &monitor)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -285,8 +273,7 @@ static int checkGetCurrentContendedMonitor() {
  */
 static int checkPopFrame() {
     NSK_DISPLAY0("Checking negative: PopFrame\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(PopFrame, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY, jvmti->PopFrame(thread)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -330,43 +317,45 @@ static int checkHeapFunctions() {
 
     NSK_DISPLAY0("Checking negative: SetTag\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(SetTag, jvmti, thread, TAG_VALUE)))
+            jvmti->SetTag(thread, TAG_VALUE)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetTag\n");
-    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetTag, jvmti, thread, &tag)))
+    if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY, jvmti->GetTag(thread, &tag)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetObjectsWithTags\n");
     tag = TAG_VALUE;
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB6(GetObjectsWithTags, jvmti, 1, &tag,
-                &count, &res_objects, &res_tags)))
+            jvmti->GetObjectsWithTags(1, &tag, &count, &res_objects, &res_tags)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: IterateOverHeap\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(IterateOverHeap, jvmti, JVMTI_HEAP_OBJECT_TAGGED,
-                HeapObject, &dummy_user_data)))
+            jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_TAGGED, HeapObject, &dummy_user_data)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: IterateOverInstancesOfClass\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(IterateOverInstancesOfClass, jvmti, klass,
-                JVMTI_HEAP_OBJECT_UNTAGGED, HeapObject, &dummy_user_data)))
+            jvmti->IterateOverInstancesOfClass(klass,
+                                               JVMTI_HEAP_OBJECT_UNTAGGED,
+                                               HeapObject,
+                                               &dummy_user_data)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: IterateOverObjectsReachableFromObject\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(IterateOverObjectsReachableFromObject, jvmti, thread,
-                ObjectReference, &dummy_user_data)))
+            jvmti->IterateOverObjectsReachableFromObject(thread,
+                                                         ObjectReference,
+                                                         &dummy_user_data)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: IterateOverReachableObjects\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                HeapRoot, StackReference, ObjectReference, &dummy_user_data)))
+            jvmti->IterateOverReachableObjects(HeapRoot,
+                                               StackReference,
+                                               ObjectReference,
+                                               &dummy_user_data)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -385,58 +374,57 @@ static int checkLocalVariableFunctions() {
 
     NSK_DISPLAY0("Checking negative: GetLocalVariableTable\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(GetLocalVariableTable, jvmti, method, &count,
-                &local_variable_table)))
+            jvmti->GetLocalVariableTable(method, &count, &local_variable_table)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLocalObject\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(GetLocalObject, jvmti, thread, 0, 0, &object_value)))
+            jvmti->GetLocalObject(thread, 0, 0, &object_value)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLocalInt\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(GetLocalInt, jvmti, thread, 0, 0, &int_value)))
+            jvmti->GetLocalInt(thread, 0, 0, &int_value)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLocalLong\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(GetLocalLong, jvmti, thread, 0, 0, &long_value)))
+            jvmti->GetLocalLong(thread, 0, 0, &long_value)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLocalFloat\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(GetLocalFloat, jvmti, thread, 0, 0, &float_value)))
+            jvmti->GetLocalFloat(thread, 0, 0, &float_value)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLocalDouble\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(GetLocalDouble, jvmti, thread, 0, 0, &double_value)))
+            jvmti->GetLocalDouble(thread, 0, 0, &double_value)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SetLocalObject\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(SetLocalObject, jvmti, thread, 0, 0, thread)))
+            jvmti->SetLocalObject(thread, 0, 0, thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SetLocalInt\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(SetLocalInt, jvmti, thread, 0, 0, (jint)0)))
+            jvmti->SetLocalInt(thread, 0, 0, (jint)0)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SetLocalLong\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(SetLocalLong, jvmti, thread, 0, 0, (jlong)0)))
+            jvmti->SetLocalLong(thread, 0, 0, (jlong)0)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SetLocalFloat\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(SetLocalFloat, jvmti, thread, 0, 0, (jfloat)0.0)))
+            jvmti->SetLocalFloat(thread, 0, 0, (jfloat)0.0)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: SetLocalDouble\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB5(SetLocalDouble, jvmti, thread, 0, 0, (jdouble)0.0)))
+            jvmti->SetLocalDouble(thread, 0, 0, (jdouble)0.0)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -451,18 +439,17 @@ static int checkSourceInfoFunctions() {
 
     NSK_DISPLAY0("Checking negative: GetSourceFileName\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetSourceFileName, jvmti, klass, &name)))
+            jvmti->GetSourceFileName(klass, &name)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetSourceDebugExtension\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetSourceDebugExtension, jvmti, klass, &name)))
+            jvmti->GetSourceDebugExtension(klass, &name)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetLineNumberTable\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(GetLineNumberTable, jvmti, method, &count,
-                &line_number_table)))
+            jvmti->GetLineNumberTable(method, &count, &line_number_table)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -478,7 +465,7 @@ static int checkRedefineClasses() {
     class_def.class_byte_count = 0;
     class_def.class_bytes = NULL;
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(RedefineClasses, jvmti, 1, &class_def)))
+            jvmti->RedefineClasses(1, &class_def)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -491,7 +478,7 @@ static int checkGetObjectMonitorUsage() {
 
     NSK_DISPLAY0("Checking negative: GetObjectMonitorUsage\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetObjectMonitorUsage, jvmti, thread, &monitor_info)))
+            jvmti->GetObjectMonitorUsage(thread, &monitor_info)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -504,12 +491,12 @@ static int checkIsSyntheticFunctions() {
 
     NSK_DISPLAY0("Checking negative: IsFieldSynthetic\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB4(IsFieldSynthetic, jvmti, klass, field, &is_synthetic)))
+            jvmti->IsFieldSynthetic(klass, field, &is_synthetic)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: IsMethodSynthetic\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(IsMethodSynthetic, jvmti, method, &is_synthetic)))
+            jvmti->IsMethodSynthetic(method, &is_synthetic)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -523,15 +510,14 @@ static int checkGetBytecodes(int positive) {
 
     if (positive) {
         NSK_DISPLAY0("Checking positive: GetBytecodes\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(GetBytecodes, jvmti, method, &count, &bytecodes)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetBytecodes(method, &count, &bytecodes)))
             return NSK_FALSE;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti, bytecodes)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(bytecodes)))
             return NSK_FALSE;
     } else {
         NSK_DISPLAY0("Checking negative: GetBytecodes\n");
         if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                NSK_CPP_STUB4(GetBytecodes, jvmti, method, &count, &bytecodes)))
+                jvmti->GetBytecodes(method, &count, &bytecodes)))
             return NSK_FALSE;
     }
 
@@ -546,12 +532,12 @@ static int checkGetCurrentThreadCpuTime() {
 
     NSK_DISPLAY0("Checking negative: GetCurrentThreadCpuTimerInfo\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(GetCurrentThreadCpuTimerInfo, jvmti, &info)))
+            jvmti->GetCurrentThreadCpuTimerInfo(&info)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetCurrentThreadCpuTime\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(GetCurrentThreadCpuTime, jvmti, &nanos)))
+            jvmti->GetCurrentThreadCpuTime(&nanos)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -565,12 +551,12 @@ static int checkGetThreadCpuTime() {
 
     NSK_DISPLAY0("Checking negative: GetThreadCpuTimerInfo\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB2(GetThreadCpuTimerInfo, jvmti, &info)))
+            jvmti->GetThreadCpuTimerInfo(&info)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: GetThreadCpuTime\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-            NSK_CPP_STUB3(GetThreadCpuTime, jvmti, thread, &nanos)))
+            jvmti->GetThreadCpuTime(thread, &nanos)))
         return NSK_FALSE;
 
     return NSK_TRUE;

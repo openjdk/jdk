@@ -54,8 +54,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -67,8 +66,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -79,38 +77,31 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
 
         if (info.name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)info.name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'M1' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "M1", FIELD_SIG)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "M1", FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (object_M1 =
-            NSK_CPP_STUB3(GetObjectField, jni, thread, field)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M1 = jni->GetObjectField(thread, field)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'M2' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "M2", FIELD_SIG)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "M2", FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (object_M2 =
-            NSK_CPP_STUB3(GetObjectField, jni, thread, field)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M2 = jni->GetObjectField(thread, field)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -126,22 +117,19 @@ static int checkGetObjectMonitorUsage(jvmtiEnv* jvmti, JNIEnv* jni,
     int i;
 
     NSK_DISPLAY1("Checking GetObjectMonitorUsage for 0x%p\n", object);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-            GetObjectMonitorUsage, jvmti, object, &inf)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetObjectMonitorUsage(object, &inf)))
         return NSK_FALSE;
 
     if (nsk_getVerboseMode()) {
         if (inf.owner == NULL) {
             NSK_DISPLAY0("\towner: none (0x0)\n");
         } else {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                    GetThreadInfo, jvmti, inf.owner, &tinf))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(inf.owner, &tinf))) {
                 result = NSK_FALSE;
             } else {
                 NSK_DISPLAY2("\towner: %s (0x%p)\n", tinf.name, inf.owner);
                 if (tinf.name != NULL) {
-                    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                            Deallocate, jvmti, (unsigned char*)tinf.name)))
+                    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)tinf.name)))
                         result = NSK_FALSE;
                 }
             }
@@ -152,15 +140,13 @@ static int checkGetObjectMonitorUsage(jvmtiEnv* jvmti, JNIEnv* jni,
         if (inf.waiter_count > 0) {
             NSK_DISPLAY0("\twaiters:\n");
             for (i = 0; i < inf.waiter_count; i++) {
-                if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                        GetThreadInfo, jvmti, inf.waiters[i], &tinf))) {
+                if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(inf.waiters[i], &tinf))) {
                     result = NSK_FALSE;
                 } else {
                     NSK_DISPLAY3("\t\t%2d: %s (0x%p)\n",
                         i, tinf.name, inf.waiters[i]);
                     if (tinf.name != NULL) {
-                        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                                Deallocate, jvmti, (unsigned char*)tinf.name)))
+                        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)tinf.name)))
                             result = NSK_FALSE;
                     }
                 }
@@ -171,15 +157,13 @@ static int checkGetObjectMonitorUsage(jvmtiEnv* jvmti, JNIEnv* jni,
         if (inf.notify_waiter_count > 0) {
             NSK_DISPLAY0("\tnotify_waiters:\n");
             for (i = 0; i < inf.notify_waiter_count; i++) {
-                if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                        GetThreadInfo, jvmti, inf.notify_waiters[i], &tinf))) {
+                if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(inf.notify_waiters[i], &tinf))) {
                     result = NSK_FALSE;
                 } else {
                     NSK_DISPLAY3("\t\t%2d: %s (0x%p)\n",
                         i, tinf.name, inf.notify_waiters[i]);
                     if (tinf.name != NULL) {
-                        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                                Deallocate, jvmti, (unsigned char*)tinf.name)))
+                        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)tinf.name)))
                             result = NSK_FALSE;
                     }
                 }
@@ -188,8 +172,7 @@ static int checkGetObjectMonitorUsage(jvmtiEnv* jvmti, JNIEnv* jni,
     }
 
     /* check owner to be debugee thread */
-    if (!NSK_JNI_VERIFY(jni, (NSK_CPP_STUB3(
-            IsSameObject, jni, inf.owner, thread)) == JNI_TRUE))
+    if (!NSK_JNI_VERIFY(jni, (jni->IsSameObject(inf.owner, thread)) == JNI_TRUE))
         result = NSK_FALSE;
 
     if (!NSK_VERIFY(inf.entry_count == 2))
@@ -203,13 +186,11 @@ static int checkGetObjectMonitorUsage(jvmtiEnv* jvmti, JNIEnv* jni,
 
     /* deallocate monitor waiters arrays */
     if (inf.waiters != NULL) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                Deallocate, jvmti, (unsigned char*)inf.waiters)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)inf.waiters)))
             result = NSK_FALSE;
     }
     if (inf.notify_waiters != NULL) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                Deallocate, jvmti, (unsigned char*)inf.notify_waiters)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)inf.notify_waiters)))
             result = NSK_FALSE;
     }
 
@@ -279,7 +260,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     /* add capabilities */
     memset(&caps, 0, sizeof(caps));
     caps.can_get_monitor_info = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     /* register agent proc and arg */

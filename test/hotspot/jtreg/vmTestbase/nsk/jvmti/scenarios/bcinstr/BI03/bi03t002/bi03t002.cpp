@@ -52,35 +52,29 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     jfieldID field = NULL;
 
     NSK_DISPLAY1("Find class: %s\n", DEBUGEE_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, debugeeClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)jni->NewGlobalRef(debugeeClass)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                "newClassBytes", "[B")) != NULL))
+            jni->GetStaticFieldID(debugeeClass, "newClassBytes", "[B")) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass, field))
+            jni->GetStaticObjectField(debugeeClass, field))
                 != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            NSK_CPP_STUB2(NewGlobalRef, jni, classBytes)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)jni->NewGlobalRef(classBytes)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (testedClass =
-            NSK_CPP_STUB2(FindClass, jni, CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)jni->NewGlobalRef(testedClass)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -93,17 +87,16 @@ static int redefine(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY0("Redefining ...\n");
 
-    if (!NSK_JNI_VERIFY(jni, (class_def.class_byte_count =
-            NSK_CPP_STUB2(GetArrayLength, jni, classBytes)) > 0))
+    if (!NSK_JNI_VERIFY(jni, (class_def.class_byte_count = jni->GetArrayLength(classBytes)) > 0))
         return NSK_TRUE;
 
     if (!NSK_JNI_VERIFY(jni, (class_def.class_bytes = (unsigned char*)
-            NSK_CPP_STUB3(GetByteArrayElements, jni, classBytes, NULL))
+            jni->GetByteArrayElements(classBytes, NULL))
                 != NULL))
         return NSK_TRUE;
 
     class_def.klass = testedClass;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses, jvmti, 1, &class_def)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RedefineClasses(1, &class_def)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -132,9 +125,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, debugeeClass));
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, classBytes));
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedClass));
+    NSK_TRACE(jni->DeleteGlobalRef(debugeeClass));
+    NSK_TRACE(jni->DeleteGlobalRef(classBytes));
+    NSK_TRACE(jni->DeleteGlobalRef(testedClass));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -171,7 +164,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_redefine_classes = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))

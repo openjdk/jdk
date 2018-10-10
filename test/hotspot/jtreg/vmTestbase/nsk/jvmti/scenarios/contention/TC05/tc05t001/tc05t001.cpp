@@ -72,14 +72,12 @@ MonitorWait(jvmtiEnv *jvmti, JNIEnv* jni,
     }
 
     /* check if event is for tested thread and object */
-    if (NSK_CPP_STUB3(IsSameObject, jni, thread, thr) &&
-            NSK_CPP_STUB3(IsSameObject, jni, object_M, obj)) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                GetThreadCpuTime, jvmti, thr, &waitThreadCpuTime))) {
+    if (jni->IsSameObject(thread, thr) &&
+            jni->IsSameObject(object_M, obj)) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadCpuTime(thr, &waitThreadCpuTime))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(GetTime, jvmti, &waitTime))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetTime(&waitTime))) {
             nsk_jvmti_setFailStatus();
         }
         waitEventsCount++;
@@ -113,14 +111,12 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv* jni,
     }
 
     /* check if event is for tested thread and object */
-    if (NSK_CPP_STUB3(IsSameObject, jni, thread, thr) &&
-            NSK_CPP_STUB3(IsSameObject, jni, object_M, obj)) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                GetThreadCpuTime, jvmti, thr, &waitedThreadCpuTime))) {
+    if (jni->IsSameObject(thread, thr) &&
+            jni->IsSameObject(object_M, obj)) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadCpuTime(thr, &waitedThreadCpuTime))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(GetTime, jvmti, &waitedTime))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetTime(&waitedTime))) {
             nsk_jvmti_setFailStatus();
         }
         waitedEventsCount++;
@@ -149,8 +145,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -162,8 +157,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -174,15 +168,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
 
         if (info.name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)info.name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (thread == NULL) {
@@ -191,39 +183,32 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (thread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'M' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "M", FIELD_SIG)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "M", FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (object_M =
-            NSK_CPP_STUB3(GetObjectField, jni, thread, field)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = jni->GetObjectField(thread, field)) != NULL))
         return NSK_FALSE;
 
     /* make object accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (object_M =
-            NSK_CPP_STUB2(NewGlobalRef, jni, object_M)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = jni->NewGlobalRef(object_M)) != NULL))
         return NSK_FALSE;
 
     /* enable MonitorWait event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_MONITOR_WAIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
         return NSK_FALSE;
 
     /* enable MonitorWaited event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_MONITOR_WAITED, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -233,14 +218,12 @@ static int clean(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     /* disable MonitorWait event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_DISABLE,
-                JVMTI_EVENT_MONITOR_WAIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
         nsk_jvmti_setFailStatus();
 
     /* disable MonitorWaited event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_DISABLE,
-                JVMTI_EVENT_MONITOR_WAITED, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
         nsk_jvmti_setFailStatus();
 
     return NSK_TRUE;
@@ -343,14 +326,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_monitor_events = 1;
     caps.can_get_thread_cpu_time = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.MonitorWait = &MonitorWait;
     callbacks.MonitorWaited = &MonitorWaited;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-            &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* register agent proc and arg */

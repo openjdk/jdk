@@ -95,15 +95,15 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 
     if (name != NULL && (strcmp(name, CLASS_NAME) == 0)) {
         NSK_DISPLAY1("ClassFileLoadHook: %s\n", name);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(Allocate,
-                jvmti_env, class_data_len, &klass_bytes)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, &klass_bytes)))
             nsk_jvmti_setFailStatus();
         else {
             memcpy(klass_bytes, class_data, class_data_len);
             klass_byte_count = class_data_len;
         }
-        NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL));
+        NSK_JVMTI_VERIFY(
+            jvmti_env->SetEventNotificationMode(
+                JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL));
     }
 }
 
@@ -116,20 +116,18 @@ FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 
     FieldAccessEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(ClearFieldAccessWatch, jvmti_env, klass, field)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->ClearFieldAccessWatch(klass, field)))
         return;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB6(GetFieldName,
-            jvmti_env, field_klass, field, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FieldAccess event: %s:%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -142,16 +140,15 @@ FieldModification(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 
     FieldModificationEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB6(GetFieldName,
-            jvmti_env, field_klass, field, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FieldModification event: %s:%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -162,19 +159,19 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
     SingleStepEventsCount++;
 
-    NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-        jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
+    NSK_JVMTI_VERIFY(
+        jvmti_env->SetEventNotificationMode(
+            JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("SingleStep event: %s%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -186,19 +183,17 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
 
     ExceptionEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti_env,
-            klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("Exception event: %s\n", signature);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 void JNICALL
@@ -209,19 +204,17 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
 
     ExceptionCatchEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti_env,
-            klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("ExceptionCatch event: %s\n", signature);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -231,18 +224,17 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     BreakpointEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("Breakpoint event: %s%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 
-    NSK_CPP_STUB3(NotifyFramePop, jvmti_env, thread, 0);
+    jvmti_env->NotifyFramePop(thread, 0);
 }
 
 static void JNICALL
@@ -253,16 +245,15 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     FramePopEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FramePop event: %s%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -272,16 +263,15 @@ MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     MethodEntryEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("MethodEntry event: %s%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
@@ -292,16 +282,15 @@ MethodExit(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     MethodExitEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("MethodExit event: %s%s\n", name, signature);
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 /* ========================================================================== */
@@ -316,8 +305,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -329,8 +317,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -341,28 +328,23 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
         return NSK_FALSE;
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'delay' */
-    if (!NSK_JNI_VERIFY(jni, (method =
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "delay", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "delay", "()V")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingFlag' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "waitingFlag", "Z")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -372,41 +354,37 @@ static int prepareEvents(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare events ...\n");
 
     /* get tested thread method 'letItGo' */
-    if (!NSK_JNI_VERIFY(jni, (method =
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "letItGo", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "letItGo", "()V")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingFlag' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "waitingFlag", "Z")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(SetFieldAccessWatch, jvmti, klass, field)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetFieldAccessWatch(klass, field)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(SetFieldModificationWatch, jvmti, klass, field)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetFieldModificationWatch(klass, field)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetBreakpoint, jvmti, method, 0)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetBreakpoint(method, 0)))
         return NSK_FALSE;
 
     /* enable events */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, thread)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, thread)))
         return NSK_FALSE;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, thread)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, thread)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -420,7 +398,7 @@ static int checkGetCapabilities(jvmtiEnv* jvmti) {
     jvmtiCapabilities caps;
 
     memset(&caps, 0, sizeof(caps));
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return NSK_FALSE;
     if (!NSK_VERIFY(caps.can_get_bytecodes))
         return NSK_FALSE;
@@ -471,10 +449,9 @@ static int checkGetBytecodes(jvmtiEnv* jvmti) {
     unsigned char *bytecodes;
 
     NSK_DISPLAY0("Checking positive: GetBytecodes\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(GetBytecodes, jvmti, method, &count, &bytecodes)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetBytecodes(method, &count, &bytecodes)))
         return NSK_FALSE;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti, bytecodes)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(bytecodes)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -486,13 +463,11 @@ static int checkIsSyntheticFunctions(jvmtiEnv* jvmti) {
     jboolean is_synthetic;
 
     NSK_DISPLAY0("Checking positive: IsFieldSynthetic\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(IsFieldSynthetic, jvmti, klass, field, &is_synthetic)))
+    if (!NSK_JVMTI_VERIFY(jvmti->IsFieldSynthetic(klass, field, &is_synthetic)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: IsMethodSynthetic\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(IsMethodSynthetic, jvmti, method, &is_synthetic)))
+    if (!NSK_JVMTI_VERIFY(jvmti->IsMethodSynthetic(method, &is_synthetic)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -511,12 +486,11 @@ static int checkRedefineClasses(jvmtiEnv* jvmti) {
     class_def.klass = klass;
     class_def.class_byte_count = klass_byte_count;
     class_def.class_bytes = klass_bytes;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses, jvmti, 1, &class_def)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RedefineClasses(1, &class_def)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: IsMethodObsolete\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(IsMethodObsolete, jvmti, method, &is_obsolete)))
+    if (!NSK_JVMTI_VERIFY(jvmti->IsMethodObsolete(method, &is_obsolete)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -528,8 +502,7 @@ static int checkGetSourceFileName(jvmtiEnv* jvmti) {
     char *name;
 
     NSK_DISPLAY0("Checking positive: GetSourceFileName\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetSourceFileName, jvmti, klass, &name)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetSourceFileName(klass, &name)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -542,9 +515,7 @@ static int checkGetLineNumberTable(jvmtiEnv* jvmti) {
     jvmtiLineNumberEntry *line_number_table = NULL;
 
     NSK_DISPLAY0("Checking positive: GetLineNumberTable\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(GetLineNumberTable, jvmti, method, &count,
-                &line_number_table)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetLineNumberTable(method, &count, &line_number_table)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -557,7 +528,7 @@ static int checkGetSourceDebugExtension(jvmtiEnv* jvmti) {
 
     NSK_DISPLAY0("Checking positive: GetSourceDebugExtension\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_ABSENT_INFORMATION,
-            NSK_CPP_STUB3(GetSourceDebugExtension, jvmti, klass, &name)))
+            jvmti->GetSourceDebugExtension(klass, &name)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -576,77 +547,74 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
     int i;
 
     NSK_DISPLAY0("Checking positive: GetLocalVariableTable\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(GetLocalVariableTable, jvmti, method, &count,
-                &local_variable_table)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetLocalVariableTable(method, &count, &local_variable_table)))
         return NSK_FALSE;
 
 /* DEBUG -- while 4913796 bug not fixed thread should be suspended
  */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(SuspendThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread)))
         return NSK_FALSE;
 
     for (i = 0; i < count; i++) {
         if (strcmp(local_variable_table[i].name, "o") ==0) {
             NSK_DISPLAY0("Checking positive: GetLocalObject\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetLocalObject, jvmti,
-                    thread, 1, local_variable_table[i].slot, &object_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->GetLocalObject(thread, 1, local_variable_table[i].slot, &object_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalObject\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(SetLocalObject, jvmti,
-                    thread, 1, local_variable_table[i].slot, object_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetLocalObject(thread, 1, local_variable_table[i].slot, object_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "i") ==0) {
             NSK_DISPLAY0("Checking positive: GetLocalInt\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetLocalInt, jvmti,
-                    thread, 1, local_variable_table[i].slot, &int_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->GetLocalInt(thread, 1, local_variable_table[i].slot, &int_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalInt\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(SetLocalInt, jvmti,
-                    thread, 1, local_variable_table[i].slot, int_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetLocalInt(thread, 1, local_variable_table[i].slot, int_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "l") ==0) {
             NSK_DISPLAY0("Checking positive: GetLocalLong\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetLocalLong, jvmti,
-                    thread, 1, local_variable_table[i].slot, &long_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->GetLocalLong(thread, 1, local_variable_table[i].slot, &long_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalLong\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(SetLocalLong, jvmti,
-                    thread, 1, local_variable_table[i].slot, long_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetLocalLong(thread, 1, local_variable_table[i].slot, long_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "f") ==0) {
             NSK_DISPLAY0("Checking positive: GetLocalFloat\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetLocalFloat, jvmti,
-                    thread, 1, local_variable_table[i].slot, &float_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->GetLocalFloat(thread, 1, local_variable_table[i].slot, &float_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalFloat\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(SetLocalFloat, jvmti,
-                    thread, 1, local_variable_table[i].slot, float_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetLocalFloat(thread, 1, local_variable_table[i].slot, float_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "d") ==0) {
             NSK_DISPLAY0("Checking positive: GetLocalDouble\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetLocalDouble, jvmti,
-                    thread, 1, local_variable_table[i].slot, &double_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->GetLocalDouble(thread, 1, local_variable_table[i].slot, &double_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalDouble\n");
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(SetLocalDouble, jvmti,
-                    thread, 1, local_variable_table[i].slot, double_value)))
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetLocalDouble(thread, 1, local_variable_table[i].slot, double_value)))
                 return NSK_FALSE;
         }
     }
 
 /* DEBUG -- while 4913796 bug not fixed thread should be suspended
  */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(ResumeThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(thread)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti,
-            (unsigned char*)local_variable_table)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)local_variable_table)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -658,21 +626,19 @@ static int checkSuspend(jvmtiEnv* jvmti) {
     jvmtiError err;
 
     NSK_DISPLAY0("Checking positive: SuspendThread\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(SuspendThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: ResumeThread\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(ResumeThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: SuspendThreadList\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SuspendThreadList, jvmti, 1, &thread, &err)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThreadList(1, &thread, &err)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: ResumeThreadList\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(ResumeThreadList, jvmti, 1, &thread, &err)))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThreadList(1, &thread, &err)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -685,20 +651,20 @@ static int checkPopFrame(jvmtiEnv* jvmti) {
     jvmtiError err;
 
     NSK_DISPLAY0("Checking positive: PopFrame\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(SuspendThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread)))
         return NSK_FALSE;
 
     // PopFrame is allowed to fail with JVMTI_ERROR_OPAQUE_FRAME.
     // That will happen if we are in a native function,
     // for example while waiting for a Condition.
     // See JCK-5020108.
-    err = NSK_CPP_STUB2(PopFrame, jvmti, thread);
+    err = jvmti->PopFrame(thread);
     if (err != JVMTI_ERROR_NONE && err != JVMTI_ERROR_OPAQUE_FRAME) {
       result = NSK_FALSE;
       NSK_DISPLAY1("jvmti error from PopFrame: %d\n", err);
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(ResumeThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(thread)))
         result = NSK_FALSE;
 
     return result;
@@ -714,25 +680,22 @@ static int checkSignalThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     jmethodID ctor = NULL;
     jobject exception = NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (cls =
-            NSK_CPP_STUB2(FindClass, jni, THREAD_DEATH_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (ctor =
-            NSK_CPP_STUB4(GetMethodID, jni, cls,
-                THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
+            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (exception =
-            NSK_CPP_STUB3(NewObject, jni, cls, ctor)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: InterruptThread\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(InterruptThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(thread)))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: StopThread\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(StopThread, jvmti, thread, exception)))
+    if (!NSK_JVMTI_VERIFY(jvmti->StopThread(thread, exception)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -847,7 +810,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!checkSignalThread(jvmti, jni))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, thread));
+    NSK_TRACE(jni->DeleteGlobalRef(thread));
 
     /* resume debugee and wait for sync */
     if (!nsk_jvmti_resumeSync())
@@ -916,7 +879,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     caps.can_generate_breakpoint_events = 1;
     caps.can_generate_method_entry_events = 1;
     caps.can_generate_method_exit_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     /* set event callbacks */
@@ -931,25 +894,24 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.FramePop = &FramePop;
     callbacks.MethodEntry = &MethodEntry;
     callbacks.MethodExit = &MethodExit;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable events */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */
