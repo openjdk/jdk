@@ -192,7 +192,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
-  static PerfCounter* _load_instance_class_failCounter;
 
   // The boot class path consists of 3 ordered pieces:
   //  1. the module/path pairs specified to --patch-module
@@ -338,12 +337,6 @@ class ClassLoader: AllStatic {
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
     return _unsafe_defineClassCallCounter;
-  }
-
-  // Record how many times SystemDictionary::load_instance_class call
-  // fails with linkageError when Unsyncloadclass flag is set.
-  static PerfCounter* load_instance_class_failCounter() {
-    return _load_instance_class_failCounter;
   }
 
   // Modular java runtime image is present vs. a build with exploded modules

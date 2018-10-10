@@ -135,7 +135,6 @@ PerfCounter*    ClassLoader::_sync_JVMFindLoadedClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_sync_JVMDefineClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_sync_JNIDefineClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
-PerfCounter*    ClassLoader::_load_instance_class_failCounter = NULL;
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = NULL;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = NULL;
@@ -1604,9 +1603,6 @@ void ClassLoader::initialize() {
 
     NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS,
                         "unsafeDefineClassCalls");
-
-    NEWPERFEVENTCOUNTER(_load_instance_class_failCounter, SUN_CLS,
-                        "loadInstanceClassFailRate");
   }
 
   // lookup zip library entry points
