@@ -507,9 +507,6 @@ public:
                                        ClassLoaderData* loader_data,
                                        TRAPS);
  public:
-  // tell if two classes have the same enclosing class (at package level)
-  bool is_same_package_member(const Klass* class2, TRAPS) const;
-
   // initialization state
   bool is_loaded() const                   { return _init_state >= loaded; }
   bool is_linked() const                   { return _init_state >= linked; }
