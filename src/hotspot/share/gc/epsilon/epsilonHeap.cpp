@@ -118,6 +118,8 @@ EpsilonHeap* EpsilonHeap::heap() {
 }
 
 HeapWord* EpsilonHeap::allocate_work(size_t size) {
+  assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
+
   HeapWord* res = _space->par_allocate(size);
 
   while (res == NULL) {
@@ -168,6 +170,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
     }
   }
 
+  assert(is_object_aligned(res), "Object should be aligned: " PTR_FORMAT, p2i(res));
   return res;
 }
 
@@ -210,6 +213,9 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
 
   // Always honor boundaries
   size = MAX2(min_size, MIN2(_max_tlab_size, size));
+
+  // Always honor alignment
+  size = align_up(size, MinObjAlignment);
 
   if (log_is_enabled(Trace, gc)) {
     ResourceMark rm;
