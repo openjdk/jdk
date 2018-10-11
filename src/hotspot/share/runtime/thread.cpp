@@ -4212,10 +4212,10 @@ void JavaThread::invoke_shutdown_hooks() {
 //     <-- do not use anything that could get blocked by Safepoint -->
 //   + Disable tracing at JNI/JVM barriers
 //   + Set _vm_exited flag for threads that are still running native code
-//   + Delete this thread
 //   + Call exit_globals()
 //      > deletes tty
 //      > deletes PerfMemory resources
+//   + Delete this thread
 //   + Return to caller
 
 bool Threads::destroy_vm() {
@@ -4291,6 +4291,9 @@ bool Threads::destroy_vm() {
 
   notify_vm_shutdown();
 
+  // exit_globals() will delete tty
+  exit_globals();
+
   // We are after VM_Exit::set_vm_exited() so we can't call
   // thread->smr_delete() or we will block on the Threads_lock.
   // Deleting the shutdown thread here is safe because another
@@ -4303,9 +4306,6 @@ bool Threads::destroy_vm() {
     FREE_C_HEAP_ARRAY(jlong, JavaThread::_jvmci_old_thread_counters);
   }
 #endif
-
-  // exit_globals() will delete tty
-  exit_globals();
 
   LogConfiguration::finalize();
 

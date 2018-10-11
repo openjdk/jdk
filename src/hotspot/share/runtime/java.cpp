@@ -575,9 +575,6 @@ void vm_direct_exit(int code) {
 }
 
 void vm_perform_shutdown_actions() {
-  // Warning: do not call 'exit_globals()' here. All threads are still running.
-  // Calling 'exit_globals()' will disable thread-local-storage and cause all
-  // kinds of assertions to trigger in debug mode.
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != NULL && thread->is_Java_thread()) {
