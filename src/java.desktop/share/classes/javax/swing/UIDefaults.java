@@ -32,6 +32,8 @@ import javax.swing.event.SwingPropertyChangeSupport;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.lang.reflect.*;
 import java.util.HashMap;
@@ -808,7 +810,11 @@ public class UIDefaults extends Hashtable<Object,Object>
                 getUIError("static createUI() method not found in " + uiClass);
             }
             catch (Exception e) {
-                getUIError("createUI() failed for " + target + " " + e);
+                StringWriter w = new StringWriter();
+                PrintWriter pw = new PrintWriter(w);
+                e.printStackTrace(pw);
+                pw.flush();
+                getUIError("createUI() failed for " + target + "\n" + w);
             }
         }
 
