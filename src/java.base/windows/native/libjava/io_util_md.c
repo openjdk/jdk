@@ -213,8 +213,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
     return pathbuf;
 }
 
-JNIEXPORT FD JNICALL
-winFileHandleOpen(JNIEnv *env, jstring path, int flags)
+FD winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 {
     const DWORD access =
         (flags & O_WRONLY) ?  GENERIC_WRITE :

@@ -56,8 +56,7 @@ handleLseek(FD fd, jlong offset, jint whence);
  * Returns an opaque handle to file named by "path".  If an error occurs,
  * returns -1 and an exception is pending.
  */
-JNIEXPORT FD JNICALL
-winFileHandleOpen(JNIEnv *env, jstring path, int flags);
+FD winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 
 /*
  * Macros to set/get fd from the java.io.FileDescriptor.
