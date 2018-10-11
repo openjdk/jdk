@@ -39,10 +39,6 @@ class ThreadHeapSampler {
   static int _enabled;
   static int _sampling_interval;
 
-  // Used for assertion mode to determine if there is a path to a TLAB slow path
-  // without a collector present.
-  size_t _collectors_present;
-
   static void init_log_table();
 
  public:
@@ -51,8 +47,6 @@ class ThreadHeapSampler {
     if (_rnd == 0) {
       _rnd = 1;
     }
-
-    _collectors_present = 0;
   }
 
   size_t bytes_until_sample()                    { return _bytes_until_sample;   }
