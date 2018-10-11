@@ -86,7 +86,7 @@ import com.sun.swingset3.demos.frame.FrameDemo;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.frame.FrameDemo
- * @run testng FrameDemoTest
+ * @run testng/timeout=600 FrameDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class FrameDemoTest {

@@ -48,7 +48,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tabbedpane.TabbedPaneDemo
- * @run testng TabbedPaneDemoTest
+ * @run testng/timeout=600 TabbedPaneDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class TabbedPaneDemoTest {

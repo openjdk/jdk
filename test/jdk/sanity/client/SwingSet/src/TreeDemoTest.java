@@ -56,7 +56,7 @@ import static org.testng.AssertJUnit.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tree.TreeDemo
- * @run testng TreeDemoTest
+ * @run testng/timeout=600 TreeDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class TreeDemoTest {

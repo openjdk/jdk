@@ -56,7 +56,7 @@ import static org.testng.AssertJUnit.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.list.ListDemo
- * @run testng ListDemoTest
+ * @run testng/timeout=600 ListDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ListDemoTest {

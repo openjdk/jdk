@@ -61,7 +61,7 @@ import com.sun.swingset3.demos.tooltip.ToolTipDemo;
  *         java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tooltip.ToolTipDemo
- * @run testng ToolTipDemoTest
+ * @run testng/timeout=600 ToolTipDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ToolTipDemoTest {

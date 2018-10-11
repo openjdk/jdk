@@ -55,7 +55,7 @@ import static org.testng.AssertJUnit.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.optionpane.OptionPaneDemo
- * @run testng OptionPaneDemoTest
+ * @run testng/timeout=600 OptionPaneDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class OptionPaneDemoTest {
