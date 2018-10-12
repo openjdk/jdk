@@ -120,13 +120,6 @@ class ObjArrayKlass : public ArrayKlass {
   // Initialization (virtual from Klass)
   void initialize(TRAPS);
 
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
-
   // Oop fields (and metadata) iterators
   //
   // The ObjArrayKlass iterators also visits the Object's klass.

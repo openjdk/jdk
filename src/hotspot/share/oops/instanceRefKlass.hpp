@@ -58,13 +58,6 @@ class InstanceRefKlass: public InstanceKlass {
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
-
   // Oop fields (and metadata) iterators
   //
   // The InstanceRefKlass iterators also support reference processing.

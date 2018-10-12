@@ -673,13 +673,6 @@ protected:
     clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
 
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  virtual void oop_pc_update_pointers(oop obj, ParCompactionManager* cm) = 0;
-#endif
-
   virtual void array_klasses_do(void f(Klass* k)) {}
 
   // Return self, except for abstract classes with exactly 1

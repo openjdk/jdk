@@ -1183,13 +1183,6 @@ public:
   const char* signature_name() const;
   static Symbol* package_from_name(const Symbol* name, TRAPS);
 
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
-
   // Oop fields (and metadata) iterators
   //
   // The InstanceKlass iterators also visits the Object's klass.

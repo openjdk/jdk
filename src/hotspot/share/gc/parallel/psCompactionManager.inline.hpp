@@ -156,7 +156,10 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
 }
 
 inline void ParCompactionManager::update_contents(oop obj) {
-  obj->pc_update_contents(this);
+  if (!obj->klass()->is_typeArray_klass()) {
+    PCAdjustPointerClosure apc(this);
+    obj->oop_iterate(&apc);
+  }
 }
 
 inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {

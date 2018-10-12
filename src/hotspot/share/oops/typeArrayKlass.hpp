@@ -74,14 +74,6 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  // GC specific object visitors
-  //
-
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
-
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
   // these functions only return the size of the object.
 

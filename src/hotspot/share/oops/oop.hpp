@@ -285,13 +285,6 @@ class oopDesc {
   // mark-sweep support
   void follow_body(int begin, int end);
 
-  // Garbage Collection support
-
-#if INCLUDE_PARALLELGC
-  // Parallel Compact
-  inline void pc_update_contents(ParCompactionManager* cm);
-#endif
-
   template <typename OopClosureType>
   inline void oop_iterate(OopClosureType* cl);
 
