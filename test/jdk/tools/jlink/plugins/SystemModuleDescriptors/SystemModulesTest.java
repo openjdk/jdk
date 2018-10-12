@@ -42,7 +42,6 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8142968 8173381
- * @library /lib/testlibrary
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
  * @modules java.base/jdk.internal.org.objectweb.asm

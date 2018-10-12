@@ -44,7 +44,7 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8142968 8173381 8174740
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler jdk.jlink
  * @modules java.base/jdk.internal.module
  * @modules java.base/jdk.internal.org.objectweb.asm
