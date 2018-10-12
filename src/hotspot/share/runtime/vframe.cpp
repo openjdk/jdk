@@ -134,7 +134,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
     //
     // Skip the monitor that the thread is blocked to enter or waiting on
     //
-    if (!found_first_monitor && (obj == pending_obj || obj == waiting_obj)) {
+    if (!found_first_monitor && (oopDesc::equals(obj, pending_obj) || oopDesc::equals(obj, waiting_obj))) {
       continue;
     }
     found_first_monitor = true;
