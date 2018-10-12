@@ -835,8 +835,6 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 # jdk_jdi
 
-com/sun/jdi/BasicJDWPConnectionTest.java                        8195703 generic-all
-
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all

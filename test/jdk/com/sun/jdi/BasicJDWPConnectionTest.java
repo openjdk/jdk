@@ -29,17 +29,15 @@
  */
 
 import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 import java.net.Socket;
 import java.net.SocketException;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Utils;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class BasicJDWPConnectionTest {
@@ -64,25 +62,37 @@ public class BasicJDWPConnectionTest {
         return res;
     }
 
-    public static ArrayList<String> prepareCmd(int port, String allowOpt) {
-         String address = "*:" + String.valueOf(port);
+    public static ArrayList<String> prepareCmd(String allowOpt) {
          ArrayList<String> cmd = new ArrayList<>();
 
          String jdwpArgs = "-agentlib:jdwp=transport=dt_socket,server=y," +
-                           "suspend=n,address=" + address + allowOpt;
+                           "suspend=n,address=*:0" + allowOpt;
          cmd.add(jdwpArgs);
          return cmd;
+    }
+
+    private static Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
+    private static int detectPort(String s) {
+        Matcher m = listenRegexp.matcher(s);
+        if (!m.find()) {
+            throw new RuntimeException("Could not detect port from '" + s + "'");
+        }
+        // m.group(1) is transport, m.group(2) is port
+        return Integer.parseInt(m.group(2));
     }
 
     public static void positiveTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        int port = Utils.getFreePort();
-        ArrayList<String> cmd = prepareCmd(port, allowOpt);
+        ArrayList<String> cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
-        int res = handshake(port);
-        a.stopApp();
+        int res;
+        try {
+            res = handshake(detectPort(a.getProcessStdout()));
+        } finally {
+            a.stopApp();
+        }
         if (res < 0) {
             throw new RuntimeException(testName + " FAILED");
         }
@@ -92,12 +102,15 @@ public class BasicJDWPConnectionTest {
     public static void negativeTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        int port = Utils.getFreePort();
-        ArrayList<String> cmd = prepareCmd(port, allowOpt);
+        ArrayList<String> cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
-        int res = handshake(port);
-        a.stopApp();
+        int res;
+        try {
+            res = handshake(detectPort(a.getProcessStdout()));
+        } finally {
+            a.stopApp();
+        }
         if (res > 0) {
             System.err.println(testName + ": res=" + res);
             throw new RuntimeException(testName + " FAILED");
@@ -109,16 +122,18 @@ public class BasicJDWPConnectionTest {
     public static void badAllowOptionTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        int port = Utils.getFreePort();
-        ArrayList<String> cmd = prepareCmd(port, allowOpt);
+        ArrayList<String> cmd = prepareCmd(allowOpt);
 
+        LingeredApp a;
         try {
-            LingeredApp a = LingeredApp.startApp(cmd);
+            a = LingeredApp.startApp(cmd);
         } catch (IOException ex) {
             System.err.println(testName + ": caught expected IOException");
             System.err.println(testName + " PASSED");
             return;
         }
+        // LingeredApp.startApp is expected to fail, but if not, terminate the app
+        a.stopApp();
         throw new RuntimeException(testName + " FAILED");
     }
 
@@ -174,26 +189,16 @@ public class BasicJDWPConnectionTest {
         badAllowOptionTest("ExplicitMultiDefault2Test", allowOpt);
     }
 
-    public static void main(String[] args) {
-        try {
-            DefaultTest();
-            ExplicitDefaultTest();
-            AllowTest();
-            MultiAllowTest();
-            DenyTest();
-            MultiDenyTest();
-            EmptyAllowOptionTest();
-            ExplicitMultiDefault1Test();
-            ExplicitMultiDefault2Test();
-            System.err.println("\nTest PASSED");
-        } catch (InterruptedException ex) {
-            System.err.println("\nTest ERROR, getFreePort");
-            ex.printStackTrace();
-            System.exit(3);
-        } catch (IOException ex) {
-            System.err.println("\nTest ERROR");
-            ex.printStackTrace();
-            System.exit(3);
-        }
+    public static void main(String[] args) throws Exception {
+        DefaultTest();
+        ExplicitDefaultTest();
+        AllowTest();
+        MultiAllowTest();
+        DenyTest();
+        MultiDenyTest();
+        EmptyAllowOptionTest();
+        ExplicitMultiDefault1Test();
+        ExplicitMultiDefault2Test();
+        System.err.println("\nTest PASSED");
     }
 }
