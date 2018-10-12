@@ -57,21 +57,25 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
 
 public class SpecialHeadersTest implements HttpServerAdapters {
@@ -91,6 +95,13 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             {"User-Agent: camel-cased"},
             {"user-agent: all-lower-case"},
             {"user-Agent: mixed"},
+            // headers which were restricted before and are now allowable
+            {"referer: lower"},
+            {"Referer: normal"},
+            {"REFERER: upper"},
+            {"origin: lower"},
+            {"Origin: normal"},
+            {"ORIGIN: upper"},
     };
 
     @DataProvider(name = "variants")
@@ -165,6 +176,50 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 assertEquals(resp.headers().allValues("X-"+key).size(), 0);
             }
 
+        }
+    }
+
+    @Test(dataProvider = "variants")
+    void testHomeMadeIllegalHeader(String uriString, String headerNameAndValue, boolean sameClient) throws Exception {
+        out.println("\n--- Starting ");
+        final URI uri = URI.create(uriString);
+
+        HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
+                .sslContext(sslContext)
+                .build();
+
+        // Test a request which contains an illegal header created
+        HttpRequest req = new HttpRequest() {
+            @Override public Optional<BodyPublisher> bodyPublisher() {
+                return Optional.of(BodyPublishers.noBody());
+            }
+            @Override public String method() {
+                return "GET";
+            }
+            @Override public Optional<Duration> timeout() {
+                return Optional.empty();
+            }
+            @Override public boolean expectContinue() {
+                return false;
+            }
+            @Override public URI uri() {
+                return uri;
+            }
+            @Override public Optional<HttpClient.Version> version() {
+                return Optional.empty();
+            }
+            @Override public HttpHeaders headers() {
+                Map<String, List<String>> map = Map.of("via", List.of("http://foo.com"));
+                return HttpHeaders.of(map, (x, y) -> true);
+            }
+        };
+
+        try {
+            HttpResponse<String> response = client.send(req, BodyHandlers.ofString());
+            Assert.fail("Unexpected reply: " + response);
+        } catch (IllegalArgumentException ee) {
+            out.println("Got IAE as expected");
         }
     }
 
@@ -259,7 +314,10 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         https2TestServer.stop();
     }
 
-    /** A handler that returns, as its body, the exact received request URI. */
+    /** A handler that returns, as its body, the exact received request URI.
+     *  The header whose name is in the URI query and is set in the request is
+     *  returned in the response with its name prefixed by X-
+     */
     static class HttpUriStringHandler implements HttpTestHandler {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
