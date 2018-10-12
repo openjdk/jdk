@@ -123,8 +123,6 @@ class ObjArrayKlass : public ArrayKlass {
   // GC specific object visitors
   //
 #if INCLUDE_PARALLELGC
-  // Parallel Scavenge
-  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
   void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
   void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,6 @@ class InstanceRefKlass: public InstanceKlass {
   // GC specific object visitors
   //
 #if INCLUDE_PARALLELGC
-  // Parallel Scavenge
-  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
   void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
   void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);

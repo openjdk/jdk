@@ -29,6 +29,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/psCardTable.hpp"
+#include "gc/parallel/psClosure.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"

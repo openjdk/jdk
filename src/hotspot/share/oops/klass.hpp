@@ -676,8 +676,6 @@ protected:
   // GC specific object visitors
   //
 #if INCLUDE_PARALLELGC
-  // Parallel Scavenge
-  virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
   // Parallel Compact
   virtual void oop_pc_follow_contents(oop obj, ParCompactionManager* cm) = 0;
   virtual void oop_pc_update_pointers(oop obj, ParCompactionManager* cm) = 0;

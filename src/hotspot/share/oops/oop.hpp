@@ -291,8 +291,6 @@ class oopDesc {
   // Parallel Compact
   inline void pc_follow_contents(ParCompactionManager* cm);
   inline void pc_update_contents(ParCompactionManager* cm);
-  // Parallel Scavenge
-  inline void ps_push_contents(PSPromotionManager* pm);
 #endif
 
   template <typename OopClosureType>

@@ -439,15 +439,6 @@ void oopDesc::pc_update_contents(ParCompactionManager* cm) {
   }
   // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
 }
-
-void oopDesc::ps_push_contents(PSPromotionManager* pm) {
-  Klass* k = klass();
-  if (!k->is_typeArray_klass()) {
-    // It might contain oops beyond the header, so take the virtual call.
-    k->oop_ps_push_contents(this, pm);
-  }
-  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
-}
 #endif // INCLUDE_PARALLELGC
 
 template <typename OopClosureType>
