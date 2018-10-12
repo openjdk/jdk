@@ -846,18 +846,43 @@ PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
+class PCReferenceProcessor: public ReferenceProcessor {
+public:
+  PCReferenceProcessor(
+    BoolObjectClosure* is_subject_to_discovery,
+    BoolObjectClosure* is_alive_non_header) :
+      ReferenceProcessor(is_subject_to_discovery,
+      ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
+      ParallelGCThreads,   // mt processing degree
+      true,                // mt discovery
+      ParallelGCThreads,   // mt discovery degree
+      true,                // atomic_discovery
+      is_alive_non_header) {
+  }
+
+  template<typename T> bool discover(oop obj, ReferenceType type) {
+    T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
+    T heap_oop = RawAccess<>::oop_load(referent_addr);
+    oop referent = CompressedOops::decode_not_null(heap_oop);
+    return PSParallelCompact::mark_bitmap()->is_unmarked(referent)
+        && ReferenceProcessor::discover_reference(obj, type);
+  }
+  virtual bool discover_reference(oop obj, ReferenceType type) {
+    if (UseCompressedOops) {
+      return discover<narrowOop>(obj, type);
+    } else {
+      return discover<oop>(obj, type);
+    }
+  }
+};
+
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _span_based_discoverer.set_span(heap->reserved_region());
   _ref_processor =
-    new ReferenceProcessor(&_span_based_discoverer,
-                           ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                           ParallelGCThreads,   // mt processing degree
-                           true,                // mt discovery
-                           ParallelGCThreads,   // mt discovery degree
-                           true,                // atomic_discovery
-                           &_is_alive_closure,  // non-header is alive closure
-                           false);              // disable adjusting number of processing threads
+    new PCReferenceProcessor(&_span_based_discoverer,
+                             &_is_alive_closure); // non-header is alive closure
+
   _counters = new CollectorCounters("PSParallelCompact", 1);
 
   // Initialize static fields in ParCompactionManager.
@@ -2077,7 +2102,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   TaskQueueSetSuper* qset = ParCompactionManager::stack_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
 
-  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
   ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
 
   // Need new claim bits before marking starts.

@@ -289,7 +289,6 @@ class oopDesc {
 
 #if INCLUDE_PARALLELGC
   // Parallel Compact
-  inline void pc_follow_contents(ParCompactionManager* cm);
   inline void pc_update_contents(ParCompactionManager* cm);
 #endif
 

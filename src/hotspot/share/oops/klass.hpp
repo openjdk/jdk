@@ -677,7 +677,6 @@ protected:
   //
 #if INCLUDE_PARALLELGC
   // Parallel Compact
-  virtual void oop_pc_follow_contents(oop obj, ParCompactionManager* cm) = 0;
   virtual void oop_pc_update_pointers(oop obj, ParCompactionManager* cm) = 0;
 #endif
 

@@ -52,7 +52,6 @@ public:
   //
 #if INCLUDE_PARALLELGC
   // Parallel Compact
-  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
   void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
 #endif
 

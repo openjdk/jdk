@@ -427,9 +427,6 @@ void oopDesc::incr_age() {
 }
 
 #if INCLUDE_PARALLELGC
-void oopDesc::pc_follow_contents(ParCompactionManager* cm) {
-  klass()->oop_pc_follow_contents(this, cm);
-}
 
 void oopDesc::pc_update_contents(ParCompactionManager* cm) {
   Klass* k = klass();
