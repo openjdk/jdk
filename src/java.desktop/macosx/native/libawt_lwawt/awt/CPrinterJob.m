@@ -317,8 +317,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
     static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
 
-    NSPrintJobDispositionValue jobDisposition = [src jobDisposition];
-    if (jobDisposition == NSPrintSaveJob) {
+    if (src.jobDisposition == NSPrintSaveJob) {
         JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
     } else {
         JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
