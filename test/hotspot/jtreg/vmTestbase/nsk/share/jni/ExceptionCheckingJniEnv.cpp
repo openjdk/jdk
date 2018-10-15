@@ -22,6 +22,8 @@
  * questions.
  */
 
+#include <stdlib.h>
+
 #include "ExceptionCheckingJniEnv.hpp"
 
 namespace {
@@ -86,7 +88,7 @@ jclass ExceptionCheckingJniEnv::GetObjectClass(jobject obj) {
 }
 
 jfieldID ExceptionCheckingJniEnv::GetFieldID(jclass klass, const char *name, const char* type) {
-  JNIVerifier<jfieldID> marker(this, "GetObjectClass");
+  JNIVerifier<jfieldID> marker(this, "GetFieldID");
   return marker.ResultNotNull(_jni_env->GetFieldID(klass, name, type));
 }
 
@@ -101,11 +103,61 @@ void ExceptionCheckingJniEnv::SetObjectField(jobject obj, jfieldID field, jobjec
 }
 
 jobject ExceptionCheckingJniEnv::NewGlobalRef(jobject obj) {
-  JNIVerifier<jobject> marker(this, "GetObjectField");
+  JNIVerifier<jobject> marker(this, "NewGlobalRef");
   return marker.ResultNotNull(_jni_env->NewGlobalRef(obj));
 }
 
 void ExceptionCheckingJniEnv::DeleteGlobalRef(jobject obj) {
   JNIVerifier<> marker(this, "DeleteGlobalRef");
   _jni_env->DeleteGlobalRef(obj);
+}
+
+jobject ExceptionCheckingJniEnv::NewLocalRef(jobject obj) {
+  JNIVerifier<jobject> marker(this, "NewLocalRef");
+  return marker.ResultNotNull(_jni_env->NewLocalRef(obj));
+}
+
+void ExceptionCheckingJniEnv::DeleteLocalRef(jobject obj) {
+  JNIVerifier<> marker(this, "DeleteLocalRef");
+  _jni_env->DeleteLocalRef(obj);
+}
+
+jweak ExceptionCheckingJniEnv::NewWeakGlobalRef(jobject obj) {
+  JNIVerifier<jweak> marker(this, "NewWeakGlobalRef");
+  return marker.ResultNotNull(_jni_env->NewWeakGlobalRef(obj));
+}
+
+void ExceptionCheckingJniEnv::DeleteWeakGlobalRef(jweak weak_ref) {
+  JNIVerifier<> marker(this, "DeleteWeakGlobalRef");
+  _jni_env->DeleteWeakGlobalRef(weak_ref);
+}
+
+jsize ExceptionCheckingJniEnv::GetArrayLength(jarray array) {
+  JNIVerifier<> marker(this, "GetArrayLength");
+  return _jni_env->GetArrayLength(array);
+}
+
+jsize ExceptionCheckingJniEnv::GetStringLength(jstring str) {
+  JNIVerifier<> marker(this, "GetStringLength");
+  return _jni_env->GetStringLength(str);
+}
+
+void* ExceptionCheckingJniEnv::GetPrimitiveArrayCritical(jarray array, jboolean* isCopy) {
+  JNIVerifier<> marker(this, "GetPrimitiveArrayCritical");
+  return marker.ResultNotNull(_jni_env->GetPrimitiveArrayCritical(array, isCopy));
+}
+
+void ExceptionCheckingJniEnv::ReleasePrimitiveArrayCritical(jarray array, void* carray, jint mode) {
+  JNIVerifier<> marker(this, "ReleasePrimitiveArrayCritical");
+  _jni_env->ReleasePrimitiveArrayCritical(array, carray, mode);
+}
+
+const jchar* ExceptionCheckingJniEnv::GetStringCritical(jstring str, jboolean* isCopy) {
+  JNIVerifier<const jchar*> marker(this, "GetPrimitiveArrayCritical");
+  return marker.ResultNotNull(_jni_env->GetStringCritical(str, isCopy));
+}
+
+void ExceptionCheckingJniEnv::ReleaseStringCritical(jstring str, const jchar* carray) {
+  JNIVerifier<> marker(this, "ReleaseStringCritical");
+  _jni_env->ReleaseStringCritical(str, carray);
 }

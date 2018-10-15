@@ -21,7 +21,7 @@
  * questions.
  */
 
+#include "ExceptionCheckingJniEnv.cpp"
 #include "JNIGlobalRefLocker.cpp"
 #include "jni_tools.cpp"
 #include "nsk_tools.cpp"
-#include "ExceptionCheckingJniEnv.cpp"
