@@ -155,8 +155,7 @@ static int prepare() {
     }
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetAllThreads, jvmti, &allThreadsCount, &allThreadsList)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&allThreadsCount, &allThreadsList)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != NULL))
@@ -170,8 +169,7 @@ static int prepare() {
             return NSK_FALSE;
 
         /* get thread name (info) */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, allThreadsList[i], &threadInfo)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(allThreadsList[i], &threadInfo)))
             return NSK_FALSE;
 
         /* find by name */
@@ -189,8 +187,7 @@ static int prepare() {
     }
 
     /* deallocate all threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)allThreadsList)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)allThreadsList)))
         return NSK_FALSE;
 
     /* check if all tested threads found */
@@ -208,8 +205,7 @@ static int prepare() {
 
     /* make global refs */
     for (i = 0; i < THREADS_COUNT; i++) {
-        if (!NSK_JNI_VERIFY(jni, (threadsList[i] =
-                NSK_CPP_STUB2(NewGlobalRef, jni, threadsList[i])) != NULL))
+        if (!NSK_JNI_VERIFY(jni, (threadsList[i] = jni->NewGlobalRef(threadsList[i])) != NULL))
             return NSK_FALSE;
     }
 
@@ -226,14 +222,10 @@ static int suspendThreadsList(int suspend) {
 
     /* suspend or resume threads list */
     if (suspend) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SuspendThreadList, jvmti, THREADS_COUNT,
-                                                    threadsList, results)))
+        if (!NSK_JVMTI_VERIFY(jvmti->SuspendThreadList(THREADS_COUNT, threadsList, results)))
             nsk_jvmti_setFailStatus();
     } else {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(ResumeThreadList, jvmti, THREADS_COUNT,
-                                                    threadsList, results)))
+        if (!NSK_JVMTI_VERIFY(jvmti->ResumeThreadList(THREADS_COUNT, threadsList, results)))
             nsk_jvmti_setFailStatus();
     }
 
@@ -273,8 +265,7 @@ static int checkThreads(int suspended, const char* kind, jlong timeout) {
         /* wait for WAITTIME for thread to reach expected state */
         do {
             /* get thread status */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetThreadState, jvmti, threadsList[i], &state))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threadsList[i], &state))) {
                 nsk_jvmti_setFailStatus();
                 return NSK_TRUE;
             }
@@ -384,7 +375,7 @@ static int clean() {
 
     /* dispose global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadsList[i]));
+        NSK_TRACE(jni->DeleteGlobalRef(threadsList[i]));
     }
 
     return NSK_TRUE;
@@ -462,8 +453,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities suspendCaps;
         memset(&suspendCaps, 0, sizeof(suspendCaps));
         suspendCaps.can_suspend = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &suspendCaps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&suspendCaps)))
             return JNI_ERR;
     }
 

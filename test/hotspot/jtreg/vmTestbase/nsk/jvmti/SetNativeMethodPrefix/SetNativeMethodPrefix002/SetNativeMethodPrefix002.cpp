@@ -60,13 +60,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_SetNativeMethodPrefix002_foo (
 
 static jboolean setMethodPrefix (char *prefix)
 {
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    SetNativeMethodPrefix
-                    , jvmti
-                    , prefix)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefix(prefix)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -114,25 +108,13 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
        )
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    GetCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     // Register all necessary JVM capabilities
     caps.can_set_native_method_prefix = 1;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    AddCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
 

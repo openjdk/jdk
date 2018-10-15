@@ -120,8 +120,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     if (thread != NULL) {
         jvmtiThreadInfo info;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &info))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -133,9 +132,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
             NSK_DISPLAY1("SetThreadLocalStorage() for current thread with pointer: %p\n",
                                                                 (void*)initialStorage);
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(SetThreadLocalStorage, jvmti,
-                                        NULL, (void*)initialStorage))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(NULL, (void*)initialStorage))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -151,8 +148,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     if (thread != NULL) {
         jvmtiThreadInfo info;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &info))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -168,8 +164,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
                 NSK_DISPLAY0("GetThreadLocalStorage() for current thread\n");
                 if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB3(GetThreadLocalStorage, jvmti,
-                                            NULL, (void**)&obtainedStorage))) {
+                        jvmti->GetThreadLocalStorage(NULL, (void**)&obtainedStorage))) {
                     nsk_jvmti_setFailStatus();
                     return;
                 }
@@ -243,8 +238,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&callbacks, 0, sizeof(callbacks));
         callbacks.ThreadStart = callbackThreadStart;
         callbacks.ThreadEnd = callbackThreadEnd;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti, &callbacks, sizeof(callbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
     }
 

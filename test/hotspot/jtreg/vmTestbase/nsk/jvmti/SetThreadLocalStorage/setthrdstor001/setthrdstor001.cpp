@@ -73,9 +73,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY1("SetThreadLocalStorage() for tested thread with pointer: %p\n",
                                                     (void*)initialStorage);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetThreadLocalStorage, jvmti,
-                                        testedThread, (void*)initialStorage))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(testedThread, (void*)initialStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -90,8 +88,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY0("GetThreadLocalStorage() for tested thread\n");
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadLocalStorage, jvmti,
-                                        testedThread, (void**)&obtainedStorage))) {
+                jvmti->GetThreadLocalStorage(testedThread, (void**)&obtainedStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -128,7 +125,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         NSK_DISPLAY0("Delete thread reference\n");
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedThread));
+        NSK_TRACE(jni->DeleteGlobalRef(testedThread));
     }
 
     NSK_DISPLAY0("Let debugee to finish\n");

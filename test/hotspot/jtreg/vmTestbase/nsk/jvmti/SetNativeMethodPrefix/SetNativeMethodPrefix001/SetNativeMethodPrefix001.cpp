@@ -123,27 +123,11 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMethodPrefix (
     char *str = NULL;
 
     if (prefix != NULL) {
-        if (!NSK_VERIFY(
-                (str = (char *) NSK_CPP_STUB3(
-                              GetStringUTFChars
-                              , jni
-                              , prefix
-                              , 0
-                         )
-                    ) != NULL
-                )
-           )
+        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != NULL))
         { result = JNI_FALSE; goto finally; }
     }
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    SetNativeMethodPrefix
-                    , jvmti
-                    , str
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefix(str)))
     { result = JNI_FALSE; goto finally; }
 
     if (str != NULL) {
@@ -175,27 +159,10 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMultiplePrefixes (
     char *str = NULL;
 
     if (prefix != NULL) {
-        if (!NSK_VERIFY(
-                (str = (char *) NSK_CPP_STUB3(
-                              GetStringUTFChars
-                              , jni
-                              , prefix
-                              , 0
-                         )
-                    ) != NULL
-                )
-           )
+        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != NULL))
         { result = JNI_FALSE; goto finally; }
 
-        if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(
-                        SetNativeMethodPrefixes
-                        , jvmti
-                        , 1
-                        , (char **) &str
-                        )
-                    )
-           )
+        if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefixes(1, (char **) &str)))
         { result = JNI_FALSE; goto finally; }
 
         NSK_DISPLAY1("MultiplePrefixes: New PREFIX is set: %s\n"
@@ -205,15 +172,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMultiplePrefixes (
         char* prefixes[1];
         prefixes[0] = NULL;
 
-        if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(
-                        SetNativeMethodPrefixes
-                        , jvmti
-                        , 0
-                        , (char **)&prefixes
-                        )
-                    )
-           )
+        if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefixes(0, (char **)&prefixes)))
         { result = JNI_FALSE; goto finally; }
 
         NSK_DISPLAY0("Old PREFIX is reset\n");
@@ -250,33 +209,11 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_registerMethod (
         return JNI_FALSE;
     }
 
-    if (!NSK_VERIFY(
-            (method.name =
-                (char *) NSK_CPP_STUB3(
-                     GetStringUTFChars
-                     , jni
-                     , method_name_obj
-                     , 0
-                    )
-            ) != NULL
-            )
-       )
-    {
+    if (!NSK_VERIFY((method.name = (char *) jni->GetStringUTFChars(method_name_obj, 0)) != NULL)) {
         goto finally;
     }
 
-    if (!NSK_VERIFY(
-            (method.signature =
-                    (char *) NSK_CPP_STUB3(
-                         GetStringUTFChars
-                         , jni
-                         , method_sig_obj
-                         , 0
-                    )
-            ) != NULL
-            )
-       )
-    {
+    if (!NSK_VERIFY((method.signature = (char *) jni->GetStringUTFChars(method_sig_obj, 0)) != NULL)) {
         goto finally;
     }
 
@@ -341,25 +278,13 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
        )
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    GetCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     // Register all necessary JVM capabilities
     caps.can_set_native_method_prefix = 1;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    AddCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     return JNI_OK;

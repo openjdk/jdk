@@ -62,8 +62,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -75,8 +74,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -87,15 +85,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
 
         if (info.name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)info.name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (thread == NULL) {
@@ -103,8 +99,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "waitLock", &waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("waitLock", &waitLock)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -114,14 +109,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
 
 static int wait_for(jvmtiEnv* jvmti, jlong millis) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(waitLock)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(RawMonitorWait, jvmti, waitLock, millis)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(waitLock, millis)))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(waitLock)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -132,27 +126,25 @@ static int displayFrameInfo(jvmtiEnv* jvmti, jint i) {
     char *name = NULL;
     char *signature = NULL;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_DISPLAY4("    got[%d] method: %s%s, location: %s\n", i, name,
         signature, jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            sampleStack[i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(sampleStack[i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_DISPLAY4("    exp[%d] method: %s%s, location: %s\n", i, name,
         signature, jlong_to_string(sampleStack[i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
     return NSK_TRUE;
 }
@@ -162,27 +154,25 @@ static int complainFrameInfo(jvmtiEnv* jvmti, jint i) {
     char *name = NULL;
     char *signature = NULL;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_COMPLAIN3("    got: method=%s%s, location=%s\n", name, signature,
         jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            sampleStack[i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(sampleStack[i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_COMPLAIN3("    expected: method=%s%s, location=%s\n", name, signature,
         jlong_to_string(sampleStack[i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
     return NSK_TRUE;
 }
@@ -193,13 +183,11 @@ static int checkStackTrace(jvmtiEnv* jvmti, JNIEnv* jni) {
     int displayFlag =
         (nsk_getVerboseMode() && (sampleCount % DISPLAYING_FREQUENCY) == 0);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(frameLock)))
         return NSK_FALSE;
 
     /* get stack trace */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB6(GetStackTrace, jvmti, thread,
-                0, MAX_DEPTH, frameBuffer, &frameCount))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetStackTrace(thread, 0, MAX_DEPTH, frameBuffer, &frameCount))) {
         res = NSK_FALSE;
     } else {
         if (displayFlag) {
@@ -228,7 +216,7 @@ static int checkStackTrace(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(frameLock)))
         return NSK_FALSE;
 
     return res;
@@ -278,49 +266,45 @@ Java_nsk_jvmti_scenarios_sampling_SP07_sp07t001Thread_wrapper(JNIEnv* jni,
         return 0;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(frameLock)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetFrameLocation, jvmti, NULL, 1,
-            &sampleStack[depth].method, &sampleStack[depth].location))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetFrameLocation(NULL, 1, &sampleStack[depth].method, &sampleStack[depth].location))) {
         nsk_jvmti_setFailStatus();
         return 0;
     }
 
     depth++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetFrameLocation, jvmti, NULL, 0,
-            &sampleStack[depth].method, &sampleStack[depth].location))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetFrameLocation(NULL, 0, &sampleStack[depth].method, &sampleStack[depth].location))) {
         nsk_jvmti_setFailStatus();
         return 0;
     }
 
     depth++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(frameLock)))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (klass = NSK_CPP_STUB2(GetObjectClass,
-            jni, obj)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(obj)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return 0;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (method = NSK_CPP_STUB4(GetMethodID,
-            jni, klass, "fibonacci", "(I)I")) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "fibonacci", "(I)I")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return 0;
     }
 
-    result = NSK_CPP_STUB4(CallIntMethod, jni, obj, method, i);
+    result = jni->CallIntMethod(obj, method, i);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(frameLock)))
         return NSK_FALSE;
 
     depth--;
     depth--;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(frameLock)))
         return NSK_FALSE;
 
     return result;
@@ -355,8 +339,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "frameLock", &frameLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("frameLock", &frameLock)))
         return NSK_FALSE;
 
     /* register agent proc and arg */

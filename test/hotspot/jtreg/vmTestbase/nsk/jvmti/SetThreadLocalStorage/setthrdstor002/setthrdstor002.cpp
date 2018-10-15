@@ -66,9 +66,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY1("SetThreadLocalStorage() for current agent thread with pointer: %p\n",
                                                     (void*)initialStorage);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetThreadLocalStorage, jvmti,
-                                        NULL, (void*)initialStorage))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(NULL, (void*)initialStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -82,9 +80,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY0("GetThreadLocalStorage() for current agent thread\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadLocalStorage, jvmti,
-                                        NULL, (void**)&obtainedStorage))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadLocalStorage(NULL, (void**)&obtainedStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }

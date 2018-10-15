@@ -66,8 +66,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -79,8 +78,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -91,15 +89,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
 
         if (info.name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)info.name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (thread == NULL) {
@@ -108,41 +104,34 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread field 'MAX_LADDER' */
-    if (!NSK_JNI_VERIFY(jni, (fid =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, klass,
-                "MAX_LADDER", "I")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (fid = jni->GetStaticFieldID(klass, "MAX_LADDER", "I")) != NULL))
         return NSK_FALSE;
 
-    MAX_LADDER = NSK_CPP_STUB3(GetStaticIntField, jni, klass, fid);
+    MAX_LADDER = jni->GetStaticIntField(klass, fid);
     NSK_DISPLAY1("MAX_LADDER: %d\n", MAX_LADDER);
 
     /* get tested thread field 'depth' */
-    if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetFieldID, jni, klass, "depth", "I")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "depth", "I")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'run' */
-    if (!NSK_JNI_VERIFY(jni, (methodRun =
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "run", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (methodRun = jni->GetMethodID(klass, "run", "()V")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'catcher' */
     if (!NSK_JNI_VERIFY(jni, (methodCatcher =
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "catcher", "(II)V")) != NULL))
+            jni->GetMethodID(klass, "catcher", "(II)V")) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'thrower' */
-    if (!NSK_JNI_VERIFY(jni, (methodThrower=
-            NSK_CPP_STUB4(GetMethodID, jni, klass, "thrower", "(I)V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (methodThrower= jni->GetMethodID(klass, "thrower", "(I)V")) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "waitLock", &waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("waitLock", &waitLock)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -152,14 +141,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
 
 static int wait_for(jvmtiEnv* jvmti, jlong millis) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(waitLock)))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(RawMonitorWait, jvmti, waitLock, millis)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(waitLock, millis)))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, waitLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(waitLock)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -170,16 +158,15 @@ static int displayFrameInfo(jvmtiEnv* jvmti, jint i) {
     char *name = NULL;
     char *signature = NULL;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_DISPLAY4("    [%d] method: %s%s, location: %s\n", i, name,
         signature, jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
     return NSK_TRUE;
 }
@@ -189,19 +176,17 @@ static int complainFrameInfo(jvmtiEnv* jvmti, jint i, jmethodID method) {
     char *name = NULL;
     char *signature = NULL;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_COMPLAIN3("    got method: %s%s, location: %s\n", name, signature,
         jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+        jvmti->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, jvmti,
-            method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &name, &signature, NULL)))
         return NSK_FALSE;
 
     NSK_COMPLAIN2("    expected method: %s%s\n", name, signature);
@@ -217,19 +202,17 @@ static int checkStackTrace(jvmtiEnv* jvmti, JNIEnv* jni) {
     int displayFlag =
         (nsk_getVerboseMode() && (sampleCount % DISPLAYING_FREQUENCY) == 0);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(SuspendThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread)))
         return NSK_FALSE;
 
-    depth = NSK_CPP_STUB3(GetIntField, jni, thread, field);
+    depth = jni->GetIntField(thread, field);
 
     /* get stack trace */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB6(GetStackTrace, jvmti, thread,
-                0, MAX_DEPTH, frameBuffer, &frameCount))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetStackTrace(thread, 0, MAX_DEPTH, frameBuffer, &frameCount))) {
         res = NSK_FALSE;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(ResumeThread, jvmti, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(thread)))
         res = NSK_FALSE;
 
     if (res) {
@@ -322,7 +305,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_suspend = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     /* register agent proc and arg */

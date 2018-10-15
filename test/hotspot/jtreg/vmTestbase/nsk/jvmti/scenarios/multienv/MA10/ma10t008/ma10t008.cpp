@@ -55,8 +55,7 @@ MonitorContendedEnter(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
     MonitorContendedEnterEventsCount++;
 
     /* get thread information */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti_env,
-            thread, &info))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(thread, &info))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -72,8 +71,7 @@ MonitorContendedEntered(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
     MonitorContendedEnteredEventsCount++;
 
     /* get thread information */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti_env,
-            thread, &info))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(thread, &info))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -89,8 +87,7 @@ MonitorWait(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
     MonitorWaitEventsCount++;
 
     /* get thread information */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti_env,
-            thread, &info))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(thread, &info))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -106,8 +103,7 @@ MonitorWaited(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
     MonitorWaitedEventsCount++;
 
     /* get thread information */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti_env,
-            thread, &info))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(thread, &info))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -189,7 +185,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_monitor_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
@@ -202,17 +198,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* enable events */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
         return JNI_ERR;
 
     return JNI_OK;

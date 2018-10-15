@@ -158,9 +158,8 @@ static int prepare() {
         threadsCounts[i] = 0;
         threadsList[i] = NULL;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(Allocate, jvmti, (threadsCount * sizeof(jthread)),
-                                                    (unsigned char**)&threadsList[i])))
+        if (!NSK_JVMTI_VERIFY(jvmti->Allocate(threadsCount * sizeof(jthread),
+                                              (unsigned char**)&threadsList[i])))
             return NSK_FALSE;
 
         for (j = 0; j < threadsCount; j++) {
@@ -169,8 +168,7 @@ static int prepare() {
     }
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetAllThreads, jvmti, &allThreadsCount, &allThreadsList)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&allThreadsCount, &allThreadsList)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != NULL))
@@ -184,8 +182,7 @@ static int prepare() {
             return NSK_FALSE;
 
         /* get thread name (info) */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, allThreadsList[i], &threadInfo)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(allThreadsList[i], &threadInfo)))
             return NSK_FALSE;
 
         /* find by name */
@@ -202,8 +199,7 @@ static int prepare() {
     }
 
     /* deallocate all threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)allThreadsList)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)allThreadsList)))
         return NSK_FALSE;
 
     /* check if all tested threads found */
@@ -226,7 +222,7 @@ static int prepare() {
     for (i = 0; i < THREADS_KINDS; i++) {
         for (j = 0; j < threadsCount; j++) {
             if (!NSK_JNI_VERIFY(jni, (threadsList[i][j] =
-                    NSK_CPP_STUB2(NewGlobalRef, jni, threadsList[i][j])) != NULL))
+                    jni->NewGlobalRef(threadsList[i][j])) != NULL))
                 return NSK_FALSE;
         }
     }
@@ -244,8 +240,7 @@ static int suspendThreadsList(int suspend) {
     int i, j;
 
     /* allocate results array */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, resultsSize, (unsigned char**)&results))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate(resultsSize, (unsigned char**)&results))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -253,14 +248,10 @@ static int suspendThreadsList(int suspend) {
     for (i = 0; i < THREADS_KINDS; i++) {
         /* suspend or resume threads list */
         if (suspend) {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(SuspendThreadList, jvmti, threadsCount,
-                                                        threadsList[i], results)))
+            if (!NSK_JVMTI_VERIFY(jvmti->SuspendThreadList(threadsCount, threadsList[i], results)))
                 nsk_jvmti_setFailStatus();
         } else {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(ResumeThreadList, jvmti, threadsCount,
-                                                        threadsList[i], results)))
+            if (!NSK_JVMTI_VERIFY(jvmti->ResumeThreadList(threadsCount, threadsList[i], results)))
                 nsk_jvmti_setFailStatus();
         }
 
@@ -277,8 +268,7 @@ static int suspendThreadsList(int suspend) {
     }
 
     /* deallocate results array */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)results))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)results))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -295,13 +285,11 @@ static int suspendThreadsIndividually(int suspend) {
         for (j = 0; j < threadsCount; j++) {
             if (suspend)  {
                 NSK_DISPLAY2("    suspend thread #%d (%s)\n", j, threadsName[i]);
-                if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB2(SuspendThread, jvmti, threadsList[i][j])))
+                if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(threadsList[i][j])))
                     nsk_jvmti_setFailStatus();
             } else {
                 NSK_DISPLAY2("    resume thread #%d (%s)\n", j, threadsName[i]);
-                if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB2(ResumeThread, jvmti, threadsList[i][j])))
+                if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(threadsList[i][j])))
                     nsk_jvmti_setFailStatus();
             }
         }
@@ -329,8 +317,7 @@ static int checkThreads(int suspended, const char* kind, jlong timeout) {
             NSK_DISPLAY2("    thread #%d (%s):\n", j, threadsName[i]);
 
             /* get thread state */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetThreadState, jvmti, threadsList[i][j], &state))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threadsList[i][j], &state))) {
                 nsk_jvmti_setFailStatus();
                 return NSK_FALSE;
             }
@@ -373,14 +360,13 @@ static int clean() {
     /* dispose global references to threads */
     for (i = 0; i < THREADS_KINDS; i++) {
         for (j = 0; j < threadsCount; j++) {
-            NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadsList[i][j]));
+            NSK_TRACE(jni->DeleteGlobalRef(threadsList[i][j]));
         }
     }
 
     /* deallocate memory */
     for (i = 0; i < THREADS_KINDS; i++) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threadsList[i])))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threadsList[i])))
             return NSK_FALSE;
         threadsList[i] = NULL;
     }
@@ -465,8 +451,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities suspendCaps;
         memset(&suspendCaps, 0, sizeof(suspendCaps));
         suspendCaps.can_suspend = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &suspendCaps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&suspendCaps)))
             return JNI_ERR;
     }
 

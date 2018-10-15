@@ -73,8 +73,7 @@ static void fillEnvStorage(StorageStructure* storage) {
 static int setEnvStorage(jvmtiEnv* jvmti, StorageStructure* storage, const char where[]) {
 
     NSK_DISPLAY1("Set local storage for current JVMTI env: 0x%p\n", (void*)storage);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, jvmti, storage))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEnvironmentLocalStorage(storage))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("  ... ok\n");
@@ -89,8 +88,7 @@ static int checkEnvStorage(jvmtiEnv* jvmti, StorageStructure* initialStorage, co
     StorageStructure* storage = NULL;
 
     NSK_DISPLAY0("Get local storage for current JVMTI env\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, jvmti, (void**)&storage))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetEnvironmentLocalStorage((void**)&storage))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got storage: 0x%p\n", (void*)storage);
@@ -224,9 +222,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.VMDeath = callbackVMDeath;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 
