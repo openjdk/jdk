@@ -1153,7 +1153,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   if (accessible) {
-    st->print_cr(INTPTR_FORMAT " points into unknown readable memory", p2i(addr));
+    st->print(INTPTR_FORMAT " points into unknown readable memory:", p2i(addr));
+    for (address p = addr; p < align_up(addr + 1, sizeof(intptr_t)); ++p) {
+      st->print(" %02x", *(u1*)p);
+    }
+    st->cr();
     return;
   }
 
