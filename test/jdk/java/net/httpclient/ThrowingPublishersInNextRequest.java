@@ -25,8 +25,8 @@
  * @test
  * @summary Tests what happens when request publishers
  *          throw unexpected exceptions.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
  *        ReferenceTracker AbstractThrowingPublishers ThrowingPublishersInNextRequest
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common

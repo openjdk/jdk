@@ -27,9 +27,9 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @library /lib/testlibrary server
+ * @library /test/lib server
  * @build Http2TestServer
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
  */
 
@@ -38,7 +38,7 @@ import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

@@ -24,12 +24,11 @@
 /*
  * @test
  * @bug 8087112
- * @library /lib/testlibrary/
  * @library /test/lib
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @build jdk.testlibrary.SimpleSSLContext jdk.test.lib.Utils
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.Utils
  * @compile ../../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../../com/sun/net/httpserver/FileServerHandler.java
  * @compile ../ProxyServer.java

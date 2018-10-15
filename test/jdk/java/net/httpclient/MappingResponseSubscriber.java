@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Tests mapped response subscriber
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -62,7 +62,7 @@ import java.net.http.HttpResponse.BodySubscribers;
 import  java.net.http.HttpResponse.BodySubscriber;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

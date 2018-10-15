@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8087112 8177935
- * @library /lib/testlibrary server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -40,7 +40,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import javax.net.ssl.*;
 import java.nio.file.*;
 import java.util.concurrent.*;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import org.testng.annotations.Test;
 

@@ -27,8 +27,8 @@
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
@@ -63,7 +63,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class ManyRequests {
 

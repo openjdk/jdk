@@ -27,8 +27,8 @@
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @compile ../../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../../com/sun/net/httpserver/FileServerHandler.java
  * @compile ../ProxyServer.java

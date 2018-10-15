@@ -40,7 +40,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import static java.lang.System.out;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -49,8 +49,8 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
 /**
  * @test
  * @bug 8087112
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer
  * @run main/othervm
  *     -Djdk.internal.httpclient.debug=true

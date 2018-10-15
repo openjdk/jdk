@@ -35,13 +35,13 @@ import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 /**
  * @test
  * @bug 8207966
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain false
  * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL false
  * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain true

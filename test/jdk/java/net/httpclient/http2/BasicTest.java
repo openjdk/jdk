@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8087112
- * @library /lib/testlibrary server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -47,7 +47,7 @@ import java.util.concurrent.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 

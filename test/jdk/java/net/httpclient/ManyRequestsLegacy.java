@@ -26,16 +26,19 @@
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm/timeout=40 ManyRequestsLegacy
  * @run main/othervm/timeout=40 -Dtest.insertDelay=true ManyRequestsLegacy
  * @run main/othervm/timeout=40 -Dtest.chunkSize=64 ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequestsLegacy
- * @summary Send a large number of requests asynchronously using the legacy URL.openConnection(), to help sanitize results of the test ManyRequest.java.
+ * @run main/othervm/timeout=40 -Dtest.insertDelay=true
+ *                              -Dtest.chunkSize=64 ManyRequestsLegacy
+ * @summary Send a large number of requests asynchronously using the legacy
+ *          URL.openConnection(), to help sanitize results of the test
+ *          ManyRequest.java.
  */
 
 import javax.net.ssl.HttpsURLConnection;
@@ -70,7 +73,7 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class ManyRequestsLegacy {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import java.util.concurrent.*;
 
 /**
@@ -61,12 +61,12 @@ import java.util.concurrent.*;
  * @summary  Verifies that you can access an HTTP/2 server over HTTPS by
  *           tunnelling through an HTTP/1.1 proxy.
  * @modules java.net.http
- * @library /lib/testlibrary server
+ * @library /test/lib server
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @build jdk.testlibrary.SimpleSSLContext ProxyTest2
+ * @build jdk.test.lib.net.SimpleSSLContext ProxyTest2
  * @run main/othervm ProxyTest2
  * @author danielfuchs
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @modules jdk.httpserver
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @compile RedirectOnPost.java
  * @run main/othervm RedirectOnPost
  * @bug 8029127
@@ -38,7 +38,7 @@ import java.util.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
 import javax.net.ssl.*;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class RedirectOnPost {
 

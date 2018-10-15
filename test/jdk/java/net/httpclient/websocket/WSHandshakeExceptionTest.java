@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Basic test for WebSocketHandshakeException
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.net.http
  *          jdk.httpserver
  * @run testng/othervm -Djdk.internal.httpclient.debug=true WSHandshakeExceptionTest
@@ -39,7 +39,7 @@ import java.net.InetAddress;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocketHandshakeException;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

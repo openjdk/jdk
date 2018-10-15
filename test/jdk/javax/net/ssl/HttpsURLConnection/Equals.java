@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /**
  * @test
  * @bug 8055299
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.httpserver
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm -Djavax.net.debug=ssl,handshake,record Equals
  */
 import com.sun.net.httpserver.*;
@@ -34,7 +34,7 @@ import java.net.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.util.concurrent.*;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class Equals {
 

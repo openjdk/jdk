@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,10 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.test.lib.net;
 
 import java.util.*;
-import java.util.concurrent.*;
 import java.io.*;
-import java.net.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
@@ -40,8 +38,7 @@ import javax.net.ssl.*;
  * permissions to be granted:
  *
  * permission "java.util.PropertyPermission" "test.src.path", "read";
- * permission java.io.FilePermission
- *    "${test.src}/../../../lib/testlibrary/jdk/testlibrary/testkeys", "read";
+ * permission java.io.FilePermission "/path/to/test/lib/jdk/test/lib/testkeys", "read";
  * The exact path above depends on the location of the test.
  */
 public class SimpleSSLContext {
@@ -63,7 +60,7 @@ public class SimpleSSLContext {
                     while (st.hasMoreTokens()) {
                         String path = st.nextToken();
                         try {
-                            File f = new File(path, "jdk/testlibrary/testkeys");
+                            File f = new File(path, "jdk/test/lib/net/testkeys");
                             if (f.exists()) {
                                 try (FileInputStream fis = new FileInputStream(f)) {
                                     init(fis);
@@ -98,7 +95,7 @@ public class SimpleSSLContext {
      * loads default keystore from given directory
      */
     public SimpleSSLContext(String dir) throws IOException {
-        String file = dir+"/testkeys";
+        String file = dir + "/testkeys";
         try (FileInputStream fis = new FileInputStream(file)) {
             init(fis);
         }
@@ -107,26 +104,20 @@ public class SimpleSSLContext {
     private void init(InputStream i) throws IOException {
         try {
             char[] passphrase = "passphrase".toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(i, passphrase);
 
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
             kmf.init(ks, passphrase);
 
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
             tmf.init(ks);
 
             ssl = SSLContext.getInstance("TLS");
             ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } catch (KeyManagementException e) {
-            throw new RuntimeException(e.getMessage());
-        } catch (KeyStoreException e) {
-            throw new RuntimeException(e.getMessage());
-        } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException(e.getMessage());
-        } catch (CertificateException e) {
-            throw new RuntimeException(e.getMessage());
-        } catch (NoSuchAlgorithmException e) {
+        } catch (KeyManagementException | KeyStoreException |
+                UnrecoverableKeyException | CertificateException |
+                NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());
         }
     }

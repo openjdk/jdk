@@ -26,7 +26,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -55,9 +55,9 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 /**
  * @test
  * @bug 8087112
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.common
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer ReferenceTracker
  * @run main/othervm  CancelledResponse
  * @run main/othervm  CancelledResponse SSL

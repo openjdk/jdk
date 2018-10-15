@@ -25,8 +25,8 @@
  * @test
  * @summary Tests Exception detail message when too few response bytes are
  *          received before a socket exception or eof.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *       ShortResponseBody
@@ -55,7 +55,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

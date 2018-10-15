@@ -32,9 +32,9 @@
  *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary http2/server
+ * @library /test/lib http2/server
  * @build Http2TestServer
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *      ConcurrentResponses
@@ -67,7 +67,7 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

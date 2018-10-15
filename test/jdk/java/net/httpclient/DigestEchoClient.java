@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 import static java.lang.System.out;
@@ -62,8 +62,8 @@ import static java.lang.String.format;
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server.
  * @bug 8087112
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters DigestEchoServer
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer
  *        ReferenceTracker DigestEchoClient
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

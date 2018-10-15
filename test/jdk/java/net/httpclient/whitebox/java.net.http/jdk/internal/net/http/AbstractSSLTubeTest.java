@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,13 @@ import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Utils;
 import org.testng.annotations.Test;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
@@ -243,77 +234,5 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
         engine.setSSLParameters(params);
         engine.setUseClientMode(client);
         return engine;
-    }
-
-    /**
-     * Creates a simple usable SSLContext for SSLSocketFactory or a HttpsServer
-     * using either a given keystore or a default one in the test tree.
-     *
-     * Using this class with a security manager requires the following
-     * permissions to be granted:
-     *
-     * permission "java.util.PropertyPermission" "test.src.path", "read";
-     * permission java.io.FilePermission "${test.src}/../../../../lib/testlibrary/jdk/testlibrary/testkeys",
-     * "read"; The exact path above depends on the location of the test.
-     */
-    protected static class SimpleSSLContext {
-
-        private final SSLContext ssl;
-
-        /**
-         * Loads default keystore from SimpleSSLContext source directory
-         */
-        public SimpleSSLContext() throws IOException {
-            String paths = System.getProperty("test.src.path");
-            StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
-            boolean securityExceptions = false;
-            SSLContext sslContext = null;
-            while (st.hasMoreTokens()) {
-                String path = st.nextToken();
-                try {
-                    File f = new File(path, "../../../../lib/testlibrary/jdk/testlibrary/testkeys");
-                    if (f.exists()) {
-                        try (FileInputStream fis = new FileInputStream(f)) {
-                            sslContext = init(fis);
-                            break;
-                        }
-                    }
-                } catch (SecurityException e) {
-                    // catch and ignore because permission only required
-                    // for one entry on path (at most)
-                    securityExceptions = true;
-                }
-            }
-            if (securityExceptions) {
-                System.err.println("SecurityExceptions thrown on loading testkeys");
-            }
-            ssl = sslContext;
-        }
-
-        private SSLContext init(InputStream i) throws IOException {
-            try {
-                char[] passphrase = "passphrase".toCharArray();
-                KeyStore ks = KeyStore.getInstance("JKS");
-                ks.load(i, passphrase);
-
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                kmf.init(ks, passphrase);
-
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(ks);
-
-                SSLContext ssl = SSLContext.getInstance("TLS");
-                ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-                return ssl;
-            } catch (KeyManagementException | KeyStoreException |
-                    UnrecoverableKeyException | CertificateException |
-                    NoSuchAlgorithmException e) {
-                throw new RuntimeException(e.getMessage());
-            }
-        }
-
-        public SSLContext get() {
-            return ssl;
-        }
     }
 }

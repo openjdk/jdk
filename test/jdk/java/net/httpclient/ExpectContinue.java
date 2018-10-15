@@ -26,8 +26,8 @@
  * @summary Basic test for Expect 100-Continue ( HTTP/1.1 only )
  * @modules java.net.http
  *          jdk.httpserver
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ExpectContinue
  */
 
@@ -49,7 +49,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
