@@ -116,10 +116,10 @@ public class InstrumentationApp {
         System.out.println("INFO: AppCDSv1 " + (wb.isSharedClass(InstrumentationApp.class) ? "enabled" :"disabled"));
         System.out.println("INFO: AppCDSv2 " + (isAppCDSV2Enabled()                        ? "enabled" : "disabled"));
 
-        File bootJar = new File(args[0]);
-        File appJar  = new File(args[1]);
-        File custJar = new File(args[2]);
-        String flagFile = args[3];
+        String flagFile = args[0];
+        File bootJar = new File(args[1]);
+        File appJar  = new File(args[2]);
+        File custJar = new File(args[3]);
         waitAttach(flagFile);
 
         instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();

@@ -124,7 +124,7 @@ JLINK := $(FIXPATH) $(JLINK_CMD)
 JMOD := $(FIXPATH) $(JMOD_CMD)
 JARSIGNER := $(FIXPATH) $(JARSIGNER_CMD)
 
-BUILD_JAVA := $(JAVA)
+BUILD_JAVA := $(JDK_IMAGE_DIR)/bin/JAVA
 ################################################################################
 # Some common tools. Assume most common name and no path.
 AWK := awk
@@ -172,3 +172,13 @@ UNZIP := unzip
 EXPR := expr
 FILE := file
 HG := hg
+
+# On Solaris gnu versions of some tools are required.
+ifeq ($(OPENJDK_BUILD_OS), solaris)
+  AWK := gawk
+  GREP := ggrep
+  EGREP := ggrep -E
+  FGREP := grep -F
+  SED := gsed
+  TAR := gtar
+endif

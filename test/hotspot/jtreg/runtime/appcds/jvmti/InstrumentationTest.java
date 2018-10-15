@@ -120,7 +120,7 @@ public class InstrumentationTest {
                 "-XX:+WhiteBoxAPI",
                 "-Xshare:off",
                 agentCmdArg,
-                "InstrumentationApp", bootJar, appJar, custJar, flagFile);
+                "InstrumentationApp", flagFile, bootJar, appJar, custJar);
         TestCommon.executeAndLog(pb, "no-sharing").shouldHaveExitValue(0);
         checkAttach(t);
 
@@ -155,7 +155,7 @@ public class InstrumentationTest {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 agentCmdArg,
-               "InstrumentationApp", bootJar, appJar, custJar, flagFile);
+               "InstrumentationApp", flagFile, bootJar, appJar, custJar);
 
         CDSOptions opts = (new CDSOptions()).setXShareMode("auto");
         TestCommon.checkExec(out, opts);
