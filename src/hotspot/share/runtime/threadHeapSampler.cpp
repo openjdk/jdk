@@ -29,22 +29,29 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadHeapSampler.hpp"
 
-// Cheap random number generator
+// Cheap random number generator.
 uint64_t ThreadHeapSampler::_rnd;
 // Default is 512kb.
-int ThreadHeapSampler::_sampling_interval = 512 * 1024;
-int ThreadHeapSampler::_enabled;
+volatile int ThreadHeapSampler::_sampling_interval = 512 * 1024;
 
-// Statics for the fast log
-static const int FastLogNumBits = 10;
-static const int FastLogMask = (1 << FastLogNumBits) - 1;
-static double log_table[1<<FastLogNumBits];  // Constant
-static bool log_table_initialized;
+// Ordering here is important: _log_table first, _log_table_initialized second.
+double ThreadHeapSampler::_log_table[1 << ThreadHeapSampler::FastLogNumBits] = {};
+
+// Force initialization of the log_table.
+bool ThreadHeapSampler::_log_table_initialized = init_log_table();
+
+bool ThreadHeapSampler::init_log_table() {
+  for (int i = 0; i < (1 << FastLogNumBits); i++) {
+    _log_table[i] = (log(1.0 + static_cast<double>(i+0.5) / (1 << FastLogNumBits))
+                    / log(2.0));
+  }
+  return true;
+}
 
 // Returns the next prng value.
 // pRNG is: aX+b mod c with a = 0x5DEECE66D, b =  0xB, c = 1<<48
 // This is the lrand64 generator.
-static uint64_t next_random(uint64_t rnd) {
+uint64_t ThreadHeapSampler::next_random(uint64_t rnd) {
   const uint64_t PrngMult = 0x5DEECE66DLL;
   const uint64_t PrngAdd = 0xB;
   const uint64_t PrngModPower = 48;
@@ -54,7 +61,7 @@ static uint64_t next_random(uint64_t rnd) {
   return (PrngMult * rnd + PrngAdd) & PrngModMask;
 }
 
-static double fast_log2(const double & d) {
+double ThreadHeapSampler::fast_log2(const double& d) {
   assert(d>0, "bad value passed to assert");
   uint64_t x = 0;
   assert(sizeof(d) == sizeof(x),
@@ -64,7 +71,9 @@ static double fast_log2(const double & d) {
   assert(FastLogNumBits <= 20, "FastLogNumBits should be less than 20.");
   const uint32_t y = x_high >> (20 - FastLogNumBits) & FastLogMask;
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;
-  return exponent + log_table[y];
+
+  assert(_log_table_initialized, "log table should be initialized");
+  return exponent + _log_table[y];
 }
 
 // Generates a geometric variable with the specified mean (512K by default).
@@ -132,36 +141,6 @@ void ThreadHeapSampler::check_for_sampling(oop obj, size_t allocation_size, size
 
   size_t overflow_bytes = total_allocated_bytes - _bytes_until_sample;
   pick_next_sample(overflow_bytes);
-}
-
-void ThreadHeapSampler::init_log_table() {
-  MutexLockerEx mu(ThreadHeapSampler_lock, Mutex::_no_safepoint_check_flag);
-
-  if (log_table_initialized) {
-    return;
-  }
-
-  for (int i = 0; i < (1 << FastLogNumBits); i++) {
-    log_table[i] = (log(1.0 + static_cast<double>(i+0.5) / (1 << FastLogNumBits))
-                    / log(2.0));
-  }
-
-  log_table_initialized = true;
-}
-
-void ThreadHeapSampler::enable() {
-  // Done here to be done when things have settled. This adds a mutex lock but
-  // presumably, users won't be enabling and disabling all the time.
-  init_log_table();
-  OrderAccess::release_store(&_enabled, 1);
-}
-
-int ThreadHeapSampler::enabled() {
-  return OrderAccess::load_acquire(&_enabled);
-}
-
-void ThreadHeapSampler::disable() {
-  OrderAccess::release_store(&_enabled, 0);
 }
 
 int ThreadHeapSampler::get_sampling_interval() {

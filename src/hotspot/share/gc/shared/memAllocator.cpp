@@ -187,7 +187,7 @@ void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
   // support for JVMTI VMObjectAlloc event (no-op if not enabled)
   JvmtiExport::vm_object_alloc_event_collector(obj());
 
-  if (!ThreadHeapSampler::enabled()) {
+  if (!JvmtiExport::should_post_sampled_object_alloc()) {
     // Sampling disabled
     return;
   }
@@ -282,7 +282,7 @@ HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const 
   HeapWord* mem = NULL;
   ThreadLocalAllocBuffer& tlab = _thread->tlab();
 
-  if (ThreadHeapSampler::enabled()) {
+  if (JvmtiExport::should_post_sampled_object_alloc()) {
     // Try to allocate the sampled object from TLAB, it is possible a sample
     // point was put and the TLAB still has space.
     tlab.set_back_allocation_end();
