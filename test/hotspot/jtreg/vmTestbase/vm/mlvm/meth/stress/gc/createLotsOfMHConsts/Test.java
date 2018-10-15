@@ -50,7 +50,7 @@
  * @build vm.mlvm.meth.stress.gc.createLotsOfMHConsts.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *      vm.mlvm.meth.stress.gc.createLotsOfMHConsts.Test
  *      -stressIterationsFactor 100000
  *      -generator vm.mlvm.cp.share.GenCPFullOfMH

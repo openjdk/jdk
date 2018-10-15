@@ -33,7 +33,7 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *        -Xbootclasspath/a:.
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI

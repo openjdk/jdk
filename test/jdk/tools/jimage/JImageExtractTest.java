@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules jdk.jlink/jdk.tools.jimage
  * @build jdk.test.lib.Asserts
- * @run main/othervm JImageExtractTest
+ * @run main/othervm/timeout=300 JImageExtractTest
  */
 
 import java.io.IOException;

@@ -842,7 +842,7 @@ endef
 # Parameter 1 is the name of the rule, and is also the name of the variable.
 #
 # Remaining parameters are named arguments. These include:
-#   KEYWORDS          A list of valid keywords
+#   SINGLE_KEYWORDS   A list of valid keywords with single string values
 #   STRING_KEYWORDS   A list of valid keywords, processed as string. This means
 #       that '%20' will be replaced by ' ' to allow for multi-word strings.
 #
@@ -856,7 +856,7 @@ define ParseKeywordVariableBody
       $$(eval mangled_part_eval := $$(call DoubleDollar, $$(mangled_part))) \
       $$(eval part := $$$$(subst ||||,$$$$(SPACE),$$$$(mangled_part_eval))) \
       $$(eval $1_NO_MATCH := true) \
-      $$(foreach keyword, $$($1_KEYWORDS), \
+      $$(foreach keyword, $$($1_SINGLE_KEYWORDS), \
         $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
         $$(if $$(filter $$(keyword)=%, $$(part)), \
           $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part)))) \
@@ -871,11 +871,11 @@ define ParseKeywordVariableBody
         ) \
       ) \
       $$(if $$($1_NO_MATCH), \
-        $$(if $$(filter $$(part), $$($1_KEYWORDS) $$($1_STRING_KEYWORDS)), \
+        $$(if $$(filter $$(part), $$($1_SINGLE_KEYWORDS) $$($1_STRING_KEYWORDS)), \
           $$(info Keyword $$(part) for $1 needs to be assigned a value.) \
         , \
           $$(info $$(part) is not a valid keyword for $1.) \
-          $$(info Valid keywords: $$($1_KEYWORDS) $$($1_STRING_KEYWORDS).) \
+          $$(info Valid keywords: $$($1_SINGLE_KEYWORDS) $$($1_STRING_KEYWORDS).) \
         ) \
         $$(error Cannot continue) \
       ) \
