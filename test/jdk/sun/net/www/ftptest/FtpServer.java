@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.util.ArrayList;
  *
  */
 
-public class FtpServer extends Thread {
+public class FtpServer extends Thread implements AutoCloseable {
     private ServerSocket listener = null;
     private FtpFileSystemHandler fsh = null;
     private FtpAuthHandler auth = null;
@@ -132,6 +132,15 @@ public class FtpServer extends Thread {
             listener.close();
         } catch (IOException e) {
 
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        terminate();
+        listener.close();
+        if (activeClientsCount() > 0) {
+            killClients();
         }
     }
 }
