@@ -132,7 +132,6 @@ extern Mutex*   Management_lock;                 // a lock used to serialize JVM
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
-extern Mutex*   ThreadHeapSampler_lock;          // protects the static data for initialization.
 
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -200,9 +199,11 @@ class MutexLocker: StackObj {
 // for debugging: check that we're already owning this lock (or are at a safepoint)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Monitor * lock);
+void assert_locked_or_safepoint_weak(const Monitor * lock);
 void assert_lock_strong(const Monitor * lock);
 #else
 #define assert_locked_or_safepoint(lock)
+#define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
 #endif
 

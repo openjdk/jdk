@@ -26,8 +26,8 @@
  * @summary Tests an asynchronous BodySubscriber that completes
  *          immediately with an InputStream which issues bad
  *          requests
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext ReferenceTracker
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -38,7 +38,7 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

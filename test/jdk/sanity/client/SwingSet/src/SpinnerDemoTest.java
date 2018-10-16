@@ -47,7 +47,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.spinner.SpinnerDemo
- * @run testng SpinnerDemoTest
+ * @run testng/timeout=600 SpinnerDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class SpinnerDemoTest {

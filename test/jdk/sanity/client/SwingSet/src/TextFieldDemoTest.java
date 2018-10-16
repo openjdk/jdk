@@ -65,7 +65,7 @@ import static org.testng.AssertJUnit.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.textfield.TextFieldDemo
- * @run testng TextFieldDemoTest
+ * @run testng/timeout=600 TextFieldDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class TextFieldDemoTest {

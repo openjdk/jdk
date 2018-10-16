@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @library /lib/testlibrary server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

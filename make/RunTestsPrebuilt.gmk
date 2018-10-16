@@ -49,10 +49,11 @@ TOPDIR := $(strip $(patsubst %/make/, %, $(dir $(makefile_path))))
 # given.
 # Note: No spaces are allowed around the arguments.
 #
-# $1: The name of the argument
+# $1: The name of the variable
 # $2: The default value, if any, or OPTIONAL (do not provide a default but
 #     do not exit if it is missing)
 # $3: If NO_CHECK, disable checking for target file/directory existence
+#     If MKDIR, create the default directory
 define SetupVariable
   ifeq ($$($1), )
     ifeq ($2, )
@@ -75,10 +76,17 @@ define SetupVariable
   endif
   # If $1 has a value (is not optional), and $3 is not set (to NO_CHECK),
   # and if wildcard is empty, then complain that the file is missing.
-  ifeq ($$(strip $$(if $$($1), , OPTIONAL) $$(wildcard $$($1)) $3), )
-    $$(info Error: Prebuilt variable $1 points to missing file/directory:)
-    $$(info '$$($1)')
-    $$(error Cannot continue.)
+  ifeq ($3, MKDIR)
+    ifneq ($$(findstring $$(LOG), info debug trace), )
+      $$(info Creating directory for $1)
+    endif
+    $$(shell mkdir -p $$($1))
+  else ifneq ($3, NO_CHECK)
+    ifeq ($$(strip $$(if $$($1), , OPTIONAL) $$(wildcard $$($1))), )
+      $$(info Error: Prebuilt variable $1 points to missing file/directory:)
+      $$(info '$$($1)')
+      $$(error Cannot continue.)
+    endif
   endif
 endef
 
@@ -106,14 +114,14 @@ endef
 # Verify that user has given correct additional input.
 
 # These variables are absolutely necessary
-$(eval $(call SetupVariable,OUTPUTDIR))
+$(eval $(call SetupVariable,OUTPUTDIR,$(TOPDIR)/build/run-test-prebuilt,MKDIR))
 $(eval $(call SetupVariable,BOOT_JDK))
 $(eval $(call SetupVariable,JT_HOME))
 
 # These can have default values based on the ones above
 $(eval $(call SetupVariable,JDK_IMAGE_DIR,$(OUTPUTDIR)/images/jdk))
 $(eval $(call SetupVariable,TEST_IMAGE_DIR,$(OUTPUTDIR)/images/test))
-$(eval $(call SetupVariable,SYMBOLS_IMAGE_DIR,$(OUTPUTDIR)/images/symbols))
+$(eval $(call SetupVariable,SYMBOLS_IMAGE_DIR,$(OUTPUTDIR)/images/symbols,NO_CHECK))
 
 # Provide default values for tools that we need
 $(eval $(call SetupVariable,MAKE,make,NO_CHECK))
@@ -202,8 +210,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(wildcard $(TEST_IMAGE_DIR)/bin/fixpath.exe), )
-    $$(info Error: fixpath is missing from test image '$(TEST_IMAGE_DIR)')
-    $$(error Cannot continue.)
+    $(info Error: fixpath is missing from test image '$(TEST_IMAGE_DIR)')
+    $(error Cannot continue.)
   endif
   FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.exe -c
   PATH_SEP:=;
@@ -214,15 +222,17 @@ endif
 
 # Check number of cores
 ifeq ($(OPENJDK_TARGET_OS), linux)
-    NUM_CORES := $(shell $(CAT) /proc/cpuinfo  | $(GREP) -c processor)
+  NUM_CORES := $(shell $(CAT) /proc/cpuinfo  | $(GREP) -c processor)
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
-    NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
+  NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
-    NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | $(GREP) -c on-line)
+  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | $(GREP) -c on-line)
 else ifeq ($(OPENJDK_TARGET_OS), windows)
-    NUM_CORES := $(NUMBER_OF_PROCESSORS)
-else
-    NUM_CORES := 1
+  NUM_CORES := $(NUMBER_OF_PROCESSORS)
+endif
+ifeq ($(NUM_CORES), )
+  $(warn Could not find number of CPUs, assuming 1)
+  NUM_CORES := 1
 endif
 
 ################################################################################
@@ -276,9 +286,6 @@ run-test-prebuilt:
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
-	@if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
-	  exit 1 ; \
-	fi
 
 all: run-test-prebuilt
 

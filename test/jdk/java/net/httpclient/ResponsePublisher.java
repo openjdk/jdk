@@ -26,8 +26,8 @@
  * @bug 8201186
  * @summary Tests an asynchronous BodySubscriber that completes
  *          immediately with a Publisher<List<ByteBuffer>>
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -40,7 +40,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

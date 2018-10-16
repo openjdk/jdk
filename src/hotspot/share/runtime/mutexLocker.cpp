@@ -133,8 +133,6 @@ Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;
 Monitor* RedefineClasses_lock         = NULL;
 
-Mutex*   ThreadHeapSampler_lock       = NULL;
-
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = NULL;
 Monitor* JfrMsg_lock                  = NULL;
@@ -165,6 +163,16 @@ void assert_locked_or_safepoint(const Monitor * lock) {
   // see if invoker of VM operation owns it
   VM_Operation* op = VMThread::vm_operation();
   if (op != NULL && op->calling_thread() == lock->owner()) return;
+  fatal("must own lock %s", lock->name());
+}
+
+// a weaker assertion than the above
+void assert_locked_or_safepoint_weak(const Monitor * lock) {
+  if (IgnoreLockingAssertions) return;
+  assert(lock != NULL, "Need non-NULL lock");
+  if (lock->is_locked()) return;
+  if (SafepointSynchronize::is_at_safepoint()) return;
+  if (!Universe::is_fully_initialized()) return;
   fatal("must own lock %s", lock->name());
 }
 
@@ -300,8 +308,6 @@ void mutex_init() {
   def(CompileThread_lock           , PaddedMonitor, nonleaf+5,   false, Monitor::_safepoint_check_always);
   def(PeriodicTask_lock            , PaddedMonitor, nonleaf+5,   true,  Monitor::_safepoint_check_sometimes);
   def(RedefineClasses_lock         , PaddedMonitor, nonleaf+5,   true,  Monitor::_safepoint_check_always);
-
-  def(ThreadHeapSampler_lock       , PaddedMutex,   nonleaf,     false, Monitor::_safepoint_check_never);
 
   if (WhiteBoxAPI) {
     def(Compilation_lock           , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_never);

@@ -25,8 +25,8 @@
  * @test
  * @summary Tests that our client deals correctly with servers that
  *          close the connection right after sending the last byte.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters EncodedCharsInURI
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters EncodedCharsInURI
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -35,7 +35,7 @@
  */
 //*        -Djdk.internal.httpclient.debug=true
 
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

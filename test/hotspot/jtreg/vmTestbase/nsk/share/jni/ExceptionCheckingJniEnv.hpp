@@ -66,8 +66,20 @@ class ExceptionCheckingJniEnv {
   jobject GetObjectField(jobject obj, jfieldID field);
   void SetObjectField(jobject obj, jfieldID field, jobject value);
 
+  jsize GetArrayLength(jarray array);
+  jsize GetStringLength(jstring str);
+
+  void* GetPrimitiveArrayCritical(jarray array, jboolean* isCopy);
+  void ReleasePrimitiveArrayCritical(jarray array, void* carray, jint mode);
+  const jchar* GetStringCritical(jstring str, jboolean* isCopy);
+  void ReleaseStringCritical(jstring str, const jchar* carray);
+
   jobject NewGlobalRef(jobject obj);
   void DeleteGlobalRef(jobject obj);
+  jobject NewLocalRef(jobject ref);
+  void DeleteLocalRef(jobject ref);
+  jweak NewWeakGlobalRef(jobject obj);
+  void DeleteWeakGlobalRef(jweak obj);
 
   // ExceptionCheckingJniEnv methods.
   JNIEnv* GetJNIEnv() {

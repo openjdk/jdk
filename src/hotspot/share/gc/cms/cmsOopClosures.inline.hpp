@@ -41,8 +41,7 @@ inline void MetadataVisitingOopsInGenClosure::do_klass(Klass* k) {
 }
 
 inline void MetadataVisitingOopsInGenClosure::do_cld(ClassLoaderData* cld) {
-  bool claim = true;  // Must claim the class loader data before processing.
-  cld->oops_do(this, claim);
+  cld->oops_do(this, ClassLoaderData::_claim_strong);
 }
 
 // Decode the oop and call do_oop on it.

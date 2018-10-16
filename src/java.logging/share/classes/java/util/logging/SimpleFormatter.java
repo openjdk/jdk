@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ import jdk.internal.logger.SurrogateLogger;
  * <p>
  * <a id="formatting">
  * <b>Configuration:</b></a>
- * The {@code SimpleFormatter} is initialized with the
- * <a href="../Formatter.html#syntax">format string</a>
+ * The {@code SimpleFormatter} is initialized with the format string
  * specified in the {@code java.util.logging.SimpleFormatter.format}
  * property to {@linkplain #format(LogRecord) format} the log messages.
  * This property can be defined
@@ -69,8 +68,7 @@ public class SimpleFormatter extends Formatter {
     /**
      * Format the given LogRecord.
      * <p>
-     * The formatting can be customized by specifying the
-     * <a href="../Formatter.html#syntax">format string</a>
+     * The formatting can be customized by specifying the format string
      * in the <a href="#formatting">
      * {@code java.util.logging.SimpleFormatter.format}</a> property.
      * The given {@code LogRecord} will be formatted as if by calling:

@@ -25,8 +25,8 @@
  * @test
  * @summary Tests that all response body is delivered to the BodySubscriber
  *          before an abortive error terminates the flow
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ResponseBodyBeforeError
  */
 
@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

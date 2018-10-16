@@ -23,6 +23,7 @@
 #include <jni.h>
 #include <stdio.h>
 #include <time.h>
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 
 extern "C" {
@@ -35,7 +36,9 @@ static jfieldID objFieldId = NULL;
  * Signature: ([Z)Z
  */
 JNIEXPORT jfloat JNICALL Java_nsk_share_gc_lock_jni_FloatArrayCriticalLocker_criticalNative
-(JNIEnv *env, jobject o, jlong enterTime, jlong sleepTime) {
+(JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
+        ExceptionCheckingJniEnvPtr env(jni_env);
+
         jsize size, i;
         jfloatArray arr;
         jfloat *pa;
@@ -44,22 +47,11 @@ JNIEXPORT jfloat JNICALL Java_nsk_share_gc_lock_jni_FloatArrayCriticalLocker_cri
 
         if (objFieldId == NULL) {
                 jclass klass = env->GetObjectClass(o);
-                if (klass == NULL) {
-                        printf("Error: GetObjectClass returned NULL\n");
-                        return 0;
-                }
                 objFieldId = env->GetFieldID(klass, "obj", "Ljava/lang/Object;");
-                if (objFieldId == NULL) {
-                        printf("Error: GetFieldID returned NULL\n");
-                        return 0;
-                }
         }
         arr = (jfloatArray) env->GetObjectField(o, objFieldId);
-        if (arr == NULL) {
-                printf("Error: GetObjectField returned NULL\n");
-                return JNI_FALSE;
-        }
         env->SetObjectField(o, objFieldId, NULL);
+
         size = env->GetArrayLength(arr);
         start_time = time(NULL);
         enterTime /= 1000;

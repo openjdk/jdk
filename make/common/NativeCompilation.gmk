@@ -67,7 +67,6 @@ endef
 # Param 2: Working directory
 # Param 3: Source file
 # Param 4: Compile command
-# Param 5: Object name
 ################################################################################
 define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
@@ -76,8 +75,7 @@ define WriteCompileCommandsFragment
       "directory": "$(strip $2)"$(COMMA) \
       "file": "$(strip $3)"$(COMMA) \
       "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
-        $(subst $(FIXPATH),,$4))))"$(COMMA) \
-      "output": "$(strip $5)" \
+        $(subst $(FIXPATH),,$4))))" \
     }$(COMMA), \
     $1)
 endef
@@ -331,7 +329,7 @@ define SetupCompileNativeFileBody
 
     $$($1_OBJ_JSON): $$($1_OBJ_DEPS)
 	$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$($1_SRC_FILE), \
-	    $$($1_COMPILER) $$($1_COMPILE_OPTIONS), $$($1_OBJ))
+	    $$($1_COMPILER) $$($1_COMPILE_OPTIONS))
 
     $$($1_OBJ): $$($1_OBJ_DEPS) | $$($$($1_BASE)_BUILD_INFO)
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
@@ -744,7 +742,7 @@ define SetupNativeCompilationBody
 
         $$($1_PCH_FILE_JSON): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$<, \
-		    $$($1_PCH_COMMAND) $$< -o $$($1_PCH_FILE), $$($1_PCH_FILE))
+		    $$($1_PCH_COMMAND) $$< -o $$($1_PCH_FILE))
       endif
     endif
   endif

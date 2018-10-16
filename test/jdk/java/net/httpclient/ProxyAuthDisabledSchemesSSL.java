@@ -28,8 +28,8 @@
  *          headers directly when connecting with a server over SSL, and
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
  *          net properties.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext DigestEchoServer DigestEchoClient
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer DigestEchoClient
  *        ReferenceTracker ProxyAuthDisabledSchemesSSL
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

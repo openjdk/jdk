@@ -23,7 +23,7 @@
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -49,8 +49,8 @@ import static java.lang.System.out;
  *          be preemptively downgraded. That, is the stack should attempt
  *          a new h2 connection to the new host.
  * @bug 8196967
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpsTunnelTest
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpsTunnelTest
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack

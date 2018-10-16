@@ -1088,8 +1088,8 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 }
 
 bool FileMapInfo::verify_mapped_heap_regions(int first, int num) {
-  for (int i = first;
-           i <= first + num; i++) {
+  assert(num > 0, "sanity");
+  for (int i = first; i < first + num; i++) {
     if (!verify_region_checksum(i)) {
       return false;
     }

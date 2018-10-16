@@ -45,8 +45,8 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    KEYWORDS := JOBS TIMEOUT, \
-    STRING_KEYWORDS := VM_OPTIONS, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR, \
+    STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
 # Helper function to propagate TEST_OPTS values.
@@ -104,22 +104,50 @@ GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, $(wildcard $(TEST_IMAGE_DI
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, $(GTEST_LAUNCHER_DIRS)))
 
 ################################################################################
+# Setup global test running parameters
+################################################################################
+
+# Each factor variable comes in 3 variants. The first one is reserved for users
+# to use on command line. The other two are for predifined configurations in JDL
+# and for machine specific configurations respectively.
+TEST_JOBS_FACTOR ?= 1
+TEST_JOBS_FACTOR_JDL ?= 1
+TEST_JOBS_FACTOR_MACHINE ?= 1
+
+ifeq ($(TEST_JOBS), 0)
+  # Concurrency based on min(cores / 2, 12) * TEST_JOBS_FACTOR
+  TEST_JOBS := $(shell $(AWK) \
+    'BEGIN { \
+      c = $(NUM_CORES) / 2; \
+      if (c > 12) c = 12; \
+      c = c * $(TEST_JOBS_FACTOR); \
+      c = c * $(TEST_JOBS_FACTOR_JDL); \
+      c = c * $(TEST_JOBS_FACTOR_MACHINE); \
+      if (c < 1) c = 1; \
+      printf "%.0f", c; \
+    }')
+endif
+
+################################################################################
 # Parse control variables
 ################################################################################
 
 ifneq ($(TEST_OPTS), )
   # Inform the user
   $(info Running tests using TEST_OPTS control variable '$(TEST_OPTS)')
-
-  $(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
-  $(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
-
-  $(eval $(call SetTestOpt,JOBS,JTREG))
-  $(eval $(call SetTestOpt,TIMEOUT,JTREG))
 endif
 
+$(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
+$(eval $(call SetTestOpt,JAVA_OPTIONS,JTREG))
+$(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
+$(eval $(call SetTestOpt,JAVA_OPTIONS,GTEST))
+
+$(eval $(call SetTestOpt,JOBS,JTREG))
+$(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
+
 $(eval $(call ParseKeywordVariable, JTREG, \
-    KEYWORDS := JOBS TIMEOUT TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM \
+        EXTRA_PROBLEM_LISTS KEYWORDS, \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS, \
 ))
 
@@ -129,8 +157,8 @@ ifneq ($(JTREG), )
 endif
 
 $(eval $(call ParseKeywordVariable, GTEST, \
-    KEYWORDS := REPEAT, \
-    STRING_KEYWORDS := OPTIONS VM_OPTIONS, \
+    SINGLE_KEYWORDS := REPEAT, \
+    STRING_KEYWORDS := OPTIONS VM_OPTIONS JAVA_OPTIONS, \
 ))
 
 ifneq ($(GTEST), )
@@ -143,17 +171,6 @@ endif
 # Component-specific Jtreg settings
 ################################################################################
 
-ifeq ($(TEST_JOBS), 0)
-  # If TEST_JOBS is not specified, hotspot fallback default is
-  # min(num_cores / 2, 12).
-  hotspot_JTREG_JOBS := $(shell $(EXPR) $(NUM_CORES) / 2)
-  ifeq ($(hotspot_JTREG_JOBS), 0)
-    hotspot_JTREG_JOBS := 1
-  else ifeq ($(shell $(EXPR) $(hotspot_JTREG_JOBS) \> 12), 1)
-    hotspot_JTREG_JOBS := 12
-  endif
-endif
-
 hotspot_JTREG_MAX_MEM := 0
 hotspot_JTREG_ASSERT := false
 hotspot_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/hotspot/jtreg/native
@@ -164,6 +181,8 @@ jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
 langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
 nashorn_JTREG_PROBLEM_LIST += $(TOPDIR)/test/nashorn/ProblemList.txt
 hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
+
+langtools_JTREG_MAX_MEM := 768m
 
 ################################################################################
 # Parse test selection
@@ -368,15 +387,16 @@ define SetupRunGtestTestBody
     $1_GTEST_REPEAT :=--gtest_repeat=$$(GTEST_REPEAT)
   endif
 
-  run-test-$1:
+  run-test-$1: $(TEST_PREREQS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
-	         -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
-	         --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
-	         $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
+	        -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
+	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
+	        $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
+	        $$($1_GTEST_JAVA_OPTIONS) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
@@ -447,12 +467,11 @@ define SetupRunJtregTestBody
 
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
 
-  $1_COMPONENT := \
+  $1_TEST_ROOT := \
       $$(strip $$(foreach root, $$(JTREG_TESTROOTS), \
-        $$(if $$(filter $$(root)%, $$(JTREG_TOPDIR)/$$($1_TEST_NAME)), \
-          $$(lastword $$(subst /, $$(SPACE), $$(root))) \
-        ) \
+        $$(if $$(filter $$(root)%, $$(JTREG_TOPDIR)/$$($1_TEST_NAME)), $$(root)) \
       ))
+  $1_COMPONENT := $$(lastword $$(subst /, $$(SPACE), $$($1_TEST_ROOT)))
   # This will work only as long as just hotspot has the additional "jtreg" directory
   ifeq ($$($1_COMPONENT), jtreg)
     $1_COMPONENT := hotspot
@@ -475,11 +494,12 @@ define SetupRunJtregTestBody
   $$(eval $$(call SetJtregValue,$1,JTREG_BASIC_OPTIONS))
   $$(eval $$(call SetJtregValue,$1,JTREG_PROBLEM_LIST))
 
+  # Only the problem list for the current test root should be used.
+  $1_JTREG_PROBLEM_LIST := $$(filter $$($1_TEST_ROOT)%, $$($1_JTREG_PROBLEM_LIST))
+
   ifneq ($(TEST_JOBS), 0)
-    # User has specified TEST_JOBS, use that as fallback default
     $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(TEST_JOBS)))
   else
-    # Use JOBS as default (except for hotspot)
     $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(JOBS)))
   endif
 
@@ -487,7 +507,7 @@ define SetupRunJtregTestBody
   # we may end up with a lot of JVM's
   $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $$(EXPR) 25 / $$($1_JTREG_JOBS))
 
-  JTREG_TIMEOUT ?= 4
+  JTREG_TIMEOUT_FACTOR ?= 4
   JTREG_VERBOSE ?= fail,error,summary
   JTREG_RETAIN ?= fail,error
 
@@ -498,10 +518,10 @@ define SetupRunJtregTestBody
 
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
-      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT) \
+      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE)
 
-  $1_JTREG_BASIC_OPTIONS += -automatic -keywords:\!ignore -ignore:quiet
+  $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet
 
   # Make it possible to specify the JIB_DATA_DIR for tests using the
   # JIB Artifact resolver
@@ -531,6 +551,14 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += $$(addprefix -exclude:, $$($1_JTREG_PROBLEM_LIST))
   endif
 
+  ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
+    # Accept both absolute paths as well as relative to the current test root.
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix -exclude:, $$(wildcard \
+        $$(JTREG_EXTRA_PROBLEM_LISTS) \
+        $$(addprefix $$($1_TEST_ROOT)/, $$(JTREG_EXTRA_PROBLEM_LISTS)) \
+    ))
+  endif
+
   ifneq ($$(JIB_HOME), )
     $1_JTREG_BASIC_OPTIONS += -e:JIB_HOME=$$(JIB_HOME)
   endif
@@ -541,10 +569,21 @@ define SetupRunJtregTestBody
     $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
   endif
 
+  ifneq ($$(JTREG_KEYWORDS), )
+    # The keywords string may contain problematic characters and may be quoted
+    # already when it arrives here. Remove any existing quotes and replace them
+    # with one set of single quotes.
+    $1_JTREG_KEYWORDS := \
+        $$(strip $$(subst $$(SQUOTE),,$$(subst $$(DQUOTE),,$$(JTREG_KEYWORDS))))
+    ifneq ($$($1_JTREG_KEYWORDS), )
+      $1_JTREG_BASIC_OPTIONS += -k:'$$($1_JTREG_KEYWORDS)'
+    endif
+  endif
+
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 
-  run-test-$1: clean-workdir-$1
+  run-test-$1: clean-workdir-$1 $(TEST_PREREQS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -631,7 +670,7 @@ define SetupRunSpecialTestBody
     $$(error Invalid special test specification: $$($1_TEST_NAME))
   endif
 
-  run-test-$1:
+  run-test-$1: $(TEST_PREREQS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))

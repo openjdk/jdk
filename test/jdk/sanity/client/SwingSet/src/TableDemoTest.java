@@ -64,7 +64,7 @@ import com.sun.swingset3.demos.table.TableDemo;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.table.TableDemo
- * @run testng TableDemoTest
+ * @run testng/timeout=600 TableDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class TableDemoTest {

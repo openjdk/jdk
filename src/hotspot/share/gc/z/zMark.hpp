@@ -108,7 +108,7 @@ public:
   template <bool finalizable, bool publish> void mark_object(uintptr_t addr);
 
   void start();
-  void mark();
+  void mark(bool initial);
   bool end();
 
   void flush_and_free();

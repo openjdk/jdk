@@ -61,7 +61,7 @@ public class CheckBlacklistedCerts {
 
         // Assumes the full src is available
         File blacklist = new File(System.getProperty("test.src"),
-                "../../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem");
+                "../../../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem");
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         try (FileInputStream fis = new FileInputStream(blacklist)) {

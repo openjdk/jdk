@@ -55,7 +55,13 @@ class x86 {
   static address _double_sign_mask;
   static address _double_sign_flip;
 
+  static address _method_entry_barrier;
+
  public:
+
+  static address method_entry_barrier() {
+    return _method_entry_barrier;
+  }
 
   static address get_previous_fp_entry() {
     return _get_previous_fp_entry;

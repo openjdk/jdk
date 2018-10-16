@@ -2213,7 +2213,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   Management::oops_do(&oop_closure);
   JvmtiExport::oops_do(&oop_closure);
   SystemDictionary::oops_do(&oop_closure);
-  CLDToOopClosure cld_closure(&oop_closure);
+  CLDToOopClosure cld_closure(&oop_closure, ClassLoaderData::_claim_strong);
   ClassLoaderDataGraph::cld_do(&cld_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should

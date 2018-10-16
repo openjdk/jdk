@@ -25,8 +25,8 @@
  * @test
  * @bug 8161157
  * @summary Test response body handlers/subscribers when there is no body
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

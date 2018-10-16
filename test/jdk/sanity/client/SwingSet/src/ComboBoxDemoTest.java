@@ -45,7 +45,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.combobox.ComboBoxDemo
- * @run testng ComboBoxDemoTest
+ * @run testng/timeout=600 ComboBoxDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ComboBoxDemoTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
@@ -36,8 +36,11 @@
  * @run main/othervm/timeout=40 -Dtest.XFixed=true ManyRequests2
  * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.insertDelay=true ManyRequests2
  * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.chunkSize=64 ManyRequests2
- * @run main/othervm/timeout=40 -Djdk.internal.httpclient.debug=true -Dtest.XFixed=true -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests2
- * @summary Send a large number of requests asynchronously. The server echoes back using known content length.
+ * @run main/othervm/timeout=40 -Djdk.internal.httpclient.debug=true
+ *                              -Dtest.XFixed=true -Dtest.insertDelay=true
+ *                              -Dtest.chunkSize=64 ManyRequests2
+ * @summary Send a large number of requests asynchronously.
+ *          The server echoes back using known content length.
  */
  // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl ManyRequests
 

@@ -27,11 +27,11 @@
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/ /test/lib
+ * @library /test/lib
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @build jdk.testlibrary.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @build LightWeightHttpServer
  * @build jdk.test.lib.Platform
  * @build jdk.test.lib.util.FileUtils

@@ -540,13 +540,6 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
       record_class_file_load_hook_enabled();
     }
 
-    if (event_type == JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) {
-      if (enabled) {
-        ThreadHeapSampler::enable();
-      } else {
-        ThreadHeapSampler::disable();
-      }
-    }
     JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.

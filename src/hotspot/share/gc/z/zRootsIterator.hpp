@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
 #include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
@@ -37,8 +38,7 @@ public:
   }
 };
 
-typedef OopStorage::ParState<false /* concurrent */, false /* is_const */> ZOopStorageIterator;
-typedef OopStorage::ParState<true /* concurrent */, false /* is_const */>  ZConcurrentOopStorageIterator;
+typedef OopStorage::ParState<true /* concurrent */, false /* is_const */> ZOopStorageIterator;
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 class ZSerialOopsDo {
@@ -86,35 +86,48 @@ public:
 
 class ZRootsIterator {
 private:
-  ZOopStorageIterator _jni_handles_iter;
-
   void do_universe(ZRootsIteratorClosure* cl);
-  void do_jni_handles(ZRootsIteratorClosure* cl);
   void do_object_synchronizer(ZRootsIteratorClosure* cl);
   void do_management(ZRootsIteratorClosure* cl);
   void do_jvmti_export(ZRootsIteratorClosure* cl);
   void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
   void do_system_dictionary(ZRootsIteratorClosure* cl);
-  void do_class_loader_data_graph(ZRootsIteratorClosure* cl);
   void do_threads(ZRootsIteratorClosure* cl);
   void do_code_cache(ZRootsIteratorClosure* cl);
 
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_universe>                  _universe;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_object_synchronizer>       _object_synchronizer;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_management>                _management;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_export>              _jvmti_export;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>         _jvmti_weak_export;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_system_dictionary>         _system_dictionary;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_jni_handles>             _jni_handles;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_threads>                 _threads;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>              _code_cache;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_universe>            _universe;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_object_synchronizer> _object_synchronizer;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_management>          _management;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_export>        _jvmti_export;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_system_dictionary>   _system_dictionary;
+  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_threads>           _threads;
+  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>        _code_cache;
 
 public:
   ZRootsIterator();
   ~ZRootsIterator();
 
   void oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_export = false);
+};
+
+class ZConcurrentRootsIterator {
+private:
+  const bool                 _marking;
+  SuspendibleThreadSetJoiner _sts_joiner;
+  ZOopStorageIterator        _jni_handles_iter;
+
+  void do_jni_handles(ZRootsIteratorClosure* cl);
+  void do_class_loader_data_graph(ZRootsIteratorClosure* cl);
+
+  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_jni_handles>             _jni_handles;
+  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
+
+public:
+  ZConcurrentRootsIterator(bool marking);
+  ~ZConcurrentRootsIterator();
+
+  void oops_do(ZRootsIteratorClosure* cl);
 };
 
 class ZWeakRootsIterator {
@@ -135,9 +148,9 @@ public:
 
 class ZConcurrentWeakRootsIterator {
 private:
-  ZConcurrentOopStorageIterator _vm_weak_handles_iter;
-  ZConcurrentOopStorageIterator _jni_weak_handles_iter;
-  ZConcurrentOopStorageIterator _string_table_iter;
+  ZOopStorageIterator _vm_weak_handles_iter;
+  ZOopStorageIterator _jni_weak_handles_iter;
+  ZOopStorageIterator _string_table_iter;
 
   void do_vm_weak_handles(ZRootsIteratorClosure* cl);
   void do_jni_weak_handles(ZRootsIteratorClosure* cl);

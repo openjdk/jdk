@@ -39,6 +39,7 @@ protected:
     : BarrierSet(barrier_set_assembler,
                  barrier_set_c1,
                  barrier_set_c2,
+                 NULL /* barrier_set_nmethod */,
                  fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 

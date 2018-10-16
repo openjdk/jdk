@@ -24,8 +24,8 @@
 #include <jni.h>
 #include <stdio.h>
 #include <time.h>
-#include "jni_tools.h"
 #include "ExceptionCheckingJniEnv.hpp"
+#include "jni_tools.h"
 
 extern "C" {
 

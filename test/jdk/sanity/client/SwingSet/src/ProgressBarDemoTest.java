@@ -49,7 +49,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.progressbar.ProgressBarDemo
- * @run testng/timeout=240 ProgressBarDemoTest
+ * @run testng/timeout=1200 ProgressBarDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ProgressBarDemoTest {

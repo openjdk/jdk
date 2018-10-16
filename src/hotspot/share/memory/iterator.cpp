@@ -32,7 +32,7 @@
 DoNothingClosure do_nothing_cl;
 
 void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
-  cld->oops_do(_oop_closure, _must_claim_cld);
+  cld->oops_do(_oop_closure, _cld_claim);
 }
 
 void ObjectToOopClosure::do_object(oop obj) {

@@ -170,10 +170,10 @@ class VerifyCLDClosure: public CLDClosure {
  public:
   VerifyCLDClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
   void do_cld(ClassLoaderData* cld) {
-    cld->oops_do(_oop_closure, false);
+    cld->oops_do(_oop_closure, ClassLoaderData::_claim_none);
 
     _young_ref_counter_closure.reset_count();
-    cld->oops_do(&_young_ref_counter_closure, false);
+    cld->oops_do(&_young_ref_counter_closure, ClassLoaderData::_claim_none);
     if (_young_ref_counter_closure.count() > 0) {
       guarantee(cld->has_modified_oops(), "CLD " PTR_FORMAT ", has young %d refs but is not dirty.", p2i(cld), _young_ref_counter_closure.count());
     }

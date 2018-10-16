@@ -48,6 +48,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
@@ -340,19 +341,21 @@ public class JemmyExt {
      * full dump and a screenshot of the whole screen.
      */
     public static void captureAll() {
-        PNGEncoder.captureScreen("failure.png", PNGEncoder.COLOR_MODE);
+        String lookAndFeelClassName = UIManager.getLookAndFeel().getClass().getSimpleName();
+        PNGEncoder.captureScreen("failure_" + lookAndFeelClassName + ".png", PNGEncoder.COLOR_MODE);
         try {
-            Dumper.dumpAll("dumpAll.xml");
+            Dumper.dumpAll("dumpAll_" + lookAndFeelClassName + ".xml");
         } catch (FileNotFoundException ex) {
             Logger.getLogger(JemmyExt.class.getName()).log(Level.SEVERE, null, ex);
         }
-        captureWindows();
+        captureWindows(lookAndFeelClassName);
     }
 
     /**
      * Captures each showing window image using Window.paint() method.
+     * @param lookAndFeelClassName
      */
-    private static void captureWindows() {
+    private static void captureWindows(String lookAndFeelClassName) {
         try {
             EventQueue.invokeAndWait(() -> {
                 Window[] windows = Window.getWindows();
@@ -367,7 +370,8 @@ public class JemmyExt {
                     g.dispose();
 
                     try {
-                        ImageIO.write(img, "png", new File("window" + index++ + ".png"));
+                        ImageIO.write(img, "png", new File("window_" + lookAndFeelClassName
+                                + "_" + index++ + ".png"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

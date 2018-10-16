@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /**
  * @test
  * @bug 6270015
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm Test13
- * @summary  Light weight HTTP server
+ * @summary Light weight HTTP server
  */
 
 import com.sun.net.httpserver.*;
@@ -37,7 +37,7 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 /* basic http/s connectivity test
  * Tests:

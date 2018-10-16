@@ -128,9 +128,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                            // loader. _keep_alive does not need to be volatile or
                            // atomic since there is one unique CLD per unsafe anonymous class.
 
-  volatile int _claimed;   // true if claimed, for example during GC traces.
-                           // To avoid applying oop closure more than once.
-                           // Has to be an int because we cas it.
+  volatile int _claim; // non-zero if claimed, for example during GC traces.
+                       // To avoid applying oop closure more than once.
   ChunkedHandleList _handles; // Handles to constant pool arrays, Modules, etc, which
                               // have the same life cycle of the corresponding ClassLoader.
 
@@ -200,11 +199,22 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Dictionary* create_dictionary();
 
   void initialize_name(Handle class_loader);
+
  public:
   // GC interface.
-  void clear_claimed() { _claimed = 0; }
-  bool claimed() const { return _claimed == 1; }
-  bool claim();
+
+  // The "claim" is typically used to check if oops_do needs to be applied on
+  // the CLD or not. Most GCs only perform strong marking during the marking phase.
+  enum {
+    _claim_none        = 0,
+    _claim_finalizable = 2,
+    _claim_strong      = 3
+  };
+  void clear_claim() { _claim = 0; }
+  bool claimed() const { return _claim != 0; }
+  bool try_claim(int claim);
+  int get_claim() const { return _claim; }
+  void set_claim(int claim) { _claim = claim; }
 
   // Computes if the CLD is alive or not. This is safe to call in concurrent
   // contexts.
@@ -264,7 +274,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   void initialize_holder(Handle holder);
 
-  void oops_do(OopClosure* f, bool must_claim, bool clear_modified_oops = false);
+  void oops_do(OopClosure* f, int claim_value, bool clear_modified_oops = false);
 
   void classes_do(KlassClosure* klass_closure);
   Klass* klasses() { return _klasses; }

@@ -49,7 +49,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.window.WindowDemo
- * @run testng WindowDemoTest
+ * @run testng/timeout=600 WindowDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class WindowDemoTest {

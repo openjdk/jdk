@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,19 @@ import java.lang.ref.*;
  * @author Santiago PericasGeertsen
  */
 public class ThreadLocalBufferAllocator {
-   private static ThreadLocal<SoftReference<BufferAllocator>> tlba = new ThreadLocal<>();
+    private static final ThreadLocal<SoftReference<BufferAllocator>> TL = new ThreadLocal<>();
 
-   public static BufferAllocator getBufferAllocator() {
-        SoftReference<BufferAllocator> bAllocatorRef = tlba.get();
-        if (bAllocatorRef == null || bAllocatorRef.get() == null) {
-            bAllocatorRef = new SoftReference<>(new BufferAllocator());
-            tlba.set(bAllocatorRef);
+    public static BufferAllocator getBufferAllocator() {
+        BufferAllocator ba = null;
+        SoftReference<BufferAllocator> sr = TL.get();
+        if (sr != null) {
+            ba = sr.get();
         }
-
-        return bAllocatorRef.get();
-   }
+        if (ba == null) {
+            ba = new BufferAllocator();
+            sr = new SoftReference<>(ba);
+            TL.set(sr);
+        }
+        return ba;
+    }
 }

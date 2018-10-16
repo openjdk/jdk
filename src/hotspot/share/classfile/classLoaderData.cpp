@@ -139,7 +139,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous
   // it from being unloaded during parsing of the unsafe anonymous class.
   // The null-class-loader should always be kept alive.
   _keep_alive((is_unsafe_anonymous || h_class_loader.is_null()) ? 1 : 0),
-  _claimed(0),
+  _claim(0),
   _handles(),
   _klasses(NULL), _packages(NULL), _modules(NULL), _unnamed_module(NULL), _dictionary(NULL),
   _jmethod_ids(NULL),
@@ -268,12 +268,17 @@ bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
 }
 #endif // PRODUCT
 
-bool ClassLoaderData::claim() {
-  if (_claimed == 1) {
-    return false;
+bool ClassLoaderData::try_claim(int claim) {
+  for (;;) {
+    int old_claim = Atomic::load(&_claim);
+    if ((old_claim & claim) == claim) {
+      return false;
+    }
+    int new_claim = old_claim | claim;
+    if (Atomic::cmpxchg(new_claim, &_claim, old_claim) == old_claim) {
+      return true;
+    }
   }
-
-  return (int) Atomic::cmpxchg(1, &_claimed, 0) == 0;
 }
 
 // Unsafe anonymous classes have their own ClassLoaderData that is marked to keep alive
@@ -295,8 +300,8 @@ void ClassLoaderData::dec_keep_alive() {
   }
 }
 
-void ClassLoaderData::oops_do(OopClosure* f, bool must_claim, bool clear_mod_oops) {
-  if (must_claim && !claim()) {
+void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oops) {
+  if (claim_value != ClassLoaderData::_claim_none && !try_claim(claim_value)) {
     return;
   }
 
