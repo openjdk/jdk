@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,6 @@ class FileOutputStream extends OutputStream
     private final Object closeLock = new Object();
 
     private volatile boolean closed;
-
-    private final Object altFinalizer;
 
     /**
      * Creates a file output stream to write to the file with the
@@ -235,10 +233,7 @@ class FileOutputStream extends OutputStream
         this.path = name;
 
         open(name, append);
-        altFinalizer = getFinalizer(this);
-        if (altFinalizer == null) {
-            FileCleanable.register(fd);   // open sets the fd, register the cleanup
-        }
+        FileCleanable.register(fd);   // open sets the fd, register the cleanup
     }
 
     /**
@@ -274,7 +269,6 @@ class FileOutputStream extends OutputStream
         }
         this.fd = fdObj;
         this.path = null;
-        this.altFinalizer = null;
 
         fd.attach(this);
     }
@@ -457,98 +451,9 @@ class FileOutputStream extends OutputStream
         return fc;
     }
 
-    /**
-     * Cleans up the connection to the file, and ensures that the
-     * {@link #close} method of this file output stream is
-     * called when there are no more references to this stream.
-     * The {@link #finalize} method does not call {@link #close} directly.
-     *
-     * @apiNote
-     * To release resources used by this stream {@link #close} should be called
-     * directly or by try-with-resources.
-     *
-     * @implSpec
-     * If this FileOutputStream has been subclassed and the {@link #close}
-     * method has been overridden, the {@link #close} method will be
-     * called when the FileOutputStream is unreachable.
-     * Otherwise, it is implementation specific how the resource cleanup described in
-     * {@link #close} is performed.
-     *
-     * @deprecated The {@code finalize} method has been deprecated and will be removed.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
-     *
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FileInputStream#close()
-     */
-    @Deprecated(since="9", forRemoval = true)
-    protected void finalize() throws IOException {
-    }
-
     private static native void initIDs();
 
     static {
         initIDs();
     }
-
-    /*
-     * Returns a finalizer object if the FOS needs a finalizer; otherwise null.
-     * If the FOS has a close method; it needs an AltFinalizer.
-     */
-    private static Object getFinalizer(FileOutputStream fos) {
-        Class<?> clazz = fos.getClass();
-        while (clazz != FileOutputStream.class) {
-            try {
-                clazz.getDeclaredMethod("close");
-                return new AltFinalizer(fos);
-            } catch (NoSuchMethodException nsme) {
-                // ignore
-            }
-            clazz = clazz.getSuperclass();
-        }
-        return null;
-    }
-
-    /**
-     * Class to call {@code FileOutputStream.close} when finalized.
-     * If finalization of the stream is needed, an instance is created
-     * in its constructor(s).  When the set of instances
-     * related to the stream is unreachable, the AltFinalizer performs
-     * the needed call to the stream's {@code close} method.
-     */
-    static class AltFinalizer {
-        private final FileOutputStream fos;
-
-        AltFinalizer(FileOutputStream fos) {
-            this.fos = fos;
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        protected final void finalize() {
-            try {
-                if (fos.fd != null) {
-                    if (fos.fd == FileDescriptor.out || fos.fd == FileDescriptor.err) {
-                        // Subclass may override flush; otherwise it is no-op
-                        fos.flush();
-                    } else {
-                        /* if fd is shared, the references in FileDescriptor
-                         * will ensure that finalizer is only called when
-                         * safe to do so. All references using the fd have
-                         * become unreachable. We can call close()
-                         */
-                        fos.close();
-                    }
-                }
-            } catch (IOException ioe) {
-                // ignore
-            }
-        }
-    }
-
 }
