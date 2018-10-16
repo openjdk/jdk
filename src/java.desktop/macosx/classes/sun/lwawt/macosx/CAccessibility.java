@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,39 @@
 
 package sun.lwawt.macosx;
 
-import sun.lwawt.LWWindowPeer;
-
-import java.awt.*;
-import java.beans.*;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Window;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
-import javax.accessibility.*;
-import javax.swing.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleTable;
+import javax.accessibility.AccessibleText;
+import javax.accessibility.AccessibleValue;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
+import javax.swing.JTextArea;
+
 import sun.awt.AWTAccessor;
+import sun.lwawt.LWWindowPeer;
 
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
@@ -626,7 +648,7 @@ class CAccessibility implements PropertyChangeListener {
                                 currentAC = currentAccessible.getAccessibleContext();
                                 currentName = currentAC.getAccessibleName();
                                 currentRole = (AccessibleRole)childrenAndRoles.get(i+1);
-                                if ( currentName.equals(activeDescendantName) &&
+                                if (currentName != null && currentName.equals(activeDescendantName) &&
                                      currentRole.equals(activeDescendantRole) ) {
                                     newArray.add(0, currentAccessible);
                                     newArray.add(1, currentRole);
@@ -646,6 +668,26 @@ class CAccessibility implements PropertyChangeListener {
 
                 return new Object[] { childrenAndRoles.get(whichChildren * 2), childrenAndRoles.get((whichChildren * 2) + 1) };
             }
+        }, c);
+    }
+
+    private static final int JAVA_AX_ROWS = 1;
+    private static final int JAVA_AX_COLS = 2;
+
+    public static int getTableInfo(final Accessible a, final Component c,
+                                   final int info) {
+        if (a == null) return 0;
+        return invokeAndWait(() -> {
+            AccessibleContext ac = a.getAccessibleContext();
+            AccessibleTable table = ac.getAccessibleTable();
+            if (table != null) {
+                if (info == JAVA_AX_COLS) {
+                    return table.getAccessibleColumnCount();
+                } else if (info == JAVA_AX_ROWS) {
+                    return table.getAccessibleRowCount();
+                }
+            }
+            return 0;
         }, c);
     }
 
