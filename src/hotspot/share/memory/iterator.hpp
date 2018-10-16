@@ -127,12 +127,13 @@ class CLDClosure : public Closure {
 
 class CLDToOopClosure : public CLDClosure {
   OopClosure*       _oop_closure;
-  bool              _must_claim_cld;
+  int               _cld_claim;
 
  public:
-  CLDToOopClosure(OopClosure* oop_closure, bool must_claim_cld = true) :
+  CLDToOopClosure(OopClosure* oop_closure,
+                  int cld_claim) :
       _oop_closure(oop_closure),
-      _must_claim_cld(must_claim_cld) {}
+      _cld_claim(cld_claim) {}
 
   void do_cld(ClassLoaderData* cld);
 };

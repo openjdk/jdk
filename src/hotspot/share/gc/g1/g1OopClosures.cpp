@@ -52,7 +52,7 @@ void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
 
     // Clean the cld since we're going to scavenge all the metadata.
     // Clear modified oops only if this cld is claimed.
-    cld->oops_do(_closure, _must_claim, /*clear_modified_oops*/true);
+    cld->oops_do(_closure, _claim, /*clear_modified_oops*/true);
 
     _closure->set_scanned_cld(NULL);
 

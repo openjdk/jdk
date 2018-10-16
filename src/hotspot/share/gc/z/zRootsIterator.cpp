@@ -242,7 +242,7 @@ void ZConcurrentRootsIterator::do_jni_handles(ZRootsIteratorClosure* cl) {
 
 void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
-  CLDToOopClosure cld_cl(cl, _marking /* must_claim */);
+  CLDToOopClosure cld_cl(cl, _marking ? ClassLoaderData::_claim_strong : ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&cld_cl);
 }
 

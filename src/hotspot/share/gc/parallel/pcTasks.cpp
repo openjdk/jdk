@@ -110,7 +110,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
       break;
 
     case class_loader_data: {
-        CLDToOopClosure cld_closure(&mark_and_push_closure);
+        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
         ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
       }
       break;

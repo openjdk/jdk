@@ -2398,7 +2398,7 @@ class VerifyCLDOopsCLDClosure : public CLDClosure {
  public:
   VerifyCLDOopsCLDClosure(CMSBitMap* bitmap) : _oop_closure(bitmap) {}
   void do_cld(ClassLoaderData* cld) {
-    cld->oops_do(&_oop_closure, false, false);
+    cld->oops_do(&_oop_closure, ClassLoaderData::_claim_none, false);
   }
 };
 
@@ -2413,7 +2413,7 @@ void CMSCollector::verify_after_remark_work_2() {
   // Mark from roots one level into CMS
   MarkRefsIntoVerifyClosure notOlder(_span, verification_mark_bm(),
                                      markBitMap());
-  CLDToOopClosure cld_closure(&notOlder, true);
+  CLDToOopClosure cld_closure(&notOlder, ClassLoaderData::_claim_strong);
 
   heap->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
@@ -2886,7 +2886,7 @@ void CMSCollector::checkpointRootsInitialWork() {
       }
     } else {
       // The serial version.
-      CLDToOopClosure cld_closure(&notOlder, true);
+      CLDToOopClosure cld_closure(&notOlder, ClassLoaderData::_claim_strong);
       heap->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
       StrongRootsScope srs(1);
@@ -4269,7 +4269,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   _timer.reset();
   _timer.start();
 
-  CLDToOopClosure cld_closure(&par_mri_cl, true);
+  CLDToOopClosure cld_closure(&par_mri_cl, ClassLoaderData::_claim_strong);
 
   heap->cms_process_roots(_strong_roots_scope,
                           false,     // yg was scanned above
@@ -4331,7 +4331,7 @@ class CMSParRemarkTask: public CMSParMarkTask {
 class RemarkCLDClosure : public CLDClosure {
   CLDToOopClosure _cm_closure;
  public:
-  RemarkCLDClosure(OopClosure* oop_closure) : _cm_closure(oop_closure) {}
+  RemarkCLDClosure(OopClosure* oop_closure) : _cm_closure(oop_closure, ClassLoaderData::_claim_strong) {}
   void do_cld(ClassLoaderData* cld) {
     // Check if we have modified any oops in the CLD during the concurrent marking.
     if (cld->has_accumulated_modified_oops()) {
