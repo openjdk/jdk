@@ -934,23 +934,6 @@ class PSParallelCompact : AllStatic {
     virtual bool do_object_b(oop p);
   };
 
-  class AdjustPointerClosure: public BasicOopIterateClosure {
-   public:
-    AdjustPointerClosure(ParCompactionManager* cm) {
-      assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-      _cm = cm;
-    }
-    template <typename T> void do_oop_work(T* p);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-
-    // This closure provides its own oop verification code.
-    debug_only(virtual bool should_verify_oops() { return false; })
-   private:
-    ParCompactionManager* _cm;
-  };
-
-  friend class AdjustPointerClosure;
   friend class RefProcTaskProxy;
   friend class PSParallelCompactTest;
 

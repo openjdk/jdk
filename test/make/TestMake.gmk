@@ -39,7 +39,10 @@ copy-files:
 test-idea:
 	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
 
+test-compile-commands:
+	+$(MAKE) -f TestCompileCommands.gmk $(TEST_SUBTARGET)
+
 
 all: make-base java-compilation copy-files test-idea
 
-.PHONY: default all make-base java-compilation copy-files test-idea
+.PHONY: default all make-base java-compilation copy-files test-idea test-compile-commands

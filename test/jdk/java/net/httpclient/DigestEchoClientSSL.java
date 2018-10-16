@@ -26,8 +26,8 @@
  * @bug 8087112
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server over SSL.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext DigestEchoServer
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer
  *        DigestEchoClient ReferenceTracker DigestEchoClientSSL
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

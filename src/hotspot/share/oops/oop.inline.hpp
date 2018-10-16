@@ -351,8 +351,8 @@ void oopDesc::forward_to(oop p) {
          "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
-  assert(!is_archive_object(oop(this)) &&
-         !is_archive_object(p),
+  assert(!is_archived_object(oop(this)) &&
+         !is_archived_object(p),
          "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
@@ -425,30 +425,6 @@ void oopDesc::incr_age() {
     set_mark_raw(mark_raw()->incr_age());
   }
 }
-
-#if INCLUDE_PARALLELGC
-void oopDesc::pc_follow_contents(ParCompactionManager* cm) {
-  klass()->oop_pc_follow_contents(this, cm);
-}
-
-void oopDesc::pc_update_contents(ParCompactionManager* cm) {
-  Klass* k = klass();
-  if (!k->is_typeArray_klass()) {
-    // It might contain oops beyond the header, so take the virtual call.
-    k->oop_pc_update_pointers(this, cm);
-  }
-  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
-}
-
-void oopDesc::ps_push_contents(PSPromotionManager* pm) {
-  Klass* k = klass();
-  if (!k->is_typeArray_klass()) {
-    // It might contain oops beyond the header, so take the virtual call.
-    k->oop_ps_push_contents(this, pm);
-  }
-  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
-}
-#endif // INCLUDE_PARALLELGC
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl) {

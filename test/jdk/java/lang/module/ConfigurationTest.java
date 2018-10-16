@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
- * @build ConfigurationTest ModuleUtils
+ * @build ConfigurationTest
+ *        jdk.test.lib.util.ModuleUtils
  * @run testng ConfigurationTest
  * @summary Basic tests for java.lang.module.Configuration
  */
@@ -46,6 +47,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import jdk.test.lib.util.ModuleUtils;
 
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleInfoWriter;

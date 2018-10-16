@@ -105,15 +105,14 @@ Java_nsk_jvmti_scenarios_allocation_AP05_ap05t001_setTag( JNIEnv* jni,
                                                           jobject target,
                                                           jlong   tag ) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, target, tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
     }
 }
 
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP05_ap05t001_setReferrer( JNIEnv* jni, jclass klass, jobject ref) {
-    if (!NSK_JNI_VERIFY(jni, (referrer =
-            NSK_CPP_STUB2(NewGlobalRef, jni, ref)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (referrer = jni->NewGlobalRef(ref)) != NULL))
         nsk_jvmti_setFailStatus();
 }
 
@@ -130,12 +129,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         staticFieldsCount = 0;
         instanceFieldsCount = 0;
         NSK_DISPLAY0("\nCalling IterateOverReachableObjects\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                                                           heapRootCallback,
-                                                           stackReferenceCallback,
-                                                           objectReferenceCallback,
-                                                           NULL /*user_data*/))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                                 stackReferenceCallback,
+                                                                 objectReferenceCallback,
+                                                                 NULL /*user_data*/))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -156,12 +153,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         instanceFieldsCount = 0;
         NSK_DISPLAY0("\nCalling IterateOverObjectsReachableFromObject\n");
         {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(IterateOverObjectsReachableFromObject,
-                        jvmti,
-                        referrer,
-                        objectReferenceCallback,
-                        NULL /*user_data*/))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(
+                    referrer, objectReferenceCallback, NULL /*user_data*/))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
@@ -180,7 +173,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
 
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, referrer));
+        NSK_TRACE(jni->DeleteGlobalRef(referrer));
 
     } while (0);
 
@@ -213,12 +206,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_tag_objects = 1;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)

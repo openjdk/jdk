@@ -143,13 +143,13 @@ public:
   inline size_t removed() const { return _removed; }
 
   inline void move_to_next() {
-    if (_current_discovered == _next_discovered) {
+    if (oopDesc::equals_raw(_current_discovered, _next_discovered)) {
       // End of the list.
       _current_discovered = NULL;
     } else {
       _current_discovered = _next_discovered;
     }
-    assert(_current_discovered != _first_seen, "cyclic ref_list found");
+    assert(!oopDesc::equals_raw(_current_discovered, _first_seen), "cyclic ref_list found");
     _processed++;
   }
 };

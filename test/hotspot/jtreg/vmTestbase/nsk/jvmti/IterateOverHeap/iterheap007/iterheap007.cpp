@@ -46,7 +46,7 @@ heapObjectCallback(jlong class_tag,
                    void* user_data) {
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTimerInfo, st_jvmti, &timer_info1 ))) {
+            st_jvmti->GetCurrentThreadCpuTimerInfo(&timer_info1 ))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -65,13 +65,13 @@ heapObjectCallback(jlong class_tag,
     /* ---------------------------------------------------------------------- */
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTime, st_jvmti, &nanos ))) {
+            st_jvmti->GetCurrentThreadCpuTime(&nanos ))) {
         nsk_jvmti_setFailStatus();
     }
     /* ---------------------------------------------------------------------- */
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTimerInfo, st_jvmti, &timer_info2 ))) {
+            st_jvmti->GetTimerInfo(&timer_info2 ))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -91,7 +91,7 @@ heapObjectCallback(jlong class_tag,
 
     nanos = 0;
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTime, st_jvmti, &nanos ))) {
+            st_jvmti->GetTime(&nanos ))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -113,11 +113,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_EITHER\n");
         {
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(IterateOverHeap,
-                        jvmti,
-                        JVMTI_HEAP_OBJECT_EITHER,
-                        heapObjectCallback,
-                        (void *)user_data))) {
+                    jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_EITHER, heapObjectCallback, (void *)user_data))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -164,7 +160,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         caps.can_get_current_thread_cpu_time = 1;
 
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+                jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

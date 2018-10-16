@@ -122,8 +122,6 @@ JNIEXPORT void JNICALL Java_java_net_NetworkInterface_init(JNIEnv *env, jclass c
 
 JNIEXPORT void JNICALL NET_ThrowNew(JNIEnv *env, int errorNum, char *msg);
 
-int NET_GetError();
-
 void NET_ThrowCurrent(JNIEnv *env, char *msg);
 
 jfieldID NET_GetFileDescriptorID(JNIEnv *env);
@@ -202,7 +200,6 @@ NET_EnableFastTcpLoopback(int fd);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 
-JNIEXPORT jint JNICALL
-NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 
 #endif /* NET_UTILS_H */

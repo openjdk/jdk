@@ -3238,16 +3238,6 @@ void os::init(void) {
   Bsd::clock_init();
   initial_time_count = javaTimeNanos();
 
-#ifdef __APPLE__
-  // XXXDARWIN
-  // Work around the unaligned VM callbacks in hotspot's
-  // sharedRuntime. The callbacks don't use SSE2 instructions, and work on
-  // Linux, Solaris, and FreeBSD. On Mac OS X, dyld (rightly so) enforces
-  // alignment when doing symbol lookup. To work around this, we force early
-  // binding of all symbols now, thus binding when alignment is known-good.
-  _dyld_bind_fully_image_containing_address((const void *) &os::init);
-#endif
-
   os::Posix::init();
 }
 
@@ -3795,7 +3785,7 @@ extern char** environ;
 // or -1 on failure (e.g. can't fork a new process).
 // Unlike system(), this function can be called from signal handler. It
 // doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd) {
+int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
   const char * argv[4] = {"sh", "-c", cmd, NULL};
 
   // fork() in BsdThreads/NPTL is not async-safe. It needs to run

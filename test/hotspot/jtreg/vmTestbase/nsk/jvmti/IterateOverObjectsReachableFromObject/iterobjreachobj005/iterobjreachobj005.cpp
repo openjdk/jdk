@@ -52,8 +52,7 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 
     objCounter++;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTimerInfo, st_jvmti, &timer_info1 ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetCurrentThreadCpuTimerInfo(&timer_info1))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -71,14 +70,12 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
     }
     /* ---------------------------------------------------------------------- */
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetCurrentThreadCpuTime, st_jvmti, &nanos ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetCurrentThreadCpuTime(&nanos))) {
         nsk_jvmti_setFailStatus();
     }
     /* ---------------------------------------------------------------------- */
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTimerInfo, st_jvmti, &timer_info2 ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetTimerInfo(&timer_info2))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -97,8 +94,7 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
     /* ---------------------------------------------------------------------- */
 
     nanos = 0;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTime, st_jvmti, &nanos ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetTime(&nanos))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -131,29 +127,23 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
 
             NSK_DISPLAY1("Find static field in debugee class: %s\n", objectFieldName);
-            if (!NSK_JNI_VERIFY(jni, (objectField =
-                    NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                     objectFieldName, debugeeClassSignature)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (objectField = jni->GetStaticFieldID(
+                    debugeeClass, objectFieldName, debugeeClassSignature)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
 
             NSK_DISPLAY1("Find value of static field in debugee class: %s\n", objectFieldName);
             if (!NSK_JNI_VERIFY(jni, (object =
-                    NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                     objectField)) != NULL)) {
+                    jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
 
             NSK_DISPLAY0("Calling IterateOverObjectsReachableFromObject with filter JVMTI_HEAP_OBJECT_EITHER\n");
             {
-                if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB4(IterateOverObjectsReachableFromObject,
-                            jvmti,
-                            object,
-                            objectReferenceCallback,
-                            &user_data))) {
+                if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(
+                        object, objectReferenceCallback, &user_data))) {
                     nsk_jvmti_setFailStatus();
                 }
             }
@@ -205,8 +195,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         caps.can_tag_objects = 1;
         caps.can_get_current_thread_cpu_time = 1;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

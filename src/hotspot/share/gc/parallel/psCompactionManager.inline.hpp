@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 #define SHARE_VM_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
@@ -36,6 +37,37 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class PCMarkAndPushClosure: public OopClosure {
+private:
+  ParCompactionManager* _compaction_manager;
+public:
+  PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+
+  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops()    { return false; })
+};
+
+class PCIterateMarkAndPushClosure: public MetadataVisitingOopIterateClosure {
+private:
+  ParCompactionManager* _compaction_manager;
+public:
+  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) : MetadataVisitingOopIterateClosure(rp), _compaction_manager(cm) { }
+
+  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+
+  void do_klass_nv(Klass* k)                      { _compaction_manager->follow_klass(k); }
+  void do_cld_nv(ClassLoaderData* cld)            { _compaction_manager->follow_class_loader(cld); }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops()    { return false; })
+};
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
   return stack_array()->steal(queue_num, t);
@@ -84,14 +116,6 @@ inline void ParCompactionManager::mark_and_push(T* p) {
   }
 }
 
-template <typename T>
-inline void ParCompactionManager::MarkAndPushClosure::do_oop_work(T* p) {
-  _compaction_manager->mark_and_push(p);
-}
-
-inline void ParCompactionManager::MarkAndPushClosure::do_oop(oop* p)       { do_oop_work(p); }
-inline void ParCompactionManager::MarkAndPushClosure::do_oop(narrowOop* p) { do_oop_work(p); }
-
 inline void ParCompactionManager::follow_klass(Klass* klass) {
   oop holder = klass->klass_holder();
   mark_and_push(&holder);
@@ -101,19 +125,8 @@ inline void ParCompactionManager::FollowStackClosure::do_void() {
   _compaction_manager->follow_marking_stacks();
 }
 
-inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {
-  MarkAndPushClosure mark_and_push_closure(this);
-
-  cld->oops_do(&mark_and_push_closure, true);
-}
-
-inline void ParCompactionManager::follow_contents(oop obj) {
-  assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-  obj->pc_follow_contents(this);
-}
-
-template <class T>
-inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCompactionManager* cm) {
+template <typename T>
+inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionManager* cm) {
   const size_t len = size_t(obj->length());
   const size_t beg_index = size_t(index);
   assert(beg_index < len || len == 0, "index too large");
@@ -134,16 +147,34 @@ inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCo
   }
 }
 
-inline void ParCompactionManager::follow_contents(objArrayOop obj, int index) {
+inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
   if (UseCompressedOops) {
-    oop_pc_follow_contents_specialized<narrowOop>(obj, index, this);
+    follow_array_specialized<narrowOop>(obj, index, this);
   } else {
-    oop_pc_follow_contents_specialized<oop>(obj, index, this);
+    follow_array_specialized<oop>(obj, index, this);
   }
 }
 
 inline void ParCompactionManager::update_contents(oop obj) {
-  obj->pc_update_contents(this);
+  if (!obj->klass()->is_typeArray_klass()) {
+    PCAdjustPointerClosure apc(this);
+    obj->oop_iterate(&apc);
+  }
+}
+
+inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {
+  PCMarkAndPushClosure mark_and_push_closure(this);
+  cld->oops_do(&mark_and_push_closure, true);
+}
+
+inline void ParCompactionManager::follow_contents(oop obj) {
+  assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
+  if (obj->is_objArray()) {
+    follow_array(objArrayOop(obj), 0);
+  } else {
+    PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
+    obj->oop_iterate(&cl);
+  }
 }
 
 #endif // SHARE_VM_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP

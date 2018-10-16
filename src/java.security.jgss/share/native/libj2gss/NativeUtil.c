@@ -145,7 +145,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
     return JNI_ERR;
   }
   CLS_GSSNameElement = (*env)->NewGlobalRef(env, cls);
-  if (CLS_GSSException == NULL) {
+  if (CLS_GSSNameElement == NULL) {
     return JNI_ERR;
   }
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/GSSCredElement");

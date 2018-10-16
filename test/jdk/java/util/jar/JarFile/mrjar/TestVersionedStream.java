@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163798 8189611
+ * @bug 8163798 8189611 8211728
  * @summary basic tests for multi-release jar versioned streams
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
@@ -82,7 +82,8 @@ public class TestVersionedStream {
                 "v10/p/Foo.class",
                 "v10/q/Bar.class",
                 "v" + LATEST_VERSION + "/p/Bar.class",
-                "v" + LATEST_VERSION + "/p/Foo.class"
+                "v" + LATEST_VERSION + "/p/Foo.class",
+                "v" + LATEST_VERSION + "/META-INF/Foo.class"
         );
 
         jar("cf mmr.jar -C base . " +
@@ -224,6 +225,11 @@ public class TestVersionedStream {
                     throw new UncheckedIOException(x);
                 }
             });
+
+            if (!unversionedEntryNames.contains("META-INF/Foo.class") ||
+                versionedNames.indexOf("META-INF/Foo.class") != -1) {
+                Assert.fail("versioned META-INF/Foo.class test failed");
+            }
         }
     }
 

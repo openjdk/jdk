@@ -107,8 +107,8 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
     }
 
     enum SourceKind {
-        SOURCE_9("9"),
-        SOURCE_10("10");
+        SOURCE_10("10"),
+        SOURCE_11("11");
 
         String sourceNumber;
 
@@ -121,9 +121,9 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
 
         IMPLICIT_1("", ExplicitKind.IMPLICIT),
         IMPLICIT_2("var", ExplicitKind.IMPLICIT_VAR),
-        EXPLIICT_SIMPLE("A", ExplicitKind.EXPLICIT),
-        EXPLIICT_SIMPLE_ARR1("A[]", ExplicitKind.EXPLICIT),
-        EXPLIICT_SIMPLE_ARR2("A[][]", ExplicitKind.EXPLICIT),
+        EXPLICIT_SIMPLE("A", ExplicitKind.EXPLICIT),
+        EXPLICIT_SIMPLE_ARR1("A[]", ExplicitKind.EXPLICIT),
+        EXPLICIT_SIMPLE_ARR2("A[][]", ExplicitKind.EXPLICIT),
         EXPLICIT_VARARGS("A...", ExplicitKind.EXPLICIT),
         EXPLICIT_GENERIC1("A<X>", ExplicitKind.EXPLICIT),
         EXPLICIT_GENERIC2("A<? extends X, ? super Y>", ExplicitKind.EXPLICIT),
@@ -157,13 +157,7 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         }
 
         ExplicitKind explicitKind(SourceKind sk) {
-            switch (explicitKind) {
-                case IMPLICIT_VAR:
-                    return (sk == SourceKind.SOURCE_9) ?
-                            ExplicitKind.EXPLICIT : ExplicitKind.IMPLICIT_VAR;
-                default:
-                    return explicitKind;
-            }
+            return explicitKind;
         }
     }
 
@@ -298,6 +292,15 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
 
         errorExpected |= pn == LambdaParameterName.UNDERSCORE &&
                 lk.arity() > 0;
+
+        for (int i = 0; i < lk.arity(); i++) {
+            if (!lk.isShort() &&
+                    pks[i].explicitKind(sk) == LambdaParameterKind.ExplicitKind.IMPLICIT_VAR &&
+                    sk == SourceKind.SOURCE_10) {
+                errorExpected = true;
+                break;
+            }
+        }
 
         if (errorExpected != res.hasErrors()) {
             fail("invalid diagnostics for source:\n" +

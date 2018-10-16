@@ -79,8 +79,7 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP12_ap12t001_setTag( JNIEnv* jni, jobject obj, jlong tag) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag,
-         jvmti, obj, tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, tag))) {
          nsk_jvmti_setFailStatus();
     }
 }
@@ -129,12 +128,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_object_free_events = 1;
     caps.can_tag_objects = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_object_free_events)
@@ -149,16 +146,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.ObjectFree = &ObjectFree;
     callbacks.VMDeath = &VMDeath;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_VM_DEATH,
+                                                          NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

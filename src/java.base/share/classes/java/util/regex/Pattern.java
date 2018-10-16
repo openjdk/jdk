@@ -1433,10 +1433,10 @@ public final class Pattern
 
     /**
      * The pattern is converted to normalized form ({@link
-     * java.text.Normalizer.Form.NFC NFC}, canonical decomposition,
+     * java.text.Normalizer.Form#NFC NFC}, canonical decomposition,
      * followed by canonical composition for the character class
-     * part, and {@link java.text.Normalizer.Form.NFD NFD},
-     * canonical decomposition) for the rest), and then a pure
+     * part, and {@link java.text.Normalizer.Form#NFD NFD},
+     * canonical decomposition for the rest), and then a pure
      * group is constructed to match canonical equivalences of the
      * characters.
      */

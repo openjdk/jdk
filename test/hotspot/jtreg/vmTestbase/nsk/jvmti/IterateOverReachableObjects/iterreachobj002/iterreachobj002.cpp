@@ -75,9 +75,7 @@ heapRootCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
     /* Set tag */
     *tag_ptr = (jlong)++objectCount;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (sizeof(ObjectDesc)),
-                             (unsigned char**)&objectDescBuf))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("heapRootCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
@@ -121,8 +119,7 @@ heapRootCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
                      (long)*tag_ptr, (long)tag, objectCount);
 */
     /* Deallocate memory of list element*/
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("heapRootCallbackForSecondObjectsIteration: Deallocation failed. Iteration aborted.\n");
@@ -156,9 +153,7 @@ stackReferenceCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
     /* Set tag */
     *tag_ptr = (jlong)++objectCount;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (sizeof(ObjectDesc)),
-                             (unsigned char**)&objectDescBuf))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("stackReferenceCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
@@ -206,8 +201,7 @@ stackReferenceCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
                      (long)*tag_ptr, (long)tag, objectCount);
 */
     /* Deallocate memory of list element*/
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("stackReferenceCallbackForSecondObjectsIteration: Deallocation failed. Iteration aborted.\n");
@@ -239,9 +233,7 @@ objectReferenceCallbackForFirstObjectsIteration( jvmtiObjectReferenceKind refere
     /* Set tag */
     *tag_ptr = (jlong)++objectCount;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (sizeof(ObjectDesc)),
-                             (unsigned char**)&objectDescBuf))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("objectReferenceCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
@@ -287,8 +279,7 @@ objectReferenceCallbackForSecondObjectsIteration( jvmtiObjectReferenceKind refer
                      (long)*tag_ptr, (long)tag, objectCount);
 */
     /* Deallocate memory of list element*/
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("objectReferenceCallbackForSecondObjectsIteration: Deallocation failed. Iteration aborted.\n");
@@ -320,9 +311,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         do {
             /* Allocate memory for first element of objectList */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(Allocate, jvmti, (sizeof(ObjectDesc)),
-                                      (unsigned char**)&objectDescBuf))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)),
+                                                  (unsigned char**)&objectDescBuf))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
@@ -331,13 +321,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY0("Calling IterateOverReachableObjects with allocating object descriptors\n");
             {
-                if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB5(IterateOverReachableObjects,
-                                      jvmti,
-                                      heapRootCallbackForFirstObjectsIteration,
-                                      stackReferenceCallbackForFirstObjectsIteration,
-                                      objectReferenceCallbackForFirstObjectsIteration,
-                                      &userData))) {
+                if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(
+                        heapRootCallbackForFirstObjectsIteration,
+                        stackReferenceCallbackForFirstObjectsIteration,
+                        objectReferenceCallbackForFirstObjectsIteration,
+                        &userData))) {
                     nsk_jvmti_setFailStatus();
                     break;
                 }
@@ -357,25 +345,22 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             objectCountMax = objectCount;
 
             /* Deallocate last unnecessary descriptor */
-            if (!NSK_JVMTI_VERIFY(
-                   NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescList))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescList))) {
                 NSK_COMPLAIN0("Unable to deallocate last unnecessary descriptor. \n");
                 nsk_jvmti_setFailStatus();
                 break;
             }
 
             /* Allocate memory for array to save pointers to ObjectDescList elements */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(Allocate, jvmti, (objectCount * sizeof(ObjectDesc*)),
-                                      (unsigned char**)&objectDescArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectCount * sizeof(ObjectDesc*)),
+                                                  (unsigned char**)&objectDescArr))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
 
             /* Allocate memory for flags array and fill with false values */
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(Allocate, jvmti, (objectCountMax * sizeof(short)),
-                                      (unsigned char**)&deallocatedFlagsArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectCountMax * sizeof(short)),
+                                                  (unsigned char**)&deallocatedFlagsArr))) {
                 nsk_jvmti_setFailStatus();
                 break;
             }
@@ -395,13 +380,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY0("Calling IterateOverReachableObjects with deallocating object descriptors\n");
             {
-                if (!NSK_JVMTI_VERIFY(
-                        NSK_CPP_STUB5(IterateOverReachableObjects,
-                                      jvmti,
-                                      heapRootCallbackForSecondObjectsIteration,
-                                      stackReferenceCallbackForSecondObjectsIteration,
-                                      objectReferenceCallbackForSecondObjectsIteration,
-                                      &userData))) {
+                if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(
+                    heapRootCallbackForSecondObjectsIteration,
+                    stackReferenceCallbackForSecondObjectsIteration,
+                    objectReferenceCallbackForSecondObjectsIteration,
+                    &userData))) {
                     nsk_jvmti_setFailStatus();
                     break;
                 }
@@ -415,8 +398,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             for (ind = 0; ind < objectCountMax; ind++) {
                 if (!deallocatedFlagsArr[ind]) {
-                    if (!NSK_JVMTI_VERIFY(
-                           NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr[ind]))) {
+                    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescArr[ind]))) {
                         NSK_COMPLAIN1("Unable to deallocate descriptor. Index = %d \n", ind);
                         nsk_jvmti_setFailStatus();
                         return;
@@ -424,13 +406,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                 }
             }
 
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescArr))) {
                 nsk_jvmti_setFailStatus();
             }
 
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)deallocatedFlagsArr))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)deallocatedFlagsArr))) {
                 nsk_jvmti_setFailStatus();
             }
 
@@ -472,13 +452,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
     caps.can_generate_object_free_events = 1;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)
@@ -491,15 +469,15 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     (void) memset(&callbacks, 0, sizeof(callbacks));
 
     callbacks.ObjectFree = &ObjectFree;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done.\n");
 
     NSK_DISPLAY0("enabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done.\n");
 

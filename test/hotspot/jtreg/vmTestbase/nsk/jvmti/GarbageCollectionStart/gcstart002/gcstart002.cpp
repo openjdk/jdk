@@ -51,8 +51,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY1("%s: creating a raw monitor ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti_env, "_lock", &_lock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->CreateRawMonitor("_lock", &_lock))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: %s: unable to create a raw monitor\n\n",
             msg);
@@ -63,8 +62,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY1("%s: entering the raw monitor ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti_env, _lock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(_lock))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: %s: unable to enter the raw monitor\n\n",
             msg);
@@ -76,8 +74,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
         NSK_DISPLAY1("%s: waiting the raw monitor ...\n",
             msg);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RawMonitorWait,
-                jvmti_env, _lock, (jlong)10))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorWait(_lock, (jlong)10))) {
             result = STATUS_FAILED;
             NSK_COMPLAIN1("TEST FAILED: %s: unable to wait the raw monitor\n\n",
                 msg);
@@ -88,8 +85,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
         NSK_DISPLAY1("%s: notifying a single thread waiting on the raw monitor ...\n",
             msg);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorNotify,
-                jvmti_env, _lock))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorNotify(_lock))) {
             result = STATUS_FAILED;
             NSK_COMPLAIN1("TEST FAILED: %s: unable to notify single thread\n\n",
                 msg);
@@ -100,8 +96,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
         NSK_DISPLAY1("%s: notifying all threads waiting on the raw monitor ...\n",
             msg);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorNotifyAll,
-                jvmti_env, _lock))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorNotifyAll(_lock))) {
             result = STATUS_FAILED;
             NSK_COMPLAIN1("TEST FAILED: %s: unable to notify all threads\n\n",
                 msg);
@@ -112,8 +107,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
         NSK_DISPLAY1("%s: exiting the raw monitor ...\n",
             msg);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-                jvmti_env, _lock))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(_lock))) {
             result = STATUS_FAILED;
             NSK_COMPLAIN1("TEST FAILED: %s: unable to exit the raw monitor\n\n",
                 msg);
@@ -124,8 +118,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY1("%s: destroying the raw monitor ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(DestroyRawMonitor,
-            jvmti_env, _lock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->DestroyRawMonitor(_lock))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: %s: unable to destroy a raw monitor\n",
             msg);
@@ -138,8 +131,7 @@ static void rawMonitorFunc(jvmtiEnv *jvmti_env, const char *msg) {
 static void memoryFunc(jvmtiEnv *jvmti_env, const char *msg) {
     NSK_DISPLAY1("%s: allocating memory ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(Allocate,
-            jvmti_env, MEM_SIZE, &mem))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(MEM_SIZE, &mem))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: %s: unable to allocate memory\n\n",
             msg);
@@ -151,8 +143,7 @@ static void memoryFunc(jvmtiEnv *jvmti_env, const char *msg) {
 
     NSK_DISPLAY1("%s: deallocating memory ...\n",
         msg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, mem))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate(mem))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: %s: unable to deallocate memory\n\n",
             msg);
@@ -210,12 +201,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     /* add capability to generate compiled method events */
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_garbage_collection_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_garbage_collection_events)
@@ -226,16 +215,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMDeath = &VMDeath;
     callbacks.GarbageCollectionStart = &GarbageCollectionStart;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

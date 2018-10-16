@@ -152,36 +152,26 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
   jobject testObject;
   jclass testObjectClass;
 
-  if(!NSK_VERIFY(NULL !=
-                 (debugee = NSK_CPP_STUB2(FindClass, jni, className))))
+  if(!NSK_VERIFY(NULL != (debugee = jni->FindClass(className))))
     return JNI_ERR;
 
-  if(!NSK_VERIFY(NULL !=
-                 (testObjectField = NSK_CPP_STUB4(GetStaticFieldID,
-                                                   jni, debugee,
-                                                   fieldName,
-                                                   fieldSig))))
+  if(!NSK_VERIFY(NULL != (testObjectField = jni->GetStaticFieldID(debugee, fieldName, fieldSig))))
     return JNI_ERR;
 
-  if(!NSK_VERIFY(NULL !=
-                 (testObject = (NSK_CPP_STUB3(GetStaticObjectField,
-                                               jni, debugee,
-                                               testObjectField)))))
+  if(!NSK_VERIFY(NULL != (testObject = (jni->GetStaticObjectField(debugee, testObjectField)))))
     return JNI_ERR;
 
-  if(!NSK_VERIFY(NULL !=
-                 (testObjectClass = (NSK_CPP_STUB2(GetObjectClass,
-                                                   jni, testObject)))))
+  if(!NSK_VERIFY(NULL != (testObjectClass = (jni->GetObjectClass(testObject)))))
     return JNI_ERR;
 
   // tag class and it's instance to pass this tag into primitive field callback
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, testObject, TEST_OBJECT_TAG)))
+  if(!NSK_JVMTI_VERIFY(jvmti->SetTag(testObject, TEST_OBJECT_TAG)))
     return JNI_ERR;
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, testObjectClass, TEST_OBJECT_TAG)))
+  if(!NSK_JVMTI_VERIFY(jvmti->SetTag(testObjectClass, TEST_OBJECT_TAG)))
     return JNI_ERR;
 
-  NSK_CPP_STUB2(DeleteLocalRef, jni, testObjectClass);
-  NSK_CPP_STUB2(DeleteLocalRef, jni, testObject);
+  jni->DeleteLocalRef(testObjectClass);
+  jni->DeleteLocalRef(testObject);
 
   return JNI_OK;
 }
@@ -207,7 +197,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   jvmtiHeapCallbacks primitive_callbacks;
   jclass klass;
 
-  if(!NSK_VERIFY(NULL != (klass = NSK_CPP_STUB2(FindClass,jni,testClassName)))) {
+  if(!NSK_VERIFY(NULL != (klass = jni->FindClass(testClassName)))) {
     NSK_COMPLAIN1("Can't find class %s.\n",testClassName);
     nsk_jvmti_setFailStatus();
     return;
@@ -233,8 +223,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   primitive_callbacks.heap_iteration_callback = &heap_callback;
 
   NSK_DISPLAY0("Iterating over reachable objects.\n");
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(IterateThroughHeap, jvmti,
-                                     0, klass, &primitive_callbacks, NULL))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -251,8 +240,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   }
 
   NSK_DISPLAY0("Iterating over unreachable objects.\n");
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(IterateThroughHeap, jvmti,
-                                     0, klass, &primitive_callbacks, NULL))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -292,15 +280,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_tag_objects = 1;
   caps.can_generate_object_free_events = 1;
 
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
     return JNI_ERR;
   }
 
   memset(&event_callbacks, 0, sizeof(jvmtiEventCallbacks));
   event_callbacks.ObjectFree = &object_free_callback;
-  if(!NSK_JVMTI_VERIFY(
-                       NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                     &event_callbacks, sizeof(jvmtiEventCallbacks)))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&event_callbacks, sizeof(jvmtiEventCallbacks)))) {
     return JNI_ERR;
   }
 

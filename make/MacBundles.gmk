@@ -63,13 +63,13 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUTDIR)/%,%,$@))
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	$(LN) -s ../Home/lib/libjli.dylib $@
 
   $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUTDIR)/%,%,$@))
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	$(LN) -s ../Home/lib/libjli.dylib $@
 

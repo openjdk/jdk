@@ -24,7 +24,8 @@
 /**
  * @test
  * @library /test/lib
- * @modules jdk.compiler
+ * @modules java.compiler
+ *          jdk.compiler
  * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils
  * @run testng AddExportsTest
  * @summary Basic tests for java --add-exports
@@ -51,12 +52,15 @@ public class AddExportsTest {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
+    private static final Path UPGRADE_MODS_DIRS = Paths.get("upgrademods");
 
     // test module m1 that uses Unsafe
     private static final String TEST1_MODULE = "m1";
     private static final String TEST1_MAIN_CLASS = "jdk.test1.Main";
 
-
+    // test module m2 uses java.compiler internals
+    private static final String TEST2_MODULE = "m2";
+    private static final String TEST2_MAIN_CLASS = "jdk.test2.Main";
 
     // test module m3 uses m4 internals
     private static final String TEST3_MODULE = "m3";
@@ -74,7 +78,19 @@ public class AddExportsTest {
                 "--add-exports", "java.base/jdk.internal.misc=m1");
         assertTrue(compiled, "module " + TEST1_MODULE + " did not compile");
 
+        // javac -d upgrademods/java.compiler src/java.compiler/**
+        compiled = CompilerUtils.compile(
+                SRC_DIR.resolve("java.compiler"),
+                UPGRADE_MODS_DIRS.resolve("java.compiler"));
+        assertTrue(compiled, "module java.compiler did not compile");
 
+        // javac --upgrade-module-path upgrademods -d mods/m2 src/m2/**
+        compiled = CompilerUtils.compile(
+                SRC_DIR.resolve(TEST2_MODULE),
+                MODS_DIR.resolve(TEST2_MODULE),
+                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
+                "--add-exports", "java.compiler/javax.tools.internal=m2");
+        assertTrue(compiled, "module " + TEST2_MODULE + " did not compile");
 
         // javac -d mods/m3 src/m3/**
         compiled = CompilerUtils.compile(
@@ -146,7 +162,25 @@ public class AddExportsTest {
         assertTrue(exitValue == 0);
     }
 
+    /**
+     * Test --add-exports with upgraded module
+     */
+    public void testWithUpgradedModule() throws Exception {
 
+        // java --add-exports java.compiler/javax.tools.internal=m2
+        //      --upgrade-module-path upgrademods --module-path mods -m ...
+        String mid = TEST2_MODULE + "/" + TEST2_MAIN_CLASS;
+        int exitValue = executeTestJava(
+                "--add-exports", "java.compiler/javax.tools.internal=m2",
+                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
+                "--module-path", MODS_DIR.toString(),
+                "-m", mid)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+
+        assertTrue(exitValue == 0);
+    }
 
     /**
      * Test --add-exports with module that is added to the set of root modules

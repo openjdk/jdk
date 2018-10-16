@@ -1,7 +1,5 @@
-#!/bin/sh
-
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,34 +21,9 @@
 # questions.
 #
 
-#  @test
-#  @bug 1234567
-#  @summary no bug
-#  @author Jim Holmlund
+#############################################################################
 #
-#  @run shell ZZZcleanup.sh
+# Additional list of quarantined tests when non-CDS mode enabled.
+#
+#############################################################################
 
-#  This is run by jtreg after all other tests in
-#  this dir have run.  It kills any orphan
-#  processes that have  been left.
-#  If you can figure out a better way, let me know
-
-mysetup()
-{
-    if [ -z "$TESTSRC" ] ; then
-        TESTSRC=.
-    fi
-
-    for ii in . $TESTSRC $TESTSRC/.. ; do
-        if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
-            break
-        fi
-    done
-}
-
-# You could replace this next line with the contents
-# of ShellScaffold.sh and this script will run just the same.
-mysetup
-setup
-pass

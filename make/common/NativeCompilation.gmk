@@ -60,6 +60,29 @@ define GetSymbols
 endef
 
 ################################################################################
+# Creates a recipe that creates a compile_commands.json fragment. Remove any
+# occurences of FIXPATH programs from the command to show the actual invocation.
+#
+# Param 1: Name of file to create
+# Param 2: Working directory
+# Param 3: Source file
+# Param 4: Compile command
+# Param 5: Object name
+################################################################################
+define WriteCompileCommandsFragment
+  $(call LogInfo, Creating compile commands fragment for $(notdir $3))
+  $(call MakeDir, $(dir $1))
+  $(call WriteFile,{ \
+      "directory": "$(strip $2)"$(COMMA) \
+      "file": "$(strip $3)"$(COMMA) \
+      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
+        $(subst $(FIXPATH),,$4))))"$(COMMA) \
+      "output": "$(strip $5)" \
+    }$(COMMA), \
+    $1)
+endef
+
+################################################################################
 # Define a native toolchain configuration that can be used by
 # SetupNativeCompilation calls
 #
@@ -203,6 +226,11 @@ define SetupCompileNativeFileBody
   $1_OBJ := $$($$($1_BASE)_OBJECT_DIR)/$$(call replace_with_obj_extension, \
       $$($1_FILENAME))
 
+  # Generate the corresponding compile_commands.json fragment.
+  $1_OBJ_JSON = $$(MAKESUPPORT_OUTPUTDIR)/compile-commands/$$(subst /,_,$$(subst \
+      $$(OUTPUTDIR)/,,$$($1_OBJ))).json
+  $$($1_BASE)_ALL_OBJS_JSON += $$($1_OBJ_JSON)
+
   # Only continue if this object file hasn't been processed already. This lets
   # the first found source file override any other with the same name.
   ifeq ($$(findstring $$($1_OBJ), $$($$($1_BASE)_OBJS_SO_FAR)), )
@@ -297,8 +325,15 @@ define SetupCompileNativeFileBody
       $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_OBJ).vardeps)
     endif
 
-    $$($1_OBJ): $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
-        $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE) | $$($$($1_BASE)_BUILD_INFO)
+    $1_OBJ_DEPS := $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
+        $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE)
+    $1_COMPILE_OPTIONS := $$($1_FLAGS) $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)
+
+    $$($1_OBJ_JSON): $$($1_OBJ_DEPS)
+	$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$($1_SRC_FILE), \
+	    $$($1_COMPILER) $$($1_COMPILE_OPTIONS), $$($1_OBJ))
+
+    $$($1_OBJ): $$($1_OBJ_DEPS) | $$($$($1_BASE)_BUILD_INFO)
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
 	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
@@ -307,13 +342,11 @@ define SetupCompileNativeFileBody
             # object file in the generated deps files. Fixing it with sed. If
             # compiling assembly, don't try this.
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_FLAGS) $$($1_DEP_FLAG) $$($1_DEP).tmp \
-	            $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE))
+	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEP).tmp $$($1_COMPILE_OPTIONS))
 	    $(SED) 's|^$$(@F):|$$@:|' $$($1_DEP).tmp > $$($1_DEP)
           else
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_FLAGS) $$($1_DEP_FLAG) $$($1_DEP) \
-	            $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE))
+	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEP) $$($1_COMPILE_OPTIONS))
           endif
           # Create a dependency target file from the dependency file.
           # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
@@ -329,8 +362,7 @@ define SetupCompileNativeFileBody
           # on Windows. No need to save exit code from compilation since
           # pipefail is always active on Windows.
 	  $$(call ExecuteWithLog, $$@, \
-	      $$($1_COMPILER) $$($1_FLAGS) -showIncludes \
-	          $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)) \
+	      $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS)) \
 	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
 	  $(ECHO) $$@: \\ > $$($1_DEP) ; \
@@ -694,17 +726,25 @@ define SetupNativeCompilationBody
         -include $$($1_PCH_DEP)
         -include $$($1_PCH_DEP_TARGETS)
 
+        $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
+            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEP)
+
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call LogInfo, Generating precompiled header)
 		$$(call MakeDir, $$(@D))
-		$$(call ExecuteWithLog, $$@, \
-		    $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-		    $$($1_OPT_CFLAGS) \
-		    -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEP) $$< -o $$@)
+		$$(call ExecuteWithLog, $$@, $$($1_PCH_COMMAND) $$< -o $$@)
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEP) > $$($1_PCH_DEP_TARGETS)
 
         $$($1_ALL_OBJS): $$($1_PCH_FILE)
 
+        # Generate the corresponding compile_commands.json fragment.
+        $1_PCH_FILE_JSON := $$(MAKESUPPORT_OUTPUTDIR)/compile-commands/$$(subst /,_,$$(subst \
+            $$(OUTPUTDIR)/,,$$($1_PCH_FILE))).json
+        $1_ALL_OBJS_JSON += $$($1_PCH_FILE_JSON)
+
+        $$($1_PCH_FILE_JSON): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
+		$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$<, \
+		    $$($1_PCH_COMMAND) $$< -o $$($1_PCH_FILE), $$($1_PCH_FILE))
       endif
     endif
   endif
@@ -1024,6 +1064,10 @@ define SetupNativeCompilationBody
 		    $(CODESIGN) -s openjdk_codesign $$@
                   endif
                 endif
+  endif
+
+  ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+    $1 := $$($1_ALL_OBJS_JSON)
   endif
 endef
 

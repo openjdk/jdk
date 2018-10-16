@@ -323,8 +323,6 @@ public class SwingSet2 extends JPanel {
                        "FileMenu.exit_accessible_description", new ExitAction(this)
         );
 
-        // Create these menu items for the first SwingSet only.
-        if (numSSs == 0) {
         // ***** create laf switcher menu
         lafMenu = (JMenu) menuBar.add(new JMenu(getString("LafMenu.laf_label")));
         lafMenu.setMnemonic(getMnemonic("LafMenu.laf_mnemonic"));
@@ -432,7 +430,6 @@ public class SwingSet2 extends JPanel {
                 "OptionsMenu.dragEnabled_mnemonic",
                 "OptionsMenu.dragEnabled_accessible_description",
                 new DragSupportAction());
-        }
 
         // ***** create the multiscreen menu, if we have multiple screens
         GraphicsDevice[] screens = GraphicsEnvironment.

@@ -91,20 +91,14 @@ $(eval $(call SetupJdkExecutable, BUILD_UNPACKEXE, \
     CFLAGS_solaris := -KPIC, \
     CFLAGS_macosx := -fPIC, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
-    LDFLAGS := $(UNPACKEXE_ZIPOBJS) \
-        $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
+    LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(UNPACKEXE_LIBS) $(LIBCXX), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe, \
     MANIFEST := $(TOPDIR)/src/jdk.pack/windows/native/unpack200/unpack200_proto.exe.manifest, \
     MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
+    EXTRA_OBJECT_FILES := $(UNPACKEXE_ZIPOBJS) \
 ))
-
-ifneq ($(USE_EXTERNAL_LIBZ), true)
-
-  $(BUILD_UNPACKEXE): $(UNPACKEXE_ZIPOBJS)
-
-endif
 
 TARGETS += $(BUILD_UNPACKEXE)
 

@@ -51,54 +51,54 @@ heapObjectCallback(jlong class_tag,
     objCounter++;
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, st_jvmti, name, &monitor_ptr))) {
+            st_jvmti->CreateRawMonitor(name, &monitor_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorEnter(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     /* Enter second time */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorEnter(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(RawMonitorWait, st_jvmti, monitor_ptr, (jlong)100))) {
+            st_jvmti->RawMonitorWait(monitor_ptr, (jlong)100))) {
         nsk_jvmti_setFailStatus();
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorNotify, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorNotify(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorNotifyAll, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorNotifyAll(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorExit(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     /* Exit second time */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, st_jvmti, monitor_ptr))) {
+            st_jvmti->RawMonitorExit(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, st_jvmti, monitor_ptr))) {
+            st_jvmti->DestroyRawMonitor(monitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -119,11 +119,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_EITHER\n");
         {
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(IterateOverHeap,
-                        jvmti,
-                        JVMTI_HEAP_OBJECT_EITHER,
-                        heapObjectCallback,
-                        &fakeUserData))) {
+                    jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_EITHER, heapObjectCallback, &fakeUserData))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -174,7 +170,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+                jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

@@ -28,7 +28,6 @@ package java.lang;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
-import java.lang.module.ModuleReference;
 import java.lang.reflect.Member;
 import java.io.FileDescriptor;
 import java.io.File;
@@ -47,9 +46,7 @@ import java.util.Objects;
 import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
@@ -81,10 +78,100 @@ import sun.security.util.SecurityConstants;
  * throws a <code>SecurityException</code> if the operation is not
  * permitted.
  * <p>
- * The current security manager is set by the
- * <code>setSecurityManager</code> method in class
- * <code>System</code>. The current security manager is obtained
- * by the <code>getSecurityManager</code> method.
+ * Environments using a security manager will typically set the security
+ * manager at startup. In the JDK implementation, this is done by setting
+ * the system property {@code java.security.manager} on the command line to
+ * the class name of the security manager. It can also be set to the empty
+ * String ("") or the special token "{@code default}" to use the
+ * default {@code java.lang.SecurityManager}. If a class name is specified,
+ * it must be {@code java.lang.SecurityManager} or a public subclass and have
+ * a public no-arg constructor. The class is loaded by the
+ * {@linkplain ClassLoader#getSystemClassLoader() built-in system class loader}
+ * if it is not {@code java.lang.SecurityManager}. If the
+ * {@code java.security.manager} system property is not set, the default value
+ * is {@code null}, which means a security manager will not be set at startup.
+ * <p>
+ * The Java run-time may also allow, but is not required to allow, the security
+ * manager to be set dynamically by invoking the
+ * {@link System#setSecurityManager(SecurityManager) setSecurityManager} method.
+ * In the JDK implementation, if the Java virtual machine is started with
+ * the {@code java.security.manager} system property set to the special token
+ * "{@code disallow}" then a security manager will not be set at startup and
+ * cannot be set dynamically (the
+ * {@link System#setSecurityManager(SecurityManager) setSecurityManager}
+ * method will throw an {@code UnsupportedOperationException}). If the
+ * {@code java.security.manager} system property is not set or is set to the
+ * special token "{@code allow}", then a security manager will not be set at
+ * startup but can be set dynamically. Finally, if the
+ * {@code java.security.manager} system property is set to the class name of
+ * the security manager, or to the empty String ("") or the special token
+ * "{@code default}", then a security manager is set at startup (as described
+ * previously) and can also be subsequently replaced (or disabled) dynamically
+ * (subject to the policy of the currently installed security manager). The
+ * following table illustrates the behavior of the JDK implementation for the
+ * different settings of the {@code java.security.manager} system property:
+ * <table class="striped">
+ * <caption style="display:none">property value,
+ *  the SecurityManager set at startup,
+ *  can dynamically set a SecurityManager
+ * </caption>
+ * <thead>
+ * <tr>
+ * <th scope="col">Property Value</th>
+ * <th scope="col">The SecurityManager set at startup</th>
+ * <th scope="col">System.setSecurityManager run-time behavior</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ *
+ * <tr>
+ *   <th scope="row">null</th>
+ *   <td>None</td>
+ *   <td>Success or throws {@code SecurityException} if not permitted by
+ * the currently installed security manager</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">empty String ("")</th>
+ *   <td>{@code java.lang.SecurityManager}</td>
+ *   <td>Success or throws {@code SecurityException} if not permitted by
+ * the currently installed security manager</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">"default"</th>
+ *   <td>{@code java.lang.SecurityManager}</td>
+ *   <td>Success or throws {@code SecurityException} if not permitted by
+ * the currently installed security manager</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">"disallow"</th>
+ *   <td>None</td>
+ *   <td>Always throws {@code UnsupportedOperationException}</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">"allow"</th>
+ *   <td>None</td>
+ *   <td>Success or throws {@code SecurityException} if not permitted by
+ * the currently installed security manager</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">a class name</th>
+ *   <td>the named class</td>
+ *   <td>Success or throws {@code SecurityException} if not permitted by
+ * the currently installed security manager</td>
+ * </tr>
+ *
+ * </tbody>
+ * </table>
+ * <p> A future release of the JDK may change the default value of the
+ * {@code java.security.manager} system property to "{@code disallow}".
+ * <p>
+ * The current security manager is returned by the
+ * {@link System#getSecurityManager() getSecurityManager} method.
  * <p>
  * The special method
  * {@link SecurityManager#checkPermission(java.security.Permission)}
@@ -221,7 +308,6 @@ import sun.security.util.SecurityConstants;
  * @see     java.net.SocketPermission
  * @see     java.util.PropertyPermission
  * @see     java.lang.RuntimePermission
- * @see     java.awt.AWTPermission
  * @see     java.security.Policy Policy
  * @see     java.security.SecurityPermission SecurityPermission
  * @see     java.security.ProtectionDomain

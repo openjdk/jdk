@@ -98,6 +98,9 @@ public class Basic {
         ctor.setAccessible(true);
         ctor.newInstance();
 
+        // Class::newInstance
+        clazz.newInstance();
+
         // method handles
         findNoArgConstructorAndInvoke(clazz, MethodHandles.publicLookup());
         findNoArgConstructorAndInvoke(clazz, MethodHandles.lookup());
@@ -121,6 +124,12 @@ public class Basic {
         } catch (IllegalAccessException expected) { }
         ctor.setAccessible(true);
         ctor.newInstance();
+
+        // Class::newInstance
+        try {
+            clazz.newInstance();
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
 
         // method handles
         try {
@@ -150,6 +159,9 @@ public class Basic {
         ctor.setAccessible(true);
         ctor.newInstance();
 
+        // Class::newInstance
+        clazz.newInstance();
+
         // method handles
         findNoArgConstructorAndInvoke(clazz, MethodHandles.publicLookup());
         findNoArgConstructorAndInvoke(clazz, MethodHandles.lookup());
@@ -173,6 +185,12 @@ public class Basic {
         } catch (IllegalAccessException expected) { }
         ctor.setAccessible(true);
         ctor.newInstance();
+
+        // Class::newInstance
+        try {
+            clazz.newInstance();
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
 
         // method handles
         try {
@@ -200,6 +218,7 @@ public class Basic {
         // core reflection
         Class<?> clazz = q.PublicType.class;
         clazz.getConstructor().newInstance();
+        clazz.newInstance();
 
         // method handles
         findNoArgConstructorAndInvoke(clazz, MethodHandles.publicLookup());
@@ -225,6 +244,12 @@ public class Basic {
         } catch (IllegalAccessException expected) { }
         ctor.setAccessible(true);
         ctor.newInstance();
+
+        // Class::newInstance
+        try {
+            clazz.newInstance();
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
 
         // method handles
         try {
@@ -255,6 +280,12 @@ public class Basic {
             ctor.setAccessible(true);
             assertTrue(false);
         } catch (InaccessibleObjectException expected) { }
+
+        // Class::newInstance
+        try {
+            clazz.newInstance();
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
 
         // method handles
         try {
@@ -287,6 +318,12 @@ public class Basic {
             ctor.setAccessible(true);
             assertTrue(false);
         } catch (InaccessibleObjectException expected) { }
+
+        // Class::newInstance
+        try {
+            clazz.newInstance();
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
 
         // method handles
         try {

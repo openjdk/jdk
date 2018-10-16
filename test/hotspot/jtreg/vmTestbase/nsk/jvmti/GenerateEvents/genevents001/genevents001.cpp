@@ -99,13 +99,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         NSK_DISPLAY0("Call GenerateEvents() to send missed events\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(GenerateEvents, jvmti, JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GenerateEvents(JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
             nsk_jvmti_setFailStatus();
         }
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(GenerateEvents, jvmti, JVMTI_EVENT_DYNAMIC_CODE_GENERATED))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GenerateEvents(JVMTI_EVENT_DYNAMIC_CODE_GENERATED))) {
             nsk_jvmti_setFailStatus();
         }
 
@@ -195,8 +193,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities caps;
         memset(&caps, 0, sizeof(caps));
         caps.can_generate_compiled_method_load_events = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 
@@ -207,9 +204,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.CompiledMethodLoad = callbackCompiledMethodLoad;
         eventCallbacks.CompiledMethodUnload = callbackCompiledMethodUnload;
         eventCallbacks.DynamicCodeGenerated = callbackDynamicCodeGenerated;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
             return JNI_ERR;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 package test;
 
+import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import javax.naming.*;
@@ -40,11 +41,17 @@ import org.example.person.Person;
 
 public class StorePerson {
 
+    static {
+        final PrintStream out = new PrintStream(System.out, true);
+        final PrintStream err = new PrintStream(System.err, true);
+
+        System.setOut(out);
+        System.setErr(err);
+    }
+
     // LDAP capture file
     private static final String LDAP_CAPTURE_FILE =
         System.getProperty("test.src") + "/src/test/test/StorePerson.ldap";
-    // LDAPServer socket
-    private static ServerSocket serverSocket;
 
     public static void main(String[] args) throws Exception {
 
@@ -67,115 +74,116 @@ public class StorePerson {
          * Launch the LDAP server with the StorePerson.ldap capture file
          */
 
-        serverSocket = new ServerSocket(0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
-               } catch (Exception e) {
-                   System.out.println("ERROR: unable to launch LDAP server");
-                   e.printStackTrace();
-               }
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
+                    } catch (Exception e) {
+                        System.out.println("ERROR: unable to launch LDAP server");
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            /*
+             * Store Person objects in the LDAP directory
+             */
+
+            Hashtable<String,Object> env = new Hashtable<>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.ldap.LdapCtxFactory");
+            URI ldapUri = new URI(args[0]);
+            if (ldapUri.getPort() == -1) {
+                ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
+                        serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
             }
-        }).start();
-
-        /*
-         * Store Person objects in the LDAP directory
-         */
-
-        Hashtable<String,Object> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-    "com.sun.jndi.ldap.LdapCtxFactory");
-        URI ldapUri = new URI(args[0]);
-        if (ldapUri.getPort() == -1) {
-            ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
-                serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
-        }
-        env.put(Context.PROVIDER_URL, ldapUri.toString());
-        if (args[args.length - 1].equalsIgnoreCase("-trace")) {
-            env.put("com.sun.jndi.ldap.trace.ber", System.out);
-        }
-
-        // Specify the factory classname explicitly
-        env.put(Context.STATE_FACTORIES, "org.example.person.PersonFactory");
-        env.put(Context.OBJECT_FACTORIES, "org.example.person.PersonFactory");
-
-        System.out.println("StorePerson: connecting to " + ldapUri);
-        DirContext ctx = new InitialDirContext(env);
-        Person person = null;
-        String name = "John Smith";
-        String dn = "cn=" + name;
-
-        try {
-            person = new Person(name, "Smith");
-            person.setMailAddress("jsmith@smith.com");
-            ctx.bind(dn, person);
-            System.out.println("StorePerson: created entry '" + dn + "'");
-        } catch (NameAlreadyBoundException e) {
-            System.err.println("StorePerson: entry '" + dn +
-                "' already exists");
-            cleanup(ctx, (String)null);
-            return;
-        }
-
-        name = "Jill Smyth";
-        String dn2 = "cn=" + name;
-        Person person2 = new Person(name, "Smyth");
-        person2.setMailAddress("jsmyth@smith.com");
-
-        try {
-            ctx.bind(dn2, person2);
-            System.out.println("StorePerson: created entry '" + dn2 + "'");
-        } catch (NameAlreadyBoundException e) {
-            System.err.println("StorePerson: entry '" + dn2 +
-                "' already exists");
-            cleanup(ctx, dn);
-            return;
-        }
-
-        /*
-         * Retrieve Person objects from the LDAP directory
-         */
-
-        try {
-            Person person3 = (Person) ctx.lookup(dn);
-            System.out.println("StorePerson: retrieved object: " + person3);
-            if (person.getAttributes().equals(person3.getAttributes())) {
-                System.out.println(
-                    "StorePerson: retrieved person matches original");
-            } else {
-                System.out.println(
-                    "StorePerson: retrieved person does NOT match original");
+            env.put(Context.PROVIDER_URL, ldapUri.toString());
+            if (args[args.length - 1].equalsIgnoreCase("-trace")) {
+                env.put("com.sun.jndi.ldap.trace.ber", System.out);
             }
-        } catch (NamingException e) {
-            System.err.println("StorePerson: error retrieving entry '" +
-                dn + "' " + e);
-            e.printStackTrace();
+
+            // Specify the factory classname explicitly
+            env.put(Context.STATE_FACTORIES, "org.example.person.PersonFactory");
+            env.put(Context.OBJECT_FACTORIES, "org.example.person.PersonFactory");
+
+            System.out.println("StorePerson: connecting to " + ldapUri);
+            DirContext ctx = new InitialDirContext(env);
+            Person person = null;
+            String name = "John Smith";
+            String dn = "cn=" + name;
+
+            try {
+                person = new Person(name, "Smith");
+                person.setMailAddress("jsmith@smith.com");
+                ctx.bind(dn, person);
+                System.out.println("StorePerson: created entry '" + dn + "'");
+            } catch (NameAlreadyBoundException e) {
+                System.err.println("StorePerson: entry '" + dn +
+                        "' already exists");
+                cleanup(ctx, (String)null);
+                return;
+            }
+
+            name = "Jill Smyth";
+            String dn2 = "cn=" + name;
+            Person person2 = new Person(name, "Smyth");
+            person2.setMailAddress("jsmyth@smith.com");
+
+            try {
+                ctx.bind(dn2, person2);
+                System.out.println("StorePerson: created entry '" + dn2 + "'");
+            } catch (NameAlreadyBoundException e) {
+                System.err.println("StorePerson: entry '" + dn2 +
+                        "' already exists");
+                cleanup(ctx, dn);
+                return;
+            }
+
+            /*
+             * Retrieve Person objects from the LDAP directory
+             */
+
+            try {
+                Person person3 = (Person) ctx.lookup(dn);
+                System.out.println("StorePerson: retrieved object: " + person3);
+                if (person.getAttributes().equals(person3.getAttributes())) {
+                    System.out.println(
+                            "StorePerson: retrieved person matches original");
+                } else {
+                    System.out.println(
+                            "StorePerson: retrieved person does NOT match original");
+                }
+            } catch (NamingException e) {
+                System.err.println("StorePerson: error retrieving entry '" +
+                        dn + "' " + e);
+                e.printStackTrace();
+                cleanup(ctx, dn, dn2);
+                return;
+            }
+
+            try {
+                Person person4 = (Person) ctx.lookup(dn2);
+                System.out.println("StorePerson: retrieved object: " + person4);
+                if (person2.getAttributes().equals(person4.getAttributes())) {
+                    System.out.println(
+                            "StorePerson: retrieved person matches original");
+                } else {
+                    System.out.println(
+                            "StorePerson: retrieved person does NOT match original");
+                }
+            } catch (NamingException e) {
+                System.err.println("StorePerson: error retrieving entry '" +
+                        dn2 + "' " + e);
+                e.printStackTrace();
+                cleanup(ctx, dn, dn2);
+                return;
+            }
+
             cleanup(ctx, dn, dn2);
-            return;
         }
-
-        try {
-            Person person4 = (Person) ctx.lookup(dn2);
-            System.out.println("StorePerson: retrieved object: " + person4);
-            if (person2.getAttributes().equals(person4.getAttributes())) {
-                System.out.println(
-                    "StorePerson: retrieved person matches original");
-            } else {
-                System.out.println(
-                    "StorePerson: retrieved person does NOT match original");
-            }
-        } catch (NamingException e) {
-            System.err.println("StorePerson: error retrieving entry '" +
-                dn2 + "' " + e);
-            e.printStackTrace();
-            cleanup(ctx, dn, dn2);
-            return;
-        }
-
-        cleanup(ctx, dn, dn2);
-        return;
     }
 
     /*

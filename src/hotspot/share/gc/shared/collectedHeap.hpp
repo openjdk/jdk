@@ -309,6 +309,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
+  virtual size_t min_dummy_object_size() const;
+  size_t tlab_alloc_reserve() const;
 
   // Return the address "addr" aligned by "alignment_in_bytes" if such
   // an address is below "end".  Return NULL otherwise.
@@ -575,6 +577,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
+
+  virtual size_t obj_size(oop obj) const;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

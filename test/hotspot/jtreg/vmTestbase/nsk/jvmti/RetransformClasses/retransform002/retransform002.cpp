@@ -49,15 +49,7 @@ Java_nsk_jvmti_RetransformClasses_retransform002_forceLoadedClassesRetransformat
         )
 {
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    RetransformClasses
-                    , jvmti
-                    , 1
-                    , &class_for_retransformation
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->RetransformClasses(1, &class_for_retransformation)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -114,53 +106,26 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
        )
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    GetCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     caps.can_retransform_classes = 1;
 
     // Register all necessary JVM capabilities
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(
-                    AddCapabilities
-                    , jvmti
-                    , &caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     // Register all necessary event callbacks
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(
-                    SetEventCallbacks
-                    , jvmti
-                    , &callbacks
-                    , sizeof(callbacks)
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     // Enable class retransformation
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(
-                    SetEventNotificationMode
-                    , jvmti
-                    , JVMTI_ENABLE
-                    , JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
-                    , NULL
-                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                                                          NULL)))
         return JNI_ERR;
 
     return JNI_OK;

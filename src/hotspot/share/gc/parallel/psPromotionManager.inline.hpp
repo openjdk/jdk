@@ -30,9 +30,10 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
-#include "gc/parallel/psScavenge.hpp"
+#include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -99,8 +100,48 @@ inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
   }
 }
 
+class PSPushContentsClosure: public BasicOopIterateClosure {
+  PSPromotionManager* _pm;
+ public:
+  PSPushContentsClosure(PSPromotionManager* pm) : BasicOopIterateClosure(PSScavenge::reference_processor()), _pm(pm) {}
+
+  template <typename T> void do_oop_nv(T* p) {
+    if (PSScavenge::should_scavenge(p)) {
+      _pm->claim_or_forward_depth(p);
+    }
+  }
+
+  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+
+  // Don't use the oop verification code in the oop_oop_iterate framework.
+  debug_only(virtual bool should_verify_oops() { return false; })
+};
+
+//
+// This closure specialization will override the one that is defined in
+// instanceRefKlass.inline.cpp. It swaps the order of oop_oop_iterate and
+// oop_oop_iterate_ref_processing. Unfortunately G1 and Parallel behaves
+// significantly better (especially in the Derby benchmark) using opposite
+// order of these function calls.
+//
+template <>
+inline void InstanceRefKlass::oop_oop_iterate_reverse<oop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure) {
+  oop_oop_iterate_ref_processing<oop>(obj, closure);
+  InstanceKlass::oop_oop_iterate_reverse<oop>(obj, closure);
+}
+
+template <>
+inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure) {
+  oop_oop_iterate_ref_processing<narrowOop>(obj, closure);
+  InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure);
+}
+
 inline void PSPromotionManager::push_contents(oop obj) {
-  obj->ps_push_contents(this);
+  if (!obj->klass()->is_typeArray_klass()) {
+    PSPushContentsClosure pcc(this);
+    obj->oop_iterate_backwards(&pcc);
+  }
 }
 //
 // This method is pretty bulky. It would be nice to split it up

@@ -35,6 +35,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -58,7 +59,7 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
 
-  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
   MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
 
   _thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
@@ -73,7 +74,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
 
   switch (_root_type) {
     case universe:
@@ -139,7 +140,7 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
   ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
   _rp_task.work(_work_id, *PSParallelCompact::is_alive_closure(),
                 mark_and_push_closure, follow_stack_closure);
@@ -182,13 +183,12 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
 
   oop obj = NULL;
   ObjArrayTask task;
   do {
     while (ParCompactionManager::steal_objarray(which,  task)) {
-      cm->follow_contents((objArrayOop)task.obj(), task.index());
+      cm->follow_array((objArrayOop)task.obj(), task.index());
       cm->follow_marking_stacks();
     }
     while (ParCompactionManager::steal(which, obj)) {

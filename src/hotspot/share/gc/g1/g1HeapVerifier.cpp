@@ -248,7 +248,7 @@ public:
     oop obj = RawAccess<>::oop_load(p);
 
     if (_hr->is_open_archive()) {
-      guarantee(obj == NULL || G1ArchiveAllocator::is_archive_object(obj),
+      guarantee(obj == NULL || G1ArchiveAllocator::is_archived_object(obj),
                 "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
                 p2i(p), p2i(obj));
     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      * Otherwise the generated code might be the only reference to the boxed value and since object
      * references from nmethods are weak this can cause GC problems.
      *
-     * @param source
      * @return true if the box is cached
      */
     private static boolean isBoxCached(JavaConstant source) {
@@ -182,13 +181,13 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (hotspotField.isStatic()) {
             HotSpotResolvedJavaType holder = (HotSpotResolvedJavaType) hotspotField.getDeclaringClass();
             if (holder.isInitialized()) {
-                return memoryAccess.readFieldValue(hotspotField, holder.mirror());
+                return memoryAccess.readFieldValue(hotspotField, holder.mirror(), field.isVolatile());
             }
         } else {
             if (receiver.isNonNull()) {
                 Object object = ((HotSpotObjectConstantImpl) receiver).object();
                 if (hotspotField.isInObject(receiver)) {
-                    return memoryAccess.readFieldValue(hotspotField, object);
+                    return memoryAccess.readFieldValue(hotspotField, object, field.isVolatile());
                 }
             }
         }

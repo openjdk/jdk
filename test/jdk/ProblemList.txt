@@ -508,6 +508,8 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
+java/lang/ProcessBuilder/PipelineTest.java                      8211844 aix-ppc64
+java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 
 ############################################################################
 
@@ -556,6 +558,8 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
+
 ############################################################################
 
 # jdk_nio
@@ -564,13 +568,16 @@ java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
+
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
-java/nio/channels/Selector/RacyDeregister.java                  8201765 windows-all
 
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfCancels.java                   8188039 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
+
+sun/nio/cs/OLD/TestIBMDB.java                                   8211841 aix-ppc64
 
 ############################################################################
 
@@ -828,8 +835,6 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 # jdk_jdi
 
-com/sun/jdi/BasicJDWPConnectionTest.java                        8195703 generic-all
-
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
@@ -853,7 +858,7 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 # svc_tools
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
-sun/tools/jhsdb/BasicLauncherTest.java                          8193639 solaris-all
+sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
 
 

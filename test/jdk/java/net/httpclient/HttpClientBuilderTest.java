@@ -48,7 +48,7 @@ import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.time.Duration.*;
 import static org.testng.Assert.*;
@@ -56,8 +56,8 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @summary HttpClient[.Builder] API and behaviour checks
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng HttpClientBuilderTest
  */
 

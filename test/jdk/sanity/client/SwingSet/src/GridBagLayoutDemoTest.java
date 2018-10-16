@@ -51,7 +51,7 @@ import static org.jemmy2ext.JemmyExt.getUIValue;
  * @modules java.desktop
  *          java.logging
  * @build com.sun.swingset3.demos.gridbaglayout.GridBagLayoutDemo
- * @run testng GridBagLayoutDemoTest
+ * @run testng/timeout=600 GridBagLayoutDemoTest
  */
 
 @Listeners(GuiTestListener.class)

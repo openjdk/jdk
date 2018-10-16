@@ -149,4 +149,11 @@ public class AccessTest {
             super("privateStaticFinalField");
         }
     }
+
+    public static class NewInstance implements Callable<Object> {
+        public Object call() throws Exception {
+            return Members.class.newInstance();
+        }
+    }
+
 }

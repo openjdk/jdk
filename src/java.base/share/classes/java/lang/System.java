@@ -72,6 +72,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
@@ -154,9 +155,18 @@ public final class System {
      */
     public static final PrintStream err = null;
 
-    /* The security manager for the system.
-     */
-    private static volatile SecurityManager security;
+    // indicates if a security manager is possible
+    private static final int NEVER = 1;
+    private static final int MAYBE = 2;
+    private static @Stable int allowSecurityManager;
+
+    // current security manager
+    private static volatile SecurityManager security;   // read by VM
+
+    // return true if a security manager is allowed
+    private static boolean allowSecurityManager() {
+        return (allowSecurityManager != NEVER);
+    }
 
     /**
      * Reassigns the "standard" input stream.
@@ -231,6 +241,7 @@ public final class System {
     }
 
     private static volatile Console cons;
+
     /**
      * Returns the unique {@link java.io.Console Console} object associated
      * with the current Java virtual machine, if any.
@@ -292,7 +303,7 @@ public final class System {
     private static native void setErr0(PrintStream err);
 
     /**
-     * Sets the System security.
+     * Sets the system-wide security manager.
      *
      * If there is a security manager already installed, this method first
      * calls the security manager's {@code checkPermission} method
@@ -306,27 +317,46 @@ public final class System {
      * security manager has been established, then no action is taken and
      * the method simply returns.
      *
-     * @param      s   the security manager.
-     * @throws     SecurityException  if the security manager has already
-     *             been set and its {@code checkPermission} method
-     *             doesn't allow it to be replaced.
+     * @implNote In the JDK implementation, if the Java virtual machine is
+     * started with the system property {@code java.security.manager} set to
+     * the special token "{@code disallow}" then the {@code setSecurityManager}
+     * method cannot be used to set a security manager.
+     *
+     * @param  sm the security manager or {@code null}
+     * @throws SecurityException
+     *         if the security manager has already been set and its {@code
+     *         checkPermission} method doesn't allow it to be replaced
+     * @throws UnsupportedOperationException
+     *         if {@code sm} is non-null and a security manager is not allowed
+     *         to be set dynamically
      * @see #getSecurityManager
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      */
-    public static void setSecurityManager(final SecurityManager s) {
-        if (security == null) {
-            // ensure image reader is initialized
-            Object.class.getResource("java/lang/ANY");
-        }
-        if (s != null) {
-            try {
-                s.checkPackageAccess("java.lang");
-            } catch (Exception e) {
-                // no-op
+    public static void setSecurityManager(SecurityManager sm) {
+        if (allowSecurityManager()) {
+            if (security == null) {
+                // ensure image reader is initialized
+                Object.class.getResource("java/lang/ANY");
+            }
+            if (sm != null) {
+                try {
+                    // pre-populates the SecurityManager.packageAccess cache
+                    // to avoid recursive permission checking issues with custom
+                    // SecurityManager implementations
+                    sm.checkPackageAccess("java.lang");
+                } catch (Exception e) {
+                    // no-op
+                }
+            }
+            setSecurityManager0(sm);
+        } else {
+            // security manager not allowed
+            if (sm != null) {
+                throw new UnsupportedOperationException(
+                    "Runtime configured to disallow security manager");
             }
         }
-        setSecurityManager0(s);
     }
 
     private static synchronized
@@ -335,13 +365,12 @@ public final class System {
         if (sm != null) {
             // ask the currently installed security manager if we
             // can replace it.
-            sm.checkPermission(new RuntimePermission
-                                     ("setSecurityManager"));
+            sm.checkPermission(new RuntimePermission("setSecurityManager"));
         }
 
         if ((s != null) && (s.getClass().getClassLoader() != null)) {
             // New security manager class is not on bootstrap classpath.
-            // Cause policy to get initialized before we install the new
+            // Force policy to get initialized before we install the new
             // security manager, in order to prevent infinite loops when
             // trying to initialize the policy (which usually involves
             // accessing some security and/or system properties, which in turn
@@ -361,7 +390,7 @@ public final class System {
     }
 
     /**
-     * Gets the system security interface.
+     * Gets the system-wide security manager.
      *
      * @return  if a security manager has already been established for the
      *          current application, then that security manager is returned;
@@ -369,7 +398,11 @@ public final class System {
      * @see     #setSecurityManager
      */
     public static SecurityManager getSecurityManager() {
-        return security;
+        if (allowSecurityManager()) {
+            return security;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -2028,35 +2061,48 @@ public final class System {
      * 3. set TCCL
      *
      * This method must be called after the module system initialization.
-     * The security manager and system class loader may be custom class from
+     * The security manager and system class loader may be a custom class from
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // set security manager
-        String cn = System.getProperty("java.security.manager");
-        if (cn != null) {
-            if (cn.isEmpty() || "default".equals(cn)) {
-                System.setSecurityManager(new SecurityManager());
-            } else {
-                try {
-                    Class<?> c = Class.forName(cn, false, ClassLoader.getBuiltinAppClassLoader());
-                    Constructor<?> ctor = c.getConstructor();
-                    // Must be a public subclass of SecurityManager with
-                    // a public no-arg constructor
-                    if (!SecurityManager.class.isAssignableFrom(c) ||
+        String smProp = System.getProperty("java.security.manager");
+        if (smProp != null) {
+            switch (smProp) {
+                case "disallow":
+                    allowSecurityManager = NEVER;
+                    break;
+                case "allow":
+                    allowSecurityManager = MAYBE;
+                    break;
+                case "":
+                case "default":
+                    setSecurityManager(new SecurityManager());
+                    allowSecurityManager = MAYBE;
+                    break;
+                default:
+                    try {
+                        ClassLoader cl = ClassLoader.getBuiltinAppClassLoader();
+                        Class<?> c = Class.forName(smProp, false, cl);
+                        Constructor<?> ctor = c.getConstructor();
+                        // Must be a public subclass of SecurityManager with
+                        // a public no-arg constructor
+                        if (!SecurityManager.class.isAssignableFrom(c) ||
                             !Modifier.isPublic(c.getModifiers()) ||
                             !Modifier.isPublic(ctor.getModifiers())) {
-                        throw new Error("Could not create SecurityManager: " + ctor.toString());
+                            throw new Error("Could not create SecurityManager: "
+                                             + ctor.toString());
+                        }
+                        // custom security manager may be in non-exported package
+                        ctor.setAccessible(true);
+                        SecurityManager sm = (SecurityManager) ctor.newInstance();
+                        setSecurityManager(sm);
+                    } catch (Exception e) {
+                        throw new InternalError("Could not create SecurityManager", e);
                     }
-                    // custom security manager implementation may be in unnamed module
-                    // or a named module but non-exported package
-                    ctor.setAccessible(true);
-                    SecurityManager sm = (SecurityManager) ctor.newInstance();
-                    System.setSecurityManager(sm);
-                } catch (Exception e) {
-                    throw new Error("Could not create SecurityManager", e);
-                }
+                    allowSecurityManager = MAYBE;
             }
+        } else {
+            allowSecurityManager = MAYBE;
         }
 
         // initializing the system class loader

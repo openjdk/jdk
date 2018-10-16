@@ -152,15 +152,14 @@ static int checkGetErrorName(jvmtiEnv *jvmti) {
 
     for (i = 0; i < sizeof(errors)/sizeof(error_info); i++) {
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetErrorName, jvmti, errors[i].err, &name)))
+                jvmti->GetErrorName(errors[i].err, &name)))
             return NSK_FALSE;
         if (strcmp(name, errors[i].name) != 0) {
             NSK_COMPLAIN2("Error: function returns \"%s\", expected \"%s\"\n",
                 name, errors[i].name);
             return_value = NSK_FALSE;
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)name)))
             return NSK_FALSE;
     }
 
@@ -172,7 +171,7 @@ static int checkGetErrorName(jvmtiEnv *jvmti) {
 void JNICALL
 VMInit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
@@ -194,10 +193,10 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
                   unsigned char** new_class_data) {
     jvmtiPhase curr_phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &curr_phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&curr_phase)))
         nsk_jvmti_setFailStatus();
 
     if (phase != curr_phase) {
@@ -210,7 +209,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
             nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -224,7 +223,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
@@ -270,12 +269,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* Create data access lock */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti,
-                "_access_lock", &access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_access_lock", &access_lock)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         return JNI_ERR;
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
@@ -288,21 +285,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMInit = &VMInit;
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable VMInit event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_INIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
 
     /* enable ClassFileLoadHook event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */

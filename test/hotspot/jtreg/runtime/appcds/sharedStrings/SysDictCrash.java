@@ -26,8 +26,7 @@
  * @test
  * @summary Regression test for JDK-8098821
  * @bug 8098821
- * @requires vm.cds
- * @requires vm.gc.G1
+ * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  * @modules java.management

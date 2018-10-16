@@ -34,7 +34,7 @@ define SetupOneCopy-zh_HK
       $$(subst _zh_TW,_zh_HK, $2))
 
   $$($1_$2_TARGET): $2
-	$(MKDIR) -p $$(@D)
+	$$(call MakeTargetDir)
 	$(CAT) $$< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $$@
 
   $1 += $$($1_$2_TARGET)
@@ -105,8 +105,8 @@ define SetupCompilePropertiesBody
 
   # Now setup the rule for the generation of the resource bundles.
   $$($1_TARGET): $$($1_SRC_FILES) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $$(@D) $$($1_DIRS)
-	$(ECHO) Compiling $$(words $$($1_SRC_FILES)) properties into resource bundles for $(MODULE)
+	$$(call LogWarn, Compiling $$(words $$($1_SRC_FILES)) properties into resource bundles for $(MODULE))
+	$$(call MakeDir, $$(@D) $$($1_DIRS))
 	$$(eval $$(call ListPathsSafely, $1_CMDLINE, $$($1_CMDLINE_FILE)))
 	$(TOOL_COMPILEPROPERTIES) -quiet @$$($1_CMDLINE_FILE)
 	$(TOUCH) $$@

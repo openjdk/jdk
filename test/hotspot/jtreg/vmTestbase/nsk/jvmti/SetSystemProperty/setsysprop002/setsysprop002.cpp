@@ -76,8 +76,7 @@ static int checkPropertyValue(jvmtiEnv* jvmti, const char phase[],
     char* value = NULL;
 
     NSK_DISPLAY1("  property: %s\n", name);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetSystemProperty, jvmti, name, &value))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetSystemProperty(name, &value))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY1("     value: \"%s\"\n", nsk_null_string(value));
@@ -93,8 +92,7 @@ static int checkPropertyValue(jvmtiEnv* jvmti, const char phase[],
         success = NSK_FALSE;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)value))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)value))) {
         success = NSK_FALSE;
     }
 
@@ -120,14 +118,12 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[], int step) {
         NSK_DISPLAY1("     value: \"%s\"\n", propDescList[i].values[step]);
         if (step > 1) {
             if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_WRONG_PHASE,
-                   NSK_CPP_STUB3(SetSystemProperty, jvmti,
-                     propDescList[i].name, propDescList[i].values[step]))) {
+                   jvmti->SetSystemProperty(propDescList[i].name, propDescList[i].values[step]))) {
                 success = NSK_FALSE;
             }
         } else {
             if (!NSK_JVMTI_VERIFY(
-                   NSK_CPP_STUB3(SetSystemProperty, jvmti,
-                     propDescList[i].name, propDescList[i].values[step]))) {
+                   jvmti->SetSystemProperty(propDescList[i].name, propDescList[i].values[step]))) {
                 success = NSK_FALSE;
             }
         }

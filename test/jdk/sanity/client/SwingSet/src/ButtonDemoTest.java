@@ -56,7 +56,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.button.ButtonDemo
- * @run testng ButtonDemoTest
+ * @run testng/timeout=600 ButtonDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ButtonDemoTest {

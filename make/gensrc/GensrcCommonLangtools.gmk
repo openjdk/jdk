@@ -49,7 +49,7 @@ TOOL_PARSEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools
 #           root.
 define SetupVersionProperties
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$$(strip $2):
-	$(MKDIR) -p $$(@D)
+	$$(call MakeTargetDir)
 	$(PRINTF) "jdk=$(VERSION_NUMBER)\nfull=$(VERSION_STRING)\nrelease=$(VERSION_SHORT)\n" \
 	    > $$@
 
@@ -92,7 +92,7 @@ define SetupCompileProperties
 
   # Now setup the rule for the generation of the resource bundles.
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props: $$(PROPSOURCES)
-	$(MKDIR) -p $$(@D) $$(PROPDIRS)
+	$$(call MakeDir, $$(@D) $$(PROPDIRS))
 	$(FIND) $$(@D) -name "*.java" -a ! -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Compiling $$(words $$(PROPSOURCES)) properties into resource bundles for $(MODULE)
 	$(TOOL_COMPILEPROPS_CMD) $$(PROPCMDLINE)
@@ -122,7 +122,7 @@ define SetupParseProperties
 
   # Now setup the rule for the generation of the resource bundles.
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $$(PARSEPROPSOURCES)
-	$(MKDIR) -p $$(@D) $$(PARSEPROPDIRS)
+	$$(call MakeDir, $$(@D) $$(PARSEPROPDIRS))
 	$(FIND) $$(@D) -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Parsing $$(words $$(PARSEPROPSOURCES)) properties into enum-like class for $(MODULE)
 	$(TOOL_PARSEPROPS_CMD) $$(PARSEPROPCMDLINE)

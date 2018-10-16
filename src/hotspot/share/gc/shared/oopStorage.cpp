@@ -727,7 +727,7 @@ OopStorage::OopStorage(const char* name,
   _allocation_mutex(allocation_mutex),
   _active_mutex(active_mutex),
   _allocation_count(0),
-  _concurrent_iteration_active(false)
+  _concurrent_iteration_count(0)
 {
   _active_array->increment_refcount();
   assert(_active_mutex->rank() < _allocation_mutex->rank(),
@@ -769,7 +769,7 @@ void OopStorage::delete_empty_blocks_safepoint() {
   // blocks available for deletion.
   while (reduce_deferred_updates()) {}
   // Don't interfere with a concurrent iteration.
-  if (_concurrent_iteration_active) return;
+  if (_concurrent_iteration_count > 0) return;
   // Delete empty (and otherwise deletable) blocks from end of _allocation_list.
   for (Block* block = _allocation_list.tail();
        (block != NULL) && block->is_deletable();
@@ -804,7 +804,7 @@ void OopStorage::delete_empty_blocks_concurrent() {
     {
       MutexLockerEx aml(_active_mutex, Mutex::_no_safepoint_check_flag);
       // Don't interfere with a concurrent iteration.
-      if (_concurrent_iteration_active) return;
+      if (_concurrent_iteration_count > 0) return;
       _active_array->remove(block);
     }
     // Remove block from _allocation_list and delete it.
@@ -875,7 +875,7 @@ OopStorage::BasicParState::BasicParState(const OopStorage* storage,
   _concurrent(concurrent)
 {
   assert(estimated_thread_count > 0, "estimated thread count must be positive");
-  update_iteration_state(true);
+  update_concurrent_iteration_count(1);
   // Get the block count *after* iteration state updated, so concurrent
   // empty block deletion is suppressed and can't reduce the count.  But
   // ensure the count we use was written after the block with that count
@@ -885,14 +885,14 @@ OopStorage::BasicParState::BasicParState(const OopStorage* storage,
 
 OopStorage::BasicParState::~BasicParState() {
   _storage->relinquish_block_array(_active_array);
-  update_iteration_state(false);
+  update_concurrent_iteration_count(-1);
 }
 
-void OopStorage::BasicParState::update_iteration_state(bool value) {
+void OopStorage::BasicParState::update_concurrent_iteration_count(int value) {
   if (_concurrent) {
     MutexLockerEx ml(_storage->_active_mutex, Mutex::_no_safepoint_check_flag);
-    assert(_storage->_concurrent_iteration_active != value, "precondition");
-    _storage->_concurrent_iteration_active = value;
+    _storage->_concurrent_iteration_count += value;
+    assert(_storage->_concurrent_iteration_count >= 0, "invariant");
   }
 }
 
@@ -954,7 +954,7 @@ void OopStorage::print_on(outputStream* st) const {
 
   st->print("%s: " SIZE_FORMAT " entries in " SIZE_FORMAT " blocks (%.F%%), " SIZE_FORMAT " bytes",
             name(), allocations, blocks, alloc_percentage, total_memory_usage());
-  if (_concurrent_iteration_active) {
+  if (_concurrent_iteration_count > 0) {
     st->print(", concurrent iteration active");
   }
 }

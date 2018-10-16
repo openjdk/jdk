@@ -51,7 +51,7 @@ $(RMIC_GENSRC_DIR)/_classes.moved: $(RMI_GEN)
 	$(foreach src, $(classfiles), \
 	    $(eval target := $(patsubst $(RMIC_GENSRC_DIR)/%, \
 	        $(STUB_CLASSES_DIR)/%, $(src))) \
-	    $(MKDIR) -p $(dir $(target)) ; \
+	    $(call MakeDir, $(dir $(target))) \
 	    $(MV) $(src) $(target) $(NEWLINE))
 	$(TOUCH) $@
 

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "memory/metaspaceShared.inline.hpp"
+#include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -144,8 +144,8 @@ bool oopDesc::is_unlocked_oop() const {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-bool oopDesc::is_archive_object(oop p) {
-  return MetaspaceShared::is_archive_object(p);
+bool oopDesc::is_archived_object(oop p) {
+  return HeapShared::is_archived_object(p);
 }
 #endif
 #endif // PRODUCT
@@ -169,6 +169,63 @@ bool oopDesc::is_typeArray_noinline()         const { return is_typeArray();    
 bool oopDesc::has_klass_gap() {
   // Only has a klass gap when compressed class pointers are used.
   return UseCompressedClassPointers;
+}
+
+oop oopDesc::decode_oop_raw(narrowOop narrow_oop) {
+  return (oop)(void*)( (uintptr_t)Universe::narrow_oop_base() +
+                      ((uintptr_t)narrow_oop << Universe::narrow_oop_shift()));
+}
+
+void* oopDesc::load_klass_raw(oop obj) {
+  if (UseCompressedClassPointers) {
+    narrowKlass narrow_klass = *(obj->compressed_klass_addr());
+    if (narrow_klass == 0) return NULL;
+    return (void*)Klass::decode_klass_raw(narrow_klass);
+  } else {
+    return *(void**)(obj->klass_addr());
+  }
+}
+
+void* oopDesc::load_oop_raw(oop obj, int offset) {
+  uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
+  if (UseCompressedOops) {
+    narrowOop narrow_oop = *(narrowOop*)addr;
+    if (narrow_oop == 0) return NULL;
+    return (void*)decode_oop_raw(narrow_oop);
+  } else {
+    return *(void**)addr;
+  }
+}
+
+bool oopDesc::is_valid(oop obj) {
+  if (!is_object_aligned(obj)) return false;
+  if ((size_t)(oopDesc*)obj < os::min_page_size()) return false;
+
+  // We need at least the mark and the klass word in the committed region.
+  if (!os::is_readable_range(obj, (oopDesc*)obj + 1)) return false;
+  if (!Universe::heap()->is_in(obj)) return false;
+
+  Klass* k = (Klass*)load_klass_raw(obj);
+
+  if (!os::is_readable_range(k, k + 1)) return false;
+  return MetaspaceUtils::is_range_in_committed(k, k + 1);
+}
+
+oop oopDesc::oop_or_null(address addr) {
+  if (is_valid(oop(addr))) {
+    // We were just given an oop directly.
+    return oop(addr);
+  }
+
+  // Try to find addr using block_start.
+  HeapWord* p = Universe::heap()->block_start(addr);
+  if (p != NULL && Universe::heap()->block_is_obj(p)) {
+    if (!is_valid(oop(p))) return NULL;
+    return oop(p);
+  }
+
+  // If we can't find it it just may mean that heap wasn't parsable.
+  return NULL;
 }
 
 oop oopDesc::obj_field_acquire(int offset) const                      { return HeapAccess<MO_ACQUIRE>::oop_load_at(as_oop(), offset); }

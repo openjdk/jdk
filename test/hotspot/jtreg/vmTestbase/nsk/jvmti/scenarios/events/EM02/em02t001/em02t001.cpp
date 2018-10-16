@@ -68,8 +68,7 @@ findThread(const char *threadName) {
     int i;
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NULL;
 
     if (!NSK_VERIFY(threads != NULL))
@@ -81,8 +80,7 @@ findThread(const char *threadName) {
             break;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             break;
 
         /* find by name */
@@ -92,8 +90,7 @@ findThread(const char *threadName) {
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NULL;
 
     return returnValue;
@@ -108,16 +105,14 @@ getStaticObjField(const char* className, const char* objFieldName,
     jfieldID fieldID;
     jclass klass = NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(FindClass, jni, className)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(className)) != NULL))
         return NULL;
 
     if (!NSK_JNI_VERIFY(jni, (fieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, klass, objFieldName,
-                                signature)) != NULL))
+            jni->GetStaticFieldID(klass, objFieldName, signature)) != NULL))
         return NULL;
 
-    return NSK_CPP_STUB3(GetStaticObjectField, jni, klass, fieldID);
+    return jni->GetStaticObjectField(klass, fieldID);
 }
 
 /* ============================================================================= */
@@ -130,8 +125,7 @@ static int prepare() {
     }
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (mainThread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, mainThread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (mainThread = jni->NewGlobalRef(mainThread)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_VERIFY((startObject =
@@ -140,8 +134,7 @@ static int prepare() {
         return NSK_FALSE;
 
     /*make object accessable for a long time*/
-    if (!NSK_JNI_VERIFY(jni, (startObject =
-            NSK_CPP_STUB2(NewGlobalRef, jni, startObject)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (startObject = jni->NewGlobalRef(startObject)) != NULL))
         return NSK_FALSE;
 
 
@@ -151,8 +144,7 @@ static int prepare() {
         return NSK_FALSE;
 
     /*make object accessable for a long time*/
-    if (!NSK_JNI_VERIFY(jni, (endObject =
-            NSK_CPP_STUB2(NewGlobalRef, jni, endObject)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (endObject = jni->NewGlobalRef(endObject)) != NULL))
         return NSK_FALSE;
 
 
@@ -162,8 +154,7 @@ static int prepare() {
         return NSK_FALSE;
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (debuggeeThread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, debuggeeThread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debuggeeThread = jni->NewGlobalRef(debuggeeThread)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -176,15 +167,15 @@ clean() {
 
     /* disable MonitorContendedEnter event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_DISABLE,
-                JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+            jvmti->SetEventNotificationMode(
+                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
         nsk_jvmti_setFailStatus();
 
     /* dispose global references */
-    NSK_CPP_STUB2(DeleteGlobalRef, jni, startObject);
-    NSK_CPP_STUB2(DeleteGlobalRef, jni, endObject);
-    NSK_CPP_STUB2(DeleteGlobalRef, jni, debuggeeThread);
-    NSK_CPP_STUB2(DeleteGlobalRef, jni, mainThread);
+    jni->DeleteGlobalRef(startObject);
+    jni->DeleteGlobalRef(endObject);
+    jni->DeleteGlobalRef(debuggeeThread);
+    jni->DeleteGlobalRef(mainThread);
 
     startObject = NULL;
     endObject = NULL;
@@ -219,8 +210,7 @@ showEventStatistics(int step /*int *currentCounts*/) {
 static void
 showThreadInfo(jthread thread) {
     jvmtiThreadInfo info;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &info)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info)))
         return;
 
     NSK_DISPLAY2("\tthread (%s): %p\n", info.name, thread);
@@ -231,12 +221,12 @@ showThreadInfo(jthread thread) {
 static void
 changeCount(jvmtiEvent event, int *currentCounts) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
         nsk_jvmti_setFailStatus();
 
     currentCounts[event - JVMTI_MIN_EVENT_TYPE_VAL]++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -327,8 +317,7 @@ cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni_env) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -420,13 +409,13 @@ handlerMC1(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
         return;
 
     /* check if event is for tested thread and for tested object */
-    if (NSK_CPP_STUB3(IsSameObject, jni_env, expectedThread, thread) &&
-            NSK_CPP_STUB3(IsSameObject, jni_env, expectedObject, object)) {
+    if (jni_env->IsSameObject(expectedThread, thread) &&
+            jni_env->IsSameObject(expectedObject, object)) {
 
         NSK_DISPLAY1("--->%-40s is received\n", TranslateEvent(event));
 
         showThreadInfo(thread);
-        if (NSK_CPP_STUB3(IsSameObject, jni_env, expectedObject, endObject))
+        if (jni_env->IsSameObject(expectedObject, endObject))
             NSK_DISPLAY0("\tobject: 'endingMonitor'\n");
         else
             NSK_DISPLAY0("\tobject: 'startingMonitor'\n");
@@ -506,13 +495,13 @@ handlerMC2(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
         return;
 
     /* check if event is for tested thread and for tested object */
-    if (NSK_CPP_STUB3(IsSameObject, jni_env, expectedThread, thread) &&
-            NSK_CPP_STUB3(IsSameObject, jni_env, expectedObject, object)) {
+    if (jni_env->IsSameObject(expectedThread, thread) &&
+            jni_env->IsSameObject(expectedObject, object)) {
 
         NSK_DISPLAY1("--->%-40s is received (new callbacks)\n", TranslateEvent(event));
 
         showThreadInfo(thread);
-        if (NSK_CPP_STUB3(IsSameObject, jni_env, expectedObject, endObject))
+        if (jni_env->IsSameObject(expectedObject, endObject))
             NSK_DISPLAY0("\tobject: 'endingMonitor'\n");
         else
             NSK_DISPLAY0("\tobject: 'startingMonitor'\n");
@@ -572,16 +561,13 @@ static int enableEvent(jvmtiEvent event) {
             && (event != JVMTI_EVENT_MONITOR_WAIT)
             && (event != JVMTI_EVENT_MONITOR_WAITED)) {
         if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
         }
     } else {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
@@ -679,10 +665,7 @@ setCallBacks(int step) {
             break;
 
     }
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -771,8 +754,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return JNI_ERR;
     }
@@ -782,7 +764,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
 
         caps.can_generate_monitor_events = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 

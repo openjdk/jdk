@@ -28,8 +28,8 @@
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
  *          net properties.
  * @bug 8087112
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext DigestEchoServer DigestEchoClient
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer DigestEchoClient
  *        ReferenceTracker ProxyAuthDisabledSchemes
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame

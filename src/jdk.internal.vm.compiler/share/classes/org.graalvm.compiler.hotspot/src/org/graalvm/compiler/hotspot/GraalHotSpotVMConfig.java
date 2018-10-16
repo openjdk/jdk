@@ -648,11 +648,33 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final long unsafeArraycopy = getFieldValue("StubRoutines::_unsafe_arraycopy", Long.class, "address");
     public final long genericArraycopy = getFieldValue("StubRoutines::_generic_arraycopy", Long.class, "address");
 
+    // Allocation stubs that throw an exception when allocation fails
     public final long newInstanceAddress = getAddress("JVMCIRuntime::new_instance");
     public final long newArrayAddress = getAddress("JVMCIRuntime::new_array");
     public final long newMultiArrayAddress = getAddress("JVMCIRuntime::new_multi_array");
-    public final long dynamicNewArrayAddress = getAddress("JVMCIRuntime::dynamic_new_array");
-    public final long dynamicNewInstanceAddress = getAddress("JVMCIRuntime::dynamic_new_instance");
+
+    // Allocation stubs that return null when allocation fails
+    public final long newInstanceOrNullAddress = getAddress("JVMCIRuntime::new_instance_or_null", 0L);
+    public final long newArrayOrNullAddress = getAddress("JVMCIRuntime::new_array_or_null", 0L);
+    public final long newMultiArrayOrNullAddress = getAddress("JVMCIRuntime::new_multi_array_or_null", 0L);
+
+    public boolean areNullAllocationStubsAvailable() {
+        return newInstanceOrNullAddress != 0L;
+    }
+
+    /**
+     * Checks that HotSpot implements all or none of the allocate-or-null stubs.
+     */
+    private boolean checkNullAllocationStubs() {
+        if (newInstanceOrNullAddress == 0L) {
+            assert newArrayOrNullAddress == 0L;
+            assert newMultiArrayOrNullAddress == 0L;
+        } else {
+            assert newArrayOrNullAddress != 0L;
+            assert newMultiArrayOrNullAddress != 0L;
+        }
+        return true;
+    }
 
     public final long threadIsInterruptedAddress = getAddress("JVMCIRuntime::thread_is_interrupted");
     public final long vmMessageAddress = getAddress("JVMCIRuntime::vm_message");
@@ -757,6 +779,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
         }
 
         assert codeEntryAlignment > 0 : codeEntryAlignment;
+        assert checkNullAllocationStubs();
         return true;
     }
 }

@@ -57,14 +57,14 @@ void JNICALL
 VMInit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
     jvmtiJlocationFormat format;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
 
     /* testcase #3: check GetJLocationFormat in VMInit */
     NSK_DISPLAY0("Testcase #3: check GetJLocationFormat in VMInit\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetJLocationFormat, jvmti, &format)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetJLocationFormat(&format)))
         nsk_jvmti_setFailStatus();
     if (!NSK_VERIFY((format == JVMTI_JLOCATION_JVMBCI)
                  || (format == JVMTI_JLOCATION_MACHINEPC)
@@ -85,10 +85,10 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
     jvmtiJlocationFormat format;
     jvmtiPhase curr_phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(access_lock)))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &curr_phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&curr_phase)))
         nsk_jvmti_setFailStatus();
 
     if (phase != curr_phase) {
@@ -97,7 +97,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         /* testcase #2: check GetJLocationFormat in ClassFileLoadHook */
         NSK_DISPLAY0("Testcase #2: check GetJLocationFormat in ClassFileLoadHook\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetJLocationFormat, jvmti, &format)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetJLocationFormat(&format)))
             nsk_jvmti_setFailStatus();
         if (!NSK_VERIFY((format == JVMTI_JLOCATION_JVMBCI)
                      || (format == JVMTI_JLOCATION_MACHINEPC)
@@ -106,7 +106,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
         NSK_DISPLAY1("JlocationFormat: %s\n", TranslateJlocationFormat(format));
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(access_lock)))
         nsk_jvmti_setFailStatus();
 }
 
@@ -121,14 +121,14 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
 
     /* testcase #4: check GetJLocationFormat in agentProc */
     NSK_DISPLAY0("Testcase #4: check GetJLocationFormat in agentProc\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetJLocationFormat, jvmti, &format)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetJLocationFormat(&format)))
         nsk_jvmti_setFailStatus();
     if (!NSK_VERIFY((format == JVMTI_JLOCATION_JVMBCI)
                  || (format == JVMTI_JLOCATION_MACHINEPC)
@@ -173,19 +173,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* Create data access lock */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti,
-                "_access_lock", &access_lock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_access_lock", &access_lock)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         return JNI_ERR;
 
     NSK_DISPLAY1("Phase: %s\n", TranslatePhase(phase));
 
     /* testcase #1: check GetJLocationFormat in Agent_OnLoad */
     NSK_DISPLAY0("Testcase #1: check GetJLocationFormat in Agent_OnLoad\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetJLocationFormat, jvmti, &format)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetJLocationFormat(&format)))
         nsk_jvmti_setFailStatus();
     if (!NSK_VERIFY((format == JVMTI_JLOCATION_JVMBCI)
                  || (format == JVMTI_JLOCATION_MACHINEPC)
@@ -196,21 +194,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMInit = &VMInit;
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable VMInit event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_INIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
 
     /* enable ClassFileLoadHook event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */

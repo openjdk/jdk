@@ -141,17 +141,17 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
 // This function looks at the mmap regions in the metaspace without locking.
 // The chunks are added with store ordering and not deleted except for at
 // unloading time during a safepoint.
-bool VirtualSpaceList::contains(const void* ptr) {
+VirtualSpaceNode* VirtualSpaceList::find_enclosing_space(const void* ptr) {
   // List should be stable enough to use an iterator here because removing virtual
   // space nodes is only allowed at a safepoint.
   VirtualSpaceListIterator iter(virtual_space_list());
   while (iter.repeat()) {
     VirtualSpaceNode* vsn = iter.get_next();
     if (vsn->contains(ptr)) {
-      return true;
+      return vsn;
     }
   }
-  return false;
+  return NULL;
 }
 
 void VirtualSpaceList::retire_current_virtual_space() {

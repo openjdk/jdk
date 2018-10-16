@@ -57,7 +57,7 @@ static int prepare(jvmtiEnv* jvmti) {
 
     /* get all live threads */
     if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+           jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -70,7 +70,7 @@ static int prepare(jvmtiEnv* jvmti) {
 
         /* get thread information */
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+                jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -89,7 +89,7 @@ static int prepare(jvmtiEnv* jvmti) {
 
     /* deallocate threads list */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+            jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -112,8 +112,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!NSK_VERIFY(runningThread != NULL)) {
         nsk_jvmti_setFailStatus();
     } else {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(InterruptThread,
-                jvmti, runningThread)))
+        if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(runningThread)))
             nsk_jvmti_setFailStatus();
     }
 
@@ -121,8 +120,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!NSK_VERIFY(waitingThread != NULL)) {
         nsk_jvmti_setFailStatus();
     } else {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(InterruptThread,
-                jvmti, waitingThread)))
+        if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(waitingThread)))
             nsk_jvmti_setFailStatus();
     }
 
@@ -130,8 +128,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!NSK_VERIFY(sleepingThread != NULL)) {
         nsk_jvmti_setFailStatus();
     } else {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(InterruptThread,
-                jvmti, sleepingThread)))
+        if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(sleepingThread)))
             nsk_jvmti_setFailStatus();
     }
 
@@ -173,7 +170,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_signal_thread = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 

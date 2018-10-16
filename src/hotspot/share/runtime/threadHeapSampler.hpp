@@ -30,20 +30,24 @@
 
 class ThreadHeapSampler {
  private:
+  // Statics for the fast log
+  static const int FastLogNumBits = 10;
+  static const int FastLogMask = (1 << FastLogNumBits) - 1;
+
   size_t _bytes_until_sample;
   // Cheap random number generator
   static uint64_t _rnd;
+  static bool _log_table_initialized;
+
+  static double _log_table[1<<FastLogNumBits];  // Constant
+  static volatile int _sampling_interval;
 
   void pick_next_geometric_sample();
   void pick_next_sample(size_t overflowed_bytes = 0);
-  static int _enabled;
-  static int _sampling_interval;
 
-  // Used for assertion mode to determine if there is a path to a TLAB slow path
-  // without a collector present.
-  size_t _collectors_present;
-
-  static void init_log_table();
+  static double fast_log2(const double& d);
+  static bool init_log_table();
+  uint64_t next_random(uint64_t rnd);
 
  public:
   ThreadHeapSampler() : _bytes_until_sample(0) {
@@ -51,8 +55,6 @@ class ThreadHeapSampler {
     if (_rnd == 0) {
       _rnd = 1;
     }
-
-    _collectors_present = 0;
   }
 
   size_t bytes_until_sample()                    { return _bytes_until_sample;   }
@@ -60,16 +62,8 @@ class ThreadHeapSampler {
 
   void check_for_sampling(oop obj, size_t size_in_bytes, size_t bytes_allocated_before);
 
-  static int enabled();
-  static void enable();
-  static void disable();
-
   static void set_sampling_interval(int sampling_interval);
   static int get_sampling_interval();
-
-  bool sampling_collector_present() const;
-  bool remove_sampling_collector();
-  bool add_sampling_collector();
 };
 
 #endif // SHARE_RUNTIME_THREADHEAPSAMPLER_HPP

@@ -68,7 +68,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   oop obj = CompressedOops::decode_not_null(heap_oop);
   assert(Universe::heap()->is_in(obj), "should be in heap");
-  if (G1ArchiveAllocator::is_archive_object(obj)) {
+  if (G1ArchiveAllocator::is_archived_object(obj)) {
     // We never forward archive objects.
     return;
   }

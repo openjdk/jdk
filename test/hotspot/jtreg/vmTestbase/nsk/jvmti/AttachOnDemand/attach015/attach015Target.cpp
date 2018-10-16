@@ -37,7 +37,7 @@ extern "C" {
  */
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_AttachOnDemand_attach015_attach015Target_loadClassFromNative(JNIEnv * jni, jclass klass) {
-    return NSK_CPP_STUB2(FindClass, jni, LOADED_CLASS_NAME) ? JNI_TRUE : JNI_FALSE;
+    return jni->FindClass(LOADED_CLASS_NAME) ? JNI_TRUE : JNI_FALSE;
 }
 
 }

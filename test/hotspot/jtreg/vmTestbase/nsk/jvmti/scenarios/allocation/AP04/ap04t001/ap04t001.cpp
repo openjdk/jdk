@@ -66,30 +66,26 @@ static jrawMonitorID counterMonitor_ptr = NULL;
 
 static void increaseCounter(volatile int* counterPtr) {
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
     (*counterPtr)++;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 }
 
 static void setCounter(volatile int* counterPtr, int value) {
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
     *counterPtr = value;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -97,15 +93,13 @@ static void setCounter(volatile int* counterPtr, int value) {
 static int getCounter(volatile int* counterPtr) {
     int result;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
     result = *counterPtr;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, jvmti, counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(counterMonitor_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -248,7 +242,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_setTag( JNIEnv* jni,
                                                           jobject target, /* object to be tagged */
                                                           jlong   tag ) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, target, tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -258,7 +252,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_forceGC( JNIEnv* jni,
                                                           jclass  klass) {
 
 NSK_DISPLAY0("  run: ForceGarbageCollection\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB1(ForceGarbageCollection, jvmti))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceGarbageCollection())) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -273,11 +267,9 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_runIterateOverHeap( JNIEnv* jn
     setCounter(&iterationCount, 0);
 
     NSK_DISPLAY0("Calling IterateOverHeap...\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(IterateOverHeap, jvmti,
-                                           JVMTI_HEAP_OBJECT_TAGGED,
-                                           heapObjectCallback,
-                                           NULL /*user_data*/))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_TAGGED,
+                                                 heapObjectCallback,
+                                                 NULL /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverHeap finished.\n");
@@ -303,12 +295,10 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_runIterateOverReachableObjects
     setCounter(&iterationCount, 0);
 
     NSK_DISPLAY0("Calling IterateOverReachableObjects...\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                                                       heapRootCallback,
-                                                       stackReferenceCallback,
-                                                       objectReferenceCallback,
-                                                       NULL /*user_data*/))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                             stackReferenceCallback,
+                                                             objectReferenceCallback,
+                                                             NULL /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverReachableObjects finished.\n");
@@ -334,12 +324,10 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_runIterateOverInstancesOfClass
     setCounter(&iterationCount, 0);
 
     NSK_DISPLAY0("Calling IterateOverInstancesOfClass...\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(IterateOverInstancesOfClass, jvmti,
-                                                       debugeeClass,
-                                                       JVMTI_HEAP_OBJECT_TAGGED,
-                                                       heapObjectCallback,
-                                                       NULL /*user_data*/))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverInstancesOfClass(debugeeClass,
+                                                             JVMTI_HEAP_OBJECT_TAGGED,
+                                                             heapObjectCallback,
+                                                             NULL /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverInstancesOfClass finished.\n");
@@ -363,27 +351,23 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_runIterateOverObjectsReachable
     int count = 0;
 
     if (!NSK_JNI_VERIFY(jni, (root =
-            NSK_CPP_STUB3(GetStaticObjectField, jni,
-                                                debugeeClass,
-                                                rootFieldID )) != NULL )) {
+            jni->GetStaticObjectField(debugeeClass, rootFieldID)) != NULL )) {
         NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'root' field value\n\n");
         nsk_jvmti_setFailStatus();
         return;
     }
 
     // release secondary lock
-    NSK_CPP_STUB3(CallStaticVoidMethod, jni, debugeeClass, unlockSecondaryID);
+    jni->CallStaticVoidMethod(debugeeClass, unlockSecondaryID);
 
     setCounter(&errorCount, 0);
     setCounter(&eventCount, 0);
     setCounter(&iterationCount, 0);
 
     NSK_DISPLAY0("Calling IterateOverObjectsReachableFromObject...\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(IterateOverObjectsReachableFromObject, jvmti,
-                                                                 root,
-                                                                 objectReferenceCallback,
-                                                                 NULL /*user_data*/))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(root,
+                                                                       objectReferenceCallback,
+                                                                       NULL /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverObjectsReachableFromObject finished.\n");
@@ -413,26 +397,19 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, debugeeClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)jni->NewGlobalRef(debugeeClass)) != NULL))
         return;
 
     NSK_DISPLAY1("Find ID of 'root' field: %s\n", ROOT_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (rootFieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni,
-                                            debugeeClass,
-                                            "root",
-                                            ROOT_SIGNATURE)) != NULL )) {
+            jni->GetStaticFieldID(debugeeClass, "root", ROOT_SIGNATURE)) != NULL )) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     NSK_DISPLAY1("Find ID of 'unlockSecondary' method: %s\n", ROOT_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (unlockSecondaryID =
-            NSK_CPP_STUB4(GetStaticMethodID, jni,
-                                            debugeeClass,
-                                            "unlockSecondary",
-                                            "()V")) != NULL )) {
+            jni->GetStaticMethodID(debugeeClass, "unlockSecondary", "()V")) != NULL )) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -448,8 +425,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     nsk_jvmti_enableEvents(JVMTI_DISABLE, eventsCount, events, NULL);
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, debugeeClass));
-    NSK_TRACE(NSK_CPP_STUB2(DestroyRawMonitor, jvmti, counterMonitor_ptr));
+    NSK_TRACE(jni->DeleteGlobalRef(debugeeClass));
+    NSK_TRACE(jvmti->DestroyRawMonitor(counterMonitor_ptr));
 
     NSK_DISPLAY0("Let debugee to finish\n");
     if (!NSK_VERIFY(nsk_jvmti_resumeSync()))
@@ -477,8 +454,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "counterMonitor", &counterMonitor_ptr))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("counterMonitor", &counterMonitor_ptr))) {
         return JNI_ERR;
     }
 
@@ -487,12 +463,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     caps.can_generate_object_free_events = 1;
     caps.can_generate_garbage_collection_events = 1;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)
@@ -509,8 +483,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.ObjectFree = &ObjectFree;
     callbacks.GarbageCollectionStart = &GarbageCollectionStart;
     callbacks.GarbageCollectionFinish = &GarbageCollectionFinish;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done.\n");

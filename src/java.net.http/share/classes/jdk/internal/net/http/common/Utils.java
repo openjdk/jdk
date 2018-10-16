@@ -133,9 +133,7 @@ public final class Utils {
         // A case insensitive TreeSet of strings.
         TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         treeSet.addAll(Set.of("connection", "content-length",
-                "date", "expect", "from", "host", "origin",
-                "referer", "upgrade",
-                "via", "warning"));
+                "date", "expect", "from", "host", "upgrade", "via", "warning"));
         DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
     }
 

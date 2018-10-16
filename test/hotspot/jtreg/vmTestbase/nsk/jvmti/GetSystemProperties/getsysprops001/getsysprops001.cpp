@@ -42,7 +42,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
 
     NSK_DISPLAY0("Invoke GetSystemProperties()\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetSystemProperties, jvmti, &count, &properties))) {
+            jvmti->GetSystemProperties(&count, &properties))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -75,7 +75,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
     }
     NSK_DISPLAY0("Deallocate properties list\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)properties))) {
+            jvmti->Deallocate((unsigned char*)properties))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("  ... deallocated\n");

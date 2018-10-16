@@ -26,8 +26,8 @@
  * @summary Verify that dependent synchronous actions added before the promise CF
  *          completes are executed either asynchronously in an executor when the
  *          CF later completes, or in the user thread that joins.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters DependentPromiseActionsTest
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DependentPromiseActionsTest
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -40,7 +40,7 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.StackWalker.StackFrame;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeTest;

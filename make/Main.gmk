@@ -263,6 +263,31 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS) hotspot-ide-project
 
 ################################################################################
+# Generate libs and launcher targets for creating compile_commands.json fragments
+define DeclareCompileCommandsRecipe
+  $1-compile-commands:
+	$$(call LogInfo, Generating compile_commands.json fragments for $1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Main.gmk $1-only \
+	    GENERATE_COMPILE_COMMANDS_ONLY=true)
+
+  COMPILE_COMMANDS_TARGETS_$2 += $1-compile-commands
+endef
+
+$(foreach t, $(HOTSPOT_VARIANT_LIBS_TARGETS), \
+  $(eval $(call DeclareCompileCommandsRecipe,$t,HOTSPOT)) \
+)
+
+$(foreach t, $(LIBS_TARGETS) $(LAUNCHER_TARGETS), \
+  $(eval $(call DeclareCompileCommandsRecipe,$t,JDK)) \
+)
+
+compile-commands compile-commands-hotspot:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileCommands.gmk)
+
+ALL_TARGETS += $(COMPILE_COMMANDS_TARGETS_HOTSPOT) $(COMPILE_COMMANDS_TARGETS_JDK)
+ALL_TARGETS += compile-commands compile-commands-hotspot
+
+################################################################################
 # Build demos targets
 
 demos-jdk:
@@ -559,8 +584,12 @@ test-jdk-jtreg-native:
 test-make:
 	($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
 
+test-compile-commands:
+	($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk test-compile-commands)
+
 ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
-    test-hotspot-internal test-hotspot-gtest test-jdk-jtreg-native test-make
+    test-hotspot-internal test-hotspot-gtest test-jdk-jtreg-native test-make \
+    test-compile-commands
 
 ################################################################################
 # Bundles
@@ -735,6 +764,20 @@ else
   $(foreach m, $(ALL_MODULES), $(eval $m-jmod: $($(m)_JMOD_DEPS)))
   $(foreach m, $(INTERIM_IMAGE_MODULES), $(eval $m-interim-jmod: $($(m)_JMOD_DEPS)))
 
+  # Setup the minimal set of generated native source dependencies for hotspot
+  $(foreach v, $(JVM_VARIANTS), \
+    $(eval hotspot-$v-libs-compile-commands: hotspot-$v-gensrc) \
+    $(foreach m, $(filter java.desktop jdk.hotspot.agent, $(GENSRC_MODULES)), \
+      $(eval hotspot-$v-libs-compile-commands: $m-gensrc)) \
+  )
+
+  # For the full JDK compile commands, create all possible generated sources
+  $(foreach m, $(GENSRC_MODULES), $(eval $m-libs-compile-commands: $m-gensrc))
+  $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs-compile-commands: $m-java))
+
+  compile-commands-hotspot: $(COMPILE_COMMANDS_TARGETS_HOTSPOT)
+  compile-commands: $(COMPILE_COMMANDS_TARGETS_HOTSPOT) $(COMPILE_COMMANDS_TARGETS_JDK)
+
   # Jmods cannot be created until we have the jmod tool ready to run. During
   # a normal build we run it from the exploded image, but when cross compiling
   # it's run from the buildjdk, which is either created at build time or user
@@ -848,6 +891,8 @@ else
   interim-image: $(INTERIM_JMOD_TARGETS)
 
   test-make: clean-test-make
+
+  test-compile-commands: compile-commands
 
   build-test-lib: exploded-image-optimize
 
@@ -1071,7 +1116,7 @@ CLEAN_MODULE_PHASE_TARGETS := $(addprefix clean-, $(foreach m, $(ALL_MODULES), \
 
 # Remove everything, except the output from configure.
 clean: $(CLEAN_DIR_TARGETS)
-	($(CD) $(OUTPUTDIR) && $(RM) -r build*.log*)
+	($(CD) $(OUTPUTDIR) && $(RM) -r build*.log* compile_commands.json)
 	$(ECHO) Cleaned all build artifacts.
 
 clean-docs:

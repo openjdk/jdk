@@ -46,12 +46,12 @@ heapObjectCallback(jlong class_tag,
                    void* storage_data) {
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, st_jvmti, storage_data ))) {
+            st_jvmti->SetEnvironmentLocalStorage(storage_data ))) {
         nsk_jvmti_setFailStatus();
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, st_jvmti, &storage_ptr))) {
+            st_jvmti->GetEnvironmentLocalStorage(&storage_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -73,11 +73,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_EITHER\n");
         {
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(IterateOverHeap,
-                        jvmti,
-                        JVMTI_HEAP_OBJECT_EITHER,
-                        heapObjectCallback,
-                        (void *)storage_data))) {
+                    jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_EITHER, heapObjectCallback, (void *)storage_data))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -135,7 +131,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+                jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

@@ -143,9 +143,7 @@ static int enableEvents(jvmtiEventMode enable) {
     int i;
 
     for (i = 0; i < EVENTS_COUNT; i++) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti, enable,
-                                                eventsList[i], NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, eventsList[i], NULL))) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -168,37 +166,35 @@ static int prepare() {
     jsize i;
 
     /* find debugee class */
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     /* find static field with threads array */
     if (!NSK_JNI_VERIFY(jni, (threadsFieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                    THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
     /* get threads array from static field */
     if (!NSK_JNI_VERIFY(jni, (threadsArray = (jobjectArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass, threadsFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != NULL))
         return NSK_FALSE;
 
     /* check array length */
     if (!NSK_JNI_VERIFY(jni, (threadsArrayLength =
-            NSK_CPP_STUB2(GetArrayLength, jni, threadsArray)) == THREADS_COUNT))
+            jni->GetArrayLength(threadsArray)) == THREADS_COUNT))
         return NSK_FALSE;
 
     /* get each thread from array */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                NSK_CPP_STUB3(GetObjectArrayElement, jni, threadsArray, i)) != NULL))
+                jni->GetObjectArrayElement(threadsArray, i)) != NULL))
             return NSK_FALSE;
     }
 
     /* make global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                NSK_CPP_STUB2(NewGlobalRef, jni, threadsList[i])) != NULL))
+                jni->NewGlobalRef(threadsList[i])) != NULL))
             return NSK_FALSE;
     }
 
@@ -218,8 +214,7 @@ static int checkThread(jthread thread, int i, const char* kind) {
     NSK_DISPLAY3("  thread #%d (%s): %p\n", i, threadsName[i], (void*)thread);
 
     /* get frames count */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetFrameCount, jvmti, thread, &framesCount))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetFrameCount(thread, &framesCount))) {
         nsk_jvmti_setFailStatus();
         return NSK_TRUE;
     }
@@ -227,8 +222,7 @@ static int checkThread(jthread thread, int i, const char* kind) {
 
     /* get stack frames */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB6(GetStackTrace, jvmti, thread, 0, MAX_STACK_DEPTH,
-                                                    stackFrames, &stackDepth))) {
+            jvmti->GetStackTrace(thread, 0, MAX_STACK_DEPTH, stackFrames, &stackDepth))) {
         nsk_jvmti_setFailStatus();
         return NSK_TRUE;
     }
@@ -269,7 +263,7 @@ static int clean() {
 
     /* dispose global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadsList[i]));
+        NSK_TRACE(jni->DeleteGlobalRef(threadsList[i]));
     }
 
     return NSK_TRUE;
@@ -293,7 +287,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
     /* check if event is for tested thread */
     for (i = 0; i < THREADS_COUNT; i++) {
-        if (NSK_CPP_STUB3(IsSameObject, jni, threadsList[i], thread)) {
+        if (jni->IsSameObject(threadsList[i], thread)) {
                 NSK_DISPLAY0("SUCCESS: expected THREAD_START event\n");
             eventsStart++;
 
@@ -320,7 +314,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
     /* check if event is for tested thread */
     for (i = 0; i < THREADS_COUNT; i++) {
-        if (NSK_CPP_STUB3(IsSameObject, jni, threadsList[i], thread)) {
+        if (jni->IsSameObject(threadsList[i], thread)) {
                 NSK_DISPLAY0("SUCCESS: expected THREAD_START event\n");
             eventsEnd++;
 
@@ -403,9 +397,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.ThreadStart = callbackThreadStart;
         eventCallbacks.ThreadEnd = callbackThreadEnd;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
             return JNI_ERR;
     }
 

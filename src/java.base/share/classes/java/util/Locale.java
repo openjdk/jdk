@@ -2246,22 +2246,26 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * @serialField language    String
-     *      language subtag in lower case. (See <a href="java/util/Locale.html#getLanguage()">getLanguage()</a>)
+     *      language subtag in lower case.
+     *      (See <a href="java.base/java/util/Locale.html#getLanguage()">getLanguage()</a>)
      * @serialField country     String
-     *      country subtag in upper case. (See <a href="java/util/Locale.html#getCountry()">getCountry()</a>)
+     *      country subtag in upper case.
+     *      (See <a href="java.base/java/util/Locale.html#getCountry()">getCountry()</a>)
      * @serialField variant     String
-     *      variant subtags separated by LOWLINE characters. (See <a href="java/util/Locale.html#getVariant()">getVariant()</a>)
+     *      variant subtags separated by LOWLINE characters.
+     *      (See <a href="java.base/java/util/Locale.html#getVariant()">getVariant()</a>)
      * @serialField hashcode    int
      *      deprecated, for forward compatibility only
      * @serialField script      String
-     *      script subtag in title case (See <a href="java/util/Locale.html#getScript()">getScript()</a>)
+     *      script subtag in title case
+     *      (See <a href="java.base/java/util/Locale.html#getScript()">getScript()</a>)
      * @serialField extensions  String
      *      canonical representation of extensions, that is,
      *      BCP47 extensions in alphabetical order followed by
      *      BCP47 private use subtags, all in lower case letters
      *      separated by HYPHEN-MINUS characters.
-     *      (See <a href="java/util/Locale.html#getExtensionKeys()">getExtensionKeys()</a>,
-     *      <a href="java/util/Locale.html#getExtension(char)">getExtension(char)</a>)
+     *      (See <a href="java.base/java/util/Locale.html#getExtensionKeys()">getExtensionKeys()</a>,
+     *      <a href="java.base/java/util/Locale.html#getExtension(char)">getExtension(char)</a>)
      */
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("language", String.class),

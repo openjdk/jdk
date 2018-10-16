@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
@@ -1218,8 +1219,13 @@ class ZipFile implements ZipConstants, Closeable {
 
 
         static Source get(File file, boolean toDelete) throws IOException {
-            Key key = new Key(file,
-                              Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+            final Key key;
+            try {
+                key = new Key(file,
+                        Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+            } catch (InvalidPathException ipe) {
+                throw new IOException(ipe);
+            }
             Source src;
             synchronized (files) {
                 src = files.get(key);

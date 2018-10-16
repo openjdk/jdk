@@ -48,6 +48,16 @@ import static org.testng.Assert.*;
 
 public class ReflectionFrames {
     final static boolean verbose = false;
+    final static Class<?> REFLECT_ACCESS = findClass("java.lang.reflect.ReflectAccess");
+    final static Class<?> REFLECTION_FACTORY = findClass("jdk.internal.reflect.ReflectionFactory");
+
+    private static Class<?> findClass(String cn) {
+        try {
+            return Class.forName(cn);
+        } catch (ClassNotFoundException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     /**
      * This test invokes new StackInspector() directly from
@@ -327,6 +337,8 @@ public class ReflectionFrames {
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
                              Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
+                             Constructor.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
                                  +"::create",
@@ -354,6 +366,8 @@ public class ReflectionFrames {
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
+                             Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
                              Constructor.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
@@ -386,6 +400,8 @@ public class ReflectionFrames {
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
+                             Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
                              Constructor.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
@@ -436,15 +452,19 @@ public class ReflectionFrames {
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
+                             REFLECT_ACCESS.getName()
+                                 +"::newInstance",
+                             REFLECTION_FACTORY.getName()
+                                 +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
                                  +"::create",
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertEquals(obj.filtered, 0);
 
         // Calls the StackInspector.reflect method through reflection
@@ -464,6 +484,10 @@ public class ReflectionFrames {
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
+                             REFLECT_ACCESS.getName()
+                                 +"::newInstance",
+                             REFLECTION_FACTORY.getName()
+                                 +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
@@ -473,9 +497,9 @@ public class ReflectionFrames {
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
 
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertEquals(obj.filtered, 0);
 
         // Calls the StackInspector.handle method through reflection
@@ -495,6 +519,10 @@ public class ReflectionFrames {
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
+                             REFLECT_ACCESS.getName()
+                                 +"::newInstance",
+                             REFLECTION_FACTORY.getName()
+                                 +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
                              StackInspector.Caller.class.getName()
@@ -504,9 +532,9 @@ public class ReflectionFrames {
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
 
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertEquals(obj.filtered, 0);
 
         // Sets a non-default walker configured to show
@@ -529,6 +557,8 @@ public class ReflectionFrames {
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
                              Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
+                             REFLECT_ACCESS.getName()
                                  +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
@@ -538,9 +568,9 @@ public class ReflectionFrames {
                                  +"::invoke",
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertNotEquals(obj.filtered, 0);
 
         // Calls the StackInspector.reflect method through reflection
@@ -557,10 +587,13 @@ public class ReflectionFrames {
         obj = ((StackInspector)StackInspector.Caller.class
                              .getMethod("reflect", How.class)
                              .invoke(null, How.CLASS));
+        System.out.println(obj.collectedFrames);
         assertEquals(obj.collectedFrames,
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
                              Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
+                             REFLECT_ACCESS.getName()
                                  +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
@@ -575,9 +608,9 @@ public class ReflectionFrames {
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
 
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertNotEquals(obj.filtered, 0);
 
         // Calls the StackInspector.handle method through reflection
@@ -598,6 +631,8 @@ public class ReflectionFrames {
                      List.of(StackInspector.class.getName()
                                  +"::<init>",
                              Constructor.class.getName()
+                                 +"::newInstanceWithCaller",
+                             REFLECT_ACCESS.getName()
                                  +"::newInstance",
                              Class.class.getName()
                                  +"::newInstance",
@@ -611,9 +646,9 @@ public class ReflectionFrames {
                              ReflectionFrames.class.getName()
                                  +"::testNewInstance"));
 
-        // Because Class.newInstance is not filtered, then the
-        // caller is Class.class
-        assertEquals(obj.cls, Class.class);
+        // Because implementation frames are not filtered, then the
+        // caller is ReflectAccess.class
+        assertEquals(obj.cls, REFLECT_ACCESS);
         assertNotEquals(obj.filtered, 0);
     }
 

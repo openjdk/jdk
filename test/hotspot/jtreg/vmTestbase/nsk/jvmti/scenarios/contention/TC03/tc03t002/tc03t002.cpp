@@ -57,38 +57,32 @@ static int printDeadlock(jvmtiEnv* jvmti, JNIEnv* jni, int dThread) {
     NSK_DISPLAY1("Found deadlock #%d:\n", numberOfDeadlocks);
     for (pThread = dThread;;pThread = cThread) {
         NSK_DISPLAY1(" \"%s\":\n", threadList[pThread].name);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetCurrentContendedMonitor,
-                jvmti, threadList[pThread].thread, &monitor)))
+        if (!NSK_JVMTI_VERIFY(
+                jvmti->GetCurrentContendedMonitor(threadList[pThread].thread, &monitor)))
             return NSK_FALSE;
         if (monitor != NULL) {
-            if (!NSK_JNI_VERIFY(jni, (klass =
-                    NSK_CPP_STUB2(GetObjectClass, jni, monitor)) != NULL))
+            if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(monitor)) != NULL))
                 return NSK_FALSE;
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(
-                    GetClassSignature, jvmti, klass, &name, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &name, NULL)))
                 return NSK_FALSE;
             NSK_DISPLAY2("    waiting to lock %p (%s),\n", monitor, name);
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)name);
+            jvmti->Deallocate((unsigned char*)name);
         } else {
             NSK_DISPLAY0(" (JVMTI raw monitor),\n");
         }
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetObjectMonitorUsage,
-                jvmti, monitor, &usageInfo)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetObjectMonitorUsage(monitor, &usageInfo)))
             return NSK_FALSE;
         if (usageInfo.owner == NULL)
             break;
         for (cThread = 0; cThread < threads_count; cThread++) {
-            if (NSK_CPP_STUB3(IsSameObject, jni,
-                    threadList[cThread].thread, usageInfo.owner))
+            if (jni->IsSameObject(threadList[cThread].thread, usageInfo.owner))
                 break;
         }
         if (usageInfo.waiters != NULL) {
-            NSK_CPP_STUB2(Deallocate, jvmti,
-                    (unsigned char*)usageInfo.waiters);
+            jvmti->Deallocate((unsigned char*)usageInfo.waiters);
         }
         if (usageInfo.notify_waiters != NULL) {
-            NSK_CPP_STUB2(Deallocate, jvmti,
-                    (unsigned char*)usageInfo.notify_waiters);
+            jvmti->Deallocate((unsigned char*)usageInfo.notify_waiters);
         }
         if (!NSK_VERIFY(cThread != threads_count))
             return NSK_FALSE;
@@ -113,15 +107,14 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Create threadList\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(Allocate, jvmti,
-            threads_count*sizeof(threadDesc), (unsigned char**)&threadList)))
+    if (!NSK_JVMTI_VERIFY(
+            jvmti->Allocate(threads_count*sizeof(threadDesc), (unsigned char**)&threadList)))
         return NSK_FALSE;
 
     for (i = 0; i < threads_count; i++) {
@@ -129,8 +122,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -141,8 +133,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     /* deallocate thread list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     for (i = 0; i < threads_count; i++) {
@@ -150,28 +141,24 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
             tDfn = gDfn;
             threadList[i].dfn = gDfn++;
             for (pThread = i;;pThread = cThread) {
-                if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetCurrentContendedMonitor,
-                        jvmti, threadList[pThread].thread, &monitor)))
+                if (!NSK_JVMTI_VERIFY(
+                        jvmti->GetCurrentContendedMonitor(threadList[pThread].thread, &monitor)))
                     return NSK_FALSE;
                 if (monitor == NULL)
                     break;
-                if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetObjectMonitorUsage,
-                        jvmti, monitor, &usageInfo)))
+                if (!NSK_JVMTI_VERIFY(jvmti->GetObjectMonitorUsage(monitor, &usageInfo)))
                     return NSK_FALSE;
                 if (usageInfo.owner == NULL)
                     break;
                 for (cThread = 0; cThread < threads_count; cThread++) {
-                    if (NSK_CPP_STUB3(IsSameObject, jni,
-                            threadList[cThread].thread, usageInfo.owner))
+                    if (jni->IsSameObject(threadList[cThread].thread, usageInfo.owner))
                         break;
                 }
                 if (usageInfo.waiters != NULL) {
-                    NSK_CPP_STUB2(Deallocate, jvmti,
-                            (unsigned char*)usageInfo.waiters);
+                    jvmti->Deallocate((unsigned char*)usageInfo.waiters);
                 }
                 if (usageInfo.notify_waiters != NULL) {
-                    NSK_CPP_STUB2(Deallocate, jvmti,
-                            (unsigned char*)usageInfo.notify_waiters);
+                    jvmti->Deallocate((unsigned char*)usageInfo.notify_waiters);
                 }
                 if (!NSK_VERIFY(cThread != threads_count))
                     return NSK_FALSE;
@@ -194,8 +181,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     /* deallocate thread names */
     for (i = 0; i < threads_count; i++) {
         if (threadList[i].name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)threadList[i].name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threadList[i].name)))
                 return NSK_FALSE;
         }
     }
@@ -261,7 +247,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_get_current_contended_monitor = 1;
     caps.can_get_monitor_info = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     /* register agent proc and arg */

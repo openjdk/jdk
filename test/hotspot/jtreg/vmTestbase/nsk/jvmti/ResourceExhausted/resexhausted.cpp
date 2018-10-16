@@ -86,15 +86,17 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     memset(&capabilities, 0, sizeof(jvmtiCapabilities));
     capabilities.can_generate_resource_exhaustion_heap_events = 1;
     capabilities.can_generate_resource_exhaustion_threads_events = 1;
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, gJvmti, &capabilities)) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmti->AddCapabilities(&capabilities)) )
         return JNI_ERR;
 
     memset((void *)&callbacks, 0, sizeof(jvmtiEventCallbacks));
     callbacks.ResourceExhausted = resourceExhausted;
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, gJvmti, &callbacks, sizeof(callbacks))) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))) )
         return JNI_ERR;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, gJvmti, JVMTI_ENABLE, JVMTI_EVENT_RESOURCE_EXHAUSTED, NULL) ) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                             JVMTI_EVENT_RESOURCE_EXHAUSTED,
+                                                             NULL) ) )
         return JNI_ERR;
 
     return JNI_OK;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     5086470 6358247 7193302
+ * @bug     5086470 6358247 7193302 8048215
  * @summary Test type conversion when invoking ThreadMXBean.dumpAllThreads
  *          through proxy.
  * @author  Mandy Chung
@@ -45,6 +45,7 @@ public class ThreadMXBeanProxy {
     private static ThreadMXBean mbean;
     static Mutex mutex = new Mutex();
     static Object lock = new Object();
+    static Object waiter = new Object();
     static MyThread thread = new MyThread();
     public static void main(String[] argv) throws Exception {
         mbean = newPlatformMXBeanProxy(server,
@@ -66,6 +67,12 @@ public class ThreadMXBeanProxy {
            } catch (InterruptedException e) {
                throw new RuntimeException(e);
            }
+        }
+
+        // 'thread' holds the mutex, which means it must also have the monitor of
+        // 'waiter' at least until it does the wait(). So we acquire the monitor of
+        // 'waiter' here, which ensures that 'thread' must be in wait()
+        synchronized(waiter) {
         }
 
         long[] ids = new long[] { thread.getId() };
@@ -108,11 +115,10 @@ public class ThreadMXBeanProxy {
         }
         public void run() {
             synchronized (lock) {
-                mutex.lock();
-                Object o = new Object();
-                synchronized(o) {
+                synchronized(waiter) {
+                    mutex.lock();
                     try {
-                        o.wait();
+                        waiter.wait();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

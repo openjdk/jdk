@@ -38,7 +38,7 @@ $(GENDATA_FONT_CONFIG_DST)/%.src: \
 $(GENDATA_FONT_CONFIG_DST)/%.bfc: \
     $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties \
     $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(RM) $@
 	$(TOOL_COMPILEFONTCONFIG) $< $@
 	$(CHMOD) 444 $@

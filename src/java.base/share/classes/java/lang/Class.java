@@ -64,7 +64,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstantPool;
@@ -540,11 +539,9 @@ public final class Class<T> implements java.io.Serializable,
             checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), false);
         }
 
-        // NOTE: the following code may not be strictly correct under
-        // the current Java memory model.
-
         // Constructor lookup
-        if (cachedConstructor == null) {
+        Constructor<T> tmpConstructor = cachedConstructor;
+        if (tmpConstructor == null) {
             if (this == Class.class) {
                 throw new IllegalAccessException(
                     "Can not call newInstance() on the Class for java.lang.Class"
@@ -555,9 +552,7 @@ public final class Class<T> implements java.io.Serializable,
                 final Constructor<T> c = getReflectionFactory().copyConstructor(
                     getConstructor0(empty, Member.DECLARED));
                 // Disable accessibility checks on the constructor
-                // since we have to do the security check here anyway
-                // (the stack depth is wrong for the Constructor's
-                // security check to work)
+                // access check is done with the true caller
                 java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
                         public Void run() {
@@ -565,32 +560,24 @@ public final class Class<T> implements java.io.Serializable,
                                 return null;
                             }
                         });
-                cachedConstructor = c;
+                cachedConstructor = tmpConstructor = c;
             } catch (NoSuchMethodException e) {
                 throw (InstantiationException)
                     new InstantiationException(getName()).initCause(e);
             }
         }
-        Constructor<T> tmpConstructor = cachedConstructor;
-        // Security check (same as in java.lang.reflect.Constructor)
-        Class<?> caller = Reflection.getCallerClass();
-        if (newInstanceCallerCache != caller) {
-            int modifiers = tmpConstructor.getModifiers();
-            Reflection.ensureMemberAccess(caller, this, this, modifiers);
-            newInstanceCallerCache = caller;
-        }
-        // Run constructor
+
         try {
-            return tmpConstructor.newInstance((Object[])null);
+            Class<?> caller = Reflection.getCallerClass();
+            return getReflectionFactory().newInstance(tmpConstructor, null, caller);
         } catch (InvocationTargetException e) {
             Unsafe.getUnsafe().throwException(e.getTargetException());
             // Not reached
             return null;
         }
     }
-    private transient volatile Constructor<T> cachedConstructor;
-    private transient volatile Class<?>       newInstanceCallerCache;
 
+    private transient volatile Constructor<T> cachedConstructor;
 
     /**
      * Determines if the specified {@code Object} is assignment-compatible

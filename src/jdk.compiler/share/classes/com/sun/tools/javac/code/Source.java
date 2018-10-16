@@ -180,6 +180,7 @@ public enum Source {
         UNDERSCORE_IDENTIFIER(MIN, JDK8),
         PRIVATE_INTERFACE_METHODS(JDK9, Fragments.FeaturePrivateIntfMethods, DiagKind.PLURAL),
         LOCAL_VARIABLE_TYPE_INFERENCE(JDK10),
+        VAR_SYNTAX_IMPLICIT_LAMBDAS(JDK11, Fragments.FeatureVarSyntaxInImplicitLambda, DiagKind.PLURAL),
         IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES(JDK1_2, JDK8),
         SWITCH_MULTIPLE_CASE_LABELS(JDK12, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK12, Fragments.FeatureSwitchRules, DiagKind.PLURAL),

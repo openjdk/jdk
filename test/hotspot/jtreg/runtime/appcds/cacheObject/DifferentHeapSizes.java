@@ -26,7 +26,6 @@
  * @test
  * @summary Test automatic relocation of archive heap regions dur to heap size changes.
  * @requires vm.cds.archived.java.heap
- * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java

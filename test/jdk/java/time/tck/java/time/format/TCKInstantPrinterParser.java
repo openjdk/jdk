@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,17 @@ import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalAccessor;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+/*
+ * @test
+ * @bug 8166138
+ */
 
 /**
  * Test DateTimeFormatterBuilder.appendInstant().
@@ -200,7 +206,10 @@ public class TCKInstantPrinterParser {
                 {0, 0, "1970-01-01T00:00:00Z"},
                 {0, 0, "1970-01-01T00:00:00.0Z"},
                 {0, 0, "1970-01-01T00:00:00.000Z"},
-                {0, 0, "1970-01-01T00:00:00.000000000Z"},
+
+                {0, 0, "1970-01-01T00:00:00+00:00"},
+                {0, 0, "1970-01-01T05:30:00+05:30"},
+                {0, 0, "1970-01-01T01:00:00.0+01:00"},
 
                 {-1, 0, "1969-12-31T23:59:59Z"},
                 {1, 0, "1970-01-01T00:00:01Z"},
@@ -208,16 +217,22 @@ public class TCKInstantPrinterParser {
                 {3600, 0, "1970-01-01T01:00:00Z"},
                 {86400, 0, "1970-01-02T00:00:00Z"},
 
+                {-1, 0, "1969-12-31T23:59:59+00:00"},
+                {1, 0, "1970-01-01T05:30:01+05:30"},
+                {60, 0, "1969-12-31T19:01:00-05:00"},
+                {3600, 0, "1970-01-01T06:30:00+05:30"},
+                {86400, 0, "1970-01-01T19:00:00-05:00"},
+
                 {182, 234000000, "1970-01-01T00:03:02.234Z"},
                 {182, 234000000, "1970-01-01T00:03:02.2340Z"},
                 {182, 234000000, "1970-01-01T00:03:02.23400Z"},
                 {182, 234000000, "1970-01-01T00:03:02.234000Z"},
-                {182, 234000000, "1970-01-01T00:03:02.234000000Z"},
 
-                {((23 * 60) + 59) * 60 + 59, 123456789, "1970-01-01T23:59:59.123456789Z"},
+                {182, 234000000, "1970-01-01T00:03:02.234+00:00"},
+                {182, 234000000, "1970-01-01T05:33:02.2340+05:30"},
+                {182, 234000000, "1969-12-31T19:03:02.23400-05:00"},
+                {182, 234000000, "1970-01-01T00:03:02.234000+00:00"},
 
-                {Instant.MAX.getEpochSecond(), 999999999, "+1000000000-12-31T23:59:59.999999999Z"},
-                {Instant.MIN.getEpochSecond(), 0, "-1000000000-01-01T00:00:00.000000000Z"},
         };
     }
 
@@ -230,22 +245,46 @@ public class TCKInstantPrinterParser {
         assertEquals(f.parse(input).query(DateTimeFormatter.parsedLeapSecond()), Boolean.FALSE);
     }
 
-    @Test(dataProvider="parseDigits")
+    @DataProvider(name="parseNineDigits")
+    Object[][] data_parse_ninedigits() {
+        return new Object[][] {
+                {0, 0, "1970-01-01T00:00:00.000000000Z"},
+                {0, 0, "1970-01-01T05:30:00.000000000+05:30"},
+
+                {182, 234000000, "1970-01-01T00:03:02.234000000Z"},
+                {182, 234000000, "1970-01-01T01:03:02.234000000+01:00"},
+
+                {((23 * 60) + 59) * 60 + 59, 123456789, "1970-01-01T23:59:59.123456789Z"},
+                {((23 * 60) + 59) * 60 + 59, 123456789, "1970-01-02T05:29:59.123456789+05:30"},
+
+                {Instant.MAX.getEpochSecond(), 999999999, "+1000000000-12-31T23:59:59.999999999Z"},
+                {Instant.MIN.getEpochSecond(), 0, "-1000000000-01-01T00:00:00.000000000Z"},
+                {Instant.MAX.getEpochSecond(), 999999999, "+1000000000-12-31T23:59:59.999999999+00:00"},
+                {Instant.MIN.getEpochSecond(), 0, "-1000000000-01-01T00:00:00.000000000+00:00"},
+        };
+    }
+
+    @Test(dataProvider="parseNineDigits")
     public void test_parse_digitsNine(long instantSecs, int nano, String input) {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendInstant(9).toFormatter();
-        if (input.charAt(input.length() - 11) == '.') {
-            Instant expected = Instant.ofEpochSecond(instantSecs, nano);
-            assertEquals(f.parse(input, Instant::from), expected);
-            assertEquals(f.parse(input).query(DateTimeFormatter.parsedExcessDays()), Period.ZERO);
-            assertEquals(f.parse(input).query(DateTimeFormatter.parsedLeapSecond()), Boolean.FALSE);
-        } else {
-            try {
-                f.parse(input, Instant::from);
-                fail();
-            } catch (DateTimeException ex) {
-                // expected
-            }
-        }
+        Instant expected = Instant.ofEpochSecond(instantSecs, nano);
+        assertEquals(f.parse(input, Instant::from), expected);
+        assertEquals(f.parse(input).query(DateTimeFormatter.parsedExcessDays()), Period.ZERO);
+        assertEquals(f.parse(input).query(DateTimeFormatter.parsedLeapSecond()), Boolean.FALSE);
+    }
+
+    @DataProvider(name="parseMaxMinInstant")
+    Object[][] data_parse_MaxMinInstant() {
+        return new Object[][] {
+                {"+1000000000-12-31T23:59:59.999999999-01:00"},
+                {"-1000000000-01-01T00:00:00.000000000+01:00"}
+        };
+    }
+
+    @Test(dataProvider="parseMaxMinInstant", expectedExceptions=DateTimeParseException.class)
+    public void test_invalid_Instant(String input) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendInstant(-1).toFormatter();
+        f.parse(input, Instant::from);
     }
 
     @Test
@@ -281,6 +320,14 @@ public class TCKInstantPrinterParser {
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendInstant_tooBig() {
         new DateTimeFormatterBuilder().appendInstant(10);
+    }
+
+    //------------------------------------------------------------------------
+    @Test
+    public void test_equality() {
+        Instant instant1 = Instant.parse("2018-09-12T22:15:51+05:30");
+        Instant instant2 = Instant.parse("2018-09-12T16:45:51Z");
+        assertEquals(instant2, instant1);
     }
 
 }

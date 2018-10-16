@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,6 +32,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -541,7 +543,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_raw_archived_mirror()) {
     ResourceMark rm;
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (MetaspaceShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -608,6 +610,20 @@ Klass* Klass::array_klass_impl(bool or_null, int rank, TRAPS) {
 Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
   fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
+}
+
+void Klass::check_array_allocation_length(int length, int max_length, TRAPS) {
+  if (length > max_length) {
+    if (!THREAD->in_retryable_allocation()) {
+      report_java_out_of_memory("Requested array size exceeds VM limit");
+      JvmtiExport::post_array_size_exhausted();
+      THROW_OOP(Universe::out_of_memory_error_array_size());
+    } else {
+      THROW_OOP(Universe::out_of_memory_error_retry());
+    }
+  } else if (length < 0) {
+    THROW_MSG(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
+  }
 }
 
 oop Klass::class_loader() const { return class_loader_data()->class_loader(); }
@@ -738,6 +754,22 @@ void Klass::verify_on(outputStream* st) {
 void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(oopDesc::is_oop(obj),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
+}
+
+Klass* Klass::decode_klass_raw(narrowKlass narrow_klass) {
+  return (Klass*)(void*)( (uintptr_t)Universe::narrow_klass_base() +
+                         ((uintptr_t)narrow_klass << Universe::narrow_klass_shift()));
+}
+
+bool Klass::is_valid(Klass* k) {
+  if (!is_aligned(k, sizeof(MetaWord))) return false;
+  if ((size_t)k < os::min_page_size()) return false;
+
+  if (!os::is_readable_range(k, k + 1)) return false;
+  if (!MetaspaceUtils::is_range_in_committed(k, k + 1)) return false;
+
+  if (!Symbol::is_valid(k->name())) return false;
+  return ClassLoaderDataGraph::is_valid(k->class_loader_data());
 }
 
 klassVtable Klass::vtable() const {

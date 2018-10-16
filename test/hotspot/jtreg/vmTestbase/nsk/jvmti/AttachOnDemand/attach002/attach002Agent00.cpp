@@ -74,12 +74,12 @@ int registerNativeMethods(JNIEnv* jni) {
     jint nativeMethodsNumber = 1;
 
     if (!NSK_JNI_VERIFY(jni, (appClass =
-        NSK_CPP_STUB2(FindClass, jni, ATTACH002_TARGET_APP_CLASS_NAME)) != NULL)) {
+        jni->FindClass(ATTACH002_TARGET_APP_CLASS_NAME)) != NULL)) {
         return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni,
-            (NSK_CPP_STUB4(RegisterNatives, jni, appClass, nativeMethods, nativeMethodsNumber) == 0))) {
+            (jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber) == 0))) {
         return NSK_FALSE;
     }
 
@@ -205,7 +205,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_all_class_hook_events = 1;
     caps.can_redefine_classes = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         /*
          * If VM is run with -Xshare:on agent can't get required capabilities (see 6718407)
          */
@@ -222,7 +222,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
         eventCallbacks.ClassLoad = classLoadHandler;
         eventCallbacks.ClassPrepare = classPrepareHandler;
         eventCallbacks.ClassFileLoadHook = classFileLoadHoockHandler;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
             return JNI_ERR;
         }
 

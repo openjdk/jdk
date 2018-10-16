@@ -31,22 +31,16 @@
 //////////////////////////////////////////////////////////////////////////////
 // Support for parallel and optionally concurrent state iteration.
 //
-// Parallel iteration is for the exclusive use of the GC.  Other iteration
-// clients must use serial iteration.
-//
 // Concurrent Iteration
 //
 // Iteration involves the _active_array (an ActiveArray), which contains all
 // of the blocks owned by a storage object.
 //
-// At most one concurrent ParState can exist at a time for a given storage
-// object.
-//
-// A concurrent ParState sets the associated storage's
-// _concurrent_iteration_active flag true when the state is constructed, and
-// sets it false when the state is destroyed.  These assignments are made with
+// A concurrent ParState increments the associated storage's
+// _concurrent_iteration_count when the state is constructed, and
+// decrements it when the state is destroyed.  These assignments are made with
 // _active_mutex locked.  Meanwhile, empty block deletion is not done while
-// _concurrent_iteration_active is true.  The flag check and the dependent
+// _concurrent_iteration_count is non-zero.  The counter check and the dependent
 // removal of a block from the _active_array is performed with _active_mutex
 // locked.  This prevents concurrent iteration and empty block deletion from
 // interfering with with each other.
@@ -83,8 +77,8 @@
 // scheduling both operations to run at the same time.
 //
 // ParState<concurrent, is_const>
-//   concurrent must be true if iteration is concurrent with the
-//   mutator, false if iteration is at a safepoint.
+//   concurrent must be true if iteration may be concurrent with the
+//   mutators.
 //
 //   is_const must be true if the iteration is over a constant storage
 //   object, false if the iteration may modify the storage object.
@@ -92,8 +86,7 @@
 // ParState([const] OopStorage* storage)
 //   Construct an object for managing an iteration over storage.  For a
 //   concurrent ParState, empty block deletion for the associated storage
-//   is inhibited for the life of the ParState.  There can be no more
-//   than one live concurrent ParState at a time for a given storage object.
+//   is inhibited for the life of the ParState.
 //
 // template<typename F> void iterate(F f)
 //   Repeatedly claims a block from the associated storage that has
@@ -152,7 +145,7 @@ class OopStorage::BasicParState {
 
   struct IterationData;
 
-  void update_iteration_state(bool value);
+  void update_concurrent_iteration_count(int value);
   bool claim_next_segment(IterationData* data);
   bool finish_iteration(const IterationData* data) const;
 

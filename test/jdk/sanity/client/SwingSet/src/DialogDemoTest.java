@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import static com.sun.swingset3.demos.dialog.DialogDemo.*;
 import java.awt.Dimension;
 import java.awt.Point;
 import javax.swing.JDialog;
+import javax.swing.UIManager;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
 import static org.jemmy2ext.JemmyExt.isIconified;
@@ -54,15 +55,16 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.dialog.DialogDemo
- * @run testng DialogDemoTest
+ * @run testng/timeout=600 DialogDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class DialogDemoTest {
 
     private final ComponentChooser jDialogClassChooser = new ByClassChooser(JDialog.class);
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
         new ClassReference(DialogDemo.class.getCanonicalName()).startApplication();
         JFrameOperator mainFrame = new JFrameOperator(DIALOG_DEMO_TITLE);
         JDialogOperator dialog = new JDialogOperator(DIALOG_TITLE);

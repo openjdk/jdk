@@ -863,6 +863,42 @@ void MetaspaceUtils::verify_metrics() {
 #endif
 }
 
+// Utils to check if a pointer or range is part of a committed metaspace region.
+metaspace::VirtualSpaceNode* MetaspaceUtils::find_enclosing_virtual_space(const void* p) {
+  VirtualSpaceNode* vsn = Metaspace::space_list()->find_enclosing_space(p);
+  if (Metaspace::using_class_space() && vsn == NULL) {
+    vsn = Metaspace::class_space_list()->find_enclosing_space(p);
+  }
+  return vsn;
+}
+
+bool MetaspaceUtils::is_in_committed(const void* p) {
+#if INCLUDE_CDS
+  if (UseSharedSpaces) {
+    for (int idx = MetaspaceShared::ro; idx <= MetaspaceShared::mc; idx++) {
+      if (FileMapInfo::current_info()->is_in_shared_region(p, idx)) {
+        return true;
+      }
+    }
+  }
+#endif
+  return find_enclosing_virtual_space(p) != NULL;
+}
+
+bool MetaspaceUtils::is_range_in_committed(const void* from, const void* to) {
+#if INCLUDE_CDS
+  if (UseSharedSpaces) {
+    for (int idx = MetaspaceShared::ro; idx <= MetaspaceShared::mc; idx++) {
+      if (FileMapInfo::current_info()->is_in_shared_region(from, idx)) {
+        return FileMapInfo::current_info()->is_in_shared_region(to, idx);
+      }
+    }
+  }
+#endif
+  VirtualSpaceNode* vsn = find_enclosing_virtual_space(from);
+  return (vsn != NULL) && vsn->contains(to);
+}
+
 
 // Metaspace methods
 

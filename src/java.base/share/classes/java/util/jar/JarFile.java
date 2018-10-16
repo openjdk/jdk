@@ -556,7 +556,8 @@ class JarFile extends ZipFile {
             return JUZFA.entryNameStream(this).map(this::getBasename)
                                               .filter(Objects::nonNull)
                                               .distinct()
-                                              .map(this::getJarEntry);
+                                              .map(this::getJarEntry)
+                                              .filter(Objects::nonNull);
         }
         return stream();
     }

@@ -59,7 +59,7 @@ static int checkTime(jvmtiEnv* jvmti, julong* time,
 
     NSK_DISPLAY0("GetTime() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetTime, jvmti, (jlong *)time))) {
+            jvmti->GetTime((jlong *)time))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got time: %s\n", julong_to_string(*time, buf));
@@ -186,8 +186,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.VMDeath = callbackVMDeath;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+                jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 

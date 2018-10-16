@@ -54,6 +54,16 @@
                   "std %0, %1\n"
                   : "=&f"(tmp), "=Q"(*(volatile double*)dst)
                   : "Q"(*(volatile double*)src));
+#elif defined(__ARM_ARCH_7A__)
+    // Note that a ldrexd + clrex combination is only needed for
+    // correctness on the OS level (context-switches). In this
+    // case, clrex *may* be beneficial for performance. For now
+    // don't bother with clrex as this is Zero.
+    jlong tmp;
+    asm volatile ("ldrexd  %0, [%1]\n"
+                  : "=r"(tmp)
+                  : "r"(src), "m"(src));
+    *(jlong *) dst = tmp;
 #else
     *(jlong *) dst = *(const jlong *) src;
 #endif

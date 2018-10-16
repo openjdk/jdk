@@ -121,37 +121,35 @@ static int prepare() {
     jsize i;
 
     /* find debugee class */
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     /* find static field with threads array */
     if (!NSK_JNI_VERIFY(jni, (threadsFieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                    THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
     /* get threads array from static field */
     if (!NSK_JNI_VERIFY(jni, (threadsArray = (jobjectArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass, threadsFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != NULL))
         return NSK_FALSE;
 
     /* check array length */
     if (!NSK_JNI_VERIFY(jni, (threadsArrayLength =
-            NSK_CPP_STUB2(GetArrayLength, jni, threadsArray)) == THREADS_COUNT))
+            jni->GetArrayLength(threadsArray)) == THREADS_COUNT))
         return NSK_FALSE;
 
     /* get each thread from array */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                NSK_CPP_STUB3(GetObjectArrayElement, jni, threadsArray, i)) != NULL))
+                jni->GetObjectArrayElement(threadsArray, i)) != NULL))
             return NSK_FALSE;
     }
 
     /* make global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                NSK_CPP_STUB2(NewGlobalRef, jni, threadsList[i])) != NULL))
+                jni->NewGlobalRef(threadsList[i])) != NULL))
             return NSK_FALSE;
     }
 
@@ -174,8 +172,7 @@ static int checkThreads(const char* kind) {
         NSK_DISPLAY2("    thread #%d (%s):\n", i, threadsName[i]);
 
         /* get thread state */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadState, jvmti, threadsList[i], &state))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threadsList[i], &state))) {
             nsk_jvmti_setFailStatus();
             return NSK_TRUE;
         }
@@ -233,7 +230,7 @@ static int clean() {
 
     /* dispose global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadsList[i]));
+        NSK_TRACE(jni->DeleteGlobalRef(threadsList[i]));
     }
 
     return NSK_TRUE;

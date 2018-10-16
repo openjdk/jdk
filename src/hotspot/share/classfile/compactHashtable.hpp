@@ -123,6 +123,15 @@ private:
 
 public:
   void dump(SimpleCompactHashtable *cht, const char* table_name);
+
+  static int default_num_buckets(size_t num_entries) {
+    return default_num_buckets((int)num_entries);
+  }
+  static int default_num_buckets(int num_entries) {
+    int num_buckets = num_entries / SharedSymbolTableBucketSize;
+    // calculation of num_buckets can result in zero buckets, we need at least one
+    return (num_buckets < 1) ? 1 : num_buckets;
+  }
 };
 #endif // INCLUDE_CDS
 
@@ -213,8 +222,8 @@ public:
     _entries = entries;
   }
 
-  // For reading from/writing to the CDS archive
-  void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
+  // Read/Write the table's header from/to the CDS archive
+  void serialize_header(SerializeClosure* soc) NOT_CDS_RETURN;
 
   inline bool empty() {
     return (_entry_count == 0);

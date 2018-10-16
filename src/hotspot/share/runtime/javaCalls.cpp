@@ -307,25 +307,26 @@ Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* construct
   JavaCalls::call_special(&void_result, klass,
                           vmSymbols::object_initializer_name(),
                           constructor_signature, args, CHECK_NH);
+  // Already returned a Null Handle if any exception is pending.
   return obj;
 }
 
 Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* constructor_signature, TRAPS) {
   JavaCallArguments args;
-  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, CHECK_NH);
+  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, THREAD);
 }
 
 Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* constructor_signature, Handle arg1, TRAPS) {
   JavaCallArguments args;
   args.push_oop(arg1);
-  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, CHECK_NH);
+  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, THREAD);
 }
 
 Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* constructor_signature, Handle arg1, Handle arg2, TRAPS) {
   JavaCallArguments args;
   args.push_oop(arg1);
   args.push_oop(arg2);
-  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, CHECK_NH);
+  return JavaCalls::construct_new_instance(klass, constructor_signature, &args, THREAD);
 }
 
 // -------------------------------------------------

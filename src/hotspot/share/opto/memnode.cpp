@@ -3174,21 +3174,43 @@ void MemBarNode::set_load_store_pair(MemBarNode* leading, MemBarNode* trailing) 
 }
 
 MemBarNode* MemBarNode::trailing_membar() const {
+  ResourceMark rm;
   Node* trailing = (Node*)this;
   VectorSet seen(Thread::current()->resource_area());
-  while (!trailing->is_MemBar() || !trailing->as_MemBar()->trailing()) {
-    if (seen.test_set(trailing->_idx)) {
-      // Dying subgraph?
-      return NULL;
-    }
-    for (DUIterator_Fast jmax, j = trailing->fast_outs(jmax); j < jmax; j++) {
-      Node* next = trailing->fast_out(j);
-      if (next != trailing && next->is_CFG()) {
-        trailing = next;
+  Node_Stack multis(0);
+  do {
+    Node* c = trailing;
+    uint i = 0;
+    do {
+      trailing = NULL;
+      for (; i < c->outcnt(); i++) {
+        Node* next = c->raw_out(i);
+        if (next != c && next->is_CFG()) {
+          if (c->is_MultiBranch()) {
+            if (multis.node() == c) {
+              multis.set_index(i+1);
+            } else {
+              multis.push(c, i+1);
+            }
+          }
+          trailing = next;
+          break;
+        }
+      }
+      if (trailing != NULL && !seen.test_set(trailing->_idx)) {
         break;
       }
-    }
-  }
+      while (multis.size() > 0) {
+        c = multis.node();
+        i = multis.index();
+        if (i < c->req()) {
+          break;
+        }
+        multis.pop();
+      }
+    } while (multis.size() > 0);
+  } while (!trailing->is_MemBar() || !trailing->as_MemBar()->trailing());
+
   MemBarNode* mb = trailing->as_MemBar();
   assert((mb->_kind == TrailingStore && _kind == LeadingStore) ||
          (mb->_kind == TrailingLoadStore && _kind == LeadingLoadStore), "bad trailing membar");
@@ -3197,14 +3219,30 @@ MemBarNode* MemBarNode::trailing_membar() const {
 }
 
 MemBarNode* MemBarNode::leading_membar() const {
+  ResourceMark rm;
   VectorSet seen(Thread::current()->resource_area());
+  Node_Stack regions(0);
   Node* leading = in(0);
   while (leading != NULL && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {
-    if (seen.test_set(leading->_idx)) {
-      // Dying subgraph?
-      return NULL;
+    while (leading == NULL || leading->is_top() || seen.test_set(leading->_idx)) {
+      leading = NULL;
+      while (regions.size() > 0) {
+        Node* r = regions.node();
+        uint i = regions.index();
+        if (i < r->req()) {
+          leading = r->in(i);
+          regions.set_index(i+1);
+        } else {
+          regions.pop();
+        }
+      }
+      if (leading == NULL) {
+        assert(regions.size() == 0, "all paths should have been tried");
+        return NULL;
+      }
     }
     if (leading->is_Region()) {
+      regions.push(leading, 2);
       leading = leading->in(1);
     } else {
       leading = leading->in(0);

@@ -23,9 +23,11 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
- * @build LayerAndLoadersTest jdk.test.lib.compiler.CompilerUtils ModuleUtils
+ * @build LayerAndLoadersTest
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.ModuleUtils
  * @run testng LayerAndLoadersTest
  * @summary Tests for java.lang.ModuleLayer@defineModulesWithXXX methods
  */
@@ -54,6 +56,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.ModuleUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

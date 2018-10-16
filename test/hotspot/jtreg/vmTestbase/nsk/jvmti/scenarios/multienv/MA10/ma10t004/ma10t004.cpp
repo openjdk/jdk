@@ -56,20 +56,18 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
     SingleStepEventsCount++;
 
-    NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-        jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
+    NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY3("SingleStep event: %s%s, location=%s\n", name, signature,
         jlong_to_string(location, buffer));
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 /* ========================================================================== */
@@ -84,8 +82,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -97,8 +94,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -109,13 +105,11 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
         return NSK_FALSE;
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -135,8 +129,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thread)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thread)))
         nsk_jvmti_setFailStatus();
 
     /* resume debugee and wait for sync */
@@ -150,7 +143,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!NSK_VERIFY(SingleStepEventsCount != 0))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, thread));
+    NSK_TRACE(jni->DeleteGlobalRef(thread));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -191,7 +184,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_single_step_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 

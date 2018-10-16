@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ import java.net.URLPermission;
  * @test
  * @bug 8010464
  * @modules jdk.httpserver
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm URLTest
  * @summary check URLPermission with Http(s)URLConnection
  */
@@ -38,7 +38,7 @@ import java.security.*;
 import java.util.concurrent.*;
 import com.sun.net.httpserver.*;
 import javax.net.ssl.*;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class URLTest {
 

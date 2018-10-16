@@ -756,6 +756,24 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("inspecting top of stack")
+
+     // decode stack contents if possible
+     if (_verbose && _context && Universe::is_fully_initialized()) {
+       frame fr = os::fetch_frame_from_context(_context);
+       const int slots = 8;
+       const intptr_t *start = fr.sp();
+       const intptr_t *end = start + slots;
+       if (is_aligned(start, sizeof(intptr_t)) && os::is_readable_range(start, end)) {
+         st->print_cr("Stack slot to memory mapping:");
+         for (int i = 0; i < slots; ++i) {
+           st->print("stack at sp + %d slots: ", i);
+           os::print_location(st, *(start + i));
+         }
+       }
+       st->cr();
+     }
+
   STEP("printing code blob if possible")
 
      if (_verbose && _context) {
@@ -1565,7 +1583,7 @@ void VM_ReportJavaOutOfMemory::doit() {
 #endif
     tty->print_cr("\"%s\"...", cmd);
 
-    if (os::fork_and_exec(cmd) < 0) {
+    if (os::fork_and_exec(cmd, true) < 0) {
       tty->print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
     }

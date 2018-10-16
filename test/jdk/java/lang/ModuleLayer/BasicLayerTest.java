@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build BasicLayerTest ModuleUtils
+ * @build BasicLayerTest
+ *        jdk.test.lib.util.ModuleUtils
  * @compile layertest/Test.java
  * @run testng BasicLayerTest
  * @summary Basic tests for java.lang.ModuleLayer
@@ -40,6 +41,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.util.ModuleUtils;
 
 import jdk.internal.misc.SharedSecrets;
 

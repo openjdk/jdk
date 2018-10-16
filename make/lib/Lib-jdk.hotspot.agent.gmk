@@ -44,7 +44,12 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(OPENJDK_TARGET_CPU), x86_64)
     SA_CXXFLAGS := -DWIN64
   else
-    SA_CXXFLAGS := -RTC1
+    # Only add /RTC1 flag for debug builds as it's
+    # incompatible with release type builds. See
+    # https://msdn.microsoft.com/en-us/library/8wtf2dfz.aspx
+    ifeq ($(DEBUG_LEVEL),slowdebug)
+      SA_CXXFLAGS := -RTC1
+    endif
   endif
 endif
 

@@ -25,8 +25,8 @@
  * @test
  * @summary Tests what happens when push promise handlers and their
  *          response body handlers and subscribers throw unexpected exceptions.
- * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
   *       ReferenceTracker AbstractThrowingPushPromises
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
@@ -35,7 +35,7 @@
  * @run testng/othervm -Djdk.internal.httpclient.debug=true AbstractThrowingPushPromises
  */
 
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeTest;

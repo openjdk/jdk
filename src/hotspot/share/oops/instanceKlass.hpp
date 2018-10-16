@@ -507,9 +507,6 @@ public:
                                        ClassLoaderData* loader_data,
                                        TRAPS);
  public:
-  // tell if two classes have the same enclosing class (at package level)
-  bool is_same_package_member(const Klass* class2, TRAPS) const;
-
   // initialization state
   bool is_loaded() const                   { return _init_state >= loaded; }
   bool is_linked() const                   { return _init_state >= linked; }
@@ -1185,16 +1182,6 @@ public:
   // Naming
   const char* signature_name() const;
   static Symbol* package_from_name(const Symbol* name, TRAPS);
-
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Scavenge
-  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
-  // Parallel Compact
-  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
 
   // Oop fields (and metadata) iterators
   //

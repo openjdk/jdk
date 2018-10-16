@@ -191,7 +191,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _shared_path_table_size = mapinfo->_shared_path_table_size;
   _shared_path_table = mapinfo->_shared_path_table;
   _shared_path_entry_size = mapinfo->_shared_path_entry_size;
-  if (MetaspaceShared::is_heap_object_archiving_allowed()) {
+  if (HeapShared::is_heap_object_archiving_allowed()) {
     _heap_reserved = Universe::heap()->reserved_region();
   }
 
@@ -908,7 +908,7 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
 // regions may be added. GC may mark and update references in the mapped
 // open archive objects.
 void FileMapInfo::map_heap_regions_impl() {
-  if (!MetaspaceShared::is_heap_object_archiving_allowed()) {
+  if (!HeapShared::is_heap_object_archiving_allowed()) {
     log_info(cds)("CDS heap data is being ignored. UseG1GC, "
                   "UseCompressedOops and UseCompressedClassPointers are required.");
     return;
@@ -1000,7 +1000,7 @@ void FileMapInfo::map_heap_regions_impl() {
                       MetaspaceShared::max_open_archive_heap_region,
                       &num_open_archive_heap_ranges,
                       true /* open */)) {
-      MetaspaceShared::set_open_archive_heap_region_mapped();
+      HeapShared::set_open_archive_heap_region_mapped();
     }
   }
 }
@@ -1014,7 +1014,7 @@ void FileMapInfo::map_heap_regions() {
     assert(string_ranges == NULL && num_string_ranges == 0, "sanity");
   }
 
-  if (!MetaspaceShared::open_archive_heap_region_mapped()) {
+  if (!HeapShared::open_archive_heap_region_mapped()) {
     assert(open_archive_heap_ranges == NULL && num_open_archive_heap_ranges == 0, "sanity");
   }
 }
@@ -1088,8 +1088,8 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 }
 
 bool FileMapInfo::verify_mapped_heap_regions(int first, int num) {
-  for (int i = first;
-           i <= first + num; i++) {
+  assert(num > 0, "sanity");
+  for (int i = first; i < first + num; i++) {
     if (!verify_region_checksum(i)) {
       return false;
     }
@@ -1160,7 +1160,7 @@ bool FileMapInfo::verify_region_checksum(int i) {
   if ((MetaspaceShared::is_string_region(i) &&
        !StringTable::shared_string_mapped()) ||
       (MetaspaceShared::is_open_archive_heap_region(i) &&
-       !MetaspaceShared::open_archive_heap_region_mapped())) {
+       !HeapShared::open_archive_heap_region_mapped())) {
     return true; // archived heap data is not mapped
   }
   const char* buf = region_addr(i);

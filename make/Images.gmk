@@ -90,24 +90,32 @@ endif
 
 $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jdk image
+	$(call LogWarn, Creating jdk image)
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jdk, \
 	    $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
 	        $(JLINK_JDK_EXTRA_OPTS) \
 	        --output $(JDK_IMAGE_DIR) \
 	)
+        ifeq ($(BUILD_CDS_ARCHIVE), true)
+	  $(call LogWarn, Creating CDS archive for jdk image)
+	  $(JDK_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+        endif
 	$(TOUCH) $@
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating legacy jre image
+	$(call LogWarn, Creating legacy jre image)
 	$(RM) -r $(JRE_IMAGE_DIR)
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre, \
 	    $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
 	        $(JLINK_JRE_EXTRA_OPTS) \
 	        --output $(JRE_IMAGE_DIR) \
 	)
+        ifeq ($(BUILD_CDS_ARCHIVE), true)
+	  $(call LogWarn, Creating CDS archive for jre image)
+	  $(JRE_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+        endif
 	$(TOUCH) $@
 
 TOOL_JRE_TARGETS := $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)

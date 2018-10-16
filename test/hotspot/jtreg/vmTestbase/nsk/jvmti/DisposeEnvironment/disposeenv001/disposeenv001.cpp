@@ -54,8 +54,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Dispose JVMTI environment in Agent_OnLoad()\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB1(DisposeEnvironment, jvmti))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->DisposeEnvironment())) {
         return JNI_ERR;
     }
     NSK_DISPLAY0("  ... disposed\n");

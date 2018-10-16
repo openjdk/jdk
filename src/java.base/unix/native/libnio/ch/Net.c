@@ -747,8 +747,7 @@ Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
 
 /* Declared in nio_util.h */
 
-JNIEXPORT jint JNICALL
-handleSocketError(JNIEnv *env, jint errorValue)
+jint handleSocketError(JNIEnv *env, jint errorValue)
 {
     char *xn;
     switch (errorValue) {

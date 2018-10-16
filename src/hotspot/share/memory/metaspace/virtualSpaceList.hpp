@@ -116,7 +116,8 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   void inc_virtual_space_count();
   void dec_virtual_space_count();
 
-  bool contains(const void* ptr);
+  VirtualSpaceNode* find_enclosing_space(const void* ptr);
+  bool contains(const void* ptr) { return find_enclosing_space(ptr) != NULL; }
 
   // Unlink empty VirtualSpaceNodes and free it.
   void purge(ChunkManager* chunk_manager);

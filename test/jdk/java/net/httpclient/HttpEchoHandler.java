@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpRequest.*;
 import static java.net.http.HttpResponse.*;
 import java.util.logging.ConsoleHandler;

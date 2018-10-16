@@ -26,7 +26,7 @@
 
 /*
  *  This file implements a binding between Java and the hsdis
- *  dissasembler.  It should compile on Linux/Solaris and Windows.
+ *  disassembler.  It should compile on Linux/Solaris and Windows.
  *  The only platform dependent pieces of the code for doing
  *  dlopen/dlsym to find the entry point in hsdis.  All the rest is
  *  standard JNI code.

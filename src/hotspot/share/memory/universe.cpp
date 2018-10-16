@@ -39,6 +39,7 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -113,6 +114,7 @@ oop Universe::_out_of_memory_error_class_metaspace    = NULL;
 oop Universe::_out_of_memory_error_array_size         = NULL;
 oop Universe::_out_of_memory_error_gc_overhead_limit  = NULL;
 oop Universe::_out_of_memory_error_realloc_objects    = NULL;
+oop Universe::_out_of_memory_error_retry              = NULL;
 oop Universe::_delayed_stack_overflow_error_message   = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
@@ -195,6 +197,7 @@ void Universe::oops_do(OopClosure* f) {
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
   f->do_oop((oop*)&_out_of_memory_error_realloc_objects);
+  f->do_oop((oop*)&_out_of_memory_error_retry);
   f->do_oop((oop*)&_delayed_stack_overflow_error_message);
   f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
   f->do_oop((oop*)&_null_ptr_exception_instance);
@@ -240,8 +243,15 @@ void Universe::serialize(SerializeClosure* f) {
 
   f->do_ptr((void**)&_objectArrayKlassObj);
 #if INCLUDE_CDS_JAVA_HEAP
-  // The mirrors are NULL if MetaspaceShared::is_heap_object_archiving_allowed
-  // is false.
+#ifdef ASSERT
+  if (DumpSharedSpaces && !HeapShared::is_heap_object_archiving_allowed()) {
+    assert(_int_mirror == NULL    && _float_mirror == NULL &&
+           _double_mirror == NULL && _byte_mirror == NULL  &&
+           _bool_mirror == NULL   && _char_mirror == NULL  &&
+           _long_mirror == NULL   && _short_mirror == NULL &&
+           _void_mirror == NULL, "mirrors should be NULL");
+  }
+#endif
   f->do_oop(&_int_mirror);
   f->do_oop(&_float_mirror);
   f->do_oop(&_double_mirror);
@@ -420,9 +430,9 @@ void Universe::genesis(TRAPS) {
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
-        MetaspaceShared::open_archive_heap_region_mapped() &&
+        HeapShared::open_archive_heap_region_mapped() &&
         _int_mirror != NULL) {
-      assert(MetaspaceShared::is_heap_object_archiving_allowed(), "Sanity");
+      assert(HeapShared::is_heap_object_archiving_allowed(), "Sanity");
       assert(_float_mirror != NULL && _double_mirror != NULL &&
              _byte_mirror  != NULL && _byte_mirror   != NULL &&
              _bool_mirror  != NULL && _char_mirror   != NULL &&
@@ -565,7 +575,8 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
           (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_class_metaspace))  &&
           (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_array_size)) &&
           (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_gc_overhead_limit)) &&
-          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_realloc_objects)));
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_realloc_objects)) &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_retry)));
 }
 
 
@@ -974,6 +985,7 @@ bool universe_post_init() {
   Universe::_out_of_memory_error_gc_overhead_limit =
     ik->allocate_instance(CHECK_false);
   Universe::_out_of_memory_error_realloc_objects = ik->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_retry = ik->allocate_instance(CHECK_false);
 
   // Setup preallocated cause message for delayed StackOverflowError
   if (StackReservedPages > 0) {
@@ -1018,6 +1030,9 @@ bool universe_post_init() {
 
   msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK_false);
   java_lang_Throwable::set_message(Universe::_out_of_memory_error_realloc_objects, msg());
+
+  msg = java_lang_String::create_from_str("Java heap space: failed retryable allocation", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_retry, msg());
 
   msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::_arithmetic_exception_instance, msg());

@@ -54,8 +54,7 @@ void writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID
 void writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                 jint len, jboolean append, jfieldID fid);
 void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
-JNIEXPORT void JNICALL
-throwFileNotFoundException(JNIEnv *env, jstring path);
+void throwFileNotFoundException(JNIEnv *env, jstring path);
 
 /*
  * Macros for managing platform strings.  The typical usage pattern is:

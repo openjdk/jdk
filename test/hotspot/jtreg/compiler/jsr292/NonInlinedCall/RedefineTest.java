@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@
 
 package compiler.jsr292.NonInlinedCall;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.vm.annotation.DontInline;
@@ -68,13 +67,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 
 public class RedefineTest {
     static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     static final String NAME = "compiler/jsr292/NonInlinedCall/RedefineTest$T";
 
     static Class<?> getClass(int r) {
         byte[] classFile = getClassFile(r);
-        return UNSAFE.defineClass(NAME, classFile, 0, classFile.length, null, null);
+        try {
+            return MethodHandles.lookup().defineClass(classFile);
+        } catch (IllegalAccessException e) {
+            throw new Error(e);
+        }
     }
 
     /**

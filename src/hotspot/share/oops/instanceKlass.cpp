@@ -1201,14 +1201,7 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
 }
 
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
-  if (length < 0)  {
-    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
-  }
-  if (length > arrayOopDesc::max_array_length(T_OBJECT)) {
-    report_java_out_of_memory("Requested array size exceeds VM limit");
-    JvmtiExport::post_array_size_exhausted();
-    THROW_OOP_0(Universe::out_of_memory_error_array_size());
-  }
+  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   int size = objArrayOopDesc::object_size(length);
   Klass* ak = array_klass(n, CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
@@ -2743,48 +2736,6 @@ void InstanceKlass::check_prohibited_package(Symbol* class_name,
     }
   }
   return;
-}
-
-// tell if two classes have the same enclosing class (at package level)
-bool InstanceKlass::is_same_package_member(const Klass* class2, TRAPS) const {
-  if (class2 == this) return true;
-  if (!class2->is_instance_klass())  return false;
-
-  // must be in same package before we try anything else
-  if (!is_same_class_package(class2))
-    return false;
-
-  // As long as there is an outer_this.getEnclosingClass,
-  // shift the search outward.
-  const InstanceKlass* outer_this = this;
-  for (;;) {
-    // As we walk along, look for equalities between outer_this and class2.
-    // Eventually, the walks will terminate as outer_this stops
-    // at the top-level class around the original class.
-    bool ignore_inner_is_member;
-    const Klass* next = outer_this->compute_enclosing_class(&ignore_inner_is_member,
-                                                            CHECK_false);
-    if (next == NULL)  break;
-    if (next == class2)  return true;
-    outer_this = InstanceKlass::cast(next);
-  }
-
-  // Now do the same for class2.
-  const InstanceKlass* outer2 = InstanceKlass::cast(class2);
-  for (;;) {
-    bool ignore_inner_is_member;
-    Klass* next = outer2->compute_enclosing_class(&ignore_inner_is_member,
-                                                    CHECK_false);
-    if (next == NULL)  break;
-    // Might as well check the new outer against all available values.
-    if (next == this)  return true;
-    if (next == outer_this)  return true;
-    outer2 = InstanceKlass::cast(next);
-  }
-
-  // If by this point we have not found an equality between the
-  // two classes, we know they are in separate package members.
-  return false;
 }
 
 bool InstanceKlass::find_inner_classes_attr(int* ooff, int* noff, TRAPS) const {

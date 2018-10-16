@@ -59,7 +59,7 @@ void JNICALL classPrepareHandler(
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetLoadedClasses, jvmti, &loadedClassesCount, &loadedClasses))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetLoadedClasses(&loadedClassesCount, &loadedClasses))) {
         NSK_COMPLAIN1("%s: failed to get loaded classes\n", agentName);
         nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_PREPARE, 0, jvmti, jni);
         return;
@@ -67,8 +67,7 @@ void JNICALL classPrepareHandler(
 
     nsk_jvmti_aod_deallocate(jvmti, (unsigned char*)loadedClasses);
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, eventsCounterMonitor))) {
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventsCounterMonitor))) {
 
         eventsCounter++;
 
@@ -80,7 +79,7 @@ void JNICALL classPrepareHandler(
             nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_PREPARE, success, jvmti, jni);
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, eventsCounterMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
             success = 0;
         }
     } else {
@@ -120,13 +119,13 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "attach045-agent01-eventsCounterMonitor", &eventsCounterMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("attach045-agent01-eventsCounterMonitor", &eventsCounterMonitor))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ClassPrepare = classPrepareHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

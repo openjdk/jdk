@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,23 +171,9 @@ private:
   void drain_region_stacks();
 
   void follow_contents(oop obj);
-  void follow_contents(objArrayOop array, int index);
+  void follow_array(objArrayOop array, int index);
 
   void update_contents(oop obj);
-
-  class MarkAndPushClosure: public BasicOopIterateClosure {
-   private:
-    ParCompactionManager* _compaction_manager;
-   public:
-    MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-
-    template <typename T> void do_oop_work(T* p);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-
-    // This closure provides its own oop verification code.
-    debug_only(virtual bool should_verify_oops() { return false; })
-  };
 
   class FollowStackClosure: public VoidClosure {
    private:

@@ -210,6 +210,7 @@ class ExchangeImpl {
         PlaceholderOutputStream o = getPlaceholderResponseBody();
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
+        boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set ("Date", dateFormat.get().format (new Date()));
 
         /* check for response type that is not allowed to send a body */
@@ -225,6 +226,7 @@ class ExchangeImpl {
                 logger.log (Level.WARNING, msg);
             }
             contentLen = -1;
+            noContentLengthHeader = (rCode != 304);
         }
 
         if (isHeadRequest() || rCode == 304) {
@@ -253,7 +255,11 @@ class ExchangeImpl {
                     noContentToSend = true;
                     contentLen = 0;
                 }
-                rspHdrs.set("Content-length", Long.toString(contentLen));
+                if (noContentLengthHeader) {
+                    rspHdrs.remove("Content-length");
+                } else {
+                    rspHdrs.set("Content-length", Long.toString(contentLen));
+                }
                 o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
             }
         }

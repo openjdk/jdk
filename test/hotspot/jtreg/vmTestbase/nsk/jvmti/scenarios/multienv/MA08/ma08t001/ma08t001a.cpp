@@ -56,14 +56,12 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
     jclass klass = NULL;
     char *signature = NULL;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti_env,
-            klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -75,7 +73,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
 
     NSK_DISPLAY1("Exception event: %s\n", signature);
 
-    if (NSK_CPP_STUB3(IsSameObject, jni_env, threadForInterrupt, thread)) {
+    if (jni_env->IsSameObject(threadForInterrupt, thread)) {
         if (strcmp(signature, INTERRUPTED_EXCEPTION_CLASS_SIG) == 0) {
             InterruptedExceptionFlag++;
         } else {
@@ -83,7 +81,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
                 signature);
             nsk_jvmti_setFailStatus();
         }
-    } else if (NSK_CPP_STUB3(IsSameObject, jni_env, threadForStop, thread)) {
+    } else if (jni_env->IsSameObject(threadForStop, thread)) {
         if (strcmp(signature, THREAD_DEATH_CLASS_SIG) == 0) {
             ThreadDeathFlag++;
         } else {
@@ -93,7 +91,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
         }
     }
 
-    NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+    jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 /* ========================================================================== */
@@ -109,8 +107,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -122,8 +119,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -139,8 +135,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (threadForStop == NULL) {
@@ -153,17 +148,14 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (threadForStop =
-            NSK_CPP_STUB2(NewGlobalRef, jni, threadForStop)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadForStop = jni->NewGlobalRef(threadForStop)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (threadForInterrupt =
-            NSK_CPP_STUB2(NewGlobalRef, jni, threadForInterrupt)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadForInterrupt = jni->NewGlobalRef(threadForInterrupt)) != NULL))
         return NSK_FALSE;
 
     /* enable event */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -199,12 +191,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
 
     /* disable event */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION, NULL)))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadForStop));
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threadForInterrupt));
+    NSK_TRACE(jni->DeleteGlobalRef(threadForStop));
+    NSK_TRACE(jni->DeleteGlobalRef(threadForInterrupt));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -245,7 +236,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_exception_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 

@@ -41,7 +41,7 @@ COPY_CLASSES_TARGET := $(BUILDJDK_OUTPUTDIR)/jdk/modules/java.base/_the.buildjdk
 
 $(COPY_CLASSES_TARGET): $(call CacheFind, $(wildcard \
     $(addprefix $(JDK_OUTPUTDIR)/modules/, $(MODULES_TO_COPY))))
-	$(ECHO) $(LOG_INFO) "Copying java modules to buildjdk: $(MODULES_TO_COPY)"
+	$(call LogInfo, Copying java modules to buildjdk: $(MODULES_TO_COPY))
 	$(RM) -r $(BUILDJDK_OUTPUTDIR)/jdk/modules
 	$(MKDIR) -p $(BUILDJDK_OUTPUTDIR)/jdk/modules
 	$(foreach m, $(MODULES_TO_COPY), \

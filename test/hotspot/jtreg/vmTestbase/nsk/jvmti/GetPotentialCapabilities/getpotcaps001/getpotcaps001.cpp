@@ -130,7 +130,7 @@ static int checkCapabilities(jvmtiEnv* jvmti, const char where[]) {
 
     NSK_DISPLAY0("GetPotentialCapabilities() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetPotentialCapabilities, jvmti, &caps))) {
+            jvmti->GetPotentialCapabilities(&caps))) {
         return NSK_FALSE;
     }
 
@@ -233,8 +233,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.VMDeath = callbackVMDeath;
         if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+                jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 

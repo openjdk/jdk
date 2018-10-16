@@ -66,7 +66,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
 
     NSK_DISPLAY2("%s: ThreadStart event was received for thread '%s'\n", agentName, startedThreadName);
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetAllThreads, jvmti, &threadsCount, &threads))) {
+    if (NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadsCount, &threads))) {
         int startedThreadWasFound = 0;
 
         for (i = 0; i < threadsCount; i++) {
@@ -94,8 +94,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
     }
 
     if (strstr(startedThreadName, TEST_THREAD_NAME_PREFIX)) {
-        if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                RawMonitorEnter, jvmti, threadsCounterMonitor))) {
+        if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(threadsCounterMonitor))) {
 
             testThreadsCounter++;
 
@@ -103,7 +102,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
                 nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, success, jvmti, jni);
             }
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, threadsCounterMonitor))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(threadsCounterMonitor))) {
                 success = 0;
             }
         } else {
@@ -145,13 +144,13 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "threadsCounterMonitor", &threadsCounterMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("threadsCounterMonitor", &threadsCounterMonitor))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ThreadStart = threadStartHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

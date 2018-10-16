@@ -54,7 +54,7 @@ import static org.jemmy2ext.JemmyExt.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.button.ButtonDemo
- * @run testng ButtonDemoScreenshotTest
+ * @run testng/timeout=600 ButtonDemoScreenshotTest
  */
 @Listeners(GuiTestListener.class)
 public class ButtonDemoScreenshotTest {

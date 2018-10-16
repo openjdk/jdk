@@ -21,10 +21,10 @@
 // questions.
 //
 
-// for JTwork/classes/0/lib/testlibrary/jdk/testlibrary/SimpleSSLContext.class
-grant codeBase "file:${test.classes}/../../../../lib/testlibrary/-" {
+// for JTwork/classes/0/test/lib/jdk/test/lib/net/SimpleSSLContext.class
+grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.util.PropertyPermission "test.src.path", "read";
-    permission java.io.FilePermission "${test.src}/../../../lib/testlibrary/jdk/testlibrary/testkeys", "read";
+    permission java.io.FilePermission "${test.src}/../../../../lib/jdk/test/lib/net/testkeys", "read";
 };
 
 // for JTwork//classes/0/java/net/httpclient/http2/server/*

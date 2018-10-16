@@ -178,20 +178,6 @@ ifeq ($(USE_FAILURE_HANDLER), true)
   endif
 endif
 
-
-# Optionally create a CDS archive before running tests
-ifeq ($(GENERATE_CDS_ARCHIVE), true)
-  CDS_ARCHIVE_FILE := $(ABS_TEST_OUTPUT_DIR)/cds_archive.jsa
-
-  $(CDS_ARCHIVE_FILE): $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java -XX:+UnlockDiagnosticVMOptions \
-	    -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)") -Xshare:dump
-
-  CDS_VM_ARGS := -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)")
-  JTREG_TEST_OPTIONS += $(addprefix -vmoption:, $(CDS_VM_ARGS))
-  TEST_PREREQS += $(CDS_ARCHIVE_FILE)
-endif
-
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
 ifneq ($(ARCHIVE_BUNDLE), )

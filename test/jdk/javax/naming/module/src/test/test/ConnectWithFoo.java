@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 package test;
 
+import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import javax.naming.*;
@@ -38,11 +39,17 @@ import org.example.foo.FooControl;
 
 public class ConnectWithFoo {
 
+    static {
+        final PrintStream out = new PrintStream(System.out, true);
+        final PrintStream err = new PrintStream(System.err, true);
+
+        System.setOut(out);
+        System.setErr(err);
+    }
+
     // LDAP capture file
     private static final String LDAP_CAPTURE_FILE =
         System.getProperty("test.src") + "/src/test/test/ConnectWithFoo.ldap";
-    // LDAPServer socket
-    private static ServerSocket serverSocket;
 
     public static void main(String[] args) throws Exception {
 
@@ -65,48 +72,50 @@ public class ConnectWithFoo {
          * Launch the LDAP server with the ConnectWithFoo.ldap capture file
          */
 
-        serverSocket = new ServerSocket(0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
-               } catch (Exception e) {
-                   System.out.println("ERROR: unable to launch LDAP server");
-                   e.printStackTrace();
-               }
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new LDAPServer(serverSocket, LDAP_CAPTURE_FILE);
+                    } catch (Exception e) {
+                        System.out.println("ERROR: unable to launch LDAP server");
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            /*
+             * Connect to the LDAP directory
+             */
+
+            Hashtable<String,Object> env = new Hashtable<>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.ldap.LdapCtxFactory");
+            URI ldapUri = new URI(args[0]);
+            if (ldapUri.getPort() == -1) {
+                ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
+                        serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
             }
-        }).start();
+            env.put(Context.PROVIDER_URL, ldapUri.toString());
+            if (args[args.length - 1].equalsIgnoreCase("-trace")) {
+                env.put("com.sun.jndi.ldap.trace.ber", System.out);
+            }
 
-        /*
-         * Connect to the LDAP directory
-         */
+            System.out.println("ConnectWithFoo: connecting to " + ldapUri);
+            LdapContext ctx = null;
+            Control[] connectionControls = { new FooControl(false) };
 
-        Hashtable<String,Object> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
-        URI ldapUri = new URI(args[0]);
-        if (ldapUri.getPort() == -1) {
-            ldapUri = new URI(ldapUri.getScheme(), null, ldapUri.getHost(),
-                serverSocket.getLocalPort(), ldapUri.getPath(), null, null);
-        }
-        env.put(Context.PROVIDER_URL, ldapUri.toString());
-        if (args[args.length - 1].equalsIgnoreCase("-trace")) {
-            env.put("com.sun.jndi.ldap.trace.ber", System.out);
-        }
-
-        System.out.println("ConnectWithFoo: connecting to " + ldapUri);
-        LdapContext ctx = null;
-        Control[] connectionControls = { new FooControl(false) };
-
-        try {
-            ctx = new InitialLdapContext(env, connectionControls);
-            System.out.println("ConnectWithFoo: connected");
-        } catch (NamingException e) {
-            System.err.println("ConnectWithFoo: error connecting " + e);
-        } finally {
-            if (ctx != null) {
-                ctx.close();
+            try {
+                ctx = new InitialLdapContext(env, connectionControls);
+                System.out.println("ConnectWithFoo: connected");
+            } catch (NamingException e) {
+                System.err.println("ConnectWithFoo: error connecting " + e);
+            } finally {
+                if (ctx != null) {
+                    ctx.close();
+                }
             }
         }
     }

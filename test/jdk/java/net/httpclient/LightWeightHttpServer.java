@@ -22,8 +22,8 @@
  */
 
 /**
- * library /lib/testlibrary/ /
- * build jdk.testlibrary.SimpleSSLContext ProxyServer
+ * library /test/lib /
+ * build jdk.test.lib.net.SimpleSSLContext ProxyServer
  * compile ../../../com/sun/net/httpserver/LogFilter.java
  * compile ../../../com/sun/net/httpserver/EchoHandler.java
  * compile ../../../com/sun/net/httpserver/FileServerHandler.java
@@ -50,7 +50,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 public class LightWeightHttpServer {
 

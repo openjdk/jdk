@@ -89,16 +89,6 @@ class InstanceMirrorKlass: public InstanceKlass {
   // allocation
   instanceOop allocate_instance(Klass* k, TRAPS);
 
-  // GC specific object visitors
-  //
-#if INCLUDE_PARALLELGC
-  // Parallel Scavenge
-  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
-  // Parallel Compact
-  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
-  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
-#endif
-
   static void serialize_offsets(class SerializeClosure* f) NOT_CDS_RETURN;
 
   // Oop fields (and metadata) iterators

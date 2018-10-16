@@ -41,6 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -1219,8 +1220,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Initialize static constant array when class is loaded.
      */
     private static final int MAX_CONSTANT = 16;
-    private static BigInteger posConst[] = new BigInteger[MAX_CONSTANT+1];
-    private static BigInteger negConst[] = new BigInteger[MAX_CONSTANT+1];
+    @Stable
+    private static final BigInteger[] posConst = new BigInteger[MAX_CONSTANT+1];
+    @Stable
+    private static final BigInteger[] negConst = new BigInteger[MAX_CONSTANT+1];
 
     /**
      * The cache of powers of each radix.  This allows us to not have to

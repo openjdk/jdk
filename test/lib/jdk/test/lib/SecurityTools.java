@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,9 +35,22 @@ import java.util.stream.Stream;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+/**
+ * Run security tools (including jarsigner and keytool) in a new process.
+ * The en_US locale is always used so a test can always match output to
+ * English text. {@code /dev/urandom} is used as entropy source so tool will
+ * not block because of entropy scarcity. {@code -Jvm-options} is supported
+ * as an argument.
+ */
 public class SecurityTools {
 
+    /**
+     * The response file name for keytool. Use {@link #setResponse} to
+     * create one. Do NOT manipulate it directly.
+     */
     public static final String RESPONSE_FILE = "security_tools_response.txt";
+
+    private SecurityTools() {}
 
     private static ProcessBuilder getProcessBuilder(String tool, List<String> args) {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
@@ -57,8 +69,13 @@ public class SecurityTools {
         return new ProcessBuilder(launcher.getCommand());
     }
 
-    // keytool
-
+    /**
+     * Runs keytool.
+     *
+     * @param args arguments to keytool
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer keytool(List<String> args)
             throws Exception {
 
@@ -77,15 +94,46 @@ public class SecurityTools {
         }
     }
 
-    // Only call this if there is no white space in every argument
+    /**
+     * Runs keytool.
+     *
+     * @param args arguments to keytool in a single string. Only call this if
+     *             there is no white space inside an argument. This string will
+     *             be split with {@code \s+}.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer keytool(String args) throws Exception {
         return keytool(args.split("\\s+"));
     }
 
+    /**
+     * Runs keytool.
+     *
+     * @param args arguments to keytool
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer keytool(String... args) throws Exception {
         return keytool(List.of(args));
     }
 
+
+    /**
+     * Sets the responses (user input) for keytool.
+     * <p>
+     * For example, if keytool requires entering a password twice, call
+     * {@code setResponse("password", "password")}. Do NOT append a newline
+     * character to each response. If there are useless responses at the end,
+     * they will be discarded silently. If there are less responses than
+     * necessary, keytool will read EOF. The responses will be written into
+     * {@linkplain #RESPONSE_FILE a local file} and will only be used by the
+     * next keytool run. After the run, the file is removed. Calling this
+     * method will always overwrite the previous response file (if exists).
+     *
+     * @param responses response to keytool
+     * @throws IOException if there is an error
+     */
     public static void setResponse(String... responses) throws IOException {
         String text;
         if (responses.length > 0) {
@@ -97,8 +145,13 @@ public class SecurityTools {
         Files.write(Paths.get(RESPONSE_FILE), text.getBytes());
     }
 
-    // jarsigner
-
+    /**
+     * Runs jarsigner.
+     *
+     * @param args arguments to jarsigner
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer jarsigner(List<String> args)
             throws Exception {
         return execute(getProcessBuilder("jarsigner", args));
@@ -118,12 +171,27 @@ public class SecurityTools {
         }
     }
 
-    // Only call this if there is no white space in every argument
+    /**
+     * Runs jarsigner.
+     *
+     * @param args arguments to jarsigner in a single string. Only call this if
+     *             there is no white space inside an argument. This string will
+     *             be split with {@code \s+}.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer jarsigner(String args) throws Exception {
 
         return jarsigner(args.split("\\s+"));
     }
 
+    /**
+     * Runs jarsigner.
+     *
+     * @param args arguments to jarsigner
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
     public static OutputAnalyzer jarsigner(String... args) throws Exception {
         return jarsigner(List.of(args));
     }

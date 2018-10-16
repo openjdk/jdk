@@ -84,12 +84,10 @@ Java_nsk_jvmti_AttachOnDemand_attach022_attach022Target_shutdownAgent(JNIEnv * j
 void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
     NSK_DISPLAY2("%s: ObjectFree event received (object tag: %ld)\n", agentName, tag);
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, objectFreeMonitor))) {
-
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(objectFreeMonitor))) {
         freedObjectsCounter++;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, objectFreeMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(objectFreeMonitor))) {
             success = 0;
         }
     } else {
@@ -107,12 +105,12 @@ int registerNativeMethods(JNIEnv* jni) {
     jint nativeMethodsNumber = 1;
 
     if (!NSK_JNI_VERIFY(jni, (appClass =
-        NSK_CPP_STUB2(FindClass, jni, ATTACH022_TARGET_APP_CLASS_NAME)) != NULL)) {
+        jni->FindClass(ATTACH022_TARGET_APP_CLASS_NAME)) != NULL)) {
         return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni,
-            (NSK_CPP_STUB4(RegisterNatives, jni, appClass, nativeMethods, nativeMethodsNumber) == 0))) {
+            (jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber) == 0))) {
         return NSK_FALSE;
     }
 
@@ -136,12 +134,10 @@ void JNICALL vmObjectAllocHandler(jvmtiEnv * jvmti,
     NSK_DISPLAY2("%s: ObjectAlloc event received (object class: %s)\n", agentName, className);
 
     if (!strcmp(className, OBJECTS_FOR_ALLOCATION_TEST_CLASS_NAME)) {
-        if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                RawMonitorEnter, jvmti, objectTagMonitor))) {
+        if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(objectTagMonitor))) {
             jlong tagValue = taggedObjectsCounter + 1;
 
-
-            if (!NSK_JVMTI_VERIFY( NSK_CPP_STUB3(SetTag, jvmti, object, tagValue))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->SetTag(object, tagValue))) {
                 NSK_COMPLAIN1("%s: failed to set tag\n", agentName);
                 success = 0;
             } else {
@@ -149,7 +145,7 @@ void JNICALL vmObjectAllocHandler(jvmtiEnv * jvmti,
                 taggedObjectsCounter++;
             }
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, objectTagMonitor))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(objectTagMonitor))) {
                 success = 0;
             }
         } else {
@@ -195,11 +191,11 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "ObjectTagMonitor", &objectTagMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("ObjectTagMonitor", &objectTagMonitor))) {
         return JNI_ERR;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "ObjectFreeMonitor", &objectFreeMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("ObjectFreeMonitor", &objectFreeMonitor))) {
         return JNI_ERR;
     }
 
@@ -207,14 +203,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     caps.can_tag_objects = 1;
     caps.can_generate_object_free_events = 1;
     caps.can_generate_vm_object_alloc_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ObjectFree = objectFreeHandler;
     eventCallbacks.VMObjectAlloc = vmObjectAllocHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

@@ -63,13 +63,13 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
             /* sent by class load */
 
             if (!NSK_JNI_VERIFY(jni_env, (*new_class_data_len =
-                    NSK_CPP_STUB2(GetArrayLength, jni_env, classBytes)) > 0)) {
+                    jni_env->GetArrayLength(classBytes)) > 0)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
 
             if (!NSK_JNI_VERIFY(jni_env, (*new_class_data = (unsigned char*)
-                    NSK_CPP_STUB3(GetByteArrayElements, jni_env, classBytes, NULL))
+                    jni_env->GetByteArrayElements(classBytes, NULL))
                         != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
@@ -86,30 +86,27 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     jfieldID field = NULL;
 
     NSK_DISPLAY1("Find class: %s\n", DEBUGEE_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, debugeeClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)jni->NewGlobalRef(debugeeClass)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (field =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                "newClassBytes", "[B")) != NULL))
+            jni->GetStaticFieldID(debugeeClass, "newClassBytes", "[B")) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass, field))
+            jni->GetStaticObjectField(debugeeClass, field))
                 != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            NSK_CPP_STUB2(NewGlobalRef, jni, classBytes)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)jni->NewGlobalRef(classBytes)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                                                          NULL)))
         return JNI_ERR;
 
     return NSK_TRUE;
@@ -140,12 +137,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE,
+                                                          JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                                                          NULL)))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, debugeeClass));
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, classBytes));
+    NSK_TRACE(jni->DeleteGlobalRef(debugeeClass));
+    NSK_TRACE(jni->DeleteGlobalRef(classBytes));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -183,7 +181,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_all_class_hook_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
@@ -191,8 +189,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     return JNI_OK;

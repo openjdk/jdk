@@ -60,8 +60,7 @@ static int lookup(jvmtiEnv* jvmti,
     jint i;
 
     for (i = 0; i < classCount && !found; i++) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti,
-                classes[i], &signature, &generic)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(classes[i], &signature, &generic)))
             break;
 
         if (signature != NULL && strcmp(signature, exp_sig) == 0) {
@@ -70,10 +69,10 @@ static int lookup(jvmtiEnv* jvmti,
         }
 
         if (signature != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+            jvmti->Deallocate((unsigned char*)signature);
 
         if (generic != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic);
+            jvmti->Deallocate((unsigned char*)generic);
     }
 
     return found;
@@ -91,8 +90,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetLoadedClasses, jvmti,
-            &classCount, &classes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetLoadedClasses(&classCount, &classes))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -124,7 +122,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     if (classes != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)classes);
+        jvmti->Deallocate((unsigned char*)classes);
 
     if (!nsk_jvmti_resumeSync())
         return;

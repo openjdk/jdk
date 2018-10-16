@@ -81,8 +81,8 @@ public class cm02t001 extends DebugeeClass {
                     return status;
                 thread.letFinish();
 
-                // pause to provoke contention
-                Thread.sleep(100);
+                // pause to provoke contention on thread.endingMonitor
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 throw new Failure(e);
             }

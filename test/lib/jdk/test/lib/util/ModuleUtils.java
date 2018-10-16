@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.test.lib.util;
+
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
@@ -47,7 +49,7 @@ public final class ModuleUtils {
      * Returns a ModuleFinder that finds modules with the given module
      * descriptors.
      */
-    static ModuleFinder finderOf(ModuleDescriptor... descriptors) {
+    public static ModuleFinder finderOf(ModuleDescriptor... descriptors) {
 
         // Create a ModuleReference for each module
         Map<String, ModuleReference> namesToReference = new HashMap<>();

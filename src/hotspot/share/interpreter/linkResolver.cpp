@@ -793,24 +793,6 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
     check_method_loader_constraints(link_info, resolved_method, "method", CHECK_NULL);
   }
 
-  // For private method invocation we should only find the method in the resolved class.
-  // If that is not the case then we have a found a supertype method that we have nestmate
-  // access to.
-  if (resolved_method->is_private() && resolved_method->method_holder() != resolved_klass) {
-    ResourceMark rm(THREAD);
-    DEBUG_ONLY(bool is_nestmate = InstanceKlass::cast(link_info.current_klass())->has_nestmate_access_to(InstanceKlass::cast(resolved_klass), THREAD);)
-    assert(is_nestmate, "was only expecting nestmates to get here!");
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_NoSuchMethodError(),
-      "%s: method %s%s not found",
-      resolved_klass->external_name(),
-      resolved_method->name()->as_C_string(),
-      resolved_method->signature()->as_C_string()
-    );
-    return NULL;
-  }
-
   return resolved_method;
 }
 

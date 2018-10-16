@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import com.sun.swingset3.demos.window.WindowDemo;
 import static com.sun.swingset3.demos.window.WindowDemo.*;
 import static org.jemmy2ext.JemmyExt.*;
 import static org.testng.AssertJUnit.*;
+import javax.swing.UIManager;
 import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JButtonOperator;
@@ -48,13 +49,14 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.window.WindowDemo
- * @run testng WindowDemoTest
+ * @run testng/timeout=600 WindowDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class WindowDemoTest {
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(WindowDemo.class.getCanonicalName()).startApplication();
 

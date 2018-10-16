@@ -59,17 +59,13 @@ static jvmtiEventCallbacks callbacks;
 static jrawMonitorID countLock;
 
 static void lock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "failed to enter a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(countLock)))
+        jni_env->FatalError("failed to enter a raw monitor\n");
 }
 
 static void unlock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-            jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "failed to exit a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(countLock)))
+        jni_env->FatalError("failed to exit a raw monitor\n");
 }
 
 /** callback functions **/
@@ -84,7 +80,7 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
     NSK_DISPLAY0(">>>> NativeMethodBind event received\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         result = STATUS_FAILED;
         unlock(jvmti_env, jni_env);
         return;
@@ -95,8 +91,7 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         return;
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &methNam, &methSig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &methNam, &methSig, NULL))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILED: unable to get method name during NativeMethodBind callback\n\n");
         unlock(jvmti_env, jni_env);
@@ -118,13 +113,11 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         }
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, (unsigned char*) methNam))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) methNam))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to method name\n\n");
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, (unsigned char*) methSig))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) methSig))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to method signature\n\n");
     }
@@ -152,8 +145,7 @@ Java_nsk_jvmti_NativeMethodBind_nativemethbind001_nativeMethod(
 
     if (registerNative == JNI_TRUE) {
         NSK_DISPLAY1("Finding class \"%s\" ...\n", CLASS_SIG);
-        if (!NSK_JNI_VERIFY(env, (testedCls =
-                NSK_CPP_STUB2(FindClass, env, CLASS_SIG)) != NULL)) {
+        if (!NSK_JNI_VERIFY(env, (testedCls = env->FindClass(CLASS_SIG)) != NULL)) {
             result = STATUS_FAILED;
             NSK_COMPLAIN1("TEST FAILURE: unable to find class \"%s\"\n\n",
                 CLASS_SIG);
@@ -167,8 +159,7 @@ Java_nsk_jvmti_NativeMethodBind_nativemethbind001_nativeMethod(
         NSK_DISPLAY3("Calling RegisterNatives() with \"%s %s\"\n"
                      "\tfor class \"%s\" ...\n",
             METHODS[1][0], METHODS[1][1], CLASS_SIG);
-        if (!NSK_JNI_VERIFY_VOID(env, (NSK_CPP_STUB4(RegisterNatives,
-                env, testedCls, &meth, 1)) != 0)) {
+        if (!NSK_JNI_VERIFY_VOID(env, (env->RegisterNatives(testedCls, &meth, 1)) != 0)) {
             result = STATUS_FAILED;
             NSK_COMPLAIN3("TEST FAILURE: unable to RegisterNatives() \"%s %s\" for class \"%s\"\n\n",
                 METHODS[1][0], METHODS[1][1], CLASS_SIG);
@@ -221,19 +212,16 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* create a raw monitor */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti, "_counter_lock", &countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_counter_lock", &countLock)))
         return JNI_ERR;
 
     /* add capability to generate compiled method events */
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_native_method_bind_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
     if (!caps.can_generate_native_method_bind_events)
         NSK_DISPLAY0("Warning: generation of native method bind events is not implemented\n");
@@ -242,13 +230,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("setting event callbacks ...\n");
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.NativeMethodBind = &NativeMethodBind;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_NATIVE_METHOD_BIND,
+                                                          NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

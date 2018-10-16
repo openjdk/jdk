@@ -124,8 +124,8 @@ define SetupZipArchiveBody
   # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
   # and only fail if it's not.
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
-	$(MKDIR) -p $$(@D)
-	$(ECHO) Updating $$($1_NAME)
+	$$(call LogWarn, Updating $$($1_NAME))
+	$$(call MakeTargetDir)
 	$$(foreach s,$$($1_SRC),(cd $$s && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . \
 	    $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* \
 	    $$($1_ZIP_EXCLUDES_$$s) \

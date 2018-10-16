@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -460,4 +461,9 @@ void ThreadLocalAllocStats::publish() {
     _perf_total_slow_allocations  ->set_value(_total_slow_allocations);
     _perf_max_slow_allocations    ->set_value(_max_slow_allocations);
   }
+}
+
+size_t ThreadLocalAllocBuffer::end_reserve() {
+  size_t reserve_size = Universe::heap()->tlab_alloc_reserve();
+  return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }

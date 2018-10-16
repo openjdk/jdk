@@ -688,7 +688,7 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   }
   LIR_Opr result = new_register(T_INT);
   __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
-           result, type);
+           result, T_INT);
   return result;
 }
 

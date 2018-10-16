@@ -470,7 +470,7 @@ jvmtiError
 JvmtiEnv::GetObjectSize(jobject object, jlong* size_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
-  *size_ptr = (jlong)mirror->size() * wordSize;
+  *size_ptr = (jlong)Universe::heap()->obj_size(mirror) * wordSize;
   return JVMTI_ERROR_NONE;
 } /* end GetObjectSize */
 
@@ -540,13 +540,6 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
       record_class_file_load_hook_enabled();
     }
 
-    if (event_type == JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) {
-      if (enabled) {
-        ThreadHeapSampler::enable();
-      } else {
-        ThreadHeapSampler::disable();
-      }
-    }
     JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.

@@ -174,7 +174,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
 // The CompactHashtable implementation
 //
 
-void SimpleCompactHashtable::serialize(SerializeClosure* soc) {
+void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   soc->do_ptr((void**)&_base_address);
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);

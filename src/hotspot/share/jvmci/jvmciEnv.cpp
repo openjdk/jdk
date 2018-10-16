@@ -148,7 +148,7 @@ Klass* JVMCIEnv::get_klass_by_name_impl(Klass* accessing_klass,
                              require_local);
     if (elem_klass != NULL) {
       // Now make an array for it
-      return elem_klass->array_klass(CHECK_NULL);
+      return elem_klass->array_klass(THREAD);
     }
   }
 

@@ -25,8 +25,8 @@
  * @test
  * @bug 8152616
  * @summary Unit test for corner case of PrettyPrinting when SourceOutput is false
- * @run compile --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED T8152616.java
- * @run main T8152616
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.tree
  */
 
 import java.io.File;

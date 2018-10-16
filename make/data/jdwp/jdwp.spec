@@ -2185,7 +2185,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "in this thread group. Threads and thread groups in child "
         "thread groups are not included. "
         "A thread is alive if it has been started and has not yet been stopped. "
-        "See <a href=../../../api/java/lang/ThreadGroup.html>java.lang.ThreadGroup </a>
+        "See <a href=../../api/java.base/java/lang/ThreadGroup.html>java.lang.ThreadGroup </a>
         "for information about active ThreadGroups.
         (Out
             (threadGroupObject group "The thread group object ID. ")

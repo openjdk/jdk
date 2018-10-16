@@ -36,8 +36,9 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/heapShared.inline.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -371,7 +372,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
   oop p = JNIHandles::resolve(obj);
-  return p->size() * HeapWordSize;
+  return Universe::heap()->obj_size(p) * HeapWordSize;
 WB_END
 
 WB_ENTRY(jlong, WB_GetHeapSpaceAlignment(JNIEnv* env, jobject o))
@@ -1749,9 +1750,23 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   return NULL;
 WB_END
 
+WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
+  const char* p = Arguments::get_default_shared_archive_path();
+  ThreadToNativeFromVM ttn(thread);
+  jstring path_string = env->NewStringUTF(p);
+
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  return path_string;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
+  return UseSharedSpaces;
+WB_END
+
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
-  return MetaspaceShared::is_archive_object(obj_oop);
+  return HeapShared::is_archived_object(obj_oop);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -1775,7 +1790,7 @@ WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return MetaspaceShared::open_archive_heap_region_mapped();
+  return HeapShared::open_archive_heap_region_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
@@ -1793,7 +1808,7 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
-  return MetaspaceShared::is_heap_object_archiving_allowed();
+  return HeapShared::is_heap_object_archiving_allowed();
 WB_END
 
 
@@ -2185,6 +2200,9 @@ static JNINativeMethod methods[] = {
   {CC"getMethodStringOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
+  {CC"getDefaultArchivePath",             CC"()Ljava/lang/String;",
+                                                      (void*)&WB_GetDefaultArchivePath},
+  {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },

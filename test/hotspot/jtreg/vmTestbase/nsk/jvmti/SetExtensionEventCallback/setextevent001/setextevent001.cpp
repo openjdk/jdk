@@ -48,8 +48,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
     int i;
 
     NSK_DISPLAY0("Get extension events list\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetExtensionEvents, jvmti, &extCount, &extList))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetExtensionEvents(&extCount, &extList))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY1("  ... got count: %d\n", (int)extCount);
@@ -72,18 +71,14 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
 
             NSK_DISPLAY1("    ... setting callback: 0x%p\n", (void*)callbackExtensionEvent);
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(SetExtensionEventCallback, jvmti,
-                                        extList[i].extension_event_index,
-                                        callbackExtensionEvent))) {
+                    jvmti->SetExtensionEventCallback(extList[i].extension_event_index, callbackExtensionEvent))) {
                 success = NSK_FALSE;
             }
             NSK_DISPLAY0("    ... done\n");
 
             NSK_DISPLAY1("    ... clearing callback: 0x%p\n", (void*)NULL);
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(SetExtensionEventCallback, jvmti,
-                                        extList[i].extension_event_index,
-                                        NULL))) {
+                    jvmti->SetExtensionEventCallback(extList[i].extension_event_index, NULL))) {
                 success = NSK_FALSE;
             }
             NSK_DISPLAY0("    ... done\n");
@@ -91,8 +86,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
     }
 
     NSK_DISPLAY1("Deallocate extension events list: 0x%p\n", (void*)extList);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)extList))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)extList))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("  ... deallocated\n");

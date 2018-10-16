@@ -52,6 +52,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -2037,13 +2038,13 @@ void SystemDictionary::resolve_preloaded_classes(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // MetaspaceShared::fixup_mapped_heap_regions() fills the empty
+    // HeapShared::fixup_mapped_heap_regions() fills the empty
     // spaces in the archived heap regions and may use
     // SystemDictionary::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_wk_klasses_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    MetaspaceShared::fixup_mapped_heap_regions();
+    HeapShared::fixup_mapped_heap_regions();
 
     // Initialize the constant pool for the Object_class
     Object_klass()->constants()->restore_unshareable_info(CHECK);

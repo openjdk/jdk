@@ -56,7 +56,7 @@ volatile int success = 0;
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor(JNIEnv * jni,
         jclass klass, jobject obj) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, obj, TAG_VALUE))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, TAG_VALUE))) {
         return JNI_FALSE;
     }
 
@@ -95,12 +95,12 @@ int registerNativeMethods(JNIEnv* jni) {
     jint nativeMethodsNumber = 2;
 
     if (!NSK_JNI_VERIFY(jni, (appClass =
-        NSK_CPP_STUB2(FindClass, jni, ATTACH021_TARGET_APP_CLASS_NAME)) != NULL)) {
+        jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME)) != NULL)) {
         return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni,
-            (NSK_CPP_STUB4(RegisterNatives, jni, appClass, nativeMethods, nativeMethodsNumber) == 0))) {
+            (jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber) == 0))) {
         return NSK_FALSE;
     }
 
@@ -142,13 +142,13 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
     caps.can_generate_object_free_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ObjectFree = objectFreeHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

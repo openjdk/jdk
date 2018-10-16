@@ -71,17 +71,15 @@ void JNICALL garbageCollectionFinishHandler(jvmtiEnv *jvmti) {
         success = 0;
     }
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, gcFinishMonitor))) {
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(gcFinishMonitor))) {
 
         gcFinishEventReceived = 1;
 
-        if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                RawMonitorNotify, jvmti, gcFinishMonitor))) {
+        if (NSK_JVMTI_VERIFY(jvmti->RawMonitorNotify(gcFinishMonitor))) {
             auxiliaryThreadNotified = 1;
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, gcFinishMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(gcFinishMonitor))) {
             success = 0;
         }
     } else {
@@ -96,17 +94,15 @@ void JNICALL garbageCollectionFinishHandler(jvmtiEnv *jvmti) {
 void JNICALL auxiliaryThreadFunction(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     NSK_DISPLAY1("%s: auxiliary thread is running\n", agentName);
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, gcFinishMonitor))) {
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(gcFinishMonitor))) {
 
         if (!gcFinishEventReceived) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(
-                    RawMonitorWait, jvmti, gcFinishMonitor, 0))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(gcFinishMonitor, 0))) {
                 success = 0;
             }
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, gcFinishMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(gcFinishMonitor))) {
             success = 0;
         }
     } else {
@@ -122,8 +118,7 @@ int startAuxiliaryThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_VERIFY((thread = nsk_jvmti_aod_createThread(jni)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(
-            RunAgentThread, jvmti, thread, auxiliaryThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, auxiliaryThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY ))) {
         return NSK_FALSE;
     }
 
@@ -161,7 +156,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "GCFinishMonitor", &gcFinishMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("GCFinishMonitor", &gcFinishMonitor))) {
         return JNI_ERR;
     }
 
@@ -170,14 +165,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_garbage_collection_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.GarbageCollectionStart  = garbageCollectionStartHandler;
     eventCallbacks.GarbageCollectionFinish = garbageCollectionFinishHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

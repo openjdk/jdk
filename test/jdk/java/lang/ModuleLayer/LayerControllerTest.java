@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
- * @build LayerControllerTest ModuleUtils
+ * @library /test/lib
+ * @build LayerControllerTest
+ *        jdk.test.lib.util.ModuleUtils
  * @run testng LayerControllerTest
  * @summary Basic tests for java.lang.ModuleLayer.Controller
  */
@@ -34,6 +35,8 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.util.List;
 import java.util.Set;
+
+import jdk.test.lib.util.ModuleUtils;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
@@ -340,19 +341,21 @@ public class JemmyExt {
      * full dump and a screenshot of the whole screen.
      */
     public static void captureAll() {
-        PNGEncoder.captureScreen("failure.png", PNGEncoder.COLOR_MODE);
+        String lookAndFeelClassName = UIManager.getLookAndFeel().getClass().getSimpleName();
+        PNGEncoder.captureScreen("failure_" + lookAndFeelClassName + ".png", PNGEncoder.COLOR_MODE);
         try {
-            Dumper.dumpAll("dumpAll.xml");
+            Dumper.dumpAll("dumpAll_" + lookAndFeelClassName + ".xml");
         } catch (FileNotFoundException ex) {
             Logger.getLogger(JemmyExt.class.getName()).log(Level.SEVERE, null, ex);
         }
-        captureWindows();
+        captureWindows(lookAndFeelClassName);
     }
 
     /**
      * Captures each showing window image using Window.paint() method.
+     * @param lookAndFeelClassName
      */
-    private static void captureWindows() {
+    private static void captureWindows(String lookAndFeelClassName) {
         try {
             EventQueue.invokeAndWait(() -> {
                 Window[] windows = Window.getWindows();
@@ -367,7 +370,8 @@ public class JemmyExt {
                     g.dispose();
 
                     try {
-                        ImageIO.write(img, "png", new File("window" + index++ + ".png"));
+                        ImageIO.write(img, "png", new File("window_" + lookAndFeelClassName
+                                + "_" + index++ + ".png"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -406,7 +410,7 @@ public class JemmyExt {
                 Window[] windows = Window.getWindows();
                 int windowCount = 0;
                 for (Window w : windows) {
-                    if (w.getClass().equals(JWindow.class)) {
+                    if (w.getClass().equals(JWindow.class) && ((JWindow)w).isShowing()) {
                         windowCount++;
                     }
                 }
@@ -427,7 +431,7 @@ public class JemmyExt {
                 Window[] windows = Window.getWindows();
                 int windowIndex = 0;
                 for (Window w : windows) {
-                    if (w.getClass().equals(JWindow.class)) {
+                    if (w.getClass().equals(JWindow.class) && ((JWindow)w).isShowing()) {
                         if (windowIndex == index) {
                             return (JWindow) w;
                         }
@@ -565,7 +569,7 @@ public class JemmyExt {
 
         @Override
         public boolean checkComponent(Component comp) {
-            return comp.getClass().equals(clazz);
+            return comp.getClass().equals(clazz) && comp.isShowing();
         }
 
         @Override

@@ -156,14 +156,13 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
   phase = ZERO_INVOCATIONS_PHASE;
   for(i = 0; i < FILTER_COUNT; i++) {
-    if(!NSK_VERIFY(NULL != (klass = NSK_CPP_STUB2(FindClass, jni, types[i])))) {
+    if(!NSK_VERIFY(NULL != (klass = jni->FindClass(types[i])))) {
       NSK_COMPLAIN1("Can't find class %s.\n",types[i]);
       nsk_jvmti_setFailStatus();
       return;
     }
     NSK_DISPLAY1("Iterating through heap with klass-filter '%s'.\n",types[i]);
-    if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(IterateThroughHeap, jvmti,
-                                       0, klass, &primitive_callbacks, NULL))) {
+    if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
       nsk_jvmti_setFailStatus();
       return;
     }
@@ -171,13 +170,12 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
   phase = STATIC_FIELDS_FINDING_PHASE;
   NSK_DISPLAY0("Iterating through heap with klass-filter 'java/lang/Class'.\n");
-  if(!NSK_VERIFY(NULL != (klass = NSK_CPP_STUB2(FindClass, jni, "java/lang/Class")))) {
+  if(!NSK_VERIFY(NULL != (klass = jni->FindClass("java/lang/Class")))) {
     NSK_COMPLAIN0("Can't find class java/lang/Class.\n");
     nsk_jvmti_setFailStatus();
     return;
   }
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(IterateThroughHeap, jvmti,
-                                     0, klass, &primitive_callbacks, NULL))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -222,14 +220,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_tag_objects = 1;
   caps.can_generate_object_free_events = 1;
 
-  if(!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
     return JNI_ERR;
   }
 
   memset(&event_callbacks, 0, sizeof(jvmtiEventCallbacks));
-  if(!NSK_JVMTI_VERIFY(
-                       NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                     &event_callbacks, sizeof(jvmtiEventCallbacks)))) {
+  if(!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&event_callbacks, sizeof(jvmtiEventCallbacks)))) {
     return JNI_ERR;
   }
 

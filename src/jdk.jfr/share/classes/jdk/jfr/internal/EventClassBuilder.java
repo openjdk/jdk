@@ -70,7 +70,7 @@ public final class EventClassBuilder {
         endClass();
         byte[] bytes = classWriter.toByteArray();
         ASMToolkit.logASM(fullClassName, bytes);
-        return SecuritySupport.defineClass(type.getInternalName(), bytes, Event.class.getClassLoader()).asSubclass(Event.class);
+        return SecuritySupport.defineClass(Event.class, bytes).asSubclass(Event.class);
     }
 
     private void endClass() {

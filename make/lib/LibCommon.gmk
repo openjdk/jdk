@@ -61,24 +61,6 @@ else ifeq ($(TOOLCHAIN_TYPE), xlc)
   endif
 endif
 
-################################################################################
-# Find a library
-# Param 1 - module name
-# Param 2 - library name
-# Param 3 - optional subdir for library
-FindLib = \
-    $(call FindLibDirForModule, \
-        $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX)
-
-################################################################################
-# Find a static library
-# Param 1 - module name
-# Param 2 - library name
-# Param 3 - optional subdir for library
-FindStaticLib = \
-    $(addprefix $(SUPPORT_OUTPUTDIR)/native/, \
-        $(strip $1)$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(STATIC_LIBRARY_SUFFIX))
-
 # Put the libraries here.
 INSTALL_LIBRARIES_HERE := $(call FindLibDirForModule, $(MODULE))
 

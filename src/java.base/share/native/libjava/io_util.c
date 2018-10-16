@@ -201,7 +201,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     }
 }
 
-JNIEXPORT void JNICALL
+void
 throwFileNotFoundException(JNIEnv *env, jstring path)
 {
     char buf[256];

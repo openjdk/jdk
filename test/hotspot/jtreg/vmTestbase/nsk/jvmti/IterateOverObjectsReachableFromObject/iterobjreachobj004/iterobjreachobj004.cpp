@@ -52,13 +52,11 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 
     objCounter++;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(SetEnvironmentLocalStorage, st_jvmti, storage_data ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->SetEnvironmentLocalStorage(storage_data))) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetEnvironmentLocalStorage, st_jvmti, &storage_ptr))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetEnvironmentLocalStorage(&storage_ptr))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -89,29 +87,23 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         NSK_DISPLAY1("Find static field in debugee class: %s\n", objectFieldName);
-        if (!NSK_JNI_VERIFY(jni, (objectField =
-                NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                 objectFieldName, debugeeClassSignature)) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni, (objectField = jni->GetStaticFieldID(
+                debugeeClass, objectFieldName, debugeeClassSignature)) != NULL)) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         NSK_DISPLAY1("Find value of static field in debugee class: %s\n", objectFieldName);
         if (!NSK_JNI_VERIFY(jni, (object =
-                NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                 objectField)) != NULL)) {
+                jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         NSK_DISPLAY0("Calling IterateOverObjectsReachableFromObject with filter JVMTI_HEAP_OBJECT_EITHER\n");
         {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(IterateOverObjectsReachableFromObject,
-                        jvmti,
-                        object,
-                        objectReferenceCallback,
-                        &fakeUserData))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(
+                  object, objectReferenceCallback, &fakeUserData))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -173,8 +165,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

@@ -23,6 +23,7 @@
 #include <jni.h>
 #include <stdio.h>
 #include <time.h>
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 
 extern "C" {
@@ -35,7 +36,9 @@ static jfieldID objFieldId = NULL;
  * Signature: ([Z)Z
  */
 JNIEXPORT jchar JNICALL Java_nsk_share_gc_lock_jni_StringCriticalLocker_criticalNative
-(JNIEnv *env, jobject o, jlong enterTime, jlong sleepTime) {
+(JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
+        ExceptionCheckingJniEnvPtr env(jni_env);
+
         jsize size, i;
         jstring str;
         const jchar *pa;
@@ -44,22 +47,11 @@ JNIEXPORT jchar JNICALL Java_nsk_share_gc_lock_jni_StringCriticalLocker_critical
 
         if (objFieldId == NULL) {
                 jclass klass = env->GetObjectClass(o);
-                if (klass == NULL) {
-                        printf("Error: GetObjectClass returned NULL\n");
-                        return JNI_FALSE;
-                }
                 objFieldId = env->GetFieldID(klass, "obj", "Ljava/lang/Object;");
-                if (objFieldId == NULL) {
-                        printf("Error: GetFieldID returned NULL\n");
-                        return JNI_FALSE;
-                }
         }
         str = (jstring) env->GetObjectField(o, objFieldId);
-        if (str == NULL) {
-                printf("Error: GetObjectField returned NULL\n");
-                return JNI_FALSE;
-        }
         env->SetObjectField(o, objFieldId, NULL);
+
         size = env->GetStringLength(str);
         start_time = time(NULL);
         enterTime /= 1000;

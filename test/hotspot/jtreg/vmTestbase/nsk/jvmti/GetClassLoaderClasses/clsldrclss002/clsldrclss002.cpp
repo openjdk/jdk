@@ -58,18 +58,15 @@ static int prepare(JNIEnv* jni) {
     NSK_DISPLAY0("Obtain tested object from a static field of debugee class\n");
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (testedClass =
-            NSK_CPP_STUB2(FindClass, jni, CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find field: %s:%s\n", FIELD_NAME, FIELD_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (testedFieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, testedClass,
-                FIELD_NAME, FIELD_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(testedClass, FIELD_NAME, FIELD_SIGNATURE)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -82,8 +79,7 @@ static int lookup(jvmtiEnv* jvmti,
     jint i;
 
     for (i = 0; i < classCount && !found; i++) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti,
-                classes[i], &signature, &generic)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(classes[i], &signature, &generic)))
             break;
 
         if (signature != NULL && strcmp(signature, exp_sig) == 0) {
@@ -92,10 +88,10 @@ static int lookup(jvmtiEnv* jvmti,
         }
 
         if (signature != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+            jvmti->Deallocate((unsigned char*)signature);
 
         if (generic != NULL)
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic);
+            jvmti->Deallocate((unsigned char*)generic);
     }
 
     return found;
@@ -119,13 +115,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #1: check on default classloader\n");
     if (!NSK_JNI_VERIFY(jni, (testedClassLoader =
-            NSK_CPP_STUB3(GetStaticObjectField, jni,
-                testedClass, testedFieldID)) != NULL)) {
+            jni->GetStaticObjectField(testedClass, testedFieldID)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassLoaderClasses, jvmti,
-            testedClassLoader, &classCount, &classes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassLoaderClasses(testedClassLoader, &classCount, &classes))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -143,7 +137,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
     }
     if (classes != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)classes);
+        jvmti->Deallocate((unsigned char*)classes);
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -152,13 +146,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #2: check on custom classloader\n");
     if (!NSK_JNI_VERIFY(jni, (testedClassLoader =
-            NSK_CPP_STUB3(GetStaticObjectField, jni,
-                testedClass, testedFieldID)) != NULL)) {
+            jni->GetStaticObjectField(testedClass, testedFieldID)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassLoaderClasses, jvmti,
-            testedClassLoader, &classCount, &classes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassLoaderClasses(testedClassLoader, &classCount, &classes))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -183,9 +175,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
     }
     if (classes != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)classes);
+        jvmti->Deallocate((unsigned char*)classes);
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedClass));
+    NSK_TRACE(jni->DeleteGlobalRef(testedClass));
 
     if (!nsk_jvmti_resumeSync())
         return;

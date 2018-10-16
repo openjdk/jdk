@@ -124,7 +124,7 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP06_ap06t001Thread_setTag( JNIEnv* jni, jobject obj) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, obj, threadTag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, threadTag))) {
         nsk_jvmti_setFailStatus();
     } else {
         NSK_DISPLAY0("setTag: the tag was set for checked thread.");
@@ -153,34 +153,26 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         if (!NSK_JNI_VERIFY(jni, (fid =
-                NSK_CPP_STUB4(GetStaticFieldID, jni,
-                                                debugeeClass,
-                                                "thread",
-                                                THREAD_CLS_SIGNATURE)) != NULL )) {
+                jni->GetStaticFieldID(debugeeClass, "thread", THREAD_CLS_SIGNATURE)) != NULL)) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         if (!NSK_JNI_VERIFY(jni, (localRefThread =
-                NSK_CPP_STUB3(GetStaticObjectField, jni,
-                                                    debugeeClass,
-                                                    fid )) != NULL )) {
+                jni->GetStaticObjectField(debugeeClass, fid)) != NULL)) {
             NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'thread' field value\n\n");
             nsk_jvmti_setFailStatus();
             break;
         }
 
-        if (!NSK_JNI_VERIFY(jni, (globalRefThread =
-                 NSK_CPP_STUB2(NewGlobalRef, jni, localRefThread)) != NULL))
+        if (!NSK_JNI_VERIFY(jni, (globalRefThread = jni->NewGlobalRef(localRefThread)) != NULL))
             return;
 
         NSK_DISPLAY0("Calling IterateOverReachableObjects\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                                                           heapRootCallback,
-                                                           stackReferenceCallback,
-                                                           objectReferenceCallback,
-                                                           NULL /*user_data*/))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                                 stackReferenceCallback,
+                                                                 objectReferenceCallback,
+                                                                 NULL /*user_data*/))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -234,12 +226,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_tag_objects = 1;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)

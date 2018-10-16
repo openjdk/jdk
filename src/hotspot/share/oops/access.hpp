@@ -277,7 +277,7 @@ public:
   }
 
   static bool equals(oop o1, oop o2) {
-    verify_decorators<INTERNAL_EMPTY>();
+    verify_decorators<AS_RAW>();
     return AccessInternal::equals<decorators>(o1, o2);
   }
 };

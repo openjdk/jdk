@@ -123,14 +123,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_monitor_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.MonitorContendedEntered = monitorContentedEnteredHandler;
     eventCallbacks.MonitorContendedEnter = monitorContentedEnterHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 

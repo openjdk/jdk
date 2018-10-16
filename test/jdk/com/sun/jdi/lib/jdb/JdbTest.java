@@ -238,7 +238,7 @@ public abstract class JdbTest {
     }
 
     // gets full test source path for the given test filename
-    protected static String getTestSourcePath(String fileName) {
+    public static String getTestSourcePath(String fileName) {
         return Paths.get(System.getProperty("test.src")).resolve(fileName).toString();
     }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8011402
+ * @bug 8011402 8211969
  * @summary Move blacklisting certificate logic from hard code to data
  * @modules java.base/sun.security.util
  */
@@ -60,38 +60,20 @@ public class CheckBlacklistedCerts {
         Set<Certificate> blacklisted = new HashSet<>();
 
         // Assumes the full src is available
-        File[] blacklists = {
-            new File(System.getProperty("test.src"),
-                "../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem"),
-            new File(System.getProperty("test.src"),
-                "../../../make/closed/data/blacklistedcertsconverter/blacklisted.certs.pem")
-        };
-
-        // Is this an OPENJDK build?
-        String prop = System.getProperty("java.runtime.name");
-        if (prop != null && prop.startsWith("OpenJDK")) {
-            System.out.println("This is a OpenJDK build.");
-            blacklists = Arrays.copyOf(blacklists, 1);
-        }
+        File blacklist = new File(System.getProperty("test.src"),
+                "../../../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem");
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        for (File blacklist: blacklists) {
-            System.out.print("Check for " + blacklist + ": ");
-            if (!blacklist.exists()) {
-                System.out.println("does not exist");
-            } else {
-                try (FileInputStream fis = new FileInputStream(blacklist)) {
-                    Collection<? extends Certificate> certs
-                            = cf.generateCertificates(fis);
-                    System.out.println(certs.size());
-                    for (Certificate c: certs) {
-                        blacklisted.add(c);
-                        X509Certificate cert = ((X509Certificate)c);
-                        if (!UntrustedCertificates.isUntrusted(cert)) {
-                            System.out.println(cert.getSubjectDN() + " is trusted");
-                            failed = true;
-                        }
-                    }
+        try (FileInputStream fis = new FileInputStream(blacklist)) {
+            Collection<? extends Certificate> certs
+                    = cf.generateCertificates(fis);
+            System.out.println(certs.size());
+            for (Certificate c: certs) {
+                blacklisted.add(c);
+                X509Certificate cert = ((X509Certificate)c);
+                if (!UntrustedCertificates.isUntrusted(cert)) {
+                    System.out.println(cert.getSubjectDN() + " is trusted");
+                    failed = true;
                 }
             }
         }

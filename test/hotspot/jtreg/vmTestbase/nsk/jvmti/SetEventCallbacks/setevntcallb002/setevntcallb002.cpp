@@ -145,8 +145,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
     NSK_DISPLAY0(">>> Testcase #2: Set NULL for events callbacks\n");
     {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti, NULL, 0))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(NULL, 0))) {
             nsk_jvmti_setFailStatus();
         }
 
@@ -193,9 +192,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.ThreadStart = callbackThreadStart;
         eventCallbacks.ThreadEnd = callbackThreadEnd;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             nsk_jvmti_setFailStatus();
         } else {
             nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, eventsList, NULL);

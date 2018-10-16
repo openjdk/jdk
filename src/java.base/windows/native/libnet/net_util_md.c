@@ -903,7 +903,7 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
  * It returns the time left from the timeout, or -1 if it expired.
  */
 
-JNIEXPORT jint JNICALL
+jint
 NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 {
     jlong prevTime = JVM_CurrentTimeMillis(env, 0);

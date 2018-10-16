@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,7 @@
 package com.sun.tools.jdi;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import com.sun.jdi.ThreadGroupReference;
 import com.sun.jdi.ThreadReference;
@@ -44,12 +41,10 @@ class VMState {
 
     /*
      * Certain information can be cached only when the entire VM is
-     * suspended and there are no pending resumes. The fields below
-     * are used to track whether there are pending resumes. (There
-     * is an assumption that JDWP command ids are increasing over time.)
+     * suspended and there are no pending resumes. The field below
+     * is used to track whether there are pending resumes.
      */
-    private int lastCompletedCommandId = 0;   // synchronized (this)
-    private int lastResumeCommandId = 0;      // synchronized (this)
+    private final Set<Integer> pendingResumeCommands = Collections.synchronizedSet(new HashSet<>());
 
     // This is cached only while the VM is suspended
     private static class Cache {
@@ -97,12 +92,12 @@ class VMState {
      * A JDWP command has been completed (reply has been received).
      * Update data that tracks pending resume commands.
      */
-    synchronized void notifyCommandComplete(int id) {
-        lastCompletedCommandId = id;
+    void notifyCommandComplete(int id) {
+        pendingResumeCommands.remove(id);
     }
 
     synchronized void freeze() {
-        if (cache == null && (lastCompletedCommandId >= lastResumeCommandId)) {
+        if (cache == null && (pendingResumeCommands.isEmpty())) {
             /*
              * No pending resumes to worry about. The VM is suspended
              * and additional state can be cached. Notify all
@@ -115,7 +110,7 @@ class VMState {
 
     synchronized PacketStream thawCommand(CommandSender sender) {
         PacketStream stream = sender.send();
-        lastResumeCommandId = stream.id();
+        pendingResumeCommands.add(stream.id());
         thaw();
         return stream;
     }

@@ -20,9 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 #include <jni.h>
 #include <stdio.h>
 #include <time.h>
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 
 extern "C" {
@@ -35,28 +37,18 @@ static jfieldID objFieldId = NULL;
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jniref_JNIGlobalRefLocker_criticalNative
-  (JNIEnv *env, jobject o, jlong enterTime, jlong sleepTime) {
+  (JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
+        ExceptionCheckingJniEnvPtr env(jni_env);
+
         jobject obj;
         jobject gref;
         time_t start_time, current_time;
 
         if (objFieldId == NULL) {
                 jclass klass = env->GetObjectClass(o);
-                if (klass == NULL) {
-                        printf("Error: GetObjectClass returned NULL\n");
-                        return;
-                }
                 objFieldId = env->GetFieldID(klass, "obj", "Ljava/lang/Object;");
-                if (objFieldId == NULL) {
-                        printf("Error: GetFieldID returned NULL\n");
-                        return;
-                }
         }
         obj = env->GetObjectField(o, objFieldId);
-        if (obj == NULL) {
-                printf("Error: GetObjectField returned NULL\n");
-                return;
-        }
         env->SetObjectField(o, objFieldId, NULL);
         start_time = time(NULL);
         enterTime /= 1000;

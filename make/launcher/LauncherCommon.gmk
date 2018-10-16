@@ -135,7 +135,7 @@ define SetupBuildLauncherBody
     $1_LIBS += -lz
   endif
 
-  $1_WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
+  $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
@@ -181,11 +181,11 @@ define SetupBuildLauncherBody
   TARGETS += $$($1)
 
   ifeq ($(OPENJDK_TARGET_OS), aix)
-    $$(BUILD_LAUNCHER_$1): $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
+    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli_static)
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    $$(BUILD_LAUNCHER_$1): $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
+    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
         $$($1_WINDOWS_JLI_LIB)
   endif
 endef

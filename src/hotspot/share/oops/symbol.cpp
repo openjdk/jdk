@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -315,6 +316,22 @@ void Symbol::print_value_on(outputStream* st) const {
     }
     st->print("'");
   }
+}
+
+bool Symbol::is_valid(Symbol* s) {
+  if (!is_aligned(s, sizeof(MetaWord))) return false;
+  if ((size_t)s < os::min_page_size()) return false;
+
+  if (!os::is_readable_range(s, s + 1)) return false;
+
+  // Symbols are not allocated in Java heap.
+  if (Universe::heap()->is_in_reserved(s)) return false;
+
+  int len = s->utf8_length();
+  if (len < 0) return false;
+
+  jbyte* bytes = (jbyte*) s->bytes();
+  return os::is_readable_range(bytes, bytes + len);
 }
 
 // SymbolTable prints this in its statistics

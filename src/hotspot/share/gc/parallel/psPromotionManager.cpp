@@ -41,14 +41,7 @@
 #include "memory/padded.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/objArrayKlass.inline.hpp"
-#include "oops/objArrayOop.inline.hpp"
-#include "oops/oop.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
@@ -395,101 +388,6 @@ void PSPromotionManager::process_array_chunk(oop old) {
   } else {
     process_array_chunk_work<oop>(obj, start, end);
   }
-}
-
-class PushContentsClosure : public BasicOopIterateClosure {
-  PSPromotionManager* _pm;
- public:
-  PushContentsClosure(PSPromotionManager* pm) : _pm(pm) {}
-
-  template <typename T> void do_oop_work(T* p) {
-    if (PSScavenge::should_scavenge(p)) {
-      _pm->claim_or_forward_depth(p);
-    }
-  }
-
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
-};
-
-void InstanceKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-  PushContentsClosure cl(pm);
-  if (UseCompressedOops) {
-    oop_oop_iterate_oop_maps_reverse<narrowOop>(obj, &cl);
-  } else {
-    oop_oop_iterate_oop_maps_reverse<oop>(obj, &cl);
-  }
-}
-
-void InstanceMirrorKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-    // Note that we don't have to follow the mirror -> klass pointer, since all
-    // klasses that are dirty will be scavenged when we iterate over the
-    // ClassLoaderData objects.
-
-  InstanceKlass::oop_ps_push_contents(obj, pm);
-
-  PushContentsClosure cl(pm);
-  if (UseCompressedOops) {
-    oop_oop_iterate_statics<narrowOop>(obj, &cl);
-  } else {
-    oop_oop_iterate_statics<oop>(obj, &cl);
-  }
-}
-
-void InstanceClassLoaderKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-  InstanceKlass::oop_ps_push_contents(obj, pm);
-
-  // This is called by the young collector. It will already have taken care of
-  // all class loader data. So, we don't have to follow the class loader ->
-  // class loader data link.
-}
-
-template <class T>
-static void oop_ps_push_contents_specialized(oop obj, InstanceRefKlass *klass, PSPromotionManager* pm) {
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr_raw(obj);
-  if (PSScavenge::should_scavenge(referent_addr)) {
-    ReferenceProcessor* rp = PSScavenge::reference_processor();
-    if (rp->discover_reference(obj, klass->reference_type())) {
-      // reference discovered, referent will be traversed later.
-      klass->InstanceKlass::oop_ps_push_contents(obj, pm);
-      return;
-    } else {
-      // treat referent as normal oop
-      pm->claim_or_forward_depth(referent_addr);
-    }
-  }
-  // Treat discovered as normal oop
-  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
-  if (PSScavenge::should_scavenge(discovered_addr)) {
-    pm->claim_or_forward_depth(discovered_addr);
-  }
-  klass->InstanceKlass::oop_ps_push_contents(obj, pm);
-}
-
-void InstanceRefKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-  if (UseCompressedOops) {
-    oop_ps_push_contents_specialized<narrowOop>(obj, this, pm);
-  } else {
-    oop_ps_push_contents_specialized<oop>(obj, this, pm);
-  }
-}
-
-void ObjArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-  assert(obj->is_objArray(), "obj must be obj array");
-  PushContentsClosure cl(pm);
-  if (UseCompressedOops) {
-    oop_oop_iterate_elements<narrowOop>(objArrayOop(obj), &cl);
-  } else {
-    oop_oop_iterate_elements<oop>(objArrayOop(obj), &cl);
-  }
-}
-
-void TypeArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
-  assert(obj->is_typeArray(),"must be a type array");
-  ShouldNotReachHere();
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {

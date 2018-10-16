@@ -170,19 +170,10 @@ int ObjArrayKlass::oop_size(oop obj) const {
 }
 
 objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
-  if (length >= 0) {
-    if (length <= arrayOopDesc::max_array_length(T_OBJECT)) {
-      int size = objArrayOopDesc::object_size(length);
-      return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
-                                                           /* do_zero */ true, THREAD);
-    } else {
-      report_java_out_of_memory("Requested array size exceeds VM limit");
-      JvmtiExport::post_array_size_exhausted();
-      THROW_OOP_0(Universe::out_of_memory_error_array_size());
-    }
-  } else {
-    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
-  }
+  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_0);
+  int size = objArrayOopDesc::object_size(length);
+  return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
+                                                       /* do_zero */ true, THREAD);
 }
 
 static int multi_alloc_counter = 0;

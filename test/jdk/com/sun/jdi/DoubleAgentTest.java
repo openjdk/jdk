@@ -41,10 +41,8 @@ public class DoubleAgentTest {
             "test.classes", ".");
 
     public static void main(String[] args) throws Throwable {
-        int port = Utils.getFreePort();
-
         String jdwpOption = "-agentlib:jdwp=transport=dt_socket"
-                         + ",server=y" + ",suspend=n" + ",address=*:" + String.valueOf(port);
+                         + ",server=y" + ",suspend=n" + ",address=*:0";
 
         OutputAnalyzer output = ProcessTools.executeTestJvm("-classpath",
                 TEST_CLASSES,

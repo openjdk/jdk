@@ -445,6 +445,15 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
+size_t CollectedHeap::min_dummy_object_size() const {
+  return oopDesc::header_size();
+}
+
+size_t CollectedHeap::tlab_alloc_reserve() const {
+  size_t min_size = min_dummy_object_size();
+  return min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;
+}
+
 HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t requested_size,
                                            size_t* actual_size) {
@@ -585,4 +594,8 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 
 void CollectedHeap::deduplicate_string(oop str) {
   // Do nothing, unless overridden in subclass.
+}
+
+size_t CollectedHeap::obj_size(oop obj) const {
+  return obj->size();
 }

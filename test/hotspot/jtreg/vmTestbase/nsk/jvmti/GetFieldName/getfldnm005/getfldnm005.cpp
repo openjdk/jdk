@@ -92,8 +92,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
     char *sign;
     char *gen_sign;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB6(GetFieldName,
-            jvmti, testedCls, testedFld, &name, &sign, &gen_sign))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetFieldName(testedCls, testedFld, &name, &sign, &gen_sign))) {
         NSK_COMPLAIN1("TEST FAILED: unable to get field name & signature for \"%s\"\n\n",
             fld_sig[idx][0]);
         return STATUS_FAILED;
@@ -120,15 +119,12 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
                 sign, (gen_sign==NULL)?"NULL":gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti, (unsigned char*) name)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name)))
             totRes = STATUS_FAILED;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti, (unsigned char*) sign)))
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign)))
             totRes = STATUS_FAILED;
         if (gen_sign!=NULL)
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                    jvmti, (unsigned char*) gen_sign)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign)))
                 totRes = STATUS_FAILED;
     }
 
@@ -140,8 +136,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
         JNIEnv *jni, jobject obj) {
     int res = PASSED, i, instance;
     jfieldID testedFld = NULL;
-    jclass objCls = NSK_CPP_STUB2(GetObjectClass,
-        jni, obj);
+    jclass objCls = jni->GetObjectClass(obj);
 
     for (i=0; i<FLDS_NUM; i++) {
         instance = strcmp(fld_sig[i][1], "instance");
@@ -150,9 +145,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
             (instance==0)?"instance":"static",
              fld_sig[i][0]);
         if (instance==0) {
-            if (!NSK_JNI_VERIFY(jni, (testedFld = NSK_CPP_STUB4(
-                    GetFieldID, jni, objCls,
-                    fld_sig[i][0], fld_sig[i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != NULL)) {
                 NSK_COMPLAIN1("TEST FAILERE: unable to get field ID for \"%s\"\n\n",
                     fld_sig[i][0]);
                 res = STATUS_FAILED;
@@ -160,9 +153,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
             }
         }
         else
-            if (!NSK_JNI_VERIFY(jni, (testedFld = NSK_CPP_STUB4(
-                    GetStaticFieldID, jni, objCls,
-                    fld_sig[i][0], fld_sig[i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetStaticFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != NULL)) {
                 NSK_COMPLAIN1("TEST FAILERE: unable to get field ID for \"%s\"\n\n",
                     fld_sig[i][0]);
                 res = STATUS_FAILED;

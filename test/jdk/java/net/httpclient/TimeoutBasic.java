@@ -31,7 +31,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
-import jdk.testlibrary.SimpleSSLContext;
+import jdk.test.lib.net.SimpleSSLContext;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -46,8 +46,8 @@ import static java.lang.System.out;
 
 /**
  * @test
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Basic tests for response timeouts
  * @run main/othervm TimeoutBasic
  */
