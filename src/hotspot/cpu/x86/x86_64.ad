@@ -890,6 +890,15 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("# stack alignment check");
 #endif
   }
+  if (C->stub_function() != NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    st->print("\n\t");
+    st->print("cmpl    [r15_thread + #disarmed_offset], #disarmed_value\t");
+    st->print("\n\t");
+    st->print("je      fast_entry\t");
+    st->print("\n\t");
+    st->print("call    #nmethod_entry_barrier_stub\t");
+    st->print("\n\tfast_entry:");
+  }
   st->cr();
 }
 #endif
@@ -901,7 +910,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->frame_size_in_bytes();
   int bangsize = C->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, false);
+  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL);
 
   C->set_frame_complete(cbuf.insts_size());
 

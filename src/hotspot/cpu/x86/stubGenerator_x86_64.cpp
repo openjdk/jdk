@@ -28,6 +28,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -5194,6 +5195,83 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     return start;
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    __ push(-1); // cookie, this is used for writing the new rsp when deoptimizing
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // save rbp
+
+    // save c_rarg0, because we want to use that value.
+    // We could do without it but then we depend on the number of slots used by pusha
+    __ push(c_rarg0);
+
+    __ lea(c_rarg0, Address(rsp, wordSize * 3)); // 1 for cookie, 1 for rbp, 1 for c_rarg0 - this should be the return address
+
+    __ pusha();
+
+    // The method may have floats as arguments, and we must spill them before calling
+    // the VM runtime.
+    assert(Argument::n_float_register_parameters_j == 8, "Assumption");
+    const int xmm_size = wordSize * 2;
+    const int xmm_spill_size = xmm_size * Argument::n_float_register_parameters_j;
+    __ subptr(rsp, xmm_spill_size);
+    __ movdqu(Address(rsp, xmm_size * 7), xmm7);
+    __ movdqu(Address(rsp, xmm_size * 6), xmm6);
+    __ movdqu(Address(rsp, xmm_size * 5), xmm5);
+    __ movdqu(Address(rsp, xmm_size * 4), xmm4);
+    __ movdqu(Address(rsp, xmm_size * 3), xmm3);
+    __ movdqu(Address(rsp, xmm_size * 2), xmm2);
+    __ movdqu(Address(rsp, xmm_size * 1), xmm1);
+    __ movdqu(Address(rsp, xmm_size * 0), xmm0);
+
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(address*)>(BarrierSetNMethod::nmethod_stub_entry_barrier)), 1);
+
+    __ movdqu(xmm0, Address(rsp, xmm_size * 0));
+    __ movdqu(xmm1, Address(rsp, xmm_size * 1));
+    __ movdqu(xmm2, Address(rsp, xmm_size * 2));
+    __ movdqu(xmm3, Address(rsp, xmm_size * 3));
+    __ movdqu(xmm4, Address(rsp, xmm_size * 4));
+    __ movdqu(xmm5, Address(rsp, xmm_size * 5));
+    __ movdqu(xmm6, Address(rsp, xmm_size * 6));
+    __ movdqu(xmm7, Address(rsp, xmm_size * 7));
+    __ addptr(rsp, xmm_spill_size);
+
+    __ cmpl(rax, 1); // 1 means deoptimize
+    __ jcc(Assembler::equal, deoptimize_label);
+
+    __ popa();
+    __ pop(c_rarg0);
+
+    __ leave();
+
+    __ addptr(rsp, 1 * wordSize); // cookie
+    __ ret(0);
+
+
+    __ BIND(deoptimize_label);
+
+    __ popa();
+    __ pop(c_rarg0);
+
+    __ leave();
+
+    // this can be taken out, but is good for verification purposes. getting a SIGSEGV
+    // here while still having a correct stack is valuable
+    __ testptr(rsp, Address(rsp, 0));
+
+    __ movptr(rsp, Address(rsp, 0)); // new rsp was written in the barrier
+    __ jmp(Address(rsp, -1 * wordSize)); // jmp target should be callers verified_entry_point
+
+    return start;
+  }
+
    /**
    *  Arguments:
    *
@@ -5831,6 +5909,11 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
+
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    }
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
