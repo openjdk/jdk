@@ -252,7 +252,7 @@ INT32 MIDI_IN_GetNumDevices() {
 }
 
 INT32 getMidiInCaps(INT32 deviceID, MIDIINCAPSW* caps, INT32* err) {
-    (*err) = midiInGetDevCapsW(deviceID, caps, sizeof(MIDIINCAPS));
+    (*err) = midiInGetDevCapsW(deviceID, caps, sizeof(MIDIINCAPSW));
     return ((*err) == MMSYSERR_NOERROR);
 }
 
@@ -260,6 +260,7 @@ INT32 MIDI_IN_GetDeviceName(INT32 deviceID, char *name, UINT32 nameLength) {
     MIDIINCAPSW midiInCaps;
     INT32 err;
 
+    memset(&midiInCaps, 0, sizeof(midiInCaps));
     if (getMidiInCaps(deviceID, &midiInCaps, &err)) {
         UnicodeToUTF8AndCopy(name, midiInCaps.szPname, nameLength);
         return MIDI_SUCCESS;
@@ -284,6 +285,7 @@ INT32 MIDI_IN_GetDeviceVersion(INT32 deviceID, char *name, UINT32 nameLength) {
     MIDIINCAPSW midiInCaps;
     INT32 err = MIDI_NOT_SUPPORTED;
 
+    memset(&midiInCaps, 0, sizeof(midiInCaps));
     if (getMidiInCaps(deviceID, &midiInCaps, &err) && (nameLength>7)) {
         sprintf(name, "%d.%d", (midiInCaps.vDriverVersion & 0xFF00) >> 8, midiInCaps.vDriverVersion & 0xFF);
         return MIDI_SUCCESS;

@@ -35,7 +35,7 @@ public:
   G1EvacuationClosures(G1CollectedHeap* g1h,
                        G1ParScanThreadState* pss,
                        bool in_young_gc) :
-      _closures(g1h, pss, in_young_gc, /* must_claim_cld */ false) {}
+      _closures(g1h, pss, in_young_gc, /* cld_claim */ ClassLoaderData::_claim_none) {}
 
   OopClosure* weak_oops()   { return &_closures._oops; }
   OopClosure* strong_oops() { return &_closures._oops; }
@@ -73,8 +73,8 @@ class G1InitialMarkClosures : public G1EvacuationRootClosures {
 public:
   G1InitialMarkClosures(G1CollectedHeap* g1h,
                         G1ParScanThreadState* pss) :
-      _strong(g1h, pss, /* process_only_dirty_klasses */ false, /* must_claim_cld */ true),
-      _weak(g1h, pss,   /* process_only_dirty_klasses */ false, /* must_claim_cld */ true) {}
+      _strong(g1h, pss, /* process_only_dirty_klasses */ false, /* cld_claim */ ClassLoaderData::_claim_strong),
+      _weak(g1h, pss,   /* process_only_dirty_klasses */ false, /* cld_claim */ ClassLoaderData::_claim_strong) {}
 
   OopClosure* weak_oops()   { return &_weak._oops; }
   OopClosure* strong_oops() { return &_strong._oops; }

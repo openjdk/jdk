@@ -336,7 +336,7 @@ void ZDriver::run_gc_cycle(GCCause::Cause cause) {
   // Phase 2: Concurrent Mark
   {
     ZStatTimer timer(ZPhaseConcurrentMark);
-    ZHeap::heap()->mark();
+    ZHeap::heap()->mark(true /* initial */);
   }
 
   // Phase 3: Pause Mark End
@@ -345,7 +345,7 @@ void ZDriver::run_gc_cycle(GCCause::Cause cause) {
     while (!vm_operation(&cl)) {
       // Phase 3.5: Concurrent Mark Continue
       ZStatTimer timer(ZPhaseConcurrentMarkContinue);
-      ZHeap::heap()->mark();
+      ZHeap::heap()->mark(false /* initial */);
     }
   }
 

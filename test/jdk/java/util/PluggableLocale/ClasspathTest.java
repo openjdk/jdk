@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *
+ * @test
+ * @bug 6388652 8062588 8210406
+ * @summary Checks whether providers can be loaded from classpath.
+ * @library providersrc/foobarutils
+ *          providersrc/barprovider
+ * @build com.foobar.Utils
+ *        com.bar.*
+ * @run main/othervm -Djava.locale.providers=JRE,SPI ClasspathTest
  */
 
-import java.text.*;
-import java.util.*;
-import sun.util.resources.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public class ClasspathTest {
 

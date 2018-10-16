@@ -5453,7 +5453,7 @@ void MacroAssembler::reinit_heapbase() {
 #endif // _LP64
 
 // C2 compiled method's prolog code.
-void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b) {
+void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
 
   // WARNING: Initial instruction MUST be 5 bytes or longer so that
   // NativeJump::patch_verified_entry will be able to patch out the entry
@@ -5535,6 +5535,10 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
   }
 #endif
 
+  if (!is_stub) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(this);
+  }
 }
 
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers

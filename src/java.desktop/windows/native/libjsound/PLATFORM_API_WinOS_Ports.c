@@ -357,7 +357,7 @@ int lineHasControls(HMIXER handle, MIXERLINE* line, MIXERLINECONTROLS* controls)
 
 INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* description) {
     MIXERCAPSW mixerCaps;
-    if (mixerGetDevCapsW(mixerIndex, &mixerCaps, sizeof(MIXERCAPS)) == MMSYSERR_NOERROR) {
+    if (mixerGetDevCapsW(mixerIndex, &mixerCaps, sizeof(MIXERCAPSW)) == MMSYSERR_NOERROR) {
         UnicodeToUTF8AndCopy(description->name, mixerCaps.szPname, PORT_STRING_LENGTH);
         sprintf(description->version, "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
         strncpy(description->description, "Port Mixer", PORT_STRING_LENGTH-1);
@@ -368,9 +368,9 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* descr
 
 int getDestinationCount(HMIXER handle) {
     int ret = 0;
-    MIXERCAPS mixerCaps;
+    MIXERCAPSW mixerCaps;
 
-    if (mixerGetDevCaps((UINT_PTR) handle, &mixerCaps, sizeof(MIXERCAPS)) == MMSYSERR_NOERROR) {
+    if (mixerGetDevCapsW((UINT_PTR) handle, &mixerCaps, sizeof(MIXERCAPSW)) == MMSYSERR_NOERROR) {
         ret = mixerCaps.cDestinations;
     }
     return ret;

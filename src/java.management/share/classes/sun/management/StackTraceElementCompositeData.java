@@ -78,14 +78,16 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
         // STACK_TRACE_ELEMENT_ATTRIBUTES!
         final Object[] stackTraceElementItemValues = {
-            ste.getClassLoaderName(),
-            ste.getModuleName(),
-            ste.getModuleVersion(),
+            // JDK 5 attributes
             ste.getClassName(),
             ste.getMethodName(),
             ste.getFileName(),
             ste.getLineNumber(),
             ste.isNativeMethod(),
+            // JDK 9 attributes
+            ste.getClassLoaderName(),
+            ste.getModuleName(),
+            ste.getModuleVersion(),
         };
         try {
             return new CompositeDataSupport(STACK_TRACE_ELEMENT_COMPOSITE_TYPE,

@@ -106,6 +106,9 @@ char*  Arguments::SharedArchivePath             = NULL;
 AgentLibraryList Arguments::_libraryList;
 AgentLibraryList Arguments::_agentList;
 
+// These are not set by the JDK's built-in launchers, but they can be set by
+// programs that embed the JVM using JNI_CreateJavaVM. See comments around
+// JavaVMOption in jni.h.
 abort_hook_t     Arguments::_abort_hook         = NULL;
 exit_hook_t      Arguments::_exit_hook          = NULL;
 vfprintf_hook_t  Arguments::_vfprintf_hook      = NULL;

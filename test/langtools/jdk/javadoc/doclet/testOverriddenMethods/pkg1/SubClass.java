@@ -48,4 +48,22 @@ public class SubClass extends BaseClass {
   public void privateMethod() {}
 
   public void overridenMethodWithDocsToCopy() {}
+
+  /**
+   * {@inheritDoc}
+   */
+  @Deprecated
+  public void func1() {}
+
+  /**
+   * deprecated with comments
+   */
+  @Deprecated
+  public void func2() {}
+
+  /**
+   * {@inheritDoc}
+   */
+  public void func3() {}
+
 }

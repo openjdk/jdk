@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,11 @@ import java.util.List;
  *
  * <p>The objects that this factory produces will be based
  * on DOM and abide by the DOM interoperability requirements as defined in the
- * {@extLink security_guide_xmldsig_rqmts DOM Mechanism Requirements} section
- * of the API overview. See the
- * {@extLink security_guide_xmldsig_provider Service Providers} section of
- * the API overview for a list of standard mechanism types.
+ * <a href="package-summary.html#dom_req">DOM Mechanism Requirements</a>.
+ * See the {@code XMLSignatureFactory} section in the <a href=
+ * "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+ * Java Security Standard Algorithm Names Specification</a> for a list of
+ * standard mechanism types.
  *
  * <p><code>XMLSignatureFactory</code> implementations are registered and loaded
  * using the {@link java.security.Provider} mechanism.
@@ -180,8 +181,10 @@ public abstract class XMLSignatureFactory {
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the {@extLink security_guide_xmldsig_provider
-     *    Service Providers} section of the API overview for a list of
+     *    representation. See the {@code XMLSignatureFactory} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
      *    standard mechanism types.
      * @return a new <code>XMLSignatureFactory</code>
      * @throws NullPointerException if <code>mechanismType</code> is
@@ -225,8 +228,10 @@ public abstract class XMLSignatureFactory {
      * provider list.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the {@extLink security_guide_xmldsig_provider
-     *    Service Providers} section of the API overview for a list of
+     *    representation. See the {@code XMLSignatureFactory} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
      *    standard mechanism types.
      * @param provider the <code>Provider</code> object
      * @return a new <code>XMLSignatureFactory</code>
@@ -276,8 +281,10 @@ public abstract class XMLSignatureFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the {@extLink security_guide_xmldsig_provider
-     *    Service Providers} section of the API overview for a list of
+     *    representation. See the {@code XMLSignatureFactory} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
      *    standard mechanism types.
      * @param provider the string name of the provider
      * @return a new <code>XMLSignatureFactory</code>

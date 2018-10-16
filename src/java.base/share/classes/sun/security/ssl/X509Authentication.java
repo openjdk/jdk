@@ -170,7 +170,7 @@ enum X509Authentication implements SSLAuthentication {
             return null;
         }
 
-        // Used by TLS 1.3 only.
+        // Used by TLS 1.2 and TLS 1.3.
         private SSLPossession createClientPossession(
                 ClientHandshakeContext chc, String keyType) {
             X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
@@ -178,11 +178,13 @@ enum X509Authentication implements SSLAuthentication {
             if (chc.conContext.transport instanceof SSLSocketImpl) {
                 clientAlias = km.chooseClientAlias(
                         new String[] { keyType },
-                        null, (SSLSocket)chc.conContext.transport);
+                        chc.peerSupportedAuthorities,
+                        (SSLSocket)chc.conContext.transport);
             } else if (chc.conContext.transport instanceof SSLEngineImpl) {
                 clientAlias = km.chooseEngineClientAlias(
                         new String[] { keyType },
-                        null, (SSLEngine)chc.conContext.transport);
+                        chc.peerSupportedAuthorities,
+                        (SSLEngine)chc.conContext.transport);
             }
 
             if (clientAlias == null) {

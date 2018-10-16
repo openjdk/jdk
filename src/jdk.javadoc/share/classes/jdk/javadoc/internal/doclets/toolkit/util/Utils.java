@@ -30,6 +30,8 @@ import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.text.CollationKey;
 import java.text.Collator;
+import java.text.ParseException;
+import java.text.RuleBasedCollator;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
@@ -1483,7 +1485,7 @@ public class Utils {
             return false;
         }
 
-        if (!getBlockTags(m).isEmpty())
+        if (!getBlockTags(m).isEmpty() || isDeprecated(m))
             return false;
 
         List<? extends DocTree> fullBody = getFullBody(m);
@@ -1588,7 +1590,7 @@ public class Utils {
         private final Collator instance;
         private final int MAX_SIZE = 1000;
         private DocCollator(Locale locale, int strength) {
-            instance = Collator.getInstance(locale);
+            instance = createCollator(locale);
             instance.setStrength(strength);
 
             keys = new LinkedHashMap<String, CollationKey>(MAX_SIZE + 1, 0.75f, true) {
@@ -1606,6 +1608,21 @@ public class Utils {
 
         public int compare(String s1, String s2) {
             return getKey(s1).compareTo(getKey(s2));
+        }
+
+        private Collator createCollator(Locale locale) {
+            Collator baseCollator = Collator.getInstance(locale);
+            if (baseCollator instanceof RuleBasedCollator) {
+                // Extend collator to sort signatures with additional args and var-args in a well-defined order:
+                // () < (int) < (int, int) < (int...)
+                try {
+                    return new RuleBasedCollator(((RuleBasedCollator) baseCollator).getRules()
+                            + "& ')' < ',' < '.','['");
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return baseCollator;
         }
     }
 

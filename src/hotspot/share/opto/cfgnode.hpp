@@ -96,6 +96,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN *phase);
+  bool optimize_trichotomy(PhaseIterGVN* igvn);
 };
 
 //------------------------------JProjNode--------------------------------------

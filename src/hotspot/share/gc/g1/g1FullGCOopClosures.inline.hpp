@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1FULLGCOOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_G1_G1FULLGCOOPCLOSURES_INLINE_HPP
 
-#include "gc/g1/g1Allocator.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1601,13 +1601,14 @@ public final class Global extends Scope {
             }
         }
 
-        switch (nameStr) {
-        case "context":
+        if ("context".equals(nameStr)) {
             return sctxt;
-        case "engine":
-            return global.engine;
-        default:
-            break;
+        } else if ("engine".equals(nameStr)) {
+            // expose "engine" variable only when there is no security manager
+            // or when no class filter is set.
+            if (System.getSecurityManager() == null || global.getClassFilter() == null) {
+                return global.engine;
+            }
         }
 
         if (self == UNDEFINED) {

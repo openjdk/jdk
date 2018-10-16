@@ -323,7 +323,7 @@ class name : AllStatic {                                                        
     static void check(oop obj, const char* field_name, int offset);                                                                                            \
     static void compute_offsets(TRAPS);                                                                                                                        \
   public:                                                                                                                                                      \
-    static InstanceKlass* klass() { return SystemDictionary::name##_klass(); }
+  static InstanceKlass* klass() { return SystemDictionary::name##_klass_is_loaded() ? SystemDictionary::name##_klass() : NULL; }
 
 #define END_CLASS };
 

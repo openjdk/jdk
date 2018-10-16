@@ -133,7 +133,7 @@ public:
   bool is_object_strongly_live(uintptr_t addr) const;
   template <bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
-  void mark();
+  void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
 

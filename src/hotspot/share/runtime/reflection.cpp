@@ -503,7 +503,8 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
   }
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
-  if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+  if (SystemDictionary::reflect_MagicAccessorImpl_klass_is_loaded() &&
+      current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return ACCESS_OK;
   }
 

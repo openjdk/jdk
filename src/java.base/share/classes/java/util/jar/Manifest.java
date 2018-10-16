@@ -50,10 +50,13 @@ import sun.security.util.SecurityProperties;
 public class Manifest implements Cloneable {
 
     // manifest main attributes
-    private Attributes attr = new Attributes();
+    private final Attributes attr = new Attributes();
 
     // manifest entries
-    private Map<String, Attributes> entries = new HashMap<>();
+    private final Map<String, Attributes> entries = new HashMap<>();
+
+    // associated JarVerifier, not null when called by JarFile::getManifest.
+    private final JarVerifier jv;
 
     // name of the corresponding jar archive if available.
     private final String jarFilename;
@@ -63,6 +66,7 @@ public class Manifest implements Cloneable {
      */
     public Manifest() {
         jarFilename = null;
+        jv = null;
     }
 
     /**
@@ -72,8 +76,7 @@ public class Manifest implements Cloneable {
      * @throws IOException if an I/O error has occurred
      */
     public Manifest(InputStream is) throws IOException {
-        this();
-        read(is);
+        this(null, is, null);
     }
 
     /**
@@ -84,8 +87,17 @@ public class Manifest implements Cloneable {
      * @throws IOException if an I/O error has occured
      */
     Manifest(InputStream is, String jarFilename) throws IOException {
+        this(null, is, jarFilename);
+    }
+
+    /**
+     * Constructs a new Manifest from the specified input stream
+     * and associates it with a JarVerifier.
+     */
+    Manifest(JarVerifier jv, InputStream is, String jarFilename) throws IOException {
         read(is);
         this.jarFilename = jarFilename;
+        this.jv = jv;
     }
 
     /**
@@ -94,9 +106,10 @@ public class Manifest implements Cloneable {
      * @param man the Manifest to copy
      */
     public Manifest(Manifest man) {
-        this();
         attr.putAll(man.getMainAttributes());
         entries.putAll(man.getEntries());
+        jarFilename = null;
+        jv = man.jv;
     }
 
     /**
@@ -144,6 +157,27 @@ public class Manifest implements Cloneable {
      */
     public Attributes getAttributes(String name) {
         return getEntries().get(name);
+    }
+
+    /**
+     * Returns the Attributes for the specified entry name, if trusted.
+     *
+     * @param name entry name
+     * @return returns the same result as {@link #getAttributes(String)}
+     * @throws SecurityException if the associated jar is signed but this entry
+     *      has been modified after signing (i.e. the section in the manifest
+     *      does not exist in SF files of all signers).
+     */
+    Attributes getTrustedAttributes(String name) {
+        // Note: Before the verification of MANIFEST.MF/.SF/.RSA files is done,
+        // jv.isTrustedManifestEntry() isn't able to detect MANIFEST.MF change.
+        // Users of this method should call SharedSecrets.javaUtilJarAccess()
+        // .ensureInitialization() first.
+        Attributes result = getAttributes(name);
+        if (result != null && jv != null && ! jv.isTrustedManifestEntry(name)) {
+            throw new SecurityException("Untrusted manifest entry: " + name);
+        }
+        return result;
     }
 
     /**

@@ -71,8 +71,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
             return;
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(Allocate,
-                jvmti_env, class_data_len, &klass_bytes)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, &klass_bytes)))
             nsk_jvmti_setFailStatus();
 
         else {
@@ -175,8 +174,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
 
     return JNI_OK;

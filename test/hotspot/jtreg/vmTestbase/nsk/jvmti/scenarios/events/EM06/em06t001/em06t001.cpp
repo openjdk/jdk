@@ -60,26 +60,24 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
     jstring jclassName;
     const char *className;
 
-    if (!NSK_JNI_VERIFY(jni_env, (classObject =
-            NSK_CPP_STUB2(GetObjectClass, jni_env, klass)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(klass)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            NSK_CPP_STUB4(GetMethodID, jni_env, classObject,
-                        "getName", "()Ljava/lang/String;")) != NULL)) {
+            jni_env->GetMethodID(classObject, "getName", "()Ljava/lang/String;")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    jclassName = (jstring) NSK_CPP_STUB3(CallObjectMethod, jni_env, klass, methodID);
+    jclassName = (jstring) jni_env->CallObjectMethod(klass, methodID);
 
-    className = NSK_CPP_STUB3(GetStringUTFChars, jni_env, jclassName, 0);
+    className = jni_env->GetStringUTFChars(jclassName, 0);
 
     if ( className != NULL && (strcmp(className, EXPECTED_CLASS_NAME)==0) ) {
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
             nsk_jvmti_setFailStatus();
 
         switch (event) {
@@ -92,12 +90,12 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
                 nsk_jvmti_setFailStatus();
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
             nsk_jvmti_setFailStatus();
 
     }
 
-    NSK_CPP_STUB3(ReleaseStringUTFChars, jni_env, jclassName, className);
+    jni_env->ReleaseStringUTFChars(jclassName, className);
 }
 
 JNIEXPORT void JNICALL
@@ -116,9 +114,7 @@ cbClassPrepare(jvmtiEnv* jvmti, JNIEnv* jni_env, jthread thread, jclass klass) {
 
 static int
 enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, enable,
-                                            event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -171,10 +167,7 @@ setCallBacks() {
     eventCallbacks.ClassLoad    = cbClassLoad;
     eventCallbacks.ClassPrepare = cbClassPrepare;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -186,8 +179,7 @@ setCallBacks() {
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -230,8 +222,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!nsk_jvmti_resumeSync())
         return;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }

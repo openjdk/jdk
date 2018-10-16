@@ -70,14 +70,7 @@ jclass JNICALL MyFindClass(JNIEnv *env, const char *name) {
 static jvmtiPhase getVMPhase(jvmtiEnv *jvmti) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                GetPhase
-                , jvmti
-                , &phase
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         exit(NSK_STATUS_FAILED);
 
     return phase;
@@ -89,14 +82,8 @@ static void doRedirect(jvmtiEnv *jvmti, jvmtiPhase phase) {
     NSK_DISPLAY0("doRedirect: obtaining the JNI function table ...\n");
 
     // Store original function table
-    if (!NSK_VERIFY(
-                (err = NSK_CPP_STUB2(
-                    GetJNIFunctionTable
-                    , jvmti
-                    , &orig_jni_functions
-                    )) == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE
-            )
-       )
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (!NSK_VERIFY((err == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE)))
     {
         NSK_COMPLAIN2("TEST FAILED: failed to get original JNI function table during %s: %s\n"
                      , TranslatePhase(phase)
@@ -116,13 +103,7 @@ static void doRedirect(jvmtiEnv *jvmti, jvmtiPhase phase) {
 
     // Get a duplicate of the function table for future modification
     if (!NSK_VERIFY(
-            (err = NSK_CPP_STUB2(
-                GetJNIFunctionTable
-                , jvmti
-                , &redir_jni_functions
-                )) == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE
-            )
-       )
+            (err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE))
     {
         NSK_COMPLAIN2("TEST FAILED: failed to get JNI function table for interception during %s: %s\n"
                      , TranslatePhase(phase)
@@ -148,13 +129,7 @@ static void doRedirect(jvmtiEnv *jvmti, jvmtiPhase phase) {
 
     // Set new JNI function table
     if (!NSK_VERIFY(
-            (err = NSK_CPP_STUB2(
-                SetJNIFunctionTable
-                , jvmti
-                , redir_jni_functions
-                )) == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE
-            )
-       )
+            (err = jvmti->SetJNIFunctionTable(redir_jni_functions)) == JVMTI_ERROR_NONE || phase != JVMTI_PHASE_LIVE))
     {
         NSK_COMPLAIN2("TEST FAILED: failed to set redirected JNI function table during %s: %s\n"
                      , TranslatePhase(phase)
@@ -178,14 +153,7 @@ static void doRestore(jvmtiEnv *jvmti) {
     NSK_DISPLAY0("doRestore: restoring the original JNI function table ...\n");
 
     // Set new JNI function table
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                SetJNIFunctionTable
-                , jvmti
-                , orig_jni_functions
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetJNIFunctionTable(orig_jni_functions)))
     {
         NSK_COMPLAIN0("TEST FAILED: failed to restore original JNI function table\n");
 
@@ -198,14 +166,7 @@ static void doRestore(jvmtiEnv *jvmti) {
 
 /* ====================================================================== */
 static void lock(jvmtiEnv *jvmti) {
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                RawMonitorEnter
-                , jvmti
-                , eventLock
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventLock)))
     {
         result = NSK_STATUS_FAILED;
         exit(NSK_STATUS_FAILED);
@@ -214,14 +175,7 @@ static void lock(jvmtiEnv *jvmti) {
 
 /* ====================================================================== */
 static void unlock(jvmtiEnv *jvmti) {
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(
-                RawMonitorExit
-                , jvmti
-                , eventLock
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventLock)))
     {
         result = NSK_STATUS_FAILED;
         exit(NSK_STATUS_FAILED);
@@ -239,15 +193,11 @@ static void checkCall(JNIEnv *env
     jclass cls;
 
     NSK_TRACE(
-        (cls = NSK_CPP_STUB2(
-                FindClass
-                , env
-                , classSig
-                ))
+        (cls = env->FindClass(classSig))
         );
 
     NSK_TRACE(
-        NSK_CPP_STUB1(ExceptionClear, env)
+        env->ExceptionClear()
         );
 
     // The check should pass if the actual number of invocations is not less that the expected number (fnd_calls >= exFndCalls).
@@ -329,15 +279,7 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *env) {
 
     (void) memset(&callbacks, 0, sizeof(callbacks));
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(
-                SetEventCallbacks
-                , jvmti
-                , &callbacks
-                , sizeof(callbacks)
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         result = NSK_STATUS_FAILED;
 
     NSK_TRACE(unlock(jvmti));
@@ -373,28 +315,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
 
-    if (!NSK_VERIFY(
-            NSK_CPP_STUB3(
-                GetEnv
-                , jvm
-                , (void **) &jvmti
-                , JVMTI_VERSION_1_1
-                ) == JNI_OK
-            && jvmti != NULL
-            )
-       )
+    if (!NSK_VERIFY(jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) == JNI_OK && jvmti != NULL))
         return JNI_ERR;
 
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(
-                CreateRawMonitor
-                , jvmti
-                , "_event_lock"
-                , &eventLock
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_event_lock", &eventLock)))
         return JNI_ERR;
 
     NSK_DISPLAY1("a) Trying to intercept JNI functions during %s phase ...\n"
@@ -409,43 +334,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.VMInit = &VMInit;
     callbacks.VMDeath = &VMDeath;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(
-                SetEventCallbacks
-                , jvmti
-                , &callbacks
-                , sizeof(callbacks)
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
 
     NSK_DISPLAY0("Event callbacks are set\nEnabling events...\n");
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(
-                SetEventNotificationMode
-                , jvmti
-                , JVMTI_ENABLE
-                , JVMTI_EVENT_VM_INIT
-                , NULL
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
 
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(
-                SetEventNotificationMode
-                , jvmti
-                , JVMTI_ENABLE
-                , JVMTI_EVENT_VM_DEATH
-                , NULL
-                )
-            )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
 
     NSK_DISPLAY0("Events are enabled\n");

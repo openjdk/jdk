@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -293,6 +294,14 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
   return VirtualSpaceSummary(reserved_region().start(),
                              reserved_region().start() + capacity_in_words,
                              reserved_region().start() + max_capacity_in_words);
+}
+
+void ZCollectedHeap::safepoint_synchronize_begin() {
+  SuspendibleThreadSet::synchronize();
+}
+
+void ZCollectedHeap::safepoint_synchronize_end() {
+  SuspendibleThreadSet::desynchronize();
 }
 
 void ZCollectedHeap::prepare_for_verify() {

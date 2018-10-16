@@ -61,16 +61,13 @@ ClassUnload(jvmtiEnv jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass, .
     }
 
     /* Notify main agent thread */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorEnter, jvmti, eventMon))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventMon))) {
         nsk_jvmti_setFailStatus();
     }
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorNotify, jvmti, eventMon))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorNotify(eventMon))) {
         nsk_jvmti_setFailStatus();
     }
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(RawMonitorExit, jvmti, eventMon))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventMon))) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -84,8 +81,7 @@ jboolean isClassUnloadingEnabled() {
 
     NSK_DISPLAY0("Get extension functions list\n");
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetExtensionFunctions, jvmti, &extCount, &extList))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetExtensionFunctions(&extCount, &extList))) {
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
     }
@@ -117,8 +113,7 @@ jboolean enableClassUnloadEvent (jboolean enable) {
     jboolean found = JNI_FALSE;
 
     NSK_DISPLAY0("Get extension events list\n");
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetExtensionEvents, jvmti, &extCount, &extList))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetExtensionEvents(&extCount, &extList))) {
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
     }
@@ -128,8 +123,8 @@ jboolean enableClassUnloadEvent (jboolean enable) {
             found = JNI_TRUE;
 
             if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(SetExtensionEventCallback, jvmti, extList[i].extension_event_index,
-                     enable ? (jvmtiExtensionEvent)ClassUnload : NULL ))) {
+                    jvmti->SetExtensionEventCallback(extList[i].extension_event_index,
+                                                     enable ? (jvmtiExtensionEvent)ClassUnload : NULL ))) {
                 nsk_jvmti_setFailStatus();
                 return JNI_FALSE;
             }
@@ -175,16 +170,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             break;
 
         /* Wait for notifying from event's thread */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(RawMonitorEnter, jvmti, eventMon))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventMon))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(RawMonitorWait, jvmti, eventMon, timeout))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(eventMon, timeout))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(RawMonitorExit, jvmti, eventMon))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventMon))) {
             nsk_jvmti_setFailStatus();
         }
 
@@ -202,16 +194,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         /* Wait during 10 secs for notifying from event's thread */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(RawMonitorEnter, jvmti, eventMon))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventMon))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(RawMonitorWait, jvmti, eventMon, 10000))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(eventMon, 10000))) {
             nsk_jvmti_setFailStatus();
         }
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(RawMonitorExit, jvmti, eventMon))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventMon))) {
             nsk_jvmti_setFailStatus();
         }
 
@@ -230,7 +219,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     } while (0);
 
-    NSK_TRACE(NSK_CPP_STUB2(DestroyRawMonitor, jvmti, eventMon));
+    NSK_TRACE(jvmti->DestroyRawMonitor(eventMon));
 
     NSK_DISPLAY0("Let debugee to finish\n");
     if (!NSK_VERIFY(nsk_jvmti_resumeSync()))
@@ -262,8 +251,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "eventMon", &eventMon))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("eventMon", &eventMon))) {
         return JNI_ERR;
     }
 

@@ -39,8 +39,7 @@
 #include "utilities/debug.hpp"
 
 inline void MetadataVisitingOopIterateClosure::do_cld(ClassLoaderData* cld) {
-  bool claim = true;  // Must claim the class loader data before processing.
-  cld->oops_do(this, claim);
+  cld->oops_do(this, ClassLoaderData::_claim_strong);
 }
 
 inline void MetadataVisitingOopIterateClosure::do_klass(Klass* k) {

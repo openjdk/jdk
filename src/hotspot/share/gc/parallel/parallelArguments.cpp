@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +51,7 @@ void ParallelArguments::initialize() {
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
   FLAG_SET_DEFAULT(ParallelGCThreads,
-                   Abstract_VM_Version::parallel_worker_threads());
+                   VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     jio_fprintf(defaultStream::error_stream(),
         "The Parallel GC can not be combined with -XX:ParallelGCThreads=0\n");

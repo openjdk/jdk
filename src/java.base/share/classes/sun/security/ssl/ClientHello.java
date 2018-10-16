@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -507,6 +508,23 @@ final class ClientHello {
                             session = null;
                         }
                     }
+                }
+            }
+
+            // ensure that the endpoint identification algorithm matches the
+            // one in the session
+            String identityAlg = chc.sslConfig.identificationProtocol;
+            if (session != null && identityAlg != null) {
+                String sessionIdentityAlg =
+                    session.getIdentificationProtocol();
+                if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+                    if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.finest("Can't resume, endpoint id" +
+                            " algorithm does not match, requested: " +
+                            identityAlg + ", cached: " + sessionIdentityAlg);
+                    }
+                    session = null;
                 }
             }
 
@@ -1008,6 +1026,23 @@ final class ClientHello {
                                 "Can't resume, " +
                                 "the session cipher suite is absent");
                         }
+                    }
+                }
+
+                // ensure that the endpoint identification algorithm matches the
+                // one in the session
+                String identityAlg = shc.sslConfig.identificationProtocol;
+                if (resumingSession && identityAlg != null) {
+                    String sessionIdentityAlg =
+                        previous.getIdentificationProtocol();
+                    if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+                        if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.finest("Can't resume, endpoint id" +
+                            " algorithm does not match, requested: " +
+                            identityAlg + ", cached: " + sessionIdentityAlg);
+                        }
+                        resumingSession = false;
                     }
                 }
 

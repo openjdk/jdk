@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *
+ * @test
+ * @bug 4052440 8062588 8165804 8210406
+ * @summary BreakIteratorProvider tests
+ * @library providersrc/foobarutils
+ *          providersrc/fooprovider
+ * @modules java.base/sun.util.locale.provider
+ *          java.base/sun.util.resources
+ * @build com.foobar.Utils
+ *        com.foo.*
+ * @run main/othervm -Djava.locale.providers=JRE,SPI BreakIteratorProviderTest
  */
 
-import java.text.*;
-import java.util.*;
-import sun.util.locale.provider.*;
+import java.text.BreakIterator;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Set;
+
+import com.foo.BreakIteratorProviderImpl;
+
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 public class BreakIteratorProviderTest extends ProviderTest {
 
-    com.foo.BreakIteratorProviderImpl bip = new com.foo.BreakIteratorProviderImpl();
+    BreakIteratorProviderImpl bip = new BreakIteratorProviderImpl();
     List<Locale> availloc = Arrays.asList(BreakIterator.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(bip.getAvailableLocales());
     List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
     List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getBreakIteratorProvider().getAvailableLocales());
-
-    private static final int CHARACTER_INDEX = 0;
-    private static final int WORD_INDEX = 1;
-    private static final int LINE_INDEX = 2;
-    private static final int SENTENCE_INDEX = 3;
 
     public static void main(String[] s) {
         new BreakIteratorProviderTest();

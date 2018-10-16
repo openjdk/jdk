@@ -66,6 +66,15 @@ public class HelloClasslist {
         Stream.of(helloWorld.split(","))
               .forEach(System.out::println);
 
+        // Common concatenation patterns
+        String const_I = "string" + args.length;
+        String const_S = "string" + String.valueOf(args.length);
+        String S_const = String.valueOf(args.length) + "string";
+        String S_S     = String.valueOf(args.length) + String.valueOf(args.length);
+        String const_J = "string" + System.currentTimeMillis();
+        String I_const = args.length + "string";
+        String J_const = System.currentTimeMillis() + "string";
+
         String newDate = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
                 LocalDateTime.now(ZoneId.of("GMT")));
 

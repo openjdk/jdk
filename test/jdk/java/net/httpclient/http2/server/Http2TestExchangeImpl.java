@@ -129,7 +129,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     @Override
     public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
         this.responseLength = responseLength;
-        if (responseLength > 0 || responseLength < 0) {
+        if (responseLength !=0 && rCode != 204) {
                 long clen = responseLength > 0 ? responseLength : 0;
             rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
         }

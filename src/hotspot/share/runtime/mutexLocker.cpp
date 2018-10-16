@@ -166,6 +166,16 @@ void assert_locked_or_safepoint(const Monitor * lock) {
   fatal("must own lock %s", lock->name());
 }
 
+// a weaker assertion than the above
+void assert_locked_or_safepoint_weak(const Monitor * lock) {
+  if (IgnoreLockingAssertions) return;
+  assert(lock != NULL, "Need non-NULL lock");
+  if (lock->is_locked()) return;
+  if (SafepointSynchronize::is_at_safepoint()) return;
+  if (!Universe::is_fully_initialized()) return;
+  fatal("must own lock %s", lock->name());
+}
+
 // a stronger assertion than the above
 void assert_lock_strong(const Monitor * lock) {
   if (IgnoreLockingAssertions) return;

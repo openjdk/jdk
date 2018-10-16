@@ -77,8 +77,7 @@ static void checkProps(jvmtiEnv *jvmti_env, const char *stepMsg) {
 
     NSK_DISPLAY1("%s: Getting system property keys ...\n",
         stepMsg);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetSystemProperties,
-            jvmti_env, &count, &propKeys))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetSystemProperties(&count, &propKeys))) {
         result = STATUS_FAILED;
         return;
     }
@@ -94,8 +93,7 @@ static void checkProps(jvmtiEnv *jvmti_env, const char *stepMsg) {
     for (i=0; i< count; i++) {
         NSK_DISPLAY2("%d) getting property for the key \"%s\":\n",
             i+1, propKeys[i]);
-       if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetSystemProperty,
-               jvmti_env, (const char*) propKeys[i], &prop))) {
+       if (!NSK_JVMTI_VERIFY(jvmti_env->GetSystemProperty((const char*) propKeys[i], &prop))) {
            result = STATUS_FAILED;
            return;
         }
@@ -105,23 +103,20 @@ static void checkProps(jvmtiEnv *jvmti_env, const char *stepMsg) {
         foundProps += findProp(propKeys[i]);
 
         NSK_DISPLAY0("\tdeallocating system property\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti_env, (unsigned char*) prop))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) prop))) {
             result = STATUS_FAILED;
             return;
         }
 
         NSK_DISPLAY0("\tdeallocating the system property key\n\n");
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti_env, (unsigned char*) propKeys[i]))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) propKeys[i]))) {
             result = STATUS_FAILED;
             return;
         }
     }
 
 /*    NSK_DISPLAY0("Deallocating the property key array ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-            jvmti_env, (unsigned char*) &propKeys))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) &propKeys))) {
         result = STATUS_FAILED;
         return;
     }*/
@@ -185,17 +180,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMInit = &VMInit;
     callbacks.VMDeath = &VMDeath;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling events ...\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
 
     NSK_DISPLAY0("enabling events done\n\n");

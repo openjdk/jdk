@@ -280,7 +280,7 @@ public:
 // We pick the values as 3 bits; the low order 2 bits we compare against the
 // condition codes, the high bit flips the sense of the result.
 struct BoolTest {
-  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, overflow = 2, no_overflow = 6, illegal = 8 };
+  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, overflow = 2, no_overflow = 6, never = 8, illegal = 9 };
   mask _test;
   BoolTest( mask btm ) : _test(btm) {}
   const Type *cc2logical( const Type *CC ) const;
@@ -293,6 +293,7 @@ struct BoolTest {
   bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
   bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
   void dump_on(outputStream *st) const;
+  mask merge(BoolTest other) const;
 };
 
 //------------------------------BoolNode---------------------------------------

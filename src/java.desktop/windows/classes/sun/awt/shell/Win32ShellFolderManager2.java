@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,21 +387,30 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return null;
     }
 
-    private File checkFile(File file) {
+    private static File checkFile(File file) {
         SecurityManager sm = System.getSecurityManager();
         return (sm == null || file == null) ? file : checkFile(file, sm);
     }
 
-    private File checkFile(File file, SecurityManager sm) {
+    private static File checkFile(File file, SecurityManager sm) {
         try {
             sm.checkRead(file.getPath());
+
+            if (file instanceof Win32ShellFolder2) {
+                Win32ShellFolder2 f = (Win32ShellFolder2)file;
+                if (f.isLink()) {
+                    Win32ShellFolder2 link = (Win32ShellFolder2)f.getLinkLocation();
+                    if (link != null)
+                        sm.checkRead(link.getPath());
+                }
+            }
             return file;
         } catch (SecurityException se) {
             return null;
         }
     }
 
-    private File[] checkFiles(File[] files) {
+    static File[] checkFiles(File[] files) {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || files == null || files.length == 0) {
             return files;
@@ -409,7 +418,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return checkFiles(Arrays.stream(files), sm);
     }
 
-    private File[] checkFiles(List<File> files) {
+    private static File[] checkFiles(List<File> files) {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || files.isEmpty()) {
             return files.toArray(new File[files.size()]);
@@ -417,7 +426,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return checkFiles(files.stream(), sm);
     }
 
-    private File[] checkFiles(Stream<File> filesStream, SecurityManager sm) {
+    private static File[] checkFiles(Stream<File> filesStream, SecurityManager sm) {
         return filesStream.filter((file) -> checkFile(file, sm) != null)
                 .toArray(File[]::new);
     }

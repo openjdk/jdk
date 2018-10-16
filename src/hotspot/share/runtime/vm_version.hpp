@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ class Abstract_VM_Version: AllStatic {
   // occurred.  Examines a variety of the hardware capabilities of
   // the platform to determine which features can be used to execute the
   // program.
-  static void initialize();
+  static void initialize() { }
 
   // This allows for early initialization of VM_Version information
   // that may be needed later in the initialization sequence but before

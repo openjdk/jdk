@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,11 @@ inline int PerfDataManager::constants_count() {
 }
 
 inline bool PerfDataManager::exists(const char* name) {
-  return _all->contains(name);
+  if (_all != NULL) {
+    return _all->contains(name);
+  } else {
+    return false;
+  }
 }
 
 #endif // SHARE_VM_RUNTIME_PERFDATA_INLINE_HPP

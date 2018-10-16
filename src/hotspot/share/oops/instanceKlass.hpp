@@ -1195,7 +1195,7 @@ public:
 
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Iterate over all oop fields in one oop map.
   template <typename T, class OopClosureType>
@@ -1205,7 +1205,7 @@ public:
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
  private:
   // Iterate over all oop fields in the oop maps.
@@ -1225,7 +1225,7 @@ public:
 
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
  private:
   // Iterate over all oop fields in one oop map.

@@ -33,7 +33,7 @@ class ZHeapIteratorBitMap;
 
 class ZHeapIterator : public StackObj {
   friend class ZHeapIteratorRootOopClosure;
-  friend class ZHeapIteratorPushOopClosure;
+  friend class ZHeapIteratorOopClosure;
 
 private:
   typedef ZAddressRangeMap<ZHeapIteratorBitMap*, ZPageSizeMinShift>         ZVisitMap;
@@ -44,14 +44,8 @@ private:
   ZVisitMap   _visit_map;
   const bool  _visit_referents;
 
-  size_t object_index_max() const;
-  size_t object_index(oop obj) const;
   ZHeapIteratorBitMap* object_map(oop obj);
-
   void push(oop obj);
-  void drain(ObjectClosure* cl);
-
-  bool visit_referents() const;
 
 public:
   ZHeapIterator(bool visit_referents);

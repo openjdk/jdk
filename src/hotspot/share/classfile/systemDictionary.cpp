@@ -1963,41 +1963,30 @@ void SystemDictionary::initialize(TRAPS) {
 
 // Compact table of directions on the initialization of klasses:
 static const short wk_init_info[] = {
-  #define WK_KLASS_INIT_INFO(name, symbol, option) \
-    ( ((int)vmSymbols::VM_SYMBOL_ENUM_NAME(symbol) \
-          << SystemDictionary::CEIL_LG_OPTION_LIMIT) \
-      | (int)SystemDictionary::option ),
+  #define WK_KLASS_INIT_INFO(name, symbol) \
+    ((short)vmSymbols::VM_SYMBOL_ENUM_NAME(symbol)),
+
   WK_KLASSES_DO(WK_KLASS_INIT_INFO)
   #undef WK_KLASS_INIT_INFO
   0
 };
 
-bool SystemDictionary::resolve_wk_klass(WKID id, int init_opt, TRAPS) {
+bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
-  int  info = wk_init_info[id - FIRST_WKID];
-  int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
+  int sid = wk_init_info[id - FIRST_WKID];
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
 
-  bool must_load;
+
 #if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    // If JVMCI is enabled we require its classes to be found.
-    must_load = (init_opt < SystemDictionary::Opt) || (init_opt == SystemDictionary::Jvmci);
-  } else
-#endif
-  {
-    must_load = (init_opt < SystemDictionary::Opt);
+  if (id >= FIRST_JVMCI_WKID) {
+    assert(EnableJVMCI, "resolve JVMCI classes only when EnableJVMCI is true");
   }
+#endif
 
   if ((*klassp) == NULL) {
-    Klass* k;
-    if (must_load) {
-      k = resolve_or_fail(symbol, true, CHECK_0); // load required class
-    } else {
-      k = resolve_or_null(symbol,       CHECK_0); // load optional klass
-    }
-    (*klassp) = (k == NULL) ? NULL : InstanceKlass::cast(k);
+    Klass* k = resolve_or_fail(symbol, true, CHECK_0);
+    (*klassp) = InstanceKlass::cast(k);
   }
   return ((*klassp) != NULL);
 }
@@ -2006,11 +1995,7 @@ void SystemDictionary::resolve_wk_klasses_until(WKID limit_id, WKID &start_id, T
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
   for (int id = (int)start_id; id < (int)limit_id; id++) {
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
-    int info = wk_init_info[id - FIRST_WKID];
-    int sid  = (info >> CEIL_LG_OPTION_LIMIT);
-    int opt  = (info & right_n_bits(CEIL_LG_OPTION_LIMIT));
-
-    resolve_wk_klass((WKID)id, opt, CHECK);
+    resolve_wk_klass((WKID)id, CHECK);
   }
 
   // move the starting value forward to the limit:

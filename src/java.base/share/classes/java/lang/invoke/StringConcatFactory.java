@@ -1588,28 +1588,47 @@ public final class StringConcatFactory {
 
                         Class<?> argClass = ptypes[ac];
                         MethodHandle lm = lengthMixer(argClass);
-                        MethodHandle cm = coderMixer(argClass);
 
-                        // Read this bottom up:
+                        // Read these bottom up:
 
-                        // 4. Drop old index and coder, producing ("new-index", "new-coder", <args>)
-                        mh = MethodHandles.dropArguments(mh, 2, int.class, byte.class);
+                        if (argClass.isPrimitive() && argClass != char.class) {
 
-                        // 3. Compute "new-index", producing ("new-index", "new-coder", "old-index", "old-coder", <args>)
-                        //    Length mixer needs old index, plus the appropriate argument
-                        mh = MethodHandles.foldArguments(mh, 0, lm,
-                                2, // old-index
-                                4 + ac // selected argument
-                        );
+                            // 3. Drop old index, producing ("new-index", "coder", <args>)
+                            mh = MethodHandles.dropArguments(mh, 1, int.class);
 
-                        // 2. Compute "new-coder", producing ("new-coder", "old-index", "old-coder", <args>)
-                        //    Coder mixer needs old coder, plus the appropriate argument.
-                        mh = MethodHandles.foldArguments(mh, 0, cm,
-                                2, // old-coder
-                                3 + ac // selected argument
-                        );
+                            // 2. Compute "new-index", producing ("new-index", "old-index", "coder", <args>)
+                            //    Length mixer needs old index, plus the appropriate argument
+                            mh = MethodHandles.foldArguments(mh, 0, lm,
+                                    1, // old-index
+                                    3 + ac // selected argument
+                            );
 
-                        // 1. The mh shape here is ("old-index", "old-coder", <args>)
+                            // 1. The mh shape here is ("old-index", "coder", <args>); we don't need to recalculate
+                            //    the coder for non-char primitive arguments
+
+                        } else {
+                            MethodHandle cm = coderMixer(argClass);
+
+                            // 4. Drop old index and coder, producing ("new-index", "new-coder", <args>)
+                            mh = MethodHandles.dropArguments(mh, 2, int.class, byte.class);
+
+                            // 3. Compute "new-index", producing ("new-index", "new-coder", "old-index", "old-coder", <args>)
+                            //    Length mixer needs old index, plus the appropriate argument
+                            mh = MethodHandles.foldArguments(mh, 0, lm,
+                                    2, // old-index
+                                    4 + ac // selected argument
+                            );
+
+                            // 2. Compute "new-coder", producing ("new-coder", "old-index", "old-coder", <args>)
+                            //    Coder mixer needs old coder, plus the appropriate argument.
+                            mh = MethodHandles.foldArguments(mh, 0, cm,
+                                    2, // old-coder
+                                    3 + ac // selected argument
+                            );
+
+                            // 1. The mh shape here is ("old-index", "old-coder", <args>)
+                        }
+
                         break;
                     default:
                         throw new StringConcatException("Unhandled tag: " + el.getTag());

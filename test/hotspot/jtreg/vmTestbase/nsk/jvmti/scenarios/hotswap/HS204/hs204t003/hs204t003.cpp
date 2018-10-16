@@ -51,27 +51,24 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
     className = NULL;
     generic   = NULL;
     redefineNumber=0;
-    if ( !NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti_env,
-                    klass, &className, &generic)) ) {
+    if ( !NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, &generic)) ) {
         NSK_DISPLAY0(" Agent :: Failed get class signature.\n");
         nsk_jvmti_agentFailed();
     } else {
         if( (strcmp(className, CLASS_NAME) == 0 ) ) {
             jfieldID fieldId;
-            if ( ! NSK_JNI_VERIFY(jni, (fieldId = NSK_CPP_STUB4(GetStaticFieldID,
-                                jni, klass, FIELDNAME, TYPE) ) != NULL ) ) {
+            if ( ! NSK_JNI_VERIFY(jni, (fieldId = jni->GetStaticFieldID(klass, FIELDNAME, TYPE) ) != NULL ) ) {
                     NSK_DISPLAY0(" Agent :: Failed to get FieldId.\n");
                     nsk_jvmti_agentFailed();
             } else {
-                if ( ! NSK_JVMTI_VERIFY( NSK_CPP_STUB3(SetFieldAccessWatch,
-                                jvmti_env, klass, fieldId) )  ) {
+                if ( ! NSK_JVMTI_VERIFY(jvmti_env->SetFieldAccessWatch(klass, fieldId) )  ) {
                     NSK_DISPLAY0(" Agent :: Failed to set watch point on a field.\n");
                     nsk_jvmti_agentFailed();
                 } else {
                     nsk_jvmti_enableNotification(jvmti_env, JVMTI_EVENT_FIELD_ACCESS, NULL);
                     if (! NSK_JNI_VERIFY(jni,
                                 ( watchFieldClass = (jclass)
-                                  NSK_CPP_STUB2(NewGlobalRef, jni, klass) )
+                                  jni->NewGlobalRef(klass) )
                                 != NULL ) ) {
                         NSK_DISPLAY0(" Agent :: Failed to get global reference for class.\n");
                         nsk_jvmti_agentFailed();
@@ -84,14 +81,14 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
     }
 
     if ( className != NULL ) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char *)className))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)className))) {
             NSK_DISPLAY1(" Agent :: #error failed to Deallocate className = %s.", className);
             nsk_jvmti_agentFailed();
         }
     }
 
     if ( generic != NULL ) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char *)generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)generic))) {
             NSK_DISPLAY1(" Agent :: #error failed to Deallocate class signature = %s.", generic);
             nsk_jvmti_agentFailed();
         }
@@ -116,8 +113,7 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
     if (redefineNumber != 0 ) {
         return;
     }
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti_env,
-                    field_klass, &className, &generic)) ) {
+    if ( ! NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(field_klass, &className, &generic)) ) {
         NSK_DISPLAY0(" Agent :: Failed get class signature.\n");
         nsk_jvmti_agentFailed();
     } else {
@@ -133,13 +129,13 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
                 nsk_jvmti_agentFailed();
             }
             NSK_DISPLAY0(" Agent :: Before attempting thread suspend.\n");
-            if ( ! NSK_JVMTI_VERIFY( NSK_CPP_STUB3(GetThreadInfo, jvmti_env, thread , &info)) ) {
+            if ( ! NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(thread, &info))) {
                 NSK_DISPLAY0(" Agent :: error getting thread info ");
                 nsk_jvmti_agentFailed();
             } else {
                 NSK_DISPLAY1(" Agent :: Thread Name = %s .\n", info.name);
             }
-            if ( ! NSK_JVMTI_VERIFY( NSK_CPP_STUB2(SuspendThread, jvmti_env, thread)) ) {
+            if ( ! NSK_JVMTI_VERIFY(jvmti_env->SuspendThread(thread))) {
                 NSK_DISPLAY0(" Agent :: Failed to suspend thread.\n");
                 nsk_jvmti_agentFailed();
             }
@@ -147,14 +143,14 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
     }
 
     if ( className != NULL ) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char *)className))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)className))) {
             NSK_DISPLAY1(" Agent :: #error failed to Deallocate className = %s.", className);
             nsk_jvmti_agentFailed();
         }
     }
 
     if ( generic != NULL ) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char *)generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)generic))) {
             NSK_DISPLAY1(" Agent :: #error failed to Deallocate class signature = %s.", generic);
             nsk_jvmti_agentFailed();
         }
@@ -173,8 +169,7 @@ JNIEXPORT jint JNI_OnLoad_hs204t003(JavaVM *jvm, char *options, void *reserved) 
 }
 #endif
 jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
-    if ( ! NSK_VERIFY ( JNI_OK == NSK_CPP_STUB3(GetEnv, vm,
-                    (void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
+    if ( ! NSK_VERIFY ( JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
         NSK_DISPLAY0("Agent :: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {
@@ -189,15 +184,14 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         caps.can_generate_field_access_events = 1;
         caps.can_pop_frame                    = 1;
         caps.can_suspend                      = 1;
-        if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB2( AddCapabilities, jvmti, &caps)) ) {
+        if ( ! NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
             NSK_DISPLAY0(" Agent :: Failed add required capabilities\n.");
             return JNI_ERR;
         }
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.ClassPrepare = callbackClassPrepare;
         eventCallbacks.FieldAccess  = callbackFieldAccess;
-        if (!NSK_JVMTI_VERIFY( NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                        &eventCallbacks, sizeof(eventCallbacks) ) ) ) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks) ) ) ) {
             NSK_DISPLAY0(" Agent :: Error occured while setting event call back \n");
             return JNI_ERR;
         }
@@ -213,28 +207,26 @@ Java_nsk_jvmti_scenarios_hotswap_HS204_hs204t003_hs204t003_popFrame(JNIEnv * jni
     jboolean retvalue;
     jint state;
     retvalue = JNI_FALSE;
-    if (! NSK_JVMTI_VERIFY( NSK_CPP_STUB3(GetThreadState, jvmti, thread, &state)) ){
+    if (! NSK_JVMTI_VERIFY(jvmti->GetThreadState(thread, &state))) {
         NSK_DISPLAY0(" Agent :: Error getting thread state.\n");
         nsk_jvmti_agentFailed();
     } else {
         if ( state & JVMTI_THREAD_STATE_SUSPENDED) {
             NSK_DISPLAY0(" Agent :: Thread state = JVMTI_THREAD_STATE_SUSPENDED.\n");
-            if ( ! NSK_JVMTI_VERIFY ( NSK_CPP_STUB2(PopFrame, jvmti, thread) ) ) {
+            if ( ! NSK_JVMTI_VERIFY ( jvmti->PopFrame(thread) ) ) {
                 NSK_DISPLAY0("#error Agent :: Jvmti failed to do popFrame.\n");
                 nsk_jvmti_agentFailed();
             } else {
-                if ( ! NSK_JVMTI_VERIFY ( NSK_CPP_STUB2(ResumeThread, jvmti, thread)) ) {
+                if ( ! NSK_JVMTI_VERIFY ( jvmti->ResumeThread(thread) ) ) {
                     NSK_DISPLAY0(" Agent :: Error occured in resuming a thread.\n");
                     nsk_jvmti_agentFailed();
                 } else {
-                    jfieldID fieldId;
-                    if ( ! NSK_JNI_VERIFY(jni, (fieldId = NSK_CPP_STUB4(GetStaticFieldID,
-                                jni, watchFieldClass, FIELDNAME, TYPE) ) != NULL ) ) {
+                    jfieldID fieldId = jni->GetStaticFieldID(watchFieldClass, FIELDNAME, TYPE);
+                    if ( ! NSK_JNI_VERIFY(jni, fieldId != NULL ) ) {
                         NSK_DISPLAY0(" Agent :: Failed to get FieldId before droping watchers.\n");
                         nsk_jvmti_agentFailed();
                     } else {
-                        if ( ! NSK_JVMTI_VERIFY ( NSK_CPP_STUB3(ClearFieldAccessWatch,
-                                        jvmti, watchFieldClass, fieldId)) ) {
+                        if ( ! NSK_JVMTI_VERIFY ( jvmti->ClearFieldAccessWatch(watchFieldClass, fieldId) ) ) {
                             NSK_DISPLAY0(" Agent :: failed to drop field watces.\n");
                             nsk_jvmti_agentFailed();
                         } else {

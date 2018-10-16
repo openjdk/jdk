@@ -31,15 +31,17 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JarArchive.gmk
+include SetupJavaCompilers.gmk
 
 ################################################################################
 # Create a jar with our generator class. Using a jar is intentional since it
 # will load more classes
 
-$(eval $(call SetupJarArchive, CLASSLIST_JAR, \
-    SRCS := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
+$(eval $(call SetupJavaCompilation, CLASSLIST_JAR, \
+    SETUP := GENERATE_JDKBYTECODE, \
+    SRC := $(TOPDIR)/make/jdk/src/classes, \
     INCLUDES := build/tools/classlist, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/classlist_classes, \
     JAR := $(SUPPORT_OUTPUTDIR)/classlist.jar, \
 ))
 

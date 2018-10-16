@@ -38,8 +38,8 @@
 ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   log_info(gc, init)("Initializing %s", ZGCName);
   log_info(gc, init)("Version: %s (%s)",
-                     Abstract_VM_Version::vm_release(),
-                     Abstract_VM_Version::jdk_debug_level());
+                     VM_Version::vm_release(),
+                     VM_Version::jdk_debug_level());
 
   // Early initialization
   ZAddressMasks::initialize();

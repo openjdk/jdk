@@ -29,6 +29,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -1045,6 +1046,13 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
     Method* method =  last_frame.method();
     int bci = method->bci_from(last_frame.bcp());
     nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (nm != NULL && bs_nm != NULL) {
+      // in case the transition passed a safepoint we need to barrier this again
+      if (!bs_nm->nmethod_osr_entry_barrier(nm)) {
+        nm = NULL;
+      }
+    }
   }
   if (nm != NULL && thread->is_interp_only_mode()) {
     // Normally we never get an nm if is_interp_only_mode() is true, because
@@ -1080,6 +1088,13 @@ IRT_ENTRY(nmethod*,
   assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
   nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, thread);
   assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (osr_nm != NULL && bs_nm != NULL) {
+    if (!bs_nm->nmethod_osr_entry_barrier(osr_nm)) {
+      osr_nm = NULL;
+    }
+  }
 
   if (osr_nm != NULL) {
     // We may need to do on-stack replacement which requires that no

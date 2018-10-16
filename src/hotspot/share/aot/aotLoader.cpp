@@ -137,6 +137,12 @@ void AOTLoader::initialize() {
       return;
     }
 
+#ifdef _WINDOWS
+    const char pathSep = ';';
+#else
+    const char pathSep = ':';
+#endif
+
     // Scan the AOTLibrary option.
     if (AOTLibrary != NULL) {
       const int len = (int)strlen(AOTLibrary);
@@ -147,7 +153,7 @@ void AOTLoader::initialize() {
         char* end = cp + len;
         while (cp < end) {
           const char* name = cp;
-          while ((*cp) != '\0' && (*cp) != '\n' && (*cp) != ',' && (*cp) != ':' && (*cp) != ';')  cp++;
+          while ((*cp) != '\0' && (*cp) != '\n' && (*cp) != ',' && (*cp) != pathSep) cp++;
           cp[0] = '\0';  // Terminate name
           cp++;
           load_library(name, true);

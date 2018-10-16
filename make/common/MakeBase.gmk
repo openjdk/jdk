@@ -656,8 +656,11 @@ dups = \
 
 # String equals
 equals = \
-    $(and $(findstring $(strip $1),$(strip $2)),\
-        $(findstring $(strip $2),$(strip $1)))
+    $(if $(strip $1)$(strip $2),$(strip \
+      $(and $(findstring $(strip $1),$(strip $2)),\
+        $(findstring $(strip $2),$(strip $1)))), \
+      true \
+    )
 
 # Remove a whole list of prefixes
 # $1 - List of prefixes

@@ -736,7 +736,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
 
         try {
-            return invoke(new Callable<File[]>() {
+            File[] files = invoke(new Callable<File[]>() {
                 public File[] call() throws InterruptedException {
                     if (!isDirectory()) {
                         return null;
@@ -791,6 +791,8 @@ final class Win32ShellFolder2 extends ShellFolder {
                         : list.toArray(new ShellFolder[list.size()]);
                 }
             }, InterruptedException.class);
+
+            return Win32ShellFolderManager2.checkFiles(files);
         } catch (InterruptedException e) {
             return new File[0];
         }

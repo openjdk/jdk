@@ -52,8 +52,7 @@ static int addSegment(jvmtiEnv* jvmti, const char segment[], const char where[])
     void* storage = NULL;
 
     NSK_DISPLAY1("Add segment: %s\n", segment);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddToBootstrapClassLoaderSearch, jvmti, segment))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddToBootstrapClassLoaderSearch(segment))) {
         return NSK_FALSE;
     }
     NSK_DISPLAY0("  ... added\n");
@@ -62,17 +61,13 @@ static int addSegment(jvmtiEnv* jvmti, const char segment[], const char where[])
 }
 
 static void setupLock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-                "failed to enter a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(countLock)))
+        jni_env->FatalError("failed to enter a raw monitor\n");
 }
 
 static void setoffLock(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-        jvmti_env, countLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-                "failed to exit a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(countLock)))
+        jni_env->FatalError("failed to exit a raw monitor\n");
 }
 
 JNIEXPORT jint JNICALL
@@ -93,8 +88,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
 
     setupLock(jvmti_env, env);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-            jvmti_env, klass, &sig, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &sig, &generic))) {
         result = STATUS_FAILED;
     }
 
@@ -103,8 +97,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
             sig);
         classLoadReceived = JNI_TRUE;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
             result = STATUS_FAILED;
         } else {
             NSK_DISPLAY0("ClassLoad event disabled\n");
@@ -121,8 +114,7 @@ ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
 
     setupLock(jvmti_env, env);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-            jvmti_env, klass, &sig, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &sig, &generic))) {
         result = STATUS_FAILED;
     }
 
@@ -131,8 +123,7 @@ ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
             sig);
         classPrepareReceived = JNI_TRUE;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
             result = STATUS_FAILED;
         } else {
             NSK_DISPLAY0("ClassPrepare event disabled\n");
@@ -172,8 +163,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti, "eventLock", &countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("eventLock", &countLock)))
         return JNI_ERR;
 
     NSK_DISPLAY0("Add bootstrap class load segment in Agent_OnLoad()\n");
@@ -189,22 +179,19 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&callbacks, 0, sizeof(callbacks));
         callbacks.ClassLoad = &ClassLoad;
         callbacks.ClassPrepare = &ClassPrepare;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti, &callbacks, size))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, size))) {
             return JNI_ERR;
         }
     }
     NSK_DISPLAY0("  ... set\n");
 
     NSK_DISPLAY0("Enabling events: \n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
         return JNI_ERR;
     } else {
         NSK_DISPLAY0("  ... ClassLoad enabled\n");
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
         return JNI_ERR;
     } else {
         NSK_DISPLAY0("  ... ClassPrepare enabled\n");

@@ -39,9 +39,9 @@ public:
   G1CLDScanClosure                _clds;
   G1CodeBlobClosure               _codeblobs;
 
-  G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty, bool must_claim_cld) :
+  G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty, int cld_claim) :
     _oops(g1h, pss),
     _oops_in_cld(g1h, pss),
-    _clds(&_oops_in_cld, process_only_dirty, must_claim_cld),
+    _clds(&_oops_in_cld, process_only_dirty, cld_claim),
     _codeblobs(&_oops) {}
 };

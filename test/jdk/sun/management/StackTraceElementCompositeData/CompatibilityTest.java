@@ -36,7 +36,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug     8139587
+ * @bug     8139587 8212197
  * @modules java.management/sun.management
  * @summary Check backward compatibility of StackTraceElementCompositeData
  * @author  Jaroslav Bachorik
@@ -153,6 +153,17 @@ public class CompatibilityTest {
         assertEquals(ste.getFileName(), "MyClass.java");
         assertEquals(ste.isNativeMethod(), false);
         assertEquals(ste.getLineNumber(), 123);
+    }
+
+    @Test
+    public void testCompositeData() throws Exception {
+        StackTraceElement ste = new StackTraceElement("app",
+                                                      "m", "1.0",
+                                                      "p.MyClass", "myMethod",
+                                                      "MyClass.java", 123);
+        CompositeData cd = StackTraceElementCompositeData.toCompositeData(ste);
+        StackTraceElement ste1 = StackTraceElementCompositeData.from(cd);
+        assertEquals(ste, ste1);
     }
 }
 

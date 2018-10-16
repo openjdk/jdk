@@ -77,7 +77,7 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s, ignore_o) ciInstanceKlass* ciEnv::_##name = NULL;
+#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
 WK_KLASSES_DO(WK_KLASS_DEFN)
 #undef WK_KLASS_DEFN
 

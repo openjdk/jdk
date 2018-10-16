@@ -157,8 +157,8 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_null_object_instance = new (_arena) ciNullObject();
   init_ident_of(ciEnv::_null_object_instance);
 
-#define WK_KLASS_DEFN(name, ignore_s, opt)                              \
-  if (SystemDictionary::name() != NULL) \
+#define WK_KLASS_DEFN(name, ignore_s)                              \
+  if (SystemDictionary::name##_is_loaded()) \
     ciEnv::_##name = get_metadata(SystemDictionary::name())->as_instance_klass();
 
   WK_KLASSES_DO(WK_KLASS_DEFN)

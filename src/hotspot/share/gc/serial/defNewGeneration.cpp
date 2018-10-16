@@ -137,7 +137,7 @@ void CLDScanClosure::do_cld(ClassLoaderData* cld) {
     _scavenge_closure->set_scanned_cld(cld);
 
     // Clean the cld since we're going to scavenge all the metadata.
-    cld->oops_do(_scavenge_closure, false, /*clear_modified_oops*/true);
+    cld->oops_do(_scavenge_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
 
     _scavenge_closure->set_scanned_cld(NULL);
   }

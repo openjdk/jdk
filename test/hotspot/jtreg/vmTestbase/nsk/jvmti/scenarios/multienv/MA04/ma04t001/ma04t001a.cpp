@@ -53,22 +53,18 @@ static int prepare(JNIEnv* jni) {
     NSK_DISPLAY0("Obtain tested object from a static field of debugee class\n");
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (cls =
-            NSK_CPP_STUB2(FindClass, jni, CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find field: %s:%s\n", FIELD_NAME, FIELD_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (fid =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, cls,
-                FIELD_NAME, FIELD_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(cls, FIELD_NAME, FIELD_SIGNATURE)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedObject =
-            NSK_CPP_STUB3(GetStaticObjectField, jni, cls, fid)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->GetStaticObjectField(cls, fid)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedObject =
-            NSK_CPP_STUB2(NewGlobalRef, jni, testedObject)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewGlobalRef(testedObject)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -91,7 +87,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Testcase #1: check that testedObject is not tagged\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetTag, jvmti, testedObject, &tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetTag(testedObject, &tag))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -107,7 +103,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY0("Testcase #2: check that testedObject is not tagged\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetTag, jvmti, testedObject, &tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetTag(testedObject, &tag))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -117,8 +113,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             jlong_to_string(tag, buffer));
         nsk_jvmti_setFailStatus();
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, testedObject,
-            SAMPLE_TAG))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(testedObject, SAMPLE_TAG))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -128,7 +123,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY0("Testcase #3: check that testedObject is tagged correctly\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetTag, jvmti, testedObject, &tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetTag(testedObject, &tag))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -149,7 +144,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY0("Testcase #4: check that testedObject is tagged correctly\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetTag, jvmti, testedObject, &tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetTag(testedObject, &tag))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -164,7 +159,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
         nsk_jvmti_setFailStatus();
     }
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, testedObject, (jlong)0))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(testedObject, (jlong)0))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -174,7 +169,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY0("Testcase #5: check that testedObject is not tagged\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetTag, jvmti, testedObject, &tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetTag(testedObject, &tag))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -184,7 +179,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             jlong_to_string(tag, buffer));
         nsk_jvmti_setFailStatus();
     }
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedObject));
+    NSK_TRACE(jni->DeleteGlobalRef(testedObject));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -222,7 +217,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 

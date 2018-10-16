@@ -50,6 +50,9 @@ final class PostHandshakeContext extends HandshakeContext {
         this.localSupportedSignAlgs = new ArrayList<SignatureScheme>(
             context.conSession.getLocalSupportedSignatureSchemes());
 
+        this.requestedServerNames =
+                context.conSession.getRequestedServerNames();
+
         handshakeConsumers = new LinkedHashMap<>(consumers);
         handshakeFinished = true;
     }

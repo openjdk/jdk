@@ -127,9 +127,7 @@ static int enableEvents(jvmtiEventMode enable) {
     int i;
 
     for (i = 0; i < EVENTS_COUNT; i++) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti, enable,
-                                                eventsList[i], NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, eventsList[i], NULL))) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -156,28 +154,24 @@ static int prepare() {
         methodsDesc[i].unloadEvents = 0;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (threadFieldID =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                                    THREAD_FIELD_NAME, THREAD_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREAD_FIELD_NAME, THREAD_FIELD_SIG)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (thread = (jthread)
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass, threadFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadFieldID)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (threadClass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadClass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Find tested methods:\n");
     for (i = 0; i < METHODS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (methodsDesc[i].method =
-                NSK_CPP_STUB4(GetMethodID, jni, threadClass,
-                            methodsDesc[i].methodName, methodsDesc[i].methodSig)) != NULL))
+                jni->GetMethodID(threadClass, methodsDesc[i].methodName, methodsDesc[i].methodSig)) != NULL))
             return NSK_FALSE;
         NSK_DISPLAY3("    method #%d (%s): 0x%p\n",
                                 i, methodsDesc[i].methodName, (void*)methodsDesc[i].method);
@@ -327,8 +321,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities caps;
         memset(&caps, 0, sizeof(caps));
         caps.can_generate_compiled_method_load_events = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 
@@ -337,9 +330,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.CompiledMethodLoad = callbackCompiledMethodLoad;
         eventCallbacks.CompiledMethodUnload = callbackCompiledMethodUnload;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
             return JNI_ERR;
     }
 

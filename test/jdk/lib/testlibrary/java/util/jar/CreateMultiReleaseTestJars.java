@@ -142,6 +142,12 @@ public class CreateMultiReleaseTestJars {
     }
 
     public void buildSignedMultiReleaseJar() throws Exception {
+        buildSignedMultiReleaseJar("multi-release.jar", "signed-multi-release.jar");
+    }
+
+    public void buildSignedMultiReleaseJar(String multiReleaseJar,
+                                           String signedMultiReleaseJar) throws Exception
+    {
         String testsrc = System.getProperty("test.src",".");
         String testdir = findTestDir(testsrc);
         String keystore = testdir + "/sun/security/tools/jarsigner/JarSigning.keystore";
@@ -155,8 +161,8 @@ public class CreateMultiReleaseTestJars {
         CertPath cp = CertificateFactory.getInstance("X.509")
                 .generateCertPath(Arrays.asList(ks.getCertificateChain("b")));
         JarSigner js = new JarSigner.Builder(pkb, cp).build();
-        try (ZipFile in = new ZipFile("multi-release.jar");
-             FileOutputStream os = new FileOutputStream("signed-multi-release.jar"))
+        try (ZipFile in = new ZipFile(multiReleaseJar);
+             FileOutputStream os = new FileOutputStream(signedMultiReleaseJar))
         {
             js.sign(in, os);
         }

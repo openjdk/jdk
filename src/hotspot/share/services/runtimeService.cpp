@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ void RuntimeService::init() {
 
     // create performance counters for jvm_version and its capabilities
     PerfDataManager::create_constant(SUN_RT, "jvmVersion", PerfData::U_None,
-                                     (jlong) Abstract_VM_Version::jvm_version(), CHECK);
+                                     (jlong) VM_Version::jvm_version(), CHECK);
 
     // The capabilities counter is a binary representation of the VM capabilities in string.
     // This string respresentation simplifies the implementation of the client side

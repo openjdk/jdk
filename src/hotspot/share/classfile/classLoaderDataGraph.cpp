@@ -48,7 +48,7 @@ volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
 
 void ClassLoaderDataGraph::clear_claimed_marks() {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    cld->clear_claimed();
+    cld->clear_claim();
   }
 }
 
@@ -231,14 +231,14 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_unsafe_anonymo
 }
 
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint_weak(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
     cl->do_cld(cld);
   }
 }
 
 void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint_weak(ClassLoaderDataGraph_lock);
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
@@ -248,7 +248,7 @@ void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
 }
 
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint_weak(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
     CLDClosure* closure = cld->keep_alive() ? strong : weak;
     if (closure != NULL) {
@@ -258,7 +258,7 @@ void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
 }
 
 void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint_weak(ClassLoaderDataGraph_lock);
   if (ClassUnloading) {
     roots_cld_do(cl, NULL);
   } else {

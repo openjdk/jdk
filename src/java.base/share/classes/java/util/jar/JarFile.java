@@ -417,10 +417,10 @@ class JarFile extends ZipFile {
             if (manEntry != null) {
                 if (verify) {
                     byte[] b = getBytes(manEntry);
-                    man = new Manifest(new ByteArrayInputStream(b), getName());
                     if (!jvInitialized) {
                         jv = new JarVerifier(b);
                     }
+                    man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
                     man = new Manifest(super.getInputStream(manEntry), getName());
                 }
@@ -1011,29 +1011,13 @@ class JarFile extends ZipFile {
                     int i = match(MULTIRELEASE_CHARS, b, MULTIRELEASE_LASTOCC,
                             MULTIRELEASE_OPTOSFT);
                     if (i != -1) {
-                        i += MULTIRELEASE_CHARS.length;
-                        if (i < b.length) {
-                            byte c = b[i++];
-                            // Check that the value is followed by a newline
-                            // and does not have a continuation
-                            if (c == '\n' &&
-                                    (i == b.length || b[i] != ' ')) {
-                                isMultiRelease = true;
-                            } else if (c == '\r') {
-                                if (i == b.length) {
-                                    isMultiRelease = true;
-                                } else {
-                                    c = b[i++];
-                                    if (c == '\n') {
-                                        if (i == b.length || b[i] != ' ') {
-                                            isMultiRelease = true;
-                                        }
-                                    } else if (c != ' ') {
-                                        isMultiRelease = true;
-                                    }
-                                }
-                            }
-                        }
+                        // Read the main attributes of the manifest
+                        byte[] lbuf = new byte[512];
+                        Attributes attr = new Attributes();
+                        attr.read(new Manifest.FastInputStream(
+                            new ByteArrayInputStream(b)), lbuf);
+                        isMultiRelease = Boolean.parseBoolean(
+                            attr.getValue(Attributes.Name.MULTI_RELEASE));
                     }
                 }
             }
@@ -1041,7 +1025,7 @@ class JarFile extends ZipFile {
         }
     }
 
-    private synchronized void ensureInitialization() {
+    synchronized void ensureInitialization() {
         try {
             maybeInstantiateVerifier();
         } catch (IOException e) {

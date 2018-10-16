@@ -65,8 +65,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 
         if (class_being_redefined == NULL) {
             /* sent by class load */
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(Allocate,
-                    jvmti_env, class_data_len, &klass_bytes)))
+            if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, &klass_bytes)))
                 nsk_jvmti_setFailStatus();
             else {
                 memcpy(klass_bytes, class_data, class_data_len);
@@ -94,12 +93,10 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (testedClass =
-            NSK_CPP_STUB2(FindClass, jni, CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -126,7 +123,7 @@ static int redefine(jvmtiEnv* jvmti, jint value) {
     class_def.klass = testedClass;
     class_def.class_byte_count = klass_byte_count;
     class_def.class_bytes = klass_bytes;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses, jvmti, 1, &class_def)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RedefineClasses(1, &class_def)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -181,11 +178,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedClass));
+    NSK_TRACE(jni->DeleteGlobalRef(testedClass));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -223,7 +219,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_redefine_classes = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
@@ -234,8 +230,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
 
     return JNI_OK;

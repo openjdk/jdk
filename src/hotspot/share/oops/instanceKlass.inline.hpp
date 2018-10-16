@@ -130,28 +130,24 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE int InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   if (Devirtualizer::do_metadata(closure)) {
     Devirtualizer::do_klass(closure, this);
   }
 
   oop_oop_iterate_oop_maps<T>(obj, closure);
-
-  return size_helper();
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE int InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 
   oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
-
-  return size_helper();
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE int InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       Devirtualizer::do_klass(closure, this);
@@ -159,8 +155,6 @@ ALWAYSINLINE int InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType*
   }
 
   oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
-
-  return size_helper();
 }
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_INLINE_HPP

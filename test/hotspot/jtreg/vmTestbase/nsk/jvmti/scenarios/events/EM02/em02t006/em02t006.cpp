@@ -57,7 +57,7 @@ JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_events_EM02_em02t006_setTag(JNIEnv *env,
                         jobject o, jobject object, jlong tag) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, object, tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(object, tag))) {
         NSK_COMPLAIN0("TEST FAILED: unable to set tag for a tested object\n");
         return NSK_FALSE;
     }
@@ -148,12 +148,12 @@ int checkEvents(int step) {
 static void
 changeCount(jvmtiEvent event, int *currentCounts) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
         nsk_jvmti_setFailStatus();
 
     currentCounts[event - JVMTI_MIN_EVENT_TYPE_VAL]++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -173,8 +173,7 @@ cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni_env) {
     if (!checkEvents(STEP_NUMBER))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -329,16 +328,13 @@ static int enableEvent(jvmtiEvent event) {
     if (nsk_jvmti_isOptionalEvent(event)
             && (event != JVMTI_EVENT_OBJECT_FREE)) {
         if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
         }
     } else {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
@@ -431,10 +427,7 @@ setCallBacks(int step) {
             break;
 
     }
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -495,8 +488,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return JNI_ERR;
     }
@@ -507,7 +499,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         caps.can_tag_objects = 1;
         caps.can_generate_object_free_events = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 
