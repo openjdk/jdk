@@ -769,7 +769,7 @@ public class JSpinner extends JComponent implements Accessible
                         // the text field font was not set by the user
                         Font font = spinner.getFont();
                         if (!newfont.equals(font)) {
-                            getTextField().setFont(new FontUIResource(font));
+                            getTextField().setFont(font == null ? null : new FontUIResource(font));
                         }
                     }
                 }

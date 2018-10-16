@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,8 @@ public class BasicSpinnerUI extends SpinnerUI
             JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
             if (tf != null) {
                 if (tf.getFont() instanceof UIResource) {
-                    tf.setFont(new FontUIResource(spinner.getFont()));
+                    Font font = spinner.getFont();
+                    tf.setFont(font == null ? null : new FontUIResource(font));
                 }
             }
         }
@@ -999,7 +1000,8 @@ public class BasicSpinnerUI extends SpinnerUI
                                 ((JSpinner.DefaultEditor)newEditor).getTextField();
                             if (tf != null) {
                                 if (tf.getFont() instanceof UIResource) {
-                                    tf.setFont(new FontUIResource(spinner.getFont()));
+                                    Font font = spinner.getFont();
+                                    tf.setFont(font == null ? null : new FontUIResource(font));
                                 }
                                 tf.addFocusListener(nextButtonHandler);
                                 tf.addFocusListener(previousButtonHandler);
@@ -1017,7 +1019,8 @@ public class BasicSpinnerUI extends SpinnerUI
                                 ((JSpinner.DefaultEditor)editor).getTextField();
                             if (tf != null) {
                                 if (tf.getFont() instanceof UIResource) {
-                                    tf.setFont(new FontUIResource(spinner.getFont()));
+                                    Font font = spinner.getFont();
+                                    tf.setFont(font == null ? null : new FontUIResource(font));
                                 }
                             }
                         }
