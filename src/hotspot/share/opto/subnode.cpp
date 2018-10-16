@@ -1252,6 +1252,24 @@ void BoolTest::dump_on(outputStream *st) const {
   st->print("%s", msg[_test]);
 }
 
+// Returns the logical AND of two tests (or 'never' if both tests can never be true).
+// For example, a test for 'le' followed by a test for 'lt' is equivalent with 'lt'.
+BoolTest::mask BoolTest::merge(BoolTest other) const {
+  const mask res[illegal+1][illegal+1] = {
+    // eq,      gt,      of,      lt,      ne,      le,      nof,     ge,      never,   illegal
+      {eq,      never,   illegal, never,   never,   eq,      illegal, eq,      never,   illegal},  // eq
+      {never,   gt,      illegal, never,   gt,      never,   illegal, gt,      never,   illegal},  // gt
+      {illegal, illegal, illegal, illegal, illegal, illegal, illegal, illegal, never,   illegal},  // of
+      {never,   never,   illegal, lt,      lt,      lt,      illegal, never,   never,   illegal},  // lt
+      {never,   gt,      illegal, lt,      ne,      lt,      illegal, gt,      never,   illegal},  // ne
+      {eq,      never,   illegal, lt,      lt,      le,      illegal, eq,      never,   illegal},  // le
+      {illegal, illegal, illegal, illegal, illegal, illegal, illegal, illegal, never,   illegal},  // nof
+      {eq,      gt,      illegal, never,   gt,      eq,      illegal, ge,      never,   illegal},  // ge
+      {never,   never,   never,   never,   never,   never,   never,   never,   never,   illegal},  // never
+      {illegal, illegal, illegal, illegal, illegal, illegal, illegal, illegal, illegal, illegal}}; // illegal
+  return res[_test][other._test];
+}
+
 //=============================================================================
 uint BoolNode::hash() const { return (Node::hash() << 3)|(_test._test+1); }
 uint BoolNode::size_of() const { return sizeof(BoolNode); }

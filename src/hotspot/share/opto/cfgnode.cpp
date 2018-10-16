@@ -714,10 +714,151 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  if (can_reshape) {
+    modified |= optimize_trichotomy(phase->is_IterGVN());
+  }
+
   return modified ? this : NULL;
 }
 
-
+//------------------------------optimize_trichotomy--------------------------
+// Optimize nested comparisons of the following kind:
+//
+// int compare(int a, int b) {
+//   return (a < b) ? -1 : (a == b) ? 0 : 1;
+// }
+//
+// Shape 1:
+// if (compare(a, b) == 1) { ... } -> if (a > b) { ... }
+//
+// Shape 2:
+// if (compare(a, b) == 0) { ... } -> if (a == b) { ... }
+//
+// Above code leads to the following IR shapes where both Ifs compare the
+// same value and two out of three region inputs idx1 and idx2 map to
+// the same value and control flow.
+//
+// (1)   If                 (2)   If
+//      /  \                     /  \
+//   Proj  Proj               Proj  Proj
+//     |      \                |      \
+//     |       If              |      If                      If
+//     |      /  \             |     /  \                    /  \
+//     |   Proj  Proj          |  Proj  Proj      ==>     Proj  Proj
+//     |   /      /            \    |    /                  |    /
+//    Region     /              \   |   /                   |   /
+//         \    /                \  |  /                    |  /
+//         Region                Region                    Region
+//
+// The method returns true if 'this' is modified and false otherwise.
+bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
+  int idx1 = 1, idx2 = 2;
+  Node* region = NULL;
+  if (req() == 3 && in(1) != NULL && in(2) != NULL) {
+    // Shape 1: Check if one of the inputs is a region that merges two control
+    // inputs and has no other users (especially no Phi users).
+    region = in(1)->isa_Region() ? in(1) : in(2)->isa_Region();
+    if (region == NULL || region->outcnt() != 2 || region->req() != 3) {
+      return false; // No suitable region input found
+    }
+  } else if (req() == 4) {
+    // Shape 2: Check if two control inputs map to the same value of the unique phi
+    // user and treat these as if they would come from another region (shape (1)).
+    PhiNode* phi = has_unique_phi();
+    if (phi == NULL) {
+      return false; // No unique phi user
+    }
+    if (phi->in(idx1) != phi->in(idx2)) {
+      idx2 = 3;
+      if (phi->in(idx1) != phi->in(idx2)) {
+        idx1 = 2;
+        if (phi->in(idx1) != phi->in(idx2)) {
+          return false; // No equal phi inputs found
+        }
+      }
+    }
+    assert(phi->in(idx1) == phi->in(idx2), "must be"); // Region is merging same value
+    region = this;
+  }
+  if (region == NULL || region->in(idx1) == NULL || region->in(idx2) == NULL) {
+    return false; // Region does not merge two control inputs
+  }
+  // At this point we know that region->in(idx1) and region->(idx2) map to the same
+  // value and control flow. Now search for ifs that feed into these region inputs.
+  ProjNode* proj1 = region->in(idx1)->isa_Proj();
+  ProjNode* proj2 = region->in(idx2)->isa_Proj();
+  if (proj1 == NULL || proj1->outcnt() != 1 ||
+      proj2 == NULL || proj2->outcnt() != 1) {
+    return false; // No projection inputs with region as unique user found
+  }
+  assert(proj1 != proj2, "should be different projections");
+  IfNode* iff1 = proj1->in(0)->isa_If();
+  IfNode* iff2 = proj2->in(0)->isa_If();
+  if (iff1 == NULL || iff1->outcnt() != 2 ||
+      iff2 == NULL || iff2->outcnt() != 2) {
+    return false; // No ifs found
+  }
+  if (iff1 == iff2) {
+    igvn->add_users_to_worklist(iff1); // Make sure dead if is eliminated
+    igvn->replace_input_of(region, idx1, iff1->in(0));
+    igvn->replace_input_of(region, idx2, igvn->C->top());
+    return (region == this); // Remove useless if (both projections map to the same control/value)
+  }
+  BoolNode* bol1 = iff1->in(1)->isa_Bool();
+  BoolNode* bol2 = iff2->in(1)->isa_Bool();
+  if (bol1 == NULL || bol2 == NULL) {
+    return false; // No bool inputs found
+  }
+  Node* cmp1 = bol1->in(1);
+  Node* cmp2 = bol2->in(1);
+  bool commute = false;
+  if (!cmp1->is_Cmp() || !cmp2->is_Cmp()) {
+    return false; // No comparison
+  } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
+             cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
+             cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
+             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN) {
+    // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
+    return false;
+  } else if (cmp1 != cmp2) {
+    if (cmp1->in(1) == cmp2->in(2) &&
+        cmp1->in(2) == cmp2->in(1)) {
+      commute = true; // Same but swapped inputs, commute the test
+    } else {
+      return false; // Ifs are not comparing the same values
+    }
+  }
+  proj1 = proj1->other_if_proj();
+  proj2 = proj2->other_if_proj();
+  if (!((proj1->unique_ctrl_out() == iff2 &&
+         proj2->unique_ctrl_out() == this) ||
+        (proj2->unique_ctrl_out() == iff1 &&
+         proj1->unique_ctrl_out() == this))) {
+    return false; // Ifs are not connected through other projs
+  }
+  // Found 'iff -> proj -> iff -> proj -> this' shape where all other projs are merged
+  // through 'region' and map to the same value. Merge the boolean tests and replace
+  // the ifs by a single comparison.
+  BoolTest test1 = (proj1->_con == 1) ? bol1->_test : bol1->_test.negate();
+  BoolTest test2 = (proj2->_con == 1) ? bol2->_test : bol2->_test.negate();
+  test1 = commute ? test1.commute() : test1;
+  // After possibly commuting test1, if we can merge test1 & test2, then proj2/iff2/bol2 are the nodes to refine.
+  BoolTest::mask res = test1.merge(test2);
+  if (res == BoolTest::illegal) {
+    return false; // Unable to merge tests
+  }
+  // Adjust iff1 to always pass (only iff2 will remain)
+  igvn->replace_input_of(iff1, 1, igvn->intcon(proj1->_con));
+  if (res == BoolTest::never) {
+    // Merged test is always false, adjust iff2 to always fail
+    igvn->replace_input_of(iff2, 1, igvn->intcon(1 - proj2->_con));
+  } else {
+    // Replace bool input of iff2 with merged test
+    BoolNode* new_bol = new BoolNode(bol2->in(1), res);
+    igvn->replace_input_of(iff2, 1, igvn->transform((proj2->_con == 1) ? new_bol : new_bol->negate(igvn)));
+  }
+  return false;
+}
 
 const RegMask &RegionNode::out_RegMask() const {
   return RegMask::Empty;
