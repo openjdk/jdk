@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +46,7 @@ void CMSArguments::set_parnew_gc_flags() {
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
 
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
+    FLAG_SET_DEFAULT(ParallelGCThreads, VM_Version::parallel_worker_threads());
     assert(ParallelGCThreads > 0, "We should always have at least one thread by default");
   } else if (ParallelGCThreads == 0) {
     jio_fprintf(defaultStream::error_stream(),

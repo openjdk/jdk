@@ -319,18 +319,18 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                                 JDK_Version::runtime_name() : "";
    const char* runtime_version = JDK_Version::runtime_version() != NULL ?
                                    JDK_Version::runtime_version() : "";
-   const char* jdk_debug_level = Abstract_VM_Version::printable_jdk_debug_level() != NULL ?
-                                   Abstract_VM_Version::printable_jdk_debug_level() : "";
+   const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != NULL ?
+                                   VM_Version::printable_jdk_debug_level() : "";
 
    st->print_cr("# JRE version: %s (%s) (%sbuild %s)", runtime_name, buf,
                  jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
    st->print_cr("# Java VM: %s (%s%s, %s%s%s%s%s, %s, %s)",
-                 Abstract_VM_Version::vm_name(),
+                 VM_Version::vm_name(),
                  jdk_debug_level,
-                 Abstract_VM_Version::vm_release(),
-                 Abstract_VM_Version::vm_info_string(),
+                 VM_Version::vm_release(),
+                 VM_Version::vm_info_string(),
                  TieredCompilation ? ", tiered" : "",
 #if INCLUDE_JVMCI
                  EnableJVMCI ? ", jvmci" : "",
@@ -340,7 +340,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
                  GCConfig::hs_err_name(),
-                 Abstract_VM_Version::vm_platform_string()
+                 VM_Version::vm_platform_string()
                );
 }
 
@@ -1007,7 +1007,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing internal vm info")
 
      if (_verbose) {
-       st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
+       st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
        st->cr();
      }
 
@@ -1170,7 +1170,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("printing internal vm info")
 
-  st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
+  st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
   st->cr();
 
   // print a defined marker to show that error handling finished correctly.
