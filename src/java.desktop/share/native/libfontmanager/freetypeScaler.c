@@ -38,6 +38,7 @@
 #include FT_SIZES_H
 #include FT_OUTLINE_H
 #include FT_SYNTHESIS_H
+#include FT_LCD_FILTER_H
 
 #include "fontscaler.h"
 
@@ -397,6 +398,8 @@ static int setupFTContext(JNIEnv *env,
         if (errCode == 0) {
             errCode = FT_Activate_Size(scalerInfo->face->size);
         }
+
+        FT_Library_SetLcdFilter(scalerInfo->library, FT_LCD_FILTER_DEFAULT);
     }
 
     return errCode;
