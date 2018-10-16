@@ -47,7 +47,7 @@ jint EpsilonHeap::initialize() {
   _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
   // Precompute hot fields
-  _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), EpsilonMaxTLABSize / HeapWordSize);
+  _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));
   _step_counter_update = MIN2<size_t>(max_byte_size / 16, EpsilonUpdateCountersStep);
   _step_heap_print = (EpsilonPrintHeapSteps == 0) ? SIZE_MAX : (max_byte_size / EpsilonPrintHeapSteps);
   _decay_time_ns = (int64_t) EpsilonTLABDecayTime * NANOSECS_PER_MILLISEC;
@@ -216,6 +216,16 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
 
   // Always honor alignment
   size = align_up(size, MinObjAlignment);
+
+  // Check that adjustments did not break local and global invariants
+  assert(is_object_aligned(size),
+         "Size honors object alignment: " SIZE_FORMAT, size);
+  assert(min_size <= size,
+         "Size honors min size: "  SIZE_FORMAT " <= " SIZE_FORMAT, min_size, size);
+  assert(size <= _max_tlab_size,
+         "Size honors max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, _max_tlab_size);
+  assert(size <= CollectedHeap::max_tlab_size(),
+         "Size honors global max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, CollectedHeap::max_tlab_size());
 
   if (log_is_enabled(Trace, gc)) {
     ResourceMark rm;
