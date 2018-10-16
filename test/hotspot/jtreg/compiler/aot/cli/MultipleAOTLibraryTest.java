@@ -54,6 +54,7 @@
 package compiler.aot.cli;
 
 import compiler.aot.HelloWorldPrinter;
+import java.io.File;
 import java.util.Arrays;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
@@ -75,8 +76,11 @@ public final class MultipleAOTLibraryTest {
             boolean addTestVMOptions = true;
             String[] allArgs = Arrays.copyOf(args, args.length + 4);
             allArgs[args.length] = "-XX:AOTLibrary="
-                    + "./libMultipleAOTLibraryTest1.so:"
-                    + "./libMultipleAOTLibraryTest2.so";
+                    + "." + File.separator
+                    + "libMultipleAOTLibraryTest1.so"
+                    + File.pathSeparator
+                    + "." + File.separator
+                    + "libMultipleAOTLibraryTest2.so";
             allArgs[args.length + 1] = "-XX:+PrintAOT";
             allArgs[args.length + 2] = "-XX:+UseAOT";
             allArgs[args.length + 3] = HelloWorldPrinter.class.getName();
