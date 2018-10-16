@@ -172,8 +172,10 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
     // this the user would have expected to see ObjectFree events for
     // unreachable objects in the tag map.
     ZRootsIterator roots;
+    ZConcurrentRootsIterator concurrent_roots(false /* marking */);
     ZHeapIteratorRootOopClosure root_cl(this);
     roots.oops_do(&root_cl, true /* visit_jvmti_weak_export */);
+    concurrent_roots.oops_do(&root_cl);
   }
 
   // Drain stack

@@ -117,6 +117,9 @@ public:
 
   virtual VirtualSpaceSummary create_heap_space_summary();
 
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
+
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;

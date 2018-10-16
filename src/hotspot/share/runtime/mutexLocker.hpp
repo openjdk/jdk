@@ -199,9 +199,11 @@ class MutexLocker: StackObj {
 // for debugging: check that we're already owning this lock (or are at a safepoint)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Monitor * lock);
+void assert_locked_or_safepoint_weak(const Monitor * lock);
 void assert_lock_strong(const Monitor * lock);
 #else
 #define assert_locked_or_safepoint(lock)
+#define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
 #endif
 
