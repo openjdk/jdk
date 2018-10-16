@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ protected:
     stdbrx,
     vshasig,
     rtm,
+    darn,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -72,6 +73,7 @@ protected:
     stdbrx_m              = (1 << stdbrx ),
     vshasig_m             = (1 << vshasig),
     rtm_m                 = (1 << rtm    ),
+    darn_m                = (1 << darn   ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -108,9 +110,10 @@ public:
   static bool has_ldbrx()   { return (_features & ldbrx_m) != 0; }
   static bool has_stdbrx()  { return (_features & stdbrx_m) != 0; }
   static bool has_vshasig() { return (_features & vshasig_m) != 0; }
-  static bool has_mtfprd()  { return has_vpmsumb(); } // alias for P8
-  // OS feature support
   static bool has_tm()      { return (_features & rtm_m) != 0; }
+  static bool has_darn()    { return (_features & darn_m) != 0; }
+
+  static bool has_mtfprd()  { return has_vpmsumb(); } // alias for P8
 
   // Assembler testing
   static void allow_all();

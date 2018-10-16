@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -978,6 +978,9 @@ inline void Assembler::tabortdci_(int t, Register a, int si)    { emit_int32( TA
 inline void Assembler::tsuspend_()                              { emit_int32( TSR_OPCODE | rc(1)); }
 inline void Assembler::tresume_()                               { emit_int32( TSR_OPCODE | /*L=1*/ 1u << (31-10) | rc(1)); }
 inline void Assembler::tcheck(int f)                            { emit_int32( TCHECK_OPCODE | bf(f)); }
+
+// Deliver A Random Number (introduced with POWER9)
+inline void Assembler::darn(Register d, int l /* =1 */) { emit_int32( DARN_OPCODE | rt(d) | l14(l)); }
 
 // ra0 version
 inline void Assembler::lwzx( Register d, Register s2) { emit_int32( LWZX_OPCODE | rt(d) | rb(s2));}
