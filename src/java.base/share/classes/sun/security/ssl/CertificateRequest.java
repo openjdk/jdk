@@ -31,7 +31,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -675,44 +677,85 @@ final class CertificateRequest {
             chc.peerRequestedSignatureSchemes = sss;
             chc.peerRequestedCertSignSchemes = sss;     // use the same schemes
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
+            chc.peerSupportedAuthorities = crm.getAuthorities();
 
-            X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
-            String clientAlias = null;
-            if (chc.conContext.transport instanceof SSLSocketImpl) {
-                clientAlias = km.chooseClientAlias(crm.getKeyTypes(),
-                    crm.getAuthorities(), (SSLSocket)chc.conContext.transport);
-            } else if (chc.conContext.transport instanceof SSLEngineImpl) {
-                clientAlias = km.chooseEngineClientAlias(crm.getKeyTypes(),
-                    crm.getAuthorities(), (SSLEngine)chc.conContext.transport);
-            }
-
-            if (clientAlias == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning("No available client authentication");
-                }
+            // For TLS 1.2, we no longer use the certificate_types field
+            // from the CertificateRequest message to directly determine
+            // the SSLPossession.  Instead, the choosePossession method
+            // will use the accepted signature schemes in the message to
+            // determine the set of acceptable certificate types to select from.
+            SSLPossession pos = choosePossession(chc);
+            if (pos == null) {
                 return;
             }
 
-            PrivateKey clientPrivateKey = km.getPrivateKey(clientAlias);
-            if (clientPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning("No available client private key");
-                }
-                return;
-            }
-
-            X509Certificate[] clientCerts = km.getCertificateChain(clientAlias);
-            if ((clientCerts == null) || (clientCerts.length == 0)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning("No available client certificate");
-                }
-                return;
-            }
-
-            chc.handshakePossessions.add(
-                    new X509Possession(clientPrivateKey, clientCerts));
+            chc.handshakePossessions.add(pos);
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
                     SSLHandshake.CERTIFICATE_VERIFY);
+        }
+
+        private static SSLPossession choosePossession(HandshakeContext hc)
+                throws IOException {
+            if (hc.peerRequestedCertSignSchemes == null ||
+                    hc.peerRequestedCertSignSchemes.isEmpty()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("No signature and hash algorithms " +
+                            "in CertificateRequest");
+                }
+                return null;
+            }
+
+            Collection<String> checkedKeyTypes = new HashSet<>();
+            for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
+                if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                            "Unsupported authentication scheme: " + ss.name);
+                    }
+                    continue;
+                }
+
+                // Don't select a signature scheme unless we will be able to
+                // produce a CertificateVerify message later
+                if (SignatureScheme.getPreferableAlgorithm(
+                        hc.peerRequestedSignatureSchemes,
+                        ss, hc.negotiatedProtocol) == null) {
+
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                            "Unable to produce CertificateVerify for " +
+                            "signature scheme: " + ss.name);
+                    }
+                    checkedKeyTypes.add(ss.keyAlgorithm);
+                    continue;
+                }
+
+                SSLAuthentication ka = X509Authentication.valueOf(ss);
+                if (ka == null) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                            "Unsupported authentication scheme: " + ss.name);
+                    }
+                    checkedKeyTypes.add(ss.keyAlgorithm);
+                    continue;
+                }
+
+                SSLPossession pos = ka.createPossession(hc);
+                if (pos == null) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                            "Unavailable authentication scheme: " + ss.name);
+                    }
+                    continue;
+                }
+
+                return pos;
+            }
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.warning("No available authentication scheme");
+            }
+            return null;
         }
     }
 

@@ -43,6 +43,7 @@ import java.util.Queue;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
+import javax.security.auth.x500.X500Principal;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
 import static sun.security.ssl.SupportedGroupsExtension.NamedGroupType.*;
@@ -135,6 +136,9 @@ abstract class HandshakeContext implements ConnectionContext {
     List<SignatureScheme>                   localSupportedSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
+
+    // Known authorities
+    X500Principal[]                         peerSupportedAuthorities = null;
 
     // SupportedGroups
     List<NamedGroup>                        clientRequestedNamedGroups;
