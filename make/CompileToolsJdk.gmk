@@ -46,6 +46,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := \
+        build/tools/classlist \
         build/tools/deps \
         build/tools/docs \
         build/tools/jigsaw \
