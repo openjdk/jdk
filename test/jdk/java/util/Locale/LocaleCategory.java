@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @bug 4700857 6997928 7079486
+ * @summary tests for Locale.getDefault(Locale.Category) and
+ * Locale.setDefault(Locale.Category, Locale)
+ * @library /java/text/testlib
+ * @build TestUtils LocaleCategory
+ * @comment test user.xxx.display user.xxx.format properties
+ * @run main/othervm -Duser.language.display=ja
+ *                   -Duser.language.format=zh LocaleCategory
+ * @comment test user.xxx properties overriding user.xxx.display/format
+ * @run main/othervm -Duser.language=en
+ *                   -Duser.language.display=ja
+ *                   -Duser.language.format=zh LocaleCategory
+ */
+
 import java.util.Locale;
 
 public class LocaleCategory {
     private static Locale base = null;
     private static Locale disp = null;
     private static Locale fmt = null;
-    private static String enc = null;
 
     public static void main(String[] args) {
         Locale reservedLocale = Locale.getDefault();
@@ -37,7 +53,6 @@ public class LocaleCategory {
 
         try {
             Locale.Builder builder = new Locale.Builder();
-
             base = builder.setLanguage(System.getProperty("user.language", ""))
                   .setScript(System.getProperty("user.script", ""))
                   .setRegion(System.getProperty("user.country", ""))
@@ -68,32 +83,37 @@ public class LocaleCategory {
         }
     }
 
-    static void checkDefault() {
+    private static void checkDefault() {
         if (!base.equals(Locale.getDefault()) ||
             !disp.equals(Locale.getDefault(Locale.Category.DISPLAY)) ||
             !fmt.equals(Locale.getDefault(Locale.Category.FORMAT))) {
-            throw new RuntimeException("Some of the return values from getDefault() do not agree with the locale derived from \"user.xxxx\" system properties");
+            throw new RuntimeException("Some of the return values from "
+                    + "getDefault() do not agree with the locale derived "
+                    + "from \"user.xxxx\" system properties");
         }
     }
 
-    static void testGetSetDefault() {
+    private static void testGetSetDefault() {
         try {
             Locale.setDefault(null, null);
-            throw new RuntimeException("setDefault(null, null) should throw a NullPointerException");
+            throw new RuntimeException("setDefault(null, null) should throw a "
+                    + "NullPointerException");
         } catch (NullPointerException npe) {}
 
         Locale.setDefault(Locale.CHINA);
         if (!Locale.CHINA.equals(Locale.getDefault(Locale.Category.DISPLAY)) ||
             !Locale.CHINA.equals(Locale.getDefault(Locale.Category.FORMAT))) {
-            throw new RuntimeException("setDefault() should set all default locales for all categories");
+            throw new RuntimeException("setDefault() should set all default "
+                    + "locales for all categories");
         }
     }
 
-    static void testBug7079486() {
+    private static void testBug7079486() {
         Locale zh_Hans_CN = Locale.forLanguageTag("zh-Hans-CN");
 
         // make sure JRE has zh_Hans_CN localized string
-        if (zh_Hans_CN.getDisplayScript(Locale.US).equals(zh_Hans_CN.getDisplayScript(zh_Hans_CN))) {
+        if (zh_Hans_CN.getDisplayScript(Locale.US)
+                .equals(zh_Hans_CN.getDisplayScript(zh_Hans_CN))) {
             return;
         }
 
@@ -104,7 +124,8 @@ public class LocaleCategory {
         String zh_script = zh_Hans_CN.getDisplayScript();
 
         if (en_script.equals(zh_script)) {
-            throw new RuntimeException("Locale.getDisplayScript() (no args) does not honor default DISPLAY locale");
+            throw new RuntimeException("Locale.getDisplayScript() (no args) "
+                    + "does not honor default DISPLAY locale");
         }
     }
 }
