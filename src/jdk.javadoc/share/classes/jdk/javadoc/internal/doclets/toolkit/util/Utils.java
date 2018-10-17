@@ -1485,7 +1485,7 @@ public class Utils {
             return false;
         }
 
-        if (!getBlockTags(m).isEmpty())
+        if (!getBlockTags(m).isEmpty() || isDeprecated(m))
             return false;
 
         List<? extends DocTree> fullBody = getFullBody(m);

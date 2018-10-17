@@ -248,7 +248,7 @@ public class VisibleMemberTable {
      * @param e the method to check
      * @return the overridden method or null
      */
-    public ExecutableElement getsimplyOverriddenMethod(ExecutableElement e) {
+    public ExecutableElement getSimplyOverriddenMethod(ExecutableElement e) {
         ensureInitialized();
 
         OverridingMethodInfo found = overriddenMethodTable.get(e);
@@ -869,7 +869,7 @@ public class VisibleMemberTable {
     public List<ExecutableElement> getImplementedMethods(ExecutableElement method) {
         ImplementedMethods imf = getImplementedMethodsFinder(method);
         return imf.getImplementedMethods().stream()
-                .filter(m -> getsimplyOverriddenMethod(m) == null)
+                .filter(m -> getSimplyOverriddenMethod(m) == null)
                 .collect(Collectors.toList());
     }
 

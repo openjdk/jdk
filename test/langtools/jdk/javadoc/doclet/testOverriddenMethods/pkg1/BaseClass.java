@@ -50,4 +50,22 @@ public class BaseClass {
    */
   public void overridenMethodWithDocsToCopy() {}
 
+  /**
+   * @deprecated func1 deprecated
+   */
+  @Deprecated
+  public void func1() {}
+
+  /**
+   * @deprecated func2 deprecated
+   */
+  @Deprecated
+  public void func2() {}
+
+  /**
+   * @deprecated func3 deprecated
+   */
+  @Deprecated
+  public void func3() {}
+
 }
