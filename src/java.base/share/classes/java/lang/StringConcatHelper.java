@@ -139,61 +139,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Mix coder into current coder
-     * @param current current coder
-     * @param value   value to mix in
-     * @return new coder
-     */
-    static byte mixCoder(byte current, boolean value) {
-        // Booleans are represented with Latin1
-        return current;
-    }
-
-    /**
-     * Mix coder into current coder
-     * @param current current coder
-     * @param value   value to mix in
-     * @return new coder
-     */
-    static byte mixCoder(byte current, byte value) {
-        // Bytes are represented with Latin1
-        return current;
-    }
-
-    /**
-     * Mix coder into current coder
-     * @param current current coder
-     * @param value   value to mix in
-     * @return new coder
-     */
-    static byte mixCoder(byte current, short value) {
-        // Shorts are represented with Latin1
-        return current;
-    }
-
-    /**
-     * Mix coder into current coder
-     * @param current current coder
-     * @param value   value to mix in
-     * @return new coder
-     */
-    static byte mixCoder(byte current, int value) {
-        // Ints are represented with Latin1
-        return current;
-    }
-
-    /**
-     * Mix coder into current coder
-     * @param current current coder
-     * @param value   value to mix in
-     * @return new coder
-     */
-    static byte mixCoder(byte current, long value) {
-        // Longs are represented with Latin1
-        return current;
-    }
-
-    /**
      * Prepends the stringly representation of boolean value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
