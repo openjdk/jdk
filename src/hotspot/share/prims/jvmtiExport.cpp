@@ -994,6 +994,20 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   }
 };
 
+bool JvmtiExport::is_early_phase() {
+  return JvmtiEnvBase::get_phase() <= JVMTI_PHASE_PRIMORDIAL;
+}
+
+bool JvmtiExport::has_early_class_hook_env() {
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    if (env->early_class_hook_env()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // this entry is for class file load hook on class load, redefine and retransform
