@@ -34,6 +34,8 @@
 #include "code/vtableStubs.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
