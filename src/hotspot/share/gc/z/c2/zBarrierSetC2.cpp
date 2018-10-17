@@ -102,7 +102,7 @@ void ZBarrierSetC2::unregister_potential_barrier_node(Node* node) const {
   }
 }
 
-void ZBarrierSetC2::eliminate_useless_gc_barriers(Unique_Node_List &useful) const {
+void ZBarrierSetC2::eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {
   // Remove useless LoadBarrier nodes
   ZBarrierSetC2State* s = state();
   for (int i = s->load_barrier_count()-1; i >= 0; i--) {
@@ -113,9 +113,9 @@ void ZBarrierSetC2::eliminate_useless_gc_barriers(Unique_Node_List &useful) cons
   }
 }
 
-void ZBarrierSetC2::enqueue_useful_gc_barrier(Unique_Node_List &worklist, Node* node) const {
+void ZBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   if (node->is_LoadBarrier() && !node->as_LoadBarrier()->has_true_uses()) {
-    worklist.push(node);
+    igvn->_worklist.push(node);
   }
 }
 

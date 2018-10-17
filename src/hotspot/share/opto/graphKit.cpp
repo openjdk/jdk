@@ -3726,6 +3726,10 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
   if (ptr == NULL) {     // reduce dumb test in callers
     return NULL;
   }
+
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  ptr = bs->step_over_gc_barrier(ptr);
+
   if (ptr->is_CheckCastPP()) { // strip only one raw-to-oop cast
     ptr = ptr->in(1);
     if (ptr == NULL) return NULL;

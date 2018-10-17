@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1447,7 +1448,10 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   } else return NULL;
 
   // Build int->bool conversion
-  Node *n = new Conv2BNode( cmp->in(1) );
+  Node *in1 = cmp->in(1);
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  in1 = bs->step_over_gc_barrier(in1);
+  Node *n = new Conv2BNode(in1);
   if( flipped )
     n = new XorINode( phase->transform(n), phase->intcon(1) );
 
@@ -1813,7 +1817,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (can_reshape && igvn != NULL) {
           igvn->_worklist.push(r);
         }
-        set_req(j, top);        // Nuke it down
+        // Nuke it down
+        if (can_reshape) {
+          set_req_X(j, top, igvn);
+        } else {
+          set_req(j, top);
+        }
         progress = this;        // Record progress
       }
     }

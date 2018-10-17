@@ -883,9 +883,7 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
   //   or NULL if not matching.
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (bs->is_gc_barrier_node(n)) {
     n = bs->step_over_gc_barrier(n);
-  }
 
   if (n->Opcode() != Op_LoadP) return NULL;
 
@@ -959,8 +957,14 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != NULL) ? k2 : conk2;
-      this->set_req(1, lhs);
-      this->set_req(2, rhs);
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn != NULL) {
+        set_req_X(1, lhs, igvn);
+        set_req_X(2, rhs, igvn);
+      } else {
+        set_req(1, lhs);
+        set_req(2, rhs);
+      }
       return this;
     }
   }
