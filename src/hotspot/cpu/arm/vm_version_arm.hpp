@@ -110,7 +110,6 @@ class VM_Version: public Abstract_VM_Version {
   static bool supports_kuser_cmpxchg64() { return _kuser_helper_version >= KUSER_VERSION_CMPXCHG64; }
   // Override Abstract_VM_Version implementation
   static bool use_biased_locking();
-  static const char* vm_info_string();
 
   static bool has_vfp()             { return (_features & vfp_m) != 0; }
   static bool has_vfp3_32()         { return (_features & vfp3_32_m) != 0; }
