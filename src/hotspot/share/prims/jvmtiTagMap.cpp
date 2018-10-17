@@ -105,7 +105,7 @@ class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
   }
 
   inline bool equals(oop object) {
-    return object == object_peek();
+    return oopDesc::equals(object, object_peek());
   }
 
   inline JvmtiTagHashmapEntry* next() const        { return _next; }
@@ -186,6 +186,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
 
     // shift right to get better distribution (as these bits will be zero
     // with aligned addresses)
+    key = Access<>::resolve(key);
     unsigned int addr = (unsigned int)(cast_from_oop<intptr_t>(key));
 #ifdef _LP64
     return (addr >> 3) % size;
