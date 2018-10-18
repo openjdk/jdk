@@ -49,8 +49,7 @@ JNIEXPORT jint JNI_OnLoad_hs104t002(JavaVM *jvm, char *options, void *reserved) 
 }
 #endif
 jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved){
-    if ( ! NSK_VERIFY ( JNI_OK == NSK_CPP_STUB3(GetEnv, vm,
-                    (void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
+    if ( ! NSK_VERIFY ( JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
         nsk_printf("#error Agent :: Could not load JVMTI interface.\n");
         return JNI_ERR;
     } else {
@@ -61,8 +60,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved){
         }
         memset(&caps, 0, sizeof(caps));
         caps.can_redefine_classes = 1;
-        if (! NSK_JVMTI_VERIFY ( NSK_CPP_STUB2(AddCapabilities, jvmti,
-                &caps) )) {
+        if (! NSK_JVMTI_VERIFY ( jvmti->AddCapabilities(&caps) )) {
             nsk_printf("#error Agent :: occured while adding capabilities.\n");
             return JNI_ERR;
         }
@@ -76,8 +74,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS104_hs104t002_hs104t002_redefineClasses(
     jclass cla;
     char fileName[512];
 
-    if ( ! NSK_JNI_VERIFY(jni, ( cla = NSK_CPP_STUB2(FindClass,
-                                jni, SEARCH_NAME) ) != NULL ) ) {
+    if ( ! NSK_JNI_VERIFY(jni, ( cla = jni->FindClass(SEARCH_NAME) ) != NULL ) ) {
         nsk_printf(" Agent :: Failed to get class.\n");
         nsk_jvmti_agentFailed();
         return;

@@ -81,14 +81,12 @@ static jniNativeInterface *redir_jni_functions = NULL;
 static volatile int monent_calls = 0;
 
 static void lock() {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti, countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(countLock)))
         exit(STATUS_FAILED);
 }
 
 static void unlock() {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-            jvmti, countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(countLock)))
         exit(STATUS_FAILED);
 }
 
@@ -482,8 +480,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     vm = jvm;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti, "_counter_lock", &countLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_counter_lock", &countLock)))
         return JNI_ERR;
 
     return JNI_OK;

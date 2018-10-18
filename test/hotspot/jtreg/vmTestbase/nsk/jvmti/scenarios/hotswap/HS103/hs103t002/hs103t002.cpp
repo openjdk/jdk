@@ -57,19 +57,15 @@ JNIEXPORT void JNICALL doRedefineInNativeThread(jvmtiEnv * jvmti,
   testClass = jni->FindClass(MAIN_CLASS);
 
   if (!NSK_JNI_VERIFY(jni, (
-    setRedefinitionFailed = NSK_CPP_STUB4(GetStaticMethodID, jni,
-                        testClass, "setRedefinitionFailed", "()V")) != NULL))
+    setRedefinitionFailed = jni->GetStaticMethodID(testClass, "setRedefinitionFailed", "()V")) != NULL))
   {
-    NSK_CPP_STUB2(FatalError, jni,
-                "TEST FAILED: while getting setRedefinitionFailed()\n");
+    jni->FatalError("TEST FAILED: while getting setRedefinitionFailed()\n");
   }
 
   if (!NSK_JNI_VERIFY(jni, (
-    setRedefinitionDone = NSK_CPP_STUB4(GetStaticMethodID, jni,
-                testClass, "setRedefinitionDone", "()V")) != NULL))
+    setRedefinitionDone = jni->GetStaticMethodID(testClass, "setRedefinitionDone", "()V")) != NULL))
   {
-    NSK_CPP_STUB2(FatalError, jni,
-        "TEST FAILED: while getting setRedefinitionDone()\n");
+    jni->FatalError("TEST FAILED: while getting setRedefinitionDone()\n");
   }
 
   nsk_printf("doRedefineInNativeThread\n");
@@ -82,20 +78,16 @@ JNIEXPORT void JNICALL doRedefineInNativeThread(jvmtiEnv * jvmti,
     } else {
       nsk_printf("\nMyClass :: Failed to redefine ..\n");
 
-      if (!NSK_JNI_VERIFY_VOID(jni, NSK_CPP_STUB3(CallStaticVoidMethod, jni,
-                                   testClass, setRedefinitionFailed)))
+      if (!NSK_JNI_VERIFY_VOID(jni, jni->CallStaticVoidMethod(testClass, setRedefinitionFailed)))
       {
-         NSK_CPP_STUB2(FatalError, jni,
-                "TEST FAILED: while calling setRedefinitionFailed()\n");
+         jni->FatalError("TEST FAILED: while calling setRedefinitionFailed()\n");
       }
     }
   }
 
-  if (!NSK_JNI_VERIFY_VOID(jni, NSK_CPP_STUB3(CallStaticVoidMethod, jni,
-                           testClass, setRedefinitionDone)))
+  if (!NSK_JNI_VERIFY_VOID(jni, jni->CallStaticVoidMethod(testClass, setRedefinitionDone)))
   {
-    NSK_CPP_STUB2(FatalError, jni,
-        "TEST FAILED: while calling setRedefinitionDone()\n");
+    jni->FatalError("TEST FAILED: while calling setRedefinitionDone()\n");
   }
 
   nsk_printf(" All 30 redefinitions are done..\n");
@@ -150,10 +142,8 @@ Java_nsk_jvmti_scenarios_hotswap_HS103_hs103t002_hs103t002_startAgentThread(JNIE
   name = jni->NewStringUTF(threadName);
   clas = jni->FindClass("java/lang/Thread");
 
-  if (!NSK_JNI_VERIFY(jni, (method = NSK_CPP_STUB4(GetMethodID,
-            jni, clas, "<init>","(Ljava/lang/String;)V")) != NULL)) {
-    NSK_CPP_STUB2(FatalError, jni,
-            "failed to get ID for the java method\n");
+  if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(clas, "<init>", "(Ljava/lang/String;)V")) != NULL)) {
+    jni->FatalError("failed to get ID for the java method\n");
   }
 
   thread = (jthread) jni->NewObject(clas,method,name);

@@ -52,8 +52,7 @@ Java_nsk_jvmti_scenarios_events_EM02_em02t012_setThread(JNIEnv *jni_env,
                         jobject o, jthread thrd) {
 
     /* make thread accessable for a long time */
-    NSK_JNI_VERIFY(jni_env, (testedThread =
-            NSK_CPP_STUB2(NewGlobalRef, jni_env, thrd)) != NULL);
+    NSK_JNI_VERIFY(jni_env, (testedThread = jni_env->NewGlobalRef(thrd)) != NULL);
 }
 
 static void
@@ -151,12 +150,12 @@ int checkEvents(int step) {
 static void
 changeCount(jvmtiEvent event, int *currentCounts) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
         nsk_jvmti_setFailStatus();
 
     currentCounts[event - JVMTI_MIN_EVENT_TYPE_VAL]++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -176,8 +175,7 @@ cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni_env) {
     if (!checkEvents(STEP_NUMBER))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -331,16 +329,13 @@ static int enableEvent(jvmtiEvent event) {
     if (nsk_jvmti_isOptionalEvent(event)
             && (event != JVMTI_EVENT_FRAME_POP)) {
         if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
         }
     } else {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                    JVMTI_ENABLE, event, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return NSK_FALSE;
@@ -433,10 +428,7 @@ setCallBacks(int step) {
             break;
 
     }
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -455,18 +447,15 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         if (!nsk_jvmti_waitForSync(timeout))
             return;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(SuspendThread, jvmti, testedThread)))
+        if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(testedThread)))
             return;
 
         for (j = 2; j < 1002; j++) {
-            if (!NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(NotifyFramePop, jvmti, testedThread, j)))
+            if (!NSK_JVMTI_VERIFY(jvmti->NotifyFramePop(testedThread, j)))
                 return;
         }
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(ResumeThread, jvmti, testedThread)))
+        if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(testedThread)))
             return;
 
         if (!nsk_jvmti_resumeSync())
@@ -489,7 +478,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
             return;
     }
 
-    NSK_CPP_STUB2(DeleteGlobalRef, agentJNI, testedThread);
+    agentJNI->DeleteGlobalRef(testedThread);
 }
 
 /* ============================================================================= */
@@ -516,8 +505,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return JNI_ERR;
     }
@@ -528,7 +516,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         caps.can_suspend = 1;
         caps.can_generate_frame_pop_events = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
             return JNI_ERR;
     }
 

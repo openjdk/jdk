@@ -88,22 +88,18 @@ static int prepare(JNIEnv* jni) {
     NSK_DISPLAY0("Obtain tested object from a static field of debugee class\n");
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (cls =
-            NSK_CPP_STUB2(FindClass, jni, CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(CLASS_NAME)) != NULL))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find field: %s:%s\n", FIELD_NAME, FIELD_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (fid =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, cls,
-                FIELD_NAME, FIELD_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(cls, FIELD_NAME, FIELD_SIGNATURE)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedObject =
-            NSK_CPP_STUB3(GetStaticObjectField, jni, cls, fid)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->GetStaticObjectField(cls, fid)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedObject =
-            NSK_CPP_STUB2(NewGlobalRef, jni, testedObject)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewGlobalRef(testedObject)) != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -124,13 +120,12 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Set tag on testedObject\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, testedObject,
-            SAMPLE_TAG))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(testedObject, SAMPLE_TAG))) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, testedObject));
+    NSK_TRACE(jni->DeleteGlobalRef(testedObject));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -169,7 +164,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
     caps.can_generate_object_free_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
@@ -182,12 +177,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
 
     return JNI_OK;

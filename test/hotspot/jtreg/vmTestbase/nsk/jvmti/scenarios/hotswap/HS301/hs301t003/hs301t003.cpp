@@ -36,8 +36,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
                                jclass klass) {
   char * className;
   char * generic;
-  if ( ! NSK_JVMTI_VERIFY ( NSK_CPP_STUB4(GetClassSignature,
-                  jvmti_env, klass, &className, &generic) ) ) {
+  if ( ! NSK_JVMTI_VERIFY ( jvmti_env->GetClassSignature(klass, &className, &generic) ) ) {
     nsk_printf(" Agent:: Error while getting ClassFileName Signature ");
   } else {
       if (strcmp(className, CLASS_NAME ) == 0) {
@@ -70,8 +69,7 @@ JNIEXPORT jint JNI_OnLoad_hs301t003(JavaVM *jvm, char *options, void *reserved) 
 jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jvmtiEnv * jvmti;
     nsk_printf("Agent:: Agent_OnLoad.\n");
-    if ( ! NSK_VERIFY ( JNI_OK == NSK_CPP_STUB3(GetEnv, vm,
-                    (void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
+    if ( ! NSK_VERIFY ( JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
         nsk_printf("Agent:: Could not load JVMTI interface.\n");
         return JNI_ERR;
     } else {
@@ -84,15 +82,13 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         memset(&caps, 0, sizeof(caps));
         caps.can_redefine_classes = 1;
         caps.can_generate_all_class_hook_events=1;
-        if (! NSK_JVMTI_VERIFY ( NSK_CPP_STUB2(AddCapabilities, jvmti, &caps) ))  {
+        if (! NSK_JVMTI_VERIFY ( jvmti->AddCapabilities(&caps) ) )  {
             nsk_printf(" Agent:: Error occured while adding capabilities.\n");
             return JNI_ERR;
         }
         memset(&eventCallbacks, 0, sizeof(eventCallbacks));
         eventCallbacks.ClassPrepare = &callbackClassPrepare;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                    &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             nsk_printf(" Agent:: Error occured while setting event call back.\n");
             return JNI_ERR;
         }

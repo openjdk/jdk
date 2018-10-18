@@ -54,17 +54,16 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     BreakpointEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
     }
 
     NSK_DISPLAY2("Breakpoint event: %s%s\n", name, signature);
 
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 
     switch(BreakpointEventsCount) {
     case 1:
@@ -85,8 +84,7 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         break;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-        NSK_CPP_STUB3(NotifyFramePop, jvmti_env, thread, 0))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->NotifyFramePop(thread, 0))) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -99,8 +97,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     char *signature = NULL;
 
     FramePopEventsCount++;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName,
-            jvmti_env, method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -108,9 +105,9 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     NSK_DISPLAY2("FramePop event: %s%s\n", name, signature);
 
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)signature);
+        jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 /* ========================================================================== */
@@ -126,8 +123,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare: find tested thread\n");
 
     /* get all live threads */
-    if (!NSK_JVMTI_VERIFY(
-           NSK_CPP_STUB3(GetAllThreads, jvmti, &threads_count, &threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
     if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
@@ -139,8 +135,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         /* get thread information */
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info)))
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info)))
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
@@ -151,15 +146,13 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         }
 
         if (info.name != NULL) {
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-                    Deallocate, jvmti, (unsigned char*)info.name)))
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
     }
 
     /* deallocate threads list */
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads)))
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
     if (thread == NULL) {
@@ -167,29 +160,24 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread =
-            NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(GetObjectClass, jni, thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
     /* get tested thread method 'checkPoint' */
-    if (!NSK_JNI_VERIFY(jni, (method = NSK_CPP_STUB4(
-            GetMethodID, jni, klass, "checkPoint", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "checkPoint", "()V")) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetBreakpoint, jvmti, method, 0)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetBreakpoint(method, 0)))
         return NSK_FALSE;
 
     /* enable events */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
         return NSK_FALSE;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -224,12 +212,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_DISABLE, JVMTI_EVENT_FRAME_POP, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FRAME_POP, NULL)))
         nsk_jvmti_setFailStatus();
 
-    NSK_TRACE(NSK_CPP_STUB3(ClearBreakpoint, jvmti, method, 0));
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, thread));
+    NSK_TRACE(jvmti->ClearBreakpoint(method, 0));
+    NSK_TRACE(jni->DeleteGlobalRef(thread));
 
     if (!nsk_jvmti_resumeSync())
         return;
@@ -268,7 +255,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_breakpoint_events = 1;
     caps.can_generate_frame_pop_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))

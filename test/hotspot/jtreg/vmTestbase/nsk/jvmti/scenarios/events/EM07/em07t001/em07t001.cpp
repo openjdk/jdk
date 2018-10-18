@@ -64,12 +64,12 @@ void showEventStatistics() {
 
 void changeCount(jvmtiEvent event) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
         nsk_jvmti_setFailStatus();
 
     eventCount[event - JVMTI_MIN_EVENT_TYPE_VAL]++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -87,8 +87,7 @@ JNIEXPORT void JNICALL
 cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni_env) {
     changeCount(JVMTI_EVENT_VM_DEATH);
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(DestroyRawMonitor, jvmti, syncLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();
 
 }
@@ -234,8 +233,7 @@ int enableOptionalEvents(jvmtiEnv *jvmti) {
         jvmtiEvent event = (jvmtiEvent)(i + JVMTI_MIN_EVENT_TYPE_VAL);
         if (nsk_jvmti_isOptionalEvent(event))
             if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                    NSK_CPP_STUB4(SetEventNotificationMode, jvmti,
-                        JVMTI_ENABLE, event, NULL))) {
+                    jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
                 NSK_COMPLAIN1("Unexpected error enabling %s\n",
                     TranslateEvent(event));
                 result = NSK_FALSE;
@@ -309,10 +307,7 @@ static int setCallBacks(jvmtiEnv *jvmti) {
     eventCallbacks.ObjectFree                = cbObjectFree;
     eventCallbacks.VMObjectAlloc             = cbVMObjectAlloc;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -363,8 +358,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(CreateRawMonitor, jvmti, "_syncLock", &syncLock))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
         nsk_jvmti_setFailStatus();
         return JNI_ERR;
     }
