@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ $(eval $(call TestNotContaining,foo bar,baz))
 
 EQUALS_VALUE1 := value1$(SPACE)
 EQUALS_VALUE2 := value2
+EQUALS_EMPTY :=
 
 ifneq ($(call equals, $(EQUALS_VALUE1), $(EQUALS_VALUE2)), )
   $(error The strings >$(EQUALS_VALUE1)< and >$(EQUALS_VALUE2)< are equal)
@@ -100,6 +101,18 @@ endif
 
 ifeq ($(call equals, $(EQUALS_VALUE1), $(EQUALS_VALUE1)), )
   $(error The strings >$(EQUALS_VALUE1)< and >$(EQUALS_VALUE1)< are not equal)
+endif
+
+ifeq ($(call equals, $(EQUALS_EMPTY), $(EQUALS_EMPTY)), )
+  $(error The strings >$(EQUALS_EMPTY)< and >$(EQUALS_EMPTY)< are not equal)
+endif
+
+ifneq ($(call equals, $(EQUALS_EMPTY), $(EQUALS_VALUE2)), )
+  $(error The strings >$(EQUALS_EMPTY)< and >$(EQUALS_VALUE2)< are equal)
+endif
+
+ifneq ($(call equals, $(EQUALS_VALUE2), $(EQUALS_EMPTY)), )
+  $(error The strings >$(EQUALS_VALUE2)< and >$(EQUALS_EMPTY)< are equal)
 endif
 
 ################################################################################
