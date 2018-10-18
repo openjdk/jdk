@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,8 @@ import java.util.function.Function;
  *            }
  *        }
  *
- *        private final State;
- *        private final Cleaner.Cleanable cleanable
+ *        private final State state;
+ *        private final Cleaner.Cleanable cleanable;
  *
  *        public CleaningExample() {
  *            this.state = new State(...);
