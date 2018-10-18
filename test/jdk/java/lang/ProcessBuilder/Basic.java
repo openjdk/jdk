@@ -36,6 +36,13 @@
  * @author Martin Buchholz
  */
 
+/*
+ * @test
+ * @modules java.base/java.lang:open
+ * @requires (os.family == "linux")
+ * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ */
+
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
