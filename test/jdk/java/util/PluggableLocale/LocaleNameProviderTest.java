@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *
+ * @test
+ * @bug 4052440 8000273 8062588 8210406
+ * @summary LocaleNameProvider tests
+ * @library providersrc/foobarutils
+ *          providersrc/barprovider
+ * @modules java.base/sun.util.locale.provider
+ *          java.base/sun.util.resources
+ * @build com.foobar.Utils
+ *        com.bar.*
+ * @run main/othervm -Djava.locale.providers=JRE,SPI LocaleNameProviderTest
  */
 
-import java.text.*;
-import java.util.*;
-import sun.util.locale.provider.*;
-import sun.util.resources.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+
+import com.bar.LocaleNameProviderImpl;
+
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
+import sun.util.resources.OpenListResourceBundle;
 
 public class LocaleNameProviderTest extends ProviderTest {
 
@@ -41,7 +57,7 @@ public class LocaleNameProviderTest extends ProviderTest {
     }
 
     void checkAvailLocValidityTest() {
-        com.bar.LocaleNameProviderImpl lnp = new com.bar.LocaleNameProviderImpl();
+        LocaleNameProviderImpl lnp = new LocaleNameProviderImpl();
         Locale[] availloc = Locale.getAvailableLocales();
         Locale[] testloc = availloc.clone();
         List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getLocaleNameProvider().getAvailableLocales());
@@ -121,7 +137,7 @@ public class LocaleNameProviderTest extends ProviderTest {
             if (YY_suffix.getVariant().equals(retVrnt)) {
                 System.out.println(message);
                 return;
-}
+            }
             message = "variantFallbackTest() failed. Returned variant: "+retVrnt;
         }
 

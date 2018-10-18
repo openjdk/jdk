@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *
+ * @test
+ * @bug 7058207 8000986 8062588 8210406
+ * @summary CalendarDataProvider tests
+ * @library providersrc/foobarutils
+ *          providersrc/barprovider
+ * @build com.foobar.Utils
+ *        com.bar.*
+ * @run main/othervm -Djava.locale.providers=JRE,SPI CalendarDataProviderTest
  */
 
-import java.text.*;
-import java.util.*;
-import static java.util.Calendar.*;
-import sun.util.locale.provider.*;
-import sun.util.resources.*;
-import com.bar.CalendarDataProviderImpl;
+import java.util.Calendar;
+import java.util.Locale;
+
+import static java.util.Calendar.WEDNESDAY;
 
 /**
  * Test case for CalendarDataProvider.
@@ -51,7 +57,6 @@ public class CalendarDataProviderTest {
     void test() {
         Locale kids = new Locale("ja", "JP", "kids"); // test provider's supported locale
         Calendar kcal = Calendar.getInstance(kids);
-        Calendar jcal = Calendar.getInstance(Locale.JAPAN);
 
         // check the week parameters
         checkResult("firstDayOfWeek", kcal.getFirstDayOfWeek(), WEDNESDAY);
