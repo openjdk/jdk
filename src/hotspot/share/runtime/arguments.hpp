@@ -36,7 +36,7 @@
 
 // Arguments parses the command line and recognizes options
 
-// Invocation API hook typedefs (these should really be defined in jni.hpp)
+// Invocation API hook typedefs (these should really be defined in jni.h)
 extern "C" {
   typedef void (JNICALL *abort_hook_t)(void);
   typedef void (JNICALL *exit_hook_t)(jint code);

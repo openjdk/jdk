@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1871,6 +1871,20 @@ struct JNIEnv_ {
 #endif /* __cplusplus */
 };
 
+/*
+ * optionString may be any option accepted by the JVM, or one of the
+ * following:
+ *
+ * -D<name>=<value>          Set a system property.
+ * -verbose[:class|gc|jni]   Enable verbose output, comma-separated. E.g.
+ *                           "-verbose:class" or "-verbose:gc,class"
+ *                           Standard names include: gc, class, and jni.
+ *                           All nonstandard (VM-specific) names must begin
+ *                           with "X".
+ * vfprintf                  extraInfo is a pointer to the vfprintf hook.
+ * exit                      extraInfo is a pointer to the exit hook.
+ * abort                     extraInfo is a pointer to the abort hook.
+ */
 typedef struct JavaVMOption {
     char *optionString;
     void *extraInfo;
