@@ -323,7 +323,12 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
 }
 
 PerfData* PerfDataManager::find_by_name(const char* name) {
-  return _all->find_by_name(name);
+  // if add_item hasn't been called the list won't be initialized
+  if (_all != NULL) {
+    return _all->find_by_name(name);
+  } else {
+    return NULL;
+  }
 }
 
 PerfDataList* PerfDataManager::all() {
@@ -590,10 +595,6 @@ bool PerfDataList::by_name(void* name, PerfData* pd) {
 }
 
 PerfData* PerfDataList::find_by_name(const char* name) {
-
-  // if add_item hasn't been called the list won't be initialized
-  if (this == NULL)
-    return NULL;
 
   int i = _set->find((void*)name, PerfDataList::by_name);
 

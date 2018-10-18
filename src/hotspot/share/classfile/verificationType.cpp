@@ -172,7 +172,11 @@ void VerificationType::print_on(outputStream* st) const {
       } else if (is_uninitialized()) {
         st->print("uninitialized %d", bci());
       } else {
-        name()->print_value_on(st);
+        if (name() != NULL) {
+          name()->print_value_on(st);
+        } else {
+          st->print_cr("NULL");
+        }
       }
   }
 }

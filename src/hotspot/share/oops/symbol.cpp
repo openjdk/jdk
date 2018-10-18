@@ -294,28 +294,20 @@ void Symbol::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Symbol::print_on(outputStream* st) const {
-  if (this == NULL) {
-    st->print_cr("NULL");
-  } else {
-    st->print("Symbol: '");
-    print_symbol_on(st);
-    st->print("'");
-    st->print(" count %d", refcount());
-  }
+  st->print("Symbol: '");
+  print_symbol_on(st);
+  st->print("'");
+  st->print(" count %d", refcount());
 }
 
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
-  if (this == NULL) {
-    st->print("NULL");
-  } else {
-    st->print("'");
-    for (int i = 0; i < utf8_length(); i++) {
-      st->print("%c", char_at(i));
-    }
-    st->print("'");
+  st->print("'");
+  for (int i = 0; i < utf8_length(); i++) {
+    st->print("%c", char_at(i));
   }
+  st->print("'");
 }
 
 bool Symbol::is_valid(Symbol* s) {
