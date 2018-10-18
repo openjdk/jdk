@@ -26,10 +26,7 @@
  * @bug 8210215
  * @summary Test that C2 correctly optimizes trichotomy expressions.
  * @library /test/lib
- * @run main/othervm -XX:-TieredCompilation -Xbatch
- *                   -XX:CompileCommand=dontinline,compiler.codegen.TestTrichotomyExpressions::test*
- *                   compiler.codegen.TestTrichotomyExpressions
- * @run main/othervm -XX:-TieredCompilation -Xcomp
+ * @run main/othervm/timeout=240 -XX:-TieredCompilation -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.codegen.TestTrichotomyExpressions::test*
  *                   compiler.codegen.TestTrichotomyExpressions
  */
