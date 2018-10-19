@@ -82,7 +82,7 @@ private:
   // Distinguished instances of certain ciObjects..
   static ciObject*              _null_object_instance;
 
-#define WK_KLASS_DECL(name, ignore_s, ignore_o) static ciInstanceKlass* _##name;
+#define WK_KLASS_DECL(name, ignore_s) static ciInstanceKlass* _##name;
   WK_KLASSES_DO(WK_KLASS_DECL)
 #undef WK_KLASS_DECL
 
@@ -374,7 +374,7 @@ public:
 
 
   // Access to certain well known ciObjects.
-#define WK_KLASS_FUNC(name, ignore_s, ignore_o) \
+#define WK_KLASS_FUNC(name, ignore_s) \
   ciInstanceKlass* name() { \
     return _##name;\
   }
