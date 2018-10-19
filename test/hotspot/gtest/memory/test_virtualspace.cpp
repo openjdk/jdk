@@ -190,3 +190,150 @@ TEST_VM(ReservedSpace, size_alignment_page_type_large_page) {
   EXPECT_NO_FATAL_FAILURE(test_reserved_size_alignment_page_type(lp * 4, lp * 2, true));
   EXPECT_NO_FATAL_FAILURE(test_reserved_size_alignment_page_type(lp * 8, lp * 2, true));
 }
+
+namespace {
+  enum TestLargePages {
+    Default,
+    Disable,
+    Reserve,
+    Commit
+  };
+
+  class ReservedSpaceReleaser {
+    ReservedSpace* const _rs;
+   public:
+    ReservedSpaceReleaser(ReservedSpace* rs) : _rs(rs) { }
+    ~ReservedSpaceReleaser() {
+      _rs->release();
+    }
+  };
+
+  ReservedSpace reserve_memory(size_t reserve_size_aligned, TestLargePages mode) {
+    switch(mode) {
+      default:
+      case Default:
+      case Reserve:
+        return ReservedSpace(reserve_size_aligned);
+      case Disable:
+      case Commit:
+        return ReservedSpace(reserve_size_aligned,
+                             os::vm_allocation_granularity(),
+                             /* large */ false, /* exec */ false);
+    }
+  }
+
+  bool initialize_virtual_space(VirtualSpace& vs, ReservedSpace rs, TestLargePages mode) {
+    switch(mode) {
+      default:
+      case Default:
+      case Reserve:
+        return vs.initialize(rs, 0);
+      case Disable:
+        return vs.initialize_with_granularity(rs, 0, os::vm_page_size());
+      case Commit:
+        return vs.initialize_with_granularity(rs, 0, os::page_size_for_region_unaligned(rs.size(), 1));
+    }
+  }
+
+ void test_virtual_space_actual_committed_space(size_t reserve_size, size_t commit_size,
+                                                TestLargePages mode = Default) {
+    size_t granularity = os::vm_allocation_granularity();
+    size_t reserve_size_aligned = align_up(reserve_size, granularity);
+
+    ReservedSpace reserved = reserve_memory(reserve_size_aligned, mode);
+    ReservedSpaceReleaser releaser(&reserved);
+
+    ASSERT_TRUE(reserved.is_reserved());
+
+    VirtualSpace vs;
+    ASSERT_TRUE(initialize_virtual_space(vs, reserved, mode)) << "Failed to initialize VirtualSpace";
+    vs.expand_by(commit_size, false);
+
+    if (vs.special()) {
+      EXPECT_EQ(reserve_size_aligned, vs.actual_committed_size());
+    } else {
+      EXPECT_GE(vs.actual_committed_size(), commit_size);
+      // Approximate the commit granularity.
+      // Make sure that we don't commit using large pages
+      // if large pages has been disabled for this VirtualSpace.
+      size_t commit_granularity = (mode == Disable || !UseLargePages) ?
+                                   os::vm_page_size() : os::large_page_size();
+      EXPECT_LT(vs.actual_committed_size(), commit_size + commit_granularity);
+    }
+  }
+}
+
+TEST_VM(VirtualSpace, actual_committed_space) {
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(4 * K,  0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(4 * K,  4 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(8 * K,  0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(8 * K,  4 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(8 * K,  8 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(12 * K, 0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(12 * K, 4 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(12 * K, 8 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(12 * K, 12 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(64 * K, 0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(64 * K, 32 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(64 * K, 64 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(2 * M,  0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(2 * M,  4 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(2 * M,  64 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(2 * M,  1 * M));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(2 * M,  2 * M));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 0));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 4 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 8 * K));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 1 * M));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 2 * M));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 5 * M));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 10 * M));
+}
+
+TEST_VM(VirtualSpace, actual_committed_space_one_large_page) {
+  if (!UseLargePages) {
+    return;
+  }
+
+  size_t large_page_size = os::large_page_size();
+
+  ReservedSpace reserved(large_page_size, large_page_size, true, false);
+  ReservedSpaceReleaser releaser(&reserved);
+  ASSERT_TRUE(reserved.is_reserved());
+
+  VirtualSpace vs;
+  ASSERT_TRUE(vs.initialize(reserved, 0)) << "Failed to initialize VirtualSpace";
+  vs.expand_by(large_page_size, false);
+
+  EXPECT_EQ(large_page_size, vs.actual_committed_size());
+}
+
+TEST_VM(VirtualSpace, disable_large_pages) {
+  if (!UseLargePages) {
+    return;
+  }
+  // These test cases verify that if we force VirtualSpace to disable large pages
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 0,      Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 4 * K,  Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 8 * K,  Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 1 * M,  Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 2 * M,  Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 5 * M,  Disable));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 10 * M, Disable));
+
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 0,      Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 4 * K,  Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 8 * K,  Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 1 * M,  Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 2 * M,  Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 5 * M,  Reserve));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 10 * M, Reserve));
+
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 0,      Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 4 * K,  Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 8 * K,  Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 1 * M,  Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 2 * M,  Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 5 * M,  Commit));
+  EXPECT_NO_FATAL_FAILURE(test_virtual_space_actual_committed_space(10 * M, 10 * M, Commit));
+}
