@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.java2d.SunGraphics2D;
 /**
  * @test
  * @key headful
- * @bug 8043869 8075244 8078082 8145173 8151787
+ * @bug 8043869 8075244 8078082 8145173 8151787 8212213
  * @summary Tests the HiDPI splash screen support for windows and MAC
  * @modules java.desktop/sun.java2d
  * @run main MultiResolutionSplashTest GENERATE_IMAGES

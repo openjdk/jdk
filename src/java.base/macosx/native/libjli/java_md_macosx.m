@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -761,7 +761,7 @@ static jboolean sameThread = JNI_FALSE; /* start VM in current thread */
  * Note there is a callback on this function from the splashscreen logic,
  * this as well SetJavaVMValue() needs to be simplified.
  */
-JavaVM*
+JNIEXPORT JavaVM* JNICALL
 JLI_GetJavaVMInstance()
 {
     return jvmInstance;
