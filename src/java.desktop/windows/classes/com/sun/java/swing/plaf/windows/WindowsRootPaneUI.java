@@ -165,11 +165,13 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
         }
 
         public boolean postProcessKeyEvent(KeyEvent ev) {
-            if(ev.isConsumed() && ev.getKeyCode() != KeyEvent.VK_ALT) {
-                // mnemonic combination, it's consumed, but we need
-                // set altKeyPressed to false, otherwise after selection
-                // component by mnemonic combination a menu will be open
-                altKeyPressed = false;
+            if (ev.isConsumed()) {
+                if (ev.getKeyCode() != KeyEvent.VK_ALT) {
+                    // mnemonic combination, it's consumed, but we need
+                    // set altKeyPressed to false, otherwise after selection
+                    // component by mnemonic combination a menu will be open
+                    altKeyPressed = false;
+                }
                 return false;
             }
             if (ev.getKeyCode() == KeyEvent.VK_ALT) {
