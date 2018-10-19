@@ -114,7 +114,7 @@ public class DeferredStepTest extends JdbTest {
          * Each "next" produces something like ("Breakpoint hit" line only if the line has BP)
          *   Step completed:
          *     Breakpoint hit: "thread=jj2", DeferredStepTestTarg$jj2.run(), line=74 bci=12
-         *     74                    ++count2;                           // @2 breakpoint
+         *     74                    ++count2;                           // @ 2 breakpoint
          *     <empty line>
          *     jj2[1]
          */
