@@ -26,21 +26,26 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.http.HttpConnectTimeoutException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.security.AccessControlContext;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.HttpTimeoutException;
 import jdk.internal.net.http.common.Log;
@@ -200,11 +205,60 @@ class MultiExchange<T> {
         return cf;
     }
 
+    // return true if the response is a type where a response body is never possible
+    // and therefore doesn't have to include header information which indicates no
+    // body is present. This is distinct from responses that also do not contain
+    // response bodies (possibly ever) but which are required to have content length
+    // info in the header (eg 205). Those cases do not have to be handled specially
+
+    private static boolean bodyNotPermitted(Response r) {
+        return r.statusCode == 204;
+    }
+
+    private boolean bodyIsPresent(Response r) {
+        HttpHeaders headers = r.headers();
+        if (headers.firstValue("Content-length").isPresent())
+            return true;
+        if (headers.firstValue("Transfer-encoding").isPresent())
+            return true;
+        return false;
+    }
+
+    // Call the user's body handler to get an empty body object
+
+    private CompletableFuture<HttpResponse<T>> handleNoBody(Response r, Exchange<T> exch) {
+        BodySubscriber<T> bs = responseHandler.apply(new ResponseInfoImpl(r.statusCode(),
+                r.headers(), r.version()));
+        CompletionStage<T> cs = bs.getBody();
+        bs.onSubscribe(new NullSubscription());
+        bs.onComplete();
+        MinimalFuture<HttpResponse<T>> result = new MinimalFuture<>();
+        cs.whenComplete((nullBody, exception) -> {
+            if (exception != null)
+                result.completeExceptionally(exception);
+            else {
+                this.response =
+                        new HttpResponseImpl<>(r.request(), r, this.response, nullBody, exch);
+                result.complete(this.response);
+            }
+        });
+        return result;
+    }
+
     private CompletableFuture<HttpResponse<T>>
     responseAsync0(CompletableFuture<Void> start) {
         return start.thenCompose( v -> responseAsyncImpl())
                     .thenCompose((Response r) -> {
                         Exchange<T> exch = getExchange();
+                        if (bodyNotPermitted(r)) {
+                            if (bodyIsPresent(r)) {
+                                IOException ioe = new IOException(
+                                    "unexpected content length header with 204 response");
+                                exch.cancel(ioe);
+                                return MinimalFuture.failedFuture(ioe);
+                            } else
+                                return handleNoBody(r, exch);
+                        }
                         return exch.readBodyAsync(responseHandler)
                             .thenApply((T body) -> {
                                 this.response =
@@ -212,6 +266,16 @@ class MultiExchange<T> {
                                 return this.response;
                             });
                     });
+    }
+
+    static class NullSubscription implements Flow.Subscription {
+        @Override
+        public void request(long n) {
+        }
+
+        @Override
+        public void cancel() {
+        }
     }
 
     private CompletableFuture<Response> responseAsyncImpl() {

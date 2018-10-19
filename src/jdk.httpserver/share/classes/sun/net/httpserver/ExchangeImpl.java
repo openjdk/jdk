@@ -255,9 +255,7 @@ class ExchangeImpl {
                     noContentToSend = true;
                     contentLen = 0;
                 }
-                if (noContentLengthHeader) {
-                    rspHdrs.remove("Content-length");
-                } else {
+                if (!noContentLengthHeader) {
                     rspHdrs.set("Content-length", Long.toString(contentLen));
                 }
                 o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
