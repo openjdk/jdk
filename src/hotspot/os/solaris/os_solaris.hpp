@@ -102,8 +102,6 @@ class Solaris {
   static size_t page_size_for_alignment(size_t alignment);
   static bool setup_large_pages(caddr_t start, size_t bytes, size_t align);
 
-  static void init_thread_fpu_state(void);
-
   static void try_enable_extended_io();
 
   static struct sigaction *(*get_signal_action)(int);
@@ -148,6 +146,9 @@ class Solaris {
 
   // SR_handler
   static void SR_handler(Thread* thread, ucontext_t* uc);
+
+  static void init_thread_fpu_state(void);
+
  protected:
   // Solaris-specific interface goes here
   static julong available_memory();
@@ -268,6 +269,7 @@ class Solaris {
   static          jint  _os_thread_limit;
   static volatile jint  _os_thread_count;
 
+  static void correct_stack_boundaries_for_primordial_thread(Thread* thr);
 
   // Stack overflow handling
 

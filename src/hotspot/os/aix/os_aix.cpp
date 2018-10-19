@@ -776,12 +776,7 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
 // Thread start routine for all newly created threads
 static void *thread_native_entry(Thread *thread) {
 
-  // find out my own stack dimensions
-  {
-    // actually, this should do exactly the same as thread->record_stack_base_and_size...
-    thread->set_stack_base(os::current_stack_base());
-    thread->set_stack_size(os::current_stack_size());
-  }
+  thread->record_stack_base_and_size();
 
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
@@ -834,19 +829,14 @@ static void *thread_native_entry(Thread *thread) {
   assert(osthread->get_state() == RUNNABLE, "invalid os thread state");
 
   // Call one more level start routine.
-  thread->run();
+  thread->call_run();
+
+  // Note: at this point the thread object may already have deleted itself.
+  // Prevent dereferencing it from here on out.
+  thread = NULL;
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) kernel_thread_id);
-
-  // If a thread has not deleted itself ("delete this") as part of its
-  // termination sequence, we have to ensure thread-local-storage is
-  // cleared before we actually terminate. No threads should ever be
-  // deleted asynchronously with respect to their termination.
-  if (Thread::current_or_null_safe() != NULL) {
-    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
-    thread->clear_thread_current();
-  }
 
   return 0;
 }

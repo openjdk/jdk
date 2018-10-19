@@ -338,31 +338,60 @@ void Thread::clear_thread_current() {
 }
 
 void Thread::record_stack_base_and_size() {
+  // Note: at this point, Thread object is not yet initialized. Do not rely on
+  // any members being initialized. Do not rely on Thread::current() being set.
+  // If possible, refrain from doing anything which may crash or assert since
+  // quite probably those crash dumps will be useless.
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
-  // CR 7190089: on Solaris, primordial thread's stack is adjusted
-  // in initialize_thread(). Without the adjustment, stack size is
-  // incorrect if stack is set to unlimited (ulimit -s unlimited).
-  // So far, only Solaris has real implementation of initialize_thread().
-  //
-  // set up any platform-specific state.
-  os::initialize_thread(this);
+
+#ifdef SOLARIS
+  if (os::is_primordial_thread()) {
+    os::Solaris::correct_stack_boundaries_for_primordial_thread(this);
+  }
+#endif
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
     ((JavaThread*) this)->set_stack_overflow_limit();
     ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
   }
+}
+
 #if INCLUDE_NMT
-  // record thread's native stack, stack grows downward
+void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
+}
 #endif // INCLUDE_NMT
+
+void Thread::call_run() {
+  // At this point, Thread object should be fully initialized and
+  // Thread::current() should be set.
+
+  register_thread_stack_with_NMT();
+
   log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
     PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
     os::current_thread_id(), p2i(stack_base() - stack_size()),
     p2i(stack_base()), stack_size()/1024);
-}
 
+  // Invoke <ChildClass>::run()
+  this->run();
+  // Returned from <ChildClass>::run(). Thread finished.
+
+  // Note: at this point the thread object may already have deleted itself.
+  // So from here on do not dereference *this*.
+
+  // If a thread has not deleted itself ("delete this") as part of its
+  // termination sequence, we have to ensure thread-local-storage is
+  // cleared before we actually terminate. No threads should ever be
+  // deleted asynchronously with respect to their termination.
+  if (Thread::current_or_null_safe() != NULL) {
+    assert(Thread::current_or_null_safe() == this, "current thread is wrong");
+    Thread::clear_thread_current();
+  }
+
+}
 
 Thread::~Thread() {
   JFR_ONLY(Jfr::on_thread_destruct(this);)
@@ -417,15 +446,10 @@ Thread::~Thread() {
   // clear Thread::current if thread is deleting itself.
   // Needed to ensure JNI correctly detects non-attached threads.
   if (this == Thread::current()) {
-    clear_thread_current();
+    Thread::clear_thread_current();
   }
 
   CHECK_UNHANDLED_OOPS_ONLY(if (CheckUnhandledOops) delete unhandled_oops();)
-}
-
-// NOTE: dummy function for assertion purpose.
-void Thread::run() {
-  ShouldNotReachHere();
 }
 
 #ifdef ASSERT
@@ -1374,7 +1398,6 @@ int WatcherThread::sleep() const {
 void WatcherThread::run() {
   assert(this == watcher_thread(), "just checking");
 
-  this->record_stack_base_and_size();
   this->set_native_thread_name(this->name());
   this->set_active_handles(JNIHandleBlock::allocate_block());
   while (true) {
@@ -1739,9 +1762,6 @@ void JavaThread::run() {
 
   // used to test validity of stack trace backs
   this->record_base_of_stack_pointer();
-
-  // Record real stack base and size.
-  this->record_stack_base_and_size();
 
   this->create_stack_guard_pages();
 
@@ -3709,6 +3729,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->initialize_thread_current();
   // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
+  main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
 
   if (!main_thread->set_as_starting_thread()) {

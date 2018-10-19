@@ -91,10 +91,6 @@ char* os::non_memory_address_word() {
   return (char*) -1;
 }
 
-void os::initialize_thread(Thread* thr) {
-  // Nothing to do
-}
-
 #ifdef AARCH64
 
 #define arm_pc pc

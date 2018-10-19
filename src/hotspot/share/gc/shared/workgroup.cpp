@@ -297,7 +297,6 @@ void AbstractGangWorker::run() {
 }
 
 void AbstractGangWorker::initialize() {
-  this->record_stack_base_and_size();
   this->initialize_named_thread();
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
