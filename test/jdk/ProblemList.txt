@@ -758,7 +758,6 @@ javax/swing/text/CSSBorder/6796710/bug6796710.java 8196099 windows-all
 javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
 javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
-javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java 8196434 linux-all,solaris-all
 javax/swing/JComboBox/8032878/bug8032878.java 8196439 linux-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
@@ -808,7 +807,6 @@ javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
 javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
 javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
 javax/swing/JTextArea/TextViewOOM/TextViewOOM.java 8167355 generic-all
-javax/swing/JEditorPane/8195095/ImageViewTest.java 8202656 windows-all
 javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8199529 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
