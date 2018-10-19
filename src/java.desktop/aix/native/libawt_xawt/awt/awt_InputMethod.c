@@ -1148,6 +1148,7 @@ PreeditDrawCallback(XIC ic, XPointer client_data,
                         tmpstyle[cnt] = text->feedback[cnt];
                 (*env)->SetIntArrayRegion(env, style, 0,
                                           text->length, (jint *)tmpstyle);
+                free(tmpstyle);
             }
         }
     }
