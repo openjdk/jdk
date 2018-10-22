@@ -100,7 +100,7 @@ public final class StackWalker {
      */
     public interface StackFrame {
         /**
-         * Gets the <a href="ClassLoader.html#name">binary name</a>
+         * Gets the <a href="ClassLoader.html#binary-name">binary name</a>
          * of the declaring class of the method represented by this stack frame.
          *
          * @return the binary name of the declaring class of the method
