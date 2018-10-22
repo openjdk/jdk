@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -32,8 +32,9 @@
  * @build KullaTesting TestingInputStream
  * @run testng ToolSimpleTest
  */
-import java.util.Arrays;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -154,6 +155,20 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  dropped method p()"),
                 (a) -> assertCommand(a, "m()",
                         "|  attempted to call method n() which cannot be invoked until method p() is declared")
+        );
+    }
+
+    @Test
+    public void testThrowWithPercent() {
+        test(
+                (a) -> assertCommandCheckOutput(a,
+                        "URI u = new URI(\"http\", null, \"h\", -1, \"a\" + (char)0x04, null, null);", (s) ->
+                                assertTrue(s.contains("URISyntaxException") && !s.contains("JShellTool"),
+                                        "Output: '" + s + "'")),
+                (a) -> assertCommandCheckOutput(a,
+                        "throw new Exception(\"%z\")", (s) ->
+                                assertTrue(s.contains("java.lang.Exception") && !s.contains("UnknownFormatConversionException"),
+                                        "Output: '" + s + "'"))
         );
     }
 
