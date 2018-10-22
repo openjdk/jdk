@@ -57,9 +57,7 @@ enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
         NSK_DISPLAY1("disabling %s\n", TranslateEvent(event));
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, enable,
-                                            event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -92,10 +90,7 @@ setCallBacks() {
 
     eventCallbacks.ThreadEnd = cbThreadEnd;
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                &eventCallbacks,
-                                sizeof(eventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
     return NSK_TRUE;

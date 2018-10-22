@@ -77,7 +77,7 @@ static jvmtiError init_agent_data(jvmtiEnv *jvmti_env, agent_data_t *data) {
     data->thread_state = NEW;
     data->last_debuggee_status = NSK_STATUS_PASSED;
 
-    return NSK_CPP_STUB3(CreateRawMonitor, jvmti_env, "agent_data_monitor", &data->monitor);
+    return jvmti_env->CreateRawMonitor("agent_data_monitor", &data->monitor);
 }
 
 /** Reset agent data to prepare for another run. */
@@ -93,14 +93,13 @@ void nsk_jvmti_resetAgentData() {
 }
 
 static jvmtiError free_agent_data(jvmtiEnv *jvmti_env, agent_data_t *data) {
-    return NSK_CPP_STUB2(DestroyRawMonitor, jvmti_env, data->monitor);
+    return jvmti_env->DestroyRawMonitor(data->monitor);
 }
 
 /** Create JVMTI environment. */
 jvmtiEnv* nsk_jvmti_createJVMTIEnv(JavaVM* javaVM, void* reserved) {
     jvm = javaVM;
-    if (!NSK_VERIFY(
-            NSK_CPP_STUB3(GetEnv, javaVM, (void **)&jvmti_env, JVMTI_VERSION_1_1) == JNI_OK)) {
+    if (!NSK_VERIFY(javaVM->GetEnv((void **)&jvmti_env, JVMTI_VERSION_1_1) == JNI_OK)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -116,8 +115,7 @@ jvmtiEnv* nsk_jvmti_createJVMTIEnv(JavaVM* javaVM, void* reserved) {
 /** Dispose JVMTI environment */
 static int nsk_jvmti_disposeJVMTIEnv(jvmtiEnv* jvmti_env) {
     if (jvmti_env != NULL) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB1(DisposeEnvironment, jvmti_env))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->DisposeEnvironment())) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -165,7 +163,7 @@ agentThreadWrapper(jvmtiEnv* jvmti_env, JNIEnv* agentJNI, void* arg) {
     /* finalize agent thread */
     {
         /* gelete global ref for agent thread */
-        NSK_CPP_STUB2(DeleteGlobalRef, agentJNI, agentThread);
+        agentJNI->DeleteGlobalRef(agentThread);
         agentThread = NULL;
     }
 }
@@ -184,35 +182,32 @@ static jthread startAgentThreadWrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) {
     jobject threadObject = NULL;
     jobject threadGlobalRef = NULL;
 
-    if (!NSK_JNI_VERIFY(jni_env, (threadClass =
-            NSK_CPP_STUB2(FindClass, jni_env, THREAD_CLASS_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (threadClass = jni_env->FindClass(THREAD_CLASS_NAME)) != NULL)) {
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (threadCtor =
-            NSK_CPP_STUB4(GetMethodID, jni_env, threadClass, THREAD_CTOR_NAME, THREAD_CTOR_SIGNATURE)) != NULL))
+            jni_env->GetMethodID(threadClass, THREAD_CTOR_NAME, THREAD_CTOR_SIGNATURE)) != NULL))
         return NULL;
 
-    if (!NSK_JNI_VERIFY(jni_env, (threadName =
-            NSK_CPP_STUB2(NewStringUTF, jni_env, THREAD_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni_env, (threadName = jni_env->NewStringUTF(THREAD_NAME)) != NULL))
         return NULL;
 
     if (!NSK_JNI_VERIFY(jni_env, (threadObject =
-            NSK_CPP_STUB4(NewObject, jni_env, threadClass, threadCtor, threadName)) != NULL))
+            jni_env->NewObject(threadClass, threadCtor, threadName)) != NULL))
         return NULL;
 
     if (!NSK_JNI_VERIFY(jni_env, (threadGlobalRef =
-            NSK_CPP_STUB2(NewGlobalRef, jni_env, threadObject)) != NULL)) {
-        NSK_CPP_STUB2(DeleteLocalRef, jni_env, threadObject);
+            jni_env->NewGlobalRef(threadObject)) != NULL)) {
+        jni_env->DeleteLocalRef(threadObject);
         return NULL;
     }
     agentThread = (jthread)threadGlobalRef;
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(RunAgentThread, jvmti_env, agentThread,
-                            &agentThreadWrapper, agentThreadArg, THREAD_PRIORITY))) {
-        NSK_CPP_STUB2(DeleteGlobalRef, jni_env, threadGlobalRef);
-        NSK_CPP_STUB2(DeleteLocalRef, jni_env, threadObject);
+            jvmti_env->RunAgentThread(agentThread, &agentThreadWrapper, agentThreadArg, THREAD_PRIORITY))) {
+        jni_env->DeleteGlobalRef(threadGlobalRef);
+        jni_env->DeleteLocalRef(threadObject);
         return NULL;
     }
     return agentThread;
@@ -395,8 +390,7 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
         return NULL;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetLoadedClasses, jvmti_env, &count, &classes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetLoadedClasses(&count, &classes))) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -405,8 +399,7 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
         char* sig = NULL;
         char* generic = NULL;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(GetClassSignature, jvmti_env, classes[i], &sig, &generic))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(classes[i], &sig, &generic))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -415,10 +408,8 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
             foundClass = classes[i];
         }
 
-        if (!(NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)sig))
-                && NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)generic)))) {
+        if (!(NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)sig))
+                && NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic)))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -427,14 +418,13 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
             break;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)classes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)classes))) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (foundClass = (jclass)
-                NSK_CPP_STUB2(NewGlobalRef, jni_env, foundClass)) != NULL)) {
+                jni_env->NewGlobalRef(foundClass)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -454,8 +444,7 @@ jthread nsk_jvmti_threadByName(const char name[]) {
         return NULL;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetAllThreads, jvmti_env, &count, &threads))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetAllThreads(&count, &threads))) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -463,8 +452,7 @@ jthread nsk_jvmti_threadByName(const char name[]) {
     for (i = 0; i < count; i++) {
         jvmtiThreadInfo info;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti_env, threads[i], &info))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadInfo(threads[i], &info))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -475,14 +463,13 @@ jthread nsk_jvmti_threadByName(const char name[]) {
         }
     }
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)threads))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)threads))) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (foundThread = (jthread)
-                NSK_CPP_STUB2(NewGlobalRef, jni_env, foundThread)) != NULL)) {
+                jni_env->NewGlobalRef(foundThread)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -499,8 +486,7 @@ int nsk_jvmti_addLocationCapabilities() {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_get_line_numbers = 1;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddCapabilities, jvmti_env, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->AddCapabilities(&caps)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -515,8 +501,7 @@ int nsk_jvmti_addBreakpointCapabilities() {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_breakpoint_events = 1;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddCapabilities, jvmti_env, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->AddCapabilities(&caps)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -529,7 +514,7 @@ jlocation nsk_jvmti_getLineLocation(jclass cls, jmethodID method, int line) {
     jlocation location = NSK_JVMTI_INVALID_JLOCATION;
     int i;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetLineNumberTable, jvmti_env, method, &count, &table)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetLineNumberTable(method, &count, &table)))
         return NSK_JVMTI_INVALID_JLOCATION;
 
     for (i = 0; i < count; i++) {
@@ -539,7 +524,7 @@ jlocation nsk_jvmti_getLineLocation(jclass cls, jmethodID method, int line) {
         }
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)table)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)table)))
         return NSK_JVMTI_INVALID_JLOCATION;
 
     return location;
@@ -553,7 +538,7 @@ jlocation nsk_jvmti_setLineBreakpoint(jclass cls, jmethodID method, int line) {
             nsk_jvmti_getLineLocation(cls, method, line)) != NSK_JVMTI_INVALID_JLOCATION))
         return NSK_JVMTI_INVALID_JLOCATION;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetBreakpoint, jvmti_env, method, location)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->SetBreakpoint(method, location)))
         return NSK_JVMTI_INVALID_JLOCATION;
 
     return location;
@@ -567,7 +552,7 @@ jlocation nsk_jvmti_clearLineBreakpoint(jclass cls, jmethodID method, int line) 
             nsk_jvmti_getLineLocation(cls, method, line)) != NSK_JVMTI_INVALID_JLOCATION))
         return NSK_JVMTI_INVALID_JLOCATION;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(ClearBreakpoint, jvmti_env, method, location)))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->ClearBreakpoint(method, location)))
         return NSK_JVMTI_INVALID_JLOCATION;
 
     return location;
@@ -580,9 +565,7 @@ int nsk_jvmti_enableEvents(jvmtiEventMode enable, int size, jvmtiEvent list[], j
     int i;
 
     for (i = 0; i < size; i++) {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SetEventNotificationMode, jvmti_env, enable,
-                                                list[i], thread))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(enable, list[i], thread))) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -624,7 +607,7 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     char *name = NULL;
     char *sig = NULL;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -632,15 +615,12 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE)
         return;
 
-    if (NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB5(GetMethodName, jvmti_env, mid, &name, &sig, NULL))) {
+    if (NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(mid, &name, &sig, NULL))) {
         if (strcmp(name, BIND_METHOD_NAME) == 0 &&
                 strcmp(sig, BIND_METHOD_SIGNATURE) == 0) {
 
-            if (NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB3(GetMethodDeclaringClass, jvmti_env, mid, &cls))
-             && NSK_JVMTI_VERIFY(
-                    NSK_CPP_STUB4(GetClassSignature, jvmti_env, cls, &class_sig, NULL))
+            if (NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(mid, &cls))
+             && NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(cls, &class_sig, NULL))
              && strcmp(class_sig, BIND_CLASS_NAME) == 0
              && address != (void*)Java_nsk_share_jvmti_DebugeeClass_checkStatus) {
                 checkStatus_func = (checkStatus_type)address;
@@ -650,13 +630,13 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     }
 
     if (name != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)name);
+        jvmti_env->Deallocate((unsigned char*)name);
 
     if (sig != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)sig);
+        jvmti_env->Deallocate((unsigned char*)sig);
 
     if (class_sig != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti_env, (unsigned char*)class_sig);
+        jvmti_env->Deallocate((unsigned char*)class_sig);
 }
 
 /**
@@ -681,19 +661,16 @@ int nsk_jvmti_init_MA(jvmtiEventCallbacks* callbacks) {
         jvmtiCapabilities caps;
         memset(&caps, 0, sizeof(caps));
         caps.can_generate_native_method_bind_events = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti_env, &caps)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->AddCapabilities(&caps)))
             return NSK_FALSE;
     }
 
     callbacks->NativeMethodBind = nativeMethodBind;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti_env, callbacks,
-                sizeof(jvmtiEventCallbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventCallbacks(callbacks, sizeof(jvmtiEventCallbacks))))
         return NSK_FALSE;
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti_env, JVMTI_ENABLE,
-                JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+            jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -731,7 +708,7 @@ void nsk_jvmti_showPossessedCapabilities(jvmtiEnv *jvmti_env) {
 
     jvmtiCapabilities caps;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities, jvmti_env, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetCapabilities(&caps))) {
         return;
     }
 

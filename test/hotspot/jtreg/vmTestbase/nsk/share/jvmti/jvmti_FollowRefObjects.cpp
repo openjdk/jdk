@@ -115,12 +115,12 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
     jvmtiEnv * jvmti = nsk_jvmti_getAgentJVMTIEnv();
     jint hashCode;
 
-    if ( ! NSK_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, o, tag) == JVMTI_ERROR_NONE) ) {
+    if ( ! NSK_VERIFY(jvmti->SetTag(o, tag) == JVMTI_ERROR_NONE) ) {
         NSK_COMPLAIN2("Can't set tag %li for object %lx\n", tag, o);
         return JNI_FALSE;
     }
 
-    if ( ! NSK_VERIFY(NSK_CPP_STUB3(GetObjectHashCode, jvmti, o, &hashCode) == JVMTI_ERROR_NONE) ) {
+    if ( ! NSK_VERIFY(jvmti->GetObjectHashCode(o, &hashCode) == JVMTI_ERROR_NONE) ) {
         NSK_COMPLAIN1("Can't get hash object %lx\n", o);
         return JNI_FALSE;
     }
@@ -131,7 +131,7 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
         jboolean fCopy;
         const char * s;
 
-        if ( ! NSK_VERIFY((s = NSK_CPP_STUB3(GetStringUTFChars, jni, sInfo, &fCopy)) != NULL) ) {
+        if ( ! NSK_VERIFY((s = jni->GetStringUTFChars(sInfo, &fCopy)) != NULL) ) {
             NSK_COMPLAIN1("Can't get string at %#p\n", sInfo);
             return JNI_FALSE;
         }
@@ -143,7 +143,7 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
 
         g_szTagInfo[tag] = strdup(s);
 
-        NSK_CPP_STUB3(ReleaseStringUTFChars, jni, sInfo, s);
+        jni->ReleaseStringUTFChars(sInfo, s);
 
         NSK_DISPLAY1(" // %s", g_szTagInfo[tag]);
 
@@ -160,7 +160,7 @@ JNIEXPORT jlong JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_ge
 
     jlong tag;
     jvmtiError r;
-    if ( ! NSK_VERIFY((r = NSK_CPP_STUB3(GetTag, jvmti, o, &tag)) == JVMTI_ERROR_NONE) ) {
+    if ( ! NSK_VERIFY((r = jvmti->GetTag(o, &tag)) == JVMTI_ERROR_NONE) ) {
         NSK_COMPLAIN2("Can't GetTag for object %lx. Return code: %i\n", o, r);
         return -1;
     }
@@ -224,14 +224,14 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
     jlong tagFrom, tagTo;
     RefToVerify * pRefRec;
 
-    if ( ! NSK_VERIFY((r = NSK_CPP_STUB3(GetTag, jvmti, from, &tagFrom)) == JVMTI_ERROR_NONE) ) {
+    if ( ! NSK_VERIFY((r = jvmti->GetTag(from, &tagFrom)) == JVMTI_ERROR_NONE) ) {
         NSK_COMPLAIN2("TEST_BUG: Can't GetTag for object %lx. Return code: %i\n", from, r);
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
     }
 
 
-    if ( ! NSK_VERIFY((r = NSK_CPP_STUB3(GetTag, jvmti, to, &tagTo)) == JVMTI_ERROR_NONE) ) {
+    if ( ! NSK_VERIFY((r = jvmti->GetTag(to, &tagTo)) == JVMTI_ERROR_NONE) ) {
         NSK_COMPLAIN2("TEST_BUG: Can't GetTag for object %lx. Return code: %i\n", to, r);
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;

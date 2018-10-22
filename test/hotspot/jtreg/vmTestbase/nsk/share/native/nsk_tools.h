@@ -38,25 +38,6 @@
 #endif // _LP64 && __APPLE__
 
 
-/**
- * Use examples:
- *
- *     jfieldID id = NSK_CPP_STUB3(jni,GetFieldID,clazz,name,sig);
- *
- *     jvmtiError code = NSK_CPP_STUB0(jvmti,DisposeEnvironment);
- *
- */
-
-#define NSK_CPP_STUB1(Func,env)  env->Func()
-#define NSK_CPP_STUB2(Func,env,a)  env->Func(a)
-#define NSK_CPP_STUB3(Func,env,a,b)  env->Func(a,b)
-#define NSK_CPP_STUB4(Func,env,a,b,c)  env->Func(a,b,c)
-#define NSK_CPP_STUB5(Func,env,a,b,c,d)  env->Func(a,b,c,d)
-#define NSK_CPP_STUB6(Func,env,a,b,c,d,e)  env->Func(a,b,c,d,e)
-#define NSK_CPP_STUB7(Func,env,a,b,c,d,e,f)  env->Func(a,b,c,d,e,f)
-#define NSK_CPP_STUB8(Func,env,a,b,c,d,e,f,g)  env->Func(a,b,c,d,e,f,g)
-#define NSK_CPP_STUB9(Func,env,a,b,c,d,e,f,g,h)  env->Func(a,b,c,d,e,f,g,h)
-
 /*************************************************************/
 
 /**

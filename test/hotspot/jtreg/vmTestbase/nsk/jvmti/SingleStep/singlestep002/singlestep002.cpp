@@ -50,8 +50,7 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         jmethodID method, jlocation location) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase,
-            jvmti_env, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         result = STATUS_FAILED;
         NSK_COMPLAIN0("TEST FAILED: unable to obtain phase of the VM execution during SingleStep callback\n\n");
     }
@@ -105,12 +104,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     /* add capability to generate compiled method events */
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_generate_single_step_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_generate_single_step_events)
@@ -121,16 +118,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.SingleStep = &SingleStep;
     callbacks.VMDeath = &VMDeath;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

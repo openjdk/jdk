@@ -41,7 +41,7 @@ and checking JNI errors and pending exceptions:
     NSK_JNI_VERIFY(jni, action)
     NSK_JNI_VERIFY_NEGATIVE(jni, action)
 
-Typical example of usage of NSK_JNI_VERIFY and NSK_CPP_STUB macroses
+Typical example of usage of the NSK_JNI_VERIFY macro
 for invokation of JNI functions:
 
     // jni->FindClass(jni, class_name)

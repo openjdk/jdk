@@ -87,7 +87,7 @@ Options* nsk_jvmti_aod_getMultiagentsOptions(jvmtiEnv *jvmti) {
  */
 
 void nsk_jvmti_aod_deallocate(jvmtiEnv *jvmti, unsigned char* mem) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, jvmti, mem))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(mem))) {
         NSK_COMPLAIN0("Deallocate failed\n");
 
         /*
@@ -101,7 +101,7 @@ void nsk_jvmti_aod_deallocate(jvmtiEnv *jvmti, unsigned char* mem) {
 int nsk_jvmti_aod_getClassName(jvmtiEnv *jvmti, jclass klass, char classNameBuffer[]) {
     char* className;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti, klass, &className, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &className, NULL))) {
         NSK_COMPLAIN0("Failed to get class name\n");
         classNameBuffer[0] = '\0';
         return NSK_FALSE;
@@ -116,7 +116,7 @@ int nsk_jvmti_aod_getClassName(jvmtiEnv *jvmti, jclass klass, char classNameBuff
 
 int nsk_jvmti_aod_getThreadName(jvmtiEnv * jvmti, jthread thread, char threadNameBuffer[]) {
     jvmtiThreadInfo info;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadInfo, jvmti, thread, &info))){
+    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))){
         NSK_COMPLAIN0("Failed to get thread info\n");
         threadNameBuffer[0] = '\0';
         return NSK_FALSE;
@@ -161,25 +161,23 @@ jthread nsk_jvmti_aod_createThread(JNIEnv *jni) {
     jmethodID threadConstructor;
     jthread thread;
 
-    if (!NSK_JNI_VERIFY(jni,
-            (klass = NSK_CPP_STUB2(FindClass, jni, "java/lang/Thread")) != NULL )) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != NULL )) {
         NSK_COMPLAIN0("Failed to get the java.lang.Thread class\n");
         return NULL;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = NSK_CPP_STUB4(GetMethodID, jni, klass, "<init>", "()V") )  != NULL )) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "()V") )  != NULL )) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY (jni,
-            (thread = NSK_CPP_STUB4(NewObject, jni, klass, threadConstructor, NULL)) != NULL ) ) {
+            (thread = jni->NewObject(klass, threadConstructor, NULL)) != NULL ) ) {
         NSK_COMPLAIN0("Failed to create Thread object\n");
         return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread =
-        NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL)) {
         NSK_COMPLAIN0("Failed to create global reference\n");
         return NULL;
     }
@@ -193,29 +191,26 @@ jthread nsk_jvmti_aod_createThreadWithName(JNIEnv *jni, const char* threadName) 
     jthread thread;
     jstring threadNameString;
 
-    if (!NSK_JNI_VERIFY(jni, (threadNameString =
-        NSK_CPP_STUB2(NewStringUTF, jni, threadName)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadNameString = jni->NewStringUTF(threadName)) != NULL))
         return NULL;
 
-    if (!NSK_JNI_VERIFY(jni,
-            (klass = NSK_CPP_STUB2(FindClass, jni, "java/lang/Thread")) != NULL )) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != NULL )) {
         NSK_COMPLAIN0("Failed to get the java.lang.Thread class\n");
         return NULL;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = NSK_CPP_STUB4(GetMethodID, jni, klass, "<init>", "(Ljava/lang/String;)V") )  != NULL )) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "(Ljava/lang/String;)V") )  != NULL )) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
         return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni,
-            (thread = NSK_CPP_STUB4(NewObject, jni, klass, threadConstructor, threadNameString)) != NULL ) ) {
+            (thread = jni->NewObject(klass, threadConstructor, threadNameString)) != NULL ) ) {
         NSK_COMPLAIN0("Failed to create Thread object\n");
         return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread =
-        NSK_CPP_STUB2(NewGlobalRef, jni, thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL)) {
         NSK_COMPLAIN0("Failed to create global reference\n");
         return NULL;
     }

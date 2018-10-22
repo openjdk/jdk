@@ -57,10 +57,6 @@ nsk_tools.h
 
 Provides functions and macroses for the most usefull actions:
 
-    - access native JVM environment in a compiler independent manner
-
-        NSK_CPP_STUBn(function, env, arg1, ..., argn)
-
     - print error message with arguments
 
         NSK_COMPLAINn(format, arg1, ..., argn)
@@ -89,7 +85,7 @@ Provides functions and macroses for the most usefull actions:
     - miscelaneous functions for printing messages
       (hidden by above mentioned macroses)
 
-Typical example of using macroses NSK_CPP_STUB and NSK_VERIFY
+Typical example of using the NSK_VERIFY macro
 for accesing JVM native environment:
 
     // jvm->GetEnv(jvm, &env, version)

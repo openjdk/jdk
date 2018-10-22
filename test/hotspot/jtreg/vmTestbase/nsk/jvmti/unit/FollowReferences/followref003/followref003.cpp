@@ -138,15 +138,14 @@ static int getChainObjects(jvmtiEnv* jvmti, JNIEnv* jni, jobject firstObject,
     count--;
     tag++;
 
-    if (!NSK_JNI_VERIFY(jni, (obj =
-            NSK_CPP_STUB3(GetObjectField, jni, firstObject, firstField)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (obj = jni->GetObjectField(firstObject, firstField)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
     objectDescList[count].tag = objTag;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, obj, objTag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, objTag))) {
         nsk_jvmti_setFailStatus();
     }
     printf("        tag=%-5ld object=0x%p\n", (long)objTag, (void*)obj);
@@ -157,7 +156,7 @@ static int getChainObjects(jvmtiEnv* jvmti, JNIEnv* jni, jobject firstObject,
         return NSK_FALSE;
     }
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteLocalRef, jni, obj));
+    NSK_TRACE(jni->DeleteLocalRef(obj));
     return NSK_TRUE;
 }
 
@@ -178,9 +177,8 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
 
     printf("Allocate memory for objects list: %d objects\n", *objectsCount);
     fflush(0);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(Allocate, jvmti, (*objectsCount * sizeof(ObjectDesc)),
-                                             (unsigned char**)objectDescList))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate((*objectsCount * sizeof(ObjectDesc)),
+                                          (unsigned char**)objectDescList))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -200,8 +198,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
 
     printf("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
     fflush(0);
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            NSK_CPP_STUB2(FindClass, jni, DEBUGEE_CLASS_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -209,14 +206,13 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
 
     printf("Find root object class: %s\n", ROOT_OBJECT_CLASS_NAME);
     fflush(0);
-    if (!NSK_JNI_VERIFY(jni, (rootObjectClass =
-            NSK_CPP_STUB2(FindClass, jni, ROOT_OBJECT_CLASS_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (rootObjectClass = jni->FindClass(ROOT_OBJECT_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     printf("  ... found class: 0x%p\n", (void*)rootObjectClass);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, rootObjectClass, rootClassTag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(rootObjectClass, rootClassTag))) {
         nsk_jvmti_setFailStatus();
     }
     printf("        tag=%-5ld rootClass=0x%p\n",
@@ -225,14 +221,14 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Find chain object class: %s\n", CHAIN_OBJECT_CLASS_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (chainObjectClass =
-            NSK_CPP_STUB2(FindClass, jni, CHAIN_OBJECT_CLASS_NAME)) != NULL)) {
+            jni->FindClass(CHAIN_OBJECT_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     printf("  ... found class: 0x%p\n",
            (void*)chainObjectClass);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, chainObjectClass, chainClassTag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(chainObjectClass, chainClassTag))) {
         nsk_jvmti_setFailStatus();
     }
     printf("        tag=%-5ld chainClass=0x%p\n",
@@ -241,8 +237,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Find static field in debugee class: %s\n", OBJECT_FIELD_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (objectField =
-            NSK_CPP_STUB4(GetStaticFieldID, jni, debugeeClass,
-                            OBJECT_FIELD_NAME, ROOT_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, ROOT_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -251,8 +246,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Find instance field in root object class: %s\n", REACHABLE_CHAIN_FIELD_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (reachableChainField =
-            NSK_CPP_STUB4(GetFieldID, jni, rootObjectClass,
-                        REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(rootObjectClass, REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -261,8 +255,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Find instance field in root object class: %s\n", UNREACHABLE_CHAIN_FIELD_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (unreachableChainField =
-            NSK_CPP_STUB4(GetFieldID, jni, rootObjectClass,
-                          UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(rootObjectClass, UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -271,8 +264,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Find instance field in chain object class: %s\n", TAIL_FIELD_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (tailField =
-            NSK_CPP_STUB4(GetFieldID, jni, chainObjectClass,
-                          TAIL_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(chainObjectClass, TAIL_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -281,16 +273,14 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
     printf("Get root object from static field: %s\n", OBJECT_FIELD_NAME);
     fflush(0);
     if (!NSK_JNI_VERIFY(jni, (*rootObject =
-            NSK_CPP_STUB3(GetStaticObjectField, jni, debugeeClass,
-                                                    objectField)) != NULL)) {
+            jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     printf("  ... got object: 0x%p\n", (void*)*rootObject);
     fflush(0);
 
-    if (!NSK_JNI_VERIFY(jni, (*rootObject =
-            NSK_CPP_STUB2(NewGlobalRef, jni, *rootObject)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (*rootObject = jni->NewGlobalRef(*rootObject)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -300,7 +290,7 @@ static int getTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
 
     printf("    root tested object\n");
     fflush(0);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, *rootObject, rootObjectTag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(*rootObject, rootObjectTag))) {
         nsk_jvmti_setFailStatus();
     }
     printf("        tag=%-5ld object=0x%p\n",
@@ -406,13 +396,12 @@ static int releaseTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int chainLength,
                                 ObjectDesc* objectDescList, jobject rootObject) {
     if (rootObject != NULL) {
         printf("Release object reference to root tested object: 0x%p\n", rootObject);
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, rootObject));
+        NSK_TRACE(jni->DeleteGlobalRef(rootObject));
     }
 
     if (objectDescList != NULL) {
         printf("Deallocate objects list: 0x%p\n", (void*)objectDescList);
-        if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)objectDescList))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescList))) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -949,14 +938,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     printf("\n\n>>> Start 1-st iteration starting from the heap root\n");
     fflush(0);
     {
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB6(FollowReferences, jvmti,
-                    (jint)   0,     /* heap_filter    */
-                    (jclass)  NULL, /* class          */
-                    (jobject) NULL, /* initial_object */
-                    &heapCallbacks,
-                    (const void *) &fakeUserData)))
-        {
+        if (!NSK_JVMTI_VERIFY(jvmti->FollowReferences((jint)   0,     /* heap_filter    */
+                                                      (jclass)  NULL, /* class          */
+                                                      (jobject) NULL, /* initial_object */
+                                                      &heapCallbacks,
+                                                      (const void *) &fakeUserData))) {
              nsk_jvmti_setFailStatus();
              return;
         }
@@ -990,14 +976,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         jint heap_filter = JVMTI_HEAP_FILTER_UNTAGGED
                          | JVMTI_HEAP_FILTER_CLASS_UNTAGGED;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB6(FollowReferences, jvmti,
-                    heap_filter,
-                    (jclass)  NULL, /* class          */
-                    (jobject) NULL, /* initial_object */
-                    &heapCallbacks,
-                    (const void *) &fakeUserData)))
-        {
+        if (!NSK_JVMTI_VERIFY(jvmti->FollowReferences(heap_filter,
+                                                      (jclass)  NULL, /* class          */
+                                                      (jobject) NULL, /* initial_object */
+                                                      &heapCallbacks,
+                                                      (const void *) &fakeUserData))) {
              nsk_jvmti_setFailStatus();
              return;
         }
@@ -1086,7 +1069,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }
