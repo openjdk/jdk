@@ -367,7 +367,7 @@ void JfrCheckpointManager::write_type_set() {
 }
 
 void JfrCheckpointManager::write_type_set_for_unloaded_classes() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrTypeManager::write_type_set_for_unloaded_classes();
 }
 
