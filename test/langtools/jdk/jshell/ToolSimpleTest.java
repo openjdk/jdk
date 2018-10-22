@@ -76,18 +76,47 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testRawString() {
-         test(false, new String[]{"--enable-preview", "--no-startup"},
-                 (a) -> assertCommand(a, "String s = `abc`", "s ==> \"abc\""),
-                 (a) -> assertCommand(a, "String a = `abc", ""),
-                 (a) -> assertCommand(a, "def`", "a ==> \"abc\\ndef\""),
-                 (a) -> assertCommand(a, "String bj = ``Hi, `Bob` and ```Jim```.``", "bj ==> \"Hi, `Bob` and ```Jim```.\""),
-                 (a) -> assertCommand(a, "String hw = ````````````", ""),
-                 (a) -> assertCommand(a, "Hello, world", ""),
-                 (a) -> assertCommand(a, "````````````;", "hw ==> \"\\nHello, world\\n\""),
-                 (a) -> assertCommand(a, "String uc = `\\u000d\\u000a`", "uc ==> \"\\\\u000d\\\\u000a\""),
-                 (a) -> assertCommand(a, "String es = `\\(.\\)\\1`", "es ==> \"\\\\(.\\\\)\\\\1\""),
-                 (a) -> assertCommand(a, "String end = `abc`+`def`+`ghi`", "end ==> \"abcdefghi\"")
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "String s = `abc`", "s ==> \"abc\""),
+                (a) -> assertCommand(a, "String a = `abc", ""),
+                (a) -> assertCommand(a, "def`", "a ==> \"abc\\ndef\""),
+                (a) -> assertCommand(a, "String bj = ``Hi, `Bob` and ```Jim```.``", "bj ==> \"Hi, `Bob` and ```Jim```.\""),
+                (a) -> assertCommand(a, "String hw = ````````````", ""),
+                (a) -> assertCommand(a, "Hello, world", ""),
+                (a) -> assertCommand(a, "````````````;", "hw ==> \"\\nHello, world\\n\""),
+                (a) -> assertCommand(a, "String uc = `\\u000d\\u000a`", "uc ==> \"\\\\u000d\\\\u000a\""),
+                (a) -> assertCommand(a, "String es = `\\(.\\)\\1`", "es ==> \"\\\\(.\\\\)\\\\1\""),
+                (a) -> assertCommand(a, "String end = `abc`+`def`+`ghi`", "end ==> \"abcdefghi\"")
         );
+    }
+
+    @Test
+    public void testSwitchExpression() {
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
+                (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
+                (a) -> assertCommand(a, "switch (day) {", ""),
+                (a) -> assertCommand(a, "case MONDAY, FRIDAY, SUNDAY -> 6;", ""),
+                (a) -> assertCommand(a, "case TUESDAY -> 7;", ""),
+                (a) -> assertCommand(a, "case THURSDAY, SATURDAY -> 8;", ""),
+                (a) -> assertCommand(a, "case WEDNESDAY -> 9;", ""),
+                (a) -> assertCommandOutputContains(a, "}", " ==> 6")
+                );
+    }
+
+    @Test
+    public void testSwitchExpressionCompletion() {
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
+                (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
+                (a) -> assertCommand(a, "switch (day) {", ""),
+                (a) -> assertCommand(a, "case MONDAY, FRIDAY, SUNDAY -> 6;", ""),
+                (a) -> assertCommand(a, "case TUESDAY -> 7;", ""),
+                (a) -> assertCommand(a, "case THURSDAY, SATURDAY -> 8;", ""),
+                (a) -> assertCommand(a, "case WEDNESDAY -> 9;", ""),
+                (a) -> assertCommand(a, "} +", ""),
+                (a) -> assertCommandOutputContains(a, "1000", " ==> 1006")
+                );
     }
 
     @Test
