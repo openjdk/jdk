@@ -119,6 +119,12 @@ public class DNSTestUtils {
 
         debug = Boolean.valueOf(System.getProperty("debug", "true"));
 
+        // override testname here if it's been specified
+        String newTestName = (String) env.get("testname");
+        if (newTestName != null && !newTestName.isEmpty()) {
+            testname = newTestName;
+        }
+
         if (env.get("DNS_SERVER") != null) {
             String port = (String) env.get("DNS_PORT");
             String portSuffix = (port == null) ? "" : ":" + port;
