@@ -61,11 +61,9 @@ class ArrayKlass: public Klass {
   inline Klass* higher_dimension_acquire() const; // load with acquire semantics
   void set_higher_dimension(Klass* k) { _higher_dimension = k; }
   inline void release_set_higher_dimension(Klass* k); // store with release semantics
-  Klass** adr_higher_dimension()      { return (Klass**)&this->_higher_dimension;}
 
   Klass* lower_dimension() const      { return _lower_dimension; }
   void set_lower_dimension(Klass* k)  { _lower_dimension = k; }
-  Klass** adr_lower_dimension()       { return (Klass**)&this->_lower_dimension;}
 
   // offset of first element, including any padding for the sake of alignment
   int  array_header_in_bytes() const    { return layout_helper_header_size(layout_helper()); }

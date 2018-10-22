@@ -326,13 +326,6 @@ static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
   }
 }
 
-#ifdef ASSERT
-static oop basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS) {
-  BasicType type = TypeArrayKlass::cast(basic_type_arrayklass)->element_type();
-  return Universe::java_mirror(type);
-}
-#endif
-
 arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
   if (element_mirror == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
@@ -395,35 +388,6 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
   return arrayOop(obj);
 }
 
-
-oop Reflection::array_component_type(oop mirror, TRAPS) {
-  if (java_lang_Class::is_primitive(mirror)) {
-    return NULL;
-  }
-
-  Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (!klass->is_array_klass()) {
-    return NULL;
-  }
-
-  oop result = java_lang_Class::component_mirror(mirror);
-#ifdef ASSERT
-  oop result2 = NULL;
-  if (ArrayKlass::cast(klass)->dimension() == 1) {
-    if (klass->is_typeArray_klass()) {
-      result2 = basic_type_arrayklass_to_mirror(klass, CHECK_NULL);
-    } else {
-      result2 = ObjArrayKlass::cast(klass)->element_klass()->java_mirror();
-    }
-  } else {
-    Klass* lower_dim = ArrayKlass::cast(klass)->lower_dimension();
-    assert(lower_dim->is_array_klass(), "just checking");
-    result2 = lower_dim->java_mirror();
-  }
-  assert(oopDesc::equals(result, result2), "results must be consistent");
-#endif //ASSERT
-  return result;
-}
 
 static bool under_unsafe_anonymous_host(const InstanceKlass* ik, const InstanceKlass* unsafe_anonymous_host) {
   DEBUG_ONLY(int inf_loop_check = 1000 * 1000 * 1000);
