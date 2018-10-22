@@ -33,7 +33,6 @@
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class PrintSharedArchiveAndExit {
@@ -44,23 +43,24 @@ public class PrintSharedArchiveAndExit {
         CDSTestUtils.checkDump(out);
 
         // (1) With a valid archive
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+        opts = (new CDSOptions())
+            .setUseVersion(false)
+            .addSuffix( "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit", "-version");
-        out = CDSTestUtils.executeAndLog(pb, "print-shared-archive-and-version");
-        CDSTestUtils.checkMappingFailure(out);
+        CDSTestUtils.run(opts)
+            .assertNormalExit(output -> {
+                output.shouldContain("archive is valid");
+                output.shouldNotContain("java version"); // Should not print JVM version
+            });
 
-        out.shouldContain("archive is valid")
-            .shouldNotContain("java version")     // Should not print JVM version
-            .shouldHaveExitValue(0);              // Should report success in error code.
-
-        pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+        opts = (new CDSOptions())
+            .setUseVersion(false)
+            .addSuffix( "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit");
-        out = CDSTestUtils.executeAndLog(pb, "print-shared-archive");
-        CDSTestUtils.checkMappingFailure(out);
-        out.shouldContain("archive is valid")
-            .shouldNotContain("Usage:")           // Should not print JVM help message
-            .shouldHaveExitValue(0);              // Should report success in error code.
+        CDSTestUtils.run(opts)
+            .assertNormalExit(output -> {
+                output.shouldContain("archive is valid");
+                output.shouldNotContain("Usage:"); // Should not print JVM help message
+            });
     }
 }

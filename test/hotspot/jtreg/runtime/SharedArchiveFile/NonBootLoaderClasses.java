@@ -34,7 +34,6 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class NonBootLoaderClasses {
     public static void main(String[] args) throws Exception {
@@ -50,16 +49,16 @@ public class NonBootLoaderClasses {
         CDSTestUtils.createArchiveAndCheck(opts);
 
         // Print the shared dictionary and inspect the output
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-cp", "\"\"",
+        opts = (new CDSOptions())
+            .setUseVersion(false)
+            .addSuffix( "-cp", "\"\"",
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary");
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "print-shared-archive");
-        CDSTestUtils.checkMappingFailure(out);
-
-        out.shouldContain("archive is valid")
-            .shouldHaveExitValue(0)               // Should report success in error code.
-            .shouldContain(PLATFORM_CLASS.replace('/', '.'))
-            .shouldContain(APP_CLASS.replace('/', '.'));
+        CDSTestUtils.run(opts)
+            .assertNormalExit(output -> {
+                output.shouldContain("archive is valid");
+                output.shouldContain(PLATFORM_CLASS.replace('/', '.'));
+                output.shouldContain(APP_CLASS.replace('/', '.'));
+            });
    }
 }
