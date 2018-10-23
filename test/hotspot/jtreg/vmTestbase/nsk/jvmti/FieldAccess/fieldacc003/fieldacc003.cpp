@@ -165,7 +165,7 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
             }
             if (watch.m_sig == NULL ||
                     strcmp(watch.m_sig, watches[i].m_sig) != 0) {
-                printf("(watch#%" PRIuPTR " ) wrong method sig: \"%s\"",
+                printf("(watch#%" PRIuPTR ") wrong method sig: \"%s\"",
                        i, watch.m_sig);
                 printf(", expected: \"%s\"\n", watches[i].m_sig);
                 result = STATUS_FAILED;

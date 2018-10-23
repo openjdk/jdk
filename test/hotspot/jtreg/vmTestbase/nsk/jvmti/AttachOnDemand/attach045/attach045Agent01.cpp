@@ -125,7 +125,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ClassPrepare = classPrepareHandler;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
         return JNI_ERR;
     }
 

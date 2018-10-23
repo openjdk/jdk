@@ -63,7 +63,7 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
 
     NSK_DISPLAY0("VMDeath event received\n");
 
-    if (obj_free != (EXP_OBJ_NUMBER - 1) ) {
+    if (obj_free != (EXP_OBJ_NUMBER - 1)) {
         NSK_COMPLAIN2(
             "Received unexpected number of ObjectFree events: %d\n"
             "\texpected number: %d\n",
@@ -88,15 +88,15 @@ heapObjectCallback(jlong class_tag,
 }
 
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     if (class_tag == DEBUGEE_CLASS_TAG && *tag_ptr == 0) {
         obj_count++;
@@ -107,11 +107,11 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 }
 
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
-                  jlong class_tag,
-                  jlong size,
-                  jlong* tag_ptr,
-                  void* user_data) {
+heapRootCallback(jvmtiHeapRootKind root_kind,
+                 jlong class_tag,
+                 jlong size,
+                 jlong* tag_ptr,
+                 void* user_data) {
 
     if (class_tag == DEBUGEE_CLASS_TAG && *tag_ptr == 0) {
         obj_count++;
@@ -122,13 +122,13 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 }
 
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     if (class_tag == DEBUGEE_CLASS_TAG && *tag_ptr == 0) {
         obj_count++;
@@ -142,17 +142,17 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /************************/
 
 JNIEXPORT jobject JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_newObject( JNIEnv* jni, jclass cls ) {
+Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_newObject(JNIEnv* jni, jclass cls) {
     jmethodID cid;
     jobject result;
 
-    if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V" )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V")) != NULL)) {
          NSK_COMPLAIN0("newObject: GetMethodID returned NULL\n\n");
          nsk_jvmti_setFailStatus();
          return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, ( result = jni->NewObject(cls, cid)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (result = jni->NewObject(cls, cid)) != NULL)) {
 
          NSK_COMPLAIN0("newObject: NewObject returned NULL\n\n");
          nsk_jvmti_setFailStatus();
@@ -163,18 +163,18 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_newObject( JNIEnv* jni, jclass
 }
 
 JNIEXPORT jobject JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_allocObject( JNIEnv* jni, jclass cls ) {
+Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_allocObject(JNIEnv* jni, jclass cls) {
     jmethodID cid;
     jobject result;
 
-    if (!NSK_JNI_VERIFY(jni, ( cid = jni->GetMethodID(cls, "<init>", "()V" )) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V")) != NULL)) {
 
          NSK_COMPLAIN0("allocObject: GetMethodID returned NULL\n\n");
          nsk_jvmti_setFailStatus();
          return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni, ( result = jni->AllocObject(cls)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (result = jni->AllocObject(cls)) != NULL)) {
 
          NSK_COMPLAIN0("allocObject: AllocObject returned NULL\n\n");
          nsk_jvmti_setFailStatus();

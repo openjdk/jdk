@@ -145,7 +145,7 @@ debug_agent(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
 
     while (terminate_debug_agent != JNI_TRUE) {
 
-        if (next_thread == NULL ) {
+        if (next_thread == NULL) {
             /* wait till new thread will be created and started */
             if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorWait(thr_start_lock, (jlong)0))) {
                 result = STATUS_FAILED;
@@ -318,7 +318,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
         }
 
         /* Wait till this started thread will be resumed by agent thread */
-        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorWait(thr_resume_lock, (jlong)WAIT_TIME ))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorWait(thr_resume_lock, (jlong)WAIT_TIME))) {
             NSK_COMPLAIN1("[ThreadStart hook] thread#%d failed while waiting for thr_resume_lock\n", eventsCount);
             result = STATUS_FAILED;
         }

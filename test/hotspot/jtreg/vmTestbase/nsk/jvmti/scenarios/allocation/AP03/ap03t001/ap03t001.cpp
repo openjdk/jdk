@@ -69,13 +69,13 @@ heapObjectCallback(jlong class_tag,
 }
 
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     if (class_tag == DEBUGEE_CLASS_TAG && *tag_ptr != 0) {
         obj_count++;
@@ -88,7 +88,7 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP03_ap03t001_setTag( JNIEnv* jni, jobject obj, jlong tag) {
+Java_nsk_jvmti_scenarios_allocation_AP03_ap03t001_setTag(JNIEnv* jni, jobject obj, jlong tag) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, tag))) {
          nsk_jvmti_setFailStatus();
@@ -160,13 +160,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         if (!NSK_JNI_VERIFY(jni, (fid =
-                jni->GetStaticFieldID(debugeeClass, "catcher", DEBUGEE_SIGNATURE)) != NULL )) {
+                jni->GetStaticFieldID(debugeeClass, "catcher", DEBUGEE_SIGNATURE)) != NULL)) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         if (!NSK_JNI_VERIFY(jni, (catcher =
-                jni->GetStaticObjectField(debugeeClass, fid)) != NULL )) {
+                jni->GetStaticObjectField(debugeeClass, fid)) != NULL)) {
             NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'catcher' field value\n\n");
             nsk_jvmti_setFailStatus();
             break;

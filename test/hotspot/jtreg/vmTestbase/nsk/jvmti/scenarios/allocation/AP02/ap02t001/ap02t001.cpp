@@ -66,15 +66,15 @@ heapObjectCallback(jlong class_tag,
 }
 
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     if (class_tag == TESTED_CLASS_TAG) {
         obj_count++;
@@ -86,14 +86,14 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP02_ap02t001_throwException( JNIEnv* jni,
-                                                                  jclass cls,
-                                                                  jclass exception_cls ) {
+Java_nsk_jvmti_scenarios_allocation_AP02_ap02t001_throwException(JNIEnv* jni,
+                                                                 jclass cls,
+                                                                 jclass exception_cls) {
     jint result;
 
-    result = jni->ThrowNew(exception_cls, "Got expected exception thrown from native code" );
+    result = jni->ThrowNew(exception_cls, "Got expected exception thrown from native code");
     if (result != 0) {
-        NSK_COMPLAIN1("throwException: Unable to throw exception in native code: %d\n\n", result );
+        NSK_COMPLAIN1("throwException: Unable to throw exception in native code: %d\n\n", result);
         nsk_jvmti_setFailStatus();
     } else {
         NSK_DISPLAY0("throwException: ThrowNew returned success code: 0\n\n");

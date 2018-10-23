@@ -45,8 +45,7 @@ heapObjectCallback(jlong class_tag,
                    jlong* tag_ptr,
                    void* user_data) {
 
-    if (!NSK_JVMTI_VERIFY(
-            st_jvmti->GetCurrentThreadCpuTimerInfo(&timer_info1 ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetCurrentThreadCpuTimerInfo(&timer_info1))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -64,14 +63,12 @@ heapObjectCallback(jlong class_tag,
     }
     /* ---------------------------------------------------------------------- */
 
-    if (!NSK_JVMTI_VERIFY(
-            st_jvmti->GetCurrentThreadCpuTime(&nanos ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetCurrentThreadCpuTime(&nanos))) {
         nsk_jvmti_setFailStatus();
     }
     /* ---------------------------------------------------------------------- */
 
-    if (!NSK_JVMTI_VERIFY(
-            st_jvmti->GetTimerInfo(&timer_info2 ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetTimerInfo(&timer_info2))) {
         nsk_jvmti_setFailStatus();
     }
     /* Check the returned jvmtiTimerInfo structure */
@@ -90,8 +87,7 @@ heapObjectCallback(jlong class_tag,
     /* ---------------------------------------------------------------------- */
 
     nanos = 0;
-    if (!NSK_JVMTI_VERIFY(
-            st_jvmti->GetTime(&nanos ))) {
+    if (!NSK_JVMTI_VERIFY(st_jvmti->GetTime(&nanos))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -112,8 +108,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         NSK_DISPLAY0("Calling IterateOverHeap with filter JVMTI_HEAP_OBJECT_EITHER\n");
         {
-            if (!NSK_JVMTI_VERIFY(
-                    jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_EITHER, heapObjectCallback, (void *)user_data))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->IterateOverHeap(
+                    JVMTI_HEAP_OBJECT_EITHER, heapObjectCallback, (void *)user_data))) {
                 nsk_jvmti_setFailStatus();
             }
         }
@@ -159,8 +155,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         caps.can_tag_objects = 1;
         caps.can_get_current_thread_cpu_time = 1;
 
-        if (!NSK_JVMTI_VERIFY(
-                jvmti->AddCapabilities(&caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

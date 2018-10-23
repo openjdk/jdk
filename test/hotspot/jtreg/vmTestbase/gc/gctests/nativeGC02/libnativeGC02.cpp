@@ -25,7 +25,7 @@
 
 extern "C" {
 
-/* A C function that takes a reference to java Object( a circular Linked list)
+/* A C function that takes a reference to java Object(a circular Linked list)
     and utilizes this reference to do a java method callback to determine the
     number of elements in the linked list */
 JNIEXPORT jint JNICALL
@@ -51,9 +51,9 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
         /* force a GC by invoking a callback where System.gc() is called
         */
 
-        cls  = env->GetObjectClass(obj);
+        cls = env->GetObjectClass(obj);
         mid = env->GetMethodID(cls, "callbackGC", "()V");
-        if (mid  == 0){
+        if (mid == 0) {
                 printf("couldnt locate method callbackGC()\n");
                 return -1;
         }
@@ -65,12 +65,12 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
            */
 
         clss = env->GetObjectClass(linked_list);
-        mid2 = env->GetMethodID(clss, "getLength", "(Lnsk/share/gc/CircularLinkedList;)I" );
-        if (mid2  == 0 ){
+        mid2 = env->GetMethodID(clss, "getLength", "(Lnsk/share/gc/CircularLinkedList;)I");
+        if (mid2 == 0) {
                 printf("couldnt locate method getLength(CircularLinkedList)\n");
                 return -1;
         }
-        elementCount  = env->CallIntMethod(linked_list, mid2, llist);
+        elementCount = env->CallIntMethod(linked_list, mid2, llist);
         return elementCount;
 }
 

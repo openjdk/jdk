@@ -245,8 +245,8 @@ Java_nsk_jvmti_GetThreadState_thrstat002_checkStatus(JNIEnv *env, jclass cls,
         return;
     }
 
-    printf( "START checkStatus for \"thr1\" (0x%p%s), check state: %s\n",
-            thr_ptr, suspStr, TranslateState(state[statInd]) );
+    printf("START checkStatus for \"thr1\" (0x%p%s), check state: %s\n",
+           thr_ptr, suspStr, TranslateState(state[statInd]));
 
     timeout_is_reached = JNI_TRUE;
     for (millis = WAIT_START, waited_millis=0; millis < wait_time; millis <<= 1) {

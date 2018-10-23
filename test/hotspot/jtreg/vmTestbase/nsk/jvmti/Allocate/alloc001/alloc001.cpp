@@ -142,7 +142,7 @@ Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
             break;
         }
 
-        if (printdump == JNI_TRUE && (memCount % 50 == 0) ) {
+        if (printdump == JNI_TRUE && (memCount % 50 == 0)) {
            printf(">>> ... done (%dMb)\n", memCount);
         }
     }

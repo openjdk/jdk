@@ -86,7 +86,7 @@ heapObjectCallbackForSecondIteration(jlong class_tag,
 
     long ind = (long)((*tag_ptr) - 1);
 
-    if (ind < 0 || ind > objectDescCount ) {
+    if (ind < 0 || ind > objectDescCount) {
         NSK_COMPLAIN1("heapObjectCallbackForSecondIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;

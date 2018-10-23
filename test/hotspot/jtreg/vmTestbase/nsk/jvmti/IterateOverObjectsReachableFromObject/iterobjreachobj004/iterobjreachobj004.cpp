@@ -42,13 +42,13 @@ static const char* objectFieldName = "object";
 /* ============================================================================= */
 
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     objCounter++;
 
@@ -115,13 +115,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         if (storage_data != storage_ptr) {
             NSK_COMPLAIN2("Local storage address was corrupted: %p ,\n\texpected value: %p\n",
-                             storage_ptr, storage_data);
+                          storage_ptr, storage_data);
             nsk_jvmti_setFailStatus();
         }
 
         if (strcmp(storage_data, (char *)storage_ptr) != 0) {
             NSK_COMPLAIN2("Local storage was corrupted: %s ,\n\texpected value: %s\n",
-                             (char *)storage_ptr, storage_data );
+                          (char *)storage_ptr, storage_data);
             nsk_jvmti_setFailStatus();
         }
     } while (0);

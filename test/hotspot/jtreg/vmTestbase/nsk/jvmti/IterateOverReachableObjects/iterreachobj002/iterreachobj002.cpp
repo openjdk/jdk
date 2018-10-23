@@ -64,11 +64,11 @@ ObjectFree(jvmtiEnv *jvmti_env, jlong tag) {
 
 /** jvmtiHeapRootCallback for first iteration. */
 jvmtiIterationControl JNICALL
-heapRootCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
-                   jlong class_tag,
-                   jlong size,
-                   jlong* tag_ptr,
-                   void* user_data) {
+heapRootCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
+                                         jlong class_tag,
+                                         jlong size,
+                                         jlong* tag_ptr,
+                                         void* user_data) {
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
@@ -94,11 +94,11 @@ heapRootCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
 
 /** jvmtiHeapRootCallback for second iteration. */
 jvmtiIterationControl JNICALL
-heapRootCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
-                   jlong class_tag,
-                   jlong size,
-                   jlong* tag_ptr,
-                   void* user_data) {
+heapRootCallbackForSecondObjectsIteration(jvmtiHeapRootKind root_kind,
+                                          jlong class_tag,
+                                          jlong size,
+                                          jlong* tag_ptr,
+                                          void* user_data) {
 
     long ind = (long)((*tag_ptr) - 1);
 
@@ -108,7 +108,7 @@ heapRootCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax ) {
+    if (ind < 0 || ind > objectCountMax) {
         NSK_COMPLAIN1("heapRootCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
@@ -138,15 +138,15 @@ heapRootCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
 
 /** jvmtiStackReferenceCallback for first iteration. */
 jvmtiIterationControl JNICALL
-stackReferenceCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
-                         jlong     class_tag,
-                         jlong     size,
-                         jlong*    tag_ptr,
-                         jlong     thread_tag,
-                         jint      depth,
-                         jmethodID method,
-                         jint      slot,
-                         void*     user_data) {
+stackReferenceCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
+                                               jlong     class_tag,
+                                               jlong     size,
+                                               jlong*    tag_ptr,
+                                               jlong     thread_tag,
+                                               jint      depth,
+                                               jmethodID method,
+                                               jint      slot,
+                                               void*     user_data) {
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
@@ -172,15 +172,15 @@ stackReferenceCallbackForFirstObjectsIteration( jvmtiHeapRootKind root_kind,
 
 /** jvmtiStackReferenceCallback for second iteration. */
 jvmtiIterationControl JNICALL
-stackReferenceCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
-                         jlong     class_tag,
-                         jlong     size,
-                         jlong*    tag_ptr,
-                         jlong     thread_tag,
-                         jint      depth,
-                         jmethodID method,
-                         jint      slot,
-                         void*     user_data) {
+stackReferenceCallbackForSecondObjectsIteration(jvmtiHeapRootKind root_kind,
+                                                jlong     class_tag,
+                                                jlong     size,
+                                                jlong*    tag_ptr,
+                                                jlong     thread_tag,
+                                                jint      depth,
+                                                jmethodID method,
+                                                jint      slot,
+                                                void*     user_data) {
 
     long ind = (long)((*tag_ptr) - 1);
 
@@ -190,7 +190,7 @@ stackReferenceCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax ) {
+    if (ind < 0 || ind > objectCountMax) {
         NSK_COMPLAIN1("stackReferenceCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
@@ -220,13 +220,13 @@ stackReferenceCallbackForSecondObjectsIteration( jvmtiHeapRootKind root_kind,
 
 /** jvmtiObjectReferenceCallback for first iteration. */
 jvmtiIterationControl JNICALL
-objectReferenceCallbackForFirstObjectsIteration( jvmtiObjectReferenceKind reference_kind,
-                          jlong  class_tag,
-                          jlong  size,
-                          jlong* tag_ptr,
-                          jlong  referrer_tag,
-                          jint   referrer_index,
-                          void*  user_data) {
+objectReferenceCallbackForFirstObjectsIteration(jvmtiObjectReferenceKind reference_kind,
+                                                jlong  class_tag,
+                                                jlong  size,
+                                                jlong* tag_ptr,
+                                                jlong  referrer_tag,
+                                                jint   referrer_index,
+                                                void*  user_data) {
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
@@ -252,13 +252,13 @@ objectReferenceCallbackForFirstObjectsIteration( jvmtiObjectReferenceKind refere
 
 /** jvmtiObjectReferenceCallback for second iteration. */
 jvmtiIterationControl JNICALL
-objectReferenceCallbackForSecondObjectsIteration( jvmtiObjectReferenceKind reference_kind,
-                          jlong  class_tag,
-                          jlong  size,
-                          jlong* tag_ptr,
-                          jlong  referrer_tag,
-                          jint   referrer_index,
-                          void*  user_data) {
+objectReferenceCallbackForSecondObjectsIteration(jvmtiObjectReferenceKind reference_kind,
+                                                 jlong  class_tag,
+                                                 jlong  size,
+                                                 jlong* tag_ptr,
+                                                 jlong  referrer_tag,
+                                                 jint   referrer_index,
+                                                 void*  user_data) {
 
     long ind = (long)((*tag_ptr) - 1);
 
@@ -268,7 +268,7 @@ objectReferenceCallbackForSecondObjectsIteration( jvmtiObjectReferenceKind refer
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax ) {
+    if (ind < 0 || ind > objectCountMax) {
         NSK_COMPLAIN1("objectReferenceCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;

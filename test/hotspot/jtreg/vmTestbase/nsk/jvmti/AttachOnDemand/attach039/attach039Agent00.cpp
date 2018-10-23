@@ -68,7 +68,7 @@ int startNewThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_VERIFY((thread = nsk_jvmti_aod_createThreadWithName(jni, STARTED_THREAD_NAME)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, startedThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, startedThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY))) {
         return NSK_FALSE;
     }
 
@@ -154,7 +154,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ThreadEnd = threadEndHandler;
     eventCallbacks.ThreadStart = threadStartHandler;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
         return JNI_ERR;
     }
 

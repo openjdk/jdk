@@ -36,7 +36,7 @@ static jlong timeout = 0;
 /* ============================================================================= */
 
 static void JNICALL
-callbackExtensionEvent(jvmtiEnv* jvmti, ... ) {
+callbackExtensionEvent(jvmtiEnv* jvmti, ...) {
     NSK_DISPLAY0("    event: callbackExtensionEvent\n");
 }
 
