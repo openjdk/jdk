@@ -205,7 +205,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_all_class_hook_events = 1;
     caps.can_redefine_classes = 1;
-    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         /*
          * If VM is run with -Xshare:on agent can't get required capabilities (see 6718407)
          */
@@ -222,7 +222,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
         eventCallbacks.ClassLoad = classLoadHandler;
         eventCallbacks.ClassPrepare = classPrepareHandler;
         eventCallbacks.ClassFileLoadHook = classFileLoadHoockHandler;
-        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
 

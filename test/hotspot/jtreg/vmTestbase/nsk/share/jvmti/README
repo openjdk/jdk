@@ -117,20 +117,18 @@ Also provides functions for running JVMTI agent:
 
 ---------------------------------------------------------------------------------
 
-Typical example of usage of NSK_JVMTI_VERIFY and NSK_CPP_STUB macroses
+Typical example of usage of the NSK_JVMTI_VERIFY macro
 for invocation of JVMTI functions:
 
     // jvmti->GetVersion(jvmti, &version)
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(GetVersion, jvmti, &version) != NULL)) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetVersion(&version) != NULL)) {
         return JNI_ERR;
     }
 
 or with saving error code:
 
     // err = jvmti->GetVersion(jvmti, &version)
-    if (!NSK_JVMTI_VERIFY(err =
-            NSK_CPP_STUB2(GetVersion, jvmti, &version))) {
+    if (!NSK_JVMTI_VERIFY(err = jvmti->GetVersion(&version))) {
         return err;
     }
         functions: nsk_jvmti_*

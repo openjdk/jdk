@@ -864,7 +864,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void errormsg(String key, Object... args) {
-        error(messageFormat(key, args));
+        error("%s", messageFormat(key, args));
     }
 
     /**

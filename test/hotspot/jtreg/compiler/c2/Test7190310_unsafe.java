@@ -95,12 +95,12 @@ public class Test7190310_unsafe {
 
         obj = getRef3(unsafe, t, referent_offset);
         if (obj != o) {
-            System.out.println("FAILED: unsafe.getObject(Object, " + referent_offset + ") " + obj + " != " + o);
+            System.out.println("FAILED: unsafe.getReference(Object, " + referent_offset + ") " + obj + " != " + o);
             System.exit(97);
         }
         obj = getRef4(unsafe, t, referent_offset);
         if (obj != o) {
-            System.out.println("FAILED: unsafe.getObject(Test7190310, " + referent_offset + ") " + obj + " != " + o);
+            System.out.println("FAILED: unsafe.getReference(Test7190310, " + referent_offset + ") " + obj + " != " + o);
             System.exit(97);
         }
     }
@@ -115,17 +115,17 @@ public class Test7190310_unsafe {
         }
         obj = getRef1(unsafe, ref, referent_offset);
         if (obj != str) {
-            System.out.println("FAILED: unsafe.getObject(weakRef, " + referent_offset + ") " + obj + " != " + str);
+            System.out.println("FAILED: unsafe.getReference(weakRef, " + referent_offset + ") " + obj + " != " + str);
             return false;
         }
         obj = getRef2(unsafe, ref, referent_offset);
         if (obj != str) {
-            System.out.println("FAILED: unsafe.getObject(abstRef, " + referent_offset + ") " + obj + " != " + str);
+            System.out.println("FAILED: unsafe.getReference(abstRef, " + referent_offset + ") " + obj + " != " + str);
             return false;
         }
         obj = getRef3(unsafe, ref, referent_offset);
         if (obj != str) {
-            System.out.println("FAILED: unsafe.getObject(Object, " + referent_offset + ") " + obj + " != " + str);
+            System.out.println("FAILED: unsafe.getReference(Object, " + referent_offset + ") " + obj + " != " + str);
             return false;
         }
         return true;
@@ -136,19 +136,19 @@ public class Test7190310_unsafe {
     }
 
     static Object getRef1(Unsafe unsafe, WeakReference ref, long referent_offset) throws Exception {
-        return unsafe.getObject(ref, referent_offset);
+        return unsafe.getReference(ref, referent_offset);
     }
 
     static Object getRef2(Unsafe unsafe, Reference ref, long referent_offset) throws Exception {
-        return unsafe.getObject(ref, referent_offset);
+        return unsafe.getReference(ref, referent_offset);
     }
 
     static Object getRef3(Unsafe unsafe, Object ref, long referent_offset) throws Exception {
-        return unsafe.getObject(ref, referent_offset);
+        return unsafe.getReference(ref, referent_offset);
     }
 
     static Object getRef4(Unsafe unsafe, Test7190310_unsafe ref, long referent_offset) throws Exception {
-        return unsafe.getObject(ref, referent_offset);
+        return unsafe.getReference(ref, referent_offset);
     }
 }
 

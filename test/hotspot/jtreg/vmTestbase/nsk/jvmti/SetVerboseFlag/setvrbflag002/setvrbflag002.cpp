@@ -47,8 +47,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Check on JVMTI_ERROR_ILLEGAL_ARGUMENT\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_ILLEGAL_ARGUMENT,
-            NSK_CPP_STUB3(SetVerboseFlag, jvmti,
-                (jvmtiVerboseFlag)(-1), JNI_TRUE)))
+            jvmti->SetVerboseFlag((jvmtiVerboseFlag)(-1), JNI_TRUE)))
         nsk_jvmti_setFailStatus();
 
     /* resume debugee after last sync */

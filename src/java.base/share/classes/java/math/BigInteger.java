@@ -4600,7 +4600,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         static void putMag(BigInteger bi, int[] magnitude) {
-            unsafe.putObject(bi, magOffset, magnitude);
+            unsafe.putReference(bi, magOffset, magnitude);
         }
     }
 

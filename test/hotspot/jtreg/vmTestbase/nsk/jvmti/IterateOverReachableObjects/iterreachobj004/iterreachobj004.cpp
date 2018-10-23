@@ -46,11 +46,11 @@ static void *storage_ptr = NULL;
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
-                  jlong class_tag,
-                  jlong size,
-                  jlong* tag_ptr,
-                  void* user_data) {
+heapRootCallback(jvmtiHeapRootKind root_kind,
+                 jlong class_tag,
+                 jlong size,
+                 jlong* tag_ptr,
+                 void* user_data) {
 
     *tag_ptr = (jlong)++objCounter;
 
@@ -66,14 +66,14 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
     if (storage_data != storage_ptr) {
         NSK_COMPLAIN2("heapRootCallback: Local storage address was corrupted: %p ,\n\texpected value: %p\n",
-                         storage_ptr, storage_data);
+                      storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (strcmp(storage_data, (char *)storage_ptr) != 0) {
         NSK_COMPLAIN2("heapRootCallback: Local storage was corrupted: %s ,\n\texpected value: %s\n",
-                         (char *)storage_ptr, storage_data );
+                      (char *)storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
@@ -86,15 +86,15 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     *tag_ptr = (jlong)++objCounter;
 
@@ -110,14 +110,14 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
     if (storage_data != storage_ptr) {
         NSK_COMPLAIN2("stackReferenceCallback: Local storage address was corrupted: %p ,\n\texpected value: %p\n",
-                         storage_ptr, storage_data);
+                      storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (strcmp(storage_data, (char *)storage_ptr) != 0) {
         NSK_COMPLAIN2("stackReferenceCallback: Local storage was corrupted: %s ,\n\texpected value: %s\n",
-                         (char *)storage_ptr, storage_data );
+                      (char *)storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
@@ -131,13 +131,13 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     *tag_ptr = (jlong)++objCounter;
 
@@ -153,14 +153,14 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 
     if (storage_data != storage_ptr) {
         NSK_COMPLAIN2("objectReferenceCallback: Local storage address was corrupted: %p ,\n\texpected value: %p\n",
-                         storage_ptr, storage_data);
+                      storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }
 
     if (strcmp(storage_data, (char *)storage_ptr) != 0) {
         NSK_COMPLAIN2("objectReferenceCallback: Local storage was corrupted: %s ,\n\texpected value: %s\n",
-                         (char *)storage_ptr, storage_data );
+                      (char *)storage_ptr, storage_data);
         nsk_jvmti_setFailStatus();
         return JVMTI_ITERATION_ABORT;
     }

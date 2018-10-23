@@ -118,7 +118,7 @@ int startAuxiliaryThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_VERIFY((thread = nsk_jvmti_aod_createThread(jni)) != NULL))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, auxiliaryThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY ))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, auxiliaryThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY))) {
         return NSK_FALSE;
     }
 
@@ -165,14 +165,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_garbage_collection_events = 1;
-    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.GarbageCollectionStart  = garbageCollectionStartHandler;
     eventCallbacks.GarbageCollectionFinish = garbageCollectionFinishHandler;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
         return JNI_ERR;
     }
 

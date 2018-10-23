@@ -42,13 +42,13 @@ static const char* objectFieldName = "object";
 /* ============================================================================= */
 
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     objCounter++;
 

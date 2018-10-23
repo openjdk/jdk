@@ -71,6 +71,6 @@ public class GetUnsafeObjectG1PreBarrier {
     }
 
     private void readField(Object o, long fieldOffset) {
-        unsafe.getObject(o, fieldOffset);
+        unsafe.getReference(o, fieldOffset);
     }
 }

@@ -3057,7 +3057,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   // java.nio.Buffer.checkIndex
   case vmIntrinsics::_checkIndex:     do_NIOCheckIndex(x); break;
 
-  case vmIntrinsics::_compareAndSetObject:
+  case vmIntrinsics::_compareAndSetReference:
     do_CompareAndSwap(x, objectType);
     break;
   case vmIntrinsics::_compareAndSetInt:

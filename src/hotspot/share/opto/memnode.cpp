@@ -924,8 +924,10 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != NULL, "need an alloc");
       assert(addp->is_AddP(), "address must be addp");
-      assert(addp->in(AddPNode::Base) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base), "strange pattern");
-      assert(addp->in(AddPNode::Address) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Address), "strange pattern");
+      assert(ac->in(ArrayCopyNode::Dest)->is_AddP(), "dest must be an address");
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Base)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base)), "strange pattern");
+      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Address)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)->in(AddPNode::Address)), "strange pattern");
       addp->set_req(AddPNode::Base, src->in(AddPNode::Base));
       addp->set_req(AddPNode::Address, src->in(AddPNode::Address));
     } else {
@@ -1081,6 +1083,8 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         (tp != NULL) && tp->is_ptr_to_boxed_value()) {
       intptr_t ignore = 0;
       Node* base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ignore);
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      base = bs->step_over_gc_barrier(base);
       if (base != NULL && base->is_Proj() &&
           base->as_Proj()->_con == TypeFunc::Parms &&
           base->in(0)->is_CallStaticJava() &&

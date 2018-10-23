@@ -452,8 +452,7 @@ JNIEXPORT jstring JNICALL
 Java_nsk_share_jvmti_ArgumentHandler_getAgentOptionsString(JNIEnv *jni, jobject obj) {
     jstring str_obj = NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (str_obj =
-            NSK_CPP_STUB2(NewStringUTF, jni, context.options.string)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (str_obj = jni->NewStringUTF(context.options.string)) != NULL)) {
         return NULL;
     }
     return str_obj;
@@ -637,7 +636,7 @@ int isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
 }
 
 jint createRawMonitor(jvmtiEnv *env, const char *name, jrawMonitorID *monitor) {
-    jvmtiError error = NSK_CPP_STUB3(CreateRawMonitor, env, name, monitor);
+    jvmtiError error = env->CreateRawMonitor(name, monitor);
     if (!NSK_JVMTI_VERIFY(error)) {
         return JNI_ERR;
     }
@@ -651,27 +650,27 @@ void exitOnError(jvmtiError error) {
 }
 
 void rawMonitorEnter(jvmtiEnv *env, jrawMonitorID monitor) {
-    jvmtiError error = NSK_CPP_STUB2(RawMonitorEnter, env, monitor);
+    jvmtiError error = env->RawMonitorEnter(monitor);
     exitOnError(error);
 }
 
 void rawMonitorExit(jvmtiEnv *env, jrawMonitorID monitor) {
-    jvmtiError error = NSK_CPP_STUB2(RawMonitorExit, env, monitor);
+    jvmtiError error = env->RawMonitorExit(monitor);
     exitOnError(error);
 }
 
 void rawMonitorNotify(jvmtiEnv *env, jrawMonitorID monitor) {
-    jvmtiError error = NSK_CPP_STUB2(RawMonitorNotify, env, monitor);
+    jvmtiError error = env->RawMonitorNotify(monitor);
     exitOnError(error);
 }
 
 void rawMonitorWait(jvmtiEnv *env, jrawMonitorID monitor, jlong millis) {
-    jvmtiError error = NSK_CPP_STUB3(RawMonitorWait, env, monitor, millis);
+    jvmtiError error = env->RawMonitorWait(monitor, millis);
     exitOnError(error);
 }
 
 void getPhase(jvmtiEnv *env, jvmtiPhase *phase) {
-    jvmtiError error = NSK_CPP_STUB2(GetPhase, env, phase);
+    jvmtiError error = env->GetPhase(phase);
     exitOnError(error);
 }
 

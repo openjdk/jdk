@@ -158,7 +158,7 @@ void JfrTypeManager::write_type_set() {
 }
 
 void JfrTypeManager::write_type_set_for_unloaded_classes() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrCheckpointWriter writer(false, true, Thread::current());
   ClassUnloadTypeSet class_unload_set;
   class_unload_set.serialize(writer);

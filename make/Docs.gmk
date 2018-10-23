@@ -228,7 +228,7 @@ define create_overview_file
       <blockquote><dl> \
       #
     $1_OVERVIEW_TEXT += $$(foreach g, $$($1_GROUPS), \
-        <dt style="margin-top: 8px;"><a href="\#$$g">$$($$g_GROUP_NAME)</a></dt> \
+        <dt style="margin-top: 8px;">$$($$g_GROUP_NAME)</dt> \
         <dd style="margin-top: 8px;">$$($$g_GROUP_DESCRIPTION)</dd> \
     )
     $1_OVERVIEW_TEXT += \

@@ -421,7 +421,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
     }
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->eliminate_useless_gc_barriers(useful);
+  bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
   remove_useless_late_inlines(&_string_late_inlines, useful);
   remove_useless_late_inlines(&_boxing_late_inlines, useful);

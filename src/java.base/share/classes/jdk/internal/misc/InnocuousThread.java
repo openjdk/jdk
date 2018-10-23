@@ -98,8 +98,8 @@ public final class InnocuousThread extends Thread {
 
     private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
         super(group, target, name, 0L, false);
-        UNSAFE.putObjectRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
-        UNSAFE.putObjectRelease(this, CONTEXTCLASSLOADER, tccl);
+        UNSAFE.putReferenceRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
+        UNSAFE.putReferenceRelease(this, CONTEXTCLASSLOADER, tccl);
     }
 
     @Override
@@ -120,8 +120,8 @@ public final class InnocuousThread extends Thread {
      * Drops all thread locals (and inherited thread locals).
      */
     public final void eraseThreadLocals() {
-        UNSAFE.putObject(this, THREAD_LOCALS, null);
-        UNSAFE.putObject(this, INHERITABLE_THREAD_LOCALS, null);
+        UNSAFE.putReference(this, THREAD_LOCALS, null);
+        UNSAFE.putReference(this, INHERITABLE_THREAD_LOCALS, null);
     }
 
     // ensure run method is run only once
@@ -158,10 +158,10 @@ public final class InnocuousThread extends Thread {
             long tg = UNSAFE.objectFieldOffset(tk, "group");
             long gp = UNSAFE.objectFieldOffset(gk, "parent");
             ThreadGroup group = (ThreadGroup)
-                UNSAFE.getObject(Thread.currentThread(), tg);
+                UNSAFE.getReference(Thread.currentThread(), tg);
 
             while (group != null) {
-                ThreadGroup parent = (ThreadGroup)UNSAFE.getObject(group, gp);
+                ThreadGroup parent = (ThreadGroup)UNSAFE.getReference(group, gp);
                 if (parent == null)
                     break;
                 group = parent;

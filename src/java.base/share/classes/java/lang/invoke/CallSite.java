@@ -287,7 +287,7 @@ public class CallSite {
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
-        return (MethodHandle) UNSAFE.getObjectVolatile(this, getTargetOffset());
+        return (MethodHandle) UNSAFE.getReferenceVolatile(this, getTargetOffset());
     }
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {

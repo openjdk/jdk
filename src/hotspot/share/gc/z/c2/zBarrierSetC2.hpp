@@ -189,9 +189,9 @@ public:
   virtual bool has_load_barriers() const { return true; }
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
-  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful) const;
+  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const;
   virtual void add_users_to_worklist(Unique_Node_List* worklist) const;
-  virtual void enqueue_useful_gc_barrier(Unique_Node_List &worklist, Node* node) const;
+  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const;
   virtual void register_potential_barrier_node(Node* node) const;
   virtual void unregister_potential_barrier_node(Node* node) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const;

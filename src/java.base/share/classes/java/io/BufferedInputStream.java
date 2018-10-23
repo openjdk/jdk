@@ -238,7 +238,7 @@ class BufferedInputStream extends FilterInputStream {
                     nsz = marklimit;
                 byte[] nbuf = new byte[nsz];
                 System.arraycopy(buffer, 0, nbuf, 0, pos);
-                if (!U.compareAndSetObject(this, BUF_OFFSET, buffer, nbuf)) {
+                if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, nbuf)) {
                     // Can't replace buf if there was an async close.
                     // Note: This would need to be changed if fill()
                     // is ever made accessible to multiple threads.
@@ -482,7 +482,7 @@ class BufferedInputStream extends FilterInputStream {
     public void close() throws IOException {
         byte[] buffer;
         while ( (buffer = buf) != null) {
-            if (U.compareAndSetObject(this, BUF_OFFSET, buffer, null)) {
+            if (U.compareAndSetReference(this, BUF_OFFSET, buffer, null)) {
                 InputStream input = in;
                 in = null;
                 if (input != null)

@@ -1663,7 +1663,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         assert(newForm.customized == null || newForm.customized == this);
         if (form == newForm)  return;
         newForm.prepare();  // as in MethodHandle.<init>
-        UNSAFE.putObject(this, FORM_OFFSET, newForm);
+        UNSAFE.putReference(this, FORM_OFFSET, newForm);
         UNSAFE.fullFence();
     }
 

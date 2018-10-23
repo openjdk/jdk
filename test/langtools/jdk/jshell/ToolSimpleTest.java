@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -32,8 +32,9 @@
  * @build KullaTesting TestingInputStream
  * @run testng ToolSimpleTest
  */
-import java.util.Arrays;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -76,18 +77,47 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testRawString() {
-         test(false, new String[]{"--enable-preview", "--no-startup"},
-                 (a) -> assertCommand(a, "String s = `abc`", "s ==> \"abc\""),
-                 (a) -> assertCommand(a, "String a = `abc", ""),
-                 (a) -> assertCommand(a, "def`", "a ==> \"abc\\ndef\""),
-                 (a) -> assertCommand(a, "String bj = ``Hi, `Bob` and ```Jim```.``", "bj ==> \"Hi, `Bob` and ```Jim```.\""),
-                 (a) -> assertCommand(a, "String hw = ````````````", ""),
-                 (a) -> assertCommand(a, "Hello, world", ""),
-                 (a) -> assertCommand(a, "````````````;", "hw ==> \"\\nHello, world\\n\""),
-                 (a) -> assertCommand(a, "String uc = `\\u000d\\u000a`", "uc ==> \"\\\\u000d\\\\u000a\""),
-                 (a) -> assertCommand(a, "String es = `\\(.\\)\\1`", "es ==> \"\\\\(.\\\\)\\\\1\""),
-                 (a) -> assertCommand(a, "String end = `abc`+`def`+`ghi`", "end ==> \"abcdefghi\"")
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "String s = `abc`", "s ==> \"abc\""),
+                (a) -> assertCommand(a, "String a = `abc", ""),
+                (a) -> assertCommand(a, "def`", "a ==> \"abc\\ndef\""),
+                (a) -> assertCommand(a, "String bj = ``Hi, `Bob` and ```Jim```.``", "bj ==> \"Hi, `Bob` and ```Jim```.\""),
+                (a) -> assertCommand(a, "String hw = ````````````", ""),
+                (a) -> assertCommand(a, "Hello, world", ""),
+                (a) -> assertCommand(a, "````````````;", "hw ==> \"\\nHello, world\\n\""),
+                (a) -> assertCommand(a, "String uc = `\\u000d\\u000a`", "uc ==> \"\\\\u000d\\\\u000a\""),
+                (a) -> assertCommand(a, "String es = `\\(.\\)\\1`", "es ==> \"\\\\(.\\\\)\\\\1\""),
+                (a) -> assertCommand(a, "String end = `abc`+`def`+`ghi`", "end ==> \"abcdefghi\"")
         );
+    }
+
+    @Test
+    public void testSwitchExpression() {
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
+                (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
+                (a) -> assertCommand(a, "switch (day) {", ""),
+                (a) -> assertCommand(a, "case MONDAY, FRIDAY, SUNDAY -> 6;", ""),
+                (a) -> assertCommand(a, "case TUESDAY -> 7;", ""),
+                (a) -> assertCommand(a, "case THURSDAY, SATURDAY -> 8;", ""),
+                (a) -> assertCommand(a, "case WEDNESDAY -> 9;", ""),
+                (a) -> assertCommandOutputContains(a, "}", " ==> 6")
+                );
+    }
+
+    @Test
+    public void testSwitchExpressionCompletion() {
+        test(false, new String[]{"--enable-preview", "--no-startup"},
+                (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
+                (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
+                (a) -> assertCommand(a, "switch (day) {", ""),
+                (a) -> assertCommand(a, "case MONDAY, FRIDAY, SUNDAY -> 6;", ""),
+                (a) -> assertCommand(a, "case TUESDAY -> 7;", ""),
+                (a) -> assertCommand(a, "case THURSDAY, SATURDAY -> 8;", ""),
+                (a) -> assertCommand(a, "case WEDNESDAY -> 9;", ""),
+                (a) -> assertCommand(a, "} +", ""),
+                (a) -> assertCommandOutputContains(a, "1000", " ==> 1006")
+                );
     }
 
     @Test
@@ -125,6 +155,20 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  dropped method p()"),
                 (a) -> assertCommand(a, "m()",
                         "|  attempted to call method n() which cannot be invoked until method p() is declared")
+        );
+    }
+
+    @Test
+    public void testThrowWithPercent() {
+        test(
+                (a) -> assertCommandCheckOutput(a,
+                        "URI u = new URI(\"http\", null, \"h\", -1, \"a\" + (char)0x04, null, null);", (s) ->
+                                assertTrue(s.contains("URISyntaxException") && !s.contains("JShellTool"),
+                                        "Output: '" + s + "'")),
+                (a) -> assertCommandCheckOutput(a,
+                        "throw new Exception(\"%z\")", (s) ->
+                                assertTrue(s.contains("java.lang.Exception") && !s.contains("UnknownFormatConversionException"),
+                                        "Output: '" + s + "'"))
         );
     }
 

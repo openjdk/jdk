@@ -49,7 +49,7 @@ class DeferredStepTestTarg {
         public void  run() {
             int count = 0;
 
-            for ( int ii = 0; ii < 10; ii++) {
+            for (int ii = 0; ii < 15; ii++) {
                 int intInPotato04 = 666;
                 ++count;                        // @1 breakpoint
                 System.out.println("Thread: " + Thread.currentThread().getName());
@@ -61,7 +61,7 @@ class DeferredStepTestTarg {
         public void run() {
             int count2 = 0;
 
-            for (int ii = 0; ii < 10; ii++) {
+            for (int ii = 0; ii < 15; ii++) {
                 String StringInPotato05 = "I am";
                 ++count2;                           // @2 breakpoint
                 System.out.println("Thread: " + Thread.currentThread().getName());
@@ -172,8 +172,8 @@ public class DeferredStepTest extends JdbTest {
         // Run to breakpoint #1
         jdb.command(JdbCommand.run());
 
-        // 2 cycles with 4 lines each - maximum 80 stops
-        for (int i=0; i<50; i++) {
+        // 2 cycles (15 iterations) with 4 lines each, 1st break at 3rd line - 58 stops
+        for (int i = 0; i < 50; i++) {
             next();
         }
     }

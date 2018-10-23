@@ -203,14 +203,14 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     caps.can_tag_objects = 1;
     caps.can_generate_object_free_events = 1;
     caps.can_generate_vm_object_alloc_events = 1;
-    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ObjectFree = objectFreeHandler;
     eventCallbacks.VMObjectAlloc = vmObjectAllocHandler;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
         return JNI_ERR;
     }
 

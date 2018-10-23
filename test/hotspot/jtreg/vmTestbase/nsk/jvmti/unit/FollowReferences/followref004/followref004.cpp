@@ -146,16 +146,16 @@ static void createGlobalRefs(JNIEnv * jni)
 {
     jclass klass;
 
-    if  ( ! NSK_JNI_VERIFY(jni, (klass = NSK_CPP_STUB2(FindClass, jni, JAVA_LANG_STRING_CLASS_NAME)) != NULL) ) {
+    if  ( ! NSK_JNI_VERIFY(jni, (klass = jni->FindClass(JAVA_LANG_STRING_CLASS_NAME)) != NULL) ) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if ( ! NSK_JNI_VERIFY(jni, (g_jniGlobalRef = NSK_CPP_STUB2(NewGlobalRef, jni, klass)) != NULL) ) {
+    if ( ! NSK_JNI_VERIFY(jni, (g_jniGlobalRef = jni->NewGlobalRef(klass)) != NULL) ) {
         nsk_jvmti_setFailStatus();
     }
 
-    if ( ! NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = NSK_CPP_STUB2(NewWeakGlobalRef, jni, klass)) != NULL) ) {
+    if ( ! NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = jni->NewWeakGlobalRef(klass)) != NULL) ) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -179,13 +179,11 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
 
     createGlobalRefs(jni);
 
-    retCode = NSK_CPP_STUB6(FollowReferences,
-                              jvmti,
-                              (jint) 0,                 /* heap filter */
-                              NULL,                     /* class */
-                              NULL,                     /* inital object */
-                              &g_heapCallbacks,
-                              (const void *) &g_fakeUserData);
+    retCode = jvmti->FollowReferences((jint) 0,                 /* heap filter */
+                                      NULL,                     /* class */
+                                      NULL,                     /* inital object */
+                                      &g_heapCallbacks,
+                                      (const void *) &g_fakeUserData);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NONE) ) {
         nsk_jvmti_setFailStatus();
@@ -247,7 +245,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

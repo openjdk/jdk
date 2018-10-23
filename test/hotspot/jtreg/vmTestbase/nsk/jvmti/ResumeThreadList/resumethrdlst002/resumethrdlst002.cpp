@@ -250,7 +250,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     int i = 0;
 
     jvmtiError e = jvmti->RawMonitorEnter(eventsReceivedMtx);
-    if ( !NSK_JVMTI_VERIFY(e) ) {
+    if (!NSK_JVMTI_VERIFY(e)) {
         NSK_DISPLAY1("  ... ERROR entering raw monitor for thread %p\n", (void *) thread);
         return;
     }
@@ -323,7 +323,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create a mutex for the eventsReceived variable */
     {
-        if ( ! NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("eventsReceived", &eventsReceivedMtx))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("eventsReceived", &eventsReceivedMtx))) {
             return JNI_ERR;
         }
     }

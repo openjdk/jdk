@@ -405,7 +405,7 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns the {@code Class} with the given <a href="ClassLoader.html#name">
+     * Returns the {@code Class} with the given <a href="ClassLoader.html#binary-name">
      * binary name</a> in the given module.
      *
      * <p> This method attempts to locate, load, and link the class or interface.
@@ -427,7 +427,7 @@ public final class Class<T> implements java.io.Serializable,
      * loads a class in another module.
      *
      * @param  module   A module
-     * @param  name     The <a href="ClassLoader.html#name">binary name</a>
+     * @param  name     The <a href="ClassLoader.html#binary-name">binary name</a>
      *                  of the class
      * @return {@code Class} object of the given name defined in the given module;
      *         {@code null} if not found.
@@ -2904,19 +2904,19 @@ public final class Class<T> implements java.io.Serializable,
         static <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,
                                              SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSetObject(clazz, reflectionDataOffset, oldData, newData);
+            return unsafe.compareAndSetReference(clazz, reflectionDataOffset, oldData, newData);
         }
 
         static <T> boolean casAnnotationType(Class<?> clazz,
                                              AnnotationType oldType,
                                              AnnotationType newType) {
-            return unsafe.compareAndSetObject(clazz, annotationTypeOffset, oldType, newType);
+            return unsafe.compareAndSetReference(clazz, annotationTypeOffset, oldType, newType);
         }
 
         static <T> boolean casAnnotationData(Class<?> clazz,
                                              AnnotationData oldData,
                                              AnnotationData newData) {
-            return unsafe.compareAndSetObject(clazz, annotationDataOffset, oldData, newData);
+            return unsafe.compareAndSetReference(clazz, annotationDataOffset, oldData, newData);
         }
     }
 

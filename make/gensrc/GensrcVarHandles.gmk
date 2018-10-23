@@ -53,8 +53,8 @@ define GenerateVarHandle
   endif
 
   $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandle.java.template $(BUILD_TOOLS_JDK)
-        ifeq ($$($1_Type), Object)
-	  $$(eval $1_type := $$($1_Type))
+        ifeq ($$($1_Type), Reference)
+	  $$(eval $1_type := Object)
         else
 	  $$(eval $1_type := $$$$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$$$($1_Type)))
         endif
@@ -158,7 +158,7 @@ endef
 ################################################################################
 
 # List the types to generate source for, with capitalized first letter
-VARHANDLES_TYPES := Boolean Byte Short Char Int Long Float Double Object
+VARHANDLES_TYPES := Boolean Byte Short Char Int Long Float Double Reference
 $(foreach t, $(VARHANDLES_TYPES), \
   $(eval $(call GenerateVarHandle,VAR_HANDLE_$t,$t)))
 

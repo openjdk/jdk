@@ -2135,7 +2135,7 @@ public class ObjectStreamClass implements Serializable {
                 switch (typeCodes[i]) {
                     case 'L':
                     case '[':
-                        vals[offsets[i]] = unsafe.getObject(obj, readKeys[i]);
+                        vals[offsets[i]] = unsafe.getReference(obj, readKeys[i]);
                         break;
 
                     default:
@@ -2190,7 +2190,7 @@ public class ObjectStreamClass implements Serializable {
                                 obj.getClass().getName());
                         }
                         if (!dryRun)
-                            unsafe.putObject(obj, key, val);
+                            unsafe.putReference(obj, key, val);
                         break;
 
                     default:

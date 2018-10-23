@@ -44,11 +44,11 @@ static jvmtiEnv* st_jvmti = NULL;
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
-                  jlong class_tag,
-                  jlong size,
-                  jlong* tag_ptr,
-                  void* user_data) {
+heapRootCallback(jvmtiHeapRootKind root_kind,
+                 jlong class_tag,
+                 jlong size,
+                 jlong* tag_ptr,
+                 void* user_data) {
 
     jrawMonitorID monitor_ptr = NULL;
 
@@ -104,15 +104,15 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     jrawMonitorID monitor_ptr = NULL;
 
@@ -169,13 +169,13 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     jrawMonitorID monitor_ptr = NULL;
 

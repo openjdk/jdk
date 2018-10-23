@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 #define SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "oops/access.inline.hpp"
@@ -40,20 +41,24 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   // processed multiple times, and so we might get references into old gen here.
   // So we need to redo this check.
   const InCSetState in_cset_state = _g1h->in_cset_state(obj);
-  if (in_cset_state.is_in_cset()) {
-    markOop m = obj->mark_raw();
-    if (m->is_marked()) {
-      obj = (oop) m->decode_pointer();
-    } else {
-      obj = copy_to_survivor_space(in_cset_state, obj, m);
-    }
-    RawAccess<IS_NOT_NULL>::oop_store(p, obj);
-  } else if (in_cset_state.is_humongous()) {
-    _g1h->set_humongous_is_live(obj);
-  } else {
-    assert(in_cset_state.is_default(),
-           "In_cset_state must be NotInCSet here, but is " CSETSTATE_FORMAT, in_cset_state.value());
+  // References pushed onto the work stack should never point to a humongous region
+  // as they are not added to the collection set due to above precondition.
+  assert(!in_cset_state.is_humongous(),
+         "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
+         p2i(obj), _g1h->addr_to_region((HeapWord*)obj), p2i(p));
+
+  if (!in_cset_state.is_in_cset()) {
+    // In this case somebody else already did all the work.
+    return;
   }
+
+  markOop m = obj->mark_raw();
+  if (m->is_marked()) {
+    obj = (oop) m->decode_pointer();
+  } else {
+    obj = copy_to_survivor_space(in_cset_state, obj, m);
+  }
+  RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
   assert(obj != NULL, "Must be");
   if (!HeapRegion::is_in_same_region(p, obj)) {

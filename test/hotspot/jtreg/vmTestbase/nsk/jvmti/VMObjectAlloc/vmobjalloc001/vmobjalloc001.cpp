@@ -61,8 +61,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
 
     eventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, jvmti,
-            object_klass, &signature, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(object_klass, &signature, &generic))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -70,10 +69,10 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
     NSK_DISPLAY2("VMObjectAlloc: \"%s\", size=%d\n", signature, size);
 
     if (signature != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)signature);
+        jvmti->Deallocate((unsigned char*)signature);
 
     if (generic != NULL)
-        NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)generic);
+        jvmti->Deallocate((unsigned char*)generic);
 
 }
 
@@ -130,21 +129,18 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_vm_object_alloc_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
         return JNI_ERR;
     }
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMObjectAlloc= &VMObjectAlloc;
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     /* enable VMObjectAlloc event */
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB4(SetEventNotificationMode, jvmti, JVMTI_ENABLE,
-                JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
         return JNI_ERR;
 
     /* register agent proc and arg */

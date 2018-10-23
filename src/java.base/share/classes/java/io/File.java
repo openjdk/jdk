@@ -2237,7 +2237,7 @@ public class File
         if (sep != separatorChar)
             pathField = pathField.replace(sep, separatorChar);
         String path = fs.normalize(pathField);
-        UNSAFE.putObject(this, PATH_OFFSET, path);
+        UNSAFE.putReference(this, PATH_OFFSET, path);
         UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, fs.prefixLength(path));
     }
 

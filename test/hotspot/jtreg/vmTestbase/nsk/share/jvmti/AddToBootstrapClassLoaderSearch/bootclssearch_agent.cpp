@@ -51,8 +51,7 @@ jvmtiPhase jvmti_phase_to_check = JVMTI_PHASE_ONLOAD;
  */
 static int addSegment(jvmtiEnv* jvmti, const char segment[], const char where[]) {
     NSK_DISPLAY1("Add segment: \"%s\"\n", segment);
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB2(AddToBootstrapClassLoaderSearch, jvmti, segment))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->AddToBootstrapClassLoaderSearch(segment))) {
         NSK_COMPLAIN1("TEST FAILURE: failed to add segment %s\n", segment);
         return NSK_FALSE;
     }
@@ -68,8 +67,7 @@ static int addSegment(jvmtiEnv* jvmti, const char segment[], const char where[])
  */
 static int addIllegalSegment(jvmtiEnv* jvmti, const char segment[], const char where[], jvmtiError expectedError) {
     NSK_DISPLAY1("Add illegal segment: \"%s\"\n", segment);
-    if (!NSK_JVMTI_VERIFY_CODE(expectedError,
-            NSK_CPP_STUB2(AddToBootstrapClassLoaderSearch, jvmti, segment))) {
+    if (!NSK_JVMTI_VERIFY_CODE(expectedError, jvmti->AddToBootstrapClassLoaderSearch(segment))) {
 
         NSK_COMPLAIN2("TEST FAILURE: got wrong error when tried to add segment %s (expected error=%s)\n",
                       segment, TranslateError(expectedError));
@@ -123,7 +121,7 @@ void JNICALL
 callbackVMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
     jvmtiPhase phase;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase, jvmti, &phase))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase))) {
         NSK_COMPLAIN0("TEST FAILURE: unable to get phase\n");
         nsk_jvmti_setFailStatus();
         NSK_BEFORE_TRACE(exit(nsk_jvmti_getStatus()));
@@ -218,8 +216,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         eventCallbacks.VMInit = callbackVMInit;
         eventCallbacks.VMDeath = callbackVMDeath;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti,
-                                            &eventCallbacks, sizeof(eventCallbacks)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             return JNI_ERR;
         }
     }

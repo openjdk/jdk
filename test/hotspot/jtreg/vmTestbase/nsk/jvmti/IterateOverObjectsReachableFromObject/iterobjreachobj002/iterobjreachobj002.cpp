@@ -54,13 +54,13 @@ static ObjectDesc *objectDescBuf;
 
 /** jvmtiObjectReferenceCallback for first iteration. */
 jvmtiIterationControl JNICALL
-objectReferenceCallback1( jvmtiObjectReferenceKind reference_kind,
-                          jlong  class_tag,
-                          jlong  size,
-                          jlong* tag_ptr,
-                          jlong  referrer_tag,
-                          jint   referrer_index,
-                          void*  user_data) {
+objectReferenceCallback1(jvmtiObjectReferenceKind reference_kind,
+                         jlong  class_tag,
+                         jlong  size,
+                         jlong* tag_ptr,
+                         jlong  referrer_tag,
+                         jint   referrer_index,
+                         void*  user_data) {
 
     objectCount++;
     /* Set tag */
@@ -80,13 +80,13 @@ objectReferenceCallback1( jvmtiObjectReferenceKind reference_kind,
 
 /** jvmtiObjectReferenceCallback for second iteration. */
 jvmtiIterationControl JNICALL
-objectReferenceCallback2( jvmtiObjectReferenceKind reference_kind,
-                          jlong  class_tag,
-                          jlong  size,
-                          jlong* tag_ptr,
-                          jlong  referrer_tag,
-                          jint   referrer_index,
-                          void*  user_data) {
+objectReferenceCallback2(jvmtiObjectReferenceKind reference_kind,
+                         jlong  class_tag,
+                         jlong  size,
+                         jlong* tag_ptr,
+                         jlong  referrer_tag,
+                         jint   referrer_index,
+                         void*  user_data) {
 
     objectCount--;
 

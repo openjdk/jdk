@@ -35,7 +35,7 @@ class UnsafeQualifiedStaticObjectFieldAccessorImpl
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return unsafe.getObjectVolatile(base, fieldOffset);
+        return unsafe.getReferenceVolatile(base, fieldOffset);
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
@@ -81,7 +81,7 @@ class UnsafeQualifiedStaticObjectFieldAccessorImpl
                 throwSetIllegalArgumentException(value);
             }
         }
-        unsafe.putObjectVolatile(base, fieldOffset, value);
+        unsafe.putReferenceVolatile(base, fieldOffset, value);
     }
 
     public void setBoolean(Object obj, boolean z)

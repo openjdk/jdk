@@ -653,7 +653,7 @@ class InvokerBytecodeGenerator {
             case LINK_TO_TARGET_METHOD:     // fall-through
             case GENERIC_INVOKER:           // fall-through
             case GENERIC_LINKER:            return resolveFrom(name, invokerType.basicType(), Invokers.Holder.class);
-            case GET_OBJECT:                // fall-through
+            case GET_REFERENCE:             // fall-through
             case GET_BOOLEAN:               // fall-through
             case GET_BYTE:                  // fall-through
             case GET_CHAR:                  // fall-through
@@ -662,7 +662,7 @@ class InvokerBytecodeGenerator {
             case GET_LONG:                  // fall-through
             case GET_FLOAT:                 // fall-through
             case GET_DOUBLE:                // fall-through
-            case PUT_OBJECT:                // fall-through
+            case PUT_REFERENCE:             // fall-through
             case PUT_BOOLEAN:               // fall-through
             case PUT_BYTE:                  // fall-through
             case PUT_CHAR:                  // fall-through

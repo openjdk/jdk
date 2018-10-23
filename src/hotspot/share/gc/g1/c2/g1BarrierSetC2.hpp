@@ -76,7 +76,7 @@ protected:
 
   // Helper for unsafe accesses, that may or may not be on the referent field.
   // Generates the guards that check whether the result of
-  // Unsafe.getObject should be recorded in an SATB log buffer.
+  // Unsafe.getReference should be recorded in an SATB log buffer.
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset, Node* pre_val, bool need_mem_bar) const;
 
   static const TypeFunc* write_ref_field_pre_entry_Type();

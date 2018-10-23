@@ -44,10 +44,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_suspendThread (
         , jobject earlyReturnThread
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->SuspendThread                    (earlyReturnThread                )
-            )
-        )
+    if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(earlyReturnThread)))
          return JNI_FALSE;
 
     return JNI_TRUE;
@@ -62,10 +59,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_resumeThread (
         , jobject earlyReturnThread
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ResumeThread                    (earlyReturnThread                )
-            )
-        )
+    if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(earlyReturnThread)))
          return JNI_FALSE;
 
     return JNI_TRUE;
@@ -81,10 +75,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnObject (
         , jobject valueToReturn
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnObject                    (earlyReturnThread                    , valueToReturn                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnObject(earlyReturnThread, valueToReturn)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -100,10 +91,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnInt(
         , jint valueToReturn
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnInt                    (earlyReturnThread                    , valueToReturn                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnInt(earlyReturnThread, valueToReturn)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -119,10 +107,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnLong (
         , jlong valueToReturn
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnLong                    (earlyReturnThread                    , valueToReturn                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnLong(earlyReturnThread, valueToReturn)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -138,10 +123,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnFloat (
         , jfloat valueToReturn
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnFloat                    (earlyReturnThread                    , valueToReturn                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnFloat(earlyReturnThread, valueToReturn)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -157,10 +139,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnDouble (
         , jdouble valueToReturn
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnDouble                    (earlyReturnThread                    , valueToReturn                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnDouble(earlyReturnThread, valueToReturn)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -175,10 +154,7 @@ Java_nsk_jvmti_ForceEarlyReturn_ForceEarlyReturn001_doForceEarlyReturnVoid (
         , jthread earlyReturnThread
         )
 {
-    if (!NSK_JVMTI_VERIFY(
-                jvmti                    ->ForceEarlyReturnVoid                    (earlyReturnThread                    )
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->ForceEarlyReturnVoid(earlyReturnThread)))
         return JNI_FALSE;
 
     return JNI_TRUE;
@@ -202,24 +178,17 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
 {
     jvmtiCapabilities caps;
 
-    if (!NSK_VERIFY(
-                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL
-                )
-       )
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(jvmti                    ->GetCapabilities                    (&caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     // Register all necessary JVM capabilities
     caps.can_force_early_return = 1;
     caps.can_suspend = 1;
 
-    if (!NSK_JVMTI_VERIFY(jvmti                    ->AddCapabilities                    (&caps)
-                )
-       )
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     return JNI_OK;

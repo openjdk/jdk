@@ -160,7 +160,6 @@ class ReplParser extends JavacParser {
             case WHILE:
             case DO:
             case TRY:
-            case SWITCH:
             case RETURN:
             case THROW:
             case BREAK:

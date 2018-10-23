@@ -78,7 +78,7 @@ public class OpaqueAccesses {
     private long l1, l2;
 
     static Object testFixedOffsetField(Object o) {
-        return UNSAFE.getObject(o, F_OFFSET);
+        return UNSAFE.getReference(o, F_OFFSET);
     }
 
     static int testFixedOffsetHeader0(Object o) {
@@ -106,11 +106,11 @@ public class OpaqueAccesses {
     }
 
     static Object testFixedBase(long off) {
-        return UNSAFE.getObject(INSTANCE, off);
+        return UNSAFE.getReference(INSTANCE, off);
     }
 
     static Object testOpaque(Object o, long off) {
-        return UNSAFE.getObject(o, off);
+        return UNSAFE.getReference(o, off);
     }
 
     static int testFixedOffsetHeaderArray0(Object[] arr) {
@@ -138,15 +138,15 @@ public class OpaqueAccesses {
     }
 
     static Object testFixedOffsetArray(Object[] arr) {
-        return UNSAFE.getObject(arr, E_OFFSET);
+        return UNSAFE.getReference(arr, E_OFFSET);
     }
 
     static Object testFixedBaseArray(long off) {
-        return UNSAFE.getObject(ARRAY, off);
+        return UNSAFE.getReference(ARRAY, off);
     }
 
     static Object testOpaqueArray(Object[] o, long off) {
-        return UNSAFE.getObject(o, off);
+        return UNSAFE.getReference(o, off);
     }
 
     static final long ADDR = UNSAFE.allocateMemory(10);

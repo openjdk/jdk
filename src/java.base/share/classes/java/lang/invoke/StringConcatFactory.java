@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1533,21 +1533,20 @@ public final class StringConcatFactory {
             // *ending* index.
             for (RecipeElement el : recipe.getElements()) {
                 // Do the prepend, and put "new" index at index 1
-                mh = MethodHandles.dropArguments(mh, 2, int.class);
                 switch (el.getTag()) {
                     case TAG_CONST: {
                         MethodHandle prepender = MethodHandles.insertArguments(prepender(String.class), 3, el.getValue());
-                        mh = MethodHandles.foldArguments(mh, 1, prepender,
-                                2, 0, 3 // index, storage, coder
+                        mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,
+                                1, 0, 2 // index, storage, coder
                         );
                         break;
                     }
                     case TAG_ARG: {
                         int pos = el.getArgPos();
                         MethodHandle prepender = prepender(ptypes[pos]);
-                        mh = MethodHandles.foldArguments(mh, 1, prepender,
-                                2, 0, 3, // index, storage, coder
-                                4 + pos  // selected argument
+                        mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,
+                                1, 0, 2, // index, storage, coder
+                                3 + pos  // selected argument
                         );
                         break;
                     }
@@ -1557,7 +1556,7 @@ public final class StringConcatFactory {
             }
 
             // Fold in byte[] instantiation at argument 0
-            mh = MethodHandles.foldArguments(mh, 0, NEW_ARRAY,
+            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, NEW_ARRAY,
                     1, 2 // index, coder
             );
 
@@ -1572,7 +1571,7 @@ public final class StringConcatFactory {
             // and deduce the coder from there. Arguments would be either converted to Strings
             // during the initial filtering, or handled by primitive specializations in CODER_MIXERS.
             //
-            // The method handle shape after all length and coder mixers is:
+            // The method handle shape before and after all length and coder mixers is:
             //   (int, byte, <args>)String = ("index", "coder", <args>)
             byte initialCoder = INITIAL_CODER;
             int initialLen = 0;    // initial length, in characters
@@ -1589,44 +1588,27 @@ public final class StringConcatFactory {
                         Class<?> argClass = ptypes[ac];
                         MethodHandle lm = lengthMixer(argClass);
 
-                        // Read these bottom up:
-
                         if (argClass.isPrimitive() && argClass != char.class) {
-
-                            // 3. Drop old index, producing ("new-index", "coder", <args>)
-                            mh = MethodHandles.dropArguments(mh, 1, int.class);
-
-                            // 2. Compute "new-index", producing ("new-index", "old-index", "coder", <args>)
-                            //    Length mixer needs old index, plus the appropriate argument
-                            mh = MethodHandles.foldArguments(mh, 0, lm,
-                                    1, // old-index
-                                    3 + ac // selected argument
+                            // Compute new "index" in-place using old value plus the appropriate argument.
+                            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, lm,
+                                    0, // old-index
+                                    2 + ac // selected argument
                             );
-
-                            // 1. The mh shape here is ("old-index", "coder", <args>); we don't need to recalculate
-                            //    the coder for non-char primitive arguments
 
                         } else {
                             MethodHandle cm = coderMixer(argClass);
 
-                            // 4. Drop old index and coder, producing ("new-index", "new-coder", <args>)
-                            mh = MethodHandles.dropArguments(mh, 2, int.class, byte.class);
-
-                            // 3. Compute "new-index", producing ("new-index", "new-coder", "old-index", "old-coder", <args>)
-                            //    Length mixer needs old index, plus the appropriate argument
-                            mh = MethodHandles.foldArguments(mh, 0, lm,
-                                    2, // old-index
-                                    4 + ac // selected argument
+                            // Compute new "index" in-place using old value plus the appropriate argument.
+                            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, lm,
+                                    0, // old-index
+                                    2 + ac // selected argument
                             );
 
-                            // 2. Compute "new-coder", producing ("new-coder", "old-index", "old-coder", <args>)
-                            //    Coder mixer needs old coder, plus the appropriate argument.
-                            mh = MethodHandles.foldArguments(mh, 0, cm,
-                                    2, // old-coder
-                                    3 + ac // selected argument
+                            // Compute new "coder" in-place using old value plus the appropriate argument.
+                            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, cm,
+                                    1, // old-coder
+                                    2 + ac // selected argument
                             );
-
-                            // 1. The mh shape here is ("old-index", "old-coder", <args>)
                         }
 
                         break;

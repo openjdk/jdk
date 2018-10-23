@@ -90,4 +90,14 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
         // can't set --enable-preview for local, ignore
     }
 
+    @Test
+    public void testSwitchExpression() {
+        // can't set --enable-preview for local, ignore
+    }
+
+    @Test
+    public void testSwitchExpressionCompletion() {
+        // can't set --enable-preview for local, ignore
+    }
+
 }

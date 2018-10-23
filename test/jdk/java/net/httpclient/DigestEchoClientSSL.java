@@ -36,10 +36,19 @@
  *          java.base/sun.net.www.http
  *          java.base/sun.net.www
  *          java.base/sun.net
- * @run main/othervm DigestEchoClientSSL SSL
- * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=
- *                   -Djdk.http.auth.tunneling.disabledSchemes=
- *                   DigestEchoClientSSL SSL PROXY
+ * @run main/othervm/timeout=300
+ *          DigestEchoClientSSL SSL
+ * @run main/othervm/timeout=300
+ *          DigestEchoClientSSL SSL
+ * @run main/othervm/timeout=300
+ *          -Djdk.http.auth.proxying.disabledSchemes=
+ *          -Djdk.http.auth.tunneling.disabledSchemes=
+ *          DigestEchoClientSSL SSL PROXY
+ * @run main/othervm/timeout=300
+ *          -Djdk.http.auth.proxying.disabledSchemes=
+ *          -Djdk.http.auth.tunneling.disabledSchemes=
+ *          DigestEchoClientSSL SSL PROXY
+ *
  */
 
 public class DigestEchoClientSSL {

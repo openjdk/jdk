@@ -715,7 +715,7 @@ static int doHotSwap(JNIEnv *jni_env, jclass redefCls, jint bCount,
             "#### JVMTIagent: >>>>>>>> Invoke RedefineClasses():\n"
             "<JVMTIagent>\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(jvmti->RedefineClasses(1, &classDef)))
+    if (!NSK_JVMTI_VERIFY(jvmti->RedefineClasses(1, &classDef)))
         return 1;
 
     display(0, "#### JVMTIagent: <<<<<<<< RedefineClasses() is successfully done ####\n");

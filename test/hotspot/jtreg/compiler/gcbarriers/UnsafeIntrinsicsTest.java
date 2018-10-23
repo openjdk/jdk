@@ -25,7 +25,7 @@
  * @test
  * @bug 8059022
  * @modules java.base/jdk.internal.misc:+open
- * @summary Validate barriers after Unsafe getObject, CAS and swap (GetAndSet)
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Z & !vm.graal.enabled
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZUnmapBadViews -XX:ZCollectionInterval=1 -XX:-CreateCoredumpOnCrash -XX:CompileCommand=dontinline,*::mergeImpl* compiler.gcbarriers.UnsafeIntrinsicsTest
  */
@@ -263,19 +263,19 @@ class Runner implements Runnable {
 
     private Node mergeImplLoad(Node startNode, Node expectedNext, Node head) {
         // Atomic load version
-        Node temp = (Node) UNSAFE.getObject(startNode, offset);
+        Node temp = (Node) UNSAFE.getReference(startNode, offset);
         startNode.setNext(head);
         return temp;
     }
 
     private Node mergeImplSwap(Node startNode, Node expectedNext, Node head) {
         // Swap version
-        return (Node) UNSAFE.getAndSetObject(startNode, offset, head);
+        return (Node) UNSAFE.getAndSetReference(startNode, offset, head);
     }
 
     private Node mergeImplCAS(Node startNode, Node expectedNext, Node head) {
         // CAS - should always be true within a single thread - no other thread can have overwritten
-        if (!UNSAFE.compareAndSetObject(startNode, offset, expectedNext, head)) {
+        if (!UNSAFE.compareAndSetReference(startNode, offset, expectedNext, head)) {
             throw new Error("CAS should always succeed on thread local objects, check you barrier implementation");
         }
         return expectedNext; // continue on old circle
@@ -283,7 +283,7 @@ class Runner implements Runnable {
 
     private Node mergeImplCASFail(Node startNode, Node expectedNext, Node head) {
         // Force a fail
-        if (UNSAFE.compareAndSetObject(startNode, offset, "fail", head)) {
+        if (UNSAFE.compareAndSetReference(startNode, offset, "fail", head)) {
             throw new Error("This CAS should always fail, check you barrier implementation");
         }
         if (startNode.next() != expectedNext) {
@@ -294,7 +294,7 @@ class Runner implements Runnable {
 
     private Node mergeImplWeakCAS(Node startNode, Node expectedNext, Node head) {
         // Weak CAS - should always be true within a single thread - no other thread can have overwritten
-        if (!UNSAFE.weakCompareAndSetObject(startNode, offset, expectedNext, head)) {
+        if (!UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head)) {
             throw new Error("Weak CAS should always succeed on thread local objects, check you barrier implementation");
         }
         return expectedNext; // continue on old circle
@@ -302,7 +302,7 @@ class Runner implements Runnable {
 
     private Node mergeImplWeakCASFail(Node startNode, Node expectedNext, Node head) {
         // Force a fail
-        if (UNSAFE.weakCompareAndSetObject(startNode, offset, "fail", head)) {
+        if (UNSAFE.weakCompareAndSetReference(startNode, offset, "fail", head)) {
             throw new Error("This weak CAS should always fail, check you barrier implementation");
         }
         if (startNode.next() != expectedNext) {
@@ -313,7 +313,7 @@ class Runner implements Runnable {
 
     private Node mergeImplCMPX(Node startNode, Node expectedNext, Node head) {
         // CmpX - should always be true within a single thread - no other thread can have overwritten
-        Object res = UNSAFE.compareAndExchangeObject(startNode, offset, expectedNext, head);
+        Object res = UNSAFE.compareAndExchangeReference(startNode, offset, expectedNext, head);
         if (!res.equals(expectedNext)) {
             throw new Error("Fail CmpX should always succeed on thread local objects, check you barrier implementation");
         }
@@ -321,7 +321,7 @@ class Runner implements Runnable {
     }
 
     private Node mergeImplCMPXFail(Node startNode, Node expectedNext, Node head) {
-        Object res = UNSAFE.compareAndExchangeObject(startNode, offset, head, head);
+        Object res = UNSAFE.compareAndExchangeReference(startNode, offset, head, head);
         if (startNode.next() != expectedNext) {
             throw new Error("Shouldn't have changed");
         }

@@ -48,8 +48,7 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
 
     NSK_DISPLAY0("CHECK PASSED: VMDeath event received\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase,
-            jvmti, &phase)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetPhase(&phase)))
         exit(95 + STATUS_FAILED);
 
     if (phase != JVMTI_PHASE_LIVE) {
@@ -88,13 +87,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("setting event callbacks ...\n");
     (void) memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMDeath = &VMDeath;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling VMDeath event ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling VMDeath event done\n");
 

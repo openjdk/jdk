@@ -49,13 +49,11 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("FollowReferences: Invalid class:");
 
-    retCode = NSK_CPP_STUB6(FollowReferences,
-                              jvmti,
-                              (jint) 0,                 /* heap filter */
-                              (jclass) &g_wrongHeapCallbacks ,   /* invalid class, but valid memory address */
-                              NULL,                     /* inital object */
-                              &g_wrongHeapCallbacks,
-                              (const void *) &g_fakeUserData);
+    retCode = jvmti->FollowReferences((jint) 0,                 /* heap filter */
+                                      (jclass) &g_wrongHeapCallbacks ,   /* invalid class, but valid memory address */
+                                      NULL,                     /* inital object */
+                                      &g_wrongHeapCallbacks,
+                                      (const void *) &g_fakeUserData);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_CLASS ) ) {
         nsk_jvmti_setFailStatus();
@@ -75,13 +73,11 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     emptyHeapCallbacks.primitive_field_callback = NULL;
     emptyHeapCallbacks.array_primitive_value_callback = NULL;
     emptyHeapCallbacks.string_primitive_value_callback = NULL;
-    retCode = NSK_CPP_STUB6(FollowReferences,
-                            jvmti,
-                            (jint) 0,               // heap filter
-                            NULL,                   // class
-                            (jobject) &g_wrongHeapCallbacks,  // invalid inital object
-                            &emptyHeapCallbacks,    // No callbacks
-                            (const void *) &g_fakeUserData);
+    retCode = jvmti->FollowReferences((jint) 0,               // heap filter
+                                      NULL,                   // class
+                                      (jobject) &g_wrongHeapCallbacks,  // invalid inital object
+                                      &emptyHeapCallbacks,    // No callbacks
+                                      (const void *) &g_fakeUserData);
 
     // Accept both JVMTI_ERROR_INVALID_OBJECT and JVMTI_ERROR_NONE
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT || retCode == JVMTI_ERROR_NONE ) ) {
@@ -90,13 +86,11 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("FollowReferences: Invalid callbacks:");
 
-    retCode = NSK_CPP_STUB6(FollowReferences,
-                              jvmti,
-                              (jint) 0,     /* heap filter */
-                              NULL,         /* class */
-                              NULL,         /* inital object */
-                              NULL,
-                              (const void *) &g_fakeUserData);
+    retCode = jvmti->FollowReferences((jint) 0,     /* heap filter */
+                                      NULL,         /* class */
+                                      NULL,         /* inital object */
+                                      NULL,
+                                      (const void *) &g_fakeUserData);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER ) ) {
         nsk_jvmti_setFailStatus();
@@ -104,10 +98,8 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("GetTag: Invalid object:");
 
-    retCode = NSK_CPP_STUB3(GetTag,
-                              jvmti,
-                              (jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
-                              &tag);
+    retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
+                            &tag);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
         nsk_jvmti_setFailStatus();
@@ -115,10 +107,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("GetTag: NULL object pointer:");
 
-    retCode = NSK_CPP_STUB3(GetTag,
-                              jvmti,
-                              NULL,
-                              &tag);
+    retCode = jvmti->GetTag(NULL, &tag);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
         nsk_jvmti_setFailStatus();
@@ -126,10 +115,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("GetTag: NULL tag pointer:");
 
-    retCode = NSK_CPP_STUB3(GetTag,
-                              jvmti,
-                              (jobject) &g_wrongHeapCallbacks,
-                              NULL);
+    retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, NULL);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER ) ) {
         nsk_jvmti_setFailStatus();
@@ -138,10 +124,8 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     NSK_DISPLAY0("SetTag: Invalid object:");
 
     tag = 1;
-    retCode = NSK_CPP_STUB3(SetTag,
-                              jvmti,
-                              (jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
-                              tag);
+    retCode = jvmti->SetTag((jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
+                            tag);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
         nsk_jvmti_setFailStatus();
@@ -149,10 +133,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     NSK_DISPLAY0("SetTag: NULL object pointer:");
 
-    retCode = NSK_CPP_STUB3(GetTag,
-                              jvmti,
-                              NULL,
-                              &tag);
+    retCode = jvmti->GetTag(NULL, &tag);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
         nsk_jvmti_setFailStatus();
@@ -170,19 +151,16 @@ static void checkNoObjIterated(JNIEnv* jni, jvmtiEnv* jvmti, const char * szClas
     jclass klass;
 
     NSK_DISPLAY1("Verify, that no objects are returned if initial object is %s", szClassName);
-    if (!NSK_JNI_VERIFY(jni, (klass =
-            NSK_CPP_STUB2(FindClass, jni, szClassName)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(szClassName)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    retCode = NSK_CPP_STUB6(FollowReferences,
-                              jvmti,
-                              (jint) 0,     /* heap filter */
-                              klass, /* class */
-                              NULL,         /* inital object */
-                              &g_wrongHeapCallbacks,
-                              (const void *) &g_fakeUserData);
+    retCode = jvmti->FollowReferences((jint) 0,     /* heap filter */
+                                      klass, /* class */
+                                      NULL,         /* inital object */
+                                      &g_wrongHeapCallbacks,
+                                      (const void *) &g_fakeUserData);
 
     if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NONE ) ) {
         nsk_jvmti_setFailStatus();
@@ -252,7 +230,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 
         memset(&caps, 0, sizeof(caps));
         caps.can_tag_objects = 1;
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, jvmti, &caps))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
             return JNI_ERR;
         }
     }

@@ -1222,6 +1222,6 @@ class Random implements java.io.Serializable {
         } catch (Exception ex) { throw new Error(ex); }
     }
     private void resetSeed(long seedVal) {
-        unsafe.putObjectVolatile(this, seedOffset, new AtomicLong(seedVal));
+        unsafe.putReferenceVolatile(this, seedOffset, new AtomicLong(seedVal));
     }
 }

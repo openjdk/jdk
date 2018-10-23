@@ -4079,7 +4079,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         static void setIntValVolatile(BigDecimal bd, BigInteger val) {
-            unsafe.putObjectVolatile(bd, intValOffset, val);
+            unsafe.putReferenceVolatile(bd, intValOffset, val);
         }
     }
 

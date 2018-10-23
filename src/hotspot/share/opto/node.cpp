@@ -1396,7 +1396,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
           } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn->_worklist, n);
+            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }

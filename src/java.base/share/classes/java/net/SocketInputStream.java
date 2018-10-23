@@ -232,11 +232,8 @@ class SocketInputStream extends FileInputStream {
      * @return the number of immediately available bytes
      */
     public int available() throws IOException {
-        if (eof) {
-            return 0;
-        } else {
-            return impl.available();
-        }
+        int available = impl.available();
+        return eof ? 0 : available;
     }
 
     /**

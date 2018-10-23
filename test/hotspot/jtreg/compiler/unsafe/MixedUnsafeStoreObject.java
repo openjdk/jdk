@@ -54,7 +54,7 @@ public class MixedUnsafeStoreObject {
         for (int c = 0; c < 20000; c++) { // trigger OSR compilation
             // java/lang/Object+12 *
             // _base = InstPtr, _ptr = BotPTR, _field = NULL, mismatched = true
-            UNSAFE.putObject(t, F_OFFSET, "foo");
+            UNSAFE.putReference(t, F_OFFSET, "foo");
         }
     }
 
@@ -62,7 +62,7 @@ public class MixedUnsafeStoreObject {
         for (int c = 0; c < 20000; c++) { // trigger OSR compilation
             // ...$T+12 *
             // _base = InstPtr, _ptr = BotPTR, _field = T.f, mismatched = false
-            UNSAFE.putObject(t, F_OFFSET, "foo");
+            UNSAFE.putReference(t, F_OFFSET, "foo");
         }
     }
     public static void main(String[] args) {

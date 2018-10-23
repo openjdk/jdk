@@ -434,7 +434,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
       if (val == mem) {
         values.at_put(j, mem);
       } else if (val->is_Store()) {
-        values.at_put(j, val->in(MemNode::ValueIn));
+        Node* n = val->in(MemNode::ValueIn);
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        n = bs->step_over_gc_barrier(n);
+        values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
         values.at_put(j, _igvn.zerocon(ft));
       } else if (val->is_Phi()) {
@@ -546,7 +549,10 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
       // hit a sentinel, return appropriate 0 value
       return _igvn.zerocon(ft);
     } else if (mem->is_Store()) {
-      return mem->in(MemNode::ValueIn);
+      Node* n = mem->in(MemNode::ValueIn);
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      n = bs->step_over_gc_barrier(n);
+      return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
       Node_Stack value_phis(a, 8);

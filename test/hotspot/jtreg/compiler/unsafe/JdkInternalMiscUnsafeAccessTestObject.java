@@ -119,141 +119,141 @@ public class JdkInternalMiscUnsafeAccessTestObject {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putObject(base, offset, "foo");
-            Object x = UNSAFE.getObject(base, offset);
+            UNSAFE.putReference(base, offset, "foo");
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "set Object value");
         }
 
         // Volatile
         {
-            UNSAFE.putObjectVolatile(base, offset, "bar");
-            Object x = UNSAFE.getObjectVolatile(base, offset);
+            UNSAFE.putReferenceVolatile(base, offset, "bar");
+            Object x = UNSAFE.getReferenceVolatile(base, offset);
             assertEquals(x, "bar", "putVolatile Object value");
         }
 
 
         // Lazy
         {
-            UNSAFE.putObjectRelease(base, offset, "foo");
-            Object x = UNSAFE.getObjectAcquire(base, offset);
+            UNSAFE.putReferenceRelease(base, offset, "foo");
+            Object x = UNSAFE.getReferenceAcquire(base, offset);
             assertEquals(x, "foo", "putRelease Object value");
         }
 
         // Opaque
         {
-            UNSAFE.putObjectOpaque(base, offset, "bar");
-            Object x = UNSAFE.getObjectOpaque(base, offset);
+            UNSAFE.putReferenceOpaque(base, offset, "bar");
+            Object x = UNSAFE.getReferenceOpaque(base, offset);
             assertEquals(x, "bar", "putOpaque Object value");
         }
 
 
-        UNSAFE.putObject(base, offset, "foo");
+        UNSAFE.putReference(base, offset, "foo");
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSetObject(base, offset, "foo", "bar");
+            boolean r = UNSAFE.compareAndSetReference(base, offset, "foo", "bar");
             assertEquals(r, true, "success compareAndSet Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "success compareAndSet Object value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSetObject(base, offset, "foo", "baz");
+            boolean r = UNSAFE.compareAndSetReference(base, offset, "foo", "baz");
             assertEquals(r, false, "failing compareAndSet Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "failing compareAndSet Object value");
         }
 
         // Advanced compare
         {
-            Object r = UNSAFE.compareAndExchangeObject(base, offset, "bar", "foo");
+            Object r = UNSAFE.compareAndExchangeReference(base, offset, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchange Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "success compareAndExchange Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObject(base, offset, "bar", "baz");
+            Object r = UNSAFE.compareAndExchangeReference(base, offset, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchange Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "failing compareAndExchange Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObjectAcquire(base, offset, "foo", "bar");
+            Object r = UNSAFE.compareAndExchangeReferenceAcquire(base, offset, "foo", "bar");
             assertEquals(r, "foo", "success compareAndExchangeAcquire Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "success compareAndExchangeAcquire Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObjectAcquire(base, offset, "foo", "baz");
+            Object r = UNSAFE.compareAndExchangeReferenceAcquire(base, offset, "foo", "baz");
             assertEquals(r, "bar", "failing compareAndExchangeAcquire Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "failing compareAndExchangeAcquire Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObjectRelease(base, offset, "bar", "foo");
+            Object r = UNSAFE.compareAndExchangeReferenceRelease(base, offset, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeRelease Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "success compareAndExchangeRelease Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObjectRelease(base, offset, "bar", "baz");
+            Object r = UNSAFE.compareAndExchangeReferenceRelease(base, offset, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeRelease Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "failing compareAndExchangeRelease Object value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetObjectPlain(base, offset, "foo", "bar");
+                success = UNSAFE.weakCompareAndSetReferencePlain(base, offset, "foo", "bar");
             }
             assertEquals(success, true, "weakCompareAndSetPlain Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "weakCompareAndSetPlain Object value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetObjectAcquire(base, offset, "bar", "foo");
+                success = UNSAFE.weakCompareAndSetReferenceAcquire(base, offset, "bar", "foo");
             }
             assertEquals(success, true, "weakCompareAndSetAcquire Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "weakCompareAndSetAcquire Object");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetObjectRelease(base, offset, "foo", "bar");
+                success = UNSAFE.weakCompareAndSetReferenceRelease(base, offset, "foo", "bar");
             }
             assertEquals(success, true, "weakCompareAndSetRelease Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "bar", "weakCompareAndSetRelease Object");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetObject(base, offset, "bar", "foo");
+                success = UNSAFE.weakCompareAndSetReference(base, offset, "bar", "foo");
             }
             assertEquals(success, true, "weakCompareAndSet Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "weakCompareAndSet Object");
         }
 
-        UNSAFE.putObject(base, offset, "bar");
+        UNSAFE.putReference(base, offset, "bar");
 
         // Compare set and get
         {
-            Object o = UNSAFE.getAndSetObject(base, offset, "foo");
+            Object o = UNSAFE.getAndSetReference(base, offset, "foo");
             assertEquals(o, "bar", "getAndSet Object");
-            Object x = UNSAFE.getObject(base, offset);
+            Object x = UNSAFE.getReference(base, offset);
             assertEquals(x, "foo", "getAndSet Object value");
         }
 

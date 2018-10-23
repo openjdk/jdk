@@ -34,7 +34,7 @@ class UnsafeObjectFieldAccessorImpl extends UnsafeFieldAccessorImpl {
 
     public Object get(Object obj) throws IllegalArgumentException {
         ensureObj(obj);
-        return unsafe.getObject(obj, fieldOffset);
+        return unsafe.getReference(obj, fieldOffset);
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
@@ -81,7 +81,7 @@ class UnsafeObjectFieldAccessorImpl extends UnsafeFieldAccessorImpl {
                 throwSetIllegalArgumentException(value);
             }
         }
-        unsafe.putObject(obj, fieldOffset, value);
+        unsafe.putReference(obj, fieldOffset, value);
     }
 
     public void setBoolean(Object obj, boolean z)

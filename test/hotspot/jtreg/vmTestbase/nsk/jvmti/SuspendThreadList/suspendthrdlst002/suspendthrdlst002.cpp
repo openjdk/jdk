@@ -73,18 +73,16 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         int i;
 
         NSK_DISPLAY1("Allocate threads array: %d threads\n", threadsCount);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(Allocate, jvmti, (threadsCount * sizeof(jthread)),
-                                                (unsigned char**)&threads))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->Allocate((threadsCount * sizeof(jthread)),
+                                              (unsigned char**)&threads))) {
             nsk_jvmti_setFailStatus();
             return;
         }
         NSK_DISPLAY1("  ... allocated array: %p\n", (void*)threads);
 
         NSK_DISPLAY1("Allocate results array: %d threads\n", threadsCount);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(Allocate, jvmti, (threadsCount * sizeof(jvmtiError)),
-                                                (unsigned char**)&results))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->Allocate((threadsCount * sizeof(jvmtiError)),
+                                              (unsigned char**)&results))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -95,8 +93,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY0("Suspend threads list\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(SuspendThreadList, jvmti, threadsCount, threads, results))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SuspendThreadList(threadsCount, threads, results))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -138,8 +135,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY0("Resume threads list\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB4(ResumeThreadList, jvmti, threadsCount, threads, results))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->ResumeThreadList(threadsCount, threads, results))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -151,18 +147,16 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_DISPLAY0("Delete threads references\n");
         for (i = 0; i < threadsCount; i++) {
             if (threads[i] != NULL)
-                NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni, threads[i]));
+                NSK_TRACE(jni->DeleteGlobalRef(threads[i]));
         }
 
         NSK_DISPLAY1("Deallocate threads array: %p\n", (void*)threads);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads))) {
             nsk_jvmti_setFailStatus();
         }
 
         NSK_DISPLAY1("Deallocate results array: %p\n", (void*)results);
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)results))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)results))) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -188,8 +182,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
         foundThreads[i] = NULL;
     }
 
-    if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(GetAllThreads, jvmti, &count, &threads))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&count, &threads))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -198,8 +191,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
     for (i = 0; i < count; i++) {
         jvmtiThreadInfo info;
 
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(GetThreadInfo, jvmti, threads[i], &info))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(threads[i], &info))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -214,8 +206,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
 
     }
 
-    if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(Deallocate, jvmti, (unsigned char*)threads))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -233,7 +224,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
     NSK_DISPLAY1("Make global references for threads: %d threads\n", foundCount);
     for (i = 0; i < foundCount; i++) {
         if (!NSK_JNI_VERIFY(jni, (foundThreads[i] = (jthread)
-                    NSK_CPP_STUB2(NewGlobalRef, jni, foundThreads[i])) != NULL)) {
+                    jni->NewGlobalRef(foundThreads[i])) != NULL)) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -253,7 +244,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     /* check if event is for tested thread */
     for (i = 0; i < threadsCount; i++) {
         if (thread != NULL &&
-                NSK_CPP_STUB3(IsSameObject, jni, threads[i], thread)) {
+                jni->IsSameObject(threads[i], thread)) {
             NSK_DISPLAY2("  ... received THREAD_END event for thread #%d: %p\n",
                                                                     i, (void*)thread);
             eventsReceived++;
@@ -301,8 +292,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiCapabilities suspendCaps;
         memset(&suspendCaps, 0, sizeof(suspendCaps));
         suspendCaps.can_suspend = 1;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB2(AddCapabilities, jvmti, &suspendCaps)))
+        if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&suspendCaps)))
             return JNI_ERR;
     }
 
@@ -311,8 +301,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         jvmtiEventCallbacks callbacks;
         memset(&callbacks, 0, sizeof(callbacks));
         callbacks.ThreadEnd = callbackThreadEnd;
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB3(SetEventCallbacks, jvmti, &callbacks, sizeof(callbacks))))
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
     }
 

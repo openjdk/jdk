@@ -173,15 +173,15 @@ public class UnsafeGetStableArrayElement {
         static float   testD_F() { return U.getFloat(  STABLE_DOUBLE_ARRAY, ARRAY_DOUBLE_BASE_OFFSET); }
         static double  testD_D() { return U.getDouble( STABLE_DOUBLE_ARRAY, ARRAY_DOUBLE_BASE_OFFSET); }
 
-        static Object  testL_L() { return U.getObject( STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static boolean testL_Z() { return U.getBoolean(STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static byte    testL_B() { return U.getByte(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static short   testL_S() { return U.getShort(  STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static char    testL_C() { return U.getChar(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static int     testL_I() { return U.getInt(    STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static long    testL_J() { return U.getLong(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static float   testL_F() { return U.getFloat(  STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
-        static double  testL_D() { return U.getDouble( STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
+        static Object  testL_L() { return U.getReference( STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET); }
+        static boolean testL_Z() { return U.getBoolean(STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static byte    testL_B() { return U.getByte(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static short   testL_S() { return U.getShort(  STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static char    testL_C() { return U.getChar(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static int     testL_I() { return U.getInt(    STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static long    testL_J() { return U.getLong(   STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static float   testL_F() { return U.getFloat(  STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
+        static double  testL_D() { return U.getDouble( STABLE_OBJECT_ARRAY, ARRAY_OBJECT_BASE_OFFSET);    }
 
         static short   testS_U() { return U.getShortUnaligned(STABLE_SHORT_ARRAY, ARRAY_SHORT_BASE_OFFSET + 1); }
         static char    testC_U() { return U.getCharUnaligned(  STABLE_CHAR_ARRAY,  ARRAY_CHAR_BASE_OFFSET + 1); }
