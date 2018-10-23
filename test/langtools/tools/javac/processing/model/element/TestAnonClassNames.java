@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,22 +129,17 @@ public class TestAnonClassNames {
     static void testClassNames(List<String> classNames) {
         System.out.println("test: " + classNames);
 
-        List<String> options = new ArrayList<String>();
-        options.add("-proc:only");
-        options.add("-classpath");
-        options.add(System.getProperty("test.classes"));
-
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         JavaCompiler.CompilationTask compileTask =
             javaCompiler.getTask(null, // Output
                                  null, // File manager
                                  null, // Diagnostics
-                                 options,
+                                 List.of("-proc:only", // options
+                                         "-classpath",
+                                         System.getProperty("test.classes")),
                                  classNames,
                                  null); // Sources
-        List<Processor> processors = new ArrayList<Processor>();
-        processors.add(new ClassNameProber());
-        compileTask.setProcessors(processors);
+        compileTask.setProcessors(List.of(new ClassNameProber()));
         Boolean goodResult = compileTask.call();
         if (!goodResult) {
             error("Errors found during compile.");

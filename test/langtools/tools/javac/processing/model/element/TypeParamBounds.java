@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,16 +84,12 @@ public class TypeParamBounds extends JavacTestingAbstractProcessor {
 
         // The names of the bounds of each type parameter of Gen.
         static Map<String, String[]> boundNames =
-                new HashMap<String, String[]>();
-
-        static {
-            boundNames.put("T", new String[] {"Object"});
-            boundNames.put("U", new String[] {"Object"});
-            boundNames.put("V", new String[] {"Number"});
-            boundNames.put("W", new String[] {"U"});
-            boundNames.put("X", new String[] {"Runnable"});
-            boundNames.put("Y", new String[] {"CharSequence", "Runnable"});
-            boundNames.put("Z", new String[] {"Object", "Runnable"});
-        }
+            Map.of("T", new String[] {"Object"},
+                   "U", new String[] {"Object"},
+                   "V", new String[] {"Number"},
+                   "W", new String[] {"U"},
+                   "X", new String[] {"Runnable"},
+                   "Y", new String[] {"CharSequence", "Runnable"},
+                   "Z", new String[] {"Object", "Runnable"});
     }
 }
