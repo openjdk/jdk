@@ -4316,28 +4316,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return result;
     }
 
-    /**
-     * As {@see foldArguments(MethodHandle, int, MethodHandle)}, but with the
-     * added capability of selecting the arguments from the targets parameters
-     * to call the combiner with. This allows us to avoid some simple cases of
-     * permutations and padding the combiner with dropArguments to select the
-     * right argument, which may ultimately produce fewer intermediaries.
-     */
-    static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner, int ... argPositions) {
-        MethodType targetType = target.type();
-        MethodType combinerType = combiner.type();
-        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType, argPositions);
-        BoundMethodHandle result = target.rebind();
-        boolean dropResult = rtype == void.class;
-        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType(), argPositions);
-        MethodType newType = targetType;
-        if (!dropResult) {
-            newType = newType.dropParameterTypes(pos, pos + 1);
-        }
-        result = result.copyWithExtendL(newType, lform, combiner);
-        return result;
-    }
-
     private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType) {
         int foldArgs   = combinerType.parameterCount();
         Class<?> rtype = combinerType.returnType();
@@ -4359,15 +4337,78 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return rtype;
     }
 
-    private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType, int ... argPos) {
-        int foldArgs = combinerType.parameterCount();
-        if (argPos.length != foldArgs) {
+    /**
+     * Adapts a target method handle by pre-processing some of its arguments, then calling the target with the result
+     * of the pre-processing replacing the argument at the given position.
+     *
+     * @param target the method handle to invoke after arguments are combined
+     * @param position the position at which to start folding and at which to insert the folding result; if this is {@code
+     *            0}, the effect is the same as for {@link #foldArguments(MethodHandle, MethodHandle)}.
+     * @param combiner method handle to call initially on the incoming arguments
+     * @param argPositions indexes of the target to pick arguments sent to the combiner from
+     * @return method handle which incorporates the specified argument folding logic
+     * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if either of the following two conditions holds:
+     *          (1) {@code combiner}'s return type is not the same as the argument type at position
+     *              {@code pos} of the target signature;
+     *          (2) the {@code N} argument types at positions {@code argPositions[1...N]} of the target signature are
+     *              not identical with the argument types of {@code combiner}.
+     */
+    /*non-public*/ static MethodHandle filterArgumentsWithCombiner(MethodHandle target, int position, MethodHandle combiner, int ... argPositions) {
+        return argumentsWithCombiner(true, target, position, combiner, argPositions);
+    }
+
+    /**
+     * Adapts a target method handle by pre-processing some of its arguments, calling the target with the result of
+     * the pre-processing inserted into the original sequence of arguments at the given position.
+     *
+     * @param target the method handle to invoke after arguments are combined
+     * @param position the position at which to start folding and at which to insert the folding result; if this is {@code
+     *            0}, the effect is the same as for {@link #foldArguments(MethodHandle, MethodHandle)}.
+     * @param combiner method handle to call initially on the incoming arguments
+     * @param argPositions indexes of the target to pick arguments sent to the combiner from
+     * @return method handle which incorporates the specified argument folding logic
+     * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if either of the following two conditions holds:
+     *          (1) {@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
+     *              {@code pos} of the target signature;
+     *          (2) the {@code N} argument types at positions {@code argPositions[1...N]} of the target signature
+     *              (skipping {@code position} where the {@code combiner}'s return will be folded in) are not identical
+     *              with the argument types of {@code combiner}.
+     */
+    /*non-public*/ static MethodHandle foldArgumentsWithCombiner(MethodHandle target, int position, MethodHandle combiner, int ... argPositions) {
+        return argumentsWithCombiner(false, target, position, combiner, argPositions);
+    }
+
+    private static MethodHandle argumentsWithCombiner(boolean filter, MethodHandle target, int position, MethodHandle combiner, int ... argPositions) {
+        MethodType targetType = target.type();
+        MethodType combinerType = combiner.type();
+        Class<?> rtype = argumentsWithCombinerChecks(position, filter, targetType, combinerType, argPositions);
+        BoundMethodHandle result = target.rebind();
+
+        MethodType newType = targetType;
+        LambdaForm lform;
+        if (filter) {
+            lform = result.editor().filterArgumentsForm(1 + position, combinerType.basicType(), argPositions);
+        } else {
+            boolean dropResult = rtype == void.class;
+            lform = result.editor().foldArgumentsForm(1 + position, dropResult, combinerType.basicType(), argPositions);
+            if (!dropResult) {
+                newType = newType.dropParameterTypes(position, position + 1);
+            }
+        }
+        result = result.copyWithExtendL(newType, lform, combiner);
+        return result;
+    }
+
+    private static Class<?> argumentsWithCombinerChecks(int position, boolean filter, MethodType targetType, MethodType combinerType, int ... argPos) {
+        int combinerArgs = combinerType.parameterCount();
+        if (argPos.length != combinerArgs) {
             throw newIllegalArgumentException("combiner and argument map must be equal size", combinerType, argPos.length);
         }
         Class<?> rtype = combinerType.returnType();
-        int foldVals = rtype == void.class ? 0 : 1;
-        boolean ok = true;
-        for (int i = 0; i < foldArgs; i++) {
+
+        for (int i = 0; i < combinerArgs; i++) {
             int arg = argPos[i];
             if (arg < 0 || arg > targetType.parameterCount()) {
                 throw newIllegalArgumentException("arg outside of target parameterRange", targetType, arg);
@@ -4378,11 +4419,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                         + " -> " + combinerType + ", map: " + Arrays.toString(argPos));
             }
         }
-        if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(foldPos)) {
-            ok = false;
-        }
-        if (!ok)
+        if (filter && combinerType.returnType() != targetType.parameterType(position)) {
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
+        }
         return rtype;
     }
 

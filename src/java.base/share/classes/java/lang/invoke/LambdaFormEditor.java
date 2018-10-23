@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,8 @@ class LambdaFormEditor {
                 PERMUTE_ARGS = 13,
                 LOCAL_TYPES = 14,
                 FOLD_SELECT_ARGS = 15,
-                FOLD_SELECT_ARGS_TO_VOID = 16;
+                FOLD_SELECT_ARGS_TO_VOID = 16,
+                FILTER_SELECT_ARGS = 17;
 
         private static final boolean STRESS_TEST = false; // turn on to disable most packing
         private static final int
@@ -730,21 +731,23 @@ class LambdaFormEditor {
         Name getCombiner = new Name(newData.getterFunction(oldData.fieldCount()), newBaseAddress);
         Object[] combinerArgs = new Object[1 + combinerArity];
         combinerArgs[0] = getCombiner;
-        Name[] newParams;
+        Name newParam = null;
         if (keepArguments) {
-            newParams = new Name[0];
             for (int i = 0; i < combinerArity; i++) {
                 combinerArgs[i + 1] = lambdaForm.parameter(1 + argPositions[i]);
                 assert (basicType(combinerType.parameterType(i)) == lambdaForm.parameterType(1 + argPositions[i]));
             }
         } else {
-            newParams = new Name[combinerArity];
-            for (int i = 0; i < newParams.length; i++) {
-                newParams[i] = lambdaForm.parameter(1 + argPositions[i]);
+            newParam = new Name(pos, BasicType.basicType(combinerType.returnType()));
+            for (int i = 0; i < combinerArity; i++) {
+                int argPos = 1 + argPositions[i];
+                if (argPos == pos) {
+                    combinerArgs[i + 1] = newParam;
+                } else {
+                    combinerArgs[i + 1] = lambdaForm.parameter(argPos);
+                }
                 assert (basicType(combinerType.parameterType(i)) == lambdaForm.parameterType(1 + argPositions[i]));
             }
-            System.arraycopy(newParams, 0,
-                             combinerArgs, 1, combinerArity);
         }
         Name callCombiner = new Name(combinerType, combinerArgs);
 
@@ -755,12 +758,13 @@ class LambdaFormEditor {
 
         // insert new arguments, if needed
         int argPos = pos + resultArity;  // skip result parameter
-        for (Name newParam : newParams) {
+        if (newParam != null) {
             buf.insertParameter(argPos++, newParam);
+            exprPos++;
         }
-        assert(buf.lastIndexOf(callCombiner) == exprPos+1+newParams.length);
+        assert(buf.lastIndexOf(callCombiner) == exprPos+1);
         if (!dropResult) {
-            buf.replaceParameterByCopy(pos, exprPos+1+newParams.length);
+            buf.replaceParameterByCopy(pos, exprPos+1);
         }
 
         return buf.endEdit();
@@ -842,6 +846,20 @@ class LambdaFormEditor {
             return form;
         }
         form = makeArgumentCombinationForm(foldPos, combinerType, argPositions, true, dropResult);
+        return putInCache(key, form);
+    }
+
+    LambdaForm filterArgumentsForm(int filterPos, MethodType combinerType, int ... argPositions) {
+        byte kind = Transform.FILTER_SELECT_ARGS;
+        int[] keyArgs = Arrays.copyOf(argPositions, argPositions.length + 1);
+        keyArgs[argPositions.length] = filterPos;
+        Transform key = Transform.of(kind, keyArgs);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity);
+            return form;
+        }
+        form = makeArgumentCombinationForm(filterPos, combinerType, argPositions, false, false);
         return putInCache(key, form);
     }
 
