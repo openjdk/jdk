@@ -538,7 +538,7 @@ class JvmtiSampledObjectAllocEventCollector : public JvmtiObjectAllocEventCollec
   JvmtiSampledObjectAllocEventCollector()  NOT_JVMTI_RETURN;
   ~JvmtiSampledObjectAllocEventCollector()  NOT_JVMTI_RETURN;
   bool is_sampled_object_alloc_event()    { return true; }
-  static bool object_alloc_is_safe_to_sample();
+  static bool object_alloc_is_safe_to_sample() NOT_JVMTI_RETURN_(false);
 };
 
 // Marker class to disable the posting of VMObjectAlloc events
