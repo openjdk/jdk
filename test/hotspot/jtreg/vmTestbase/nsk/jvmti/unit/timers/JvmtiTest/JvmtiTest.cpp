@@ -41,11 +41,11 @@
 
 extern "C" {
 
-#define JVMTI_ERROR_CHECK_DURING_ONLOAD(str,res) if ( res != JVMTI_ERROR_NONE) { printf("Fatal error: %s - %d\n", str, res); return JNI_ERR; }
+#define JVMTI_ERROR_CHECK_DURING_ONLOAD(str,res) if (res != JVMTI_ERROR_NONE) { printf("Fatal error: %s - %d\n", str, res); return JNI_ERR; }
 
-#define JVMTI_ERROR_CHECK_RETURN(str,res) if ( res != JVMTI_ERROR_NONE) { printf("Error: %s - %d\n", str, res); return; }
+#define JVMTI_ERROR_CHECK_RETURN(str,res) if (res != JVMTI_ERROR_NONE) { printf("Error: %s - %d\n", str, res); return; }
 
-#define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf("Error: %s - %d\n", str, res); }
+#define JVMTI_ERROR_CHECK(str,res) if (res != JVMTI_ERROR_NONE) { printf("Error: %s - %d\n", str, res); }
 
 #define THREADS_LIMIT 200
 

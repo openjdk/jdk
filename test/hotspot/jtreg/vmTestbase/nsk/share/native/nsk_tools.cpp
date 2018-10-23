@@ -133,11 +133,11 @@ void nsk_lvcomplain(const char file[], int line,
     char msg_buf[1024];
     nsk_context.nComplains++;
     if (!nsk_context.verbose) {
-        if ( nsk_context.nComplains > NSK_MAX_COMPLAINS_NON_VERBOSE ) {
+        if (nsk_context.nComplains > NSK_MAX_COMPLAINS_NON_VERBOSE) {
             return;
         }
 
-        if ( nsk_context.nComplains == NSK_MAX_COMPLAINS_NON_VERBOSE ) {
+        if (nsk_context.nComplains == NSK_MAX_COMPLAINS_NON_VERBOSE) {
             nsk_printf("# ...\n"
                        "# ERROR: too many complains, giving up to save disk space (CR 6341460)\n"
                        "# Please rerun the test with -verbose option to listen to the entire song\n");

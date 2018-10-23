@@ -232,12 +232,12 @@ int nsk_jvmti_parseOptions(const char options[]) {
     context.options.string[len] = '\0';
     context.options.string[len+1] = '\0';
 
-    for (opt = context.options.string; ; ) {
+    for (opt = context.options.string; ;) {
         const char* opt_end;
         const char* val_sep;
         int opt_len=0;
         int val_len=0;
-                int exit=1;
+        int exit=1;
 
         while (*opt != '\0' && isOptSep(*opt)) opt++;
         if (*opt == '\0') break;
@@ -489,15 +489,13 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
         jclass classToRedefine,
         const char * fileName) {
     redefineAttempted = NSK_TRUE;
-    if ( nsk_jvmti_findOptionValue(NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE)
-            == NULL  ) {
-        nsk_printf("#   error expected: %s \n",
-                NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE );
+    if (nsk_jvmti_findOptionValue(NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE) == NULL) {
+        nsk_printf("#   error expected: %s \n", NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE);
         nsk_printf("Hint :: missing java -agentlib:agentlib=%s=DirName, ($TESTBASE/bin) \n",
-                NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE );
+                   NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE);
         return NSK_FALSE;
     }
-    if ( fileName == NULL) {
+    if (fileName == NULL) {
         nsk_printf("# error file name expected did not found \n");
         return NSK_FALSE;
     }
@@ -517,7 +515,7 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
 
             bytecode = fopen(file, "rb");
             error= JVMTI_ERROR_NONE;
-            if ( bytecode == NULL ) {
+            if (bytecode == NULL) {
                 nsk_printf("# error **Agent::error opening file %s \n",file);
                 return NSK_FALSE;
             }
@@ -528,12 +526,12 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
             nsk_printf("# info file size= %ld\n",ftell(bytecode));
             rewind(bytecode);
             error = jvmti->Allocate(size,&classBytes);
-            if ( error != JVMTI_ERROR_NONE) {
+            if (error != JVMTI_ERROR_NONE) {
                 nsk_printf(" Failed to create memory %s \n",TranslateError(error));
                 return NSK_FALSE;
             }
 
-            if ( ((jint) fread( classBytes, 1,size,bytecode )) != size ) {
+            if (((jint) fread(classBytes, 1,size,bytecode)) != size) {
                 nsk_printf(" # error failed to read all the bytes , could be less or more \n");
                 return NSK_FALSE;
             } else {
@@ -546,9 +544,9 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
                 classDef.class_byte_count= size;
                 classDef.class_bytes = classBytes;
                 error = jvmti->RedefineClasses(1,&classDef);
-                if ( error != JVMTI_ERROR_NONE ) {
+                if (error != JVMTI_ERROR_NONE) {
                     nsk_printf("# error occured while redefining %s ",
-                            TranslateError(error) );
+                            TranslateError(error));
                     return NSK_FALSE;
                 }
             }
@@ -570,7 +568,7 @@ Java_nsk_share_jvmti_RedefineAgent_redefineAttempted(JNIEnv *jni,  jobject obj) 
 
 
 JNIEXPORT jboolean JNICALL
-Java_nsk_share_jvmti_RedefineAgent_isRedefined(JNIEnv * jni,  jobject obj ) {
+Java_nsk_share_jvmti_RedefineAgent_isRedefined(JNIEnv * jni,  jobject obj) {
 
     if (redefineSucceed == NSK_TRUE) {
         return JNI_TRUE;
@@ -582,8 +580,8 @@ Java_nsk_share_jvmti_RedefineAgent_isRedefined(JNIEnv * jni,  jobject obj ) {
  * This jni method is a Java wrapper for agent status.
  */
 JNIEXPORT jboolean JNICALL
-Java_nsk_share_jvmti_RedefineAgent_agentStatus(JNIEnv * jni,  jobject obj ) {
-    if ( agentFailed == NSK_TRUE) {
+Java_nsk_share_jvmti_RedefineAgent_agentStatus(JNIEnv * jni,  jobject obj) {
+    if (agentFailed == NSK_TRUE) {
         return JNI_FALSE;
     } else {
         return JNI_TRUE;

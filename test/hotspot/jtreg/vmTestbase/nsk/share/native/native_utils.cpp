@@ -22,7 +22,7 @@
  */
 #include <stdio.h>
 
-#if (defined(WIN32) || defined (_WIN32) )
+#if (defined(WIN32) || defined (_WIN32))
 #include <process.h>
 #define getpid _getpid
 #define pidType int

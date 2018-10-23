@@ -102,7 +102,7 @@ JNIEXPORT jboolean JNICALL Java_vm_share_ProcessUtils_sendCtrlBreak
 }
 
 #ifdef _WIN32
-static BOOL  (WINAPI *_MiniDumpWriteDump)  ( HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+static BOOL  (WINAPI *_MiniDumpWriteDump)  (HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
                                             PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
 void reportLastError(const char *msg) {
         long errcode = GetLastError();
@@ -171,9 +171,10 @@ jboolean doDumpCore() {
                 return JNI_FALSE;
         }
 
-        _MiniDumpWriteDump = (
-                        BOOL(WINAPI *)( HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
-                                PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION)) GetProcAddress(dbghelp, "MiniDumpWriteDump");
+        _MiniDumpWriteDump =
+                        (BOOL(WINAPI *)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+                                        PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION))
+                                        GetProcAddress(dbghelp, "MiniDumpWriteDump");
 
         if (_MiniDumpWriteDump == NULL) {
                 printf("Failed to find MiniDumpWriteDump() in module dbghelp.dll");
