@@ -33,7 +33,7 @@ class UnsafeStaticObjectFieldAccessorImpl extends UnsafeStaticFieldAccessorImpl 
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return unsafe.getObject(base, fieldOffset);
+        return unsafe.getReference(base, fieldOffset);
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
@@ -79,7 +79,7 @@ class UnsafeStaticObjectFieldAccessorImpl extends UnsafeStaticFieldAccessorImpl 
                 throwSetIllegalArgumentException(value);
             }
         }
-        unsafe.putObject(base, fieldOffset, value);
+        unsafe.putReference(base, fieldOffset, value);
     }
 
     public void setBoolean(Object obj, boolean z)

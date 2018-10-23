@@ -34,8 +34,8 @@ final class VarHandles {
             long foffset = MethodHandleNatives.objectFieldOffset(f);
             if (!type.isPrimitive()) {
                 return f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleObjects.FieldInstanceReadOnly(refc, foffset, type)
-                       : new VarHandleObjects.FieldInstanceReadWrite(refc, foffset, type);
+                       ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type)
+                       : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type);
             }
             else if (type == boolean.class) {
                 return f.isFinal() && !isWriteAllowedOnFinalFields
@@ -95,8 +95,8 @@ final class VarHandles {
             long foffset = MethodHandleNatives.staticFieldOffset(f);
             if (!type.isPrimitive()) {
                 return f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleObjects.FieldStaticReadOnly(base, foffset, type)
-                       : new VarHandleObjects.FieldStaticReadWrite(base, foffset, type);
+                       ? new VarHandleReferences.FieldStaticReadOnly(base, foffset, type)
+                       : new VarHandleReferences.FieldStaticReadWrite(base, foffset, type);
             }
             else if (type == boolean.class) {
                 return f.isFinal() && !isWriteAllowedOnFinalFields
@@ -155,7 +155,7 @@ final class VarHandles {
         int ashift = 31 - Integer.numberOfLeadingZeros(ascale);
 
         if (!componentType.isPrimitive()) {
-            return new VarHandleObjects.Array(aoffset, ashift, arrayClass);
+            return new VarHandleReferences.Array(aoffset, ashift, arrayClass);
         }
         else if (componentType == boolean.class) {
             return new VarHandleBooleans.Array(aoffset, ashift);

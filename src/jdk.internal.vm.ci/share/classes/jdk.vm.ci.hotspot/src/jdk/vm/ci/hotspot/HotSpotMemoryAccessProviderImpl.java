@@ -203,7 +203,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             assert verifyReadRawObject(ret, baseConstant, initialDisplacement);
         } else {
             assert runtime.getConfig().useCompressedOops == compressed;
-            ret = UNSAFE.getObject(base, displacement);
+            ret = UNSAFE.getReference(base, displacement);
         }
         return ret;
     }
@@ -233,7 +233,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             case Double:
                 return JavaConstant.forDouble(isVolatile ? UNSAFE.getDoubleVolatile(obj, displacement) : UNSAFE.getDouble(obj, displacement));
             case Object:
-                return HotSpotObjectConstantImpl.forObject(isVolatile ? UNSAFE.getObjectVolatile(obj, displacement) : UNSAFE.getObject(obj, displacement));
+                return HotSpotObjectConstantImpl.forObject(isVolatile ? UNSAFE.getReferenceVolatile(obj, displacement) : UNSAFE.getReference(obj, displacement));
             default:
                 throw new IllegalArgumentException("Unsupported kind: " + kind);
         }

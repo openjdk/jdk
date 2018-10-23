@@ -624,12 +624,12 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         static void setType(AnnotationInvocationHandler o,
                             Class<? extends Annotation> type) {
-            unsafe.putObject(o, typeOffset, type);
+            unsafe.putReference(o, typeOffset, type);
         }
 
         static void setMemberValues(AnnotationInvocationHandler o,
                                     Map<String, Object> memberValues) {
-            unsafe.putObject(o, memberValuesOffset, memberValues);
+            unsafe.putReference(o, memberValuesOffset, memberValues);
         }
     }
 }

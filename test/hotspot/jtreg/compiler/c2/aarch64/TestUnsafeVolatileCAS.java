@@ -75,6 +75,6 @@ class TestUnsafeVolatileCAS
 
     public void testObj(Object x, Object o)
     {
-        unsafe.compareAndSetObject(this, f_obj_off, x, o);
+        unsafe.compareAndSetReference(this, f_obj_off, x, o);
     }
 }

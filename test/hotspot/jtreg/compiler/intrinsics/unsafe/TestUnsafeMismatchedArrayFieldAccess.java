@@ -52,7 +52,7 @@ public class TestUnsafeMismatchedArrayFieldAccess {
     static final long array_offset;
 
     void m() {
-        UNSAFE.getObject(this, array_offset);
+        UNSAFE.getReference(this, array_offset);
     }
 
     static public void main(String[] args) {

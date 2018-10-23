@@ -74,8 +74,8 @@ public class SafeThread extends Thread {
      * Drops all thread locals (and inherited thread locals).
      */
     public final void eraseThreadLocals() {
-        UNSAFE.putObject(this, THREAD_LOCALS, null);
-        UNSAFE.putObject(this, INHERITABLE_THREAD_LOCALS, null);
+        UNSAFE.putReference(this, THREAD_LOCALS, null);
+        UNSAFE.putReference(this, INHERITABLE_THREAD_LOCALS, null);
     }
 
     static {

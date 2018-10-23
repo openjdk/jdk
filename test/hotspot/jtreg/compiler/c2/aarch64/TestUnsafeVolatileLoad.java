@@ -51,6 +51,6 @@ class TestUnsafeVolatileLoad
 
     public int testObj()
     {
-        return ((Integer)unsafe.getObjectVolatile(this, f_obj_off));
+        return ((Integer)unsafe.getReferenceVolatile(this, f_obj_off));
     }
 }

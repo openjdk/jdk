@@ -61,6 +61,11 @@ public final class GraalServices {
      */
     public static final boolean Java8OrEarlier = JAVA_SPECIFICATION_VERSION <= 8;
 
+    /**
+     * Determines if the Java runtime is version 11 or earlier.
+     */
+    public static final boolean Java11OrEarlier = JAVA_SPECIFICATION_VERSION <= 11;
+
     private GraalServices() {
     }
 

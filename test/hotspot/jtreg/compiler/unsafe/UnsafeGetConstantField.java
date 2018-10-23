@@ -222,6 +222,9 @@ public class UnsafeGetConstantField {
                 return name();
             }
         }
+        String unsafeTypeName() {
+            return typeName.equals("Object") ? "Reference" : typeName;
+        }
     }
 
     static String internalName(Class cls) {
@@ -352,7 +355,7 @@ public class UnsafeGetConstantField {
                 } else {
                     mv.visitInsn(ACONST_NULL);
                 }
-                String name = "put" + type.typeName + nameSuffix;
+                String name = "put" + type.unsafeTypeName() + nameSuffix;
                 mv.visitMethodInsn(INVOKEVIRTUAL, UNSAFE_NAME, name, "(Ljava/lang/Object;J" + type.desc()+ ")V", false);
                 mv.visitInsn(RETURN);
 
@@ -438,7 +441,7 @@ public class UnsafeGetConstantField {
                 mv.visitFieldInsn(GETSTATIC, className, "t", classDesc);
             }
             mv.visitFieldInsn(GETSTATIC, className, "FIELD_OFFSET", "J");
-            String name = "get" + type.typeName + nameSuffix;
+            String name = "get" + type.unsafeTypeName() + nameSuffix;
             mv.visitMethodInsn(INVOKEVIRTUAL, UNSAFE_NAME, name, "(Ljava/lang/Object;J)" + type.desc(), false);
         }
         void wrapResult(MethodVisitor mv) {

@@ -179,7 +179,7 @@ public class PrincipalName implements Cloneable {
     public Object clone() {
         try {
             PrincipalName pName = (PrincipalName) super.clone();
-            UNSAFE.putObject(this, NAME_STRINGS_OFFSET, nameStrings.clone());
+            UNSAFE.putReference(this, NAME_STRINGS_OFFSET, nameStrings.clone());
             return pName;
         } catch (CloneNotSupportedException ex) {
             throw new AssertionError("Should never happen");

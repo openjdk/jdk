@@ -126,7 +126,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getAndSetLong:
     if (!VM_Version::supports_atomic_getset8()) return false;
     break;
-  case vmIntrinsics::_getAndSetObject:
+  case vmIntrinsics::_getAndSetReference:
 #ifdef _LP64
     if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) return false;
     if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) return false;
@@ -167,7 +167,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
-  case vmIntrinsics::_getObject:
+  case vmIntrinsics::_getReference:
   case vmIntrinsics::_getBoolean:
   case vmIntrinsics::_getByte:
   case vmIntrinsics::_getShort:
@@ -176,7 +176,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getLong:
   case vmIntrinsics::_getFloat:
   case vmIntrinsics::_getDouble:
-  case vmIntrinsics::_putObject:
+  case vmIntrinsics::_putReference:
   case vmIntrinsics::_putBoolean:
   case vmIntrinsics::_putByte:
   case vmIntrinsics::_putShort:
@@ -185,7 +185,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getObjectVolatile:
+  case vmIntrinsics::_getReferenceVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
   case vmIntrinsics::_getShortVolatile:
@@ -194,7 +194,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getLongVolatile:
   case vmIntrinsics::_getFloatVolatile:
   case vmIntrinsics::_getDoubleVolatile:
-  case vmIntrinsics::_putObjectVolatile:
+  case vmIntrinsics::_putReferenceVolatile:
   case vmIntrinsics::_putBooleanVolatile:
   case vmIntrinsics::_putByteVolatile:
   case vmIntrinsics::_putShortVolatile:
@@ -221,7 +221,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 #endif
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_compareAndSetObject:
+  case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
 #ifdef JFR_HAVE_INTRINSICS

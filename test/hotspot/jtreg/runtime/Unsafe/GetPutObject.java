@@ -42,16 +42,16 @@ public class GetPutObject {
         Field field = Test.class.getField("o");
 
         long offset = unsafe.objectFieldOffset(field);
-        assertEquals(t.o, unsafe.getObject(t, offset));
+        assertEquals(t.o, unsafe.getReference(t, offset));
 
-        unsafe.putObject(t, offset, o);
-        assertEquals(o, unsafe.getObject(t, offset));
+        unsafe.putReference(t, offset, o);
+        assertEquals(o, unsafe.getReference(t, offset));
 
         Object arrayObject[] = { unsafe, null, new Object() };
         int scale = unsafe.arrayIndexScale(arrayObject.getClass());
         offset = unsafe.arrayBaseOffset(arrayObject.getClass());
         for (int i = 0; i < arrayObject.length; i++) {
-            assertEquals(unsafe.getObject(arrayObject, offset), arrayObject[i]);
+            assertEquals(unsafe.getReference(arrayObject, offset), arrayObject[i]);
             offset += scale;
         }
     }

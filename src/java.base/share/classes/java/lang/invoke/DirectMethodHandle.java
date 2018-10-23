@@ -655,7 +655,7 @@ class DirectMethodHandle extends MethodHandle {
                     case LONG:    return GET_LONG_VOLATILE;
                     case FLOAT:   return GET_FLOAT_VOLATILE;
                     case DOUBLE:  return GET_DOUBLE_VOLATILE;
-                    case OBJECT:  return GET_OBJECT_VOLATILE;
+                    case OBJECT:  return GET_REFERENCE_VOLATILE;
                 }
             } else {
                 switch (wrapper) {
@@ -667,7 +667,7 @@ class DirectMethodHandle extends MethodHandle {
                     case LONG:    return GET_LONG;
                     case FLOAT:   return GET_FLOAT;
                     case DOUBLE:  return GET_DOUBLE;
-                    case OBJECT:  return GET_OBJECT;
+                    case OBJECT:  return GET_REFERENCE;
                 }
             }
         } else {
@@ -681,7 +681,7 @@ class DirectMethodHandle extends MethodHandle {
                     case LONG:    return PUT_LONG_VOLATILE;
                     case FLOAT:   return PUT_FLOAT_VOLATILE;
                     case DOUBLE:  return PUT_DOUBLE_VOLATILE;
-                    case OBJECT:  return PUT_OBJECT_VOLATILE;
+                    case OBJECT:  return PUT_REFERENCE_VOLATILE;
                 }
             } else {
                 switch (wrapper) {
@@ -693,7 +693,7 @@ class DirectMethodHandle extends MethodHandle {
                     case LONG:    return PUT_LONG;
                     case FLOAT:   return PUT_FLOAT;
                     case DOUBLE:  return PUT_DOUBLE;
-                    case OBJECT:  return PUT_OBJECT;
+                    case OBJECT:  return PUT_REFERENCE;
                 }
             }
         }

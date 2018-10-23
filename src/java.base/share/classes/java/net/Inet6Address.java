@@ -641,7 +641,7 @@ class Inet6Address extends InetAddress {
             ipaddress, scope_id, scope_id_set, scope_ifname, scope_ifname_set
         );
 
-        UNSAFE.putObject(this, FIELDS_OFFSET, h);
+        UNSAFE.putReference(this, FIELDS_OFFSET, h);
     }
 
     /**

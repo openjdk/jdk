@@ -3471,7 +3471,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   // Some intrinsics need special IR nodes.
   switch(id) {
-  case vmIntrinsics::_getObject          : append_unsafe_get_obj(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_getReference       : append_unsafe_get_obj(callee, T_OBJECT,  false); return;
   case vmIntrinsics::_getBoolean         : append_unsafe_get_obj(callee, T_BOOLEAN, false); return;
   case vmIntrinsics::_getByte            : append_unsafe_get_obj(callee, T_BYTE,    false); return;
   case vmIntrinsics::_getShort           : append_unsafe_get_obj(callee, T_SHORT,   false); return;
@@ -3480,7 +3480,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getLong            : append_unsafe_get_obj(callee, T_LONG,    false); return;
   case vmIntrinsics::_getFloat           : append_unsafe_get_obj(callee, T_FLOAT,   false); return;
   case vmIntrinsics::_getDouble          : append_unsafe_get_obj(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_putObject          : append_unsafe_put_obj(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_putReference       : append_unsafe_put_obj(callee, T_OBJECT,  false); return;
   case vmIntrinsics::_putBoolean         : append_unsafe_put_obj(callee, T_BOOLEAN, false); return;
   case vmIntrinsics::_putByte            : append_unsafe_put_obj(callee, T_BYTE,    false); return;
   case vmIntrinsics::_putShort           : append_unsafe_put_obj(callee, T_SHORT,   false); return;
@@ -3497,7 +3497,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_putCharUnaligned   : append_unsafe_put_obj(callee, T_CHAR,    false); return;
   case vmIntrinsics::_putIntUnaligned    : append_unsafe_put_obj(callee, T_INT,     false); return;
   case vmIntrinsics::_putLongUnaligned   : append_unsafe_put_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getObjectVolatile  : append_unsafe_get_obj(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_getReferenceVolatile  : append_unsafe_get_obj(callee, T_OBJECT,  true); return;
   case vmIntrinsics::_getBooleanVolatile : append_unsafe_get_obj(callee, T_BOOLEAN, true); return;
   case vmIntrinsics::_getByteVolatile    : append_unsafe_get_obj(callee, T_BYTE,    true); return;
   case vmIntrinsics::_getShortVolatile   : append_unsafe_get_obj(callee, T_SHORT,   true); return;
@@ -3506,7 +3506,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getLongVolatile    : append_unsafe_get_obj(callee, T_LONG,    true); return;
   case vmIntrinsics::_getFloatVolatile   : append_unsafe_get_obj(callee, T_FLOAT,   true); return;
   case vmIntrinsics::_getDoubleVolatile  : append_unsafe_get_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_putObjectVolatile  : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_putReferenceVolatile : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
   case vmIntrinsics::_putBooleanVolatile : append_unsafe_put_obj(callee, T_BOOLEAN, true); return;
   case vmIntrinsics::_putByteVolatile    : append_unsafe_put_obj(callee, T_BYTE,    true); return;
   case vmIntrinsics::_putShortVolatile   : append_unsafe_put_obj(callee, T_SHORT,   true); return;
@@ -3517,12 +3517,12 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
   case vmIntrinsics::_compareAndSetLong:
   case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_compareAndSetObject: append_unsafe_CAS(callee); return;
+  case vmIntrinsics::_compareAndSetReference : append_unsafe_CAS(callee); return;
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong      : append_unsafe_get_and_set_obj(callee, true); return;
   case vmIntrinsics::_getAndSetInt       :
   case vmIntrinsics::_getAndSetLong      :
-  case vmIntrinsics::_getAndSetObject    : append_unsafe_get_and_set_obj(callee, false); return;
+  case vmIntrinsics::_getAndSetReference : append_unsafe_get_and_set_obj(callee, false); return;
   case vmIntrinsics::_getCharStringU     : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU     : append_char_access(callee, true); return;
   default:

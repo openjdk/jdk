@@ -1734,7 +1734,7 @@ class InetAddress implements java.io.Serializable {
             throw new InvalidObjectException("invalid address family type: " + family);
         }
         InetAddressHolder h = new InetAddressHolder(host, address, family);
-        UNSAFE.putObject(this, FIELDS_OFFSET, h);
+        UNSAFE.putReference(this, FIELDS_OFFSET, h);
     }
 
     /* needed because the serializable fields no longer exist */

@@ -1999,7 +1999,7 @@ public abstract class VarHandle {
     /*non-public*/
     final void updateVarForm(VarForm newVForm) {
         if (vform == newVForm) return;
-        UNSAFE.putObject(this, VFORM_OFFSET, newVForm);
+        UNSAFE.putReference(this, VFORM_OFFSET, newVForm);
         UNSAFE.fullFence();
     }
 

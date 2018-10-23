@@ -33,6 +33,7 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.OFF_HEAP_LOCATION;
+import static org.graalvm.compiler.serviceprovider.GraalServices.Java11OrEarlier;
 import static org.graalvm.compiler.serviceprovider.GraalServices.Java8OrEarlier;
 
 import java.lang.reflect.Array;
@@ -270,10 +271,11 @@ public class StandardGraphBuilderPlugins {
     }
 
     private abstract static class UnsafeCompareAndUpdatePluginsRegistrar {
-        public void register(Registration r, String casPrefix, boolean explicitUnsafeNullChecks, JavaKind[] compareAndSwapTypes) {
+        public void register(Registration r, String casPrefix, boolean explicitUnsafeNullChecks, JavaKind[] compareAndSwapTypes, boolean java11OrEarlier) {
             for (JavaKind kind : compareAndSwapTypes) {
                 Class<?> javaClass = kind == JavaKind.Object ? Object.class : kind.toJavaClass();
-                r.register5(casPrefix + kind.name(), Receiver.class, Object.class, long.class, javaClass, javaClass, new UnsafeAccessPlugin(returnKind(kind), explicitUnsafeNullChecks) {
+                String kindName = (kind == JavaKind.Object && !java11OrEarlier) ? "Reference" : kind.name();
+                r.register5(casPrefix + kindName, Receiver.class, Object.class, long.class, javaClass, javaClass, new UnsafeAccessPlugin(returnKind(kind), explicitUnsafeNullChecks) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unsafe, ValueNode object, ValueNode offset, ValueNode expected, ValueNode x) {
                         // Emits a null-check for the otherwise unused receiver
@@ -332,10 +334,10 @@ public class StandardGraphBuilderPlugins {
 
     private static void registerPlatformSpecificUnsafePlugins(JavaKind[] supportedCasKinds, Registration r, boolean java8OrEarlier, boolean explicitUnsafeNullChecks) {
         if (java8OrEarlier) {
-            unsafeCompareAndSwapPluginsRegistrar.register(r, "compareAndSwap", explicitUnsafeNullChecks, new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object});
+            unsafeCompareAndSwapPluginsRegistrar.register(r, "compareAndSwap", explicitUnsafeNullChecks, new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object}, true);
         } else {
-            unsafeCompareAndSwapPluginsRegistrar.register(r, "compareAndSet", explicitUnsafeNullChecks, supportedCasKinds);
-            unsafeCompareAndExchangePluginsRegistrar.register(r, "compareAndExchange", explicitUnsafeNullChecks, supportedCasKinds);
+            unsafeCompareAndSwapPluginsRegistrar.register(r, "compareAndSet", explicitUnsafeNullChecks, supportedCasKinds, Java11OrEarlier);
+            unsafeCompareAndExchangePluginsRegistrar.register(r, "compareAndExchange", explicitUnsafeNullChecks, supportedCasKinds, Java11OrEarlier);
         }
     }
 
@@ -346,11 +348,11 @@ public class StandardGraphBuilderPlugins {
         }
     }
 
-    private static void registerUnsafePlugins(Registration r, boolean java8OrEarlier, boolean explicitUnsafeNullChecks) {
+    private static void registerUnsafePlugins(Registration r, boolean sunMiscUnsafe, boolean explicitUnsafeNullChecks) {
         for (JavaKind kind : JavaKind.values()) {
             if ((kind.isPrimitive() && kind != JavaKind.Void) || kind == JavaKind.Object) {
                 Class<?> javaClass = kind == JavaKind.Object ? Object.class : kind.toJavaClass();
-                String kindName = kind.name();
+                String kindName = (kind == JavaKind.Object && !sunMiscUnsafe && !Java11OrEarlier) ? "Reference" : kind.name();
                 String getName = "get" + kindName;
                 String putName = "put" + kindName;
                 // Object-based accesses
@@ -360,7 +362,7 @@ public class StandardGraphBuilderPlugins {
                 r.register3(getName + "Volatile", Receiver.class, Object.class, long.class, new UnsafeGetPlugin(kind, AccessKind.VOLATILE, explicitUnsafeNullChecks));
                 r.register4(putName + "Volatile", Receiver.class, Object.class, long.class, javaClass, new UnsafePutPlugin(kind, AccessKind.VOLATILE, explicitUnsafeNullChecks));
                 // Ordered object-based accesses
-                if (java8OrEarlier) {
+                if (sunMiscUnsafe) {
                     if (kind == JavaKind.Int || kind == JavaKind.Long || kind == JavaKind.Object) {
                         r.register4("putOrdered" + kindName, Receiver.class, Object.class, long.class, javaClass, new UnsafePutPlugin(kind, AccessKind.RELEASE_ACQUIRE, explicitUnsafeNullChecks));
                     }

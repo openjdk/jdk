@@ -2904,19 +2904,19 @@ public final class Class<T> implements java.io.Serializable,
         static <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,
                                              SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSetObject(clazz, reflectionDataOffset, oldData, newData);
+            return unsafe.compareAndSetReference(clazz, reflectionDataOffset, oldData, newData);
         }
 
         static <T> boolean casAnnotationType(Class<?> clazz,
                                              AnnotationType oldType,
                                              AnnotationType newType) {
-            return unsafe.compareAndSetObject(clazz, annotationTypeOffset, oldType, newType);
+            return unsafe.compareAndSetReference(clazz, annotationTypeOffset, oldType, newType);
         }
 
         static <T> boolean casAnnotationData(Class<?> clazz,
                                              AnnotationData oldData,
                                              AnnotationData newData) {
-            return unsafe.compareAndSetObject(clazz, annotationDataOffset, oldData, newData);
+            return unsafe.compareAndSetReference(clazz, annotationDataOffset, oldData, newData);
         }
     }
 

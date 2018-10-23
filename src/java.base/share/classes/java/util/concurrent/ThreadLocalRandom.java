@@ -976,13 +976,13 @@ public class ThreadLocalRandom extends Random {
      * Erases ThreadLocals by nulling out Thread maps.
      */
     static final void eraseThreadLocals(Thread thread) {
-        U.putObject(thread, THREADLOCALS, null);
-        U.putObject(thread, INHERITABLETHREADLOCALS, null);
+        U.putReference(thread, THREADLOCALS, null);
+        U.putReference(thread, INHERITABLETHREADLOCALS, null);
     }
 
     static final void setInheritedAccessControlContext(Thread thread,
                                                        AccessControlContext acc) {
-        U.putObjectRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
+        U.putReferenceRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 
     // Serialization support

@@ -940,7 +940,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 Object base = MethodHandleNatives.staticFieldBase(sdField);
                 long offset = MethodHandleNatives.staticFieldOffset(sdField);
                 UNSAFE.loadFence();
-                return metaType.cast(UNSAFE.getObject(base, offset));
+                return metaType.cast(UNSAFE.getReference(base, offset));
             } catch (Error err) {
                 throw err;
             } catch (Exception ex) {
@@ -970,7 +970,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 Object base = MethodHandleNatives.staticFieldBase(sdField);
                 long offset = MethodHandleNatives.staticFieldOffset(sdField);
                 UNSAFE.storeFence();
-                UNSAFE.putObject(base, offset, speciesData);
+                UNSAFE.putReference(base, offset, speciesData);
                 UNSAFE.storeFence();
             } catch (Error err) {
                 throw err;

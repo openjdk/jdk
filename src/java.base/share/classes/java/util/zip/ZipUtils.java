@@ -25,7 +25,6 @@
 
 package java.util.zip;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
@@ -40,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 import static java.util.zip.ZipConstants.ENDHDR;
 
 import jdk.internal.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
 
 class ZipUtils {
 
@@ -295,7 +293,7 @@ class ZipUtils {
     private static final long byteBufferOffsetOffset = unsafe.objectFieldOffset(ByteBuffer.class, "offset");
 
     static byte[] getBufferArray(ByteBuffer byteBuffer) {
-        return (byte[]) unsafe.getObject(byteBuffer, byteBufferArrayOffset);
+        return (byte[]) unsafe.getReference(byteBuffer, byteBufferArrayOffset);
     }
 
     static int getBufferOffset(ByteBuffer byteBuffer) {

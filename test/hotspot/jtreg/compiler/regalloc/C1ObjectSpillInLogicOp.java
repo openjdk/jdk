@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8027751
- * @summary C1 crashes generating G1 post-barrier in Unsafe.getAndSetObject() intrinsic because of the new value spill
+ * @summary C1 crashes generating G1 post-barrier in Unsafe.getAndSetReference() intrinsic because of the new value spill
  * @requires vm.gc.G1
  *
  * @run main/othervm -XX:+UseG1GC compiler.regalloc.C1ObjectSpillInLogicOp

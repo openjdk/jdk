@@ -141,7 +141,7 @@ public class LockSupport {
 
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.
-        U.putObject(t, PARKBLOCKER, arg);
+        U.putReference(t, PARKBLOCKER, arg);
     }
 
     /**
@@ -291,7 +291,7 @@ public class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return U.getObjectVolatile(t, PARKBLOCKER);
+        return U.getReferenceVolatile(t, PARKBLOCKER);
     }
 
     /**
