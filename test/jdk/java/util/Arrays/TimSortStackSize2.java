@@ -25,7 +25,6 @@
  * @test
  * @bug 8072909
  * @summary Test TimSort stack size on big arrays
- * @key intermittent
  * @library /test/lib
  * @modules java.management
  *          java.base/jdk.internal

@@ -35,8 +35,7 @@ tier1_part1 = \
     :jdk_lang
 
 tier1_part2 = \
-    :jdk_util \
-    -java/util/Arrays/TimSortStackSize2.java
+    :jdk_util
 
 tier1_part3 = \
     :jdk_math \
@@ -67,9 +66,7 @@ tier2_part2 = \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
-    :jdk_time \
-    java/util/Arrays/TimSortStackSize2.java
-
+    :jdk_time
 
 tier2_part3 = \
     :jdk_net
