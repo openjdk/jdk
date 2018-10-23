@@ -725,7 +725,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             return config().invalidVtableIndex;
         }
         if (holder.isInterface()) {
-            if (resolved.isInterface()) {
+            if (resolved.isInterface() || !resolved.isLinked()) {
                 return config().invalidVtableIndex;
             }
             return getVtableIndexForInterfaceMethod(resolved);
