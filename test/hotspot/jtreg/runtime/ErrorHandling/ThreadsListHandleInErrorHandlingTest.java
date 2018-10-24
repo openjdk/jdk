@@ -49,11 +49,15 @@ public class ThreadsListHandleInErrorHandlingTest {
   public static void main(String[] args) throws Exception {
 
     // The -XX:ErrorHandlerTest=N option requires debug bits.
+    // Need to disable ShowRegistersOnAssert: that flag causes registers to be shown, which calls os::print_location,
+    // which - as part of its checks - will iterate the threads list under a ThreadListHandle, changing the max nesting
+    // counters and confusing this test.
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:ErrorHandlerTest=16",
         "-XX:-CreateCoredumpOnCrash",
+        "-XX:-ShowRegistersOnAssert",
         "-version");
 
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
