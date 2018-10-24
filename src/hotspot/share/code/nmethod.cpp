@@ -790,7 +790,9 @@ void nmethod::log_identity(xmlStream* log) const {
     char buffer[O_BUFLEN];
     char* jvmci_name = jvmci_installed_code_name(buffer, O_BUFLEN);
     if (jvmci_name != NULL) {
-      log->print(" jvmci_installed_code_name='%s'", jvmci_name);
+      log->print(" jvmci_installed_code_name='");
+      log->text("%s", jvmci_name);
+      log->print("'");
     }
 #endif
 }
