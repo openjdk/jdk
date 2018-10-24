@@ -40,7 +40,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * algorithms are available from the well-known network library
  * {@code netlib} as the package "Freely Distributable Math
  * Library," <a
- * href="ftp://ftp.netlib.org/fdlibm.tar">{@code fdlibm}</a>. These
+ * href="https://www.netlib.org/fdlibm/">{@code fdlibm}</a>. These
  * algorithms, which are written in the C programming language, are
  * then to be understood as executed with all floating-point
  * operations following the rules of Java floating-point arithmetic.
