@@ -1118,7 +1118,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
 
     // Attempt to install a null forwarding pointer (atomically),
     // to claim the right to install the real forwarding pointer.
-    forward_ptr = old->forward_to_atomic(ClaimedForwardPtr);
+    forward_ptr = old->forward_to_atomic(ClaimedForwardPtr, m);
     if (forward_ptr != NULL) {
       // someone else beat us to it.
         return real_forwardee(old);
@@ -1144,7 +1144,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
     // Is in to-space; do copying ourselves.
     Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
     assert(CMSHeap::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
-    forward_ptr = old->forward_to_atomic(new_obj);
+    forward_ptr = old->forward_to_atomic(new_obj, m);
     // Restore the mark word copied above.
     new_obj->set_mark_raw(m);
     // Increment age if obj still in new generation
