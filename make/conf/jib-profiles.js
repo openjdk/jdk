@@ -759,7 +759,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 testedProfile + ".test"
             ],
             src: "src.conf",
-            make_args: [ "run-test-prebuilt", "LOG_CMDLINES=true" ],
+            make_args: [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ],
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
                 "JDK_IMAGE_DIR": input.get(testedProfile + ".jdk", "home_path"),
