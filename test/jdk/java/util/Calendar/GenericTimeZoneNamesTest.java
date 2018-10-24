@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,22 @@
  * questions.
  */
 
-import java.util.*;
+/*
+ * @test
+ * @bug 8003267
+ * @summary Unit test for generic time zone names support. This test is locale
+ *          data-dependent and assumes that both JRE and CLDR have the same
+ *          geneic time zone names in English.
+ * @modules java.base/sun.util.locale.provider
+ * @comment Locale providers: default
+ * @run main GenericTimeZoneNamesTest en-US
+ * @comment Locale providers: CLDR
+ * @run main/othervm -Djava.locale.providers=CLDR GenericTimeZoneNamesTest en-US
+*/
+
+import java.util.Locale;
+import java.util.TimeZone;
+
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 public class GenericTimeZoneNamesTest {

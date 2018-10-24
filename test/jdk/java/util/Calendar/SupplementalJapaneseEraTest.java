@@ -32,20 +32,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import static java.util.GregorianCalendar.*;
 import java.util.Locale;
-import java.util.TimeZone;
 
 /*
  * Usage:
- *   java SupplementalJapaneseEraTest <flag>
- *    <flag>
- *      -s   prints start time for a test era
- *      -e   prints the English name of the last predefined era
- *
  *   java -Djdk.calendar.japanese.supplemental.era=... SupplementalJapaneseEraTest <flag>
  *      -t   executes tests with a valid property value
  *      -b <eraname>
  *           executes tests with an invalid property value
- *           <eraname> must be the output with -e
  */
 
 public class SupplementalJapaneseEraTest {
@@ -57,26 +50,6 @@ public class SupplementalJapaneseEraTest {
     public static void main(String[] args) {
         // args[0] is a flag.
         switch (args[0]) {
-        case "-s":
-            // print the start time of the new era for testing
-            Calendar cal = new Calendar.Builder()
-                .setCalendarType("japanese")
-                .setTimeZone(TimeZone.getTimeZone("GMT"))
-                .setFields(ERA, 5)
-                .setDate(200, FEBRUARY, 11)
-                .build();
-            System.out.println(cal.getTimeInMillis());
-            break;
-
-        case "-e":
-            // print the current era name in English
-            Calendar jcal = new Calendar.Builder()
-                .setCalendarType("japanese")
-                .setFields(YEAR, 1, DAY_OF_YEAR, 1)
-                .build();
-            System.out.println(jcal.getDisplayName(ERA, LONG, Locale.US));
-            break;
-
         case "-t":
             // test with a valid property value
             testProperty();
@@ -84,7 +57,7 @@ public class SupplementalJapaneseEraTest {
 
         case "-b":
             // test with an invalid property value
-            // args[1] is the current era name given by -e.
+            // args[1] is the current era name.
             testValidation(args[1].replace("\r", "")); // remove any CR for Cygwin
             break;
         }
