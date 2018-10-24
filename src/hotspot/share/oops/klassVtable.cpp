@@ -84,6 +84,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     methodHandle mh(THREAD, methods->at(i));
 
     if (needs_new_vtable_entry(mh, super, classloader, classname, class_flags, major_version, THREAD)) {
+      assert(!methods->at(i)->is_private(), "private methods should not need a vtable entry");
       vtable_length += vtableEntry::size(); // we need a new entry
     }
   }
@@ -283,7 +284,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 // If none found, return a null superk, else return the superk of the method this does override
 // For public and protected methods: if they override a superclass, they will
 // also be overridden themselves appropriately.
-// Private methods do not override and are not overridden.
+// Private methods do not override, and are not overridden and are not in the vtable.
 // Package Private methods are trickier:
 // e.g. P1.A, pub m
 // P2.B extends A, package private m
@@ -390,8 +391,9 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
     target_method()->set_vtable_index(Method::nonvirtual_vtable_index);
   }
 
-  // Static and <init> methods are never in
-  if (target_method()->is_static() || target_method()->name() ==  vmSymbols::object_initializer_name()) {
+  // Private, static and <init> methods are never in
+  if (target_method()->is_private() || target_method()->is_static() ||
+      (target_method()->name()->fast_compare(vmSymbols::object_initializer_name()) == 0)) {
     return false;
   }
 
@@ -411,10 +413,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
     // valid itable index, if so, don't change it.
     // Overpass methods in an interface will be assigned an itable index later
     // by an inheriting class.
-    // Private interface methods have no itable index and are always invoked nonvirtually,
-    // so they retain their nonvirtual_vtable_index value, and therefore can_be_statically_bound()
-    // will return true.
-    if ((!is_default || !target_method()->has_itable_index()) && !target_method()->is_private()) {
+    if ((!is_default || !target_method()->has_itable_index())) {
       target_method()->set_vtable_index(Method::pending_itable_index);
     }
   }
@@ -422,14 +421,6 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
   // we need a new entry if there is no superclass
   Klass* super = klass->super();
   if (super == NULL) {
-    return allocate_new;
-  }
-
-  // private methods in classes always have a new entry in the vtable
-  // specification interpretation since classic has
-  // private methods not overriding
-  // JDK8 adds private methods in interfaces which require invokespecial
-  if (target_method()->is_private()) {
     return allocate_new;
   }
 
@@ -555,6 +546,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
 }
 
 void klassVtable::put_method_at(Method* m, int index) {
+  assert(!m->is_private(), "private methods should not be in vtable");
   if (is_preinitialized_vtable()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for shared class loaded by the non-boot loader to obtain the loader
@@ -606,9 +598,11 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
       // a final method never needs a new entry; final methods can be statically
       // resolved and they have to be present in the vtable only if they override
       // a super's method, in which case they re-use its entry
+      (target_method()->is_private()) ||
+      // private methods don't need to be in vtable
       (target_method()->is_static()) ||
       // static methods don't need to be in vtable
-      (target_method()->name() ==  vmSymbols::object_initializer_name())
+      (target_method()->name()->fast_compare(vmSymbols::object_initializer_name()) == 0)
       // <init> is never called dynamically-bound
       ) {
     return false;
@@ -619,19 +613,13 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
   if (target_method()->method_holder() != NULL &&
       target_method()->method_holder()->is_interface()  &&
       !target_method()->is_abstract()) {
-    assert(target_method()->is_default_method() || target_method()->is_private(),
+    assert(target_method()->is_default_method(),
            "unexpected interface method type");
     return false;
   }
 
   // we need a new entry if there is no superclass
   if (super == NULL) {
-    return true;
-  }
-
-  // private methods in classes always have a new entry in the vtable.
-  // Specification interpretation since classic has private methods not overriding.
-  if (target_method()->is_private()) {
     return true;
   }
 
@@ -660,8 +648,8 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
     // make sure you use that class for is_override
     InstanceKlass* superk = super_method->method_holder();
     // we want only instance method matches
-    // pretend private methods are not in the super vtable
-    // since we do override around them: e.g. a.m pub/b.m private/c.m pub,
+    // ignore private methods found via lookup_method since they do not participate in overriding,
+    // and since we do override around them: e.g. a.m pub/b.m private/c.m pub,
     // ignore private, c.m pub does override a.m pub
     // For classes that were not javac'd together, we also do transitive overriding around
     // methods that have less accessibility
