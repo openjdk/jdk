@@ -21,8 +21,24 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8000983 8008577
+ * @summary Unit test for narrow names support. This test is locale data-dependent
+ *          and assumes that both JRE and CLDR have the same narrow names.
+ * @modules jdk.localedata
+ * @comment Locale providers: JRE,SPI
+ * @run main/othervm -Djava.locale.providers=JRE,SPI NarrowNamesTest JRE,SPI
+ * @comment Locale providers: CLDR
+ * @run main/othervm -Djava.locale.providers=CLDR NarrowNamesTest CLDR
+ */
+
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 import static java.util.GregorianCalendar.*;
 
 public class NarrowNamesTest {
