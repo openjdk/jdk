@@ -69,13 +69,13 @@ int g_tagVisitCount[MAX_TAG];
 
 void markTagSet(jlong tag_val)
 {
-    if ( tag_val > 0 && tag_val < MAX_TAG )
+    if (tag_val > 0 && tag_val < MAX_TAG)
         g_tagFlags[tag_val] |= FLAG_TAG_SET;
 }
 
 void markTagVisited(jlong tag_val)
 {
-    if ( tag_val > 0 && tag_val < MAX_TAG ) {
+    if (tag_val > 0 && tag_val < MAX_TAG) {
         g_tagVisitCount[tag_val]++;
     }
 }
@@ -87,11 +87,11 @@ jboolean checkThatAllTagsVisited()
 
     NSK_DISPLAY0("Checking that all set tags have been visited\n");
 
-    for ( i = 1; i < MAX_TAG; i++ ) {
+    for (i = 1; i < MAX_TAG; i++) {
         char flags = g_tagFlags[i];
 
-        if ( (g_tagFlags[i] & FLAG_TAG_SET) ) {
-            if ( g_tagVisitCount[i] == 0 ) {
+        if ((g_tagFlags[i] & FLAG_TAG_SET)) {
+            if (g_tagVisitCount[i] == 0) {
                 NSK_COMPLAIN1("Tag %" LL "d has not been visited: %x\n", i);
                 ok = JNI_FALSE;
             }
@@ -115,28 +115,28 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
     jvmtiEnv * jvmti = nsk_jvmti_getAgentJVMTIEnv();
     jint hashCode;
 
-    if ( ! NSK_VERIFY(jvmti->SetTag(o, tag) == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY(jvmti->SetTag(o, tag) == JVMTI_ERROR_NONE)) {
         NSK_COMPLAIN2("Can't set tag %li for object %lx\n", tag, o);
         return JNI_FALSE;
     }
 
-    if ( ! NSK_VERIFY(jvmti->GetObjectHashCode(o, &hashCode) == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY(jvmti->GetObjectHashCode(o, &hashCode) == JVMTI_ERROR_NONE)) {
         NSK_COMPLAIN1("Can't get hash object %lx\n", o);
         return JNI_FALSE;
     }
 
     NSK_DISPLAY2("setTag: %08x <- % 3li", hashCode, tag);
 
-    if ( tag > 0 && tag < MAX_TAG ) {
+    if (tag > 0 && tag < MAX_TAG) {
         jboolean fCopy;
         const char * s;
 
-        if ( ! NSK_VERIFY((s = jni->GetStringUTFChars(sInfo, &fCopy)) != NULL) ) {
+        if (!NSK_VERIFY((s = jni->GetStringUTFChars(sInfo, &fCopy)) != NULL)) {
             NSK_COMPLAIN1("Can't get string at %#p\n", sInfo);
             return JNI_FALSE;
         }
 
-        if ( ! s ) {
+        if (!s) {
             NSK_COMPLAIN1("Can't get string at %#p: NULL\n", sInfo);
             return JNI_FALSE;
         }
@@ -160,7 +160,7 @@ JNIEXPORT jlong JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_ge
 
     jlong tag;
     jvmtiError r;
-    if ( ! NSK_VERIFY((r = jvmti->GetTag(o, &tag)) == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY((r = jvmti->GetTag(o, &tag)) == JVMTI_ERROR_NONE)) {
         NSK_COMPLAIN2("Can't GetTag for object %lx. Return code: %i\n", o, r);
         return -1;
     }
@@ -186,9 +186,9 @@ static RefToVerify * findRefToVerify(jlong tagFrom, jlong tagTo, jint refKind)
     int i;
     RefToVerify * pRefRec = g_refsToVerify;
 
-    for ( i = g_refsToVerifyCnt; i > 0; i--, pRefRec++ ) {
+    for (i = g_refsToVerifyCnt; i > 0; i--, pRefRec++) {
         pRefRec = &g_refsToVerify[i];
-        if ( pRefRec->_tagFrom == tagFrom && pRefRec->_tagTo == tagTo && pRefRec->_refKind == refKind ) {
+        if (pRefRec->_tagFrom == tagFrom && pRefRec->_tagTo == tagTo && pRefRec->_refKind == refKind) {
             return pRefRec;
         }
     }
@@ -200,7 +200,7 @@ static jboolean addRefToVerify(jlong tagFrom, jlong tagTo, jint refKind, int exp
 {
     RefToVerify * pRefRec;
 
-    if ( g_refsToVerifyCnt >= MAX_REFS ) {
+    if (g_refsToVerifyCnt >= MAX_REFS) {
         NSK_COMPLAIN0("TEST_BUG: Max. number of refs reached!");
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
@@ -224,20 +224,20 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
     jlong tagFrom, tagTo;
     RefToVerify * pRefRec;
 
-    if ( ! NSK_VERIFY((r = jvmti->GetTag(from, &tagFrom)) == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY((r = jvmti->GetTag(from, &tagFrom)) == JVMTI_ERROR_NONE)) {
         NSK_COMPLAIN2("TEST_BUG: Can't GetTag for object %lx. Return code: %i\n", from, r);
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
     }
 
 
-    if ( ! NSK_VERIFY((r = jvmti->GetTag(to, &tagTo)) == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY((r = jvmti->GetTag(to, &tagTo)) == JVMTI_ERROR_NONE)) {
         NSK_COMPLAIN2("TEST_BUG: Can't GetTag for object %lx. Return code: %i\n", to, r);
         nsk_jvmti_setFailStatus();
         return JNI_FALSE;
     }
 
-    if ( (pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL ) {
+    if ((pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL) {
         pRefRec->_expectedCount += count;
         return JNI_TRUE;
     }
@@ -249,7 +249,7 @@ jboolean markRefToVerify(jlong tagFrom, jlong tagTo, int refKind)
 {
     RefToVerify * pRefRec;
 
-    if ( (pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL ) {
+    if ((pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL) {
         pRefRec->_actualCount++;
         return JNI_TRUE;
     }
@@ -299,8 +299,8 @@ void printHeapRefCallbackInfo(
     NSK_DISPLAY2("   tag: %" LL "d, referrer_tag: %" LL "d\n",
                      tag_val, DEREF(referrer_tag_ptr));
 
-    szInfo = ( tag_val > 0 && tag_val < MAX_TAG ) ? g_szTagInfo[tag_val] : "<none>";
-    szRefInfo = ( referrer_tag_ptr && *referrer_tag_ptr > 0 && *referrer_tag_ptr < MAX_TAG ) ? g_szTagInfo[*referrer_tag_ptr] : "<none>";
+    szInfo = (tag_val > 0 && tag_val < MAX_TAG) ? g_szTagInfo[tag_val] : "<none>";
+    szRefInfo = (referrer_tag_ptr && *referrer_tag_ptr > 0 && *referrer_tag_ptr < MAX_TAG) ? g_szTagInfo[*referrer_tag_ptr] : "<none>";
 
     NSK_DISPLAY3("   summary: %s: %s <- %s\n",
                      g_refKindStr[reference_kind], szInfo, szRefInfo);

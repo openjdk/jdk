@@ -24,6 +24,7 @@
 package lib.jdb;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -118,6 +119,8 @@ import java.util.stream.Collectors;
 public class JdbCommand {
     final String cmd;
     boolean allowExit = false;
+    // Default pattern to wait for command to complete
+    Pattern waitForPattern = Jdb.PROMPT_REGEXP;
 
     public JdbCommand(String cmd) {
         this.cmd = cmd;
@@ -125,6 +128,11 @@ public class JdbCommand {
 
     public JdbCommand allowExit() {
         allowExit = true;
+        return this;
+    }
+
+    public JdbCommand waitForPrompt(String pattern, boolean isMultiline) {
+        waitForPattern = Pattern.compile(pattern, isMultiline ? Pattern.MULTILINE : 0);
         return this;
     }
 
@@ -145,10 +153,18 @@ public class JdbCommand {
     public static JdbCommand stopAt(String targetClass, int lineNum) {
         return new JdbCommand("stop at " + targetClass + ":" + lineNum);
     }
+    public static JdbCommand stopThreadAt(String targetClass, int lineNum) {
+        return new JdbCommand("stop thread at " + targetClass + ":" + lineNum);
+    }
+    public static JdbCommand stopGoAt(String targetClass, int lineNum) {
+        return new JdbCommand("stop go at " + targetClass + ":" + lineNum);
+    }
     public static JdbCommand stopIn(String targetClass, String methodName) {
         return new JdbCommand("stop in " + targetClass + "." + methodName);
     }
-
+    public static JdbCommand thread(int threadNumber) {
+        return new JdbCommand("thread " + threadNumber);
+    }
     // clear <class id>:<line>   -- clear a breakpoint at a line
     public static JdbCommand clear(String targetClass, int lineNum) {
         return new JdbCommand("clear " + targetClass + ":" + lineNum);

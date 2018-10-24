@@ -130,7 +130,7 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
     found = JNI_FALSE;
     for (i = 0; i < classCount; ++i) {
       jclass k = classes[i];
-      if ( env->IsSameObject(k, appCls) ) {
+      if (env->IsSameObject(k, appCls)) {
         if (printdump) {
           printf(">>> found app class in app class loader\n");
         }
@@ -154,7 +154,7 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
     found = JNI_FALSE;
     for (i = 0; i < classCount; ++i) {
       jclass k = classes[i];
-      if ( env->IsSameObject(k, objCls) ) {
+      if (env->IsSameObject(k, objCls)) {
         if (printdump) {
           printf(">>> found Object class in bootstrap class loader\n");
         }

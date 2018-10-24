@@ -100,6 +100,17 @@ public class TTY implements EventNotifier {
     public void breakpointEvent(BreakpointEvent be)  {
         Thread.yield();  // fetch output
         MessageOutput.lnprint("Breakpoint hit:");
+        // Print breakpoint location and prompt if suspend policy is
+        // SUSPEND_NONE or SUSPEND_EVENT_THREAD. In case of SUSPEND_ALL
+        // policy this is handled by vmInterrupted() method.
+        int suspendPolicy = be.request().suspendPolicy();
+        switch (suspendPolicy) {
+            case EventRequest.SUSPEND_EVENT_THREAD:
+            case EventRequest.SUSPEND_NONE:
+                printBreakpointLocation(be);
+                MessageOutput.printPrompt();
+                break;
+        }
     }
 
     @Override
@@ -227,6 +238,10 @@ public class TTY implements EventNotifier {
                                              Commands.locationString(loc)});
     }
 
+    private void printBreakpointLocation(BreakpointEvent be) {
+        printLocationWithSourceLine(be.thread().name(), be.location());
+    }
+
     private void printCurrentLocation() {
         ThreadInfo threadInfo = ThreadInfo.getCurrentThreadInfo();
         StackFrame frame;
@@ -239,24 +254,27 @@ public class TTY implements EventNotifier {
         if (frame == null) {
             MessageOutput.println("No frames on the current call stack");
         } else {
-            Location loc = frame.location();
-            printBaseLocation(threadInfo.getThread().name(), loc);
-            // Output the current source line, if possible
-            if (loc.lineNumber() != -1) {
-                String line;
-                try {
-                    line = Env.sourceLine(loc, loc.lineNumber());
-                } catch (java.io.IOException e) {
-                    line = null;
-                }
-                if (line != null) {
-                    MessageOutput.println("source line number and line",
-                                          new Object [] {loc.lineNumber(),
-                                                         line});
-                }
-            }
+            printLocationWithSourceLine(threadInfo.getThread().name(), frame.location());
         }
         MessageOutput.println();
+    }
+
+    private void printLocationWithSourceLine(String threadName, Location loc) {
+        printBaseLocation(threadName, loc);
+        // Output the current source line, if possible
+        if (loc.lineNumber() != -1) {
+            String line;
+            try {
+                line = Env.sourceLine(loc, loc.lineNumber());
+            } catch (java.io.IOException e) {
+                line = null;
+            }
+            if (line != null) {
+                MessageOutput.println("source line number and line",
+                                           new Object [] {loc.lineNumber(),
+                                                          line});
+            }
+        }
     }
 
     private void printLocationOfEvent(LocatableEvent theEvent) {

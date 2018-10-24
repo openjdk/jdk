@@ -45,9 +45,9 @@ class GlobalCounter : public AllStatic {
   // Since do not know what we will end up next to in BSS, we make sure the
   // counter is on a seperate cacheline.
   struct PaddedCounter {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE/2, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
     volatile uintx _counter;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE/2, sizeof(volatile uintx));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uintx));
   };
 
   // The global counter

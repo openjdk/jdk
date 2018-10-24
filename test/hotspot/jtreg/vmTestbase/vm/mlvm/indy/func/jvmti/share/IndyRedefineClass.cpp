@@ -75,35 +75,35 @@ Java_vm_mlvm_indy_func_jvmti_share_IndyRedefineClass_checkStatus(JNIEnv * pEnv, 
     NSK_DISPLAY1("Single step event fired? %i\n", gIsSingleStepWorking);
         NSK_DISPLAY0("The following value should be zero for test to pass:\n");
     NSK_DISPLAY1("Any other error occured? %i\n", gIsErrorOccured);
-    return gIsMethodEntryWorking && gIsSingleStepWorking && ! gIsErrorOccured;
+    return gIsMethodEntryWorking && gIsSingleStepWorking && !gIsErrorOccured;
 }
 
 static void popFrameLogic(jvmtiEnv * jvmti_env, jthread thread) {
 
     TLSStruct * tls = (TLSStruct *) getTLS(jvmti_env, thread, sizeof(TLSStruct));
 
-    if ( ! tls )
+    if (!tls)
         return;
 
-    if ( tls->countOfFramesToPop <= 0 ) {
+    if (tls->countOfFramesToPop <= 0) {
 
         NSK_DISPLAY0("Disabling single step\n");
-        if ( ! NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
             gIsErrorOccured = JNI_TRUE;
 
     } else {
 
         NSK_DISPLAY0("Enabling single step\n");
-        if ( ! NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
             gIsErrorOccured = JNI_TRUE;
 
-        if ( tls->countOfFramesToPop == 1 ) {
+        if (tls->countOfFramesToPop == 1) {
             NSK_DISPLAY0("Popping a frame\n");
-            if ( ! NSK_JVMTI_VERIFY(jvmti_env->PopFrame(thread)) )
+            if (!NSK_JVMTI_VERIFY(jvmti_env->PopFrame(thread)))
                 gIsErrorOccured = JNI_TRUE;
         } else {
             NSK_DISPLAY0("Forcing early return\n");
-            if ( ! NSK_JVMTI_VERIFY(jvmti_env->ForceEarlyReturnVoid(thread)) )
+            if (!NSK_JVMTI_VERIFY(jvmti_env->ForceEarlyReturnVoid(thread)))
                 gIsErrorOccured = JNI_TRUE;
         }
 
@@ -123,10 +123,10 @@ MethodEntry(jvmtiEnv *jvmti_env,
 
     gIsMethodEntryWorking = JNI_TRUE;
     mn = getMethodName(jvmti_env, method);
-    if ( ! mn )
+    if (!mn)
         return;
 
-    if ( strcmp(mn->methodName, gszRedefineTriggerMethodName) != 0 ) {
+    if (strcmp(mn->methodName, gszRedefineTriggerMethodName) != 0) {
         free(mn);
         return;
     }
@@ -134,17 +134,17 @@ MethodEntry(jvmtiEnv *jvmti_env,
     NSK_DISPLAY2("Entering redefine tigger method: %s.%s\n", mn->classSig, mn->methodName);
     free(mn); mn = NULL;
 
-    if ( gIsClassRedefined ) {
+    if (gIsClassRedefined) {
         NSK_DISPLAY0("Class is already redefined.\n");
         return;
     }
 
     NSK_DISPLAY1("Redefining class %s\n", gszRedefinedClassFileName);
 
-    if ( ! NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &clazz)) )
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &clazz)))
         return;
 
-    if ( ! NSK_VERIFY(nsk_jvmti_redefineClass(jvmti_env, clazz, gszRedefinedClassFileName)) ) {
+    if (!NSK_VERIFY(nsk_jvmti_redefineClass(jvmti_env, clazz, gszRedefinedClassFileName))) {
         gIsErrorOccured = JNI_TRUE;
         return;
     }
@@ -183,13 +183,13 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     jvmtiEventCallbacks callbacks;
     jvmtiCapabilities caps;
 
-    if ( ! NSK_VERIFY(nsk_jvmti_parseOptions(options)) )
+    if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
-    if ( ! NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL) )
+    if (!NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if ( nsk_jvmti_findOptionValue("debuggerCompatible") ) {
+    if (nsk_jvmti_findOptionValue("debuggerCompatible")) {
         gIsDebuggerCompatible = JNI_TRUE;
     }
 
@@ -200,20 +200,20 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     caps.can_force_early_return = 1;
     caps.can_redefine_classes = 1;
 
-    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->AddCapabilities(&caps)) )
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->AddCapabilities(&caps)))
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.MethodEntry = &MethodEntry;
     callbacks.SingleStep = &SingleStep;
 
-    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventCallbacks(&callbacks, sizeof(callbacks))) )
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventCallbacks(&callbacks, sizeof(callbacks))))
             return JNI_ERR;
 
-    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL) ) )
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
             return JNI_ERR;
 
-    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL) ) )
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
             return JNI_ERR;
 
     return JNI_OK;

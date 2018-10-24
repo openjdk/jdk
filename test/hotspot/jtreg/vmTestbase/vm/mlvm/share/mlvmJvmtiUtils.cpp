@@ -36,7 +36,7 @@ void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst) {
     const char * pStr;
         jsize len;
 
-    if ( ! NSK_VERIFY((pStr = pEnv->GetStringUTFChars(src, NULL)) != NULL) ) {
+    if (!NSK_VERIFY((pStr = pEnv->GetStringUTFChars(src, NULL)) != NULL)) {
         return;
     }
 
@@ -53,16 +53,16 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
     jclass clazz;
     struct MethodName * mn;
 
-    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodName(method, &szName, NULL, NULL)) ) {
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodName(method, &szName, NULL, NULL))) {
         return NULL;
     }
 
-    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodDeclaringClass(method, &clazz)) ) {
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodDeclaringClass(method, &clazz))) {
         NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
 
-    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, NULL)) ) {
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, NULL))) {
         NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
@@ -83,7 +83,7 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
     const char * const format = "%s .%s :" JLONG_FORMAT;
 
     pMN = getMethodName(pJvmtiEnv, method);
-    if ( ! pMN )
+    if (!pMN)
         return strdup("NONE");
 
     len = snprintf(NULL, 0, format, pMN->classSig, pMN->methodName, location) + 1;
@@ -107,16 +107,16 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
 
 void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {
     void * tls;
-    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetThreadLocalStorage(thread, &tls)) )
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetThreadLocalStorage(thread, &tls)))
         return NULL;
 
-    if ( ! tls) {
-        if ( ! NSK_VERIFY((tls = malloc(sizeToAllocate)) != NULL) )
+    if (!tls) {
+        if (!NSK_VERIFY((tls = malloc(sizeToAllocate)) != NULL))
             return NULL;
 
         memset(tls, 0, sizeToAllocate);
 
-        if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->SetThreadLocalStorage(thread, tls)) )
+        if (!NSK_JVMTI_VERIFY(pJvmtiEnv->SetThreadLocalStorage(thread, tls)))
             return NULL;
     }
 

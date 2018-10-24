@@ -150,10 +150,11 @@ public class Jdb implements AutoCloseable {
         # i.e., the > prompt comes out AFTER the prompt we we need to wait for.
     */
     // compile regexp once
-    private final String promptPattern = "[a-zA-Z0-9_-][a-zA-Z0-9_-]*\\[[1-9][0-9]*\\] [ >]*$";
-    private final Pattern promptRegexp = Pattern.compile(promptPattern);
+    private final static String promptPattern = "[a-zA-Z0-9_-][a-zA-Z0-9_-]*\\[[1-9][0-9]*\\] [ >]*$";
+    final static Pattern PROMPT_REGEXP = Pattern.compile(promptPattern);
+
     public List<String> waitForPrompt(int lines, boolean allowExit) {
-        return waitForPrompt(lines, allowExit, promptRegexp);
+        return waitForPrompt(lines, allowExit, PROMPT_REGEXP);
     }
 
     // jdb prompt when debuggee is not started and is not suspended after breakpoint
@@ -183,10 +184,18 @@ public class Jdb implements AutoCloseable {
                 }
             }
             List<String> reply = outputHandler.get();
-            for (String line: reply.subList(Math.max(0, reply.size() - lines), reply.size())) {
-                if (promptRegexp.matcher(line).find()) {
+            if ((promptRegexp.flags() & Pattern.MULTILINE) > 0) {
+                String replyString = reply.stream().collect(Collectors.joining(lineSeparator));
+                if (promptRegexp.matcher(replyString).find()) {
                     logJdb(reply);
                     return outputHandler.reset();
+                }
+            } else {
+                for (String line : reply.subList(Math.max(0, reply.size() - lines), reply.size())) {
+                    if (promptRegexp.matcher(line).find()) {
+                        logJdb(reply);
+                        return outputHandler.reset();
+                    }
                 }
             }
             if (!jdb.isAlive()) {
@@ -195,7 +204,7 @@ public class Jdb implements AutoCloseable {
                 logJdb(reply);
                 if (!allowExit) {
                     throw new RuntimeException("waitForPrompt timed out after " + (timeout/1000)
-                            + " seconds, looking for '" + promptPattern + "', in " + lines + " lines");
+                            + " seconds, looking for '" + promptRegexp.pattern() + "', in " + lines + " lines");
                 }
                 return reply;
             }
@@ -203,7 +212,7 @@ public class Jdb implements AutoCloseable {
         // timeout
         logJdb(outputHandler.get());
         throw new RuntimeException("waitForPrompt timed out after " + (timeout/1000)
-                + " seconds, looking for '" + promptPattern + "', in " + lines + " lines");
+                + " seconds, looking for '" + promptRegexp.pattern() + "', in " + lines + " lines");
     }
 
     public List<String> command(JdbCommand cmd) {
@@ -223,7 +232,7 @@ public class Jdb implements AutoCloseable {
             throw new RuntimeException("Unexpected IO error while writing command '" + cmd.cmd + "' to jdb stdin stream");
         }
 
-        return waitForPrompt(1, cmd.allowExit);
+        return waitForPrompt(1, cmd.allowExit, cmd.waitForPattern);
     }
 
     public List<String> command(String cmd) {

@@ -429,11 +429,24 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
+    static class UnlinkedType {
+    }
+
     /**
      * All public non-final methods should be available in the vtable.
      */
     @Test
     public void testVirtualMethodTableAccess() {
+        ResolvedJavaType unlinkedType = metaAccess.lookupJavaType(UnlinkedType.class);
+        assertTrue(!unlinkedType.isLinked());
+        for (Class<?> c : classes) {
+            if (c.isInterface()) {
+                for (Method m : c.getDeclaredMethods()) {
+                    ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+                    method.isInVirtualMethodTable(unlinkedType);
+                }
+            }
+        }
         for (Class<?> c : classes) {
             if (c.isPrimitive() || c.isInterface()) {
                 continue;

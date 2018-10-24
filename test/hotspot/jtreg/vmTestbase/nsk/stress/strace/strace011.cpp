@@ -75,7 +75,7 @@ Java_nsk_stress_strace_strace011Thread_recursiveMethod(JNIEnv *env, jobject obj)
         alltime = 0;
         GET_STATIC_BOOL_FIELD(isLocked, testClass, "isLocked");
 
-        while ( isLocked != JNI_TRUE )
+        while (isLocked != JNI_TRUE)
         {
             MONITOR_ENTER(testField);
             CALL_VOID(testField, threadClass, "wait", Slongparam, 1LL);
