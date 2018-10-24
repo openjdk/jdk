@@ -26,7 +26,6 @@
  * @key gc regression
  * @summary Make sure that start up with NUMA support does not cause problems.
  * @bug 8061467
- * @requires vm.opt.AggressiveOpts != true
  * @requires vm.gc != "Z"
  * @run main/othervm -Xmx128m -XX:+UseNUMA -XX:+UseLargePages TestNUMAPageSize
  */

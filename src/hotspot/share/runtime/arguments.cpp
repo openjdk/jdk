@@ -536,7 +536,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "AggressiveOpts",               JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -563,6 +562,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SyncFlags",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncKnobs",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "MonitorInUseLists",             JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "AggressiveOpts",                JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -1940,7 +1940,7 @@ void Arguments::set_bytecode_flags() {
   }
 }
 
-// Aggressive optimization flags  -XX:+AggressiveOpts
+// Aggressive optimization flags
 jint Arguments::set_aggressive_opts_flags() {
 #ifdef COMPILER2
   if (AggressiveUnboxing) {
@@ -1957,14 +1957,10 @@ jint Arguments::set_aggressive_opts_flags() {
       AggressiveUnboxing = false;
     }
   }
-  if (AggressiveOpts || !FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
+  if (!FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
     if (FLAG_IS_DEFAULT(EliminateAutoBox)) {
       FLAG_SET_DEFAULT(EliminateAutoBox, true);
     }
-    if (FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
-      FLAG_SET_DEFAULT(AutoBoxCacheMax, 20000);
-    }
-
     // Feed the cache size setting into the JDK
     char buffer[1024];
     jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
@@ -1972,17 +1968,7 @@ jint Arguments::set_aggressive_opts_flags() {
       return JNI_ENOMEM;
     }
   }
-  if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
-    FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
-  }
 #endif
-
-  if (AggressiveOpts) {
-// Sample flag setting code
-//    if (FLAG_IS_DEFAULT(EliminateZeroing)) {
-//      FLAG_SET_DEFAULT(EliminateZeroing, true);
-//    }
-  }
 
   return JNI_OK;
 }
@@ -3913,7 +3899,7 @@ jint Arguments::apply_ergo() {
   // Set bytecode rewriting flags
   set_bytecode_flags();
 
-  // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled
+  // Set flags if aggressive optimization flags are enabled
   jint code = set_aggressive_opts_flags();
   if (code != JNI_OK) {
     return code;

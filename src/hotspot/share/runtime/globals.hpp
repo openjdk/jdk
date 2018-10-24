@@ -1351,9 +1351,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
                                                                             \
-  product(bool, AggressiveOpts, false,                                      \
-          "(Deprecated) Enable aggressive optimizations - see arguments.cpp") \
-                                                                            \
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
                                                                             \

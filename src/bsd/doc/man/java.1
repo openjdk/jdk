@@ -1606,11 +1606,6 @@ Enables installation of signal handlers by the application\&. By default, this o
 .PP
 These options control the dynamic just\-in\-time (JIT) compilation performed by the Java HotSpot VM\&.
 .PP
-\-XX:+AggressiveOpts
-.RS 4
-Enables the use of aggressive performance optimization features, which are expected to become default in upcoming releases\&. By default, this option is disabled and experimental performance features are not used\&.
-.RE
-.PP
 \-XX:AllocateInstancePrefetchLines=\fIlines\fR
 .RS 4
 Sets the number of lines to prefetch ahead of the instance allocation pointer\&. By default, the number of lines to prefetch is set to 1:
@@ -3444,7 +3439,7 @@ The following examples show how to use experimental tuning flags to either optim
 .RS 4
 .\}
 .nf
-\fBjava \-d64 \-server \-XX:+AggressiveOpts \-XX:+UseLargePages \-Xmn10g  \-Xms26g \-Xmx26g\fR
+\fBjava \-d64 \-server \-XX:+UseLargePages \-Xmn10g  \-Xms26g \-Xmx26g\fR
  
 .fi
 .if n \{\
