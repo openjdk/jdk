@@ -361,6 +361,33 @@ class Eval {
                 winit = winit == null ? Wrap.rangeWrap(compileSource, rinit) : winit;
                 nameMax = rinit.begin - 1;
             } else {
+                String sinit;
+                switch (typeName) {
+                    case "byte":
+                    case "short":
+                    case "int":
+                        sinit = "0";
+                        break;
+                    case "long":
+                        sinit = "0L";
+                        break;
+                    case "float":
+                        sinit = "0.0f";
+                        break;
+                    case "double":
+                        sinit = "0.0d";
+                        break;
+                    case "boolean":
+                        sinit = "false";
+                        break;
+                    case "char":
+                        sinit = "'\\u0000'";
+                        break;
+                    default:
+                        sinit = "null";
+                        break;
+                }
+                winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
             int nameStart = compileSource.lastIndexOf(name, nameMax);
@@ -860,28 +887,6 @@ class Eval {
                 } catch (EngineTerminationException ex) {
                     state.debug(ex, "termination");
                     state.closeDown();
-                }
-            } else if (si.subKind() == SubKind.VAR_DECLARATION_SUBKIND) {
-                switch (((VarSnippet) si).typeName()) {
-                    case "byte":
-                    case "short":
-                    case "int":
-                    case "long":
-                        value = "0";
-                        break;
-                    case "float":
-                    case "double":
-                        value = "0.0";
-                        break;
-                    case "boolean":
-                        value = "false";
-                        break;
-                    case "char":
-                        value = "''";
-                        break;
-                    default:
-                        value = "null";
-                        break;
                 }
             }
         }

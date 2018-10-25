@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133 8199912
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133 8199912 8211694
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -833,8 +833,8 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertCommandOutputStartsWith(a, "import jdk.internal.misc.VM;", "|  Error:")
         );
         test(false, new String[]{"--no-startup",
-            "-R--add-exports", "-Rjava.base/jdk.internal.misc=ALL-UNNAMED",
-            "-C--add-exports", "-Cjava.base/jdk.internal.misc=ALL-UNNAMED"},
+                        "-R--add-exports", "-Rjava.base/jdk.internal.misc=ALL-UNNAMED",
+                        "-C--add-exports", "-Cjava.base/jdk.internal.misc=ALL-UNNAMED"},
                 a -> assertImport(a, "import jdk.internal.misc.VM;", "", "jdk.internal.misc.VM"),
                 a -> assertCommand(a, "System.err.println(VM.isBooted())", "", "", null, "", "true\n")
         );
@@ -843,5 +843,16 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertCommand(a, "System.err.println(VM.isBooted())", "", "", null, "", "true\n")
         );
     }
+
+    public void testRedeclareVariableNoInit() {
+        test(
+                a -> assertCommand(a, "Integer a;", "a ==> null"),
+                a -> assertCommand(a, "a instanceof Integer;", "$2 ==> false"),
+                a -> assertCommand(a, "a = 1;", "a ==> 1"),
+                a -> assertCommand(a, "Integer a;", "a ==> null"),
+                a -> assertCommand(a, "a instanceof Integer;", "$5 ==> false"),
+                a -> assertCommand(a, "a", "a ==> null")
+        );
+     }
 
 }
