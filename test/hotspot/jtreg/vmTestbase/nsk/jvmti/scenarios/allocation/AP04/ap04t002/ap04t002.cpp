@@ -102,10 +102,10 @@ static int getCounter(volatile int* counterPtr) {
 /***********************************************************************/
 
 jvmtiIterationControl JNICALL
-heapObjectCallback( jlong  class_tag,
-                    jlong  size,
-                    jlong* tag_ptr,
-                    void*  user_data) {
+heapObjectCallback(jlong  class_tag,
+                   jlong  size,
+                   jlong* tag_ptr,
+                   void*  user_data) {
 
     int count = 0;
 
@@ -126,11 +126,11 @@ heapObjectCallback( jlong  class_tag,
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
-                  jlong class_tag,
-                  jlong size,
-                  jlong* tag_ptr,
-                  void* user_data) {
+heapRootCallback(jvmtiHeapRootKind root_kind,
+                 jlong class_tag,
+                 jlong size,
+                 jlong* tag_ptr,
+                 void* user_data) {
 
     int count = 0;
 
@@ -151,15 +151,15 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     int count = 0;
 
@@ -181,13 +181,13 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     int count = 0;
 
@@ -210,16 +210,16 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /***********************************************************************/
 
 void JNICALL
-FieldModification( jvmtiEnv    *jvmti_env,
-                   JNIEnv      *env,
-                   jthread     thr,
-                   jmethodID   method,
-                   jlocation   location,
-                   jclass      field_klass,
-                   jobject     obj,
-                   jfieldID    field,
-                   char        sig,
-                   jvalue      new_value ) {
+FieldModification(jvmtiEnv    *jvmti_env,
+                  JNIEnv      *env,
+                  jthread     thr,
+                  jmethodID   method,
+                  jlocation   location,
+                  jclass      field_klass,
+                  jobject     obj,
+                  jfieldID    field,
+                  char        sig,
+                  jvalue      new_value) {
 
     increaseCounter(&modificationCount);
 }
@@ -227,10 +227,10 @@ FieldModification( jvmtiEnv    *jvmti_env,
 /***********************************************************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_setTag( JNIEnv* jni,
-                                                          jclass  klass,
-                                                          jobject target, /* object to be tagged */
-                                                          jlong   tag ) {
+Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_setTag(JNIEnv* jni,
+                                                         jclass  klass,
+                                                         jobject target, /* object to be tagged */
+                                                         jlong   tag) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
@@ -238,8 +238,8 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_setTag( JNIEnv* jni,
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverHeap( JNIEnv* jni,
-                                                                      jclass  klass ) {
+Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverHeap(JNIEnv* jni,
+                                                                     jclass  klass) {
     int count = 0;
 
     setCounter(&errorCount, 0);
@@ -267,8 +267,8 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverHeap( JNIEnv* jn
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverReachableObjects( JNIEnv* jni,
-                                                                                  jclass  klass ) {
+Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverReachableObjects(JNIEnv* jni,
+                                                                                 jclass  klass) {
     int count = 0;
 
     setCounter(&errorCount, 0);
@@ -297,8 +297,8 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverReachableObjects
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverInstancesOfClass( JNIEnv* jni,
-                                                                                  jclass  klass ) {
+Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverInstancesOfClass(JNIEnv* jni,
+                                                                                 jclass  klass) {
     int count = 0;
 
     setCounter(&errorCount, 0);
@@ -327,13 +327,13 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverInstancesOfClass
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverObjectsReachableFromObject( JNIEnv* jni,
-                                                                                            jclass  klass ) {
+Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverObjectsReachableFromObject(JNIEnv* jni,
+                                                                                           jclass  klass) {
     jobject root = NULL;
     int count = 0;
 
     if (!NSK_JNI_VERIFY(jni, (root =
-                jni->GetStaticObjectField(debugeeClass, rootFieldID)) != NULL )) {
+                jni->GetStaticObjectField(debugeeClass, rootFieldID)) != NULL)) {
         NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'root' field value\n\n");
         nsk_jvmti_setFailStatus();
         return;
@@ -382,14 +382,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY1("Find ID of 'root' field: %s\n", ROOT_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (rootFieldID =
-            jni->GetStaticFieldID(debugeeClass, "root", ROOT_SIGNATURE)) != NULL )) {
+            jni->GetStaticFieldID(debugeeClass, "root", ROOT_SIGNATURE)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     NSK_DISPLAY0("Find ID of 'modified' field\n");
     if (!NSK_JNI_VERIFY(jni, (modifiedFieldID =
-            jni->GetStaticFieldID(debugeeClass, "modified", "I")) != NULL )) {
+            jni->GetStaticFieldID(debugeeClass, "modified", "I")) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }

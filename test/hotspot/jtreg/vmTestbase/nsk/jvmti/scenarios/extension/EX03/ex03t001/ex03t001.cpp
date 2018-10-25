@@ -124,7 +124,7 @@ jboolean enableClassUnloadEvent (jboolean enable) {
 
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetExtensionEventCallback(extList[i].extension_event_index,
-                                                     enable ? (jvmtiExtensionEvent)ClassUnload : NULL ))) {
+                                                     enable ? (jvmtiExtensionEvent)ClassUnload : NULL))) {
                 nsk_jvmti_setFailStatus();
                 return JNI_FALSE;
             }

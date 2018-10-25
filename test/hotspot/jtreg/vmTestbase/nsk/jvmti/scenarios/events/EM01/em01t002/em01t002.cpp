@@ -127,7 +127,7 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_startThread(JNIEnv *jni_env,
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID)) ) {
+    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }

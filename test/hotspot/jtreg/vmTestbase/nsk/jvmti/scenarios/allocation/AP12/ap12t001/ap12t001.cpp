@@ -77,7 +77,7 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP12_ap12t001_setTag( JNIEnv* jni, jobject obj, jlong tag) {
+Java_nsk_jvmti_scenarios_allocation_AP12_ap12t001_setTag(JNIEnv* jni, jobject obj, jlong tag) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, tag))) {
          nsk_jvmti_setFailStatus();

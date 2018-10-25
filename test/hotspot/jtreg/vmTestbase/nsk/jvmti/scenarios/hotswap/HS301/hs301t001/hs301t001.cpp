@@ -49,19 +49,19 @@ JNIEXPORT jint JNI_OnLoad_hs301t001(JavaVM *jvm, char *options, void *reserved) 
 #endif
 jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     nsk_printf("Agent:: Agent_OnLoad .\n");
-    if ( ! NSK_VERIFY ( JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
+    if (!NSK_VERIFY (JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1))) {
         nsk_printf("Agent:: Could not load JVMTI interface.\n");
         return JNI_ERR;
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
             nsk_printf("# error agent Failed to parse options.\n");
             return JNI_ERR;
         }
         memset(&caps, 0, sizeof(caps));
         caps.can_redefine_classes = 1;
-        if (! NSK_JVMTI_VERIFY ( jvmti->AddCapabilities(&caps) )) {
+        if (!NSK_JVMTI_VERIFY (jvmti->AddCapabilities(&caps))) {
             nsk_printf(" Agent:: Error occured while adding capabilities.\n");
             return JNI_ERR;
         }
@@ -84,13 +84,13 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t001_hs301t001_redefine(JNIEnv * jni
 
     redefineNumber=0;
     cls = jni->FindClass(SEARCH_NAME);
-    if (! NSK_JNI_VERIFY(jni, cls != NULL) ) {
+    if (!NSK_JNI_VERIFY(jni, cls != NULL)) {
         nsk_printf("Agent:: (*JNI)->FindClass(jni, %s) returns `null`.\n",SEARCH_NAME);
         return NSK_FALSE;
     }
     ret = JNI_FALSE;
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
-    if ( nsk_jvmti_redefineClass(jvmti, cls, fileName) == NSK_TRUE ) {
+    if (nsk_jvmti_redefineClass(jvmti, cls, fileName) == NSK_TRUE) {
         nsk_printf("Agent:: Redefine successful.\n");
         ret = JNI_TRUE;
     } else {

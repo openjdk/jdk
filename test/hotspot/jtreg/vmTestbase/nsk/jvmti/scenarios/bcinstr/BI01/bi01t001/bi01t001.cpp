@@ -110,7 +110,7 @@ cbClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
             const unsigned char* class_data, jint* new_class_data_len,
             unsigned char** new_class_data) {
 
-    if ( name == NULL || strcmp(name, TESTED_CLASS_NAME) ) {
+    if (name == NULL || strcmp(name, TESTED_CLASS_NAME)) {
         return;
     }
 

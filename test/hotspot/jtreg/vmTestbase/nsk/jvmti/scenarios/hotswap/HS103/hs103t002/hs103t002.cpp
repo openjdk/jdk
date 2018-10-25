@@ -73,7 +73,7 @@ JNIEXPORT void JNICALL doRedefineInNativeThread(jvmtiEnv * jvmti,
   nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
   for(i = 0; i < 30; i++) {
     nsk_printf(" Inside the redefine method..\n");
-    if ( nsk_jvmti_redefineClass(jvmti, cla,fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cla,fileName) == NSK_TRUE) {
       nsk_printf("\nMyClass :: Successfully redefined..\n");
     } else {
       nsk_printf("\nMyClass :: Failed to redefine ..\n");
@@ -112,12 +112,12 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
   nsk_printf("Agent:: VM.. Started..\n");
 
   rc = vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-  if (rc != JNI_OK ) {
+  if (rc != JNI_OK) {
     nsk_printf("Agent:: Could not load JVMTI interface \n");
     return JNI_ERR;
   } else {
     jvmtiCapabilities caps;
-    if (nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+    if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
       nsk_printf("# error agent Failed to parse options \n");
       return JNI_ERR;
     }
@@ -154,7 +154,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS103_hs103t002_hs103t002_startAgentThread(JNIE
   if (err == JVMTI_ERROR_INVALID_PRIORITY) {
     nsk_printf(" JVMTI_ERROR_INVALID_PRIORITY ..\n");
     return JNI_ERR;
-  } else if ( err == JVMTI_ERROR_INVALID_THREAD) {
+  } else if (err == JVMTI_ERROR_INVALID_THREAD) {
     nsk_printf(" JVMTI_ERROR_INVALID_THREAD ..\n");
     return JNI_ERR;
   } else if (err == JVMTI_ERROR_NULL_POINTER) {

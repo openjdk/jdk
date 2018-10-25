@@ -71,7 +71,7 @@ JNIEXPORT void JNICALL
                 if (err == JVMTI_ERROR_NONE) {
                     nsk_printf("Agent:: NO ERRORS FOUND \n");
                     err= jvmti->SetBreakpoint(method, start);
-                    if ( err == JVMTI_ERROR_NONE) {
+                    if (err == JVMTI_ERROR_NONE) {
                         nsk_printf(" Class Name %s \n", className);
                         nsk_printf("Agent:: Breakpoint set \n");
                     } else {
@@ -97,7 +97,7 @@ void JNICALL callbackSingleStep(jvmtiEnv *jvmti, JNIEnv* jni,
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                     sizeof(fileName)/sizeof(char));
     nsk_printf(" %d..",redefineNumber);
-    if ( nsk_jvmti_redefineClass(jvmti, threadClass, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, threadClass, fileName) == NSK_TRUE) {
         nsk_printf("\nMyClass :: Successfully redefined..\n");
     } else {
         nsk_printf("\nMyClass :: Failed to redefine ..\n");
@@ -118,7 +118,7 @@ callbackBreakpoint(jvmtiEnv *jvmti,
         jmethodID method,
         jlocation location) {
     nsk_printf("Agent::... BreakPoint Reached..\n");
-    if ( nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_SINGLE_STEP,thread) == NSK_TRUE ) {
+    if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_SINGLE_STEP,thread) == NSK_TRUE) {
         nsk_printf(" ....   Enabled..\n");
     }
     return;
@@ -139,13 +139,13 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint rc ;
     nsk_printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if ( rc!= JNI_OK ) {
+    if (rc!= JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
             nsk_printf("# error agent Failed to parse options \n");
             return JNI_ERR;
         }
@@ -166,8 +166,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if ( (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD, NULL) == NSK_TRUE ) &&
-                (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT,NULL) == NSK_TRUE) ) {
+        if ((nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD, NULL) == NSK_TRUE) &&
+                (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT,NULL) == NSK_TRUE)) {
             nsk_printf("Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Error in Eanableing Notifications..");
@@ -189,7 +189,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t001_hs203t001_popThreadFrame(JNIEnv
     nsk_printf(" Here ");
     jvmti->GetThreadState(thread, &state);
     nsk_printf(" Here ");
-    if ( state & JVMTI_THREAD_STATE_SUSPENDED) {
+    if (state & JVMTI_THREAD_STATE_SUSPENDED) {
         err = jvmti->PopFrame(thread);
         if (err == JVMTI_ERROR_NONE) {
             nsk_printf("Agent:: NO Errors poped very well ..\n");
