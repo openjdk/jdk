@@ -52,14 +52,15 @@ Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setNewByteCode(JNIEnv *jni_env,
     jbyte* elements;
     jboolean isCopy;
 
-    if (!NSK_JNI_VERIFY(jni_env, (newClassSize = jni_env->GetArrayLength(byteCode)) > 0)) {
+    newClassSize = jni_env->GetArrayLength(byteCode);
+    if (!NSK_JNI_VERIFY(jni_env, newClassSize > 0)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("\t... got array size: %d\n", newClassSize);
 
-    if (!NSK_JNI_VERIFY(jni_env, (elements =
-            jni_env->GetByteArrayElements(byteCode, &isCopy)) != NULL)) {
+    elements = jni_env->GetByteArrayElements(byteCode, &isCopy);
+    if (!NSK_JNI_VERIFY(jni_env, elements != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -94,8 +95,8 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setClass(JNIEnv *jni_env,
                         jobject o, jclass cls) {
 
-    if (!NSK_JNI_VERIFY(jni_env, (oldClassDef.klass = (jclass)
-             jni_env->NewGlobalRef(cls)) != NULL)) {
+    oldClassDef.klass = (jclass) jni_env->NewGlobalRef(cls);
+    if (!NSK_JNI_VERIFY(jni_env, oldClassDef.klass != NULL)) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -242,7 +243,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     {

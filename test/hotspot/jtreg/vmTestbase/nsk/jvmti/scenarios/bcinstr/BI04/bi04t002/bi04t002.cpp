@@ -97,13 +97,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     NSK_DISPLAY1("Find class: %s\n", TESTED_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (classDef.klass = jni->FindClass(TESTED_CLASS_NAME)) != NULL)) {
+    classDef.klass = jni->FindClass(TESTED_CLASS_NAME);
+    if (!NSK_JNI_VERIFY(jni, classDef.klass != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (classDef.klass = (jclass)
-            jni->NewGlobalRef(classDef.klass)) != NULL)) {
+    classDef.klass = (jclass) jni->NewGlobalRef(classDef.klass);
+    if (!NSK_JNI_VERIFY(jni, classDef.klass != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -150,7 +151,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     {

@@ -444,11 +444,12 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JNI_VERIFY(agentJNI, (cls = agentJNI->FindClass(CLASS_NAME)) != NULL))
+    cls = agentJNI->FindClass(CLASS_NAME);
+    if (!NSK_JNI_VERIFY(agentJNI, cls != NULL))
         return;
 
-    if (!NSK_JNI_VERIFY(agentJNI, (methodID =
-            agentJNI->GetStaticMethodID(cls, METHOD_NAME, "()I")) != NULL))
+    methodID = agentJNI->GetStaticMethodID(cls, METHOD_NAME, "()I");
+    if (!NSK_JNI_VERIFY(agentJNI, methodID != NULL))
         return;
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetBreakpoint(methodID, 0)))
@@ -499,7 +500,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {

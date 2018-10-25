@@ -199,10 +199,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
-    if (!NSK_VERIFY((plist = (const void *)nsk_list_create()) != NULL))
+    plist = (const void *)nsk_list_create();
+    if (!NSK_VERIFY(plist != NULL))
         return JNI_ERR;
 
     NSK_DISPLAY1("plist = 0x%p\n", plist);
