@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,30 @@
  * questions.
  */
 
-import java.util.prefs.Preferences;
-
-/**
- * CheckUserPrefsStorage.java uses this to check that preferences stored
- * by CheckUserPrefFirst.java can be retrieved
+/*
+ * @test
+ * @bug 7198073 7197662
+ * @summary Tests that user preferences are stored in the permanent storage
+ * @library /test/lib
+ * @build jdk.test.lib.process.* CheckUserPrefFirst CheckUserPrefLater
+ * @run main CheckUserPrefsStorage
  */
 
-public class CheckUserPrefLater {
+import jdk.test.lib.process.ProcessTools;
 
-    public static void main(String[] args) throws Exception {
-        Preferences prefs = Preferences.userNodeForPackage(CheckUserPrefFirst.class);
-        String result = prefs.get("Check", null);
-        if ((result == null) || !(result.equals("Success")))
-            throw new RuntimeException("User pref not stored!");
-        prefs.remove("Check");
-        prefs.flush();
+public class CheckUserPrefsStorage {
+
+    public static void main(String[] args) throws Throwable {
+        // First to create and store a user preference
+        run("CheckUserPrefFirst");
+        // Then check that preferences stored by CheckUserPrefFirst can be retrieved
+        run("CheckUserPrefLater");
     }
 
+    public static void run(String testName) throws Exception {
+        ProcessTools.executeTestJvm("-Djava.util.prefs.userRoot=.", testName)
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .shouldHaveExitValue(0);
+    }
 }
-
