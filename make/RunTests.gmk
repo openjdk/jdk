@@ -65,10 +65,14 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   ifndef _NT_SYMBOL_PATH
     # Can't use PathList here as it adds quotes around the value.
     _NT_SYMBOL_PATH := \
-        $(subst $(SPACE),;, $(foreach p, $(sort $(dir $(wildcard \
-        $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), $(call FixPath, $p)))
+        $(subst $(SPACE),;,$(strip \
+            $(foreach p, $(sort $(dir $(wildcard \
+                $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), \
+              $(call FixPath, $p) \
+            ) \
+        ))
     export _NT_SYMBOL_PATH
-    $(info _NT_SYMBOL_PATH $(_NT_SYMBOL_PATH))
+    $(info _NT_SYMBOL_PATH=$(_NT_SYMBOL_PATH))
   endif
 endif
 
