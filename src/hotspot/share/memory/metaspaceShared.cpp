@@ -1957,8 +1957,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     assert(ro_top == md_base, "must be");
     assert(md_top == od_base, "must be");
 
-    MetaspaceObj::_shared_metaspace_base = (void*)mc_base;
-    MetaspaceObj::_shared_metaspace_top  = (void*)od_top;
+    MetaspaceObj::set_shared_metaspace_range((void*)mc_base, (void*)od_top);
     return true;
   } else {
     // If there was a failure in mapping any of the spaces, unmap the ones

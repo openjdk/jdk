@@ -244,7 +244,6 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
-  friend class MetaspaceShared;
   // When CDS is enabled, all shared metaspace objects are mapped
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if something is in the
@@ -262,6 +261,13 @@ class MetaspaceObj {
     return (((void*)this) < _shared_metaspace_top && ((void*)this) >= _shared_metaspace_base);
   }
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
+
+  static void set_shared_metaspace_range(void* base, void* top) {
+    _shared_metaspace_base = base;
+    _shared_metaspace_top = top;
+  }
+  static void* shared_metaspace_base() { return _shared_metaspace_base; }
+  static void* shared_metaspace_top()  { return _shared_metaspace_top;  }
 
 #define METASPACE_OBJ_TYPES_DO(f) \
   f(Class) \

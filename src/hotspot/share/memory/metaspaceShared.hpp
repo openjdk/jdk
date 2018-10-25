@@ -125,7 +125,7 @@ class MetaspaceShared : AllStatic {
   static bool is_in_shared_metaspace(const void* p) {
     // If no shared metaspace regions are mapped, MetaspceObj::_shared_metaspace_{base,top} will
     // both be NULL and all values of p will be rejected quickly.
-    return (p < MetaspaceObj::_shared_metaspace_top && p >= MetaspaceObj::_shared_metaspace_base);
+    return (p < MetaspaceObj::shared_metaspace_top() && p >= MetaspaceObj::shared_metaspace_base());
   }
 
   // Return true if given address is in the shared region corresponding to the idx
