@@ -676,7 +676,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
 jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
-    EC keySize < 224, 3DES_EDE_CBC
+    EC keySize < 224, 3DES_EDE_CBC, anon, NULL
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
