@@ -74,6 +74,7 @@
  *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  */
 
+import java.security.Security;
 import javax.net.ssl.*;
 
 /**
@@ -90,14 +91,18 @@ public class CustomizedCipherSuites {
     private static boolean isClientMode;
 
     private static String enabledCipherSuite;
-    private static String disabledCipherSuite;
+    private static String notEnabledCipherSuite;
 
     public static void main(String[] args) throws Exception {
+
+        // reset the security property to make sure the cipher suites
+        // used in this test are not disabled
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         contextProtocol = trimQuotes(args[0]);
         isClientMode = Boolean.parseBoolean(args[1]);
         enabledCipherSuite = trimQuotes(args[2]);
-        disabledCipherSuite = trimQuotes(args[3]);
+        notEnabledCipherSuite = trimQuotes(args[3]);
 
         //
         // Create instance of SSLContext with the specified protocol.
@@ -206,8 +211,8 @@ public class CustomizedCipherSuites {
                 isMatch = true;
             }
 
-            if (!disabledCipherSuite.isEmpty() &&
-                        cipher.equals(disabledCipherSuite)) {
+            if (!notEnabledCipherSuite.isEmpty() &&
+                        cipher.equals(notEnabledCipherSuite)) {
                 isBroken = true;
             }
         }
@@ -219,7 +224,7 @@ public class CustomizedCipherSuites {
 
         if (isBroken) {
             throw new Exception(
-                "Cipher suite " + disabledCipherSuite + " should be disabled");
+                "Cipher suite " + notEnabledCipherSuite + " should not be enabled");
         }
     }
 
@@ -231,7 +236,7 @@ public class CustomizedCipherSuites {
         }
 
         boolean hasEnabledCipherSuite = enabledCipherSuite.isEmpty();
-        boolean hasDisabledCipherSuite = disabledCipherSuite.isEmpty();
+        boolean hasNotEnabledCipherSuite = notEnabledCipherSuite.isEmpty();
         for (String cipher : ciphers) {
             System.out.println("\tsupported cipher suite " + cipher);
             if (!enabledCipherSuite.isEmpty() &&
@@ -239,9 +244,9 @@ public class CustomizedCipherSuites {
                 hasEnabledCipherSuite = true;
             }
 
-            if (!disabledCipherSuite.isEmpty() &&
-                        cipher.equals(disabledCipherSuite)) {
-                hasDisabledCipherSuite = true;
+            if (!notEnabledCipherSuite.isEmpty() &&
+                        cipher.equals(notEnabledCipherSuite)) {
+                hasNotEnabledCipherSuite = true;
             }
         }
 
@@ -250,9 +255,9 @@ public class CustomizedCipherSuites {
                 "Cipher suite " + enabledCipherSuite + " should be supported");
         }
 
-        if (!hasDisabledCipherSuite) {
+        if (!hasNotEnabledCipherSuite) {
             throw new Exception(
-                "Cipher suite " + disabledCipherSuite + " should be supported");
+                "Cipher suite " + notEnabledCipherSuite + " should not be enabled");
         }
     }
 
