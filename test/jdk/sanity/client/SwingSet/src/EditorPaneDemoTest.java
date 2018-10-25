@@ -24,7 +24,9 @@
 import static com.sun.swingset3.demos.editorpane.EditorPaneDemo.DEMO_TITLE;
 import static com.sun.swingset3.demos.editorpane.EditorPaneDemo.SOURCE_FILES;
 import static org.jemmy2ext.JemmyExt.EXACT_STRING_COMPARATOR;
+import static org.jemmy2ext.JemmyExt.assertNotBlack;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Point;
@@ -147,14 +149,14 @@ public class EditorPaneDemoTest {
         final int xGap = 100, yGap = 40, columns = 2, rows = 5;
         editorPaneOperator.waitState(comp -> {
             BufferedImage capturedImage = ImageTool.getImage(imageRect);
+            assertNotBlack(capturedImage);
             int x = 0, y = 0, i = 0, j;
             for (; i < columns; i++) {
                 x += xGap;
                 y = 0;
                 for (j = 0; j < rows; j++) {
                     y += yGap;
-                    if(capturedImage.getRGB(x, y) ==
-                            editorPaneOperator.getBackground().getRGB()) {
+                    if(capturedImage.getRGB(x, y) == Color.WHITE.getRGB()) {
                         // saving image for failure case
                         JemmyExt.save(capturedImage, "capturedimage_" + pageName + "_" +
                                 UIManager.getLookAndFeel().getClass().getSimpleName() + ".png");
