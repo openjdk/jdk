@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,18 @@ static const char* flag_type_names[] = {
     "unknown"
 };
 
+class DirectivesParserTest;
+
 class DirectivesParser : public JSON {
-public:
+ friend class DirectivesParserTest;
+ public:
   static bool has_file();
   static bool parse_from_flag();
   static bool parse_from_file(const char* filename, outputStream* st);
   static int  parse_string(const char* string, outputStream* st);
   int install_directives();
 
-private:
+ private:
   DirectivesParser(const char* text, outputStream* st, bool silent);
   ~DirectivesParser();
 
@@ -134,12 +137,6 @@ private:
   int _tmp_depth;               // Number of directives that has been parsed but not installed.
 
   static uint mask(keytype kt);
-
-#ifndef PRODUCT
-  static void test(const char* json, bool valid);
-public:
-  static void test();
-#endif
 };
 
 #endif // SHARE_VM_COMPILER_DIRECTIVESPARSER_HPP
