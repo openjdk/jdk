@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,17 @@
  * questions.
  */
 
+import java.util.prefs.AbstractPreferences;
 
-import java.util.prefs.Preferences;
-
-/*
- * main class used by regtest PrefsSpiTest.java
- */
-public class PrefsSpi {
-
-    public static void main (String[] args) throws Exception {
-        if (args.length != 1)
-            throw new Exception("Usage: java PrefsSpi REGEXP");
-
-        String className = Preferences.userRoot().getClass().getName();
-        System.out.printf("className=%s%n", className);
-
-        if (! className.matches(args[0]))
-            throw new Exception("Preferences class name \"" + className
-                                + "\" does not match regular expression \""
-                                + args[0] + "\".");
-    }
+public class StubPreferences extends AbstractPreferences {
+    public StubPreferences() { super(null, ""); }
+    public String              getSpi(String x)           { return null; }
+    public void                putSpi(String x, String y) { }
+    public void                removeSpi(String x)        { }
+    public AbstractPreferences childSpi(String x)         { return null; }
+    public void                removeNodeSpi()            { }
+    public String[]            keysSpi()                  { return null; }
+    public String[]            childrenNamesSpi()         { return null; }
+    public void                syncSpi()                  { }
+    public void                flushSpi()                 { }
 }
