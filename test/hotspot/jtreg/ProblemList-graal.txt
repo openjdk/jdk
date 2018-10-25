@@ -43,6 +43,8 @@ compiler/intrinsics/mathexact/LongMulOverflowTest.java          8196568   generi
 
 compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
 
+compiler/jsr292/RedefineMethodUsedByMultipleMethodHandles.java  8204521   windows-all
+
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
 compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
