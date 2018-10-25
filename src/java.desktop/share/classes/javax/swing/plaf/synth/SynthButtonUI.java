@@ -25,6 +25,8 @@
 
 package javax.swing.plaf.synth;
 
+import sun.awt.AppContext;
+
 import javax.swing.*;
 import java.awt.*;
 import java.beans.*;
@@ -44,6 +46,8 @@ public class SynthButtonUI extends BasicButtonUI implements
                                  PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    private static final Object SYNTH_BUTTON_UI_KEY = new Object();
+
     /**
      * Creates a new UI object for the given component.
      *
@@ -51,7 +55,14 @@ public class SynthButtonUI extends BasicButtonUI implements
      * @return the UI object
      */
     public static ComponentUI createUI(JComponent c) {
-        return new SynthButtonUI();
+        AppContext appContext = AppContext.getAppContext();
+        SynthButtonUI synthButtonUI =
+                (SynthButtonUI) appContext.get(SYNTH_BUTTON_UI_KEY);
+        if (synthButtonUI == null) {
+            synthButtonUI = new SynthButtonUI();
+            appContext.put(SYNTH_BUTTON_UI_KEY, synthButtonUI);
+        }
+        return synthButtonUI;
     }
 
     /**
@@ -206,7 +217,7 @@ public class SynthButtonUI extends BasicButtonUI implements
         // layout the text and icon
         SynthContext context = getContext(b);
         FontMetrics fm = context.getComponent().getFontMetrics(
-            context.getStyle().getFont(context));
+                               context.getStyle().getFont(context));
         context.getStyle().getGraphicsUtils(context).layoutText(
             context, fm, b.getText(), b.getIcon(),
             b.getHorizontalAlignment(), b.getVerticalAlignment(),
