@@ -69,7 +69,7 @@ import java.util.*;
  *         getContentPane().add(field1, BorderLayout.NORTH);
  *         getContentPane().add(field2, BorderLayout.SOUTH);
  *
- *         field.setInputVerifier(new InputVerifier() {
+ *         field1.setInputVerifier(new InputVerifier() {
  *             public boolean verify(JComponent input) {
  *                return "pass".equals(((JTextField) input).getText());
  *             }
