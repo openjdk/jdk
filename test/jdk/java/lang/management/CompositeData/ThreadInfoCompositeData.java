@@ -29,8 +29,9 @@
  *          the input CompositeData is invalid.
  * @author  Mandy Chung
  *
+ * @modules java.management/sun.management
  * @build ThreadInfoCompositeData OpenTypeConverter
- * @run main ThreadInfoCompositeData
+ * @run testng/othervm ThreadInfoCompositeData
  */
 
 
@@ -42,6 +43,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
 public class ThreadInfoCompositeData {
     private static String lockClassName = "myClass";
     private static int lockIdentityHashCode = 123456;
@@ -50,24 +54,7 @@ public class ThreadInfoCompositeData {
     private static LockInfo lockInfo =
         new LockInfo(lockClassName, lockIdentityHashCode);
 
-    public static void main(String[] argv) throws Exception {
-        // A valid CompositeData is passed to ThreadInfo
-        createGoodCompositeData();
-        // A valid CompositeData for JDK 5 ThreadInfo
-        // is passed to ThreadInfo
-        createV5ThreadInfo();
-        // ThreadInfo of version N can accept lockedMonitors of version >= N
-        withNewMonitorInfoCompositeData();
-
-        // An invalid CompositeData is passed to ThreadInfo.from()
-        badNameCompositeData();
-        badTypeCompositeData();
-        badMissingCompositeData();
-        withV5StackTraceCompositeData();
-        withInvalidMonitorInfoCompositeData();
-        System.out.println("Test passed");
-    }
-
+    @Test
     public static void createGoodCompositeData() throws Exception {
         CompositeData cd = Factory.makeThreadInfoCompositeData();
         ThreadInfo info = ThreadInfo.from(cd);
@@ -77,6 +64,7 @@ public class ThreadInfoCompositeData {
     /*
      * An invalid CompositeData with JDK 9 attributes but missing JDK 6 attributes
      */
+    @Test
     public static void badMissingCompositeData() throws Exception {
         CompositeData cd = Factory.makeCompositeDataMissingV6();
         try {
@@ -92,6 +80,7 @@ public class ThreadInfoCompositeData {
     /*
      * Current version of ThreadInfo but an older version of StackTraceElement
      */
+    @Test
     public static void withV5StackTraceCompositeData() throws Exception {
         CompositeData cd = Factory.makeThreadInfoWithV5StackTrace();
         try {
@@ -104,6 +93,7 @@ public class ThreadInfoCompositeData {
      * Current version of ThreadInfo but an older version of MonitorInfo
      * and the value of "lockedStackFrame" attribute is null.
      */
+    @Test
     public static void withInvalidMonitorInfoCompositeData() throws Exception {
         CompositeData cd = Factory.makeThreadInfoWithIncompatibleMonitorInfo();
 
@@ -128,6 +118,7 @@ public class ThreadInfoCompositeData {
     /*
      * ThreadInfo of version N can accept lockedMonitors of version >= N
      */
+    @Test
     public static void withNewMonitorInfoCompositeData() throws Exception {
         CompositeData cd = Factory.makeThreadInfoWithNewMonitorInfo();
         ThreadInfo info = ThreadInfo.from(cd);
@@ -137,11 +128,24 @@ public class ThreadInfoCompositeData {
     /*
      * Test CompositeData representing JDK 5 ThreadInfo
      */
+    @Test
     public static void createV5ThreadInfo() throws Exception {
         CompositeData cd = Factory.makeThreadInfoV5CompositeData();
         ThreadInfo info = ThreadInfo.from(cd);
         checkThreadInfoV5(info);
-   }
+    }
+
+    /*
+     * Test ThreadInfoCompositeData.toCompositeData
+     */
+    @Test
+    public static void internalToCompositeData() throws Exception {
+        CompositeData cd = Factory.makeThreadInfoCompositeData();
+        ThreadInfo info = ThreadInfo.from(cd);
+        cd = sun.management.ThreadInfoCompositeData.toCompositeData(info);
+        info = ThreadInfo.from(cd);
+        checkThreadInfo(info);
+    }
 
    static void checkThreadInfoV5(ThreadInfo info) {
        Object[] values = Factory.VALUES;
@@ -262,6 +266,7 @@ public class ThreadInfoCompositeData {
         }
     }
 
+    @Test
     public static void badNameCompositeData() throws Exception {
         CompositeData cd = Factory.makeCompositeDataWithBadNames();
         try {
@@ -270,6 +275,7 @@ public class ThreadInfoCompositeData {
         } catch (IllegalArgumentException e) { }
     }
 
+    @Test
     public static void badTypeCompositeData() throws Exception {
         CompositeData cd = Factory.makeCompositeDataWithBadTypes();
 
@@ -300,7 +306,7 @@ public class ThreadInfoCompositeData {
     private static final int DAEMON = 16;
     private static final int PRIORITY = 17;
 
-    static class Factory {
+    private static class Factory {
 
         static final CompositeType STE_COMPOSITE_TYPE;
         static final CompositeType LOCK_INFO_COMPOSITE_TYPE;
