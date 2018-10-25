@@ -21,6 +21,16 @@
  * questions.
  */
 
+#include <stdlib.h>
+
+// checked malloc to trap OOM conditions
+static void* c_malloc(JNIEnv* env, size_t size) {
+  void* ret = malloc(size);
+  if (ret == NULL)
+    env->FatalError("malloc failed");
+  return ret;
+}
+
 // Asserts every exception as fatal one
 #define CE {\
     if (env->ExceptionOccurred())\
