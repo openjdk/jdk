@@ -236,20 +236,20 @@ class Http1Response<T> {
      * Return known fixed content length or -1 if chunked, or -2 if no content-length
      * information in which case, connection termination delimits the response body
      */
-    int fixupContentLen(int clen) {
+    long fixupContentLen(long clen) {
         if (request.method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED) {
-            return 0;
+            return 0L;
         }
-        if (clen == -1) {
+        if (clen == -1L) {
             if (headers.firstValue("Transfer-encoding").orElse("")
                        .equalsIgnoreCase("chunked")) {
-                return -1;
+                return -1L;
             }
             if (responseCode == 101) {
                 // this is a h2c or websocket upgrade, contentlength must be zero
-                return 0;
+                return 0L;
             }
-            return -2;
+            return -2L;
         }
         return clen;
     }
@@ -383,9 +383,8 @@ class Http1Response<T> {
 
         final CompletableFuture<U> cf = new MinimalFuture<>();
 
-        int clen0 = (int)headers.firstValueAsLong("Content-Length").orElse(-1);
-
-        final int clen = fixupContentLen(clen0);
+        long clen0 = headers.firstValueAsLong("Content-Length").orElse(-1L);
+        final long clen = fixupContentLen(clen0);
 
         // expect-continue reads headers and body twice.
         // if we reach here, we must reset the headersReader state.
