@@ -2821,7 +2821,6 @@ public final class String
      * <p>
      * If {@code n == 0} then the line remains unchanged. However, line
      * terminators are still normalized.
-     * <p>
      *
      * @param n  number of leading
      *           {@link Character#isWhitespace(int) white space characters}

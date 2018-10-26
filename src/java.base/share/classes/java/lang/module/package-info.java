@@ -34,7 +34,7 @@
  * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  *
- * <h1><a id="resolution">{@index "Module Resolution"}</a></h1>
+ * <h1><a id="resolution"></a>{@index "Module Resolution"}</h1>
  *
  * <p> Resolution is the process of computing how modules depend on each other.
  * The process occurs at compile time and run time. </p>
