@@ -175,8 +175,7 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
   }
 
   if (strstr(manifest, "Extension-List:") != NULL) {
-    tty->print_cr("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name());
-    vm_exit(1);
+    vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
