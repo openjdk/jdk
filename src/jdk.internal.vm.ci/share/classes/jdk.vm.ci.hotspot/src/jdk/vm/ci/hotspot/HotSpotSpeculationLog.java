@@ -51,7 +51,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     private Set<SpeculationReason> failedSpeculations;
 
     /** Strong references to all reasons embedded in the current nmethod. */
-    private Map<Long, SpeculationReason> speculations;
+    private HashMap<SpeculationReason, JavaConstant> speculations;
 
     private long currentSpeculationID;
 
@@ -62,7 +62,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
                 failedSpeculations = new HashSet<>(2);
             }
             if (speculations != null) {
-                SpeculationReason lastFailedSpeculation = speculations.get(lastFailed);
+                SpeculationReason lastFailedSpeculation = lookupSpeculation(this.lastFailed);
                 if (lastFailedSpeculation != null) {
                     failedSpeculations.add(lastFailedSpeculation);
                 }
@@ -70,6 +70,15 @@ public class HotSpotSpeculationLog implements SpeculationLog {
                 speculations = null;
             }
         }
+    }
+
+    private SpeculationReason lookupSpeculation(long value) {
+        for (Map.Entry<SpeculationReason, JavaConstant> entry : speculations.entrySet()) {
+            if (value == entry.getValue().asLong()) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -85,8 +94,12 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (speculations == null) {
             speculations = new HashMap<>();
         }
-        speculations.put(++currentSpeculationID, reason);
-        return new HotSpotSpeculation(reason, JavaConstant.forLong(currentSpeculationID));
+        JavaConstant id = speculations.get(reason);
+        if (id == null) {
+            id = JavaConstant.forLong(++currentSpeculationID);
+            speculations.put(reason, id);
+        }
+        return new HotSpotSpeculation(reason, id);
     }
 
     @Override
@@ -99,7 +112,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (constant.isDefaultForKind()) {
             return NO_SPECULATION;
         }
-        SpeculationReason reason = speculations.get(constant.asLong());
+        SpeculationReason reason = lookupSpeculation(constant.asLong());
         assert reason != null : "Speculation should have been registered";
         return new HotSpotSpeculation(reason, constant);
     }

@@ -58,6 +58,20 @@ public interface SpeculationLog {
         public String toString() {
             return reason.toString();
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Speculation) {
+                Speculation other = (Speculation) obj;
+                return reason.equals(other.reason);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return getReason().hashCode();
+        }
     }
 
     Speculation NO_SPECULATION = new Speculation(new NoSpeculationReason());
