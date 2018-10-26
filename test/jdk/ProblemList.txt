@@ -492,7 +492,10 @@ java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
-
+java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris-all
+java/awt/MenuBar/8007006/bug8007006.java 8213122 windows-all
+# below test fails only on Win 7
+java/awt/font/FontNames/LocaleFamilyNames.java 8213129 windows-all
 
 ############################################################################
 
@@ -811,8 +814,10 @@ javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8199529 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
-java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris-all
-
+javax/swing/JComboBox/WindowsComboBoxSize/WindowsComboBoxSizeTest.java 8213116 windows-all
+javax/swing/JComboBox/4199622/bug4199622.java 8213122 windows-all
+javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java 8213122 windows-all
+javax/swing/JPopupMenu/7154841/bug7154841.java 8213122 windows-all
 
 ############################################################################
 
