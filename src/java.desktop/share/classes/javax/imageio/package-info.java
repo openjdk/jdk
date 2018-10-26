@@ -88,7 +88,7 @@
  * <!-- TIFF plugin -->
  *   <tr>
  *     <th scope="row">
- *     <a href="https://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf">
+ *     <a href="https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf">
  *     TIFF</a>
  *     <td>yes
  *     <td>yes
