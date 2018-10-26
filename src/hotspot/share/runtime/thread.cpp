@@ -1819,6 +1819,9 @@ static void ensure_join(JavaThread* thread) {
   thread->clear_pending_exception();
 }
 
+static bool is_daemon(oop threadObj) {
+  return (threadObj != NULL && java_lang_Thread::is_daemon(threadObj));
+}
 
 // For any new cleanup additions, please check to see if they need to be applied to
 // cleanup_failed_attach_current_thread as well.
@@ -1910,7 +1913,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
         MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
         if (!is_external_suspend()) {
           set_terminated(_thread_exiting);
-          ThreadService::current_thread_exiting(this);
+          ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
           break;
         }
         // Implied else:
@@ -1930,6 +1933,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     }
     // no more external suspends are allowed at this point
   } else {
+    assert(!is_terminated() && !is_exiting(), "must not be exiting");
     // before_exit() has already posted JVMTI THREAD_END events
   }
 
@@ -4332,7 +4336,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
 
 void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
-  assert_locked_or_safepoint(Threads_lock);
+  assert(Threads_lock->owned_by_self(), "must have threads lock");
 
   BarrierSet::barrier_set()->on_thread_attach(p);
 
@@ -4348,7 +4352,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial
   // JavaThread (or for threads attached via JNI)
-  if ((!force_daemon) && (threadObj == NULL || !java_lang_Thread::is_daemon(threadObj))) {
+  if ((!force_daemon) && !is_daemon((threadObj))) {
     _number_of_non_daemon_threads++;
     daemon = false;
   }
@@ -4393,7 +4397,7 @@ void Threads::remove(JavaThread* p) {
     _number_of_threads--;
     oop threadObj = p->threadObj();
     bool daemon = true;
-    if (threadObj == NULL || !java_lang_Thread::is_daemon(threadObj)) {
+    if (!is_daemon(threadObj)) {
       _number_of_non_daemon_threads--;
       daemon = false;
 

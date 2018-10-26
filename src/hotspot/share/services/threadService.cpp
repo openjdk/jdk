@@ -57,8 +57,8 @@ PerfCounter*  ThreadService::_total_threads_count = NULL;
 PerfVariable* ThreadService::_live_threads_count = NULL;
 PerfVariable* ThreadService::_peak_threads_count = NULL;
 PerfVariable* ThreadService::_daemon_threads_count = NULL;
-volatile int ThreadService::_exiting_threads_count = 0;
-volatile int ThreadService::_exiting_daemon_threads_count = 0;
+volatile int ThreadService::_atomic_threads_count = 0;
+volatile int ThreadService::_atomic_daemon_threads_count = 0;
 
 ThreadDumpResult* ThreadService::_threaddump_list = NULL;
 
@@ -101,50 +101,104 @@ void ThreadService::reset_peak_thread_count() {
   _peak_threads_count->set_value(get_live_thread_count());
 }
 
+static bool is_hidden_thread(JavaThread *thread) {
+  // hide VM internal or JVMTI agent threads
+  return thread->is_hidden_from_external_view() || thread->is_jvmti_agent_thread();
+}
+
 void ThreadService::add_thread(JavaThread* thread, bool daemon) {
-  // Do not count VM internal or JVMTI agent threads
-  if (thread->is_hidden_from_external_view() ||
-      thread->is_jvmti_agent_thread()) {
+  assert(Threads_lock->owned_by_self(), "must have threads lock");
+
+  // Do not count hidden threads
+  if (is_hidden_thread(thread)) {
     return;
   }
 
   _total_threads_count->inc();
   _live_threads_count->inc();
+  Atomic::inc(&_atomic_threads_count);
+  int count = _atomic_threads_count;
 
-  if (_live_threads_count->get_value() > _peak_threads_count->get_value()) {
-    _peak_threads_count->set_value(_live_threads_count->get_value());
+  if (count > _peak_threads_count->get_value()) {
+    _peak_threads_count->set_value(count);
   }
 
   if (daemon) {
     _daemon_threads_count->inc();
+    Atomic::inc(&_atomic_daemon_threads_count);
+  }
+}
+
+void ThreadService::decrement_thread_counts(JavaThread* jt, bool daemon) {
+  Atomic::dec(&_atomic_threads_count);
+
+  if (daemon) {
+    Atomic::dec(&_atomic_daemon_threads_count);
   }
 }
 
 void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
-  Atomic::dec(&_exiting_threads_count);
-  if (daemon) {
-    Atomic::dec(&_exiting_daemon_threads_count);
-  }
+  assert(Threads_lock->owned_by_self(), "must have threads lock");
 
-  if (thread->is_hidden_from_external_view() ||
-      thread->is_jvmti_agent_thread()) {
+  // Do not count hidden threads
+  if (is_hidden_thread(thread)) {
     return;
   }
 
-  _live_threads_count->set_value(_live_threads_count->get_value() - 1);
-  if (daemon) {
-    _daemon_threads_count->set_value(_daemon_threads_count->get_value() - 1);
+  assert(!thread->is_terminated(), "must not be terminated");
+  if (!thread->is_exiting()) {
+    // JavaThread::exit() skipped calling current_thread_exiting()
+    decrement_thread_counts(thread, daemon);
   }
+
+  int daemon_count = _atomic_daemon_threads_count;
+  int count = _atomic_threads_count;
+
+  // Counts are incremented at the same time, but atomic counts are
+  // decremented earlier than perf counts.
+  assert(_live_threads_count->get_value() > count,
+    "thread count mismatch %d : %d",
+    (int)_live_threads_count->get_value(), count);
+
+  _live_threads_count->dec(1);
+  if (daemon) {
+    assert(_daemon_threads_count->get_value() > daemon_count,
+      "thread count mismatch %d : %d",
+      (int)_daemon_threads_count->get_value(), daemon_count);
+
+    _daemon_threads_count->dec(1);
+  }
+
+  // Counts are incremented at the same time, but atomic counts are
+  // decremented earlier than perf counts.
+  assert(_daemon_threads_count->get_value() >= daemon_count,
+    "thread count mismatch %d : %d",
+    (int)_daemon_threads_count->get_value(), daemon_count);
+  assert(_live_threads_count->get_value() >= count,
+    "thread count mismatch %d : %d",
+    (int)_live_threads_count->get_value(), count);
+  assert(_live_threads_count->get_value() > 0 ||
+    (_live_threads_count->get_value() == 0 && count == 0 &&
+    _daemon_threads_count->get_value() == 0 && daemon_count == 0),
+    "thread counts should reach 0 at the same time, live %d,%d daemon %d,%d",
+    (int)_live_threads_count->get_value(), count,
+    (int)_daemon_threads_count->get_value(), daemon_count);
+  assert(_daemon_threads_count->get_value() > 0 ||
+    (_daemon_threads_count->get_value() == 0 && daemon_count == 0),
+    "thread counts should reach 0 at the same time, daemon %d,%d",
+    (int)_daemon_threads_count->get_value(), daemon_count);
 }
 
-void ThreadService::current_thread_exiting(JavaThread* jt) {
-  assert(jt == JavaThread::current(), "Called by current thread");
-  Atomic::inc(&_exiting_threads_count);
-
-  oop threadObj = jt->threadObj();
-  if (threadObj != NULL && java_lang_Thread::is_daemon(threadObj)) {
-    Atomic::inc(&_exiting_daemon_threads_count);
+void ThreadService::current_thread_exiting(JavaThread* jt, bool daemon) {
+  // Do not count hidden threads
+  if (is_hidden_thread(jt)) {
+    return;
   }
+
+  assert(jt == JavaThread::current(), "Called by current thread");
+  assert(!jt->is_terminated() && jt->is_exiting(), "must be exiting");
+
+  decrement_thread_counts(jt, daemon);
 }
 
 // FIXME: JVMTI should call this function

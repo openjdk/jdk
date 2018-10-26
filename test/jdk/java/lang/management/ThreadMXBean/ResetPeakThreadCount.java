@@ -158,10 +158,6 @@ public class ResetPeakThreadCount {
                 " Expected to be == previous peak = " + peak1 + " + " +
                 delta);
         }
-        // wait until the current thread count gets incremented
-        while (mbean.getThreadCount() < (current + count)) {
-            Thread.sleep(100);
-        }
         current = mbean.getThreadCount();
         System.out.println("   Live thread count before returns " + current);
         return current;
@@ -194,12 +190,6 @@ public class ResetPeakThreadCount {
         for (int i = from; i < (from+count); i++) {
             allThreads[i].join();
         }
-
-        // there is a race in the counter update logic somewhere causing
-        // the thread counters go ff
-        // we need to give the terminated threads some extra time to really die
-        // JDK-8021335
-        Thread.sleep(500);
 
         long current = mbean.getThreadCount();
         System.out.println("   Live thread count before returns " + current);

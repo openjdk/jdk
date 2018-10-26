@@ -58,10 +58,12 @@ private:
   static PerfVariable* _peak_threads_count;
   static PerfVariable* _daemon_threads_count;
 
-  // These 2 counters are atomically incremented once the thread is exiting.
-  // They will be atomically decremented when ThreadService::remove_thread is called.
-  static volatile int  _exiting_threads_count;
-  static volatile int  _exiting_daemon_threads_count;
+  // These 2 counters are like the above thread counts, but are
+  // atomically decremented in ThreadService::current_thread_exiting instead of
+  // ThreadService::remove_thread, so that the thread count is updated before
+  // Thread.join() returns.
+  static volatile int  _atomic_threads_count;
+  static volatile int  _atomic_daemon_threads_count;
 
   static bool          _thread_monitoring_contention_enabled;
   static bool          _thread_cpu_time_enabled;
@@ -72,11 +74,13 @@ private:
   // requested by multiple threads concurrently.
   static ThreadDumpResult* _threaddump_list;
 
+  static void decrement_thread_counts(JavaThread* jt, bool daemon);
+
 public:
   static void init();
   static void add_thread(JavaThread* thread, bool daemon);
   static void remove_thread(JavaThread* thread, bool daemon);
-  static void current_thread_exiting(JavaThread* jt);
+  static void current_thread_exiting(JavaThread* jt, bool daemon);
 
   static bool set_thread_monitoring_contention(bool flag);
   static bool is_thread_monitoring_contention() { return _thread_monitoring_contention_enabled; }
@@ -89,11 +93,8 @@ public:
 
   static jlong get_total_thread_count()       { return _total_threads_count->get_value(); }
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
-  static jlong get_live_thread_count()        { return _live_threads_count->get_value() - _exiting_threads_count; }
-  static jlong get_daemon_thread_count()      { return _daemon_threads_count->get_value() - _exiting_daemon_threads_count; }
-
-  static int   exiting_threads_count()        { return _exiting_threads_count; }
-  static int   exiting_daemon_threads_count() { return _exiting_daemon_threads_count; }
+  static jlong get_live_thread_count()        { return _atomic_threads_count; }
+  static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
 
   // Support for thread dump
   static void   add_thread_dump(ThreadDumpResult* dump);
