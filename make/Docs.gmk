@@ -61,11 +61,11 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
     $(SUPPORT_OUTPUTDIR)/rmic/* $(TOPDIR)/src/*/share/doc/stub)
 
 # URLs
-JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase$(VERSION_NUMBER)&amp;id=homepage
-BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
+JAVADOC_BASE_URL := https://www.oracle.com/pls/topic/lookup?ctx=javase$(VERSION_NUMBER)&amp;id=homepage
+BUG_SUBMIT_URL := https://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/copyright.html
-LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java$(VERSION_NUMBER)speclicense.html
-REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
+LICENSE_URL := https://www.oracle.com/technetwork/java/javase/terms/license/java$(VERSION_NUMBER)speclicense.html
+REDISTRIBUTION_URL := https://www.oracle.com/technetwork/java/redist-137594.html
 
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
