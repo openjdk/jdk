@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,6 @@
   /*  overridden in Arguments::parse_each_vm_init_arg.            */            \
   product(bool, UseBsdPosixThreadCPUClocks, true,                               \
           "enable fast Bsd Posix clocks where available")                       \
-                                                                                \
-  product(bool, UseHugeTLBFS, false,                                            \
-          "Use MAP_HUGETLB for large pages")                                    \
-                                                                                \
-  product(bool, UseSHM, false,                                                  \
-          "Use SYSV shared memory for large pages")
 
 //
 // Defines Bsd-specific default values. The flags are available on all

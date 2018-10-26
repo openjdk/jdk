@@ -537,6 +537,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
+#if defined(_ALLBSD_SOURCE)
+  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+#endif
+
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
