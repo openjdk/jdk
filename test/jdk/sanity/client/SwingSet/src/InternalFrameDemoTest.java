@@ -45,10 +45,12 @@ import java.awt.Point;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
+import javax.swing.UIManager;
 
 import org.jemmy2ext.JemmyExt;
 import org.jtregext.GuiTestListener;
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.JemmyProperties;
 import org.netbeans.jemmy.operators.ComponentOperator;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JCheckBoxOperator;
@@ -74,7 +76,7 @@ import com.sun.swingset3.demos.internalframe.InternalFrameDemo;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.internalframe.InternalFrameDemo
- * @run testng InternalFrameDemoTest
+ * @run testng/timeout=600 InternalFrameDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class InternalFrameDemoTest {
@@ -92,8 +94,12 @@ public class InternalFrameDemoTest {
      *
      * @throws Exception
      */
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
+        // initializing internal frame driver for each L&F
+        JemmyProperties.setCurrentDispatchingModel(
+                JemmyProperties.getCurrentDispatchingModel());
 
         new ClassReference(InternalFrameDemo.class.getCanonicalName()).startApplication();
 
