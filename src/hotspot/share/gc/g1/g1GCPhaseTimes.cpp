@@ -95,7 +95,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _update_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
   _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_scanned_cards, UpdateRSScannedCards);
   _update_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
-  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_skipped_cards, ScanRSSkippedCards);
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_skipped_cards, UpdateRSSkippedCards);
 
   _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
   _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
