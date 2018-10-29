@@ -1007,7 +1007,7 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const;
+  Klass* implementor(bool log = false) const;
   void set_implementor(Klass* k);
   int  nof_implementors() const;
   void add_implementor(Klass* k);  // k is a new class that implements this interface

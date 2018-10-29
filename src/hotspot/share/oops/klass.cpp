@@ -117,7 +117,7 @@ Klass *Klass::up_cast_abstract() {
   Klass *r = this;
   while( r->is_abstract() ) {   // Receiver is abstract?
     Klass *s = r->subklass();   // Check for exactly 1 subklass
-    if( !s || s->next_sibling() ) // Oops; wrong count; give up
+    if (s == NULL || s->next_sibling() != NULL) // Oops; wrong count; give up
       return this;              // Return 'this' as a no-progress flag
     r = s;                    // Loop till find concrete class
   }
@@ -358,9 +358,47 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 }
 
 
+// superklass links
 InstanceKlass* Klass::superklass() const {
   assert(super() == NULL || super()->is_instance_klass(), "must be instance klass");
   return _super == NULL ? NULL : InstanceKlass::cast(_super);
+}
+
+// subklass links.  Used by the compiler (and vtable initialization)
+// May be cleaned concurrently, so must use the Compile_lock.
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::subklass(bool log) const {
+  assert_locked_or_safepoint(Compile_lock);
+  for (Klass* chain = _subklass; chain != NULL;
+       chain = chain->_next_sibling) {
+    if (chain->is_loader_alive()) {
+      return chain;
+    } else if (log) {
+      if (log_is_enabled(Trace, class, unload)) {
+        ResourceMark rm;
+        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
+      }
+    }
+  }
+  return NULL;
+}
+
+Klass* Klass::next_sibling(bool log) const {
+  assert_locked_or_safepoint(Compile_lock);
+  for (Klass* chain = _next_sibling; chain != NULL;
+       chain = chain->_next_sibling) {
+    // Only return alive klass, there may be stale klass
+    // in this chain if cleaned concurrently.
+    if (chain->is_loader_alive()) {
+      return chain;
+    } else if (log) {
+      if (log_is_enabled(Trace, class, unload)) {
+        ResourceMark rm;
+        log_trace(class, unload)("unlinking class (sibling): %s", chain->external_name());
+      }
+    }
+  }
+  return NULL;
 }
 
 void Klass::set_subklass(Klass* s) {
@@ -374,6 +412,7 @@ void Klass::set_next_sibling(Klass* s) {
 }
 
 void Klass::append_to_sibling_list() {
+  assert_locked_or_safepoint(Compile_lock);
   debug_only(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
@@ -381,6 +420,7 @@ void Klass::append_to_sibling_list() {
   assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == NULL || !is_interface())),
          "an interface can only be a subklass of Object");
+
   Klass* prev_first_subklass = super->subklass();
   if (prev_first_subklass != NULL) {
     // set our sibling to be the superklass' previous first subklass
@@ -396,6 +436,7 @@ oop Klass::holder_phantom() const {
 }
 
 void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses) {
+  assert_locked_or_safepoint(Compile_lock);
   if (!ClassUnloading || !unloading_occurred) {
     return;
   }
@@ -410,30 +451,14 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass();
-    while (sub != NULL && !sub->is_loader_alive()) {
-#ifndef PRODUCT
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", sub->external_name());
-      }
-#endif
-      sub = sub->next_sibling();
-    }
+    Klass* sub = current->subklass(true);
     current->set_subklass(sub);
     if (sub != NULL) {
       stack.push(sub);
     }
 
     // Find and set the first alive sibling
-    Klass* sibling = current->next_sibling();
-    while (sibling != NULL && !sibling->is_loader_alive()) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("[Unlinking class (sibling) %s]", sibling->external_name());
-      }
-      sibling = sibling->next_sibling();
-    }
+    Klass* sibling = current->next_sibling(true);
     current->set_next_sibling(sibling);
     if (sibling != NULL) {
       stack.push(sibling);

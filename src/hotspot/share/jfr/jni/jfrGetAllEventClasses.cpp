@@ -90,7 +90,6 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   Stack<const Klass*, mtTracing> mark_stack;
-  MutexLocker ml(Compile_lock, thread);
   mark_stack.push(event_klass->subklass());
 
   while (!mark_stack.is_empty()) {
@@ -146,16 +145,19 @@ jobject JfrEventClasses::get_all_event_classes(TRAPS) {
   assert(klass != NULL, "invariant");
   assert(JdkJfrEvent::is(klass), "invariant");
 
-  if (klass->subklass() == NULL) {
-    return empty_java_util_arraylist;
-  }
-
   ResourceMark rm(THREAD);
   GrowableArray<const void*> event_subklasses(THREAD, initial_size_growable_array);
-  fill_klasses(event_subklasses, klass, THREAD);
+  {
+    MutexLocker cl(Compile_lock);
+    if (klass->subklass() == NULL) {
+      return empty_java_util_arraylist;
+    }
 
-  if (event_subklasses.is_empty()) {
-    return empty_java_util_arraylist;
+    fill_klasses(event_subklasses, klass, THREAD);
+
+    if (event_subklasses.is_empty()) {
+      return empty_java_util_arraylist;
+    }
   }
 
   transform_klasses_to_local_jni_handles(event_subklasses, THREAD);

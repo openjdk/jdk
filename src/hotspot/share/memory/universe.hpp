@@ -219,6 +219,7 @@ class Universe: AllStatic {
   static void fixup_mirrors(TRAPS);
 
   static void reinitialize_vtable_of(Klass* k, TRAPS);
+  static void reinitialize_vtables(TRAPS);
   static void reinitialize_itables(TRAPS);
   static void compute_base_vtable_size();             // compute vtable size of class Object
 

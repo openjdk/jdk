@@ -876,7 +876,7 @@ void Monitor::lock(Thread * Self) {
 #endif // CHECK_UNHANDLED_OOPS
 
   debug_only(check_prelock_state(Self, StrictSafepointChecks));
-  assert(_owner != Self, "invariant");
+  assert(_owner != Self, "this lock %s is already held by this thread", name());
   assert(_OnDeck != Self->_MutexEvent, "invariant");
 
   if (TryFast()) {
