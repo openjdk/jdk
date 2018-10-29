@@ -23,17 +23,19 @@
 
 /*
  * @test
- * @bug 8058202
+ * @bug 8058202 8212081
  * @summary Test java.lang.Object methods on AnnotatedType objects.
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.regex.*;
 
 /**
  * Test toString, equals, and hashCode on various AnnotatedType objects.
  */
+
 public class TestObjectMethods {
     private static int errors = 0;
 
@@ -61,8 +63,8 @@ public class TestObjectMethods {
             testEquals(clazz);
         }
 
-        testToString(TypeHost.class, false);
-        testToString(AnnotatedTypeHost.class, true);
+        testToString(TypeHost.class);
+        testToString(AnnotatedTypeHost.class);
 
         testAnnotationsMatterForEquals(TypeHost.class, AnnotatedTypeHost.class);
 
@@ -80,29 +82,45 @@ public class TestObjectMethods {
      * For non-array types, verify toString version of the annotated
      * type ends with the same string as the generic type.
      */
-    static void testToString(Class<?> clazz, boolean leadingAnnotations) {
+    static void testToString(Class<?> clazz) {
         System.err.println("Testing toString on methods of class " + clazz.getName());
         Method[] methods = clazz.getDeclaredMethods();
         for (Method m : methods) {
+            // Expected information about the type annotations stored
+            // in a *declaration* annotation.
+            AnnotTypeInfo annotTypeInfo = m.getAnnotation(AnnotTypeInfo.class);
+            int expectedAnnotCount      = annotTypeInfo.count();
+            Relation relation           = annotTypeInfo.relation();
+
             AnnotatedType annotType = m.getAnnotatedReturnType();
             String annotTypeString = annotType.toString();
 
             Type type = m.getGenericReturnType();
-            String typeString = type.toString();
+            String typeString = (type instanceof Class) ?
+                type.getTypeName() :
+                type.toString();
 
             boolean isArray = annotType instanceof AnnotatedArrayType;
             boolean isVoid = "void".equals(typeString);
 
             boolean valid;
-            if (!isArray) {
-                if (leadingAnnotations && !isVoid) {
-                    valid =
-                        annotTypeString.endsWith(typeString) &&
-                        !annotTypeString.startsWith(typeString);
-                } else {
-                    valid = annotTypeString.equals(typeString);
-                }
-            } else {
+
+            switch(relation) {
+            case EQUAL:
+                valid = annotTypeString.equals(typeString);
+                break;
+
+            case POSTFIX:
+                valid = annotTypeString.endsWith(typeString) &&
+                    !annotTypeString.startsWith(typeString);
+                break;
+
+            case STRIPPED:
+                String stripped = annotationRegex.matcher(annotTypeString).replaceAll("");
+                valid = typeString.replace(" ", "").equals(stripped.replace(" ", ""));
+                break;
+
+            case ARRAY:
                 // Find final non-array component type and gets its name.
                 typeString = null;
 
@@ -114,6 +132,38 @@ public class TestObjectMethods {
 
                 String componentName = componentType.getType().getTypeName();
                 valid = annotTypeString.contains(componentName);
+                break;
+
+            case OTHER:
+                // No additional checks
+                valid = true;
+                break;
+
+            default:
+                throw new AssertionError("Shouldn't be reached");
+            }
+
+            // Verify number of type annotations matches expected value
+            Matcher matcher = annotationRegex.matcher(annotTypeString);
+            if (expectedAnnotCount > 0) {
+                int i = expectedAnnotCount;
+                int annotCount = 0;
+                while (i > 0) {
+                    boolean found = matcher.find();
+                    if (found) {
+                        i--;
+                        annotCount++;
+                    } else {
+                        errors++;
+                        System.err.println("\tExpected annotation not found: " + annotTypeString);
+                    }
+                }
+            }
+
+            boolean found = matcher.find();
+            if (found) {
+                errors++;
+                System.err.println("\tAnnotation found unexpectedly: " + annotTypeString);
             }
 
             if (!valid) {
@@ -124,6 +174,8 @@ public class TestObjectMethods {
             }
         }
     }
+
+    private static final Pattern annotationRegex = Pattern.compile("@TestObjectMethods\\$AnnotType\\(value=(\\p{Digit})+\\)");
 
     static void testGetAnnotations(Class<?> clazz, boolean annotationsExpectedOnMethods) {
         System.err.println("Testing getAnnotations on methods of class " + clazz.getName());
@@ -230,7 +282,6 @@ public class TestObjectMethods {
         }
     }
 
-
     static void testWildcards() {
         System.err.println("Testing wildcards");
         // public @AnnotType(10) Set<? extends Number> fooNumberSet() {return null;}
@@ -269,22 +320,53 @@ public class TestObjectMethods {
     // possible.
 
     static class TypeHost<E, F extends Number> {
+        @AnnotTypeInfo
         public void fooVoid() {return;}
 
+        @AnnotTypeInfo
         public int foo() {return 0;}
+
+        @AnnotTypeInfo
         public String fooString() {return null;}
 
+        @AnnotTypeInfo
         public int[] fooIntArray() {return null;}
+
+        @AnnotTypeInfo
         public String[] fooStringArray() {return null;}
+
+        @AnnotTypeInfo
         public String [][] fooStringArrayArray() {return null;}
 
+        @AnnotTypeInfo
         public Set<String> fooSetString() {return null;}
+
+        @AnnotTypeInfo
+        public Set<Number> fooSetNumber() {return null;}
+
+        @AnnotTypeInfo
         public E fooE() {return null;}
+
+        @AnnotTypeInfo
         public F fooF() {return null;}
+
+        @AnnotTypeInfo
         public <G> G fooG() {return null;}
 
+        @AnnotTypeInfo
         public  Set<? extends Number> fooNumberSet() {return null;}
+
+        @AnnotTypeInfo
         public  Set<? extends Integer> fooNumberSet2() {return null;}
+
+        @AnnotTypeInfo
+        public  Set<? extends Long> fooNumberSet3() {return null;}
+
+        @AnnotTypeInfo
+        public Set<?> fooObjectSet() {return null;}
+
+        @AnnotTypeInfo
+        public List<? extends Object> fooObjectList() {return null;}
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -293,22 +375,114 @@ public class TestObjectMethods {
         int value() default 0;
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    static @interface AnnotTypeInfo {
+        /**
+         * Expected number of @AnnotType
+         */
+        int count() default 0;
+
+        /**
+         * Relation to genericString output.
+         */
+        Relation relation() default Relation.EQUAL;
+    }
+
+    /**
+     * Expected relationship of toString output of AnnotatedType to
+     * toGenericString output of underlying type.
+     */
+    static private enum Relation {
+        EQUAL,
+
+        /**
+         * The toGenericString output is a postfix of the
+         * AnnotatedType output; a leading annotation is expected.
+         */
+        POSTFIX,
+
+        /**
+         * If the annotations are stripped from the AnnotatedType
+         * output and whitespace adjusted accordingly, it should equal
+         * the toGenericString output.
+         */
+        STRIPPED,
+
+        /**
+         * The output of AnnotatedType for arrays would require more
+         * extensive transformation to map to toGenericString output.
+         */
+        ARRAY,
+
+       /**
+         * Some other, harder to characterize, relationship. Currently
+         * used for a wildcard where Object in "extends Object" is
+         * annotated; the "extends Object" is elided in toGenericString.
+         */
+        OTHER;
+    }
+
     static class AnnotatedTypeHost<E, F extends Number> {
+        @AnnotTypeInfo
         public /*@AnnotType(0)*/ void fooVoid() {return;} // Illegal to annotate void
 
-        public @AnnotType(1) int foo() {return 0;}
-        public @AnnotType(2) String fooString() {return null;}
+        @AnnotTypeInfo(count =1, relation = Relation.POSTFIX)
+        @AnnotType(1)
+        public int foo() {return 0;}
 
-        public  int @AnnotType(3) [] fooIntArray() {return null;}
-        public  String @AnnotType(4) [] fooStringArray() {return null;}
-        public  @AnnotType(5) String  @AnnotType(0) [] @AnnotType(1) [] fooStringArrayArray() {return null;}
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(2)
+        public  String fooString() {return null;}
 
-        public @AnnotType(6) Set<String> fooSetString() {return null;}
-        public @AnnotType(7) E fooE() {return null;}
-        public @AnnotType(8) F fooF() {return null;}
-        public @AnnotType(9) <G> G fooG() {return null;}
+        @AnnotTypeInfo(count = 1, relation = Relation.ARRAY)
+        public int @AnnotType(3) [] fooIntArray() {return null;}
 
-        public @AnnotType(10) Set<? extends Number> fooNumberSet() {return null;}
-        public @AnnotType(11) Set<@AnnotType(13) ? extends Number> fooNumberSet2() {return null;}
+        @AnnotTypeInfo(count = 1, relation = Relation.ARRAY)
+        public String @AnnotType(4) [] fooStringArray() {return null;}
+
+        @AnnotTypeInfo(count = 3, relation = Relation.ARRAY)
+        @AnnotType(5)
+        public String  @AnnotType(0) [] @AnnotType(1) [] fooStringArrayArray() {return null;}
+
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(6)
+        public Set<String> fooSetString() {return null;}
+
+        @AnnotTypeInfo(count = 2, relation = Relation.STRIPPED)
+        @AnnotType(7)
+        public Set<@AnnotType(8) Number> fooSetNumber() {return null;}
+
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(9)
+        public E fooE() {return null;}
+
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(10)
+        public F fooF() {return null;}
+
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(11)
+        public <G> G fooG() {return null;}
+
+        @AnnotTypeInfo(count = 1, relation = Relation.POSTFIX)
+        @AnnotType(12)
+        public Set<? extends Number> fooNumberSet() {return null;}
+
+        @AnnotTypeInfo(count = 2, relation = Relation.STRIPPED)
+        @AnnotType(13)
+        public Set<@AnnotType(14) ? extends Number> fooNumberSet2() {return null;}
+
+        @AnnotTypeInfo(count = 2, relation = Relation.STRIPPED)
+        @AnnotType(15)
+        public Set< ? extends @AnnotType(16) Long> fooNumberSet3() {return null;}
+
+        @AnnotTypeInfo(count = 2, relation = Relation.STRIPPED)
+        @AnnotType(16)
+        public Set<@AnnotType(17) ?> fooObjectSet() {return null;}
+
+        @AnnotTypeInfo(count = 2, relation = Relation.OTHER)
+        @AnnotType(18)
+        public List<? extends @AnnotType(19) Object> fooObjectList() {return null;}
     }
 }
