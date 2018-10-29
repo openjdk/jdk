@@ -48,7 +48,7 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * will produce the following html
  * <p>
  * {@code
- * Please see <a href="https://www.oracle.com/pls/topic/lookup?ctx=javase10&id=Borealis">a spectacular</a> sight.
+ * Please see <a href="https://docs.oracle.com/pls/topic/lookup?ctx=javase10&id=Borealis">a spectacular</a> sight.
  * }
  */
 public class ExtLink implements Taglet {
@@ -63,7 +63,7 @@ public class ExtLink implements Taglet {
 
     static final String TAG_NAME = "extLink";
 
-    static final String URL = "https://www.oracle.com/pls/topic/lookup?ctx=javase" +
+    static final String URL = "https://docs.oracle.com/pls/topic/lookup?ctx=javase" +
         SPEC_VERSION + "&amp;id=";
 
     static final Pattern TAG_PATTERN = Pattern.compile("(?s)(\\s*)(?<name>\\w+)(\\s+)(?<desc>.*)$");
