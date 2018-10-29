@@ -125,6 +125,24 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
+    @Test
+    public void testWriteVariables() {
+        testEditor(
+                a -> assertEditOutput(a, "/edit",
+                                "x ==> 1\n" +
+                                "y ==> 2\n" +
+                                "z ==> 3",
+                        () -> {
+                            writeSource(
+                                            "var x = 1;\n" +
+                                            "var y = 2;\n" +
+                                            "var z = 3;\n");
+                            exit();
+                        }),
+                a -> assertCommand(a, "z", "z ==> 3")
+        );
+    }
+
     public void testEditClass1() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),

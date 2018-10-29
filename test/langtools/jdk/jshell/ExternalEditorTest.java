@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing external editor.
- * @bug 8143955 8080843 8163816 8143006 8169828 8171130 8162989
+ * @bug 8143955 8080843 8163816 8143006 8169828 8171130 8162989 8210808
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
  * @run testng ExternalEditorTest
