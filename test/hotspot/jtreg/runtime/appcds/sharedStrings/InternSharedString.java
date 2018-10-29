@@ -27,19 +27,19 @@
  * @summary Test shared strings together with string intern operation
  * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile InternStringTest.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver InternSharedString
- * @run main/othervm -XX:+UseStringDeduplication InternSharedString
- * @run main/othervm -XX:-CompactStrings InternSharedString
  */
 
 public class InternSharedString {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, InternSharedString::test);
+    }
+
+    public static void test(String[] args) throws Exception {
         SharedStringsUtils.buildJarAndWhiteBox("InternStringTest");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("InternStringTest"),

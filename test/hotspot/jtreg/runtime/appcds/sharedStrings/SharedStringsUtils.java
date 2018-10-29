@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,56 @@
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Asserts;
 
 // A helper/utility class for testing shared strings
 public class SharedStringsUtils {
     public static final String TEST_JAR_NAME =      "test";
     public static final String TEST_JAR_NAME_FULL = "test.jar";
     public static final String WHITEBOX_JAR_NAME =  "whitebox";
+
+    public static interface Test {
+        public void dotest(String args[]) throws Exception ;
+    }
+
+    private static String[][] vmOptionCombos = {
+        {},
+        {"-XX:+UseStringDeduplication"},
+        {"-XX:-CompactStrings"}
+    };
+
+    private static String childVMOptionsPrefix[] = {};
+
+    // SharedStringsUtils.run() is for running the main test body multiple times, each with a different
+    // set of extra VM options that are passed to the child processes.
+    //
+    // See ./ExerciseGC.java for an example.
+    public static void run(String args[], Test t) throws Exception {
+        int numSetOfChildVMOptions = vmOptionCombos.length;
+        for (int i=0; i< numSetOfChildVMOptions; i++) {
+            run(i, numSetOfChildVMOptions, args, t);
+        }
+    }
+
+    public static void run(int i, int numSetOfChildVMOptions, String args[], Test t) throws Exception {
+        // When you add a new set of options to vmOptionCombos, we make sure all
+        // callers of this method (i.e., IncompatibleOptions.java) knows about it and will
+        // add new @test blocks accordingly.
+        Asserts.assertEQ(numSetOfChildVMOptions, vmOptionCombos.length);
+        String opts[] = vmOptionCombos[i];
+
+        System.out.print("Running with extra VM option prefix for child processes [" + opts.length + "] =");
+        for (String o : opts) {
+            System.out.print(" " + o);
+        }
+        System.out.println();
+        childVMOptionsPrefix = opts;
+        t.dotest(args);
+    }
+
+    public static String[] getChildVMOptionsPrefix() {
+        return childVMOptionsPrefix;
+    }
 
     public static String getWbParam() {
         return "-Xbootclasspath/a:" + TestCommon.getTestJar(WHITEBOX_JAR_NAME + ".jar");
@@ -55,6 +99,7 @@ public class SharedStringsUtils {
             TestCommon.concat(extraOptions, "-XX:+UseCompressedOops", "-XX:+UseG1GC",
             "-XX:SharedArchiveConfigFile=" +
             TestCommon.getSourceFile(sharedDataFile));
+        args = TestCommon.concat(childVMOptionsPrefix, args);
 
         return TestCommon.dump(appJar, appClasses, args);
     }
@@ -80,6 +125,7 @@ public class SharedStringsUtils {
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args = TestCommon.concat(extraOptions,
             "-cp", appJar, "-XX:+UseCompressedOops", "-XX:+UseG1GC", className);
+        args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.execAuto(args);
         checkExecAuto(output);
@@ -98,6 +144,7 @@ public class SharedStringsUtils {
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args = TestCommon.concat(extraOptions,
             "-XX:+UseCompressedOops", "-XX:+UseG1GC", className);
+        args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.exec(appJar, args);
         checkExec(output, extraMatches);

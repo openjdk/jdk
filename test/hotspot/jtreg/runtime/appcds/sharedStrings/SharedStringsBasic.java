@@ -27,44 +27,49 @@
  * @summary Basic test for shared strings
  * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run driver SharedStringsBasic
- * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasic
- * @run main/othervm -XX:-CompactStrings SharedStringsBasic
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-// This test does not use SharedStringsUtils intentionally:
+// This test does not use SharedStringsUtils.dumpXXX()
+// and SharedStringsUtils.runWithXXX() intentionally:
 // - in order to demonstrate the basic use of the functionality
 // - to provide sanity check and catch potential problems in the utils
 public class SharedStringsBasic {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, SharedStringsBasic::test);
+    }
+
+    public static void test(String[] args) throws Exception {
+        String vmOptionsPrefix[] = SharedStringsUtils.getChildVMOptionsPrefix();
+
         String appJar = JarBuilder.build("SharedStringsBasic", "HelloString");
 
         String sharedArchiveConfigFile =
             TestCommon.getSourceFile("SharedStringsBasic.txt").toString();
 
         ProcessBuilder dumpPb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.concat(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
             "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
             "-Xshare:dump",
-            "-Xlog:cds,cds+hashtables");
+            "-Xlog:cds,cds+hashtables"));
 
         TestCommon.executeAndLog(dumpPb, "dump")
             .shouldContain("Shared string table stats")
             .shouldHaveExitValue(0);
 
         ProcessBuilder runPb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.concat(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
             "-Xshare:auto",
             "-showversion",
-            "HelloString");
+            "HelloString"));
 
         TestCommon.executeAndLog(runPb, "run").shouldHaveExitValue(0);
     }

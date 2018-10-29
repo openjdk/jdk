@@ -22,6 +22,11 @@
  *
  */
 
+// NOTE: the test takes a long time for each VM option combination, so we split
+// it into 3 @test parts, so that they can be executed in parallel. If you make a
+// change, please ensure all @test blocks are in sync.
+
+
 /*
  * @test
  * @summary Test options that are incompatible with use of shared strings
@@ -36,8 +41,34 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @build HelloString
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions 0
  */
+
+
+/*
+ * @test
+ * @requires vm.cds.archived.java.heap
+ * @requires (vm.gc=="null")
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds
+ * @modules jdk.jartool/sun.tools.jar
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build HelloString
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions 1
+ */
+
+/*
+ * @test
+ * @requires vm.cds.archived.java.heap
+ * @requires (vm.gc=="null")
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds
+ * @modules jdk.jartool/sun.tools.jar
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build HelloString
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions 2
+ */
+
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
@@ -59,10 +90,17 @@ public class IncompatibleOptions {
         "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
 
     static String appJar;
-    static String[] globalVmOptions;
+    static String[] vmOptionsPrefix = {};
 
     public static void main(String[] args) throws Exception {
-        globalVmOptions = args; // specified by "@run main" in IncompatibleOptions_*.java
+        String[] noargs = {};
+        SharedStringsUtils.run(Integer.parseInt(args[0]), 3, noargs, IncompatibleOptions::test);
+        // Add a new @test block if you get an assert ----^ about this number. See
+        // SharedStringsUtils.java for details.
+    }
+
+    public static void test(String[] args_ignored) throws Exception {
+        vmOptionsPrefix = SharedStringsUtils.getChildVMOptionsPrefix();
         appJar = JarBuilder.build("IncompatibleOptions", "HelloString");
 
         // Uncompressed OOPs
@@ -118,7 +156,7 @@ public class IncompatibleOptions {
 
         System.out.println("Testcase: " + testCaseNr);
         OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
-            TestCommon.concat(globalVmOptions,
+            TestCommon.concat(vmOptionsPrefix,
                 "-XX:+UseCompressedOops",
                 collectorOption,
                 "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("SharedStringsBasic.txt"),
@@ -145,12 +183,12 @@ public class IncompatibleOptions {
         // main class param, and fails with "Could not find or load main class"
         if (!extraOption.isEmpty()) {
             output = TestCommon.exec(appJar,
-                TestCommon.concat(globalVmOptions,
+                TestCommon.concat(vmOptionsPrefix,
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", extraOption, "HelloString"));
         } else {
             output = TestCommon.exec(appJar,
-                TestCommon.concat(globalVmOptions,
+                TestCommon.concat(vmOptionsPrefix,
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", "HelloString"));
         }

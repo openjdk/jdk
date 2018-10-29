@@ -27,14 +27,10 @@
  * @summary White box test for shared strings
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox SharedStringsWb
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver SharedStringsWbTest
- * @run main/othervm -XX:+UseStringDeduplication SharedStringsWbTest
- * @run main/othervm -XX:-CompactStrings SharedStringsWbTest
  */
 
 import java.io.*;
@@ -42,6 +38,10 @@ import sun.hotspot.WhiteBox;
 
 public class SharedStringsWbTest {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, SharedStringsWbTest::test);
+    }
+
+    public static void test(String[] args) throws Exception {
         SharedStringsUtils.buildJarAndWhiteBox("SharedStringsWb");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("SharedStringsWb"),
