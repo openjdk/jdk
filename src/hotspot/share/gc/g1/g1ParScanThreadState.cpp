@@ -203,7 +203,7 @@ void G1ParScanThreadState::report_promotion_event(InCSetState const dest_state,
   if (alloc_buf->contains(obj_ptr)) {
     _g1h->_gc_tracer_stw->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
                                                              dest_state.value() == InCSetState::Old,
-                                                             alloc_buf->word_sz());
+                                                             alloc_buf->word_sz() * HeapWordSize);
   } else {
     _g1h->_gc_tracer_stw->report_promotion_outside_plab_event(old->klass(), word_sz * HeapWordSize, age,
                                                               dest_state.value() == InCSetState::Old);
