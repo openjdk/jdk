@@ -2967,7 +2967,9 @@ public final class String
                              .mapToInt(String::indexOfNonWhitespace)
                              .min()
                              .orElse(0);
-        return indent(n - outdent, true);
+        // overflow-conscious code
+        int indent = n - outdent;
+        return indent(indent > n ? Integer.MIN_VALUE : indent, true);
     }
 
     /**
