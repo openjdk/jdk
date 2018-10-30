@@ -214,7 +214,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
     if (IS(styleBits, UNIFIED))       type |= NSUnifiedTitleAndToolbarWindowMask;
     if (IS(styleBits, UTILITY))       type |= NSUtilityWindowMask;
     if (IS(styleBits, HUD))           type |= NSHUDWindowMask;
-    if (IS(styleBits, SHEET))         type |= NSDocModalWindowMask;
+    if (IS(styleBits, SHEET))         type |= NSWindowStyleMaskDocModalWindow;
     if (IS(styleBits, NONACTIVATING)) type |= NSNonactivatingPanelMask;
 
     return type;
@@ -273,7 +273,12 @@ AWT_NS_WINDOW_IMPLEMENTATION
 {
 AWT_ASSERT_APPKIT_THREAD;
 
-    NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:bits];
+    NSUInteger newBits = bits;
+    if (IS(bits, SHEET) && owner == nil) {
+        newBits = bits & ~NSWindowStyleMaskDocModalWindow;
+    }
+    NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:newBits];
+
     NSRect contentRect = rect; //[NSWindow contentRectForFrameRect:rect styleMask:styleMask];
     if (contentRect.size.width <= 0.0) {
         contentRect.size.width = 1.0;
@@ -289,7 +294,8 @@ AWT_ASSERT_APPKIT_THREAD;
     if (IS(bits, UTILITY) ||
         IS(bits, NONACTIVATING) ||
         IS(bits, HUD) ||
-        IS(bits, HIDES_ON_DEACTIVATE))
+        IS(bits, HIDES_ON_DEACTIVATE) ||
+        IS(bits, SHEET))
     {
         self.nsWindow = [[AWTWindow_Panel alloc] initWithDelegate:self
                             frameRect:contentRect
@@ -317,6 +323,10 @@ AWT_ASSERT_APPKIT_THREAD;
 
     if (IS(self.styleBits, IS_POPUP)) {
         [self.nsWindow setCollectionBehavior:(1 << 8) /*NSWindowCollectionBehaviorFullScreenAuxiliary*/];
+    }
+
+    if (IS(bits, SHEET) && owner != nil) {
+        [self.nsWindow setStyleMask: NSWindowStyleMaskDocModalWindow];
     }
 
     return self;
