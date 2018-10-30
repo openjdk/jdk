@@ -25,34 +25,46 @@
 #ifndef SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
 #define SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
 
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.hpp"
 
-inline void GlobalCounter::critical_section_begin(Thread *thread) {
+inline GlobalCounter::CSContext
+GlobalCounter::critical_section_begin(Thread *thread) {
   assert(thread == Thread::current(), "must be current thread");
-  assert((*thread->get_rcu_counter() & COUNTER_ACTIVE) == 0x0, "nested critical sections, not supported yet");
-  uintx gbl_cnt = OrderAccess::load_acquire(&_global_counter._counter);
-  OrderAccess::release_store_fence(thread->get_rcu_counter(), gbl_cnt | COUNTER_ACTIVE);
+  uintx old_cnt = Atomic::load(thread->get_rcu_counter());
+  // Retain the old counter value if already active, e.g. nested.
+  // Otherwise, set the counter to the current version + active bit.
+  uintx new_cnt = old_cnt;
+  if ((new_cnt & COUNTER_ACTIVE) == 0) {
+    new_cnt = Atomic::load(&_global_counter._counter) | COUNTER_ACTIVE;
+  }
+  OrderAccess::release_store_fence(thread->get_rcu_counter(), new_cnt);
+  return static_cast<CSContext>(old_cnt);
 }
 
-inline void GlobalCounter::critical_section_end(Thread *thread) {
+inline void
+GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
   assert(thread == Thread::current(), "must be current thread");
   assert((*thread->get_rcu_counter() & COUNTER_ACTIVE) == COUNTER_ACTIVE, "must be in critical section");
-  // Mainly for debugging we set it to 'now'.
-  uintx gbl_cnt = OrderAccess::load_acquire(&_global_counter._counter);
-  OrderAccess::release_store(thread->get_rcu_counter(), gbl_cnt);
+  // Restore the counter value from before the associated begin.
+  OrderAccess::release_store(thread->get_rcu_counter(),
+                             static_cast<uintx>(context));
 }
 
 class GlobalCounter::CriticalSection {
  private:
   Thread* _thread;
+  CSContext _context;
  public:
-  inline CriticalSection(Thread* thread) : _thread(thread) {
-    GlobalCounter::critical_section_begin(_thread);
-  }
+  inline CriticalSection(Thread* thread) :
+    _thread(thread),
+    _context(GlobalCounter::critical_section_begin(_thread))
+  {}
+
   inline  ~CriticalSection() {
-    GlobalCounter::critical_section_end(_thread);
+    GlobalCounter::critical_section_end(_thread, _context);
   }
 };
 
