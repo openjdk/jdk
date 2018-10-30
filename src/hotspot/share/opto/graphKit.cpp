@@ -2116,8 +2116,17 @@ void GraphKit::uncommon_trap(int trap_request,
 // We use this to determine if an object is so "fresh" that
 // it does not require card marks.
 Node* GraphKit::just_allocated_object(Node* current_control) {
-  if (C->recent_alloc_ctl() == current_control)
-    return C->recent_alloc_obj();
+  Node* ctrl = current_control;
+  // Object::<init> is invoked after allocation, most of invoke nodes
+  // will be reduced, but a region node is kept in parse time, we check
+  // the pattern and skip the region node if it degraded to a copy.
+  if (ctrl != NULL && ctrl->is_Region() && ctrl->req() == 2 &&
+      ctrl->as_Region()->is_copy()) {
+    ctrl = ctrl->as_Region()->is_copy();
+  }
+  if (C->recent_alloc_ctl() == ctrl) {
+   return C->recent_alloc_obj();
+  }
   return NULL;
 }
 
