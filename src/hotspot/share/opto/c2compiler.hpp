@@ -26,6 +26,7 @@
 #define SHARE_VM_OPTO_C2COMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "opto/output.hpp"
 
 class C2Compiler : public AbstractCompiler {
  private:
@@ -66,7 +67,7 @@ public:
   virtual bool is_intrinsic_supported(const methodHandle& method, bool is_virtual);
 
   // Initial size of the code buffer (may be increased at runtime)
-  static int initial_code_buffer_size();
+  static int initial_code_buffer_size(int const_size = initial_const_capacity);
 };
 
 #endif // SHARE_VM_OPTO_C2COMPILER_HPP
