@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,17 +130,22 @@ public abstract class KeyAgreementSpi {
     /**
      * Generates the shared secret and returns it in a new buffer.
      *
-     * <p>This method resets this <code>KeyAgreementSpi</code> object,
-     * so that it
-     * can be reused for further key agreements. Unless this key agreement is
-     * reinitialized with one of the <code>engineInit</code> methods, the same
-     * private information and algorithm parameters will be used for
-     * subsequent key agreements.
+     * <p>This method resets this {@code KeyAgreementSpi} object to the state
+     * that it was in after the most recent call to one of the {@code init}
+     * methods. After a call to {@code generateSecret}, the object can be reused
+     * for further key agreement operations by calling {@code doPhase} to supply
+     * new keys, and then calling {@code generateSecret} to produce a new
+     * secret. In this case, the private information and algorithm parameters
+     * supplied to {@code init} will be used for multiple key agreement
+     * operations. The {@code init} method can be called after
+     * {@code generateSecret} to change the private information used in
+     * subsequent operations.
      *
      * @return the new buffer with the shared secret
      *
      * @exception IllegalStateException if this key agreement has not been
-     * completed yet
+     * initialized or if {@code doPhase} has not been called to supply the
+     * keys for all parties in the agreement
      */
     protected abstract byte[] engineGenerateSecret()
         throws IllegalStateException;
@@ -153,12 +158,16 @@ public abstract class KeyAgreementSpi {
      * result, a <code>ShortBufferException</code> is thrown.
      * In this case, this call should be repeated with a larger output buffer.
      *
-     * <p>This method resets this <code>KeyAgreementSpi</code> object,
-     * so that it
-     * can be reused for further key agreements. Unless this key agreement is
-     * reinitialized with one of the <code>engineInit</code> methods, the same
-     * private information and algorithm parameters will be used for
-     * subsequent key agreements.
+     * <p>This method resets this {@code KeyAgreementSpi} object to the state
+     * that it was in after the most recent call to one of the {@code init}
+     * methods. After a call to {@code generateSecret}, the object can be reused
+     * for further key agreement operations by calling {@code doPhase} to supply
+     * new keys, and then calling {@code generateSecret} to produce a new
+     * secret. In this case, the private information and algorithm parameters
+     * supplied to {@code init} will be used for multiple key agreement
+     * operations. The {@code init} method can be called after
+     * {@code generateSecret} to change the private information used in
+     * subsequent operations.
      *
      * @param sharedSecret the buffer for the shared secret
      * @param offset the offset in <code>sharedSecret</code> where the
@@ -167,7 +176,8 @@ public abstract class KeyAgreementSpi {
      * @return the number of bytes placed into <code>sharedSecret</code>
      *
      * @exception IllegalStateException if this key agreement has not been
-     * completed yet
+     * initialized or if {@code doPhase} has not been called to supply the
+     * keys for all parties in the agreement
      * @exception ShortBufferException if the given output buffer is too small
      * to hold the secret
      */
@@ -179,19 +189,24 @@ public abstract class KeyAgreementSpi {
      * Creates the shared secret and returns it as a secret key object
      * of the requested algorithm type.
      *
-     * <p>This method resets this <code>KeyAgreementSpi</code> object,
-     * so that it
-     * can be reused for further key agreements. Unless this key agreement is
-     * reinitialized with one of the <code>engineInit</code> methods, the same
-     * private information and algorithm parameters will be used for
-     * subsequent key agreements.
+     * <p>This method resets this {@code KeyAgreementSpi} object to the state
+     * that it was in after the most recent call to one of the {@code init}
+     * methods. After a call to {@code generateSecret}, the object can be reused
+     * for further key agreement operations by calling {@code doPhase} to supply
+     * new keys, and then calling {@code generateSecret} to produce a new
+     * secret. In this case, the private information and algorithm parameters
+     * supplied to {@code init} will be used for multiple key agreement
+     * operations. The {@code init} method can be called after
+     * {@code generateSecret} to change the private information used in
+     * subsequent operations.
      *
      * @param algorithm the requested secret key algorithm
      *
      * @return the shared secret key
      *
      * @exception IllegalStateException if this key agreement has not been
-     * completed yet
+     * initialized or if {@code doPhase} has not been called to supply the
+     * keys for all parties in the agreement
      * @exception NoSuchAlgorithmException if the requested secret key
      * algorithm is not available
      * @exception InvalidKeyException if the shared secret key material cannot
