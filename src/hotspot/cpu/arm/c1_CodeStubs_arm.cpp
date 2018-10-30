@@ -67,9 +67,6 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
   if (_info->deoptimize_on_exception()) {
-#ifdef AARCH64
-    __ NOT_TESTED();
-#endif
     __ call(Runtime1::entry_for(Runtime1::predicate_failed_trap_id), relocInfo::runtime_call_type);
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
@@ -86,9 +83,6 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   }
 
   if (_throw_index_out_of_bounds_exception) {
-#ifdef AARCH64
-    __ NOT_TESTED();
-#endif
     __ call(Runtime1::entry_for(Runtime1::throw_index_exception_id), relocInfo::runtime_call_type);
   } else {
     __ str(_array->as_pointer_register(), Address(SP, BytesPerWord)); // ??? Correct offset? Correct instruction?
@@ -208,16 +202,12 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(2);
-#ifdef AARCH64
-  __ stp(obj_reg, lock_reg, Address(SP));
-#else
   if (obj_reg < lock_reg) {
     __ stmia(SP, RegisterSet(obj_reg) | RegisterSet(lock_reg));
   } else {
     __ str(obj_reg, Address(SP));
     __ str(lock_reg, Address(SP, BytesPerWord));
   }
-#endif // AARCH64
 
   Runtime1::StubID enter_id = ce->compilation()->has_fpu_code() ?
                               Runtime1::monitorenter_id :
@@ -259,7 +249,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
 }
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {
-  const int patchable_instruction_offset = AARCH64_ONLY(NativeInstruction::instruction_size) NOT_AARCH64(0);
+  const int patchable_instruction_offset = 0;
 
   assert(NativeCall::instruction_size <= _bytes_to_copy && _bytes_to_copy <= 0xFF,
          "not enough room for call");
@@ -267,31 +257,17 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   Label call_patch;
   bool is_load = (_id == load_klass_id) || (_id == load_mirror_id) || (_id == load_appendix_id);
 
-#ifdef AARCH64
-  assert(nativeInstruction_at(_pc_start)->is_nop(), "required for MT safe patching");
 
-  // Same alignment of reg2mem code and PatchingStub code. Required to make copied bind_literal() code properly aligned.
-  __ align(wordSize);
-#endif // AARCH64
-
-  if (is_load NOT_AARCH64(&& !VM_Version::supports_movw())) {
+  if (is_load && !VM_Version::supports_movw()) {
     address start = __ pc();
 
     // The following sequence duplicates code provided in MacroAssembler::patchable_mov_oop()
     // without creating relocation info entry.
-#ifdef AARCH64
-    // Extra nop for MT safe patching
-    __ nop();
-#endif // AARCH64
 
     assert((__ pc() - start) == patchable_instruction_offset, "should be");
-#ifdef AARCH64
-    __ ldr(_obj, __ pc());
-#else
     __ ldr(_obj, Address(PC));
     // Extra nop to handle case of large offset of oop placeholder (see NativeMovConstReg::set_data).
     __ nop();
-#endif // AARCH64
 
 #ifdef ASSERT
     for (int i = 0; i < _bytes_to_copy; i++) {

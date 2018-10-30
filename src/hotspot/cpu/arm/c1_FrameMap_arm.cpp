@@ -49,9 +49,6 @@ LIR_Opr FrameMap::R3_metadata_opr;
 LIR_Opr FrameMap::R4_metadata_opr;
 LIR_Opr FrameMap::R5_metadata_opr;
 
-#ifdef AARCH64
-LIR_Opr FrameMap::ZR_opr;
-#endif // AARCH64
 
 LIR_Opr FrameMap::LR_opr;
 LIR_Opr FrameMap::LR_oop_opr;
@@ -82,12 +79,7 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
   } else if (r_1->is_Register()) {
     Register reg = r_1->as_Register();
     if (r_2->is_Register() && (type == T_LONG || type == T_DOUBLE)) {
-#ifdef AARCH64
-      assert(r_1->next() == r_2, "should be the same");
-      opr = as_long_opr(reg);
-#else
       opr = as_long_opr(reg, r_2->as_Register());
-#endif
     } else if (type == T_OBJECT || type == T_ARRAY) {
       opr = as_oop_opr(reg);
     } else if (type == T_METADATA) {
@@ -115,20 +107,10 @@ void FrameMap::initialize() {
   int rnum = 0;
 
   // Registers used for allocation
-#ifdef AARCH64
-  assert(Rthread == R28 && Rheap_base == R27 && Rtemp == R16, "change the code here");
-  for (i = 0; i < 16; i++) {
-    map_register(rnum++, as_Register(i));
-  }
-  for (i = 17; i < 28; i++) {
-    map_register(rnum++, as_Register(i));
-  }
-#else
   assert(Rthread == R10 && Rtemp == R12, "change the code here");
   for (i = 0; i < 10; i++) {
     map_register(rnum++, as_Register(i));
   }
-#endif // AARCH64
   assert(rnum == pd_nof_cpu_regs_reg_alloc, "should be");
 
   // Registers not used for allocation
@@ -139,11 +121,7 @@ void FrameMap::initialize() {
   map_register(rnum++, Rthread);
   map_register(rnum++, FP); // ARM32: R7 or R11
   map_register(rnum++, SP);
-#ifdef AARCH64
-  map_register(rnum++, ZR);
-#else
   map_register(rnum++, PC);
-#endif
   assert(rnum == pd_nof_cpu_regs_frame_map, "should be");
 
   _init_done = true;
@@ -155,9 +133,6 @@ void FrameMap::initialize() {
   R4_opr  = as_opr(R4);   R4_oop_opr = as_oop_opr(R4);    R4_metadata_opr = as_metadata_opr(R4);
   R5_opr  = as_opr(R5);   R5_oop_opr = as_oop_opr(R5);    R5_metadata_opr = as_metadata_opr(R5);
 
-#ifdef AARCH64
-  ZR_opr = as_opr(ZR);
-#endif // AARCH64
 
   LR_opr      = as_opr(LR);
   LR_oop_opr  = as_oop_opr(LR);
@@ -169,11 +144,6 @@ void FrameMap::initialize() {
   // LIR operands for result
   Int_result_opr = R0_opr;
   Object_result_opr = R0_oop_opr;
-#ifdef AARCH64
-  Long_result_opr = as_long_opr(R0);
-  Float_result_opr = as_float_opr(S0);
-  Double_result_opr = as_double_opr(D0);
-#else
   Long_result_opr = as_long_opr(R0, R1);
 #ifdef __ABI_HARD__
   Float_result_opr = as_float_opr(S0);
@@ -182,7 +152,6 @@ void FrameMap::initialize() {
   Float_result_opr = LIR_OprFact::single_softfp(0);
   Double_result_opr = LIR_OprFact::double_softfp(0, 1);
 #endif // __ABI_HARD__
-#endif // AARCH64
 
   Exception_oop_opr = as_oop_opr(Rexception_obj);
   Exception_pc_opr = as_opr(Rexception_pc);
@@ -222,7 +191,7 @@ bool FrameMap::validate_frame() {
     }
     java_index += type2size[opr->type()];
   }
-  return max_offset < AARCH64_ONLY(16384) NOT_AARCH64(4096); // TODO-AARCH64 check that LIRAssembler does not generate load/store of byte and half-word with SP as address base
+  return max_offset < 4096;
 }
 
 VMReg FrameMap::fpu_regname(int n) {

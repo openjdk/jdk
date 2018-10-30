@@ -92,7 +92,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     int method_offset = vtableEntry::method_offset_in_bytes() + entry_offset;
 
     assert ((method_offset & (wordSize - 1)) == 0, "offset should be aligned");
-    int offset_mask = AARCH64_ONLY(0xfff << LogBytesPerWord) NOT_AARCH64(0xfff);
+    int offset_mask = 0xfff;
     if (method_offset & ~offset_mask) {
       __ add(tmp, tmp, method_offset & ~offset_mask);
     }
@@ -109,12 +109,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #endif
 
   address ame_addr = __ pc();
-#ifdef AARCH64
-  __ ldr(tmp, Address(Rmethod, Method::from_compiled_offset()));
-  __ br(tmp);
-#else
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
-#endif // AARCH64
 
   masm->flush();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
@@ -150,9 +145,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
-  const Register Rclass  = AARCH64_ONLY(R9)  NOT_AARCH64(R4);
-  const Register Rintf   = AARCH64_ONLY(R10) NOT_AARCH64(R5);
-  const Register Rscan   = AARCH64_ONLY(R11) NOT_AARCH64(R6);
+  const Register Rclass  = R4;
+  const Register Rintf   = R5;
+  const Register Rscan   = R6;
 
   Label L_no_such_interface;
 
@@ -200,12 +195,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   address ame_addr = __ pc();
 
-#ifdef AARCH64
-  __ ldr(Rtemp, Address(Rmethod, Method::from_compiled_offset()));
-  __ br(Rtemp);
-#else
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
-#endif // AARCH64
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.

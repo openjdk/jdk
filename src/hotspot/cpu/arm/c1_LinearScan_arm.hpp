@@ -31,24 +31,17 @@ inline bool LinearScan::is_processed_reg_num(int reg_num) {
 }
 
 inline int LinearScan::num_physical_regs(BasicType type) {
-#ifndef AARCH64
   if (type == T_LONG || type == T_DOUBLE) return 2;
-#endif // !AARCH64
   return 1;
 }
 
 
 inline bool LinearScan::requires_adjacent_regs(BasicType type) {
-#ifdef AARCH64
-  return false;
-#else
   return type == T_DOUBLE || type == T_LONG;
-#endif // AARCH64
 }
 
 inline bool LinearScan::is_caller_save(int assigned_reg) {
   assert(assigned_reg >= 0 && assigned_reg < nof_regs, "should call this only for registers");
-  // TODO-AARCH64 try to add callee-saved registers
   return true;
 }
 

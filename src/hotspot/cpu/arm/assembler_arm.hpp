@@ -40,29 +40,14 @@ enum AsmShift {
   lsl, lsr, asr, ror
 };
 
-#ifdef AARCH64
-enum AsmExtendOp {
-  ex_uxtb, ex_uxth, ex_uxtw, ex_uxtx,
-  ex_sxtb, ex_sxth, ex_sxtw, ex_sxtx,
-
-  ex_lsl = ex_uxtx
-};
-#endif
 
 enum AsmOffset {
-#ifdef AARCH64
-  basic_offset = 0b00,
-  pre_indexed  = 0b11,
-  post_indexed = 0b01
-#else
   basic_offset = 1 << 24,
   pre_indexed  = 1 << 24 | 1 << 21,
   post_indexed = 0
-#endif
 };
 
 
-#ifndef AARCH64
 enum AsmWriteback {
   no_writeback,
   writeback
@@ -72,7 +57,6 @@ enum AsmOffsetOp {
   sub_offset = 0,
   add_offset = 1
 };
-#endif
 
 
 // ARM Addressing Modes 2 and 3 - Load and store
@@ -84,21 +68,13 @@ class Address {
   AsmOffset _mode;
   RelocationHolder   _rspec;
   int       _shift_imm;
-#ifdef AARCH64
-  AsmExtendOp _extend;
-#else
   AsmShift  _shift;
   AsmOffsetOp _offset_op;
 
   static inline int abs(int x) { return x < 0 ? -x : x; }
   static inline int up (int x) { return x < 0 ?  0 : 1; }
-#endif
 
-#ifdef AARCH64
-  static const AsmExtendOp LSL = ex_lsl;
-#else
   static const AsmShift LSL = lsl;
-#endif
 
  public:
   Address() : _base(noreg) {}
@@ -109,12 +85,8 @@ class Address {
     _disp = offset;
     _mode = mode;
     _shift_imm = 0;
-#ifdef AARCH64
-    _extend = ex_lsl;
-#else
     _shift = lsl;
     _offset_op = add_offset;
-#endif
   }
 
 #ifdef ASSERT
@@ -124,27 +96,11 @@ class Address {
     _disp = in_bytes(offset);
     _mode = mode;
     _shift_imm = 0;
-#ifdef AARCH64
-    _extend = ex_lsl;
-#else
     _shift = lsl;
     _offset_op = add_offset;
-#endif
   }
 #endif
 
-#ifdef AARCH64
-  Address(Register rn, Register rm, AsmExtendOp extend = ex_lsl, int shift_imm = 0) {
-    assert ((extend == ex_uxtw) || (extend == ex_lsl) || (extend == ex_sxtw) || (extend == ex_sxtx), "invalid extend for address mode");
-    assert ((0 <= shift_imm) && (shift_imm <= 4), "shift amount is out of range");
-    _base = rn;
-    _index = rm;
-    _disp = 0;
-    _mode = basic_offset;
-    _extend = extend;
-    _shift_imm = shift_imm;
-  }
-#else
   Address(Register rn, Register rm, AsmShift shift = lsl,
           int shift_imm = 0, AsmOffset mode = basic_offset,
           AsmOffsetOp offset_op = add_offset) {
@@ -181,7 +137,6 @@ class Address {
     _mode = basic_offset;
     _offset_op = add_offset;
   }
-#endif // AARCH64
 
   // [base + index * wordSize]
   static Address indexed_ptr(Register base, Register index) {
@@ -211,25 +166,6 @@ class Address {
     return a;
   }
 
-#ifdef AARCH64
-  int encoding_simd() const {
-    assert(_index != SP, "encoding constraint");
-    assert(_disp == 0 || _mode == post_indexed,  "encoding constraint");
-    assert(_index == noreg || _mode == basic_offset, "encoding constraint");
-    assert(_mode == basic_offset || _mode == post_indexed, "encoding constraint");
-    assert(_extend == ex_lsl, "encoding constraint");
-    int index;
-    if (_index == noreg) {
-      if (_mode == post_indexed)
-        index = 0b100 << 5 | 31;
-      else
-        index = 0;
-    } else {
-      index = 0b100 << 5 | _index->encoding();
-    }
-    return index << 16 | _base->encoding_with_sp() << 5;
-  }
-#else /* !AARCH64 */
   int encoding2() const {
     assert(_mode == basic_offset || _base != PC, "unpredictable instruction");
     if (_index == noreg) {
@@ -287,7 +223,6 @@ class Address {
 
     return _base->encoding() << 16 | index;
   }
-#endif // !AARCH64
 
   Register base() const {
     return _base;
@@ -309,11 +244,6 @@ class Address {
     return _shift_imm;
   }
 
-#ifdef AARCH64
-  AsmExtendOp extend() const {
-    return _extend;
-  }
-#else
   AsmShift shift() const {
     return _shift;
   }
@@ -321,7 +251,6 @@ class Address {
   AsmOffsetOp offset_op() const {
     return _offset_op;
   }
-#endif
 
   bool uses(Register reg) const { return _base == reg || _index == reg; }
 
@@ -394,11 +323,7 @@ class VFP {
 };
 #endif
 
-#ifdef AARCH64
-#include "assembler_arm_64.hpp"
-#else
 #include "assembler_arm_32.hpp"
-#endif
 
 
 #endif // CPU_ARM_VM_ASSEMBLER_ARM_HPP

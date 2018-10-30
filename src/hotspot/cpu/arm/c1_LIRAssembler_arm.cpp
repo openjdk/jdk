@@ -127,9 +127,6 @@ void LIR_Assembler::pop(LIR_Opr opr) {
 Address LIR_Assembler::as_Address(LIR_Address* addr) {
   Register base = addr->base()->as_pointer_register();
 
-#ifdef AARCH64
-  int align = exact_log2(type2aelembytes(addr->type(), true));
-#endif
 
   if (addr->index()->is_illegal() || addr->index()->is_constant()) {
     int offset = addr->disp();
@@ -137,16 +134,9 @@ Address LIR_Assembler::as_Address(LIR_Address* addr) {
       offset += addr->index()->as_constant_ptr()->as_jint() << addr->scale();
     }
 
-#ifdef AARCH64
-    if (!Assembler::is_unsigned_imm_in_range(offset, 12, align) && !Assembler::is_imm_in_range(offset, 9, 0)) {
-      BAILOUT_("offset not in range", Address(base));
-    }
-    assert(UseUnalignedAccesses || (offset & right_n_bits(align)) == 0, "offset should be aligned");
-#else
     if ((offset <= -4096) || (offset >= 4096)) {
       BAILOUT_("offset not in range", Address(base));
     }
-#endif // AARCH64
 
     return Address(base, offset);
 
@@ -154,44 +144,21 @@ Address LIR_Assembler::as_Address(LIR_Address* addr) {
     assert(addr->disp() == 0, "can't have both");
     int scale = addr->scale();
 
-#ifdef AARCH64
-    assert((scale == 0) || (scale == align), "scale should be zero or equal to embedded shift");
-
-    bool is_index_extended = (addr->index()->type() == T_INT);
-    if (is_index_extended) {
-      assert(addr->index()->is_single_cpu(), "should be");
-      return Address(base, addr->index()->as_register(), ex_sxtw, scale);
-    } else {
-      assert(addr->index()->is_double_cpu(), "should be");
-      return Address(base, addr->index()->as_register_lo(), ex_lsl, scale);
-    }
-#else
     assert(addr->index()->is_single_cpu(), "should be");
     return scale >= 0 ? Address(base, addr->index()->as_register(), lsl, scale) :
                         Address(base, addr->index()->as_register(), lsr, -scale);
-#endif // AARCH64
   }
 }
 
 Address LIR_Assembler::as_Address_hi(LIR_Address* addr) {
-#ifdef AARCH64
-  ShouldNotCallThis(); // Not used on AArch64
-  return Address();
-#else
   Address base = as_Address(addr);
   assert(base.index() == noreg, "must be");
   if (base.disp() + BytesPerWord >= 4096) { BAILOUT_("offset not in range", Address(base.base(),0)); }
   return Address(base.base(), base.disp() + BytesPerWord);
-#endif // AARCH64
 }
 
 Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
-#ifdef AARCH64
-  ShouldNotCallThis(); // Not used on AArch64
-  return Address();
-#else
   return as_Address(addr);
-#endif // AARCH64
 }
 
 
@@ -327,13 +294,8 @@ int LIR_Assembler::emit_deopt_handler() {
   int offset = code_offset();
 
   __ mov_relative_address(LR, __ pc());
-#ifdef AARCH64
-  __ raw_push(LR, LR);
-  __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, Rtemp);
-#else
   __ push(LR); // stub expects LR to be saved
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
-#endif // AARCH64
 
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
@@ -347,7 +309,6 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   __ remove_frame(initial_frame_size_in_bytes());
 
   // mov_slow here is usually one or two instruction
-  // TODO-AARCH64 3 instructions on AArch64, so try to load polling page by ldr_literal
   __ mov_address(Rtemp, os::get_polling_page(), symbolic_Relocation::polling_page_reference);
   __ relocate(relocInfo::poll_return_type);
   __ ldr(Rtemp, Address(Rtemp));
@@ -386,12 +347,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG:
       assert(patch_code == lir_patch_none, "no patching handled here");
-#ifdef AARCH64
-      __ mov_slow(dest->as_pointer_register(), (intptr_t)c->as_jlong());
-#else
       __ mov_slow(dest->as_register_lo(), c->as_jint_lo());
       __ mov_slow(dest->as_register_hi(), c->as_jint_hi());
-#endif // AARCH64
       break;
 
     case T_OBJECT:
@@ -414,12 +371,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (dest->is_single_fpu()) {
         __ mov_float(dest->as_float_reg(), c->as_jfloat());
       } else {
-#ifdef AARCH64
-        ShouldNotReachHere();
-#else
         // Simple getters can return float constant directly into r0
         __ mov_slow(dest->as_register(), c->as_jint_bits());
-#endif // AARCH64
       }
       break;
 
@@ -427,13 +380,9 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (dest->is_double_fpu()) {
         __ mov_double(dest->as_double_reg(), c->as_jdouble());
       } else {
-#ifdef AARCH64
-        ShouldNotReachHere();
-#else
         // Simple getters can return double constant directly into r1r0
         __ mov_slow(dest->as_register_lo(), c->as_jint_lo_bits());
         __ mov_slow(dest->as_register_hi(), c->as_jint_hi_bits());
-#endif // AARCH64
       }
       break;
 
@@ -466,17 +415,12 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
 
     case T_LONG:  // fall through
     case T_DOUBLE:
-#ifdef AARCH64
-      __ mov_slow(Rtemp, c->as_jlong_bits());
-      __ str(Rtemp, frame_map()->address_for_slot(dest->double_stack_ix()));
-#else
       __ mov_slow(Rtemp, c->as_jint_lo_bits());
       __ str(Rtemp, frame_map()->address_for_slot(dest->double_stack_ix(), lo_word_offset_in_bytes));
       if (c->as_jint_hi_bits() != c->as_jint_lo_bits()) {
         __ mov_slow(Rtemp, c->as_jint_hi_bits());
       }
       __ str(Rtemp, frame_map()->address_for_slot(dest->double_stack_ix(), hi_word_offset_in_bytes));
-#endif // AARCH64
       break;
 
     default:
@@ -486,49 +430,14 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
 
 void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
                               CodeEmitInfo* info, bool wide) {
-#ifdef AARCH64
-  assert((src->as_constant_ptr()->type() == T_OBJECT && src->as_constant_ptr()->as_jobject() == NULL) ||
-         (src->as_constant_ptr()->type() == T_INT && src->as_constant_ptr()->as_jint() == 0) ||
-         (src->as_constant_ptr()->type() == T_LONG && src->as_constant_ptr()->as_jlong() == 0) ||
-         (src->as_constant_ptr()->type() == T_FLOAT && src->as_constant_ptr()->as_jint_bits() == 0) ||
-         (src->as_constant_ptr()->type() == T_DOUBLE && src->as_constant_ptr()->as_jlong_bits() == 0),
-        "cannot handle otherwise");
-  assert(dest->as_address_ptr()->type() == type, "should be");
-
-  Address addr = as_Address(dest->as_address_ptr());
-  int null_check_offset = code_offset();
-  switch (type) {
-    case T_OBJECT:  // fall through
-    case T_ARRAY:
-        if (UseCompressedOops && !wide) {
-          __ str_w(ZR, addr);
-        } else {
-          __ str(ZR, addr);
-        }
-        break;
-    case T_ADDRESS: // fall through
-    case T_DOUBLE:  // fall through
-    case T_LONG:    __ str(ZR, addr);   break;
-    case T_FLOAT:   // fall through
-    case T_INT:     __ str_w(ZR, addr); break;
-    case T_BOOLEAN: // fall through
-    case T_BYTE:    __ strb(ZR, addr);  break;
-    case T_CHAR:    // fall through
-    case T_SHORT:   __ strh(ZR, addr);  break;
-    default: ShouldNotReachHere();
-  }
-#else
   assert((src->as_constant_ptr()->type() == T_OBJECT && src->as_constant_ptr()->as_jobject() == NULL),"cannot handle otherwise");
   __ mov(Rtemp, 0);
 
   int null_check_offset = code_offset();
   __ str(Rtemp, as_Address(dest->as_address_ptr()));
-#endif // AARCH64
 
   if (info != NULL) {
-#ifndef AARCH64
     assert(false, "arm32 didn't support this before, investigate if bug");
-#endif
     add_debug_info_for_null_check(null_check_offset, info);
   }
 }
@@ -539,27 +448,17 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   if (src->is_single_cpu()) {
     if (dest->is_single_cpu()) {
       move_regs(src->as_register(), dest->as_register());
-#ifdef AARCH64
-    } else if (dest->is_double_cpu()) {
-      assert ((src->type() == T_OBJECT) || (src->type() == T_ARRAY) || (src->type() == T_ADDRESS), "invalid src type");
-      move_regs(src->as_register(), dest->as_register_lo());
-#else
     } else if (dest->is_single_fpu()) {
       __ fmsr(dest->as_float_reg(), src->as_register());
-#endif // AARCH64
     } else {
       ShouldNotReachHere();
     }
   } else if (src->is_double_cpu()) {
-#ifdef AARCH64
-    move_regs(src->as_register_lo(), dest->as_register_lo());
-#else
     if (dest->is_double_cpu()) {
       __ long_move(dest->as_register_lo(), dest->as_register_hi(), src->as_register_lo(), src->as_register_hi());
     } else {
       __ fmdrr(dest->as_double_reg(), src->as_register_lo(), src->as_register_hi());
     }
-#endif // AARCH64
   } else if (src->is_single_fpu()) {
     if (dest->is_single_fpu()) {
       __ mov_float(dest->as_float_reg(), src->as_float_reg());
@@ -572,11 +471,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
     if (dest->is_double_fpu()) {
       __ mov_double(dest->as_double_reg(), src->as_double_reg());
     } else if (dest->is_double_cpu()) {
-#ifdef AARCH64
-      __ fmov_xd(dest->as_register_lo(), src->as_double_reg());
-#else
       __ fmrrd(dest->as_register_lo(), dest->as_register_hi(), src->as_double_reg());
-#endif // AARCH64
     } else {
       ShouldNotReachHere();
     }
@@ -593,12 +488,10 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
     frame_map()->address_for_slot(dest->single_stack_ix()) :
     frame_map()->address_for_slot(dest->double_stack_ix());
 
-#ifndef AARCH64
   assert(lo_word_offset_in_bytes == 0 && hi_word_offset_in_bytes == 4, "little ending");
   if (src->is_single_fpu() || src->is_double_fpu()) {
     if (addr.disp() >= 1024) { BAILOUT("Too exotic case to handle here"); }
   }
-#endif // !AARCH64
 
   if (src->is_single_cpu()) {
     switch (type) {
@@ -613,9 +506,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
     }
   } else if (src->is_double_cpu()) {
     __ str(src->as_register_lo(), addr);
-#ifndef AARCH64
     __ str(src->as_register_hi(), frame_map()->address_for_slot(dest->double_stack_ix(), hi_word_offset_in_bytes));
-#endif // !AARCH64
   } else if (src->is_single_fpu()) {
     __ str_float(src->as_float_reg(), addr);
   } else if (src->is_double_fpu()) {
@@ -636,15 +527,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
 
   PatchingStub* patch = NULL;
   if (needs_patching) {
-#ifdef AARCH64
-    // Same alignment of reg2mem code and PatchingStub code. Required to make copied bind_literal() code properly aligned.
-    __ align(wordSize);
-#endif
     patch = new PatchingStub(_masm, PatchingStub::access_field_id);
-#ifdef AARCH64
-    // Extra nop for MT safe patching
-    __ nop();
-#endif // AARCH64
   }
 
   int null_check_offset = code_offset();
@@ -653,24 +536,13 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
     case T_ARRAY:
     case T_OBJECT:
       if (UseCompressedOops && !wide) {
-#ifdef AARCH64
-        const Register temp_src = Rtemp;
-        assert_different_registers(temp_src, src->as_register());
-        __ encode_heap_oop(temp_src, src->as_register());
-        null_check_offset = code_offset();
-        __ str_32(temp_src, as_Address(to_addr));
-#else
         ShouldNotReachHere();
-#endif // AARCH64
       } else {
         __ str(src->as_register(), as_Address(to_addr));
       }
       break;
 
     case T_ADDRESS:
-#ifdef AARCH64
-    case T_LONG:
-#endif // AARCH64
       __ str(src->as_pointer_register(), as_Address(to_addr));
       break;
 
@@ -691,17 +563,6 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
       __ str_32(src->as_register(), as_Address(to_addr));
       break;
 
-#ifdef AARCH64
-
-    case T_FLOAT:
-      __ str_s(src->as_float_reg(), as_Address(to_addr));
-      break;
-
-    case T_DOUBLE:
-      __ str_d(src->as_double_reg(), as_Address(to_addr));
-      break;
-
-#else // AARCH64
 
 #ifdef __SOFTFP__
     case T_DOUBLE:
@@ -765,7 +626,6 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
       break;
 #endif // __SOFTFP__
 
-#endif // AARCH64
 
     default:
       ShouldNotReachHere();
@@ -793,12 +653,10 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     frame_map()->address_for_slot(src->single_stack_ix()) :
     frame_map()->address_for_slot(src->double_stack_ix());
 
-#ifndef AARCH64
   assert(lo_word_offset_in_bytes == 0 && hi_word_offset_in_bytes == 4, "little ending");
   if (dest->is_single_fpu() || dest->is_double_fpu()) {
     if (addr.disp() >= 1024) { BAILOUT("Too exotic case to handle here"); }
   }
-#endif // !AARCH64
 
   if (dest->is_single_cpu()) {
     switch (type) {
@@ -816,9 +674,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     }
   } else if (dest->is_double_cpu()) {
     __ ldr(dest->as_register_lo(), addr);
-#ifndef AARCH64
     __ ldr(dest->as_register_hi(), frame_map()->address_for_slot(src->double_stack_ix(), hi_word_offset_in_bytes));
-#endif // !AARCH64
   } else if (dest->is_single_fpu()) {
     __ ldr_float(dest->as_float_reg(), addr);
   } else if (dest->is_double_fpu()) {
@@ -853,12 +709,8 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     assert(src->is_double_stack(), "must be");
     __ ldr(Rtemp, frame_map()->address_for_slot(src->double_stack_ix(), lo_word_offset_in_bytes));
     __ str(Rtemp, frame_map()->address_for_slot(dest->double_stack_ix(), lo_word_offset_in_bytes));
-#ifdef AARCH64
-    assert(lo_word_offset_in_bytes == 0, "adjust this code");
-#else
     __ ldr(Rtemp, frame_map()->address_for_slot(src->double_stack_ix(), hi_word_offset_in_bytes));
     __ str(Rtemp, frame_map()->address_for_slot(dest->double_stack_ix(), hi_word_offset_in_bytes));
-#endif // AARCH64
   }
 }
 
@@ -875,10 +727,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   PatchingStub* patch = NULL;
   if (patch_code != lir_patch_none) {
     patch = new PatchingStub(_masm, PatchingStub::access_field_id);
-#ifdef AARCH64
-    // Extra nop for MT safe patching
-    __ nop();
-#endif // AARCH64
   }
   if (info != NULL) {
     add_debug_info_for_null_check_here(info);
@@ -902,14 +750,10 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       }
       break;
 
-#ifdef AARCH64
-    case T_LONG:
-#else
     case T_INT:
 #ifdef __SOFTFP__
     case T_FLOAT:
 #endif // __SOFTFP__
-#endif // AARCH64
       __ ldr(dest->as_pointer_register(), as_Address(addr));
       break;
 
@@ -929,21 +773,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       __ ldrsh(dest->as_register(), as_Address(addr));
       break;
 
-#ifdef AARCH64
-
-    case T_INT:
-      __ ldr_w(dest->as_register(), as_Address(addr));
-      break;
-
-    case T_FLOAT:
-      __ ldr_s(dest->as_float_reg(), as_Address(addr));
-      break;
-
-    case T_DOUBLE:
-      __ ldr_d(dest->as_double_reg(), as_Address(addr));
-      break;
-
-#else // AARCH64
 
 #ifdef __SOFTFP__
     case T_DOUBLE:
@@ -1007,7 +836,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       break;
 #endif // __SOFTFP__
 
-#endif // AARCH64
 
     default:
       ShouldNotReachHere();
@@ -1021,23 +849,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
     patching_epilog(patch, patch_code, base_reg, info);
   }
 
-#ifdef AARCH64
-  switch (type) {
-    case T_ARRAY:
-    case T_OBJECT:
-      if (UseCompressedOops && !wide) {
-        __ decode_heap_oop(dest->as_register());
-      }
-      __ verify_oop(dest->as_register());
-      break;
-
-    case T_ADDRESS:
-      if (UseCompressedClassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
-        __ decode_klass_not_null(dest->as_register());
-      }
-      break;
-  }
-#endif // AARCH64
 }
 
 
@@ -1064,48 +875,13 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
       // x/0x80000000 is a special case, since dividend is a power of two, but is negative.
       // The only possible result values are 0 and 1, with 1 only for dividend == divisor == 0x80000000.
       __ cmp_32(left, c);
-#ifdef AARCH64
-      __ cset(dest, eq);
-#else
       __ mov(dest, 0, ne);
       __ mov(dest, 1, eq);
-#endif // AARCH64
     }
   } else {
-#ifdef AARCH64
-    Register left  = op->in_opr1()->as_pointer_register();
-    Register right = op->in_opr2()->as_pointer_register();
-    Register dest  = op->result_opr()->as_pointer_register();
-
-    switch (op->code()) {
-      case lir_idiv:
-        if (is_32) {
-          __ sdiv_w(dest, left, right);
-        } else {
-          __ sdiv(dest, left, right);
-        }
-        break;
-      case lir_irem: {
-        Register tmp = op->in_opr3()->as_pointer_register();
-        assert_different_registers(left, tmp);
-        assert_different_registers(right, tmp);
-        if (is_32) {
-          __ sdiv_w(tmp, left, right);
-          __ msub_w(dest, right, tmp, left);
-        } else {
-          __ sdiv(tmp, left, right);
-          __ msub(dest, right, tmp, left);
-        }
-        break;
-      }
-      default:
-        ShouldNotReachHere();
-    }
-#else
     assert(op->code() == lir_idiv || op->code() == lir_irem, "unexpected op3");
     __ call(StubRoutines::Arm::idiv_irem_entry(), relocInfo::runtime_call_type);
     add_debug_info_for_div0_here(op->info());
-#endif // AARCH64
   }
 }
 
@@ -1122,9 +898,7 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
   assert (op->code() != lir_cond_float_branch, "this should be impossible");
 #else
   if (op->code() == lir_cond_float_branch) {
-#ifndef AARCH64
     __ fmstat();
-#endif // !AARCH64
     __ b(*(op->ublock()->label()), vs);
   }
 #endif // __SOFTFP__
@@ -1151,12 +925,8 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
   switch (op->bytecode()) {
     case Bytecodes::_i2l:
-#ifdef AARCH64
-      __ sign_extend(dest->as_register_lo(), src->as_register(), 32);
-#else
       move_regs(src->as_register(), dest->as_register_lo());
       __ mov(dest->as_register_hi(), AsmOperand(src->as_register(), asr, 31));
-#endif // AARCH64
       break;
     case Bytecodes::_l2i:
       move_regs(src->as_register_lo(), dest->as_register());
@@ -1177,51 +947,21 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ convert_d2f(dest->as_float_reg(), src->as_double_reg());
       break;
     case Bytecodes::_i2f:
-#ifdef AARCH64
-      __ scvtf_sw(dest->as_float_reg(), src->as_register());
-#else
       __ fmsr(Stemp, src->as_register());
       __ fsitos(dest->as_float_reg(), Stemp);
-#endif // AARCH64
       break;
     case Bytecodes::_i2d:
-#ifdef AARCH64
-      __ scvtf_dw(dest->as_double_reg(), src->as_register());
-#else
       __ fmsr(Stemp, src->as_register());
       __ fsitod(dest->as_double_reg(), Stemp);
-#endif // AARCH64
       break;
     case Bytecodes::_f2i:
-#ifdef AARCH64
-      __ fcvtzs_ws(dest->as_register(), src->as_float_reg());
-#else
       __ ftosizs(Stemp, src->as_float_reg());
       __ fmrs(dest->as_register(), Stemp);
-#endif // AARCH64
       break;
     case Bytecodes::_d2i:
-#ifdef AARCH64
-      __ fcvtzs_wd(dest->as_register(), src->as_double_reg());
-#else
       __ ftosizd(Stemp, src->as_double_reg());
       __ fmrs(dest->as_register(), Stemp);
-#endif // AARCH64
       break;
-#ifdef AARCH64
-    case Bytecodes::_l2f:
-      __ scvtf_sx(dest->as_float_reg(), src->as_register_lo());
-      break;
-    case Bytecodes::_l2d:
-      __ scvtf_dx(dest->as_double_reg(), src->as_register_lo());
-      break;
-    case Bytecodes::_f2l:
-      __ fcvtzs_xs(dest->as_register_lo(), src->as_float_reg());
-      break;
-    case Bytecodes::_d2l:
-      __ fcvtzs_xd(dest->as_register_lo(), src->as_double_reg());
-      break;
-#endif // AARCH64
     default:
       ShouldNotReachHere();
   }
@@ -1327,11 +1067,7 @@ void LIR_Assembler::typecheck_profile_helper1(ciMethod* method, int bci,
   assert_different_registers(obj, mdo, data_val);
   setup_md_access(method, bci, md, data, mdo_offset_bias);
   Label not_null;
-#ifdef AARCH64
-  __ cbnz(obj, not_null);
-#else
   __ b(not_null, ne);
-#endif // AARCH64
   __ mov_metadata(mdo, md->constant_encoding());
   if (mdo_offset_bias > 0) {
     __ mov_slow(data_val, mdo_offset_bias);
@@ -1373,13 +1109,9 @@ void LIR_Assembler::typecheck_profile_helper2(ciMethodData* md, ciProfileData* d
   __ b(*failure);
 }
 
-// Sets `res` to true, if `cond` holds. On AArch64 also sets `res` to false if `cond` does not hold.
+// Sets `res` to true, if `cond` holds.
 static void set_instanceof_result(MacroAssembler* _masm, Register res, AsmCondition cond) {
-#ifdef AARCH64
-  __ cset(res, cond);
-#else
   __ mov(res, 1, cond);
-#endif // AARCH64
 }
 
 
@@ -1406,9 +1138,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
 
       if (op->should_profile()) {
-#ifndef AARCH64
         __ cmp(value, 0);
-#endif // !AARCH64
         typecheck_profile_helper1(op->profiled_method(), op->profiled_bci(), md, data, mdo_offset_bias, value, k_RInfo, Rtemp, &done);
       } else {
         __ cbz(value, done);
@@ -1470,57 +1200,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       Label *failure_target = op->should_profile() ? &profile_cast_failure : op->stub()->entry();
       Label *success_target = op->should_profile() ? &profile_cast_success : &done;
 
-#ifdef AARCH64
-      move_regs(obj, res);
-      if (op->should_profile()) {
-        typecheck_profile_helper1(op->profiled_method(), op->profiled_bci(), md, data, mdo_offset_bias, res, klass_RInfo, Rtemp, &done);
-      } else {
-        __ cbz(obj, done);
-      }
-      if (k->is_loaded()) {
-        __ mov_metadata(k_RInfo, k->constant_encoding());
-      } else {
-        if (res != obj) {
-          op->info_for_patch()->add_register_oop(FrameMap::as_oop_opr(res));
-        }
-        klass2reg_with_patching(k_RInfo, op->info_for_patch());
-      }
-      __ load_klass(klass_RInfo, res);
-
-      if (op->fast_check()) {
-        __ cmp(klass_RInfo, k_RInfo);
-        __ b(*failure_target, ne);
-      } else if (k->is_loaded()) {
-        __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
-        if (in_bytes(Klass::secondary_super_cache_offset()) != (int) k->super_check_offset()) {
-          __ cmp(Rtemp, k_RInfo);
-          __ b(*failure_target, ne);
-        } else {
-          __ cmp(klass_RInfo, k_RInfo);
-          __ cond_cmp(Rtemp, k_RInfo, ne);
-          __ b(*success_target, eq);
-          assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-          __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
-          __ cbz(R0, *failure_target);
-        }
-      } else {
-        __ ldr_u32(Rtemp, Address(k_RInfo, Klass::super_check_offset_offset()));
-        // check for immediate positive hit
-        __ ldr(Rtemp, Address(klass_RInfo, Rtemp));
-        __ cmp(klass_RInfo, k_RInfo);
-        __ cond_cmp(Rtemp, k_RInfo, ne);
-        __ b(*success_target, eq);
-        // check for immediate negative hit
-        __ ldr_u32(Rtemp, Address(k_RInfo, Klass::super_check_offset_offset()));
-        __ cmp(Rtemp, in_bytes(Klass::secondary_super_cache_offset()));
-        __ b(*failure_target, ne);
-        // slow case
-        assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-        __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
-        __ cbz(R0, *failure_target);
-      }
-
-#else // AARCH64
 
       __ movs(res, obj);
       if (op->should_profile()) {
@@ -1575,7 +1254,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
         __ cbz(R0, *failure_target);
       }
-#endif // AARCH64
 
       if (op->should_profile()) {
         Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtemp;
@@ -1605,20 +1283,12 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       Label *failure_target = op->should_profile() ? &profile_cast_failure : &done;
       Label *success_target = op->should_profile() ? &profile_cast_success : &done;
 
-#ifdef AARCH64
-      move_regs(obj, res);
-#else
       __ movs(res, obj);
-#endif // AARCH64
 
       if (op->should_profile()) {
         typecheck_profile_helper1(op->profiled_method(), op->profiled_bci(), md, data, mdo_offset_bias, res, klass_RInfo, Rtemp, &done);
       } else {
-#ifdef AARCH64
-        __ cbz(obj, done); // If obj == NULL, res is false
-#else
         __ b(done, eq);
-#endif // AARCH64
       }
 
       if (k->is_loaded()) {
@@ -1629,11 +1299,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       }
       __ load_klass(klass_RInfo, res);
 
-#ifndef AARCH64
       if (!op->should_profile()) {
         __ mov(res, 0);
       }
-#endif // !AARCH64
 
       if (op->fast_check()) {
         __ cmp(klass_RInfo, k_RInfo);
@@ -1671,21 +1339,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         // check for immediate positive hit
         __ cmp(klass_RInfo, k_RInfo);
         if (!op->should_profile()) {
-#ifdef AARCH64
-          // TODO-AARCH64 check if separate conditional branch is more efficient than ldr+cond_cmp
-          __ ldr(res, Address(klass_RInfo, Rtemp));
-#else
           __ ldr(res, Address(klass_RInfo, Rtemp), ne);
-#endif // AARCH64
           __ cond_cmp(res, k_RInfo, ne);
           set_instanceof_result(_masm, res, eq);
         } else {
-#ifdef AARCH64
-          // TODO-AARCH64 check if separate conditional branch is more efficient than ldr+cond_cmp
-          __ ldr(Rtemp, Address(klass_RInfo, Rtemp));
-#else
           __ ldr(Rtemp, Address(klass_RInfo, Rtemp), ne);
-#endif // AARCH64
           __ cond_cmp(Rtemp, k_RInfo, ne);
         }
         __ b(*success_target, eq);
@@ -1695,11 +1353,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         }
         __ cmp(Rtemp, in_bytes(Klass::secondary_super_cache_offset()));
         if (!op->should_profile()) {
-#ifdef AARCH64
-          __ mov(res, 0);
-#else
           __ mov(res, 0, ne);
-#endif // AARCH64
         }
         __ b(*failure_target, ne);
         // slow case
@@ -1741,41 +1395,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   //   } else {
   //     dest = 0;
   //   }
-#ifdef AARCH64
-  Label retry, done;
-  Register addr = op->addr()->as_pointer_register();
-  Register cmpval = op->cmp_value()->as_pointer_register();
-  Register newval = op->new_value()->as_pointer_register();
-  Register dest = op->result_opr()->as_pointer_register();
-  assert_different_registers(dest, addr, cmpval, newval, Rtemp);
-
-  if (UseCompressedOops && op->code() == lir_cas_obj) {
-    Register tmp1 = op->tmp1()->as_pointer_register();
-    Register tmp2 = op->tmp2()->as_pointer_register();
-    assert_different_registers(dest, addr, cmpval, newval, tmp1, tmp2, Rtemp);
-    __ encode_heap_oop(tmp1, cmpval); cmpval = tmp1;
-    __ encode_heap_oop(tmp2, newval); newval = tmp2;
-  }
-
-  __ mov(dest, ZR);
-  __ bind(retry);
-  if (((op->code() == lir_cas_obj) && !UseCompressedOops) || op->code() == lir_cas_long) {
-    __ ldaxr(Rtemp, addr);
-    __ cmp(Rtemp, cmpval);
-    __ b(done, ne);
-    __ stlxr(Rtemp, newval, addr);
-  } else if (((op->code() == lir_cas_obj) && UseCompressedOops) || op->code() == lir_cas_int) {
-    __ ldaxr_w(Rtemp, addr);
-    __ cmp_w(Rtemp, cmpval);
-    __ b(done, ne);
-    __ stlxr_w(Rtemp, newval, addr);
-  } else {
-    ShouldNotReachHere();
-  }
-  __ cbnz_w(Rtemp, retry);
-  __ mov(dest, 1);
-  __ bind(done);
-#else
   // FIXME: membar_release
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
   Register addr = op->addr()->is_register() ?
@@ -1812,7 +1431,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   } else {
     Unimplemented();
   }
-#endif // AARCH64
   // FIXME: is full membar really needed instead of just membar_acquire?
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 }
@@ -1835,36 +1453,6 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     }
   }
 
-#ifdef AARCH64
-
-  // TODO-AARCH64 implement it more efficiently
-
-  if (opr1->is_register()) {
-    reg2reg(opr1, result);
-  } else if (opr1->is_stack()) {
-    stack2reg(opr1, result, result->type());
-  } else if (opr1->is_constant()) {
-    const2reg(opr1, result, lir_patch_none, NULL);
-  } else {
-    ShouldNotReachHere();
-  }
-
-  Label skip;
-  __ b(skip, acond);
-
-  if (opr2->is_register()) {
-    reg2reg(opr2, result);
-  } else if (opr2->is_stack()) {
-    stack2reg(opr2, result, result->type());
-  } else if (opr2->is_constant()) {
-    const2reg(opr2, result, lir_patch_none, NULL);
-  } else {
-    ShouldNotReachHere();
-  }
-
-  __ bind(skip);
-
-#else
   for (;;) {                         // two iterations only
     if (opr1 == result) {
       // do nothing
@@ -1924,10 +1512,9 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     opr1 = opr2;
     acond = ncond;
   }
-#endif // AARCH64
 }
 
-#if defined(AARCH64) || defined(ASSERT)
+#ifdef ASSERT
 static int reg_size(LIR_Opr op) {
   switch (op->type()) {
   case T_FLOAT:
@@ -1959,37 +1546,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     int scale = addr->scale();
     AsmShift shift = lsl;
 
-#ifdef AARCH64
-    bool is_index_extended = reg_size(addr->base()) > reg_size(addr->index());
-    if (scale < 0) {
-      scale = -scale;
-      shift = lsr;
-    }
-    assert(shift == lsl || !is_index_extended, "could not have extend and right shift in one operand");
-    assert(0 <= scale && scale <= 63, "scale is too large");
-
-    if (is_index_extended) {
-      assert(scale <= 4, "scale is too large for add with extended register");
-      assert(addr->index()->is_single_cpu(), "should be");
-      assert(addr->index()->type() == T_INT, "should be");
-      assert(dest->is_double_cpu(), "should be");
-      assert(code == lir_add, "special case of add with extended register");
-
-      __ add(res, lreg, addr->index()->as_register(), ex_sxtw, scale);
-      return;
-    } else if (reg_size(dest) == BytesPerInt) {
-      assert(reg_size(addr->base()) == reg_size(addr->index()), "should be");
-      assert(reg_size(addr->base()) == reg_size(dest), "should be");
-
-      AsmOperand operand(addr->index()->as_pointer_register(), shift, scale);
-      switch (code) {
-        case lir_add: __ add_32(res, lreg, operand); break;
-        case lir_sub: __ sub_32(res, lreg, operand); break;
-        default: ShouldNotReachHere();
-      }
-      return;
-    }
-#endif // AARCH64
 
     assert(reg_size(addr->base()) == reg_size(addr->index()), "should be");
     assert(reg_size(addr->base()) == reg_size(dest), "should be");
@@ -2002,7 +1558,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       default: ShouldNotReachHere();
     }
 
-#ifndef AARCH64
   } else if (left->is_address()) {
     assert(code == lir_sub && right->is_single_cpu(), "special case used by strength_reduce_multiply()");
     const LIR_Address* addr = left->as_address_ptr();
@@ -2010,15 +1565,9 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     const Register rreg = right->as_register();
     assert(addr->base()->as_register() == rreg && addr->index()->is_register() && addr->disp() == 0, "must be");
     __ rsb(res, rreg, AsmOperand(addr->index()->as_register(), lsl, addr->scale()));
-#endif // !AARCH64
 
   } else if (dest->is_single_cpu()) {
     assert(left->is_single_cpu(), "unexpected left operand");
-#ifdef AARCH64
-    assert(dest->type() == T_INT, "unexpected dest type");
-    assert(left->type() == T_INT, "unexpected left type");
-    assert(right->type() == T_INT, "unexpected right type");
-#endif // AARCH64
 
     const Register res = dest->as_register();
     const Register lreg = left->as_register();
@@ -2045,36 +1594,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     }
 
   } else if (dest->is_double_cpu()) {
-#ifdef AARCH64
-    assert(left->is_double_cpu() ||
-           (left->is_single_cpu() && ((left->type() == T_OBJECT) || (left->type() == T_ARRAY) || (left->type() == T_ADDRESS))),
-           "unexpected left operand");
-
-    const Register res = dest->as_register_lo();
-    const Register lreg = left->as_pointer_register();
-
-    if (right->is_constant()) {
-      assert(right->type() == T_LONG, "unexpected right type");
-      assert((right->as_constant_ptr()->as_jlong() >> 24) == 0, "out of range");
-      jint imm = (jint)right->as_constant_ptr()->as_jlong();
-      switch (code) {
-        case lir_add: __ add(res, lreg, imm); break;
-        case lir_sub: __ sub(res, lreg, imm); break;
-        default: ShouldNotReachHere();
-      }
-    } else {
-      assert(right->is_double_cpu() ||
-             (right->is_single_cpu() && ((right->type() == T_OBJECT) || (right->type() == T_ARRAY) || (right->type() == T_ADDRESS))),
-             "unexpected right operand");
-      const Register rreg = right->as_pointer_register();
-      switch (code) {
-        case lir_add: __ add(res, lreg, rreg); break;
-        case lir_sub: __ sub(res, lreg, rreg); break;
-        case lir_mul: __ mul(res, lreg, rreg); break;
-        default: ShouldNotReachHere();
-      }
-    }
-#else // AARCH64
     Register res_lo = dest->as_register_lo();
     Register res_hi = dest->as_register_hi();
     Register lreg_lo = left->as_register_lo();
@@ -2118,7 +1637,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
     }
     move_regs(res_lo, dest->as_register_lo());
-#endif // AARCH64
 
   } else if (dest->is_single_fpu()) {
     assert(left->is_single_fpu(), "must be");
@@ -2175,11 +1693,6 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
   assert(left->is_register(), "wrong items state");
 
   if (dest->is_single_cpu()) {
-#ifdef AARCH64
-    assert (dest->type() == T_INT, "unexpected result type");
-    assert (left->type() == T_INT, "unexpected left type");
-    assert (right->type() == T_INT, "unexpected right type");
-#endif // AARCH64
 
     const Register res = dest->as_register();
     const Register lreg = left->as_register();
@@ -2206,10 +1719,6 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     assert(dest->is_double_cpu(), "should be");
     Register res_lo = dest->as_register_lo();
 
-#ifdef AARCH64
-    assert ((left->is_single_cpu() && left->is_oop_register()) || left->is_double_cpu(), "should be");
-    const Register lreg_lo = left->as_pointer_register();
-#else
     assert (dest->type() == T_LONG, "unexpected result type");
     assert (left->type() == T_LONG, "unexpected left type");
     assert (right->type() == T_LONG, "unexpected right type");
@@ -2217,19 +1726,8 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     const Register res_hi = dest->as_register_hi();
     const Register lreg_lo = left->as_register_lo();
     const Register lreg_hi = left->as_register_hi();
-#endif // AARCH64
 
     if (right->is_register()) {
-#ifdef AARCH64
-      assert ((right->is_single_cpu() && right->is_oop_register()) || right->is_double_cpu(), "should be");
-      const Register rreg_lo = right->as_pointer_register();
-      switch (code) {
-        case lir_logic_and: __ andr(res_lo, lreg_lo, rreg_lo); break;
-        case lir_logic_or:  __ orr (res_lo, lreg_lo, rreg_lo); break;
-        case lir_logic_xor: __ eor (res_lo, lreg_lo, rreg_lo); break;
-        default: ShouldNotReachHere();
-      }
-#else
       const Register rreg_lo = right->as_register_lo();
       const Register rreg_hi = right->as_register_hi();
       if (res_lo == lreg_hi || res_lo == rreg_hi) {
@@ -2252,23 +1750,8 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
           ShouldNotReachHere();
       }
       move_regs(res_lo, dest->as_register_lo());
-#endif // AARCH64
     } else {
       assert(right->is_constant(), "must be");
-#ifdef AARCH64
-      const julong c = (julong)right->as_constant_ptr()->as_jlong();
-      Assembler::LogicalImmediate imm(c, false);
-      if (imm.is_encoded()) {
-        switch (code) {
-          case lir_logic_and: __ andr(res_lo, lreg_lo, imm); break;
-          case lir_logic_or:  __ orr (res_lo, lreg_lo, imm); break;
-          case lir_logic_xor: __ eor (res_lo, lreg_lo, imm); break;
-          default: ShouldNotReachHere();
-        }
-      } else {
-        BAILOUT("64 bit constant cannot be inlined");
-      }
-#else
       const jint c_lo = (jint) right->as_constant_ptr()->as_jlong();
       const jint c_hi = (jint) (right->as_constant_ptr()->as_jlong() >> 32);
       // Case for logic_or from do_ClassIDIntrinsic()
@@ -2303,36 +1786,11 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       } else {
         BAILOUT("64 bit constant cannot be inlined");
       }
-#endif // AARCH64
     }
   }
 }
 
 
-#ifdef AARCH64
-
-void LIR_Assembler::long_compare_helper(LIR_Opr opr1, LIR_Opr opr2) {
-  assert(opr1->is_double_cpu(), "should be");
-  Register x = opr1->as_register_lo();
-
-  if (opr2->is_double_cpu()) {
-    Register y = opr2->as_register_lo();
-    __ cmp(x, y);
-
-  } else {
-    assert(opr2->is_constant(), "should be");
-    assert(opr2->as_constant_ptr()->type() == T_LONG, "long constant expected");
-    jlong c = opr2->as_jlong();
-    assert(((c >> 31) == 0) || ((c >> 31) == -1), "immediate is out of range");
-    if (c >= 0) {
-      __ cmp(x, (jint)c);
-    } else {
-      __ cmn(x, (jint)(-c));
-    }
-  }
-}
-
-#endif // AARCH64
 
 void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Op2* op) {
   if (opr1->is_single_cpu()) {
@@ -2373,9 +1831,6 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       ShouldNotReachHere();
     }
   } else if (opr1->is_double_cpu()) {
-#ifdef AARCH64
-    long_compare_helper(opr1, opr2);
-#else
     Register xlo = opr1->as_register_lo();
     Register xhi = opr1->as_register_hi();
     if (opr2->is_constant() && opr2->as_jlong() == 0) {
@@ -2394,7 +1849,6 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     } else {
       ShouldNotReachHere();
     }
-#endif // AARCH64
   } else if (opr1->is_single_fpu()) {
     if (opr2->is_constant()) {
       assert(opr2->as_jfloat() == 0.0f, "cannot handle otherwise");
@@ -2418,15 +1872,6 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
   const Register res = dst->as_register();
   if (code == lir_cmp_fd2i || code == lir_ucmp_fd2i) {
     comp_op(lir_cond_unknown, left, right, op);
-#ifdef AARCH64
-    if (code == lir_ucmp_fd2i) {         // unordered is less
-      __ cset(res, gt);                  // 1 if '>', else 0
-      __ csinv(res, res, ZR, ge);        // previous value if '>=', else -1
-    } else {
-      __ cset(res, hi);                  // 1 if '>' or unordered, else 0
-      __ csinv(res, res, ZR, pl);        // previous value if '>=' or unordered, else -1
-    }
-#else
     __ fmstat();
     if (code == lir_ucmp_fd2i) {  // unordered is less
       __ mvn(res, 0, lt);
@@ -2436,17 +1881,10 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
       __ mvn(res, 0, cc);
     }
     __ mov(res, 0, eq);
-#endif // AARCH64
 
   } else {
     assert(code == lir_cmp_l2i, "must be");
 
-#ifdef AARCH64
-    long_compare_helper(left, right);
-
-    __ cset(res, gt);            // 1 if '>', else 0
-    __ csinv(res, res, ZR, ge);  // previous value if '>=', else -1
-#else
     Label done;
     const Register xlo = left->as_register_lo();
     const Register xhi = left->as_register_hi();
@@ -2460,7 +1898,6 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
     __ mov(res, 1, hi);
     __ mvn(res, 0, lo);
     __ bind(done);
-#endif // AARCH64
   }
 }
 
@@ -2481,19 +1918,15 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
   bool near_range = __ cache_fully_reachable();
   address oop_address = pc();
 
-  bool use_movw = AARCH64_ONLY(false) NOT_AARCH64(VM_Version::supports_movw());
+  bool use_movw = VM_Version::supports_movw();
 
   // Ricklass may contain something that is not a metadata pointer so
   // mov_metadata can't be used
   InlinedAddress value((address)Universe::non_oop_word());
   InlinedAddress addr(op->addr());
   if (use_movw) {
-#ifdef AARCH64
-    ShouldNotReachHere();
-#else
     __ movw(Ricklass, ((unsigned int)Universe::non_oop_word()) & 0xffff);
     __ movt(Ricklass, ((unsigned int)Universe::non_oop_word()) >> 16);
-#endif // AARCH64
   } else {
     // No movw/movt, must be load a pc relative value but no
     // relocation so no metadata table to load from.
@@ -2585,35 +2018,6 @@ void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
 }
 
 void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, LIR_Opr count, LIR_Opr dest, LIR_Opr tmp) {
-#ifdef AARCH64
-  if (dest->is_single_cpu()) {
-    Register res = dest->as_register();
-    Register x = left->as_register();
-    Register y = count->as_register();
-    assert (dest->type() == T_INT, "unexpected result type");
-    assert (left->type() == T_INT, "unexpected left type");
-
-    switch (code) {
-      case lir_shl:  __ lslv_w(res, x, y); break;
-      case lir_shr:  __ asrv_w(res, x, y); break;
-      case lir_ushr: __ lsrv_w(res, x, y); break;
-      default: ShouldNotReachHere();
-    }
-  } else if (dest->is_double_cpu()) {
-    Register res = dest->as_register_lo();
-    Register x = left->as_register_lo();
-    Register y = count->as_register();
-
-    switch (code) {
-      case lir_shl:  __ lslv(res, x, y); break;
-      case lir_shr:  __ asrv(res, x, y); break;
-      case lir_ushr: __ lsrv(res, x, y); break;
-      default: ShouldNotReachHere();
-    }
-  } else {
-    ShouldNotReachHere();
-  }
-#else
   AsmShift shift = lsl;
   switch (code) {
     case lir_shl:  shift = lsl; break;
@@ -2648,43 +2052,10 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, LIR_Opr count, LIR_Opr
   } else {
     ShouldNotReachHere();
   }
-#endif // AARCH64
 }
 
 
 void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr dest) {
-#ifdef AARCH64
-  if (dest->is_single_cpu()) {
-    assert (dest->type() == T_INT, "unexpected result type");
-    assert (left->type() == T_INT, "unexpected left type");
-    count &= 31;
-    if (count != 0) {
-      switch (code) {
-        case lir_shl:  __ _lsl_w(dest->as_register(), left->as_register(), count); break;
-        case lir_shr:  __ _asr_w(dest->as_register(), left->as_register(), count); break;
-        case lir_ushr: __ _lsr_w(dest->as_register(), left->as_register(), count); break;
-        default: ShouldNotReachHere();
-      }
-    } else {
-      move_regs(left->as_register(), dest->as_register());
-    }
-  } else if (dest->is_double_cpu()) {
-    count &= 63;
-    if (count != 0) {
-      switch (code) {
-        case lir_shl:  __ _lsl(dest->as_register_lo(), left->as_register_lo(), count); break;
-        case lir_shr:  __ _asr(dest->as_register_lo(), left->as_register_lo(), count); break;
-        case lir_ushr: __ _lsr(dest->as_register_lo(), left->as_register_lo(), count); break;
-        default: ShouldNotReachHere();
-      }
-    } else {
-      move_regs(left->as_register_lo(), dest->as_register_lo());
-    }
-  } else {
-    ShouldNotReachHere();
-  }
-
-#else
   AsmShift shift = lsl;
   switch (code) {
     case lir_shl:  shift = lsl; break;
@@ -2723,29 +2094,18 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   } else {
     ShouldNotReachHere();
   }
-#endif // AARCH64
 }
 
 
 // Saves 4 given registers in reserved argument area.
 void LIR_Assembler::save_in_reserved_area(Register r1, Register r2, Register r3, Register r4) {
   verify_reserved_argument_area_size(4);
-#ifdef AARCH64
-  __ stp(r1, r2, Address(SP, 0));
-  __ stp(r3, r4, Address(SP, 2*wordSize));
-#else
   __ stmia(SP, RegisterSet(r1) | RegisterSet(r2) | RegisterSet(r3) | RegisterSet(r4));
-#endif // AARCH64
 }
 
 // Restores 4 given registers from reserved argument area.
 void LIR_Assembler::restore_from_reserved_area(Register r1, Register r2, Register r3, Register r4) {
-#ifdef AARCH64
-  __ ldp(r1, r2, Address(SP, 0));
-  __ ldp(r3, r4, Address(SP, 2*wordSize));
-#else
   __ ldmia(SP, RegisterSet(r1) | RegisterSet(r2) | RegisterSet(r3) | RegisterSet(r4), no_writeback);
-#endif // AARCH64
 }
 
 
@@ -2760,9 +2120,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register tmp2 = Rtemp;
 
   assert(src == R0 && src_pos == R1 && dst == R2 && dst_pos == R3, "code assumption");
-#ifdef AARCH64
-  assert(length == R4, "code assumption");
-#endif // AARCH64
 
   __ resolve(ACCESS_READ, src);
   __ resolve(ACCESS_WRITE, dst);
@@ -2779,13 +2136,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // save arguments, because they will be killed by a runtime call
     save_in_reserved_area(R0, R1, R2, R3);
 
-#ifdef AARCH64
-    // save length argument, will be killed by a runtime call
-    __ raw_push(length, ZR);
-#else
     // pass length argument on SP[0]
     __ str(length, Address(SP, -2*wordSize, pre_indexed));  // 2 words for a proper stack alignment
-#endif // AARCH64
 
     address copyfunc_addr = StubRoutines::generic_arraycopy();
     assert(copyfunc_addr != NULL, "generic arraycopy stub required");
@@ -2797,11 +2149,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // the stub is in the code cache so close enough
     __ call(copyfunc_addr, relocInfo::runtime_call_type);
 
-#ifdef AARCH64
-    __ raw_pop(length, ZR);
-#else
     __ add(SP, SP, 2*wordSize);
-#endif // AARCH64
 
     __ cbz_32(R0, *stub->continuation());
 
@@ -2975,7 +2323,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         Register dst_ptr = R1;
         Register len     = R2;
         Register chk_off = R3;
-        Register super_k = AARCH64_ONLY(R4) NOT_AARCH64(tmp);
+        Register super_k = tmp;
 
         __ add(src_ptr, src, arrayOopDesc::base_offset_in_bytes(basic_type));
         __ add_ptr_scaled_int32(src_ptr, src_ptr, src_pos, shift);
@@ -2987,20 +2335,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
 
-#ifdef AARCH64
-        __ raw_push(length, ZR); // Preserve length around *copyfunc_addr call
-
-        __ mov(len, length);
-        __ ldr(super_k, Address(tmp, ek_offset)); // super_k == R4 == length, so this load cannot be performed earlier
-        // TODO-AARCH64: check whether it is faster to load super klass early by using tmp and additional mov.
-        __ ldr_u32(chk_off, Address(super_k, sco_offset));
-#else // AARCH64
         __ ldr(super_k, Address(tmp, ek_offset));
 
         __ mov(len, length);
         __ ldr_u32(chk_off, Address(super_k, sco_offset));
         __ push(super_k);
-#endif // AARCH64
 
         __ call(copyfunc_addr, relocInfo::runtime_call_type);
 
@@ -3013,11 +2352,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         }
 #endif // PRODUCT
 
-#ifdef AARCH64
-        __ raw_pop(length, ZR);
-#else
         __ add(SP, SP, wordSize);  // Drop super_k argument
-#endif // AARCH64
 
         __ cbz_32(R0, *stub->continuation());
         __ mvn_32(tmp, R0);
@@ -3079,9 +2414,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 void LIR_Assembler::emit_assert(LIR_OpAssert* op) {
   assert(op->code() == lir_assert, "must be");
 
-#ifdef AARCH64
-  __ NOT_IMPLEMENTED();
-#else
   if (op->in_opr1()->is_valid()) {
     assert(op->in_opr2()->is_valid(), "both operands must be valid");
     comp_op(op->condition(), op->in_opr1(), op->in_opr2(), op);
@@ -3113,7 +2445,6 @@ void LIR_Assembler::emit_assert(LIR_OpAssert* op) {
     breakpoint();
   }
   __ bind(ok);
-#endif // AARCH64
 }
 #endif // ASSERT
 
@@ -3163,7 +2494,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   assert_different_registers(mdo, tmp1);
   __ mov_metadata(mdo, md->constant_encoding());
   int mdo_offset_bias = 0;
-  int max_offset = AARCH64_ONLY(4096 << LogBytesPerWord) NOT_AARCH64(4096);
+  int max_offset = 4096;
   if (md->byte_offset_of_slot(data, CounterData::count_offset()) + data->size_in_bytes() >= max_offset) {
     // The offset is large so bias the mdo by the base of the slot so
     // that the ldr can use an immediate offset to reference the slots of the data
@@ -3259,7 +2590,6 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
 
 
 void LIR_Assembler::align_backward_branch_target() {
-  // TODO-AARCH64 review it
   // Some ARM processors do better with 8-byte branch target alignment
   __ align(8);
 }
@@ -3274,9 +2604,6 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
     assert (left->type() == T_INT, "unexpected left type");
     __ neg_32(dest->as_register(), left->as_register());
   } else if (left->is_double_cpu()) {
-#ifdef AARCH64
-    __ neg(dest->as_register_lo(), left->as_register_lo());
-#else
     Register dest_lo = dest->as_register_lo();
     Register dest_hi = dest->as_register_hi();
     Register src_lo = left->as_register_lo();
@@ -3287,7 +2614,6 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
     __ rsbs(dest_lo, src_lo, 0);
     __ rsc(dest_hi, src_hi, 0);
     move_regs(dest_lo, dest->as_register_lo());
-#endif // AARCH64
   } else if (left->is_single_fpu()) {
     __ neg_float(dest->as_float_reg(), left->as_float_reg());
   } else if (left->is_double_fpu()) {
@@ -3309,9 +2635,6 @@ void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_cod
     __ add(dest->as_pointer_register(), addr->base()->as_pointer_register(), c);
   } else {
     assert(addr->disp() == 0, "cannot handle otherwise");
-#ifdef AARCH64
-    assert(addr->index()->is_double_cpu(), "should be");
-#endif // AARCH64
     __ add(dest->as_pointer_register(), addr->base()->as_pointer_register(),
            AsmOperand(addr->index()->as_pointer_register(), lsl, addr->scale()));
   }
@@ -3328,9 +2651,6 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-#ifdef AARCH64
-  Unimplemented(); // TODO-AARCH64: Use stlr/ldar instructions for volatile load/store
-#else
   assert(src->is_double_cpu() && dest->is_address() ||
          src->is_address() && dest->is_double_cpu(),
          "Simple move_op is called for all other cases");
@@ -3372,7 +2692,6 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
   if (info != NULL) {
     add_debug_info_for_null_check(null_check_offset, info);
   }
-#endif // AARCH64
 }
 
 
@@ -3414,9 +2733,6 @@ void LIR_Assembler::get_thread(LIR_Opr result_reg) {
 }
 
 void LIR_Assembler::peephole(LIR_List* lir) {
-#ifdef AARCH64
-  return; // TODO-AARCH64 implement peephole optimizations
-#endif
   LIR_OpList* inst = lir->instructions_list();
   const int inst_length = inst->length();
   for (int i = 0; i < inst_length; i++) {
@@ -3480,38 +2796,23 @@ void LIR_Assembler::peephole(LIR_List* lir) {
 }
 
 void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp) {
-#ifdef AARCH64
-  Register ptr = src->as_pointer_register();
-#else
   assert(src->is_address(), "sanity");
   Address addr = as_Address(src->as_address_ptr());
-#endif
 
   if (code == lir_xchg) {
-#ifdef AARCH64
-    if (UseCompressedOops && data->is_oop()) {
-      __ encode_heap_oop(tmp->as_pointer_register(), data->as_register());
-    }
-#endif // AARCH64
   } else {
     assert (!data->is_oop(), "xadd for oops");
   }
 
-#ifndef AARCH64
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
-#endif // !AARCH64
 
   Label retry;
   __ bind(retry);
 
-  if ((data->type() == T_INT) || (data->is_oop() AARCH64_ONLY(&& UseCompressedOops))) {
+  if (data->type() == T_INT || data->is_oop()) {
     Register dst = dest->as_register();
     Register new_val = noreg;
-#ifdef AARCH64
-    __ ldaxr_w(dst, ptr);
-#else
     __ ldrex(dst, addr);
-#endif
     if (code == lir_xadd) {
       Register tmp_reg = tmp->as_register();
       if (data->is_constant()) {
@@ -3530,35 +2831,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       }
       assert_different_registers(dst, new_val);
     }
-#ifdef AARCH64
-    __ stlxr_w(Rtemp, new_val, ptr);
-#else
     __ strex(Rtemp, new_val, addr);
-#endif // AARCH64
 
-#ifdef AARCH64
-  } else if ((data->type() == T_LONG) || (data->is_oop() && !UseCompressedOops)) {
-    Register dst = dest->as_pointer_register();
-    Register new_val = noreg;
-    __ ldaxr(dst, ptr);
-    if (code == lir_xadd) {
-      Register tmp_reg = tmp->as_pointer_register();
-      if (data->is_constant()) {
-        assert_different_registers(dst, ptr, tmp_reg);
-        jlong c = data->as_constant_ptr()->as_jlong();
-        assert((jlong)((jint)c) == c, "overflow");
-        __ add(tmp_reg, dst, (jint)c);
-      } else {
-        assert_different_registers(dst, ptr, tmp_reg, data->as_pointer_register());
-        __ add(tmp_reg, dst, data->as_pointer_register());
-      }
-      new_val = tmp_reg;
-    } else {
-      new_val = data->as_pointer_register();
-      assert_different_registers(dst, ptr, new_val);
-    }
-    __ stlxr(Rtemp, new_val, ptr);
-#else
   } else if (data->type() == T_LONG) {
     Register dst_lo = dest->as_register_lo();
     Register new_val_lo = noreg;
@@ -3599,7 +2873,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       assert((new_val_lo->encoding() & 0x1) == 0, "misaligned register pair");
     }
     __ strexd(Rtemp, new_val_lo, addr);
-#endif // AARCH64
   } else {
     ShouldNotReachHere();
   }
@@ -3607,11 +2880,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   __ cbnz_32(Rtemp, retry);
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 
-#ifdef AARCH64
-  if (UseCompressedOops && data->is_oop()) {
-    __ decode_heap_oop(dest->as_register());
-  }
-#endif // AARCH64
 }
 
 #undef __

@@ -707,7 +707,6 @@ ls build/linux-aarch64-normal-server-release/</code></pre></li>
 <p>Additional architectures might be supported by Debian/Ubuntu Ports.</p>
 <h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
 <p>A common cross-compilation target is the ARM CPU. When building for ARM, it is useful to set the ABI profile. A number of pre-defined ABI profiles are available using <code>--with-abi-profile</code>: arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer properly supported by the JDK.</p>
-<p>The JDK contains two different ports for the aarch64 platform, one is the original aarch64 port from the <a href="http://openjdk.java.net/projects/aarch64-port">AArch64 Port Project</a> and one is a 64-bit version of the Oracle contributed ARM port. When targeting aarch64, by the default the original aarch64 port is used. To select the Oracle ARM 64 port, use <code>--with-cpu-port=arm64</code>. Also set the corresponding value (<code>aarch64</code> or <code>arm64</code>) to --with-abi-profile, to ensure a consistent build.</p>
 <h3 id="verifying-the-build">Verifying the Build</h3>
 <p>The build will end up in a directory named like <code>build/linux-arm-normal-server-release</code>.</p>
 <p>Inside this build output directory, the <code>images/jdk</code> will contain the newly built JDK, for your <em>target</em> system.</p>

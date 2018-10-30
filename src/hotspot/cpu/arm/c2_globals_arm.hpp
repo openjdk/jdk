@@ -39,27 +39,15 @@ define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
 define_pd_global(bool, ProfileInterpreter,           true);
-#ifdef AARCH64
-define_pd_global(bool, TieredCompilation,            trueInTiered);
-#else
 define_pd_global(bool, TieredCompilation,            false);
-#endif
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);
 // C2 gets to use all the float/double registers
-#ifdef AARCH64
-define_pd_global(intx, FLOATPRESSURE,                31);
-#else
 define_pd_global(intx, FLOATPRESSURE,                30);
-#endif
 define_pd_global(intx, FreqInlineSize,               175);
-#ifdef AARCH64
-define_pd_global(intx, INTPRESSURE,                  27);
-#else
 define_pd_global(intx, INTPRESSURE,                  12);
-#endif
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.

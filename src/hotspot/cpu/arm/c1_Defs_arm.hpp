@@ -47,9 +47,9 @@ enum {
 
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map             = AARCH64_ONLY(33) NOT_AARCH64(16), // number of registers used during code emission
-  pd_nof_caller_save_cpu_regs_frame_map = AARCH64_ONLY(27) NOT_AARCH64(10), // number of registers killed by calls
-  pd_nof_cpu_regs_reg_alloc             = AARCH64_ONLY(27) NOT_AARCH64(10), // number of registers that are visible to register allocator (including Rheap_base which is visible only if compressed pointers are not enabled)
+  pd_nof_cpu_regs_frame_map             = 16, // number of registers used during code emission
+  pd_nof_caller_save_cpu_regs_frame_map = 10, // number of registers killed by calls
+  pd_nof_cpu_regs_reg_alloc             = 10, // number of registers that are visible to register allocator (including Rheap_base which is visible only if compressed pointers are not enabled)
   pd_nof_cpu_regs_linearscan = pd_nof_cpu_regs_frame_map,                   // number of registers visible to linear scan
   pd_nof_cpu_regs_processed_in_linearscan = pd_nof_cpu_regs_reg_alloc + 1,  // number of registers processed in linear scan; includes LR as it is used as temporary register in c1_LIRGenerator_arm
   pd_first_cpu_reg = 0,
@@ -57,7 +57,7 @@ enum {
 
   pd_nof_fpu_regs_frame_map             = VFP(32) SOFT(0),                               // number of float registers used during code emission
   pd_nof_caller_save_fpu_regs_frame_map = VFP(32) SOFT(0),                               // number of float registers killed by calls
-  pd_nof_fpu_regs_reg_alloc             = AARCH64_ONLY(32) NOT_AARCH64(VFP(30) SOFT(0)), // number of float registers that are visible to register allocator
+  pd_nof_fpu_regs_reg_alloc             = VFP(30) SOFT(0), // number of float registers that are visible to register allocator
   pd_nof_fpu_regs_linearscan            = pd_nof_fpu_regs_frame_map,                     // number of float registers visible to linear scan
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg  = pd_first_fpu_reg + pd_nof_fpu_regs_frame_map - 1,
@@ -74,11 +74,7 @@ enum {
   pd_float_saved_as_double = false
 };
 
-#ifdef AARCH64
-#define PATCHED_ADDR 0xff8
-#else
 #define PATCHED_ADDR (204)
-#endif
 #define CARDTABLEBARRIERSET_POST_BARRIER_HELPER
 #define GENERATE_ADDRESS_IS_PREFERRED
 

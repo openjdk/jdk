@@ -1080,14 +1080,6 @@ available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
 
-The JDK contains two different ports for the aarch64 platform, one is the
-original aarch64 port from the [AArch64 Port Project](
-http://openjdk.java.net/projects/aarch64-port) and one is a 64-bit version of
-the Oracle contributed ARM port. When targeting aarch64, by the default the
-original aarch64 port is used. To select the Oracle ARM 64 port, use
-`--with-cpu-port=arm64`. Also set the corresponding value (`aarch64` or
-`arm64`) to --with-abi-profile, to ensure a consistent build.
-
 ### Verifying the Build
 
 The build will end up in a directory named like

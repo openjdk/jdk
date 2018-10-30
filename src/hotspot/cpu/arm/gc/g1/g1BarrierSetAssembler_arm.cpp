@@ -60,27 +60,16 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
     BLOCK_COMMENT("PreBarrier");
 
-#ifdef AARCH64
-    callee_saved_regs = align_up(callee_saved_regs, 2);
-    for (int i = 0; i < callee_saved_regs; i += 2) {
-      __ raw_push(as_Register(i), as_Register(i+1));
-    }
-#else
     RegisterSet saved_regs = RegisterSet(R0, as_Register(callee_saved_regs-1));
     __ push(saved_regs | R9ifScratched);
-#endif // AARCH64
 
     if (addr != R0) {
       assert_different_registers(count, R0);
       __ mov(R0, addr);
     }
-#ifdef AARCH64
-    __ zero_extend(R1, count, 32); // G1BarrierSetRuntime::write_ref_array_pre_*_entry takes size_t
-#else
     if (count != R1) {
       __ mov(R1, count);
     }
-#endif // AARCH64
 
     if (UseCompressedOops) {
       __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry));
@@ -88,13 +77,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
       __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry));
     }
 
-#ifdef AARCH64
-    for (int i = callee_saved_regs - 2; i >= 0; i -= 2) {
-      __ raw_pop(as_Register(i), as_Register(i+1));
-    }
-#else
     __ pop(saved_regs | R9ifScratched);
-#endif // AARCH64
   }
 }
 
@@ -106,9 +89,6 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
     assert_different_registers(count, R0);
     __ mov(R0, addr);
   }
-#ifdef AARCH64
-  __ zero_extend(R1, count, 32); // G1BarrierSetRuntime::write_ref_array_post_entry takes size_t
-#else
   if (count != R1) {
     __ mov(R1, count);
   }
@@ -120,17 +100,14 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // difficult for this particular call site.
   __ push(R9);
 #endif // !R9_IS_SCRATCHED
-#endif // !AARCH64
   __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry));
-#ifndef AARCH64
 #if R9_IS_SCRATCHED
   __ pop(R9);
 #endif // !R9_IS_SCRATCHED
-#endif // !AARCH64
 }
 
 // G1 pre-barrier.
-// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+// Blows all volatile registers R0-R3, Rtemp, LR).
 // If store_addr != noreg, then previous value is loaded from [store_addr];
 // in such case store_addr and new_val registers are preserved;
 // otherwise pre_val register is preserved.
@@ -186,20 +163,12 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ bind(runtime);
 
   // save the live input values
-#ifdef AARCH64
-  if (store_addr != noreg) {
-    __ raw_push(store_addr, new_val);
-  } else {
-    __ raw_push(pre_val, ZR);
-  }
-#else
   if (store_addr != noreg) {
     // avoid raw_push to support any ordering of store_addr and new_val
     __ push(RegisterSet(store_addr) | RegisterSet(new_val));
   } else {
     __ push(pre_val);
   }
-#endif // AARCH64
 
   if (pre_val != R0) {
     __ mov(R0, pre_val);
@@ -208,25 +177,17 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), R0, R1);
 
-#ifdef AARCH64
-  if (store_addr != noreg) {
-    __ raw_pop(store_addr, new_val);
-  } else {
-    __ raw_pop(pre_val, ZR);
-  }
-#else
   if (store_addr != noreg) {
     __ pop(RegisterSet(store_addr) | RegisterSet(new_val));
   } else {
     __ pop(pre_val);
   }
-#endif // AARCH64
 
   __ bind(done);
 }
 
 // G1 post-barrier.
-// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+// Blows all volatile registers R0-R3, Rtemp, LR).
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                            Register store_addr,
                                            Register new_val,
@@ -246,13 +207,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   // Does store cross heap regions?
 
   __ eor(tmp1, store_addr, new_val);
-#ifdef AARCH64
-  __ logical_shift_right(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
-  __ cbz(tmp1, done);
-#else
   __ movs(tmp1, AsmOperand(tmp1, lsr, HeapRegion::LogOfHRGrainBytes));
   __ b(done, eq);
-#endif
 
   // crosses regions, storing NULL?
 
@@ -333,12 +289,8 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
   const Register store_addr = obj.base();
   if (obj.index() != noreg) {
     assert (obj.disp() == 0, "index or displacement, not both");
-#ifdef AARCH64
-    __ add(store_addr, obj.base(), obj.index(), obj.extend(), obj.shift_imm());
-#else
     assert(obj.offset_op() == add_offset, "addition is expected");
     __ add(store_addr, obj.base(), AsmOperand(obj.index(), obj.shift(), obj.shift_imm()));
-#endif // AARCH64
   } else if (obj.disp() != 0) {
     __ add(store_addr, obj.base(), obj.disp());
   }
@@ -415,16 +367,10 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ set_info("g1_pre_barrier_slow_id", false);
 
   // save at least the registers that need saving if the runtime is called
-#ifdef AARCH64
-  __ raw_push(R0, R1);
-  __ raw_push(R2, R3);
-  const int nb_saved_regs = 4;
-#else // AARCH64
   const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
   const int nb_saved_regs = 6;
   assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
   __ push(saved_regs);
-#endif // AARCH64
 
   const Register r_pre_val_0  = R0; // must be R0, to be ready for the runtime call
   const Register r_index_1    = R1;
@@ -454,12 +400,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ bind(done);
 
-#ifdef AARCH64
-  __ raw_pop(R2, R3);
-  __ raw_pop(R0, R1);
-#else // AARCH64
   __ pop(saved_regs);
-#endif // AARCH64
 
   __ ret();
 
@@ -492,16 +433,10 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
 
   // save at least the registers that need saving if the runtime is called
-#ifdef AARCH64
-  __ raw_push(R0, R1);
-  __ raw_push(R2, R3);
-  const int nb_saved_regs = 4;
-#else // AARCH64
   const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
   const int nb_saved_regs = 6;
   assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
   __ push(saved_regs);
-#endif // AARCH64
 
   const Register r_card_addr_0 = R0; // must be R0 for the slow case
   const Register r_obj_0 = R0;
@@ -528,12 +463,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(done);
 
-#ifdef AARCH64
-  __ raw_pop(R2, R3);
-  __ raw_pop(R0, R1);
-#else // AARCH64
   __ pop(saved_regs);
-#endif // AARCH64
 
   __ ret();
 

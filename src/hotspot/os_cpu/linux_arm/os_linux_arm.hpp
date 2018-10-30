@@ -28,11 +28,7 @@
 #ifndef __thumb__
   enum {
     // Offset to add to frame::_fp when dealing with non-thumb C frames
-#ifdef AARCH64
-    C_frame_offset =  0,
-#else
     C_frame_offset =  -1,
-#endif
   };
 #endif
 
@@ -44,7 +40,6 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
-#ifndef AARCH64
   static int64_t (*atomic_cmpxchg_long_func)(int64_t compare_value,
                                              int64_t exchange_value,
                                              volatile int64_t *dest);
@@ -74,6 +69,5 @@
   static int32_t  atomic_cmpxchg_bootstrap(int32_t compare_value,
                                            int32_t exchange_value,
                                            volatile int32_t *dest);
-#endif // !AARCH64
 
 #endif // OS_CPU_LINUX_ARM_VM_OS_LINUX_ARM_HPP

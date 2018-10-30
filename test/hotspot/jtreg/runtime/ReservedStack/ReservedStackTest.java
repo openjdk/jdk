@@ -232,22 +232,6 @@ public class ReservedStackTest {
         }
     }
 
-    private static boolean isAlwaysSupportedPlatform() {
-        // Note: To date Aarch64 is the only platform that we don't statically
-        // know if it supports the reserved stack area. This is because the
-        // open Aarch64 port supports it and the Oracle arm64 port does not.
-        return Platform.isAix() ||
-            (Platform.isLinux() &&
-             (Platform.isPPC() || Platform.isS390x() || Platform.isX64() ||
-              Platform.isX86())) ||
-            Platform.isOSX() ||
-            Platform.isSolaris();
-    }
-
-    private static boolean isNeverSupportedPlatform() {
-        return !isAlwaysSupportedPlatform() && !Platform.isAArch64();
-    }
-
     private static boolean isSupportedPlatform;
 
     private static void initIsSupportedPlatform() throws Exception {
@@ -272,16 +256,8 @@ public class ReservedStackTest {
 
         // Do a sanity check. Some platforms we know are always supported. Make sure
         // we didn't determine that one of those platforms is not supported.
-        if (!isSupportedPlatform && isAlwaysSupportedPlatform()) {
+        if (!isSupportedPlatform) {
             String msg  = "This platform should be supported: " + Platform.getOsArch();
-            System.err.println("FAILED: " +  msg);
-            throw new RuntimeException(msg);
-        }
-
-        // And some platforms we know are never supported. Make sure
-        // we didn't determine that one of those platforms is supported.
-        if (isSupportedPlatform && isNeverSupportedPlatform()) {
-            String msg  = "This platform should not be supported: " + Platform.getOsArch();
             System.err.println("FAILED: " +  msg);
             throw new RuntimeException(msg);
         }

@@ -88,13 +88,5 @@ define_pd_global(bool, ThreadLocalHandshakes, false);
                    notproduct, \
                    range, \
                    constraint, \
-                   writeable) \
-                                                                                        \
-  develop(bool, VerifyInterpreterStackTop, false,                                       \
-          "Verify interpreter stack top at every stack expansion (AArch64 only)")       \
-                                                                                        \
-  develop(bool, ZapHighNonSignificantBits, false,                                       \
-          "Zap high non-significant bits of values (AArch64 only)")                     \
-                                                                                        \
-
+                   writeable)
 #endif // CPU_ARM_VM_GLOBALS_ARM_HPP

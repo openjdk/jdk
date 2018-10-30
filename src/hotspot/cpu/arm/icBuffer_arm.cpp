@@ -35,7 +35,7 @@
 #define __ masm->
 
 int InlineCacheBuffer::ic_stub_code_size() {
-  return (AARCH64_ONLY(8) NOT_AARCH64(4)) * Assembler::InstructionSize;
+  return (4 * Assembler::InstructionSize);
 }
 
 void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {

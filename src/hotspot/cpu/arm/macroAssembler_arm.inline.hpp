@@ -32,46 +32,9 @@
 
 inline void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
   int instr = *(int*)branch;
-  int new_offset = (int)(target - branch NOT_AARCH64(- 8));
+  int new_offset = (int)(target - branch - 8);
   assert((new_offset & 3) == 0, "bad alignment");
 
-#ifdef AARCH64
-  if ((instr & (0x1f << 26)) == (0b00101 << 26)) {
-    // Unconditional B or BL
-    assert (is_offset_in_range(new_offset, 26), "offset is too large");
-    *(int*)branch = (instr & ~right_n_bits(26)) | encode_offset(new_offset, 26, 0);
-  } else if ((instr & (0xff << 24)) == (0b01010100 << 24) && (instr & (1 << 4)) == 0) {
-    // Conditional B
-    assert (is_offset_in_range(new_offset, 19), "offset is too large");
-    *(int*)branch = (instr & ~(right_n_bits(19) << 5)) | encode_offset(new_offset, 19, 5);
-  } else if ((instr & (0b111111 << 25)) == (0b011010 << 25)) {
-    // Compare & branch CBZ/CBNZ
-    assert (is_offset_in_range(new_offset, 19), "offset is too large");
-    *(int*)branch = (instr & ~(right_n_bits(19) << 5)) | encode_offset(new_offset, 19, 5);
-  } else if ((instr & (0b111111 << 25)) == (0b011011 << 25)) {
-    // Test & branch TBZ/TBNZ
-    assert (is_offset_in_range(new_offset, 14), "offset is too large");
-    *(int*)branch = (instr & ~(right_n_bits(14) << 5)) | encode_offset(new_offset, 14, 5);
-  } else if ((instr & (0b111011 << 24)) == (0b011000 << 24)) {
-    // LDR (literal)
-    unsigned opc = ((unsigned)instr >> 30);
-    assert (opc != 0b01 || ((uintx)target & 7) == 0, "ldr target should be aligned");
-    assert (is_offset_in_range(new_offset, 19), "offset is too large");
-    *(int*)branch = (instr & ~(right_n_bits(19) << 5)) | encode_offset(new_offset, 19, 5);
-  } else if (((instr & (1 << 31)) == 0) && ((instr & (0b11111 << 24)) == (0b10000 << 24))) {
-    // ADR
-    assert (is_imm_in_range(new_offset, 21, 0), "offset is too large");
-    instr = (instr & ~(right_n_bits(2) << 29)) | (new_offset & 3) << 29;
-    *(int*)branch = (instr & ~(right_n_bits(19) << 5)) | encode_imm(new_offset >> 2, 19, 0, 5);
-  } else if((unsigned int)instr == address_placeholder_instruction) {
-    // address
-    assert (*(unsigned int *)(branch + InstructionSize) == address_placeholder_instruction, "address placeholder occupies two instructions");
-    *(intx*)branch = (intx)target;
-  } else {
-    ::tty->print_cr("=============== instruction: 0x%x ================\n", instr);
-    Unimplemented(); // TODO-AARCH64
-  }
-#else
   if ((instr & 0x0e000000) == 0x0a000000) {
     // B or BL instruction
     assert(new_offset < 0x2000000 && new_offset > -0x2000000, "encoding constraint");
@@ -98,7 +61,6 @@ inline void MacroAssembler::pd_patch_instruction(address branch, address target,
       *(int*)branch = (instr & 0xff0ff000) | 1 << 20 | -new_offset;
     }
   }
-#endif // AARCH64
 }
 
 #endif // CPU_ARM_VM_MACROASSEMBLER_ARM_INLINE_HPP

@@ -27,13 +27,9 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
-#ifndef AARCH64
 address StubRoutines::Arm::_idiv_irem_entry = NULL;
-#endif
 
 address StubRoutines::Arm::_partial_subtype_check = NULL;
 
-#ifndef AARCH64
 address StubRoutines::_atomic_load_long_entry = NULL;
 address StubRoutines::_atomic_store_long_entry = NULL;
-#endif

@@ -44,12 +44,8 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
   _abi_offset = 0;
   _ireg = is_static() ? 2 : 1;
 #ifdef __ABI_HARD__
-#ifdef AARCH64
-  _freg = 0;
-#else
   _fp_slot = 0;
   _single_fpr_slot = 0;
-#endif
 #endif
 }
 
@@ -126,17 +122,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
-#ifdef AARCH64
-  if (_ireg < GPR_PARAMS) {
-    Register dst = as_Register(_ireg);
-    __ ldr(dst, Address(Rlocals, Interpreter::local_offset_in_bytes(offset() + 1)));
-    _ireg++;
-  } else {
-    __ ldr(Rtemp, Address(Rlocals, Interpreter::local_offset_in_bytes(offset() + 1)));
-    __ str(Rtemp, Address(SP, _abi_offset * wordSize));
-    _abi_offset++;
-  }
-#else
   if (_ireg <= 2) {
 #if (ALIGN_WIDE_ARGUMENTS == 1)
     if ((_ireg & 1) != 0) {
@@ -170,24 +155,9 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
     _abi_offset += 2;
     _ireg = 4;
   }
-#endif // AARCH64
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
-#ifdef AARCH64
-  __ ldr(Rtemp, Address(Rlocals, Interpreter::local_offset_in_bytes(offset())));
-  __ cmp(Rtemp, 0);
-  __ sub(Rtemp, Rlocals, -Interpreter::local_offset_in_bytes(offset()));
-  if (_ireg < GPR_PARAMS) {
-    Register dst = as_Register(_ireg);
-    __ csel(dst, ZR, Rtemp, eq);
-    _ireg++;
-  } else {
-    __ csel(Rtemp, ZR, Rtemp, eq);
-    __ str(Rtemp, Address(SP, _abi_offset * wordSize));
-    _abi_offset++;
-  }
-#else
   if (_ireg < 4) {
     Register dst = as_Register(_ireg);
     __ ldr(dst, Address(Rlocals, Interpreter::local_offset_in_bytes(offset())));
@@ -201,7 +171,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
     __ str(Rtemp, Address(SP, _abi_offset * wordSize));
     _abi_offset++;
   }
-#endif // AARCH64
 }
 
 #ifndef __ABI_HARD__
@@ -220,17 +189,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
 #else
 #ifndef __SOFTFP__
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
-#ifdef AARCH64
-    if (_freg < FPR_PARAMS) {
-      FloatRegister dst = as_FloatRegister(_freg);
-      __ ldr_s(dst, Address(Rlocals, Interpreter::local_offset_in_bytes(offset())));
-      _freg++;
-    } else {
-      __ ldr_u32(Rtemp, Address(Rlocals, Interpreter::local_offset_in_bytes(offset())));
-      __ str_32(Rtemp, Address(SP, _abi_offset * wordSize));
-      _abi_offset++;
-    }
-#else
     if((_fp_slot < 16) || (_single_fpr_slot & 1)) {
       if ((_single_fpr_slot & 1) == 0) {
         _single_fpr_slot = _fp_slot;
@@ -243,21 +201,9 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
       __ str(Rtemp, Address(SP, _abi_offset * wordSize));
       _abi_offset++;
     }
-#endif // AARCH64
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
-#ifdef AARCH64
-    if (_freg < FPR_PARAMS) {
-      FloatRegister dst = as_FloatRegister(_freg);
-      __ ldr_d(dst, Address(Rlocals, Interpreter::local_offset_in_bytes(offset() + 1)));
-      _freg++;
-    } else {
-      __ ldr(Rtemp, Address(Rlocals, Interpreter::local_offset_in_bytes(offset() + 1)));
-      __ str(Rtemp, Address(SP, _abi_offset * wordSize));
-      _abi_offset++;
-    }
-#else
     if(_fp_slot <= 14) {
       __ fldd(as_FloatRegister(_fp_slot), Address(Rlocals, Interpreter::local_offset_in_bytes(offset()+1)));
       _fp_slot += 2;
@@ -269,7 +215,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
       _abi_offset += 2;
       _single_fpr_slot = 16;
     }
-#endif // AARCH64
 }
 #endif // __SOFTFP__
 #endif // __ABI_HARD__
@@ -281,14 +226,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
 
   address result_handler = Interpreter::result_handler(result_type);
 
-#ifdef AARCH64
-  __ mov_slow(R0, (address)result_handler);
-#else
   // Check that result handlers are not real handler on ARM (0 or -1).
   // This ensures the signature handlers do not need symbolic information.
   assert((result_handler == NULL)||(result_handler==(address)0xffffffff),"");
   __ mov_slow(R0, (intptr_t)result_handler);
-#endif
 
   __ ret();
 }
@@ -339,9 +280,7 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   intptr_t* _toGP;
   int       _last_gp;
   int       _last_fp;
-#ifndef AARCH64
   int       _last_single_fp;
-#endif // !AARCH64
 
   virtual void pass_int() {
     if(_last_gp < GPR_PARAMS) {
@@ -353,13 +292,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   }
 
   virtual void pass_long() {
-#ifdef AARCH64
-    if(_last_gp < GPR_PARAMS) {
-      _toGP[_last_gp++] = *(jlong *)(_from+Interpreter::local_offset_in_bytes(1));
-    } else {
-      *_to++ = *(jlong *)(_from+Interpreter::local_offset_in_bytes(1));
-    }
-#else
     assert(ALIGN_WIDE_ARGUMENTS == 1, "ABI_HARD not supported with unaligned wide arguments");
     if (_last_gp <= 2) {
       if(_last_gp & 1) _last_gp++;
@@ -375,7 +307,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
       _to += 2;
       _last_gp = 4;
     }
-#endif // AARCH64
     _from -= 2*Interpreter::stackElementSize;
   }
 
@@ -390,13 +321,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   }
 
   virtual void pass_float() {
-#ifdef AARCH64
-    if(_last_fp < FPR_PARAMS) {
-      _toFP[_last_fp++] = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    } else {
-      *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    }
-#else
     if((_last_fp < 16) || (_last_single_fp & 1)) {
       if ((_last_single_fp & 1) == 0) {
         _last_single_fp = _last_fp;
@@ -407,18 +331,10 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     } else {
       *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
     }
-#endif // AARCH64
     _from -= Interpreter::stackElementSize;
   }
 
   virtual void pass_double() {
-#ifdef AARCH64
-    if(_last_fp < FPR_PARAMS) {
-      _toFP[_last_fp++] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    } else {
-      *_to++ = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    }
-#else
     assert(ALIGN_WIDE_ARGUMENTS == 1, "ABI_HARD not supported with unaligned wide arguments");
     if(_last_fp <= 14) {
       _toFP[_last_fp++] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
@@ -432,7 +348,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
       _to += 2;
       _last_single_fp = 16;
     }
-#endif // AARCH64
     _from -= 2*Interpreter::stackElementSize;
   }
 
@@ -446,12 +361,10 @@ class SlowSignatureHandler: public NativeSignatureIterator {
 #ifdef __ABI_HARD__
     _toGP  = to;
     _toFP = _toGP + GPR_PARAMS;
-    _to   = _toFP + AARCH64_ONLY(FPR_PARAMS) NOT_AARCH64(8*2);
+    _to   = _toFP + (8*2);
     _last_gp = (is_static() ? 2 : 1);
     _last_fp = 0;
-#ifndef AARCH64
     _last_single_fp = 0;
-#endif // !AARCH64
 #else
     _to   = to + (is_static() ? 2 : 1);
 #endif // __ABI_HARD__

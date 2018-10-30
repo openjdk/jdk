@@ -304,26 +304,12 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
   *((BasicObjectLock**)addr_at(interpreter_frame_monitor_block_top_offset)) = value;
 }
 
-#ifdef AARCH64
-
-// Used by template based interpreter deoptimization
-void frame::interpreter_frame_set_stack_top(intptr_t* stack_top) {
-  *((intptr_t**)addr_at(interpreter_frame_stack_top_offset)) = stack_top;
-}
-
-// Used by template based interpreter deoptimization
-void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
-  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
-}
-
-#else
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
 }
 
-#endif // AARCH64
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
@@ -334,18 +320,12 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-#ifdef AARCH64
-  assert (jfa->last_Java_pc() != NULL, "pc should be stored");
-  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
-  return fr;
-#else
   if (jfa->last_Java_pc() != NULL) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
     return fr;
   }
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp());
   return fr;
-#endif // AARCH64
 }
 
 //------------------------------------------------------------------------------
@@ -403,10 +383,6 @@ void frame::adjust_unextended_sp() {
 void frame::update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr) {
   // see x86 for comments
   map->set_location(FP->as_VMReg(), (address) link_addr);
-#ifdef AARCH64
-  // also adjust a high part of register
-  map->set_location(FP->as_VMReg()->next(), (address) link_addr);
-#endif // AARCH64
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
@@ -539,14 +515,6 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
   if (method->is_native()) {
     // Prior to calling into the runtime to report the method_exit both of
     // the possible return value registers are saved.
-#ifdef AARCH64
-    // Return value registers are saved into the frame
-    if (type == T_FLOAT || type == T_DOUBLE) {
-      res_addr = addr_at(interpreter_frame_fp_saved_result_offset);
-    } else {
-      res_addr = addr_at(interpreter_frame_gp_saved_result_offset);
-    }
-#else
     // Return value registers are pushed to the native stack
     res_addr = (intptr_t*)sp();
 #ifdef __ABI_HARD__
@@ -555,7 +523,6 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       res_addr += 2;
     }
 #endif // __ABI_HARD__
-#endif // AARCH64
   } else {
     res_addr = (intptr_t*)interpreter_frame_tos_address();
   }
@@ -602,12 +569,7 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
 void frame::describe_pd(FrameValues& values, int frame_no) {
   if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_sender_sp);
-#ifdef AARCH64
-    DESCRIBE_FP_OFFSET(interpreter_frame_stack_top);
-    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
-#else
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
-#endif // AARCH64
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
@@ -631,7 +593,6 @@ intptr_t *frame::initial_deoptimization_info() {
 }
 
 intptr_t* frame::real_fp() const {
-#ifndef AARCH64
   if (is_entry_frame()) {
     // Work-around: FP (currently) does not conform to the ABI for entry
     // frames (see generate_call_stub). Might be worth fixing as another CR.
@@ -644,7 +605,6 @@ intptr_t* frame::real_fp() const {
 #endif
     return new_fp;
   }
-#endif // !AARCH64
   if (_cb != NULL) {
     // use the frame size if valid
     int size = _cb->frame_size();

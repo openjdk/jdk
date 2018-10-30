@@ -34,12 +34,8 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   int  _ireg;
 
 #ifdef __ABI_HARD__
-#ifdef AARCH64
-  int _freg;
-#else
   int _fp_slot; // number of FPR's with arguments loaded
   int _single_fpr_slot;
-#endif
 #endif
 
   void move(int from_offset, int to_offset);
@@ -60,10 +56,8 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   void generate(uint64_t fingerprint);
 };
 
-#ifndef AARCH64
 // ARM provides a normalized fingerprint for native calls (to increase
 // sharing). See normalize_fast_native_fingerprint
 #define SHARING_FAST_NATIVE_FINGERPRINTS
-#endif
 
 #endif // CPU_ARM_VM_INTERPRETERRT_ARM_HPP

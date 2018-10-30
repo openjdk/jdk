@@ -229,10 +229,6 @@ public:
   // this was subsequently modified to its present name and return type
   virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset);
 
-#ifdef AARCH64
-# define NOT_IMPLEMENTED() unimplemented("NYI at " __FILE__ ":" XSTR(__LINE__))
-# define NOT_TESTED()      warn("Not tested at " __FILE__ ":" XSTR(__LINE__))
-#endif
 
   void align(int modulus);
 
@@ -275,7 +271,7 @@ public:
 
   // Always sets/resets sp, which default to SP if (last_sp == noreg)
   // Optionally sets/resets fp (use noreg to avoid setting it)
-  // Always sets/resets pc on AArch64; optionally sets/resets pc on 32-bit ARM depending on save_last_java_pc flag
+  // Optionally sets/resets pc depending on save_last_java_pc flag
   // Note: when saving PC, set_last_Java_frame returns PC's offset in the code section
   //       (for oop_maps offset computation)
   int set_last_Java_frame(Register last_sp, Register last_fp, bool save_last_java_pc, Register tmp);
@@ -399,7 +395,6 @@ public:
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
-#ifndef AARCH64
   void nop() {
     mov(R0, R0);
   }
@@ -439,7 +434,6 @@ public:
   void fpops(FloatRegister fd, AsmCondition cond = al) {
     fldmias(SP, FloatRegisterSet(fd), writeback, cond);
   }
-#endif // !AARCH64
 
   // Order access primitives
   enum Membar_mask_bits {
@@ -449,15 +443,10 @@ public:
     LoadLoad   = 1 << 0
   };
 
-#ifdef AARCH64
-  // tmp register is not used on AArch64, this parameter is provided solely for better compatibility with 32-bit ARM
-  void membar(Membar_mask_bits order_constraint, Register tmp = noreg);
-#else
   void membar(Membar_mask_bits mask,
               Register tmp,
               bool preserve_flags = true,
               Register load_tgt = noreg);
-#endif
 
   void breakpoint(AsmCondition cond = al);
   void stop(const char* msg);
@@ -489,47 +478,28 @@ public:
   void add_slow(Register rd, Register rn, int c);
   void sub_slow(Register rd, Register rn, int c);
 
-#ifdef AARCH64
-  static int mov_slow_helper(Register rd, intptr_t c, MacroAssembler* masm /* optional */);
-#endif
 
-  void mov_slow(Register rd, intptr_t c NOT_AARCH64_ARG(AsmCondition cond = al));
+  void mov_slow(Register rd, intptr_t c, AsmCondition cond = al);
   void mov_slow(Register rd, const char *string);
   void mov_slow(Register rd, address addr);
 
   void patchable_mov_oop(Register rd, jobject o, int oop_index) {
-    mov_oop(rd, o, oop_index AARCH64_ONLY_ARG(true));
+    mov_oop(rd, o, oop_index);
   }
-  void mov_oop(Register rd, jobject o, int index = 0
-               AARCH64_ONLY_ARG(bool patchable = false)
-               NOT_AARCH64_ARG(AsmCondition cond = al));
-
+  void mov_oop(Register rd, jobject o, int index = 0, AsmCondition cond = al);
 
   void patchable_mov_metadata(Register rd, Metadata* o, int index) {
-    mov_metadata(rd, o, index AARCH64_ONLY_ARG(true));
+    mov_metadata(rd, o, index);
   }
-  void mov_metadata(Register rd, Metadata* o, int index = 0 AARCH64_ONLY_ARG(bool patchable = false));
+  void mov_metadata(Register rd, Metadata* o, int index = 0);
 
-  void mov_float(FloatRegister fd, jfloat c NOT_AARCH64_ARG(AsmCondition cond = al));
-  void mov_double(FloatRegister fd, jdouble c NOT_AARCH64_ARG(AsmCondition cond = al));
+  void mov_float(FloatRegister fd, jfloat c, AsmCondition cond = al);
+  void mov_double(FloatRegister fd, jdouble c, AsmCondition cond = al);
 
-#ifdef AARCH64
-  int mov_pc_to(Register rd) {
-    Label L;
-    adr(rd, L);
-    bind(L);
-    return offset();
-  }
-#endif
 
   // Note: this variant of mov_address assumes the address moves with
   // the code. Do *not* implement it with non-relocated instructions,
   // unless PC-relative.
-#ifdef AARCH64
-  void mov_relative_address(Register rd, address addr) {
-    adr(rd, addr);
-  }
-#else
   void mov_relative_address(Register rd, address addr, AsmCondition cond = al) {
     int offset = addr - pc() - 8;
     assert((offset & 3) == 0, "bad alignment");
@@ -541,7 +511,6 @@ public:
       sub(rd, PC, -offset, cond);
     }
   }
-#endif // AARCH64
 
   // Runtime address that may vary from one execution to another. The
   // symbolic_reference describes what the address is, allowing
@@ -562,7 +531,6 @@ public:
       mov_slow(rd, (intptr_t)addr);
       return;
     }
-#ifndef AARCH64
     if (VM_Version::supports_movw()) {
       relocate(rspec);
       int c = (int)addr;
@@ -572,15 +540,11 @@ public:
       }
       return;
     }
-#endif
     Label skip_literal;
     InlinedAddress addr_literal(addr, rspec);
     ldr_literal(rd, addr_literal);
     b(skip_literal);
     bind_literal(addr_literal);
-    // AARCH64 WARNING: because of alignment padding, extra padding
-    // may be required to get a consistent size for C2, or rules must
-    // overestimate size see MachEpilogNode::size
     bind(skip_literal);
   }
 
@@ -594,45 +558,28 @@ public:
     assert(L.rspec().type() != relocInfo::runtime_call_type, "avoid ldr_literal for calls");
     assert(L.rspec().type() != relocInfo::static_call_type, "avoid ldr_literal for calls");
     relocate(L.rspec());
-#ifdef AARCH64
-    ldr(rd, target(L.label));
-#else
     ldr(rd, Address(PC, target(L.label) - pc() - 8));
-#endif
   }
 
   void ldr_literal(Register rd, InlinedString& L) {
     const char* msg = L.msg();
     if (code()->consts()->contains((address)msg)) {
       // string address moves with the code
-#ifdef AARCH64
-      ldr(rd, (address)msg);
-#else
       ldr(rd, Address(PC, ((address)msg) - pc() - 8));
-#endif
       return;
     }
     // Warning: use external strings with care. They are not relocated
     // if the code moves. If needed, use code_string to move them
     // to the consts section.
-#ifdef AARCH64
-    ldr(rd, target(L.label));
-#else
     ldr(rd, Address(PC, target(L.label) - pc() - 8));
-#endif
   }
 
   void ldr_literal(Register rd, InlinedMetadata& L) {
     // relocation done in the bind_literal for metadatas
-#ifdef AARCH64
-    ldr(rd, target(L.label));
-#else
     ldr(rd, Address(PC, target(L.label) - pc() - 8));
-#endif
   }
 
   void bind_literal(InlinedAddress& L) {
-    AARCH64_ONLY(align(wordSize));
     bind(L.label);
     assert(L.rspec().type() != relocInfo::metadata_type, "Must use InlinedMetadata");
     // We currently do not use oop 'bound' literals.
@@ -650,13 +597,11 @@ public:
       // to detect errors.
       return;
     }
-    AARCH64_ONLY(align(wordSize));
     bind(L.label);
     AbstractAssembler::emit_address((address)L.msg());
   }
 
   void bind_literal(InlinedMetadata& L) {
-    AARCH64_ONLY(align(wordSize));
     bind(L.label);
     relocate(metadata_Relocation::spec_for_immediate());
     AbstractAssembler::emit_address((address)L.data());
@@ -665,138 +610,106 @@ public:
   void resolve_oop_handle(Register result);
   void load_mirror(Register mirror, Register method, Register tmp);
 
-  // Porting layer between 32-bit ARM and AArch64
-
-#define COMMON_INSTR_1(common_mnemonic, aarch64_mnemonic, arm32_mnemonic, arg_type) \
+#define ARM_INSTR_1(common_mnemonic, arm32_mnemonic, arg_type) \
   void common_mnemonic(arg_type arg) { \
-      AARCH64_ONLY(aarch64_mnemonic) NOT_AARCH64(arm32_mnemonic) (arg); \
+      arm32_mnemonic(arg); \
   }
 
-#define COMMON_INSTR_2(common_mnemonic, aarch64_mnemonic, arm32_mnemonic, arg1_type, arg2_type) \
+#define ARM_INSTR_2(common_mnemonic, arm32_mnemonic, arg1_type, arg2_type) \
   void common_mnemonic(arg1_type arg1, arg2_type arg2) { \
-      AARCH64_ONLY(aarch64_mnemonic) NOT_AARCH64(arm32_mnemonic) (arg1, arg2); \
+      arm32_mnemonic(arg1, arg2); \
   }
 
-#define COMMON_INSTR_3(common_mnemonic, aarch64_mnemonic, arm32_mnemonic, arg1_type, arg2_type, arg3_type) \
+#define ARM_INSTR_3(common_mnemonic, arm32_mnemonic, arg1_type, arg2_type, arg3_type) \
   void common_mnemonic(arg1_type arg1, arg2_type arg2, arg3_type arg3) { \
-      AARCH64_ONLY(aarch64_mnemonic) NOT_AARCH64(arm32_mnemonic) (arg1, arg2, arg3); \
+      arm32_mnemonic(arg1, arg2, arg3); \
   }
 
-  COMMON_INSTR_1(jump, br,  bx,  Register)
-  COMMON_INSTR_1(call, blr, blx, Register)
+  ARM_INSTR_1(jump, bx,  Register)
+  ARM_INSTR_1(call, blx, Register)
 
-  COMMON_INSTR_2(cbz_32,  cbz_w,  cbz,  Register, Label&)
-  COMMON_INSTR_2(cbnz_32, cbnz_w, cbnz, Register, Label&)
+  ARM_INSTR_2(cbz_32,  cbz,  Register, Label&)
+  ARM_INSTR_2(cbnz_32, cbnz, Register, Label&)
 
-  COMMON_INSTR_2(ldr_u32, ldr_w,  ldr,  Register, Address)
-  COMMON_INSTR_2(ldr_s32, ldrsw,  ldr,  Register, Address)
-  COMMON_INSTR_2(str_32,  str_w,  str,  Register, Address)
+  ARM_INSTR_2(ldr_u32, ldr,  Register, Address)
+  ARM_INSTR_2(ldr_s32, ldr,  Register, Address)
+  ARM_INSTR_2(str_32,  str,  Register, Address)
 
-  COMMON_INSTR_2(mvn_32,  mvn_w,  mvn,  Register, Register)
-  COMMON_INSTR_2(cmp_32,  cmp_w,  cmp,  Register, Register)
-  COMMON_INSTR_2(neg_32,  neg_w,  neg,  Register, Register)
-  COMMON_INSTR_2(clz_32,  clz_w,  clz,  Register, Register)
-  COMMON_INSTR_2(rbit_32, rbit_w, rbit, Register, Register)
+  ARM_INSTR_2(mvn_32,  mvn,  Register, Register)
+  ARM_INSTR_2(cmp_32,  cmp,  Register, Register)
+  ARM_INSTR_2(neg_32,  neg,  Register, Register)
+  ARM_INSTR_2(clz_32,  clz,  Register, Register)
+  ARM_INSTR_2(rbit_32, rbit, Register, Register)
 
-  COMMON_INSTR_2(cmp_32,  cmp_w,  cmp,  Register, int)
-  COMMON_INSTR_2(cmn_32,  cmn_w,  cmn,  Register, int)
+  ARM_INSTR_2(cmp_32,  cmp,  Register, int)
+  ARM_INSTR_2(cmn_32,  cmn,  Register, int)
 
-  COMMON_INSTR_3(add_32,  add_w,  add,  Register, Register, Register)
-  COMMON_INSTR_3(sub_32,  sub_w,  sub,  Register, Register, Register)
-  COMMON_INSTR_3(subs_32, subs_w, subs, Register, Register, Register)
-  COMMON_INSTR_3(mul_32,  mul_w,  mul,  Register, Register, Register)
-  COMMON_INSTR_3(and_32,  andr_w, andr, Register, Register, Register)
-  COMMON_INSTR_3(orr_32,  orr_w,  orr,  Register, Register, Register)
-  COMMON_INSTR_3(eor_32,  eor_w,  eor,  Register, Register, Register)
+  ARM_INSTR_3(add_32,  add,  Register, Register, Register)
+  ARM_INSTR_3(sub_32,  sub,  Register, Register, Register)
+  ARM_INSTR_3(subs_32, subs, Register, Register, Register)
+  ARM_INSTR_3(mul_32,  mul,  Register, Register, Register)
+  ARM_INSTR_3(and_32,  andr, Register, Register, Register)
+  ARM_INSTR_3(orr_32,  orr,  Register, Register, Register)
+  ARM_INSTR_3(eor_32,  eor,  Register, Register, Register)
 
-  COMMON_INSTR_3(add_32,  add_w,  add,  Register, Register, AsmOperand)
-  COMMON_INSTR_3(sub_32,  sub_w,  sub,  Register, Register, AsmOperand)
-  COMMON_INSTR_3(orr_32,  orr_w,  orr,  Register, Register, AsmOperand)
-  COMMON_INSTR_3(eor_32,  eor_w,  eor,  Register, Register, AsmOperand)
-  COMMON_INSTR_3(and_32,  andr_w, andr, Register, Register, AsmOperand)
-
-
-  COMMON_INSTR_3(add_32,  add_w,  add,  Register, Register, int)
-  COMMON_INSTR_3(adds_32, adds_w, adds, Register, Register, int)
-  COMMON_INSTR_3(sub_32,  sub_w,  sub,  Register, Register, int)
-  COMMON_INSTR_3(subs_32, subs_w, subs, Register, Register, int)
-
-  COMMON_INSTR_2(tst_32,  tst_w,  tst,  Register, unsigned int)
-  COMMON_INSTR_2(tst_32,  tst_w,  tst,  Register, AsmOperand)
-
-  COMMON_INSTR_3(and_32,  andr_w, andr, Register, Register, uint)
-  COMMON_INSTR_3(orr_32,  orr_w,  orr,  Register, Register, uint)
-  COMMON_INSTR_3(eor_32,  eor_w,  eor,  Register, Register, uint)
-
-  COMMON_INSTR_1(cmp_zero_float,  fcmp0_s, fcmpzs, FloatRegister)
-  COMMON_INSTR_1(cmp_zero_double, fcmp0_d, fcmpzd, FloatRegister)
-
-  COMMON_INSTR_2(ldr_float,   ldr_s,   flds,   FloatRegister, Address)
-  COMMON_INSTR_2(str_float,   str_s,   fsts,   FloatRegister, Address)
-  COMMON_INSTR_2(mov_float,   fmov_s,  fcpys,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(neg_float,   fneg_s,  fnegs,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(abs_float,   fabs_s,  fabss,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(sqrt_float,  fsqrt_s, fsqrts, FloatRegister, FloatRegister)
-  COMMON_INSTR_2(cmp_float,   fcmp_s,  fcmps,  FloatRegister, FloatRegister)
-
-  COMMON_INSTR_3(add_float,   fadd_s,  fadds,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(sub_float,   fsub_s,  fsubs,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(mul_float,   fmul_s,  fmuls,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(div_float,   fdiv_s,  fdivs,  FloatRegister, FloatRegister, FloatRegister)
-
-  COMMON_INSTR_2(ldr_double,  ldr_d,   fldd,   FloatRegister, Address)
-  COMMON_INSTR_2(str_double,  str_d,   fstd,   FloatRegister, Address)
-  COMMON_INSTR_2(mov_double,  fmov_d,  fcpyd,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(neg_double,  fneg_d,  fnegd,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(cmp_double,  fcmp_d,  fcmpd,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(abs_double,  fabs_d,  fabsd,  FloatRegister, FloatRegister)
-  COMMON_INSTR_2(sqrt_double, fsqrt_d, fsqrtd, FloatRegister, FloatRegister)
-
-  COMMON_INSTR_3(add_double,  fadd_d,  faddd,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(sub_double,  fsub_d,  fsubd,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(mul_double,  fmul_d,  fmuld,  FloatRegister, FloatRegister, FloatRegister)
-  COMMON_INSTR_3(div_double,  fdiv_d,  fdivd,  FloatRegister, FloatRegister, FloatRegister)
-
-  COMMON_INSTR_2(convert_f2d, fcvt_ds, fcvtds, FloatRegister, FloatRegister)
-  COMMON_INSTR_2(convert_d2f, fcvt_sd, fcvtsd, FloatRegister, FloatRegister)
-
-  COMMON_INSTR_2(mov_fpr2gpr_float, fmov_ws, fmrs, Register, FloatRegister)
-
-#undef COMMON_INSTR_1
-#undef COMMON_INSTR_2
-#undef COMMON_INSTR_3
+  ARM_INSTR_3(add_32,  add,  Register, Register, AsmOperand)
+  ARM_INSTR_3(sub_32,  sub,  Register, Register, AsmOperand)
+  ARM_INSTR_3(orr_32,  orr,  Register, Register, AsmOperand)
+  ARM_INSTR_3(eor_32,  eor,  Register, Register, AsmOperand)
+  ARM_INSTR_3(and_32,  andr, Register, Register, AsmOperand)
 
 
-#ifdef AARCH64
+  ARM_INSTR_3(add_32,  add,  Register, Register, int)
+  ARM_INSTR_3(adds_32, adds, Register, Register, int)
+  ARM_INSTR_3(sub_32,  sub,  Register, Register, int)
+  ARM_INSTR_3(subs_32, subs, Register, Register, int)
 
-  void mov(Register dst, Register src, AsmCondition cond) {
-    if (cond == al) {
-      mov(dst, src);
-    } else {
-      csel(dst, src, dst, cond);
-    }
-  }
+  ARM_INSTR_2(tst_32,  tst,  Register, unsigned int)
+  ARM_INSTR_2(tst_32,  tst,  Register, AsmOperand)
 
-  // Propagate other overloaded "mov" methods from Assembler.
-  void mov(Register dst, Register src)    { Assembler::mov(dst, src); }
-  void mov(Register rd, int imm)          { Assembler::mov(rd, imm);  }
+  ARM_INSTR_3(and_32,  andr, Register, Register, uint)
+  ARM_INSTR_3(orr_32,  orr,  Register, Register, uint)
+  ARM_INSTR_3(eor_32,  eor,  Register, Register, uint)
 
-  void mov(Register dst, int imm, AsmCondition cond) {
-    assert(imm == 0 || imm == 1, "");
-    if (imm == 0) {
-      mov(dst, ZR, cond);
-    } else if (imm == 1) {
-      csinc(dst, dst, ZR, inverse(cond));
-    } else if (imm == -1) {
-      csinv(dst, dst, ZR, inverse(cond));
-    } else {
-      fatal("illegal mov(R%d,%d,cond)", dst->encoding(), imm);
-    }
-  }
+  ARM_INSTR_1(cmp_zero_float,  fcmpzs, FloatRegister)
+  ARM_INSTR_1(cmp_zero_double, fcmpzd, FloatRegister)
 
-  void movs(Register dst, Register src)    { adds(dst, src, 0); }
+  ARM_INSTR_2(ldr_float,   flds,   FloatRegister, Address)
+  ARM_INSTR_2(str_float,   fsts,   FloatRegister, Address)
+  ARM_INSTR_2(mov_float,   fcpys,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(neg_float,   fnegs,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(abs_float,   fabss,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(sqrt_float,  fsqrts, FloatRegister, FloatRegister)
+  ARM_INSTR_2(cmp_float,   fcmps,  FloatRegister, FloatRegister)
 
-#else // AARCH64
+  ARM_INSTR_3(add_float,   fadds,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(sub_float,   fsubs,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(mul_float,   fmuls,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(div_float,   fdivs,  FloatRegister, FloatRegister, FloatRegister)
+
+  ARM_INSTR_2(ldr_double,  fldd,   FloatRegister, Address)
+  ARM_INSTR_2(str_double,  fstd,   FloatRegister, Address)
+  ARM_INSTR_2(mov_double,  fcpyd,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(neg_double,  fnegd,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(cmp_double,  fcmpd,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(abs_double,  fabsd,  FloatRegister, FloatRegister)
+  ARM_INSTR_2(sqrt_double, fsqrtd, FloatRegister, FloatRegister)
+
+  ARM_INSTR_3(add_double,  faddd,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(sub_double,  fsubd,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(mul_double,  fmuld,  FloatRegister, FloatRegister, FloatRegister)
+  ARM_INSTR_3(div_double,  fdivd,  FloatRegister, FloatRegister, FloatRegister)
+
+  ARM_INSTR_2(convert_f2d, fcvtds, FloatRegister, FloatRegister)
+  ARM_INSTR_2(convert_d2f, fcvtsd, FloatRegister, FloatRegister)
+
+  ARM_INSTR_2(mov_fpr2gpr_float, fmrs, Register, FloatRegister)
+
+#undef ARM_INSTR_1
+#undef ARM_INSTR_2
+#undef ARM_INSTR_3
+
+
 
   void tbz(Register rt, int bit, Label& L) {
     assert(0 <= bit && bit < BitsPerWord, "bit number is out of range");
@@ -829,166 +742,91 @@ public:
     bx(dst);
   }
 
-#endif // AARCH64
 
   Register zero_register(Register tmp) {
-#ifdef AARCH64
-    return ZR;
-#else
     mov(tmp, 0);
     return tmp;
-#endif
   }
 
   void logical_shift_left(Register dst, Register src, int shift) {
-#ifdef AARCH64
-    _lsl(dst, src, shift);
-#else
     mov(dst, AsmOperand(src, lsl, shift));
-#endif
   }
 
   void logical_shift_left_32(Register dst, Register src, int shift) {
-#ifdef AARCH64
-    _lsl_w(dst, src, shift);
-#else
     mov(dst, AsmOperand(src, lsl, shift));
-#endif
   }
 
   void logical_shift_right(Register dst, Register src, int shift) {
-#ifdef AARCH64
-    _lsr(dst, src, shift);
-#else
     mov(dst, AsmOperand(src, lsr, shift));
-#endif
   }
 
   void arith_shift_right(Register dst, Register src, int shift) {
-#ifdef AARCH64
-    _asr(dst, src, shift);
-#else
     mov(dst, AsmOperand(src, asr, shift));
-#endif
   }
 
   void asr_32(Register dst, Register src, int shift) {
-#ifdef AARCH64
-    _asr_w(dst, src, shift);
-#else
     mov(dst, AsmOperand(src, asr, shift));
-#endif
   }
 
   // If <cond> holds, compares r1 and r2. Otherwise, flags are set so that <cond> does not hold.
   void cond_cmp(Register r1, Register r2, AsmCondition cond) {
-#ifdef AARCH64
-    ccmp(r1, r2, flags_for_condition(inverse(cond)), cond);
-#else
     cmp(r1, r2, cond);
-#endif
   }
 
   // If <cond> holds, compares r and imm. Otherwise, flags are set so that <cond> does not hold.
   void cond_cmp(Register r, int imm, AsmCondition cond) {
-#ifdef AARCH64
-    ccmp(r, imm, flags_for_condition(inverse(cond)), cond);
-#else
     cmp(r, imm, cond);
-#endif
   }
 
   void align_reg(Register dst, Register src, int align) {
     assert (is_power_of_2(align), "should be");
-#ifdef AARCH64
-    andr(dst, src, ~(uintx)(align-1));
-#else
     bic(dst, src, align-1);
-#endif
   }
 
   void prefetch_read(Address addr) {
-#ifdef AARCH64
-    prfm(pldl1keep, addr);
-#else
     pld(addr);
-#endif
   }
 
   void raw_push(Register r1, Register r2) {
-#ifdef AARCH64
-    stp(r1, r2, Address(SP, -2*wordSize, pre_indexed));
-#else
     assert(r1->encoding() < r2->encoding(), "should be ordered");
     push(RegisterSet(r1) | RegisterSet(r2));
-#endif
   }
 
   void raw_pop(Register r1, Register r2) {
-#ifdef AARCH64
-    ldp(r1, r2, Address(SP, 2*wordSize, post_indexed));
-#else
     assert(r1->encoding() < r2->encoding(), "should be ordered");
     pop(RegisterSet(r1) | RegisterSet(r2));
-#endif
   }
 
   void raw_push(Register r1, Register r2, Register r3) {
-#ifdef AARCH64
-    raw_push(r1, r2);
-    raw_push(r3, ZR);
-#else
     assert(r1->encoding() < r2->encoding() && r2->encoding() < r3->encoding(), "should be ordered");
     push(RegisterSet(r1) | RegisterSet(r2) | RegisterSet(r3));
-#endif
   }
 
   void raw_pop(Register r1, Register r2, Register r3) {
-#ifdef AARCH64
-    raw_pop(r3, ZR);
-    raw_pop(r1, r2);
-#else
     assert(r1->encoding() < r2->encoding() && r2->encoding() < r3->encoding(), "should be ordered");
     pop(RegisterSet(r1) | RegisterSet(r2) | RegisterSet(r3));
-#endif
   }
 
   // Restores registers r1 and r2 previously saved by raw_push(r1, r2, ret_addr) and returns by ret_addr. Clobbers LR.
   void raw_pop_and_ret(Register r1, Register r2) {
-#ifdef AARCH64
-    raw_pop(r1, r2, LR);
-    ret();
-#else
     raw_pop(r1, r2, PC);
-#endif
   }
 
   void indirect_jump(Address addr, Register scratch) {
-#ifdef AARCH64
-    ldr(scratch, addr);
-    br(scratch);
-#else
     ldr(PC, addr);
-#endif
   }
 
   void indirect_jump(InlinedAddress& literal, Register scratch) {
-#ifdef AARCH64
-    ldr_literal(scratch, literal);
-    br(scratch);
-#else
     ldr_literal(PC, literal);
-#endif
   }
 
-#ifndef AARCH64
   void neg(Register dst, Register src) {
     rsb(dst, src, 0);
   }
-#endif
 
   void branch_if_negative_32(Register r, Label& L) {
-    // Note about branch_if_negative_32() / branch_if_any_negative_32() implementation for AArch64:
+    // TODO: This function and branch_if_any_negative_32 could possibly
+    // be revised after the aarch64 removal.
     // tbnz is not used instead of tst & b.mi because destination may be out of tbnz range (+-32KB)
     // since these methods are used in LIR_Assembler::emit_arraycopy() to jump to stub entry.
     tst_32(r, r);
@@ -996,56 +834,31 @@ public:
   }
 
   void branch_if_any_negative_32(Register r1, Register r2, Register tmp, Label& L) {
-#ifdef AARCH64
-    orr_32(tmp, r1, r2);
-    tst_32(tmp, tmp);
-#else
     orrs(tmp, r1, r2);
-#endif
     b(L, mi);
   }
 
   void branch_if_any_negative_32(Register r1, Register r2, Register r3, Register tmp, Label& L) {
     orr_32(tmp, r1, r2);
-#ifdef AARCH64
-    orr_32(tmp, tmp, r3);
-    tst_32(tmp, tmp);
-#else
     orrs(tmp, tmp, r3);
-#endif
     b(L, mi);
   }
 
   void add_ptr_scaled_int32(Register dst, Register r1, Register r2, int shift) {
-#ifdef AARCH64
-      add(dst, r1, r2, ex_sxtw, shift);
-#else
       add(dst, r1, AsmOperand(r2, lsl, shift));
-#endif
   }
 
   void sub_ptr_scaled_int32(Register dst, Register r1, Register r2, int shift) {
-#ifdef AARCH64
-    sub(dst, r1, r2, ex_sxtw, shift);
-#else
     sub(dst, r1, AsmOperand(r2, lsl, shift));
-#endif
   }
 
 
     // klass oop manipulations if compressed
 
-#ifdef AARCH64
-  void load_klass(Register dst_klass, Register src_oop);
-#else
   void load_klass(Register dst_klass, Register src_oop, AsmCondition cond = al);
-#endif // AARCH64
 
   void store_klass(Register src_klass, Register dst_oop);
 
-#ifdef AARCH64
-  void store_klass_gap(Register dst);
-#endif // AARCH64
 
     // oop manipulations
 
@@ -1060,39 +873,6 @@ public:
   // All other registers are preserved.
   void resolve(DecoratorSet decorators, Register obj);
 
-#ifdef AARCH64
-  void encode_heap_oop(Register dst, Register src);
-  void encode_heap_oop(Register r) {
-    encode_heap_oop(r, r);
-  }
-  void decode_heap_oop(Register dst, Register src);
-  void decode_heap_oop(Register r) {
-      decode_heap_oop(r, r);
-  }
-
-#ifdef COMPILER2
-  void encode_heap_oop_not_null(Register dst, Register src);
-  void decode_heap_oop_not_null(Register dst, Register src);
-
-  void set_narrow_klass(Register dst, Klass* k);
-  void set_narrow_oop(Register dst, jobject obj);
-#endif
-
-  void encode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register r);
-  void decode_klass_not_null(Register dst, Register src);
-
-  void reinit_heapbase();
-
-#ifdef ASSERT
-  void verify_heapbase(const char* msg);
-#endif // ASSERT
-
-  static int instr_count_for_mov_slow(intptr_t c);
-  static int instr_count_for_mov_slow(address addr);
-  static int instr_count_for_decode_klass_not_null();
-#endif // AARCH64
 
   void ldr_global_ptr(Register reg, address address_of_global);
   void ldr_global_s32(Register reg, address address_of_global);
@@ -1108,12 +888,7 @@ public:
 
     assert ((offset() & (wordSize-1)) == 0, "should be aligned by word size");
 
-#ifdef AARCH64
-    emit_int32(address_placeholder_instruction);
-    emit_int32(address_placeholder_instruction);
-#else
     AbstractAssembler::emit_address((address)address_placeholder_instruction);
-#endif
   }
 
   void b(address target, AsmCondition cond = al) {
@@ -1124,15 +899,14 @@ public:
     Assembler::b(target(L), cond);
   }
 
-  void bl(address target NOT_AARCH64_ARG(AsmCondition cond = al)) {
-    Assembler::bl(target NOT_AARCH64_ARG(cond));
+  void bl(address target, AsmCondition cond = al) {
+    Assembler::bl(target, cond);
   }
-  void bl(Label& L NOT_AARCH64_ARG(AsmCondition cond = al)) {
+  void bl(Label& L, AsmCondition cond = al) {
     // internal calls
-    Assembler::bl(target(L)  NOT_AARCH64_ARG(cond));
+    Assembler::bl(target(L), cond);
   }
 
-#ifndef AARCH64
   void adr(Register dest, Label& L, AsmCondition cond = al) {
     int delta = target(L) - pc() - 8;
     if (delta >= 0) {
@@ -1141,7 +915,6 @@ public:
       sub(dest, PC, -delta, cond);
     }
   }
-#endif // !AARCH64
 
   // Variable-length jump and calls. We now distinguish only the
   // patchable case from the other cases. Patchable must be
@@ -1165,30 +938,23 @@ public:
   // specified to allow future optimizations.
   void jump(address target,
             relocInfo::relocType rtype = relocInfo::runtime_call_type,
-            Register scratch = AARCH64_ONLY(Rtemp) NOT_AARCH64(noreg)
-#ifndef AARCH64
-            , AsmCondition cond = al
-#endif
-            );
+            Register scratch = noreg, AsmCondition cond = al);
 
   void call(address target,
-            RelocationHolder rspec
-            NOT_AARCH64_ARG(AsmCondition cond = al));
+            RelocationHolder rspec, AsmCondition cond = al);
 
   void call(address target,
-            relocInfo::relocType rtype = relocInfo::runtime_call_type
-            NOT_AARCH64_ARG(AsmCondition cond = al)) {
-    call(target, Relocation::spec_simple(rtype) NOT_AARCH64_ARG(cond));
+            relocInfo::relocType rtype = relocInfo::runtime_call_type,
+            AsmCondition cond = al) {
+    call(target, Relocation::spec_simple(rtype), cond);
   }
 
   void jump(AddressLiteral dest) {
     jump(dest.target(), dest.reloc());
   }
-#ifndef AARCH64
   void jump(address dest, relocInfo::relocType rtype, AsmCondition cond) {
     jump(dest, rtype, Rtemp, cond);
   }
-#endif
 
   void call(AddressLiteral dest) {
     call(dest.target(), dest.reloc());
@@ -1206,10 +972,7 @@ public:
   // specified to allow future optimizations.
   void patchable_jump(address target,
                       relocInfo::relocType rtype = relocInfo::runtime_call_type,
-                      Register scratch = AARCH64_ONLY(Rtemp) NOT_AARCH64(noreg)
-#ifndef AARCH64
-                      , AsmCondition cond = al
-#endif
+                      Register scratch = noreg, AsmCondition cond = al
                       );
 
   // patchable_call may scratch Rtemp
@@ -1223,13 +986,7 @@ public:
     return patchable_call(target, Relocation::spec_simple(rtype), c2);
   }
 
-#if defined(AARCH64) && defined(COMPILER2)
-  static int call_size(address target, bool far, bool patchable);
-#endif
 
-#ifdef AARCH64
-  static bool page_reachable_from_cache(address target);
-#endif
   static bool _reachable_from_cache(address target);
   static bool _cache_fully_reachable();
   bool cache_fully_reachable();
@@ -1239,15 +996,8 @@ public:
   void sign_extend(Register rd, Register rn, int bits);
 
   inline void zap_high_non_significant_bits(Register r) {
-#ifdef AARCH64
-    if(ZapHighNonSignificantBits) {
-      movk(r, 0xBAAD, 48);
-      movk(r, 0xF00D, 32);
-    }
-#endif
   }
 
-#ifndef AARCH64
   void cmpoop(Register obj1, Register obj2);
 
   void long_move(Register rd_lo, Register rd_hi,
@@ -1263,7 +1013,6 @@ public:
   void atomic_cas(Register tmpreg1, Register tmpreg2, Register oldval, Register newval, Register base, int offset);
   void atomic_cas_bool(Register oldval, Register newval, Register base, int offset, Register tmpreg);
   void atomic_cas64(Register temp_lo, Register temp_hi, Register temp_result, Register oldval_lo, Register oldval_hi, Register newval_lo, Register newval_hi, Register base, int offset);
-#endif // !AARCH64
 
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
@@ -1286,14 +1035,9 @@ public:
   // size must not exceed wordSize (i.e. 8-byte values are not supported on 32-bit ARM);
   // each of these calls generates exactly one load or store instruction,
   // so src can be pre- or post-indexed address.
-#ifdef AARCH64
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
-  void store_sized_value(Register src, Address dst, size_t size_in_bytes);
-#else
   // 32-bit ARM variants also support conditional execution
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, AsmCondition cond = al);
   void store_sized_value(Register src, Address dst, size_t size_in_bytes, AsmCondition cond = al);
-#endif
 
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -1315,11 +1059,7 @@ public:
 
   void ldr_literal(Register rd, AddressLiteral addr) {
     relocate(addr.rspec());
-#ifdef AARCH64
-    ldr(rd, addr.target());
-#else
     ldr(rd, Address(PC, addr.target() - pc() - 8));
-#endif
   }
 
   void lea(Register Rd, AddressLiteral addr) {
@@ -1330,46 +1070,10 @@ public:
   void restore_default_fp_mode();
 
 #ifdef COMPILER2
-#ifdef AARCH64
-  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register obj, Register box, Register scratch, Register scratch2, Register scratch3);
-  void fast_unlock(Register obj, Register box, Register scratch, Register scratch2, Register scratch3);
-#else
   void fast_lock(Register obj, Register box, Register scratch, Register scratch2);
   void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
 #endif
-#endif
 
-#ifdef AARCH64
-
-#define F(mnemonic)                                             \
-  void mnemonic(Register rt, address target) {                  \
-    Assembler::mnemonic(rt, target);                            \
-  }                                                             \
-  void mnemonic(Register rt, Label& L) {                        \
-    Assembler::mnemonic(rt, target(L));                         \
-  }
-
-  F(cbz_w);
-  F(cbnz_w);
-  F(cbz);
-  F(cbnz);
-
-#undef F
-
-#define F(mnemonic)                                             \
-  void mnemonic(Register rt, int bit, address target) {         \
-    Assembler::mnemonic(rt, bit, target);                       \
-  }                                                             \
-  void mnemonic(Register rt, int bit, Label& L) {               \
-    Assembler::mnemonic(rt, bit, target(L));                    \
-  }
-
-  F(tbz);
-  F(tbnz);
-#undef F
-
-#endif // AARCH64
 
 };
 

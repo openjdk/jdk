@@ -541,10 +541,9 @@
 #define NOT_E500V2(code) code
 #endif
 
-// Note: There are three ARM ports. They set the following in the makefiles:
-// 1. Closed 32-bit port:   -DARM -DARM32           -DTARGET_ARCH_arm
-// 2. Closed 64-bit port:   -DARM -DAARCH64 -D_LP64 -DTARGET_ARCH_arm
-// 3. Open   64-bit port:         -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// Note: There are two ARM ports. They set the following in the makefiles:
+// 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)

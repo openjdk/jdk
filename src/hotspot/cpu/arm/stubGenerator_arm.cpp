@@ -85,21 +85,13 @@
 // Hard coded choices (XXX: could be changed to a command line option)
 #define ArmCopyPlatform DEFAULT_ARRAYCOPY_CONFIG
 
-#ifdef AARCH64
-#define ArmCopyCacheLineSize 64
-#else
 #define ArmCopyCacheLineSize 32 // not worth optimizing to 64 according to measured gains
-#endif // AARCH64
-
-// TODO-AARCH64: tune and revise AArch64 arraycopy optimizations
 
 // configuration for each kind of loop
 typedef struct {
   int pld_distance;       // prefetch distance (0 => no prefetch, <0: prefetch_before);
-#ifndef AARCH64
   bool split_ldm;         // if true, split each STM in STMs with fewer registers
   bool split_stm;         // if true, split each LTM in LTMs with fewer registers
-#endif // !AARCH64
 } arraycopy_loop_config;
 
 // configuration for all loops
@@ -114,14 +106,6 @@ typedef struct {
 // configured platforms
 static arraycopy_platform_config arraycopy_configurations[] = {
   // configuration parameters for arraycopy loops
-#ifdef AARCH64
-  {
-    {-256 }, // forward aligned
-    {-128 }, // backward aligned
-    {-256 }, // forward shifted
-    {-128 }  // backward shifted
-  }
-#else
 
   // Configurations were chosen based on manual analysis of benchmark
   // results, minimizing overhead with respect to best results on the
@@ -171,7 +155,6 @@ static arraycopy_platform_config arraycopy_configurations[] = {
     {-160, false, false }, // forward shifted
     {-160, true,  true  } // backward shifted
   }
-#endif // AARCH64
 };
 
 class StubGenerator: public StubCodeGenerator {
@@ -190,100 +173,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "call_stub");
     address start = __ pc();
 
-#ifdef AARCH64
-    const int saved_regs_size = 192;
-
-    __ stp(FP, LR, Address(SP, -saved_regs_size, pre_indexed));
-    __ mov(FP, SP);
-
-    int sp_offset = 16;
-    assert(frame::entry_frame_call_wrapper_offset * wordSize == sp_offset, "adjust this code");
-    __ stp(R0,  ZR,  Address(SP, sp_offset)); sp_offset += 16;
-
-    const int saved_result_and_result_type_offset = sp_offset;
-    __ stp(R1,  R2,  Address(SP, sp_offset)); sp_offset += 16;
-    __ stp(R19, R20, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp(R21, R22, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp(R23, R24, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp(R25, R26, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp(R27, R28, Address(SP, sp_offset)); sp_offset += 16;
-
-    __ stp_d(V8,  V9,  Address(SP, sp_offset)); sp_offset += 16;
-    __ stp_d(V10, V11, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp_d(V12, V13, Address(SP, sp_offset)); sp_offset += 16;
-    __ stp_d(V14, V15, Address(SP, sp_offset)); sp_offset += 16;
-    assert (sp_offset == saved_regs_size, "adjust this code");
-
-    __ mov(Rmethod, R3);
-    __ mov(Rthread, R7);
-    __ reinit_heapbase();
-
-    { // Pass parameters
-      Label done_parameters, pass_parameters;
-
-      __ mov(Rparams, SP);
-      __ cbz_w(R6, done_parameters);
-
-      __ sub(Rtemp, SP, R6, ex_uxtw, LogBytesPerWord);
-      __ align_reg(SP, Rtemp, StackAlignmentInBytes);
-      __ add(Rparams, SP, R6, ex_uxtw, LogBytesPerWord);
-
-      __ bind(pass_parameters);
-      __ subs_w(R6, R6, 1);
-      __ ldr(Rtemp, Address(R5, wordSize, post_indexed));
-      __ str(Rtemp, Address(Rparams, -wordSize, pre_indexed));
-      __ b(pass_parameters, ne);
-
-      __ bind(done_parameters);
-
-#ifdef ASSERT
-      {
-        Label L;
-        __ cmp(SP, Rparams);
-        __ b(L, eq);
-        __ stop("SP does not match Rparams");
-        __ bind(L);
-      }
-#endif
-    }
-
-    __ mov(Rsender_sp, SP);
-    __ blr(R4);
-    return_address = __ pc();
-
-    __ mov(SP, FP);
-
-    __ ldp(R1, R2, Address(SP, saved_result_and_result_type_offset));
-
-    { // Handle return value
-      Label cont;
-      __ str(R0, Address(R1));
-
-      __ cmp_w(R2, T_DOUBLE);
-      __ ccmp_w(R2, T_FLOAT, Assembler::flags_for_condition(eq), ne);
-      __ b(cont, ne);
-
-      __ str_d(V0, Address(R1));
-      __ bind(cont);
-    }
-
-    sp_offset = saved_result_and_result_type_offset + 16;
-    __ ldp(R19, R20, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp(R21, R22, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp(R23, R24, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp(R25, R26, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp(R27, R28, Address(SP, sp_offset)); sp_offset += 16;
-
-    __ ldp_d(V8,  V9,  Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp_d(V10, V11, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp_d(V12, V13, Address(SP, sp_offset)); sp_offset += 16;
-    __ ldp_d(V14, V15, Address(SP, sp_offset)); sp_offset += 16;
-    assert (sp_offset == saved_regs_size, "adjust this code");
-
-    __ ldp(FP, LR, Address(SP, saved_regs_size, post_indexed));
-    __ ret();
-
-#else // AARCH64
 
     assert(frame::entry_frame_call_wrapper_offset == 0, "adjust this code");
 
@@ -358,7 +247,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ pop(RegisterSet(FP) | RegisterSet(PC));
 
-#endif // AARCH64
     return start;
   }
 
@@ -406,7 +294,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-#ifndef AARCH64
 
   // Integer division shared routine
   //   Input:
@@ -795,7 +682,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-#endif // AARCH64
 
 #ifdef COMPILER2
   // Support for uint StubRoutine::Arm::partial_subtype_check( Klass sub, Klass super );
@@ -883,12 +769,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Return failure
       __ bind(L_fail);
-#ifdef AARCH64
-      // count_temp is 0, can't use ZR here
-      __ adds(R0, count_temp, 1); // sets the flags
-#else
       __ movs(R0, 1); // sets the flags
-#endif
       __ raw_pop(saved_set);
       __ ret();
     }
@@ -925,11 +806,7 @@ class StubGenerator: public StubCodeGenerator {
     Label exit, error;
     InlinedAddress verify_oop_count((address) StubRoutines::verify_oop_count_addr());
 
-#ifdef AARCH64
-    __ mrs(flags, Assembler::SysReg_NZCV);
-#else
     __ mrs(Assembler::CPSR, flags);
-#endif // AARCH64
 
     __ ldr_literal(tmp1, verify_oop_count);
     __ ldr_s32(tmp2, Address(tmp1));
@@ -956,11 +833,7 @@ class StubGenerator: public StubCodeGenerator {
     // return if everything seems ok
     __ bind(exit);
 
-#ifdef AARCH64
-    __ msr(Assembler::SysReg_NZCV, flags);
-#else
     __ msr(Assembler::CPSR_f, flags);
-#endif // AARCH64
 
     __ ret();
 
@@ -1006,9 +879,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to         = R1;
     const Register count      = R2;
     const Register to_from    = tmp1; // to - from
-#ifndef AARCH64
     const Register byte_count = (log2_elem_size == 0) ? count : tmp2; // count << log2_elem_size
-#endif // AARCH64
     assert_different_registers(from, to, count, tmp1, tmp2);
 
     // no_overlap version works if 'to' lower (unsigned) than 'from'
@@ -1016,114 +887,24 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Array Overlap Test:");
     __ subs(to_from, to, from);
-#ifndef AARCH64
     if (log2_elem_size != 0) {
       __ mov(byte_count, AsmOperand(count, lsl, log2_elem_size));
     }
-#endif // !AARCH64
     if (NOLp == NULL)
       __ b(no_overlap_target,lo);
     else
       __ b((*NOLp), lo);
-#ifdef AARCH64
-    __ subs(ZR, to_from, count, ex_sxtw, log2_elem_size);
-#else
     __ cmp(to_from, byte_count);
-#endif // AARCH64
     if (NOLp == NULL)
       __ b(no_overlap_target, ge);
     else
       __ b((*NOLp), ge);
   }
 
-#ifdef AARCH64
-  // TODO-AARCH64: revise usages of bulk_* methods (probably ldp`s and stp`s should interlace)
 
-  // Loads [from, from + count*wordSize) into regs[0], regs[1], ..., regs[count-1]
-  // and increases 'from' by count*wordSize.
-  void bulk_load_forward(Register from, const Register regs[], int count) {
-    assert (count > 0 && count % 2 == 0, "count must be positive even number");
-    int bytes = count * wordSize;
-
-    int offset = 0;
-    __ ldp(regs[0], regs[1], Address(from, bytes, post_indexed));
-    offset += 2*wordSize;
-
-    for (int i = 2; i < count; i += 2) {
-      __ ldp(regs[i], regs[i+1], Address(from, -bytes + offset));
-      offset += 2*wordSize;
-    }
-
-    assert (offset == bytes, "must be");
-  }
-
-  // Stores regs[0], regs[1], ..., regs[count-1] to [to, to + count*wordSize)
-  // and increases 'to' by count*wordSize.
-  void bulk_store_forward(Register to, const Register regs[], int count) {
-    assert (count > 0 && count % 2 == 0, "count must be positive even number");
-    int bytes = count * wordSize;
-
-    int offset = 0;
-    __ stp(regs[0], regs[1], Address(to, bytes, post_indexed));
-    offset += 2*wordSize;
-
-    for (int i = 2; i < count; i += 2) {
-      __ stp(regs[i], regs[i+1], Address(to, -bytes + offset));
-      offset += 2*wordSize;
-    }
-
-    assert (offset == bytes, "must be");
-  }
-
-  // Loads [from - count*wordSize, from) into regs[0], regs[1], ..., regs[count-1]
-  // and decreases 'from' by count*wordSize.
-  // Note that the word with lowest address goes to regs[0].
-  void bulk_load_backward(Register from, const Register regs[], int count) {
-    assert (count > 0 && count % 2 == 0, "count must be positive even number");
-    int bytes = count * wordSize;
-
-    int offset = 0;
-
-    for (int i = count - 2; i > 0; i -= 2) {
-      offset += 2*wordSize;
-      __ ldp(regs[i], regs[i+1], Address(from, -offset));
-    }
-
-    offset += 2*wordSize;
-    __ ldp(regs[0], regs[1], Address(from, -bytes, pre_indexed));
-
-    assert (offset == bytes, "must be");
-  }
-
-  // Stores regs[0], regs[1], ..., regs[count-1] into [to - count*wordSize, to)
-  // and decreases 'to' by count*wordSize.
-  // Note that regs[0] value goes into the memory with lowest address.
-  void bulk_store_backward(Register to, const Register regs[], int count) {
-    assert (count > 0 && count % 2 == 0, "count must be positive even number");
-    int bytes = count * wordSize;
-
-    int offset = 0;
-
-    for (int i = count - 2; i > 0; i -= 2) {
-      offset += 2*wordSize;
-      __ stp(regs[i], regs[i+1], Address(to, -offset));
-    }
-
-    offset += 2*wordSize;
-    __ stp(regs[0], regs[1], Address(to, -bytes, pre_indexed));
-
-    assert (offset == bytes, "must be");
-  }
-#endif // AARCH64
-
-  // TODO-AARCH64: rearrange in-loop prefetches:
   //   probably we should choose between "prefetch-store before or after store", not "before or after load".
   void prefetch(Register from, Register to, int offset, int to_delta = 0) {
     __ prefetch_read(Address(from, offset));
-#ifdef AARCH64
-  // Next line commented out to avoid significant loss of performance in memory copy - JDK-8078120
-  // __ prfm(pstl1keep, Address(to, offset + to_delta));
-#endif // AARCH64
   }
 
   // Generate the inner loop for forward aligned array copy
@@ -1137,14 +918,14 @@ class StubGenerator: public StubCodeGenerator {
   // Return the minimum initial value for count
   //
   // Notes:
-  // - 'from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA, required for AArch64)
+  // - 'from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA)
   // - 'to' aligned on wordSize
   // - 'count' must be greater or equal than the returned value
   //
   // Increases 'from' and 'to' by count*bytes_per_count.
   //
   // Scratches 'count', R3.
-  // On AArch64 also scratches R4-R10; on 32-bit ARM R4-R10 are preserved (saved/restored).
+  // R4-R10 are preserved (saved/restored).
   //
   int generate_forward_aligned_copy_loop(Register from, Register to, Register count, int bytes_per_count) {
     assert (from == R0 && to == R1 && count == R2, "adjust the implementation below");
@@ -1154,7 +935,6 @@ class StubGenerator: public StubCodeGenerator {
     int pld_offset = config->pld_distance;
     const int count_per_loop = bytes_per_loop / bytes_per_count;
 
-#ifndef AARCH64
     bool split_read= config->split_ldm;
     bool split_write= config->split_stm;
 
@@ -1167,7 +947,6 @@ class StubGenerator: public StubCodeGenerator {
     //      BGE NEONCopyPLD
 
     __ push(RegisterSet(R4,R10));
-#endif // !AARCH64
 
     const bool prefetch_before = pld_offset < 0;
     const bool prefetch_after = pld_offset > 0;
@@ -1200,12 +979,7 @@ class StubGenerator: public StubCodeGenerator {
       };
     }
 
-#ifdef AARCH64
-    const Register data_regs[8] = {R3, R4, R5, R6, R7, R8, R9, R10};
-#endif // AARCH64
     {
-      // LDM (32-bit ARM) / LDP (AArch64) copy of 'bytes_per_loop' bytes
-
       // 32-bit ARM note: we have tried implementing loop unrolling to skip one
       // PLD with 64 bytes cache line but the gain was not significant.
 
@@ -1218,9 +992,6 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_skip_pld);
       }
 
-#ifdef AARCH64
-      bulk_load_forward(from, data_regs, 8);
-#else
       if (split_read) {
         // Split the register set in two sets so that there is less
         // latency between LDM and STM (R3-R6 available while R7-R10
@@ -1231,7 +1002,6 @@ class StubGenerator: public StubCodeGenerator {
       } else {
         __ ldmia(from, RegisterSet(R3, R10), writeback);
       }
-#endif // AARCH64
 
       __ subs_32(count, count, count_per_loop);
 
@@ -1239,16 +1009,12 @@ class StubGenerator: public StubCodeGenerator {
         prefetch(from, to, pld_offset, bytes_per_loop);
       }
 
-#ifdef AARCH64
-      bulk_store_forward(to, data_regs, 8);
-#else
       if (split_write) {
         __ stmia(to, RegisterSet(R3, R6), writeback);
         __ stmia(to, RegisterSet(R7, R10), writeback);
       } else {
         __ stmia(to, RegisterSet(R3, R10), writeback);
       }
-#endif // AARCH64
 
       __ b(L_copy_loop, ge);
 
@@ -1264,70 +1030,6 @@ class StubGenerator: public StubCodeGenerator {
     // __ add(count, count, ...); // addition useless for the bit tests
     assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
 
-#ifdef AARCH64
-    assert (bytes_per_loop == 64, "adjust the code below");
-    assert (bytes_per_count <= 8, "adjust the code below");
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(32/bytes_per_count), L);
-
-      bulk_load_forward(from, data_regs, 4);
-      bulk_store_forward(to, data_regs, 4);
-
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(16/bytes_per_count), L);
-
-      bulk_load_forward(from, data_regs, 2);
-      bulk_store_forward(to, data_regs, 2);
-
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(8/bytes_per_count), L);
-
-      __ ldr(R3, Address(from, 8, post_indexed));
-      __ str(R3, Address(to,   8, post_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 4) {
-      Label L;
-      __ tbz(count, exact_log2(4/bytes_per_count), L);
-
-      __ ldr_w(R3, Address(from, 4, post_indexed));
-      __ str_w(R3, Address(to,   4, post_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 2) {
-      Label L;
-      __ tbz(count, exact_log2(2/bytes_per_count), L);
-
-      __ ldrh(R3, Address(from, 2, post_indexed));
-      __ strh(R3, Address(to,   2, post_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 1) {
-      Label L;
-      __ tbz(count, 0, L);
-
-      __ ldrb(R3, Address(from, 1, post_indexed));
-      __ strb(R3, Address(to,   1, post_indexed));
-
-      __ bind(L);
-    }
-#else
     __ tst(count, 16 / bytes_per_count);
     __ ldmia(from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
     __ stmia(to, RegisterSet(R3, R6), writeback, ne);
@@ -1355,7 +1057,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ pop(RegisterSet(R4,R10));
-#endif // AARCH64
 
     return count_per_loop;
   }
@@ -1372,14 +1073,14 @@ class StubGenerator: public StubCodeGenerator {
   // Return the minimum initial value for count
   //
   // Notes:
-  // - 'end_from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA, required for AArch64)
+  // - 'end_from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA)
   // - 'end_to' aligned on wordSize
   // - 'count' must be greater or equal than the returned value
   //
   // Decreases 'end_from' and 'end_to' by count*bytes_per_count.
   //
   // Scratches 'count', R3.
-  // On AArch64 also scratches R4-R10; on 32-bit ARM R4-R10 are preserved (saved/restored).
+  // ARM R4-R10 are preserved (saved/restored).
   //
   int generate_backward_aligned_copy_loop(Register end_from, Register end_to, Register count, int bytes_per_count) {
     assert (end_from == R0 && end_to == R1 && count == R2, "adjust the implementation below");
@@ -1390,14 +1091,12 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_loop_config *config=&arraycopy_configurations[ArmCopyPlatform].backward_aligned;
     int pld_offset = config->pld_distance;
 
-#ifndef AARCH64
     bool split_read= config->split_ldm;
     bool split_write= config->split_stm;
 
     // See the forward copy variant for additional comments.
 
     __ push(RegisterSet(R4,R10));
-#endif // !AARCH64
 
     __ sub_32(count, count, count_per_loop);
 
@@ -1423,12 +1122,7 @@ class StubGenerator: public StubCodeGenerator {
       };
     }
 
-#ifdef AARCH64
-    const Register data_regs[8] = {R3, R4, R5, R6, R7, R8, R9, R10};
-#endif // AARCH64
     {
-      // LDM (32-bit ARM) / LDP (AArch64) copy of 'bytes_per_loop' bytes
-
       // 32-bit ARM note: we have tried implementing loop unrolling to skip one
       // PLD with 64 bytes cache line but the gain was not significant.
 
@@ -1441,16 +1135,12 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_skip_pld);
       }
 
-#ifdef AARCH64
-      bulk_load_backward(end_from, data_regs, 8);
-#else
       if (split_read) {
         __ ldmdb(end_from, RegisterSet(R7, R10), writeback);
         __ ldmdb(end_from, RegisterSet(R3, R6), writeback);
       } else {
         __ ldmdb(end_from, RegisterSet(R3, R10), writeback);
       }
-#endif // AARCH64
 
       __ subs_32(count, count, count_per_loop);
 
@@ -1458,16 +1148,12 @@ class StubGenerator: public StubCodeGenerator {
         prefetch(end_from, end_to, -(wordSize + pld_offset), -bytes_per_loop);
       }
 
-#ifdef AARCH64
-      bulk_store_backward(end_to, data_regs, 8);
-#else
       if (split_write) {
         __ stmdb(end_to, RegisterSet(R7, R10), writeback);
         __ stmdb(end_to, RegisterSet(R3, R6), writeback);
       } else {
         __ stmdb(end_to, RegisterSet(R3, R10), writeback);
       }
-#endif // AARCH64
 
       __ b(L_copy_loop, ge);
 
@@ -1482,70 +1168,6 @@ class StubGenerator: public StubCodeGenerator {
     // __ add(count, count, ...); // addition useless for the bit tests
     assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
 
-#ifdef AARCH64
-    assert (bytes_per_loop == 64, "adjust the code below");
-    assert (bytes_per_count <= 8, "adjust the code below");
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(32/bytes_per_count), L);
-
-      bulk_load_backward(end_from, data_regs, 4);
-      bulk_store_backward(end_to, data_regs, 4);
-
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(16/bytes_per_count), L);
-
-      bulk_load_backward(end_from, data_regs, 2);
-      bulk_store_backward(end_to, data_regs, 2);
-
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(8/bytes_per_count), L);
-
-      __ ldr(R3, Address(end_from, -8, pre_indexed));
-      __ str(R3, Address(end_to,   -8, pre_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 4) {
-      Label L;
-      __ tbz(count, exact_log2(4/bytes_per_count), L);
-
-      __ ldr_w(R3, Address(end_from, -4, pre_indexed));
-      __ str_w(R3, Address(end_to,   -4, pre_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 2) {
-      Label L;
-      __ tbz(count, exact_log2(2/bytes_per_count), L);
-
-      __ ldrh(R3, Address(end_from, -2, pre_indexed));
-      __ strh(R3, Address(end_to,   -2, pre_indexed));
-
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 1) {
-      Label L;
-      __ tbz(count, 0, L);
-
-      __ ldrb(R3, Address(end_from, -1, pre_indexed));
-      __ strb(R3, Address(end_to,   -1, pre_indexed));
-
-      __ bind(L);
-    }
-#else
     __ tst(count, 16 / bytes_per_count);
     __ ldmdb(end_from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
     __ stmdb(end_to, RegisterSet(R3, R6), writeback, ne);
@@ -1573,15 +1195,13 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ pop(RegisterSet(R4,R10));
-#endif // AARCH64
 
     return count_per_loop;
   }
 
 
   // Generate the inner loop for shifted forward array copy (unaligned copy).
-  // It can be used when bytes_per_count < wordSize, i.e.
-  //  byte/short copy on 32-bit ARM, byte/short/int/compressed-oop copy on AArch64.
+  // It can be used when bytes_per_count < wordSize, i.e. byte/short copy
   //
   // Arguments
   //      from:      start src address, 64 bits aligned
@@ -1594,11 +1214,11 @@ class StubGenerator: public StubCodeGenerator {
   // Return the minimum initial value for count
   //
   // Notes:
-  // - 'from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA, required for AArch64)
+  // - 'from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA)
   // - 'to' aligned on wordSize
   // - 'count' must be greater or equal than the returned value
   // - 'lsr_shift' + 'lsl_shift' = BitsPerWord
-  // - 'bytes_per_count' is 1 or 2 on 32-bit ARM; 1, 2 or 4 on AArch64
+  // - 'bytes_per_count' is 1 or 2
   //
   // Increases 'to' by count*bytes_per_count.
   //
@@ -1622,10 +1242,8 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_loop_config *config=&arraycopy_configurations[ArmCopyPlatform].forward_shifted;
     int pld_offset = config->pld_distance;
 
-#ifndef AARCH64
     bool split_read= config->split_ldm;
     bool split_write= config->split_stm;
-#endif // !AARCH64
 
     const bool prefetch_before = pld_offset < 0;
     const bool prefetch_after = pld_offset > 0;
@@ -1666,12 +1284,6 @@ class StubGenerator: public StubCodeGenerator {
       __ b(L_last_read, lt);
     }
 
-#ifdef AARCH64
-    const Register data_regs[9] = {R3, R4, R5, R6, R7, R8, R9, R10, R12};
-    __ logical_shift_right(R3, R12, lsr_shift); // part of R12 not yet written
-    __ subs_32(count, count, count_per_loop);
-    bulk_load_forward(from, &data_regs[1], 8);
-#else
     // read 32 bytes
     if (split_read) {
       // if write is not split, use less registers in first set to reduce locking
@@ -1686,7 +1298,6 @@ class StubGenerator: public StubCodeGenerator {
       __ ldmia(from, RegisterSet(R4, R10) | R12, writeback); // Note: small latency on R4
       __ subs(count, count, count_per_loop);
     }
-#endif // AARCH64
 
     if (prefetch_after) {
       // do it after the 1st ldm/ldp anyway  (no locking issues with early STM/STP)
@@ -1701,12 +1312,10 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(R5, R5, AsmOperand(R6, lsl, lsl_shift));
     __ logical_shift_right(R6, R6, lsr_shift);
     __ orr(R6, R6, AsmOperand(R7, lsl, lsl_shift));
-#ifndef AARCH64
     if (split_write) {
       // write the first half as soon as possible to reduce stm locking
       __ stmia(to, RegisterSet(R3, R6), writeback, prefetch_before ? gt : ge);
     }
-#endif // !AARCH64
     __ logical_shift_right(R7, R7, lsr_shift);
     __ orr(R7, R7, AsmOperand(R8, lsl, lsl_shift));
     __ logical_shift_right(R8, R8, lsr_shift);
@@ -1716,23 +1325,17 @@ class StubGenerator: public StubCodeGenerator {
     __ logical_shift_right(R10, R10, lsr_shift);
     __ orr(R10, R10, AsmOperand(R12, lsl, lsl_shift));
 
-#ifdef AARCH64
-    bulk_store_forward(to, data_regs, 8);
-#else
     if (split_write) {
       __ stmia(to, RegisterSet(R7, R10), writeback, prefetch_before ? gt : ge);
     } else {
       __ stmia(to, RegisterSet(R3, R10), writeback, prefetch_before ? gt : ge);
     }
-#endif // AARCH64
     __ b(L_shifted_loop, gt); // no need to loop if 0 (when count need not be precise modulo bytes_per_loop)
 
     if (prefetch_before) {
       // the first loop may end earlier, allowing to skip pld at the end
       __ cmn_32(count, (bytes_per_loop + pld_offset)/bytes_per_count);
-#ifndef AARCH64
       __ stmia(to, RegisterSet(R3, R10), writeback); // stmia was skipped
-#endif // !AARCH64
       __ b(L_skip_pld, ge);
       __ adds_32(count, count, ((bytes_per_loop + pld_offset) / bytes_per_count) + count_per_loop);
     }
@@ -1740,90 +1343,6 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_last_read);
     __ b(L_done, eq);
 
-#ifdef AARCH64
-    assert(bytes_per_count < 8, "adjust the code below");
-
-    __ logical_shift_right(R3, R12, lsr_shift);
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(32/bytes_per_count), L);
-      bulk_load_forward(from, &data_regs[1], 4);
-      __ orr(R3, R3, AsmOperand(R4, lsl, lsl_shift));
-      __ logical_shift_right(R4, R4, lsr_shift);
-      __ orr(R4, R4, AsmOperand(R5, lsl, lsl_shift));
-      __ logical_shift_right(R5, R5, lsr_shift);
-      __ orr(R5, R5, AsmOperand(R6, lsl, lsl_shift));
-      __ logical_shift_right(R6, R6, lsr_shift);
-      __ orr(R6, R6, AsmOperand(R7, lsl, lsl_shift));
-      bulk_store_forward(to, data_regs, 4);
-      __ logical_shift_right(R3, R7, lsr_shift);
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(16/bytes_per_count), L);
-      bulk_load_forward(from, &data_regs[1], 2);
-      __ orr(R3, R3, AsmOperand(R4, lsl, lsl_shift));
-      __ logical_shift_right(R4, R4, lsr_shift);
-      __ orr(R4, R4, AsmOperand(R5, lsl, lsl_shift));
-      bulk_store_forward(to, data_regs, 2);
-      __ logical_shift_right(R3, R5, lsr_shift);
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(8/bytes_per_count), L);
-      __ ldr(R4, Address(from, 8, post_indexed));
-      __ orr(R3, R3, AsmOperand(R4, lsl, lsl_shift));
-      __ str(R3, Address(to, 8, post_indexed));
-      __ logical_shift_right(R3, R4, lsr_shift);
-      __ bind(L);
-    }
-
-    const int have_bytes = lsl_shift/BitsPerByte; // number of already read bytes in R3
-
-    // It remains less than wordSize to write.
-    // Do not check count if R3 already has maximal number of loaded elements (one less than wordSize).
-    if (have_bytes < wordSize - bytes_per_count) {
-      Label L;
-      __ andr(count, count, (uintx)(8/bytes_per_count-1)); // make count exact
-      __ cmp_32(count, have_bytes/bytes_per_count); // do we have enough bytes to store?
-      __ b(L, le);
-      __ ldr(R4, Address(from, 8, post_indexed));
-      __ orr(R3, R3, AsmOperand(R4, lsl, lsl_shift));
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(4/bytes_per_count), L);
-      __ str_w(R3, Address(to, 4, post_indexed));
-      if (bytes_per_count < 4) {
-        __ logical_shift_right(R3, R3, 4*BitsPerByte);
-      }
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 2) {
-      Label L;
-      __ tbz(count, exact_log2(2/bytes_per_count), L);
-      __ strh(R3, Address(to, 2, post_indexed));
-      if (bytes_per_count < 2) {
-        __ logical_shift_right(R3, R3, 2*BitsPerByte);
-      }
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 1) {
-      Label L;
-      __ tbz(count, exact_log2(1/bytes_per_count), L);
-      __ strb(R3, Address(to, 1, post_indexed));
-      __ bind(L);
-    }
-#else
     switch (bytes_per_count) {
     case 2:
       __ mov(R3, AsmOperand(R12, lsr, lsr_shift));
@@ -1906,15 +1425,13 @@ class StubGenerator: public StubCodeGenerator {
       __ strb(R3, Address(to, 1, post_indexed), ne); // one last byte
       break;
     }
-#endif // AARCH64
 
     __ BIND(L_done);
     return 0; // no minimum
   }
 
   // Generate the inner loop for shifted backward array copy (unaligned copy).
-  // It can be used when bytes_per_count < wordSize, i.e.
-  //  byte/short copy on 32-bit ARM, byte/short/int/compressed-oop copy on AArch64.
+  // It can be used when bytes_per_count < wordSize, i.e. byte/short copy
   //
   // Arguments
   //      end_from:  end src address, 64 bits aligned
@@ -1927,11 +1444,11 @@ class StubGenerator: public StubCodeGenerator {
   // Return the minimum initial value for count
   //
   // Notes:
-  // - 'end_from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA, required for AArch64)
+  // - 'end_from' aligned on 64-bit (recommended for 32-bit ARM in case this speeds up LDMIA)
   // - 'end_to' aligned on wordSize
   // - 'count' must be greater or equal than the returned value
   // - 'lsr_shift' + 'lsl_shift' = 'BitsPerWord'
-  // - 'bytes_per_count' is 1 or 2 on 32-bit ARM; 1, 2 or 4 on AArch64
+  // - 'bytes_per_count' is 1 or 2 on 32-bit ARM
   //
   // Decreases 'end_to' by count*bytes_per_count.
   //
@@ -1955,10 +1472,8 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_loop_config *config=&arraycopy_configurations[ArmCopyPlatform].backward_shifted;
     int pld_offset = config->pld_distance;
 
-#ifndef AARCH64
     bool split_read= config->split_ldm;
     bool split_write= config->split_stm;
-#endif // !AARCH64
 
 
     const bool prefetch_before = pld_offset < 0;
@@ -2001,11 +1516,6 @@ class StubGenerator: public StubCodeGenerator {
       __ b(L_last_read, lt);
     }
 
-#ifdef AARCH64
-    __ logical_shift_left(R12, R3, lsl_shift);
-    const Register data_regs[9] = {R3, R4, R5, R6, R7, R8, R9, R10, R12};
-    bulk_load_backward(end_from, data_regs, 8);
-#else
     if (split_read) {
       __ ldmdb(end_from, RegisterSet(R7, R10), writeback);
       __ mov(R12, AsmOperand(R3, lsl, lsl_shift)); // part of R3 not yet written
@@ -2014,7 +1524,6 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(R12, AsmOperand(R3, lsl, lsl_shift)); // part of R3 not yet written
       __ ldmdb(end_from, RegisterSet(R3, R10), writeback);
     }
-#endif // AARCH64
 
     __ subs_32(count, count, count_per_loop);
 
@@ -2034,35 +1543,27 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(R7, R7, AsmOperand(R6, lsr, lsr_shift));
     __ logical_shift_left(R6, R6, lsl_shift);
     __ orr(R6, R6, AsmOperand(R5, lsr, lsr_shift));
-#ifndef AARCH64
     if (split_write) {
       // store early to reduce locking issues
       __ stmdb(end_to, RegisterSet(R6, R10) | R12, writeback, prefetch_before ? gt : ge);
     }
-#endif // !AARCH64
     __ logical_shift_left(R5, R5, lsl_shift);
     __ orr(R5, R5, AsmOperand(R4, lsr, lsr_shift));
     __ logical_shift_left(R4, R4, lsl_shift);
     __ orr(R4, R4, AsmOperand(R3, lsr, lsr_shift));
 
-#ifdef AARCH64
-    bulk_store_backward(end_to, &data_regs[1], 8);
-#else
     if (split_write) {
       __ stmdb(end_to, RegisterSet(R4, R5), writeback, prefetch_before ? gt : ge);
     } else {
       __ stmdb(end_to, RegisterSet(R4, R10) | R12, writeback, prefetch_before ? gt : ge);
     }
-#endif // AARCH64
 
     __ b(L_shifted_loop, gt); // no need to loop if 0 (when count need not be precise modulo bytes_per_loop)
 
     if (prefetch_before) {
       // the first loop may end earlier, allowing to skip pld at the end
       __ cmn_32(count, ((bytes_per_loop + pld_offset)/bytes_per_count));
-#ifndef AARCH64
       __ stmdb(end_to, RegisterSet(R4, R10) | R12, writeback); // stmdb was skipped
-#endif // !AARCH64
       __ b(L_skip_pld, ge);
       __ adds_32(count, count, ((bytes_per_loop + pld_offset) / bytes_per_count) + count_per_loop);
     }
@@ -2070,99 +1571,6 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_last_read);
     __ b(L_done, eq);
 
-#ifdef AARCH64
-    assert(bytes_per_count < 8, "adjust the code below");
-
-    __ logical_shift_left(R12, R3, lsl_shift);
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(32/bytes_per_count), L);
-      bulk_load_backward(end_from, &data_regs[4], 4);
-
-      __ orr(R12, R12, AsmOperand(R10, lsr, lsr_shift));
-      __ logical_shift_left(R10, R10, lsl_shift);
-      __ orr(R10, R10, AsmOperand(R9, lsr, lsr_shift));
-      __ logical_shift_left(R9, R9, lsl_shift);
-      __ orr(R9, R9, AsmOperand(R8, lsr, lsr_shift));
-      __ logical_shift_left(R8, R8, lsl_shift);
-      __ orr(R8, R8, AsmOperand(R7, lsr, lsr_shift));
-
-      bulk_store_backward(end_to, &data_regs[5], 4);
-      __ logical_shift_left(R12, R7, lsl_shift);
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(16/bytes_per_count), L);
-      bulk_load_backward(end_from, &data_regs[6], 2);
-
-      __ orr(R12, R12, AsmOperand(R10, lsr, lsr_shift));
-      __ logical_shift_left(R10, R10, lsl_shift);
-      __ orr(R10, R10, AsmOperand(R9, lsr, lsr_shift));
-
-      bulk_store_backward(end_to, &data_regs[7], 2);
-      __ logical_shift_left(R12, R9, lsl_shift);
-      __ bind(L);
-    }
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(8/bytes_per_count), L);
-      __ ldr(R10, Address(end_from, -8, pre_indexed));
-      __ orr(R12, R12, AsmOperand(R10, lsr, lsr_shift));
-      __ str(R12, Address(end_to, -8, pre_indexed));
-      __ logical_shift_left(R12, R10, lsl_shift);
-      __ bind(L);
-    }
-
-    const int have_bytes = lsr_shift/BitsPerByte; // number of already read bytes in R12
-
-    // It remains less than wordSize to write.
-    // Do not check count if R12 already has maximal number of loaded elements (one less than wordSize).
-    if (have_bytes < wordSize - bytes_per_count) {
-      Label L;
-      __ andr(count, count, (uintx)(8/bytes_per_count-1)); // make count exact
-      __ cmp_32(count, have_bytes/bytes_per_count); // do we have enough bytes to store?
-      __ b(L, le);
-      __ ldr(R10, Address(end_from, -8, pre_indexed));
-      __ orr(R12, R12, AsmOperand(R10, lsr, lsr_shift));
-      __ bind(L);
-    }
-
-    assert (bytes_per_count <= 4, "must be");
-
-    {
-      Label L;
-      __ tbz(count, exact_log2(4/bytes_per_count), L);
-      __ logical_shift_right(R9, R12, (wordSize-4)*BitsPerByte);
-      __ str_w(R9, Address(end_to, -4, pre_indexed)); // Write 4 MSB
-      if (bytes_per_count < 4) {
-        __ logical_shift_left(R12, R12, 4*BitsPerByte); // Promote remaining bytes to MSB
-      }
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 2) {
-      Label L;
-      __ tbz(count, exact_log2(2/bytes_per_count), L);
-      __ logical_shift_right(R9, R12, (wordSize-2)*BitsPerByte);
-      __ strh(R9, Address(end_to, -2, pre_indexed)); // Write 2 MSB
-      if (bytes_per_count < 2) {
-        __ logical_shift_left(R12, R12, 2*BitsPerByte); // Promote remaining bytes to MSB
-      }
-      __ bind(L);
-    }
-
-    if (bytes_per_count <= 1) {
-      Label L;
-      __ tbz(count, exact_log2(1/bytes_per_count), L);
-      __ logical_shift_right(R9, R12, (wordSize-1)*BitsPerByte);
-      __ strb(R9, Address(end_to, -1, pre_indexed)); // Write 1 MSB
-      __ bind(L);
-    }
-#else
       switch(bytes_per_count) {
       case 2:
       __ mov(R12, AsmOperand(R3, lsl, lsl_shift)); // part of R3 not yet written
@@ -2246,7 +1654,6 @@ class StubGenerator: public StubCodeGenerator {
 
       break;
       }
-#endif // AARCH64
 
     __ BIND(L_done);
     return 0; // no minimum
@@ -2260,27 +1667,6 @@ class StubGenerator: public StubCodeGenerator {
       return Address(base, -delta, pre_indexed);
     }
   }
-
-#ifdef AARCH64
-  // Loads one 'size_in_bytes'-sized value from 'from' in given direction, i.e.
-  //   if forward:  loads value at from and increases from by size
-  //   if !forward: loads value at from-size_in_bytes and decreases from by size
-  void load_one(Register rd, Register from, int size_in_bytes, bool forward) {
-    assert_different_registers(from, rd);
-    Address addr = get_addr_with_indexing(from, size_in_bytes, forward);
-    __ load_sized_value(rd, addr, size_in_bytes, false);
-  }
-
-  // Stores one 'size_in_bytes'-sized value to 'to' in given direction (see load_one)
-  void store_one(Register rd, Register to, int size_in_bytes, bool forward) {
-    assert_different_registers(to, rd);
-    Address addr = get_addr_with_indexing(to, size_in_bytes, forward);
-    __ store_sized_value(rd, addr, size_in_bytes);
-  }
-#else
-  // load_one and store_one are the same as for AArch64 except for
-  //   *) Support for condition execution
-  //   *) Second value register argument for 8-byte values
 
   void load_one(Register rd, Register from, int size_in_bytes, bool forward, AsmCondition cond = al, Register rd2 = noreg) {
     assert_different_registers(from, rd, rd2);
@@ -2315,7 +1701,6 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
   }
-#endif // AARCH64
 
   // Copies data from 'from' to 'to' in specified direction to align 'from' by 64 bits.
   // (on 32-bit ARM 64-bit alignment is better for LDM).
@@ -2336,36 +1721,6 @@ class StubGenerator: public StubCodeGenerator {
   // Returns maximum number of bytes which may be copied.
   int align_src(Register from, Register to, Register count, Register tmp, int bytes_per_count, bool forward) {
     assert_different_registers(from, to, count, tmp);
-#ifdef AARCH64
-    // TODO-AARCH64: replace by simple loop?
-    Label Laligned_by_2, Laligned_by_4, Laligned_by_8;
-
-    if (bytes_per_count == 1) {
-      __ tbz(from, 0, Laligned_by_2);
-      __ sub_32(count, count, 1);
-      load_one(tmp, from, 1, forward);
-      store_one(tmp, to, 1, forward);
-    }
-
-    __ BIND(Laligned_by_2);
-
-    if (bytes_per_count <= 2) {
-      __ tbz(from, 1, Laligned_by_4);
-      __ sub_32(count, count, 2/bytes_per_count);
-      load_one(tmp, from, 2, forward);
-      store_one(tmp, to, 2, forward);
-    }
-
-    __ BIND(Laligned_by_4);
-
-    if (bytes_per_count <= 4) {
-      __ tbz(from, 2, Laligned_by_8);
-      __ sub_32(count, count, 4/bytes_per_count);
-      load_one(tmp, from, 4, forward);
-      store_one(tmp, to, 4, forward);
-    }
-    __ BIND(Laligned_by_8);
-#else // AARCH64
     if (bytes_per_count < 8) {
       Label L_align_src;
       __ BIND(L_align_src);
@@ -2378,7 +1733,6 @@ class StubGenerator: public StubCodeGenerator {
         __ b(L_align_src, ne); // if bytes_per_count == 4, then 0 or 1 loop iterations are enough
       }
     }
-#endif // AARCH64
     return 7/bytes_per_count;
   }
 
@@ -2398,19 +1752,6 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(from, to, count, tmp);
 
     __ align(OptoLoopAlignment);
-#ifdef AARCH64
-    Label L_small_array_done, L_small_array_loop;
-    __ BIND(entry);
-    __ cbz_32(count, L_small_array_done);
-
-    __ BIND(L_small_array_loop);
-    __ subs_32(count, count, 1);
-    load_one(tmp, from, bytes_per_count, forward);
-    store_one(tmp, to, bytes_per_count, forward);
-    __ b(L_small_array_loop, gt);
-
-    __ BIND(L_small_array_done);
-#else
     Label L_small_loop;
     __ BIND(L_small_loop);
     store_one(tmp, to, bytes_per_count, forward, al, tmp2);
@@ -2418,7 +1759,6 @@ class StubGenerator: public StubCodeGenerator {
     __ subs(count, count, 1);
     load_one(tmp, from, bytes_per_count, forward, ge, tmp2);
     __ b(L_small_loop, ge);
-#endif // AARCH64
   }
 
   // Aligns 'to' by reading one word from 'from' and writting its part to 'to'.
@@ -2500,7 +1840,7 @@ class StubGenerator: public StubCodeGenerator {
 
     assert (0 < to_remainder && to_remainder < wordSize, "to_remainder is invalid");
 
-    const Register tmp  = forward ? R3 : R12; // TODO-AARCH64: on cojoint_short R4 was used for tmp
+    const Register tmp  = forward ? R3 : R12;
     assert_different_registers(from, to, count, Rval, tmp);
 
     int required_to_align = align_dst(to, count, Rval, tmp, to_remainder, bytes_per_count, forward);
@@ -2534,7 +1874,7 @@ class StubGenerator: public StubCodeGenerator {
   //     shifts 'to' by the number of copied bytes
   //
   // Scratches 'from', 'count', R3 and R12.
-  // On AArch64 also scratches R4-R10, on 32-bit ARM saves them to use.
+  // R4-R10 saved for use.
   int align_dst_and_generate_shifted_copy_loop(Register from, Register to, Register count, int bytes_per_count, bool forward) {
 
     const Register Rval = forward ? R12 : R3; // as generate_{forward,backward}_shifted_copy_loop expect
@@ -2544,100 +1884,6 @@ class StubGenerator: public StubCodeGenerator {
     // Note: if {seq} is a sequence of numbers, L{seq} means that if the execution reaches this point,
     // then the remainder of 'to' divided by wordSize is one of elements of {seq}.
 
-#ifdef AARCH64
-    // TODO-AARCH64: simplify, tune
-
-    load_one(Rval, from, wordSize, forward);
-
-    Label L_loop_finished;
-
-    switch (bytes_per_count) {
-      case 4:
-        min_copy = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 4, bytes_per_count, forward);
-        break;
-      case 2:
-      {
-        Label L2, L4, L6;
-
-        __ tbz(to, 1, L4);
-        __ tbz(to, 2, L2);
-
-        __ BIND(L6);
-        int min_copy6 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 6, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L2);
-        int min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L4);
-        int min_copy4 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 4, bytes_per_count, forward);
-
-        min_copy = MAX2(MAX2(min_copy2, min_copy4), min_copy6);
-        break;
-      }
-      case 1:
-      {
-        Label L1, L2, L3, L4, L5, L6, L7;
-        Label L15, L26;
-        Label L246;
-
-        __ tbz(to, 0, L246);
-        __ tbz(to, 1, L15);
-        __ tbz(to, 2, L3);
-
-        __ BIND(L7);
-        int min_copy7 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 7, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L246);
-        __ tbnz(to, 1, L26);
-
-        __ BIND(L4);
-        int min_copy4 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 4, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L15);
-        __ tbz(to, 2, L1);
-
-        __ BIND(L5);
-        int min_copy5 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 5, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L3);
-        int min_copy3 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 3, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L26);
-        __ tbz(to, 2, L2);
-
-        __ BIND(L6);
-        int min_copy6 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 6, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L1);
-        int min_copy1 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 1, bytes_per_count, forward);
-        __ b(L_loop_finished);
-
-        __ BIND(L2);
-        int min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
-
-
-        min_copy = MAX2(min_copy1, min_copy2);
-        min_copy = MAX2(min_copy,  min_copy3);
-        min_copy = MAX2(min_copy,  min_copy4);
-        min_copy = MAX2(min_copy,  min_copy5);
-        min_copy = MAX2(min_copy,  min_copy6);
-        min_copy = MAX2(min_copy,  min_copy7);
-        break;
-      }
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-    __ BIND(L_loop_finished);
-
-#else
     __ push(RegisterSet(R4,R10));
     load_one(Rval, from, wordSize, forward);
 
@@ -2694,7 +1940,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ pop(RegisterSet(R4,R10));
-#endif // AARCH64
 
     return min_copy;
   }
@@ -2776,7 +2021,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_small_array;
     __ cmp_32(count, small_copy_limit);
-    __ b(L_small_array, le); // TODO-AARCH64: le vs lt
+    __ b(L_small_array, le);
 
     // Otherwise proceed with large implementation.
 
@@ -2864,7 +2109,7 @@ class StubGenerator: public StubCodeGenerator {
   //               if 'forward' then 'to' == upper bound, else 'to' == beginning of the modified region
   //     count:    total number of copied elements, 32-bit int
   //
-  // Blows all volatile (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR) and 'to', 'count', 'tmp' registers.
+  // Blows all volatile R0-R3, Rtemp, LR) and 'to', 'count', 'tmp' registers.
   void oop_arraycopy_stub_epilogue_helper(Register to, Register count, Register tmp, bool status, bool forward, DecoratorSet decorators) {
     assert_different_registers(to, count, tmp);
 
@@ -2883,12 +2128,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(R0, 0); // OK
     }
 
-#ifdef AARCH64
-    __ raw_pop(LR, ZR);
-    __ ret();
-#else
     __ pop(PC);
-#endif // AARCH64
   }
 
 
@@ -2939,11 +2179,7 @@ class StubGenerator: public StubCodeGenerator {
     const int callee_saved_regs = 3; // R0-R2
 
     // LR is used later to save barrier args
-#ifdef AARCH64
-    __ raw_push(LR, ZR);
-#else
     __ push(LR);
-#endif // AARCH64
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (disjoint) {
@@ -3021,13 +2257,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (!to_is_aligned) {
-      // !to_is_aligned <=> UseCompressedOops && AArch64
       __ BIND(L_unaligned_dst);
-#ifdef AARCH64
-      assert (UseCompressedOops, "unaligned oop array copy may be requested only with UseCompressedOops");
-#else
       ShouldNotReachHere();
-#endif // AARCH64
       int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward);
       assert (small_copy_limit >= count_required_to_align + min_copy_shifted, "first loop might exhaust count");
 
@@ -3060,10 +2291,6 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
-#ifdef AARCH64
-    __ NOT_IMPLEMENTED();
-    start = NULL;
-#else
     const Register tmp = Rtemp;
 
     // bump this on entry, not on exit:
@@ -3085,7 +2312,6 @@ class StubGenerator: public StubCodeGenerator {
     __ jump(StubRoutines::_jshort_arraycopy, relocInfo::runtime_call_type, tmp, eq);
 
     __ jump(StubRoutines::_jbyte_arraycopy, relocInfo::runtime_call_type, tmp);
-#endif
     return start;
   }
 
@@ -3185,7 +2411,7 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    R1
   //      count: R2 treated as signed 32-bit int
   //      ckoff: R3 (super_check_offset)
-  //      ckval: R4 (AArch64) / SP[0] (32-bit ARM) (super_klass)
+  //      ckval: R4 (super_klass)
   //      ret:   R0 zero for success; (-1^K) where K is partial transfer count (32-bit)
   //
   address generate_checkcast_copy(const char * name) {
@@ -3200,7 +2426,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register R3_ckoff  = R3;      // super_check_offset
     const Register R4_ckval  = R4;      // super_klass
 
-    const int callee_saved_regs = AARCH64_ONLY(5) NOT_AARCH64(4); // LR saved differently
+    const int callee_saved_regs = 4; // LR saved differently
 
     Label load_element, store_element, do_epilogue, fail;
 
@@ -3208,52 +2434,34 @@ class StubGenerator: public StubCodeGenerator {
 
     __ zap_high_non_significant_bits(R2);
 
-#ifdef AARCH64
-    __ raw_push(LR, ZR);
-    __ raw_push(R19, R20);
-#else
     int pushed = 0;
     __ push(LR);
     pushed+=1;
-#endif // AARCH64
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST;
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);
 
-#ifndef AARCH64
     const RegisterSet caller_saved_regs = RegisterSet(R4,R6) | RegisterSet(R8,R9) | altFP_7_11;
     __ push(caller_saved_regs);
     assert(caller_saved_regs.size() == 6, "check the count");
     pushed+=6;
 
     __ ldr(R4_ckval,Address(SP, wordSize*pushed)); // read the argument that was on the stack
-#endif // !AARCH64
 
     // Save arguments for barrier generation (after the pre barrier):
     // - must be a caller saved register and not LR
     // - ARM32: avoid R10 in case RThread is needed
-    const Register saved_count = AARCH64_ONLY(R19) NOT_AARCH64(altFP_7_11);
-#ifdef AARCH64
-    __ mov_w(saved_count, count);
-    __ cbnz_w(count, load_element); // and test count
-#else
+    const Register saved_count = altFP_7_11;
     __ movs(saved_count, count); // and test count
     __ b(load_element,ne);
-#endif // AARCH64
 
     // nothing to copy
     __ mov(R0, 0);
 
-#ifdef AARCH64
-    __ raw_pop(R19, R20);
-    __ raw_pop(LR, ZR);
-    __ ret();
-#else
     __ pop(caller_saved_regs);
     __ pop(PC);
-#endif // AARCH64
 
     // ======== begin loop ========
     // (Loop is rotated; its entry is load_element.)
@@ -3290,7 +2498,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(do_epilogue);
 
-    Register copied = AARCH64_ONLY(R20) NOT_AARCH64(R4); // saved
+    Register copied = R4; // saved
     Label L_not_copied;
 
     __ subs_32(copied, saved_count, count); // copied count (in saved reg)
@@ -3306,17 +2514,10 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_not_copied);
     __ cmp_32(copied, saved_count); // values preserved in saved registers
 
-#ifdef AARCH64
-    __ csinv(R0, ZR, copied, eq); // 0 if all copied else NOT(copied)
-    __ raw_pop(R19, R20);
-    __ raw_pop(LR, ZR);
-    __ ret();
-#else
     __ mov(R0, 0, eq); // 0 if all copied
     __ mvn(R0, copied, ne); // else NOT(copied)
     __ pop(caller_saved_regs);
     __ pop(PC);
-#endif // AARCH64
 
     return start;
   }
@@ -3360,7 +2561,7 @@ class StubGenerator: public StubCodeGenerator {
   //    R1    -  src_pos (32-bit int)
   //    R2    -  dst oop
   //    R3    -  dst_pos (32-bit int)
-  //    R4 (AArch64) / SP[0] (32-bit ARM) -  element count (32-bit int)
+  //    SP[0] -  element count (32-bit int)
   //
   //  Output: (32-bit int)
   //    R0 ==  0  -  success
@@ -3378,7 +2579,7 @@ class StubGenerator: public StubCodeGenerator {
     // registers used as temp
     const Register R5_src_klass = R5; // source array klass
     const Register R6_dst_klass = R6; // destination array klass
-    const Register R_lh         = AARCH64_ONLY(R7) NOT_AARCH64(altFP_7_11); // layout handler
+    const Register R_lh         = altFP_7_11; // layout handler
     const Register R8_temp      = R8;
 
     __ align(CodeEntryAlignment);
@@ -3389,21 +2590,17 @@ class StubGenerator: public StubCodeGenerator {
     __ zap_high_non_significant_bits(R3);
     __ zap_high_non_significant_bits(R4);
 
-#ifndef AARCH64
     int pushed = 0;
     const RegisterSet saved_regs = RegisterSet(R4,R6) | RegisterSet(R8,R9) | altFP_7_11;
     __ push(saved_regs);
     assert(saved_regs.size() == 6, "check the count");
     pushed+=6;
-#endif // !AARCH64
 
     // bump this on entry, not on exit:
     inc_counter_np(SharedRuntime::_generic_array_copy_ctr, R5, R12);
 
     const Register length   = R4;  // elements count
-#ifndef AARCH64
     __ ldr(length, Address(SP,4*pushed));
-#endif // !AARCH64
 
 
     //-----------------------------------------------------------------------
@@ -3496,43 +2693,6 @@ class StubGenerator: public StubCodeGenerator {
       // 'from', 'to', 'count' registers should be set in this order
       // since they are the same as 'src', 'src_pos', 'dst'.
 
-#ifdef AARCH64
-
-      BLOCK_COMMENT("choose copy loop based on element size and scale indexes");
-      Label Lbyte, Lshort, Lint, Llong;
-
-      __ cbz(R12_elsize, Lbyte);
-
-      assert (LogBytesPerShort < LogBytesPerInt && LogBytesPerInt < LogBytesPerLong, "must be");
-      __ cmp(R12_elsize, LogBytesPerInt);
-      __ b(Lint,  eq);
-      __ b(Llong, gt);
-
-      __ BIND(Lshort);
-      __ add_ptr_scaled_int32(from, src, src_pos, LogBytesPerShort);
-      __ add_ptr_scaled_int32(to,   dst, dst_pos, LogBytesPerShort);
-      __ mov(count, length);
-      __ b(StubRoutines::_jshort_arraycopy);
-
-      __ BIND(Lint);
-      __ add_ptr_scaled_int32(from, src, src_pos, LogBytesPerInt);
-      __ add_ptr_scaled_int32(to,   dst, dst_pos, LogBytesPerInt);
-      __ mov(count, length);
-      __ b(StubRoutines::_jint_arraycopy);
-
-      __ BIND(Lbyte);
-      __ add_ptr_scaled_int32(from, src, src_pos, 0);
-      __ add_ptr_scaled_int32(to,   dst, dst_pos, 0);
-      __ mov(count, length);
-      __ b(StubRoutines::_jbyte_arraycopy);
-
-      __ BIND(Llong);
-      __ add_ptr_scaled_int32(from, src, src_pos, LogBytesPerLong);
-      __ add_ptr_scaled_int32(to,   dst, dst_pos, LogBytesPerLong);
-      __ mov(count, length);
-      __ b(StubRoutines::_jlong_arraycopy);
-
-#else // AARCH64
 
       BLOCK_COMMENT("scale indexes to element size");
       __ add(from, src, AsmOperand(src_pos, lsl, R12_elsize));       // src_addr
@@ -3556,7 +2716,6 @@ class StubGenerator: public StubCodeGenerator {
 
       __ b(StubRoutines::_jlong_arraycopy);
 
-#endif // AARCH64
     }
 
     // ObjArrayKlass
@@ -3586,9 +2745,7 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(L_plain_copy);
       __ mov(count, length);
 
-#ifndef AARCH64
       __ pop(saved_regs); // XXX optim: avoid later push in oop_arraycopy ?
-#endif // !AARCH64
       __ b(StubRoutines::_oop_arraycopy);
     }
 
@@ -3628,28 +2785,24 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr_u32(sco_temp, Address(R6_dst_klass, sco_offset));
       generate_type_check(R5_src_klass, sco_temp, R6_dst_klass,
                           R8_temp, R9,
-                          AARCH64_ONLY(R10) NOT_AARCH64(R12),
+                          R12,
                           L_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
 
       // the checkcast_copy loop needs two extra arguments:
-      const Register Rdst_elem_klass = AARCH64_ONLY(R4) NOT_AARCH64(R3);
+      const Register Rdst_elem_klass = R3;
       __ ldr(Rdst_elem_klass, Address(R6_dst_klass, ek_offset));   // dest elem klass
-#ifndef AARCH64
       __ pop(saved_regs); // XXX optim: avoid later push in oop_arraycopy ?
       __ str(Rdst_elem_klass, Address(SP,0));    // dest elem klass argument
-#endif // !AARCH64
       __ ldr_u32(R3, Address(Rdst_elem_klass, sco_offset));  // sco of elem klass
       __ b(StubRoutines::_checkcast_arraycopy);
     }
 
     __ BIND(L_failed);
 
-#ifndef AARCH64
     __ pop(saved_regs);
-#endif // !AARCH64
     __ mvn(R0, 0); // failure, with 0 copied
     __ ret();
 
@@ -3683,11 +2836,7 @@ class StubGenerator: public StubCodeGenerator {
         break;
 
       case 8: // int64_t
-#ifdef AARCH64
-        __ ldr(R1, Address(R0));
-#else
         Unimplemented();
-#endif // AARCH64
         break;
 
       default:
@@ -3765,467 +2914,8 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
-#ifndef AARCH64
 #define COMPILE_CRYPTO
 #include "stubRoutinesCrypto_arm.cpp"
-#else
-
-#ifdef COMPILER2
-  // Arguments:
-  //
-  // Inputs:
-  //   c_rarg0   - source byte array address
-  //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
-  //
-  address generate_aescrypt_encryptBlock() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
-
-    Label L_doLast;
-
-    const Register from        = c_rarg0;  // source array address
-    const Register to          = c_rarg1;  // destination array address
-    const Register key         = c_rarg2;  // key array address
-    const Register keylen      = R8;
-
-    address start = __ pc();
-    __ stp(FP, LR, Address(SP, -2 * wordSize, pre_indexed));
-    __ mov(FP, SP);
-
-    __ ldr_w(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    __ vld1(V0, Address(from), MacroAssembler::VELEM_SIZE_8, 128); // get 16 bytes of input
-
-    __ vld1(V1, V2, V3, V4, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-
-    int quad = 1;
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V3, V3, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V4, V4, MacroAssembler::VELEM_SIZE_8, quad);
-    __ aese(V0, V1);
-    __ aesmc(V0, V0);
-    __ aese(V0, V2);
-    __ aesmc(V0, V0);
-    __ aese(V0, V3);
-    __ aesmc(V0, V0);
-    __ aese(V0, V4);
-    __ aesmc(V0, V0);
-
-    __ vld1(V1, V2, V3, V4, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V3, V3, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V4, V4, MacroAssembler::VELEM_SIZE_8, quad);
-    __ aese(V0, V1);
-    __ aesmc(V0, V0);
-    __ aese(V0, V2);
-    __ aesmc(V0, V0);
-    __ aese(V0, V3);
-    __ aesmc(V0, V0);
-    __ aese(V0, V4);
-    __ aesmc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ cmp_w(keylen, 44);
-    __ b(L_doLast, eq);
-
-    __ aese(V0, V1);
-    __ aesmc(V0, V0);
-    __ aese(V0, V2);
-    __ aesmc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ cmp_w(keylen, 52);
-    __ b(L_doLast, eq);
-
-    __ aese(V0, V1);
-    __ aesmc(V0, V0);
-    __ aese(V0, V2);
-    __ aesmc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ BIND(L_doLast);
-
-    __ aese(V0, V1);
-    __ aesmc(V0, V0);
-    __ aese(V0, V2);
-
-    __ vld1(V1, Address(key), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ eor(V0, V0, V1, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ vst1(V0, Address(to), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ mov(R0, 0);
-
-    __ mov(SP, FP);
-    __ ldp(FP, LR, Address(SP, 2 * wordSize, post_indexed));
-    __ ret(LR);
-
-    return start;
-  }
-
-  // Arguments:
-  //
-  // Inputs:
-  //   c_rarg0   - source byte array address
-  //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
-  //
-  address generate_aescrypt_decryptBlock() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
-    Label L_doLast;
-
-    const Register from        = c_rarg0;  // source array address
-    const Register to          = c_rarg1;  // destination array address
-    const Register key         = c_rarg2;  // key array address
-    const Register keylen      = R8;
-
-    address start = __ pc();
-    __ stp(FP, LR, Address(SP, -2 * wordSize, pre_indexed));
-    __ mov(FP, SP);
-
-    __ ldr_w(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    __ vld1(V0, Address(from), MacroAssembler::VELEM_SIZE_8, 128); // get 16 bytes of input
-
-    __ vld1(V5, Address(key, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-
-    int quad = 1;
-    __ rev32(V5, V5, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ vld1(V1, V2, V3, V4, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V3, V3, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V4, V4, MacroAssembler::VELEM_SIZE_8, quad);
-    __ aesd(V0, V1);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V2);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V3);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V4);
-    __ aesimc(V0, V0);
-
-    __ vld1(V1, V2, V3, V4, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V3, V3, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V4, V4, MacroAssembler::VELEM_SIZE_8, quad);
-    __ aesd(V0, V1);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V2);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V3);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V4);
-    __ aesimc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ cmp_w(keylen, 44);
-    __ b(L_doLast, eq);
-
-    __ aesd(V0, V1);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V2);
-    __ aesimc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ cmp_w(keylen, 52);
-    __ b(L_doLast, eq);
-
-    __ aesd(V0, V1);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V2);
-    __ aesimc(V0, V0);
-
-    __ vld1(V1, V2, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V2, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ BIND(L_doLast);
-
-    __ aesd(V0, V1);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V2);
-
-    __ eor(V0, V0, V5, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ vst1(V0, Address(to), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ mov(R0, 0);
-
-    __ mov(SP, FP);
-    __ ldp(FP, LR, Address(SP, 2 * wordSize, post_indexed));
-    __ ret(LR);
-
-
-    return start;
-  }
-
-  // Arguments:
-  //
-  // Inputs:
-  //   c_rarg0   - source byte array address
-  //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
-  //   c_rarg3   - r vector byte array address
-  //   c_rarg4   - input length
-  //
-  // Output:
-  //   x0        - input length
-  //
-  address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
-
-    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
-
-    const Register from        = c_rarg0;  // source array address
-    const Register to          = c_rarg1;  // destination array address
-    const Register key         = c_rarg2;  // key array address
-    const Register rvec        = c_rarg3;  // r byte array initialized from initvector array address
-                                           // and left with the results of the last encryption block
-    const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
-    const Register keylen      = R8;
-
-    address start = __ pc();
-    __ stp(FP, LR, Address(SP, -2 * wordSize, pre_indexed));
-    __ mov(FP, SP);
-
-    __ mov(R9, len_reg);
-    __ ldr_w(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    __ vld1(V0, Address(rvec), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ cmp_w(keylen, 52);
-    __ b(L_loadkeys_44, cc);
-    __ b(L_loadkeys_52, eq);
-
-    __ vld1(V17, V18, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-
-    int quad = 1;
-    __ rev32(V17, V17, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V18, V18, MacroAssembler::VELEM_SIZE_8, quad);
-    __ BIND(L_loadkeys_52);
-    __ vld1(V19, V20, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V19, V19, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V20, V20, MacroAssembler::VELEM_SIZE_8, quad);
-    __ BIND(L_loadkeys_44);
-    __ vld1(V21, V22, V23, V24, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V21, V21, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V22, V22, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V23, V23, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V24, V24, MacroAssembler::VELEM_SIZE_8, quad);
-    __ vld1(V25, V26, V27, V28, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V25, V25, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V26, V26, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V27, V27, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V28, V28, MacroAssembler::VELEM_SIZE_8, quad);
-    __ vld1(V29, V30, V31, Address(key), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V29, V29, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V30, V30, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V31, V31, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ BIND(L_aes_loop);
-    __ vld1(V1, Address(from, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ eor(V0, V0, V1, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ b(L_rounds_44, cc);
-    __ b(L_rounds_52, eq);
-
-    __ aese(V0, V17);
-    __ aesmc(V0, V0);
-    __ aese(V0, V18);
-    __ aesmc(V0, V0);
-    __ BIND(L_rounds_52);
-    __ aese(V0, V19);
-    __ aesmc(V0, V0);
-    __ aese(V0, V20);
-    __ aesmc(V0, V0);
-    __ BIND(L_rounds_44);
-    __ aese(V0, V21);
-    __ aesmc(V0, V0);
-    __ aese(V0, V22);
-    __ aesmc(V0, V0);
-    __ aese(V0, V23);
-    __ aesmc(V0, V0);
-    __ aese(V0, V24);
-    __ aesmc(V0, V0);
-    __ aese(V0, V25);
-    __ aesmc(V0, V0);
-    __ aese(V0, V26);
-    __ aesmc(V0, V0);
-    __ aese(V0, V27);
-    __ aesmc(V0, V0);
-    __ aese(V0, V28);
-    __ aesmc(V0, V0);
-    __ aese(V0, V29);
-    __ aesmc(V0, V0);
-    __ aese(V0, V30);
-    __ eor(V0, V0, V31, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ vst1(V0, Address(to, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ sub(len_reg, len_reg, 16);
-    __ cbnz(len_reg, L_aes_loop);
-
-    __ vst1(V0, Address(rvec), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ mov(R0, R9);
-
-    __ mov(SP, FP);
-    __ ldp(FP, LR, Address(SP, 2 * wordSize, post_indexed));
-    __ ret(LR);
-
-    return start;
-  }
-
-  // Arguments:
-  //
-  // Inputs:
-  //   c_rarg0   - source byte array address
-  //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
-  //   c_rarg3   - r vector byte array address
-  //   c_rarg4   - input length
-  //
-  // Output:
-  //   rax       - input length
-  //
-  address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
-
-    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
-
-    const Register from        = c_rarg0;  // source array address
-    const Register to          = c_rarg1;  // destination array address
-    const Register key         = c_rarg2;  // key array address
-    const Register rvec        = c_rarg3;  // r byte array initialized from initvector array address
-                                           // and left with the results of the last encryption block
-    const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
-    const Register keylen      = R8;
-
-    address start = __ pc();
-    __ stp(FP, LR, Address(SP, -2 * wordSize, pre_indexed));
-    __ mov(FP, SP);
-
-    __ mov(R9, len_reg);
-    __ ldr_w(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    __ vld1(V2, Address(rvec), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ vld1(V31, Address(key, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-
-    int quad = 1;
-    __ rev32(V31, V31, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ cmp_w(keylen, 52);
-    __ b(L_loadkeys_44, cc);
-    __ b(L_loadkeys_52, eq);
-
-    __ vld1(V17, V18, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V17, V17, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V18, V18, MacroAssembler::VELEM_SIZE_8, quad);
-    __ BIND(L_loadkeys_52);
-    __ vld1(V19, V20, Address(key, 32, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V19, V19, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V20, V20, MacroAssembler::VELEM_SIZE_8, quad);
-    __ BIND(L_loadkeys_44);
-    __ vld1(V21, V22, V23, V24, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V21, V21, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V22, V22, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V23, V23, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V24, V24, MacroAssembler::VELEM_SIZE_8, quad);
-    __ vld1(V25, V26, V27, V28, Address(key, 64, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V25, V25, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V26, V26, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V27, V27, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V28, V28, MacroAssembler::VELEM_SIZE_8, quad);
-    __ vld1(V29, V30, Address(key), MacroAssembler::VELEM_SIZE_8, 128);
-    __ rev32(V29, V29, MacroAssembler::VELEM_SIZE_8, quad);
-    __ rev32(V30, V30, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ BIND(L_aes_loop);
-    __ vld1(V0, Address(from, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ orr(V1, V0, V0, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ b(L_rounds_44, cc);
-    __ b(L_rounds_52, eq);
-
-    __ aesd(V0, V17);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V17);
-    __ aesimc(V0, V0);
-    __ BIND(L_rounds_52);
-    __ aesd(V0, V19);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V20);
-    __ aesimc(V0, V0);
-    __ BIND(L_rounds_44);
-    __ aesd(V0, V21);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V22);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V23);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V24);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V25);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V26);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V27);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V28);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V29);
-    __ aesimc(V0, V0);
-    __ aesd(V0, V30);
-    __ eor(V0, V0, V31, MacroAssembler::VELEM_SIZE_8, quad);
-    __ eor(V0, V0, V2, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ vst1(V0, Address(to, 16, post_indexed), MacroAssembler::VELEM_SIZE_8, 128);
-    __ orr(V2, V1, V1, MacroAssembler::VELEM_SIZE_8, quad);
-
-    __ sub(len_reg, len_reg, 16);
-    __ cbnz(len_reg, L_aes_loop);
-
-    __ vst1(V2, Address(rvec), MacroAssembler::VELEM_SIZE_8, 128);
-
-    __ mov(R0, R9);
-
-    __ mov(SP, FP);
-    __ ldp(FP, LR, Address(SP, 2 * wordSize, post_indexed));
-    __ ret(LR);
-
-    return start;
-  }
-
-#endif // COMPILER2
-#endif // AARCH64
 
  private:
 
@@ -4298,7 +2988,6 @@ class StubGenerator: public StubCodeGenerator {
     // stub for throwing stack overflow error used both by interpreter and compiler
     StubRoutines::_throw_StackOverflowError_entry  = generate_throw_exception("StackOverflowError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
-#ifndef AARCH64
     // integer division used both by interpreter and compiler
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
 
@@ -4308,7 +2997,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_load_long_entry = generate_atomic_load_long();
     StubRoutines::_atomic_store_long_entry = generate_atomic_store_long();
-#endif // !AARCH64
   }
 
   void generate_all() {
@@ -4338,24 +3026,10 @@ class StubGenerator: public StubCodeGenerator {
     generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
                                                    &StubRoutines::_safefetch32_fault_pc,
                                                    &StubRoutines::_safefetch32_continuation_pc);
-#ifdef AARCH64
-    generate_safefetch("SafeFetchN", wordSize, &StubRoutines::_safefetchN_entry,
-                                               &StubRoutines::_safefetchN_fault_pc,
-                                               &StubRoutines::_safefetchN_continuation_pc);
-#ifdef COMPILER2
-    if (UseAESIntrinsics) {
-      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
-      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
-      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
-      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
-    }
-#endif
-#else
     assert (sizeof(int) == wordSize, "32-bit architecture");
     StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
     StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
     StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
-#endif // AARCH64
 
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code

@@ -72,8 +72,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
       [JVM variants (separated by commas) to build (server,client,minimal,core,zero,custom) @<:@server@:>@])])
 
-  SETUP_HOTSPOT_TARGET_CPU_PORT
-
   if test "x$with_jvm_variants" = x; then
     with_jvm_variants="server"
   fi
@@ -299,9 +297,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   if test "x$OPENJDK_TARGET_CPU" = xarm; then
     HOTSPOT_TARGET_CPU=arm_32
     HOTSPOT_TARGET_CPU_DEFINE="ARM32"
-  elif test "x$OPENJDK_TARGET_CPU" = xaarch64 && test "x$HOTSPOT_TARGET_CPU_PORT" = xarm64; then
-    HOTSPOT_TARGET_CPU=arm_64
-    HOTSPOT_TARGET_CPU_ARCH=arm
   fi
 
   # Verify that dependencies are met for explicitly set features.
@@ -542,6 +537,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # Used for verification of Makefiles by check-jvm-feature
   AC_SUBST(VALID_JVM_FEATURES)
+
+  # --with-cpu-port is no longer supported
+  BASIC_DEPRECATED_ARG_WITH(with-cpu-port)
 ])
 
 ###############################################################################
@@ -577,31 +575,6 @@ AC_DEFUN_ONCE([HOTSPOT_FINALIZE_JVM_FEATURES],
     fi
   done
 ])
-
-################################################################################
-#
-# Specify which sources will be used to build the 64-bit ARM port
-#
-# --with-cpu-port=arm64   will use hotspot/src/cpu/arm
-# --with-cpu-port=aarch64 will use hotspot/src/cpu/aarch64
-#
-AC_DEFUN([SETUP_HOTSPOT_TARGET_CPU_PORT],
-[
-  AC_ARG_WITH(cpu-port, [AS_HELP_STRING([--with-cpu-port],
-      [specify sources to use for Hotspot 64-bit ARM port (arm64,aarch64) @<:@aarch64@:>@ ])])
-
-  if test "x$with_cpu_port" != x; then
-    if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
-      AC_MSG_ERROR([--with-cpu-port only available on aarch64])
-    fi
-    if test "x$with_cpu_port" != xarm64 && \
-        test "x$with_cpu_port" != xaarch64; then
-      AC_MSG_ERROR([--with-cpu-port must specify arm64 or aarch64])
-    fi
-    HOTSPOT_TARGET_CPU_PORT="$with_cpu_port"
-  fi
-])
-
 
 ################################################################################
 # Check if gtest should be built

@@ -44,9 +44,6 @@
                                  Label* profile_cast_success, Label* profile_cast_failure,
                                  Label* success, Label* failure);
 
-#ifdef AARCH64
-  void long_compare_helper(LIR_Opr opr1, LIR_Opr opr2);
-#endif // AARCH64
 
   // Saves 4 given registers in reserved argument area.
   void save_in_reserved_area(Register r1, Register r2, Register r3, Register r4);
@@ -55,10 +52,10 @@
   void restore_from_reserved_area(Register r1, Register r2, Register r3, Register r4);
 
   enum {
-    _call_stub_size = AARCH64_ONLY(32) NOT_AARCH64(16),
+    _call_stub_size = 16,
     _call_aot_stub_size = 0,
-    _exception_handler_size = PRODUCT_ONLY(AARCH64_ONLY(256) NOT_AARCH64(68)) NOT_PRODUCT(AARCH64_ONLY(256+216) NOT_AARCH64(68+60)),
-    _deopt_handler_size = AARCH64_ONLY(32) NOT_AARCH64(16)
+    _exception_handler_size = PRODUCT_ONLY(68) NOT_PRODUCT(68+60),
+    _deopt_handler_size = 16
   };
 
  public:

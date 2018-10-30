@@ -44,7 +44,6 @@
  * kernel source or kernel_user_helpers.txt in Linux Doc.
  */
 
-#ifndef AARCH64
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
@@ -61,18 +60,9 @@ inline void Atomic::PlatformStore<8>::operator()(T store_value,
   (*os::atomic_store_long_func)(
     PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
-#endif
 
 // As per atomic.hpp all read-modify-write operations have to provide two-way
-// barriers semantics. For AARCH64 we are using load-acquire-with-reservation and
-// store-release-with-reservation. While load-acquire combined with store-release
-// do not generally form two-way barriers, their use with reservations does - the
-// ARMv8 architecture manual Section F "Barrier Litmus Tests" indicates they
-// provide sequentially consistent semantics. All we need to add is an explicit
-// barrier in the failure path of the cmpxchg operations (as these don't execute
-// the store) - arguably this may be overly cautious as there is a very low
-// likelihood that the hardware would pull loads/stores into the region guarded
-// by the reservation.
+// barriers semantics.
 //
 // For ARMv7 we add explicit barriers in the stubs.
 
@@ -90,45 +80,9 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
-#ifdef AARCH64
-  D val;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %w[val], [%[dest]]\n\t"
-    " add %w[val], %w[val], %w[add_val]\n\t"
-    " stlxr %w[tmp], %w[val], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    : [val] "=&r" (val), [tmp] "=&r" (tmp)
-    : [add_val] "r" (add_value), [dest] "r" (dest)
-    : "memory");
-  return val;
-#else
   return add_using_helper<int32_t>(os::atomic_add_func, add_value, dest);
-#endif
 }
 
-#ifdef AARCH64
-template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest,
-                                               atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
-  D val;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %[val], [%[dest]]\n\t"
-    " add %[val], %[val], %[add_val]\n\t"
-    " stlxr %w[tmp], %[val], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    : [val] "=&r" (val), [tmp] "=&r" (tmp)
-    : [add_val] "r" (add_value), [dest] "r" (dest)
-    : "memory");
-  return val;
-}
-#endif
 
 template<>
 template<typename T>
@@ -136,43 +90,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
                                              T volatile* dest,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-#ifdef AARCH64
-  T old_val;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %w[old_val], [%[dest]]\n\t"
-    " stlxr %w[tmp], %w[new_val], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    : [old_val] "=&r" (old_val), [tmp] "=&r" (tmp)
-    : [new_val] "r" (exchange_value), [dest] "r" (dest)
-    : "memory");
-  return old_val;
-#else
   return xchg_using_helper<int32_t>(os::atomic_xchg_func, exchange_value, dest);
-#endif
 }
 
-#ifdef AARCH64
-template<>
-template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
-                                             T volatile* dest,
-                                             atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
-  T old_val;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %[old_val], [%[dest]]\n\t"
-    " stlxr %w[tmp], %[new_val], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    : [old_val] "=&r" (old_val), [tmp] "=&r" (tmp)
-    : [new_val] "r" (exchange_value), [dest] "r" (dest)
-    : "memory");
-  return old_val;
-}
-#endif // AARCH64
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 
@@ -180,7 +100,6 @@ inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
 template<>
 struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
-#ifndef AARCH64
 
 inline int32_t reorder_cmpxchg_func(int32_t exchange_value,
                                     int32_t volatile* dest,
@@ -197,7 +116,6 @@ inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
   return (*os::atomic_cmpxchg_long_func)(compare_value, exchange_value, dest);
 }
 
-#endif // !AARCH64
 
 template<>
 template<typename T>
@@ -206,27 +124,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
                                                 T compare_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-#ifdef AARCH64
-  T rv;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %w[rv], [%[dest]]\n\t"
-    " cmp %w[rv], %w[cv]\n\t"
-    " b.ne 2f\n\t"
-    " stlxr %w[tmp], %w[ev], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    " b 3f\n\t"
-    "2:\n\t"
-    " dmb sy\n\t"
-    "3:\n\t"
-    : [rv] "=&r" (rv), [tmp] "=&r" (tmp)
-    : [ev] "r" (exchange_value), [dest] "r" (dest), [cv] "r" (compare_value)
-    : "memory");
-  return rv;
-#else
   return cmpxchg_using_helper<int32_t>(reorder_cmpxchg_func, exchange_value, dest, compare_value);
-#endif
 }
 
 template<>
@@ -236,27 +134,7 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T compare_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-#ifdef AARCH64
-  T rv;
-  int tmp;
-  __asm__ volatile(
-    "1:\n\t"
-    " ldaxr %[rv], [%[dest]]\n\t"
-    " cmp %[rv], %[cv]\n\t"
-    " b.ne 2f\n\t"
-    " stlxr %w[tmp], %[ev], [%[dest]]\n\t"
-    " cbnz %w[tmp], 1b\n\t"
-    " b 3f\n\t"
-    "2:\n\t"
-    " dmb sy\n\t"
-    "3:\n\t"
-    : [rv] "=&r" (rv), [tmp] "=&r" (tmp)
-    : [ev] "r" (exchange_value), [dest] "r" (dest), [cv] "r" (compare_value)
-    : "memory");
-  return rv;
-#else
   return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, exchange_value, dest, compare_value);
-#endif
 }
 
 #endif // OS_CPU_LINUX_ARM_VM_ATOMIC_LINUX_ARM_HPP
