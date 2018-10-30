@@ -24,6 +24,8 @@
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
 
 using namespace metaspace;
