@@ -200,7 +200,7 @@ public class  XMSelection {
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("client messags = " + xce);
             }
-            long timestamp = xce.get_data(0);
+            long timestamp = xce.get_data(0) & 0xFFFFFFFFL;
             long atom = xce.get_data(1);
             long owner = xce.get_data(2);
             long data = xce.get_data(3);

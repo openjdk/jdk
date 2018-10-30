@@ -620,7 +620,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         /* Time stamp - new in XDnD version 1. */
         if (sourceProtocolVersion > 0) {
-            time_stamp = xclient.get_data(3);
+            time_stamp = xclient.get_data(3) & 0xFFFFFFFFL;
         }
 
         /* User action - new in XDnD version 2. */
@@ -867,7 +867,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
          */
         if (dropAction == DnDConstants.ACTION_MOVE && success) {
 
-            long time_stamp = xclient.get_data(2);
+            long time_stamp = xclient.get_data(2) & 0xFFFFFFFFL;
             long xdndSelectionAtom =
                 XDnDConstants.XDnDSelection.getSelectionAtom().getAtom();
 
