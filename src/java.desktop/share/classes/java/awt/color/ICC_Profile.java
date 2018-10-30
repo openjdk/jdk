@@ -23,8 +23,7 @@
  * questions.
  */
 
-/*
- **********************************************************************
+/* ********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -36,17 +35,8 @@
 
 package java.awt.color;
 
-import sun.java2d.cmm.PCMM;
-import sun.java2d.cmm.CMSManager;
-import sun.java2d.cmm.Profile;
-import sun.java2d.cmm.ProfileDataVerifier;
-import sun.java2d.cmm.ProfileDeferralMgr;
-import sun.java2d.cmm.ProfileDeferralInfo;
-import sun.java2d.cmm.ProfileActivator;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilePermission;
 import java.io.IOException;
@@ -56,42 +46,43 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serializable;
-
-import java.util.StringTokenizer;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.StringTokenizer;
 
+import sun.java2d.cmm.CMSManager;
+import sun.java2d.cmm.PCMM;
+import sun.java2d.cmm.Profile;
+import sun.java2d.cmm.ProfileActivator;
+import sun.java2d.cmm.ProfileDataVerifier;
+import sun.java2d.cmm.ProfileDeferralInfo;
+import sun.java2d.cmm.ProfileDeferralMgr;
 
 /**
- * A representation of color profile data for device independent and
- * device dependent color spaces based on the International Color
- * Consortium Specification ICC.1:2001-12, File Format for Color Profiles,
- * (see <A href="http://www.color.org"> http://www.color.org</A>).
+ * A representation of color profile data for device independent and device
+ * dependent color spaces based on the International Color Consortium
+ * Specification ICC.1:2001-12, File Format for Color Profiles, (see
+ * <a href="http://www.color.org"> http://www.color.org</a>).
  * <p>
- * An ICC_ColorSpace object can be constructed from an appropriate
- * ICC_Profile.
- * Typically, an ICC_ColorSpace would be associated with an ICC
- * Profile which is either an input, display, or output profile (see
- * the ICC specification).  There are also device link, abstract,
- * color space conversion, and named color profiles.  These are less
- * useful for tagging a color or image, but are useful for other
- * purposes (in particular device link profiles can provide improved
- * performance for converting from one device's color space to
- * another's).
+ * An {@code ICC_ColorSpace} object can be constructed from an appropriate
+ * {@code ICC_Profile}. Typically, an {@code ICC_ColorSpace} would be associated
+ * with an ICC Profile which is either an input, display, or output profile (see
+ * the ICC specification). There are also device link, abstract, color space
+ * conversion, and named color profiles. These are less useful for tagging a
+ * color or image, but are useful for other purposes (in particular device link
+ * profiles can provide improved performance for converting from one device's
+ * color space to another's).
  * <p>
- * ICC Profiles represent transformations from the color space of
- * the profile (e.g. a monitor) to a Profile Connection Space (PCS).
- * Profiles of interest for tagging images or colors have a PCS
- * which is one of the two specific device independent
- * spaces (one CIEXYZ space and one CIELab space) defined in the
- * ICC Profile Format Specification.  Most profiles of interest
- * either have invertible transformations or explicitly specify
- * transformations going both directions.
+ * ICC Profiles represent transformations from the color space of the profile
+ * (e.g. a monitor) to a Profile Connection Space (PCS). Profiles of interest
+ * for tagging images or colors have a PCS which is one of the two specific
+ * device independent spaces (one CIEXYZ space and one CIELab space) defined in
+ * the ICC Profile Format Specification. Most profiles of interest either have
+ * invertible transformations or explicitly specify transformations going both
+ * directions.
+ *
  * @see ICC_ColorSpace
  */
-
-
 public class ICC_Profile implements Serializable {
 
     private static final long serialVersionUID = -3938515861990936766L;
@@ -109,7 +100,6 @@ public class ICC_Profile implements Serializable {
     private static ICC_Profile PYCCprofile;
     private static ICC_Profile GRAYprofile;
     private static ICC_Profile LINEAR_RGBprofile;
-
 
     /**
      * Profile class is input.
@@ -145,7 +135,6 @@ public class ICC_Profile implements Serializable {
      * Profile class is named color.
      */
     public static final int CLASS_NAMEDCOLOR = 6;
-
 
     /**
      * ICC Profile Color Space Type Signature: 'XYZ '.
@@ -321,6 +310,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Rendering Intent: Media-RelativeColorimetric.
+     *
      * @since 1.5
      */
     public static final int icMediaRelativeColorimetric = 1;
@@ -337,6 +327,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Rendering Intent: ICC-AbsoluteColorimetric.
+     *
      * @since 1.5
      */
     public static final int icICCAbsoluteColorimetric = 3;
@@ -369,6 +360,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Tag Signature: 'bXYZ'.
+     *
      * @since 1.5
      */
     public static final int icSigBlueMatrixColumnTag = 0x6258595A; /* 'bXYZ' */
@@ -446,6 +438,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Tag Signature: 'gXYZ'.
+     *
      * @since 1.5
      */
     public static final int icSigGreenMatrixColumnTag = 0x6758595A;/* 'gXYZ' */
@@ -550,6 +543,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Tag Signature: 'rXYZ'.
+     *
      * @since 1.5
      */
     public static final int icSigRedMatrixColumnTag = 0x7258595A;  /* 'rXYZ' */
@@ -596,18 +590,21 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Tag Signature: 'chad'.
+     *
      * @since 1.5
      */
     public static final int icSigChromaticAdaptationTag = 0x63686164;/* 'chad' */
 
     /**
      * ICC Profile Tag Signature: 'clro'.
+     *
      * @since 1.5
      */
     public static final int icSigColorantOrderTag = 0x636C726F;    /* 'clro' */
 
     /**
      * ICC Profile Tag Signature: 'clrt'.
+     *
      * @since 1.5
      */
     public static final int icSigColorantTableTag = 0x636C7274;    /* 'clrt' */
@@ -695,6 +692,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * ICC Profile Header Location: profile's ID.
+     *
      * @since 1.5
      */
     public static final int icHdrProfileID = 84; /* Profile's ID */
@@ -727,15 +725,14 @@ public class ICC_Profile implements Serializable {
 
 
     /**
-     * Constructs an ICC_Profile object with a given ID.
+     * Constructs an {@code ICC_Profile} object with a given ID.
      */
     ICC_Profile(Profile p) {
         this.cmmProfile = p;
     }
 
-
     /**
-     * Constructs an ICC_Profile object whose loading will be deferred.
+     * Constructs an {@code ICC_Profile} object whose loading will be deferred.
      * The ID will be 0 until the profile is loaded.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
@@ -748,18 +745,18 @@ public class ICC_Profile implements Serializable {
         ProfileDeferralMgr.registerDeferral(this.profileActivator);
     }
 
-
     /**
-     * Frees the resources associated with an ICC_Profile object.
+     * Frees the resources associated with an {@code ICC_Profile} object.
      *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
+     * @deprecated The {@code finalize} method has been deprecated. Subclasses
+     *         that override {@code finalize} in order to perform cleanup should
+     *         be modified to use alternative cleanup mechanisms and to remove
+     *         the overriding {@code finalize} method. When overriding the
+     *         {@code finalize} method, its implementation must explicitly
+     *         ensure that {@code super.finalize()} is invoked as described in
+     *         {@link Object#finalize}. See the specification for {@link
+     *         Object#finalize()} for further information about migration
+     *         options.
      */
     @Deprecated(since="9")
     protected void finalize () {
@@ -770,14 +767,14 @@ public class ICC_Profile implements Serializable {
         }
     }
 
-
     /**
-     * Constructs an ICC_Profile object corresponding to the data in
-     * a byte array.  Throws an IllegalArgumentException if the data
-     * does not correspond to a valid ICC Profile.
-     * @param data the specified ICC Profile data
-     * @return an {@code ICC_Profile} object corresponding to
-     *          the data in the specified {@code data} array.
+     * Constructs an {@code ICC_Profile} object corresponding to the data in a
+     * byte array. Throws an {@code IllegalArgumentException} if the data does
+     * not correspond to a valid ICC Profile.
+     *
+     * @param  data the specified ICC Profile data
+     * @return an {@code ICC_Profile} object corresponding to the data in the
+     *         specified {@code data} array
      */
     public static ICC_Profile getInstance(byte[] data) {
     ICC_Profile thisProfile;
@@ -821,22 +818,19 @@ public class ICC_Profile implements Serializable {
         return thisProfile;
     }
 
-
-
     /**
-     * Constructs an ICC_Profile corresponding to one of the specific color
-     * spaces defined by the ColorSpace class (for example CS_sRGB).
-     * Throws an IllegalArgumentException if cspace is not one of the
-     * defined color spaces.
+     * Constructs an {@code ICC_Profile} corresponding to one of the specific
+     * color spaces defined by the {@code ColorSpace} class (for example
+     * {@code CS_sRGB}). Throws an {@code IllegalArgumentException} if cspace is
+     * not one of the defined color spaces.
      *
-     * @param cspace the type of color space to create a profile for.
-     * The specified type is one of the color
-     * space constants defined in the  {@code ColorSpace} class.
-     *
-     * @return an {@code ICC_Profile} object corresponding to
-     *          the specified {@code ColorSpace} type.
-     * @exception IllegalArgumentException If {@code cspace} is not
-     * one of the predefined color space types.
+     * @param  cspace the type of color space to create a profile for. The
+     *         specified type is one of the color space constants defined in the
+     *         {@code ColorSpace} class.
+     * @return an {@code ICC_Profile} object corresponding to the specified
+     *         {@code ColorSpace} type
+     * @throws IllegalArgumentException If {@code cspace} is not one of the
+     *         predefined color space types
      */
     public static ICC_Profile getInstance (int cspace) {
         ICC_Profile thisProfile = null;
@@ -931,51 +925,49 @@ public class ICC_Profile implements Serializable {
         return thisProfile;
     }
 
-    /* This asserts system privileges, so is used only for the
-     * standard profiles.
+    /**
+     * This method asserts system privileges, so is used only for the standard
+     * profiles.
      */
     private static ICC_Profile getStandardProfile(final String name) {
-
         return AccessController.doPrivileged(
-            new PrivilegedAction<ICC_Profile>() {
-                 public ICC_Profile run() {
-                     ICC_Profile p = null;
-                     try {
-                         p = getInstance (name);
-                     } catch (IOException ex) {
-                         throw new IllegalArgumentException(
-                               "Can't load standard profile: " + name);
-                     }
-                     return p;
-                 }
-             });
+                new PrivilegedAction<ICC_Profile>() {
+                    public ICC_Profile run() {
+                        ICC_Profile p = null;
+                        try {
+                            p = getInstance(name);
+                        } catch (IOException ex) {
+                            throw new IllegalArgumentException(
+                                    "Can't load standard profile: " + name);
+                        }
+                        return p;
+                    }
+                });
     }
 
     /**
-     * Constructs an ICC_Profile corresponding to the data in a file.
-     * fileName may be an absolute or a relative file specification.
-     * Relative file names are looked for in several places: first, relative
-     * to any directories specified by the java.iccprofile.path property;
-     * second, relative to any directories specified by the java.class.path
-     * property; finally, in a directory used to store profiles always
-     * available, such as the profile for sRGB.  Built-in profiles use .pf as
-     * the file name extension for profiles, e.g. sRGB.pf.
-     * This method throws an IOException if the specified file cannot be
-     * opened or if an I/O error occurs while reading the file.  It throws
-     * an IllegalArgumentException if the file does not contain valid ICC
-     * Profile data.
-     * @param fileName The file that contains the data for the profile.
+     * Constructs an {@code ICC_Profile} corresponding to the data in a file.
+     * {@code fileName} may be an absolute or a relative file specification.
+     * Relative file names are looked for in several places: first, relative to
+     * any directories specified by the {@code java.iccprofile.path} property;
+     * second, relative to any directories specified by the
+     * {@code java.class.path} property; finally, in a directory used to store
+     * profiles always available, such as the profile for sRGB. Built-in
+     * profiles use {@code .pf} as the file name extension for profiles, e.g.
+     * {@code sRGB.pf}. This method throws an {@code IOException} if the
+     * specified file cannot be opened or if an I/O error occurs while reading
+     * the file. It throws an {@code IllegalArgumentException} if the file does
+     * not contain valid ICC Profile data.
      *
-     * @return an {@code ICC_Profile} object corresponding to
-     *          the data in the specified file.
-     * @exception IOException If the specified file cannot be opened or
-     * an I/O error occurs while reading the file.
-     *
-     * @exception IllegalArgumentException If the file does not
-     * contain valid ICC Profile data.
-     *
-     * @exception SecurityException If a security manager is installed
-     * and it does not permit read access to the given file.
+     * @param  fileName the file that contains the data for the profile
+     * @return an {@code ICC_Profile} object corresponding to the data in the
+     *         specified file
+     * @throws IOException If the specified file cannot be opened or an I/O
+     *         error occurs while reading the file
+     * @throws IllegalArgumentException If the file does not contain valid ICC
+     *         Profile data
+     * @throws SecurityException If a security manager is installed and it does
+     *         not permit read access to the given file
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
         ICC_Profile thisProfile;
@@ -999,21 +991,19 @@ public class ICC_Profile implements Serializable {
         return thisProfile;
     }
 
-
     /**
-     * Constructs an ICC_Profile corresponding to the data in an InputStream.
-     * This method throws an IllegalArgumentException if the stream does not
-     * contain valid ICC Profile data.  It throws an IOException if an I/O
-     * error occurs while reading the stream.
-     * @param s The input stream from which to read the profile data.
+     * Constructs an {@code ICC_Profile} corresponding to the data in an
+     * {@code InputStream}. This method throws an
+     * {@code IllegalArgumentException} if the stream does not contain valid ICC
+     * Profile data. It throws an {@code IOException} if an I/O error occurs
+     * while reading the stream.
      *
-     * @return an {@code ICC_Profile} object corresponding to the
-     *     data in the specified {@code InputStream}.
-     *
-     * @exception IOException If an I/O error occurs while reading the stream.
-     *
-     * @exception IllegalArgumentException If the stream does not
-     * contain valid ICC Profile data.
+     * @param  s the input stream from which to read the profile data
+     * @return an {@code ICC_Profile} object corresponding to the data in the
+     *         specified {@code InputStream}
+     * @throws IOException If an I/O error occurs while reading the stream
+     * @throws IllegalArgumentException If the stream does not contain valid ICC
+     *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
     byte[] profileData;
@@ -1070,17 +1060,15 @@ public class ICC_Profile implements Serializable {
         return profileData;
     }
 
-
     /**
-     * Constructs an ICC_Profile for which the actual loading of the
-     * profile data from a file and the initialization of the CMM should
-     * be deferred as long as possible.
-     * Deferral is only used for standard profiles.
-     * If deferring is disabled, then getStandardProfile() ensures
-     * that all of the appropriate access privileges are granted
-     * when loading this profile.
-     * If deferring is enabled, then the deferred activation
-     * code will take care of access privileges.
+     * Constructs an {@code ICC_Profile} for which the actual loading of the
+     * profile data from a file and the initialization of the CMM should be
+     * deferred as long as possible. Deferral is only used for standard
+     * profiles. If deferring is disabled, then getStandardProfile() ensures
+     * that all of the appropriate access privileges are granted when loading
+     * this profile. If deferring is enabled, then the deferred activation code
+     * will take care of access privileges.
+     *
      * @see #activateDeferredProfile()
      */
     static ICC_Profile getDeferredInstance(ProfileDeferralInfo pdi) {
@@ -1131,10 +1119,10 @@ public class ICC_Profile implements Serializable {
         }
     }
 
-
     /**
      * Returns profile major version.
-     * @return  The major version of the profile.
+     *
+     * @return the major version of the profile
      */
     public int getMajorVersion() {
     byte[] theHeader;
@@ -1147,7 +1135,8 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Returns profile minor version.
-     * @return The minor version of the profile.
+     *
+     * @return the minor version of the profile
      */
     public int getMinorVersion() {
     byte[] theHeader;
@@ -1160,7 +1149,8 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Returns the profile class.
-     * @return One of the predefined profile class constants.
+     *
+     * @return one of the predefined profile class constants
      */
     public int getProfileClass() {
     byte[] theHeader;
@@ -1214,16 +1204,16 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Returns the color space type.  Returns one of the color space type
-     * constants defined by the ColorSpace class.  This is the
-     * "input" color space of the profile.  The type defines the
-     * number of components of the color space and the interpretation,
-     * e.g. TYPE_RGB identifies a color space with three components - red,
-     * green, and blue.  It does not define the particular color
-     * characteristics of the space, e.g. the chromaticities of the
-     * primaries.
-     * @return One of the color space type constants defined in the
-     * {@code ColorSpace} class.
+     * Returns the color space type. Returns one of the color space type
+     * constants defined by the {@code ColorSpace} class. This is the "input"
+     * color space of the profile. The type defines the number of components of
+     * the color space and the interpretation, e.g. {@code TYPE_RGB} identifies
+     * a color space with three components - red, green, and blue. It does not
+     * define the particular color characteristics of the space, e.g. the
+     * chromaticities of the primaries.
+     *
+     * @return one of the color space type constants defined in the
+     *         {@code ColorSpace} class
      */
     public int getColorSpaceType() {
         if (deferralInfo != null) {
@@ -1247,15 +1237,16 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Returns the color space type of the Profile Connection Space (PCS).
-     * Returns one of the color space type constants defined by the
-     * ColorSpace class.  This is the "output" color space of the
-     * profile.  For an input, display, or output profile useful
-     * for tagging colors or images, this will be either TYPE_XYZ or
-     * TYPE_Lab and should be interpreted as the corresponding specific
-     * color space defined in the ICC specification.  For a device
-     * link profile, this could be any of the color space type constants.
-     * @return One of the color space type constants defined in the
-     * {@code ColorSpace} class.
+     * Returns one of the color space type constants defined by the ColorSpace
+     * class. This is the "output" color space of the profile. For an input,
+     * display, or output profile useful for tagging colors or images, this will
+     * be either {@code TYPE_XYZ} or {@code TYPE_Lab} and should be interpreted
+     * as the corresponding specific color space defined in the ICC
+     * specification. For a device link profile, this could be any of the color
+     * space type constants.
+     *
+     * @return one of the color space type constants defined in the
+     *         {@code ColorSpace} class
      */
     public int getPCSType() {
         if (ProfileDeferralMgr.deferring) {
@@ -1275,14 +1266,12 @@ public class ICC_Profile implements Serializable {
         return thePCS;
     }
 
-
     /**
-     * Write this ICC_Profile to a file.
+     * Write this {@code ICC_Profile} to a file.
      *
-     * @param fileName The file to write the profile data to.
-     *
-     * @exception IOException If the file cannot be opened for writing
-     * or an I/O error occurs while writing to the file.
+     * @param  fileName the file to write the profile data to
+     * @throws IOException If the file cannot be opened for writing or an I/O
+     *         error occurs while writing to the file
      */
     public void write(String fileName) throws IOException {
     FileOutputStream outputFile;
@@ -1295,14 +1284,11 @@ public class ICC_Profile implements Serializable {
         outputFile.close ();
     }
 
-
     /**
-     * Write this ICC_Profile to an OutputStream.
+     * Write this {@code ICC_Profile} to an {@code OutputStream}.
      *
-     * @param s The stream to write the profile data to.
-     *
-     * @exception IOException If an I/O error occurs while writing to the
-     * stream.
+     * @param  s the stream to write the profile data to
+     * @throws IOException If an I/O error occurs while writing to the stream
      */
     public void write(OutputStream s) throws IOException {
     byte[] profileData;
@@ -1312,10 +1298,11 @@ public class ICC_Profile implements Serializable {
         s.write(profileData);
     }
 
-
     /**
-     * Returns a byte array corresponding to the data of this ICC_Profile.
-     * @return A byte array that contains the profile data.
+     * Returns a byte array corresponding to the data of this
+     * {@code ICC_Profile}.
+     *
+     * @return a byte array that contains the profile data
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
@@ -1339,20 +1326,17 @@ public class ICC_Profile implements Serializable {
         return profileData;
     }
 
-
     /**
-     * Returns a particular tagged data element from the profile as
-     * a byte array.  Elements are identified by signatures
-     * as defined in the ICC specification.  The signature
-     * icSigHead can be used to get the header.  This method is useful
-     * for advanced applets or applications which need to access
-     * profile data directly.
+     * Returns a particular tagged data element from the profile as a byte
+     * array. Elements are identified by signatures as defined in the ICC
+     * specification. The signature icSigHead can be used to get the header.
+     * This method is useful for advanced applets or applications which need to
+     * access profile data directly.
      *
-     * @param tagSignature The ICC tag signature for the data element you
-     * want to get.
-     *
-     * @return A byte array that contains the tagged data element. Returns
-     * {@code null} if the specified tag doesn't exist.
+     * @param  tagSignature the ICC tag signature for the data element you want
+     *         to get
+     * @return a byte array that contains the tagged data element. Returns
+     *         {@code null} if the specified tag doesn't exist.
      * @see #setData(int, byte[])
      */
     public byte[] getData(int tagSignature) {
@@ -1387,20 +1371,20 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Sets a particular tagged data element in the profile from
-     * a byte array. The array should contain data in a format, corresponded
-     * to the {@code tagSignature} as defined in the ICC specification, section 10.
+     * Sets a particular tagged data element in the profile from a byte array.
+     * The array should contain data in a format, corresponded to the
+     * {@code tagSignature} as defined in the ICC specification, section 10.
      * This method is useful for advanced applets or applications which need to
      * access profile data directly.
      *
-     * @param tagSignature The ICC tag signature for the data element
-     * you want to set.
-     * @param tagData the data to set for the specified tag signature
-     * @throws IllegalArgumentException if {@code tagSignature} is not a signature
-     *         as defined in the ICC specification.
+     * @param  tagSignature the ICC tag signature for the data element you want
+     *         to set
+     * @param  tagData the data to set for the specified tag signature
+     * @throws IllegalArgumentException if {@code tagSignature} is not a
+     *         signature as defined in the ICC specification.
      * @throws IllegalArgumentException if a content of the {@code tagData}
-     *         array can not be interpreted as valid tag data, corresponding
-     *         to the {@code tagSignature}.
+     *         array can not be interpreted as valid tag data, corresponding to
+     *         the {@code tagSignature}
      * @see #getData
      */
     public void setData(int tagSignature, byte[] tagData) {
@@ -1413,9 +1397,8 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Sets the rendering intent of the profile.
-     * This is used to select the proper transform from a profile that
-     * has multiple transforms.
+     * Sets the rendering intent of the profile. This is used to select the
+     * proper transform from a profile that has multiple transforms.
      */
     void setRenderingIntent(int renderingIntent) {
         byte[] theHeader = getData(icSigHead);/* getData will activate deferred
@@ -1425,12 +1408,11 @@ public class ICC_Profile implements Serializable {
         setData (icSigHead, theHeader);
     }
 
-
     /**
-     * Returns the rendering intent of the profile.
-     * This is used to select the proper transform from a profile that
-     * has multiple transforms.  It is typically set in a source profile
-     * to select a transform from an output profile.
+     * Returns the rendering intent of the profile. This is used to select the
+     * proper transform from a profile that has multiple transforms. It is
+     * typically set in a source profile to select a transform from an output
+     * profile.
      */
     int getRenderingIntent() {
         byte[] theHeader = getData(icSigHead);/* getData will activate deferred
@@ -1449,17 +1431,13 @@ public class ICC_Profile implements Serializable {
         return (0xffff & renderingIntent);
     }
 
-
     /**
-     * Returns the number of color components in the "input" color
-     * space of this profile.  For example if the color space type
-     * of this profile is TYPE_RGB, then this method will return 3.
+     * Returns the number of color components in the "input" color space of this
+     * profile. For example if the color space type of this profile is
+     * {@code TYPE_RGB}, then this method will return 3.
      *
-     * @return The number of color components in the profile's input
-     * color space.
-     *
-     * @throws ProfileDataException if color space is in the profile
-     *         is invalid
+     * @return the number of color components in the profile's input color space
+     * @throws ProfileDataException if color space is in the profile is invalid
      */
     public int getNumComponents() {
     byte[]    theHeader;
@@ -1553,20 +1531,18 @@ public class ICC_Profile implements Serializable {
         return theNumComponents;
     }
 
-
     /**
-     * Returns a float array of length 3 containing the X, Y, and Z
-     * components of the mediaWhitePointTag in the ICC profile.
+     * Returns a float array of length 3 containing the X, Y, and Z components
+     * of the mediaWhitePointTag in the ICC profile.
      */
     float[] getMediaWhitePoint() {
         return getXYZTag(icSigMediaWhitePointTag);
                                            /* get the media white point tag */
     }
 
-
     /**
-     * Returns a float array of length 3 containing the X, Y, and Z
-     * components encoded in an XYZType tag.
+     * Returns a float array of length 3 containing the X, Y, and Z components
+     * encoded in an XYZType tag.
      */
     float[] getXYZTag(int theTagSignature) {
     byte[] theData;
@@ -1587,17 +1563,17 @@ public class ICC_Profile implements Serializable {
         return theXYZNumber;
     }
 
-
     /**
-     * Returns a gamma value representing a tone reproduction
-     * curve (TRC).  If the profile represents the TRC as a table rather
-     * than a single gamma value, then an exception is thrown.  In this
-     * case the actual table can be obtained via getTRC().
-     * theTagSignature should be one of icSigGrayTRCTag, icSigRedTRCTag,
-     * icSigGreenTRCTag, or icSigBlueTRCTag.
-     * @return the gamma value as a float.
-     * @exception ProfileDataException if the profile does not specify
-     *            the TRC as a single gamma value.
+     * Returns a gamma value representing a tone reproduction curve (TRC). If
+     * the profile represents the TRC as a table rather than a single gamma
+     * value, then an exception is thrown. In this case the actual table can be
+     * obtained via {@link #getTRC}. {@code theTagSignature} should be one of
+     * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
+     * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
+     *
+     * @return the gamma value as a float
+     * @throws ProfileDataException if the profile does not specify the TRC as a
+     *         single gamma value
      */
     float getGamma(int theTagSignature) {
     byte[] theTRCData;
@@ -1620,26 +1596,25 @@ public class ICC_Profile implements Serializable {
         return theGamma;
     }
 
-
     /**
-     * Returns the TRC as an array of shorts.  If the profile has
-     * specified the TRC as linear (gamma = 1.0) or as a simple gamma
-     * value, this method throws an exception, and the getGamma() method
-     * should be used to get the gamma value.  Otherwise the short array
-     * returned here represents a lookup table where the input Gray value
-     * is conceptually in the range [0.0, 1.0].  Value 0.0 maps
-     * to array index 0 and value 1.0 maps to array index length-1.
-     * Interpolation may be used to generate output values for
-     * input values which do not map exactly to an index in the
-     * array.  Output values also map linearly to the range [0.0, 1.0].
-     * Value 0.0 is represented by an array value of 0x0000 and
-     * value 1.0 by 0xFFFF, i.e. the values are really unsigned
-     * short values, although they are returned in a short array.
-     * theTagSignature should be one of icSigGrayTRCTag, icSigRedTRCTag,
-     * icSigGreenTRCTag, or icSigBlueTRCTag.
-     * @return a short array representing the TRC.
-     * @exception ProfileDataException if the profile does not specify
-     *            the TRC as a table.
+     * Returns the TRC as an array of shorts. If the profile has specified the
+     * TRC as linear (gamma = 1.0) or as a simple gamma value, this method
+     * throws an exception, and the {@link #getGamma} method should be used to
+     * get the gamma value. Otherwise the short array returned here represents a
+     * lookup table where the input Gray value is conceptually in the range
+     * [0.0, 1.0]. Value 0.0 maps to array index 0 and value 1.0 maps to array
+     * index length-1. Interpolation may be used to generate output values for
+     * input values which do not map exactly to an index in the array. Output
+     * values also map linearly to the range [0.0, 1.0]. Value 0.0 is
+     * represented by an array value of 0x0000 and value 1.0 by 0xFFFF, i.e. the
+     * values are really unsigned short values, although they are returned in a
+     * short array. {@code theTagSignature} should be one of
+     * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
+     * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
+     *
+     * @return a short array representing the TRC
+     * @throws ProfileDataException if the profile does not specify the TRC as a
+     *         table
      */
     short[] getTRC(int theTagSignature) {
     byte[] theTRCData;
@@ -1666,8 +1641,9 @@ public class ICC_Profile implements Serializable {
         return theTRC;
     }
 
-
-    /* convert an ICC color space signature into a Java color space type */
+    /**
+     * Convert an ICC color space signature into a Java color space type.
+     */
     static int iccCStoJCS(int theColorSpaceSig) {
     int theColorSpace;
 
@@ -1775,7 +1751,6 @@ public class ICC_Profile implements Serializable {
         default:
             throw new IllegalArgumentException ("Unknown color space");
         }
-
         return theColorSpace;
     }
 
@@ -1807,17 +1782,16 @@ public class ICC_Profile implements Serializable {
             array[index+1] = (byte) (value);
     }
 
-
-    /*
-     * fileName may be an absolute or a relative file specification.
-     * Relative file names are looked for in several places: first, relative
-     * to any directories specified by the java.iccprofile.path property;
-     * second, relative to any directories specified by the java.class.path.
-     * The built-in profile files are now loaded as resources, since they
-     * may not be individual disk files, and so this method will not find
-     * these and on a null return, the caller needs to try as resources.
-     * Built-in profiles use .pf as the file name extension for profiles,
-     * e.g. sRGB.pf.
+    /**
+     * {@code fileName} may be an absolute or a relative file specification.
+     * Relative file names are looked for in several places: first, relative to
+     * any directories specified by the {@code java.iccprofile.path} property;
+     * second, relative to any directories specified by the
+     * {@code java.class.path}. The built-in profile files are now loaded as
+     * resources, since they may not be individual disk files, and so this
+     * method will not find these and on a {@code null} return, the caller needs
+     * to try as resources. Built-in profiles use {@code .pf} as the file name
+     * extension for profiles, e.g. {@code sRGB.pf}.
      */
     private static File getProfileFile(String fileName) {
         String path, dir, fullPath;
@@ -1862,10 +1836,9 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Returns a stream corresponding to a built-in profile
-     * specified by fileName.
-     * If there is no built-in profile with such name, then the method
-     * returns null.
+     * Returns a stream corresponding to a built-in profile specified by
+     * fileName. If there is no built-in profile with such name, then the method
+     * returns {@code null}.
      */
     private static InputStream getStandardProfileInputStream(String fileName) {
         return AccessController.doPrivileged(
@@ -1909,68 +1882,58 @@ public class ICC_Profile implements Serializable {
             });
     }
 
-
     /*
      * Serialization support.
      *
-     * Directly deserialized profiles are useless since they are not
-     * registered with CMM.  We don't allow constructor to be called
-     * directly and instead have clients to call one of getInstance
-     * factory methods that will register the profile with CMM.  For
-     * deserialization we implement readResolve method that will
-     * resolve the bogus deserialized profile object with one obtained
-     * with getInstance as well.
+     * Directly deserialized profiles are useless since they are not registered
+     * with CMM. We don't allow constructor to be called directly and instead
+     * have clients to call one of getInstance factory methods that will
+     * register the profile with CMM. For deserialization we implement
+     * readResolve method that will resolve the bogus deserialized profile
+     * object with one obtained with getInstance as well.
      *
-     * There are two primary factory methods for construction of ICC
-     * profiles: getInstance(int cspace) and getInstance(byte[] data).
-     * This implementation of ICC_Profile uses the former to return a
-     * cached singleton profile object, other implementations will
-     * likely use this technique too.  To preserve the singleton
-     * pattern across serialization we serialize cached singleton
-     * profiles in such a way that deserializing VM could call
-     * getInstance(int cspace) method that will resolve deserialized
-     * object into the corresponding singleton as well.
+     * There are two primary factory methods for construction of ICC profiles:
+     * getInstance(int cspace) and getInstance(byte[] data). This implementation
+     * of ICC_Profile uses the former to return a cached singleton profile
+     * object, other implementations will likely use this technique too. To
+     * preserve the singleton pattern across serialization we serialize cached
+     * singleton profiles in such a way that deserializing VM could call
+     * getInstance(int cspace) method that will resolve deserialized object into
+     * the corresponding singleton as well.
      *
-     * Since the singletons are private to ICC_Profile the readResolve
-     * method have to be `protected' instead of `private' so that
-     * singletons that are instances of subclasses of ICC_Profile
-     * could be correctly deserialized.
+     * Since the singletons are private to ICC_Profile the readResolve method
+     * have to be `protected' instead of `private' so that singletons that are
+     * instances of subclasses of ICC_Profile could be correctly deserialized.
      */
 
-
     /**
-     * Version of the format of additional serialized data in the
-     * stream.  Version&nbsp;{@code 1} corresponds to Java&nbsp;2
-     * Platform,&nbsp;v1.3.
-     * @since 1.3
+     * Version of the format of additional serialized data in the stream.
+     * Version&nbsp;{@code 1} corresponds to Java&nbsp;2 Platform,&nbsp;v1.3.
+     *
      * @serial
+     * @since 1.3
      */
     private int iccProfileSerializedDataVersion = 1;
 
-
     /**
-     * Writes default serializable fields to the stream.  Writes a
-     * string and an array of bytes to the stream as additional data.
+     * Writes default serializable fields to the stream. Writes a string and an
+     * array of bytes to the stream as additional data.
      *
-     * @param s stream used for serialization.
-     * @throws IOException
-     *     thrown by {@code ObjectInputStream}.
-     * @serialData
-     *     The {@code String} is the name of one of
-     *     <code>CS_<var>*</var></code> constants defined in the
-     *     {@link ColorSpace} class if the profile object is a profile
-     *     for a predefined color space (for example
-     *     {@code "CS_sRGB"}).  The string is {@code null}
-     *     otherwise.
-     *     <p>
-     *     The {@code byte[]} array is the profile data for the
-     *     profile.  For predefined color spaces {@code null} is
-     *     written instead of the profile data.  If in the future
-     *     versions of Java API new predefined color spaces will be
-     *     added, future versions of this class may choose to write
-     *     for new predefined color spaces not only the color space
-     *     name, but the profile data as well so that older versions
-     *     could still deserialize the object.
+     * @param  s stream used for serialization
+     * @throws IOException thrown by {@code ObjectInputStream}
+     * @serialData the {@code String} is the name of one of
+     *         <code>CS_<var>*</var></code> constants defined in the
+     *         {@link ColorSpace} class if the profile object is a profile for a
+     *         predefined color space (for example {@code "CS_sRGB"}). The
+     *         string is {@code null} otherwise.
+     *         <p>
+     *         The {@code byte[]} array is the profile data for the profile. For
+     *         predefined color spaces {@code null} is written instead of the
+     *         profile data. If in the future versions of Java API new
+     *         predefined color spaces will be added, future versions of this
+     *         class may choose to write for new predefined color spaces not
+     *         only the color space name, but the profile data as well so that
+     *         older versions could still deserialize the object.
      */
     private void writeObject(ObjectOutputStream s)
       throws IOException
@@ -2009,33 +1972,30 @@ public class ICC_Profile implements Serializable {
     private transient ICC_Profile resolvedDeserializedProfile;
 
     /**
-     * Reads default serializable fields from the stream.  Reads from
-     * the stream a string and an array of bytes as additional data.
+     * Reads default serializable fields from the stream. Reads from the stream
+     * a string and an array of bytes as additional data.
      *
-     * @param s stream used for deserialization.
-     * @throws IOException
-     *     thrown by {@code ObjectInputStream}.
-     * @throws ClassNotFoundException
-     *     thrown by {@code ObjectInputStream}.
-     * @serialData
-     *     The {@code String} is the name of one of
-     *     <code>CS_<var>*</var></code> constants defined in the
-     *     {@link ColorSpace} class if the profile object is a profile
-     *     for a predefined color space (for example
-     *     {@code "CS_sRGB"}).  The string is {@code null}
-     *     otherwise.
-     *     <p>
-     *     The {@code byte[]} array is the profile data for the
-     *     profile.  It will usually be {@code null} for the
-     *     predefined profiles.
-     *     <p>
-     *     If the string is recognized as a constant name for
-     *     predefined color space the object will be resolved into
-     *     profile obtained with
-     *     <code>getInstance(int&nbsp;cspace)</code> and the profile
-     *     data are ignored.  Otherwise the object will be resolved
-     *     into profile obtained with
-     *     <code>getInstance(byte[]&nbsp;data)</code>.
+     * @param  s stream used for deserialization
+     * @throws IOException thrown by {@code ObjectInputStream}
+     * @throws ClassNotFoundException thrown by {@code
+     *         ObjectInputStream}
+     * @serialData the {@code String} is the name of one of
+     *         <code>CS_<var>*</var></code> constants defined in the
+     *         {@link ColorSpace} class if the profile object is a profile for a
+     *         predefined color space (for example {@code "CS_sRGB"}). The
+     *         string is {@code null} otherwise.
+     *         <p>
+     *         The {@code byte[]} array is the profile data for the profile. It
+     *         will usually be {@code null} for the predefined profiles.
+     *         <p>
+     *         If the string is recognized as a constant name for predefined
+     *         color space the object will be resolved into profile obtained
+     *         with
+     *         <code>getInstance(int&nbsp;cspace)</code> and the profile data
+     *         are
+     *         ignored. Otherwise the object will be resolved into profile
+     *         obtained with
+     *         <code>getInstance(byte[]&nbsp;data)</code>.
      * @see #readResolve()
      * @see #getInstance(int)
      * @see #getInstance(byte[])
@@ -2075,11 +2035,11 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Resolves instances being deserialized into instances registered
-     * with CMM.
-     * @return ICC_Profile object for profile registered with CMM.
-     * @throws ObjectStreamException
-     *     never thrown, but mandated by the serialization spec.
+     * Resolves instances being deserialized into instances registered with CMM.
+     *
+     * @return ICC_Profile object for profile registered with CMM
+     * @throws ObjectStreamException never thrown, but mandated by the
+     *         serialization spec
      * @since 1.3
      */
     protected Object readResolve() throws ObjectStreamException {
