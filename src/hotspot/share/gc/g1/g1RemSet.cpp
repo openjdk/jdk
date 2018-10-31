@@ -133,10 +133,10 @@ private:
 
     virtual bool do_heap_region(HeapRegion* r) {
       uint hrm_index = r->hrm_index();
-      if (!r->in_collection_set() && r->is_old_or_humongous_or_archive()) {
+      if (!r->in_collection_set() && r->is_old_or_humongous_or_archive() && !r->is_empty()) {
         _scan_top[hrm_index] = r->top();
       } else {
-        _scan_top[hrm_index] = r->bottom();
+        _scan_top[hrm_index] = NULL;
       }
       return false;
     }
@@ -191,6 +191,7 @@ public:
   void reset() {
     for (uint i = 0; i < _max_regions; i++) {
       _iter_states[i] = Unclaimed;
+      _scan_top[i] = NULL;
     }
 
     G1ResetScanTopClosure cl(_scan_top);
@@ -350,6 +351,10 @@ void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
     _scan_state->add_dirty_region(region_idx);
   }
 
+  if (r->rem_set()->cardset_is_empty()) {
+    return;
+  }
+
   // We claim cards in blocks so as to reduce the contention.
   size_t const block_size = G1RSetScanBlockSize;
 
@@ -367,18 +372,21 @@ void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
     }
     _cards_claimed++;
 
-    // If the card is dirty, then G1 will scan it during Update RS.
-    if (_ct->is_card_claimed(card_index) || _ct->is_card_dirty(card_index)) {
+    HeapWord* const card_start = _g1h->bot()->address_for_index_raw(card_index);
+    uint const region_idx_for_card = _g1h->addr_to_region(card_start);
+
+#ifdef ASSERT
+    HeapRegion* hr = _g1h->region_at_or_null(region_idx_for_card);
+    assert(hr == NULL || hr->is_in_reserved(card_start),
+           "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx_for_card)->hrm_index());
+#endif
+    HeapWord* const top = _scan_state->scan_top(region_idx_for_card);
+    if (card_start >= top) {
       continue;
     }
 
-    HeapWord* const card_start = _g1h->bot()->address_for_index(card_index);
-    uint const region_idx_for_card = _g1h->addr_to_region(card_start);
-
-    assert(_g1h->region_at(region_idx_for_card)->is_in_reserved(card_start),
-           "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx_for_card)->hrm_index());
-    HeapWord* const top = _scan_state->scan_top(region_idx_for_card);
-    if (card_start >= top) {
+    // If the card is dirty, then G1 will scan it during Update RS.
+    if (_ct->is_card_claimed(card_index) || _ct->is_card_dirty(card_index)) {
       continue;
     }
 
@@ -545,17 +553,22 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
                                         uint worker_i) {
   assert(!_g1h->is_gc_active(), "Only call concurrently");
 
+  // Construct the region representing the card.
+  HeapWord* start = _ct->addr_for(card_ptr);
+  // And find the region containing it.
+  HeapRegion* r = _g1h->heap_region_containing_or_null(start);
+
+  // If this is a (stale) card into an uncommitted region, exit.
+  if (r == NULL) {
+    return;
+  }
+
   check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do.
   if (*card_ptr != G1CardTable::dirty_card_val()) {
     return;
   }
-
-  // Construct the region representing the card.
-  HeapWord* start = _ct->addr_for(card_ptr);
-  // And find the region containing it.
-  HeapRegion* r = _g1h->heap_region_containing(start);
 
   // This check is needed for some uncommon cases where we should
   // ignore the card.
@@ -679,6 +692,18 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1h->is_gc_active(), "Only call during GC");
 
+  // Construct the region representing the card.
+  HeapWord* card_start = _ct->addr_for(card_ptr);
+  // And find the region containing it.
+  uint const card_region_idx = _g1h->addr_to_region(card_start);
+
+  HeapWord* scan_limit = _scan_state->scan_top(card_region_idx);
+  if (scan_limit == NULL) {
+    // This is a card into an uncommitted region. We need to bail out early as we
+    // should not access the corresponding card table entry.
+    return false;
+  }
+
   check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do. This covers cards that were already
@@ -691,13 +716,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   // number of potential duplicate scans (multiple threads may enqueue the same card twice).
   *card_ptr = G1CardTable::clean_card_val() | G1CardTable::claimed_card_val();
 
-  // Construct the region representing the card.
-  HeapWord* card_start = _ct->addr_for(card_ptr);
-  // And find the region containing it.
-  uint const card_region_idx = _g1h->addr_to_region(card_start);
-
   _scan_state->add_dirty_region(card_region_idx);
-  HeapWord* scan_limit = _scan_state->scan_top(card_region_idx);
   if (scan_limit <= card_start) {
     // If the card starts above the area in the region containing objects to scan, skip it.
     return false;

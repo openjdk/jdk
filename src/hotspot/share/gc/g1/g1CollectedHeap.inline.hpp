@@ -60,6 +60,9 @@ size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
+// Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
+inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
+
 inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
   return _hrm.next_region_in_humongous(hr);
 }
@@ -82,6 +85,16 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
          p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
   return _hrm.addr_to_region((HeapWord*) addr);
+}
+
+template <class T>
+inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const T addr) const {
+  assert(addr != NULL, "invariant");
+  assert(is_in_g1_reserved((const void*) addr),
+         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
+         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
+  uint const region_idx = addr_to_region(addr);
+  return region_at_or_null(region_idx);
 }
 
 inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {

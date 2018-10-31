@@ -1120,6 +1120,7 @@ public:
 
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
+  inline HeapRegion* region_at_or_null(uint index) const;
 
   // Return the next region (by index) that is part of the same
   // humongous object that hr is part of.
@@ -1156,6 +1157,11 @@ public:
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
   inline HeapRegion* heap_region_containing(const T addr) const;
+
+  // Returns the HeapRegion that contains addr, or NULL if that is an uncommitted
+  // region. addr must not be NULL.
+  template <class T>
+  inline HeapRegion* heap_region_containing_or_null(const T addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly

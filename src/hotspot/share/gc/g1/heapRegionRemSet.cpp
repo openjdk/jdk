@@ -751,7 +751,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
       _coarse_cur_region_cur_card = 0;
       HeapWord* r_bot =
         _g1h->region_at((uint) _coarse_cur_region_index)->bottom();
-      _cur_region_card_offset = _bot->index_for(r_bot);
+      _cur_region_card_offset = _bot->index_for_raw(r_bot);
     } else {
       return false;
     }
@@ -792,7 +792,7 @@ void HeapRegionRemSetIterator::switch_to_prt(PerRegionTable* prt) {
   _fine_cur_prt = prt;
 
   HeapWord* r_bot = _fine_cur_prt->hr()->bottom();
-  _cur_region_card_offset = _bot->index_for(r_bot);
+  _cur_region_card_offset = _bot->index_for_raw(r_bot);
 
   // The bitmap scan for the PRT always scans from _cur_region_cur_card + 1.
   // To avoid special-casing this start case, and not miss the first bitmap

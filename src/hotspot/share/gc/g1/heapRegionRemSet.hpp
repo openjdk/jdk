@@ -187,8 +187,12 @@ public:
 
   static void setup_remset_size();
 
+  bool cardset_is_empty() const {
+    return _other_regions.is_empty();
+  }
+
   bool is_empty() const {
-    return (strong_code_roots_list_length() == 0) && _other_regions.is_empty();
+    return (strong_code_roots_list_length() == 0) && cardset_is_empty();
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
@@ -353,7 +357,7 @@ public:
 };
 
 class HeapRegionRemSetIterator : public StackObj {
- private:
+private:
   // The region RSet over which we are iterating.
   HeapRegionRemSet* _hrrs;
 
@@ -401,7 +405,7 @@ class HeapRegionRemSetIterator : public StackObj {
   // The Sparse remembered set iterator.
   SparsePRTIter _sparse_iter;
 
- public:
+public:
   HeapRegionRemSetIterator(HeapRegionRemSet* hrrs);
 
   // If there remains one or more cards to be yielded, returns true and
