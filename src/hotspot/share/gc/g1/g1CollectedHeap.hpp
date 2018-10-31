@@ -468,9 +468,6 @@ private:
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  // Resize the heap if necessary after a full collection.
-  void resize_if_necessary_after_full_collection();
-
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
@@ -527,6 +524,8 @@ public:
     assert(_g1mm != NULL, "should have been initialized");
     return _g1mm;
   }
+
+  void resize_heap_if_necessary();
 
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;

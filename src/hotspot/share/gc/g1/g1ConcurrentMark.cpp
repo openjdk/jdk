@@ -1178,6 +1178,8 @@ void G1ConcurrentMark::remark() {
       ClassLoaderDataGraph::purge();
     }
 
+    _g1h->resize_heap_if_necessary();
+
     compute_new_sizes();
 
     verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark after");

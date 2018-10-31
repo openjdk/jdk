@@ -1043,7 +1043,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   assert(num_free_regions() == 0, "we should not have added any free regions");
   rebuild_region_sets(false /* free_list_only */);
   abort_refinement();
-  resize_if_necessary_after_full_collection();
+  resize_heap_if_necessary();
 
   // Rebuild the strong code root lists for each region
   rebuild_strong_code_roots();
@@ -1149,7 +1149,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
                                   clear_all_soft_refs);
 }
 
-void G1CollectedHeap::resize_if_necessary_after_full_collection() {
+void G1CollectedHeap::resize_heap_if_necessary() {
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.
   const size_t capacity_after_gc = capacity();
@@ -1206,7 +1206,7 @@ void G1CollectedHeap::resize_if_necessary_after_full_collection() {
     // Don't expand unless it's significant
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
 
-    log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity after Full GC). "
+    log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
                               "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
                               "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
                               capacity_after_gc, used_after_gc, used(), minimum_desired_capacity, MinHeapFreeRatio);
@@ -1218,7 +1218,7 @@ void G1CollectedHeap::resize_if_necessary_after_full_collection() {
     // Capacity too large, compute shrinking size
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
 
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity after Full GC). "
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
                               "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
                               "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
                               capacity_after_gc, used_after_gc, used(), maximum_desired_capacity, MaxHeapFreeRatio);
@@ -1394,8 +1394,8 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
 void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 
-  // We should only reach here at the end of a Full GC which means we
-  // should not not be holding to any GC alloc regions. The method
+  // We should only reach here at the end of a Full GC or during Remark which
+  // means we should not not be holding to any GC alloc regions. The method
   // below will make sure of that and do any remaining clean up.
   _allocator->abandon_gc_alloc_regions();
 
@@ -4399,13 +4399,13 @@ public:
   }
 
   bool do_heap_region(HeapRegion* r) {
-    // After full GC, no region should have a remembered set.
-    r->rem_set()->clear(true);
     if (r->is_empty()) {
+      assert(r->rem_set()->is_empty(), "Empty regions should have empty remembered sets.");
       // Add free regions to the free list
       r->set_free();
       _hrm->insert_into_free_list(r);
     } else if (!_free_list_only) {
+      assert(r->rem_set()->is_empty(), "At this point remembered sets must have been cleared.");
 
       if (r->is_archive() || r->is_humongous()) {
         // We ignore archive and humongous regions. We left these sets unchanged.
@@ -4443,10 +4443,9 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
       _archive_allocator->clear_used();
     }
   }
-  assert(used_unlocked() == recalculate_used(),
-         "inconsistent used_unlocked(), "
-         "value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
-         used_unlocked(), recalculate_used());
+  assert(used() == recalculate_used(),
+         "inconsistent used(), value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
+         used(), recalculate_used());
 }
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
