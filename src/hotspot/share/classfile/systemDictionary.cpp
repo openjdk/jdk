@@ -1189,20 +1189,15 @@ InstanceKlass* SystemDictionary::find_shared_class(Symbol* class_name) {
 }
 
 
-// Load a class from the shared spaces (found through the shared system
-// dictionary).  Force the superclass and all interfaces to be loaded.
-// Update the class definition to include sibling classes and no
-// subclasses (yet).  [Classes in the shared space are not part of the
-// object hierarchy until loaded.]
-
-InstanceKlass* SystemDictionary::load_shared_class(
-                 Symbol* class_name, Handle class_loader, TRAPS) {
+// Load a class for boot loader from the shared spaces (found through
+// the shared system dictionary). Force the super class and all interfaces
+// to be loaded.
+InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
+                                                        TRAPS) {
   InstanceKlass* ik = find_shared_class(class_name);
-  // Make sure we only return the boot class for the NULL classloader.
-  if (ik != NULL &&
-      ik->is_shared_boot_class() && class_loader.is_null()) {
-    Handle protection_domain;
-    return load_shared_class(ik, class_loader, protection_domain, THREAD);
+  // Make sure we only return the boot class.
+  if (ik != NULL && ik->is_shared_boot_class()) {
+    return load_shared_class(ik, Handle(), Handle(), THREAD);
   }
   return NULL;
 }
@@ -1494,7 +1489,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     {
 #if INCLUDE_CDS
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
-      k = load_shared_class(class_name, class_loader, THREAD);
+      k = load_shared_boot_class(class_name, THREAD);
 #endif
     }
 

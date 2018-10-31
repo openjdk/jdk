@@ -651,6 +651,8 @@ protected:
                                           Handle class_loader,
                                           Handle protection_domain,
                                           TRAPS);
+  static InstanceKlass* load_shared_boot_class(Symbol* class_name,
+                                               TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
@@ -658,9 +660,6 @@ protected:
   static bool is_parallelDefine(Handle class_loader);
 
 public:
-  static InstanceKlass* load_shared_class(Symbol* class_name,
-                                          Handle class_loader,
-                                          TRAPS);
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
   static void clear_invoke_method_table();
