@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,15 @@ ALL_NAMED_TESTS += $(JTREG_TEST_GROUPS)
 
 # Add Gtest
 ALL_NAMED_TESTS += gtest
+
+# Find make test targets
+MAKE_TEST_TARGETS := $(shell $(MAKE) -s --no-print-directory $(MAKE_ARGS) \
+    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets)
+
+ALL_NAMED_TESTS += $(addprefix make-, $(MAKE_TEST_TARGETS))
+
+# Add special tests
+ALL_NAMED_TESTS += hotspot-internal failure-handler make
 
 ################################################################################
 

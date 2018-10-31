@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,10 @@ help:
 	$(info $(_) make install           # Install the generated images locally)
 	$(info $(_) make reconfigure       # Rerun configure with the same arguments as last time)
 	$(info $(_) make help              # Give some help on using make)
-	$(info $(_) make test              # Run tests, default is all tests (see TEST below))
-	$(info $(_) make run-test-<test>   # Run test, e.g. run-test-tier1)
-	$(info $(_) make run-test TEST=<t> # Run test(s) given by TEST specification)
-	$(info $(_) make exploded-run-test TEST=<t> # Run test(s) on the exploded image instead of)
+	$(info $(_) make check             # Run basic testing (currently tier1))
+	$(info $(_) make test-<test>       # Run test, e.g. test-tier1)
+	$(info $(_) make test TEST=<t>     # Run test(s) given by TEST specification)
+	$(info $(_) make exploded-test TEST=<t> # Run test(s) on the exploded image instead of)
 	$(info $(_)                        # the full jdk image)
 	$(info )
 	$(info Targets for cleaning)
@@ -99,10 +99,12 @@ help:
 	$(info $(_) TEST_JOBS=<n>          # Run <n> parallel test jobs)
 	$(info $(_) CONF_CHECK=<method>    # What to do if spec file is out of date)
 	$(info $(_)                        # method is 'auto', 'ignore' or 'fail' (default))
-	$(info $(_) make test TEST=<test>  # Only run the given test or tests, e.g.)
-	$(info $(_)                        # make test TEST="jdk_lang jdk_net")
-	$(info $(_) JTREG="OPT1=x;OPT2=y"  # Control the JTREG test harness for run-test)
-	$(info $(_) GTEST="OPT1=x;OPT2=y"  # Control the GTEST test harness for run-test)
+	$(info $(_) TEST="test1 ..."       # Use the given test descriptor(s) for testing, e.g.)
+	$(info $(_)                        # make test TEST="jdk_lang gtest:all")
+	$(info $(_) JTREG="OPT1=x;OPT2=y"  # Control the JTREG test harness)
+	$(info $(_) GTEST="OPT1=x;OPT2=y"  # Control the GTEST test harness)
+	$(info $(_) TEST_OPTS="OPT1=x;..." # Generic control of all test harnesses)
+	$(info $(_) TEST_VM_OPTS="ARG ..." # Same as setting TEST_OPTS to VM_OPTIONS="ARG ...")
 	$(info )
 	$(if $(all_confs), $(info Available configurations in $(build_dir):) $(foreach var,$(all_confs),$(info * $(var))),\
 	    $(info No configurations were found in $(build_dir).) $(info Run 'bash configure' to create a configuration.))

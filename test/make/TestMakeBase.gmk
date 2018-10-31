@@ -344,7 +344,7 @@ $(eval $(call assert-equals, \
 KWBASE := APA=banan;GURKA=tomat;COUNT=1%202%203%204%205;SUM=1+2+3+4+5;MANY_WORDS=I have the best words.
 
 $(eval $(call ParseKeywordVariable, KWBASE, \
-    KEYWORDS := APA GURKA SUM, \
+    SINGLE_KEYWORDS := APA GURKA SUM, \
     STRING_KEYWORDS := COUNT MANY_WORDS, \
 ))
 
@@ -377,7 +377,7 @@ override KWBASE_WEIRD_GURKA := paprika
 KWBASE_WEIRD := ;;APA=banan;;;GURKA=apelsin;APA=skansen;;
 
 $(eval $(call ParseKeywordVariable, KWBASE_WEIRD, \
-    KEYWORDS := APA GURKA SUM, \
+    SINGLE_KEYWORDS := APA GURKA SUM, \
     STRING_KEYWORDS := COUNT, \
 ))
 

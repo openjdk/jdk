@@ -1,26 +1,32 @@
 % Testing the JDK
 
-## Using the run-test framework
+## Using "make test" (the run-test framework)
 
 This new way of running tests is developer-centric. It assumes that you have
 built a JDK locally and want to test it. Running common test targets is simple,
 and more complex ad-hoc combination of tests is possible. The user interface is
 forgiving, and clearly report errors it cannot resolve.
 
-The main target "run-test" uses the jdk-image as the tested product. There is
-also an alternate target "exploded-run-test" that uses the exploded image
+The main target `test` uses the jdk-image as the tested product. There is
+also an alternate target `exploded-test` that uses the exploded image
 instead. Not all tests will run successfully on the exploded image, but using
 this target can greatly improve rebuild times for certain workflows.
 
+Previously, `make test` was used invoke an old system for running test, and
+`make run-test` was used for the new test framework. For backward compatibility
+with scripts and muscle memory, `run-test` (and variants like
+`exploded-run-test` or `run-test-tier1`) are kept as aliases. The old system
+can still be accessed for some time using `cd test && make`.
+
 Some example command-lines:
 
-    $ make run-test-tier1
-    $ make run-test-jdk_lang JTREG="JOBS=8"
-    $ make run-test TEST=jdk_lang
-    $ make run-test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
-    $ make run-test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
-    $ make run-test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
-    $ make exploded-run-test TEST=tier2
+    $ make test-tier1
+    $ make test-jdk_lang JTREG="JOBS=8"
+    $ make test TEST=jdk_lang
+    $ make test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
+    $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
+    $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
+    $ make exploded-test TEST=tier2
 
 ### Configuration
 
@@ -33,16 +39,16 @@ environment variable to point to the JTReg home before running `configure`.)
 
 ## Test selection
 
-All functionality is available using the run-test make target. In this use
-case, the test or tests to be executed is controlled using the `TEST` variable.
-To speed up subsequent test runs with no source code changes, run-test-only can
-be used instead, which do not depend on the source and test image build.
+All functionality is available using the `test` make target. In this use case,
+the test or tests to be executed is controlled using the `TEST` variable. To
+speed up subsequent test runs with no source code changes, `test-only` can be
+used instead, which do not depend on the source and test image build.
 
 For some common top-level tests, direct make targets have been generated. This
 includes all JTReg test groups, the hotspot gtest, and custom tests (if
-present). This means that `make run-test-tier1` is equivalent to `make run-test
+present). This means that `make test-tier1` is equivalent to `make test
 TEST="tier1"`, but the latter is more tab-completion friendly. For more complex
-test runs, the `run-test TEST="x"` solution needs to be used.
+test runs, the `test TEST="x"` solution needs to be used.
 
 The test specifications given in `TEST` is parsed into fully qualified test
 descriptors, which clearly and unambigously show which tests will be run. As an
@@ -98,6 +104,27 @@ is defined by adding `/<variant>` to the test descriptor, e.g.
 variant present (e.g. server, client). So if you only have the server JVM
 present, then `gtest:all` will be equivalent to `gtest:all/server`.
 
+### Special tests
+
+A handful of odd tests that are not covered by any other testing framework are
+accessible using the `special:` test descriptor. Currently, this includes
+`hotspot-internal`, `failure-handler` and `make`.
+
+  * Hotspot legacy internal testing (run using `-XX:+ExecuteInternalVMTests`)
+    is run using `special:hotspot-internal` or just `hotspot-internal` as test
+    descriptor, and will only work on a debug JVM.
+
+  * Failure handler testing is run using `special:failure-handler` or just
+    `failure-handler` as test descriptor.
+
+  * Tests for the build system, including both makefiles and related
+    functionality, is run using `special:make` or just `make` as test
+    descriptor. This is equivalent to `special:make:all`.
+
+    A specific make test can be run by supplying it as argument, e.g.
+    `special:make:idea`. As a special syntax, this can also be expressed as
+    `make-idea`, which allows for command lines as `make test-make-idea`.
+
 ## Test results and summary
 
 At the end of the test run, a summary of all tests run will be presented. This
@@ -123,7 +150,7 @@ the summary, ERROR is used as a catch-all for tests that neither passed nor are
 classified as failed by the framework. This might indicate test framework
 error, timeout or other problems.
 
-In case of test failures, `make run-test` will exit with a non-zero exit value.
+In case of test failures, `make test` will exit with a non-zero exit value.
 
 All tests have their result stored in `build/$BUILD/test-results/$TEST_ID`,
 where TEST_ID is a path-safe conversion from the fully qualified test
