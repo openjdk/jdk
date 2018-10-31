@@ -93,11 +93,11 @@ final class EventHandlerCreator {
         return EventHandler.class.getName() + id + SUFFIX;
     }
 
-    public EventHandlerCreator(long id, List<SettingInfo> settingInfos, EventType type, Class<? extends Event> eventClass) {
+    public EventHandlerCreator(long id, List<SettingInfo> settingInfos, EventType type, Class<? extends jdk.internal.event.Event> eventClass) {
         this(id, settingInfos, createFieldInfos(eventClass, type));
     }
 
-    private static List<FieldInfo> createFieldInfos(Class<? extends Event> eventClass, EventType type) throws Error {
+    private static List<FieldInfo> createFieldInfos(Class<? extends jdk.internal.event.Event> eventClass, EventType type) throws Error {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         for (ValueDescriptor v : type.getFields()) {
             // Only value descriptors that are not fields on the event class.

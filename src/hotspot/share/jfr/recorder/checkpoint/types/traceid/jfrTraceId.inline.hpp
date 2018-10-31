@@ -112,10 +112,8 @@ inline bool JfrTraceId::is_jdk_jfr_event(const Klass* k) {
 
 inline void JfrTraceId::tag_as_jdk_jfr_event(const Klass* klass) {
   assert(klass != NULL, "invariant");
-  assert(IS_NOT_AN_EVENT_KLASS(klass), "invariant");
   SET_TAG(klass, JDK_JFR_EVENT_KLASS);
   assert(IS_JDK_JFR_EVENT_KLASS(klass), "invariant");
-  assert(IS_NOT_AN_EVENT_SUB_KLASS(klass), "invariant");
 }
 
 inline bool JfrTraceId::is_jdk_jfr_event_sub(const Klass* k) {
@@ -125,7 +123,7 @@ inline bool JfrTraceId::is_jdk_jfr_event_sub(const Klass* k) {
 
 inline void JfrTraceId::tag_as_jdk_jfr_event_sub(const Klass* k) {
   assert(k != NULL, "invariant");
-  if (IS_NOT_AN_EVENT_KLASS(k)) {
+  if (IS_NOT_AN_EVENT_SUB_KLASS(k)) {
     SET_TAG(k, JDK_JFR_EVENT_SUBKLASS);
   }
   assert(IS_JDK_JFR_EVENT_SUBKLASS(k), "invariant");
