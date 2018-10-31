@@ -114,7 +114,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   }
 
   HeapRegion* hr = _g1h->heap_region_containing(to_obj);
-  _scanner.set_scanning_in_young(hr->is_young());
+  G1ScanInYoungSetter x(&_scanner, hr->is_young());
   // Process indexes [start,end). It will also process the header
   // along with the first chunk (i.e., the chunk with start == 0).
   // Note that at this point the length field of to_obj_array is not

@@ -84,7 +84,8 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(state, p, obj);
-    if (_scanning_in_young) {
+    assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
+    if (_scanning_in_young == True) {
       return;
     }
     _par_scan_state->enqueue_card_if_tracked(p, obj);

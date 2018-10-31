@@ -36,6 +36,7 @@ class G1ConcurrentMark;
 class DirtyCardToOopClosure;
 class G1CMBitMap;
 class G1ParScanThreadState;
+class G1ScanEvacuatedObjClosure;
 class G1CMTask;
 class ReferenceProcessor;
 
@@ -82,15 +83,22 @@ public:
   virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
 };
 
+
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
-  bool _scanning_in_young;
+  friend class G1ScanInYoungSetter;
+
+  enum ScanningInYoungValues {
+    False = 0,
+    True,
+    Uninitialized
+  };
+
+  ScanningInYoungValues _scanning_in_young;
 
 public:
   G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1h, par_scan_state), _scanning_in_young(false) { }
-
-  void set_scanning_in_young(bool scanning_in_young) { _scanning_in_young = scanning_in_young; }
+    G1ScanClosureBase(g1h, par_scan_state), _scanning_in_young(Uninitialized) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }
@@ -101,6 +109,21 @@ public:
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);
+  }
+};
+
+// RAII object to properly set the _scanning_in_young field in G1ScanEvacuatedObjClosure.
+class G1ScanInYoungSetter : public StackObj {
+  G1ScanEvacuatedObjClosure* _closure;
+
+public:
+  G1ScanInYoungSetter(G1ScanEvacuatedObjClosure* closure, bool new_value) : _closure(closure) {
+    assert(_closure->_scanning_in_young == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
+    _closure->_scanning_in_young = new_value ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+  }
+
+  ~G1ScanInYoungSetter() {
+    DEBUG_ONLY(_closure->_scanning_in_young = G1ScanEvacuatedObjClosure::Uninitialized;)
   }
 };
 

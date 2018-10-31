@@ -311,7 +311,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       oop* old_p = set_partial_array_mask(old);
       do_oop_partial_array(old_p);
     } else {
-      _scanner.set_scanning_in_young(dest_state.is_young());
+      G1ScanInYoungSetter x(&_scanner, dest_state.is_young());
       obj->oop_iterate_backwards(&_scanner);
     }
     return obj;
@@ -366,7 +366,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);
 
-    _scanner.set_scanning_in_young(r->is_young());
+    G1ScanInYoungSetter x(&_scanner, r->is_young());
     old->oop_iterate_backwards(&_scanner);
 
     return old;
