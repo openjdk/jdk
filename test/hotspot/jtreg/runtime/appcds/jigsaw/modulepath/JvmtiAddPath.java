@@ -33,7 +33,7 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile ../../test-classes/JvmtiApp.java
- * @run driver JvmtiAddPath
+ * @run driver/timeout=240 JvmtiAddPath
  */
 
 import java.io.File;

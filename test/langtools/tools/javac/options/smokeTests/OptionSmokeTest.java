@@ -32,8 +32,10 @@
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
- * @run main OptionSmokeTest
+ * @run main/othervm OptionSmokeTest
  */
+
+import java.util.Locale;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,6 +53,7 @@ public class OptionSmokeTest extends TestRunner {
 
     public OptionSmokeTest() {
         super(System.err);
+        Locale.setDefault(Locale.US);
     }
 
     protected void runTests() throws Exception {
@@ -117,7 +120,7 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void requiresArg(Path base) throws Exception {
-        doTestNoSource(base, "error: -target requires an argument", "-target");
+        doTestNoSource(base, "error: --target requires an argument", "-target");
     }
 
     @Test
@@ -209,7 +212,7 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void optionCantBeUsedWithRelease(Path base) throws Exception {
-        doTestNoSource(base, "error: option -source cannot be used together with --release",
+        doTestNoSource(base, "error: option --source cannot be used together with --release",
                 String.format("--release %s -source %s", Source.DEFAULT.name, Source.DEFAULT.name));
     }
 
@@ -232,9 +235,9 @@ public class OptionSmokeTest extends TestRunner {
                 String.format("--release %s -endorseddirs any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -extdirs cannot be used together with --release",
                 String.format("--release %s -extdirs any", Source.DEFAULT.name));
-        doTestNoSource(base, "error: option -source cannot be used together with --release",
+        doTestNoSource(base, "error: option --source cannot be used together with --release",
                 String.format("--release %s -source %s", Source.MIN.name, Source.DEFAULT.name));
-        doTestNoSource(base, "error: option -target cannot be used together with --release",
+        doTestNoSource(base, "error: option --target cannot be used together with --release",
                 String.format("--release %s -target %s", Source.MIN.name, Source.DEFAULT.name));
         doTestNoSource(base, "error: option --system cannot be used together with --release",
                 String.format("--release %s --system none", Source.DEFAULT.name));

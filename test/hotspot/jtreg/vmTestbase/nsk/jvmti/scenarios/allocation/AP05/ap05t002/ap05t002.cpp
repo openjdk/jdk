@@ -48,7 +48,7 @@ static int caseNumber = 0, forthRef = 0, backRef = 0;
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
+heapRootCallback(jvmtiHeapRootKind root_kind,
                   jlong class_tag,
                   jlong size,
                   jlong* tag_ptr,
@@ -58,28 +58,28 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
     return JVMTI_ITERATION_CONTINUE;
 }
 
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     if (*tag_ptr != 0 && referrer_tag != 0) {
         NSK_DISPLAY4("objectReferenceCallback: reference kind=%s, referrer_index=%d, referrer_tag=%d, referree_tag=%d\n",
@@ -98,10 +98,10 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP05_ap05t002_setTag( JNIEnv* jni,
-                                                          jobject obj,
-                                                          jobject target,
-                                                          jlong   tag ) {
+Java_nsk_jvmti_scenarios_allocation_AP05_ap05t002_setTag(JNIEnv* jni,
+                                                         jobject obj,
+                                                         jobject target,
+                                                         jlong   tag) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
@@ -109,7 +109,7 @@ Java_nsk_jvmti_scenarios_allocation_AP05_ap05t002_setTag( JNIEnv* jni,
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP05_ap05t002_setReferrer( JNIEnv* jni, jclass klass, jobject ref, jint caseNum) {
+Java_nsk_jvmti_scenarios_allocation_AP05_ap05t002_setReferrer(JNIEnv* jni, jclass klass, jobject ref, jint caseNum) {
     caseNumber = caseNum;
     if (!NSK_JNI_VERIFY(jni, (referrer = jni->NewGlobalRef(ref)) != NULL))
         nsk_jvmti_setFailStatus();

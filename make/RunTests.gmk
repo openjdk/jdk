@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,14 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   ifndef _NT_SYMBOL_PATH
     # Can't use PathList here as it adds quotes around the value.
     _NT_SYMBOL_PATH := \
-        $(subst $(SPACE),;, $(foreach p, $(sort $(dir $(wildcard \
-        $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), $(call FixPath, $p)))
+        $(subst $(SPACE),;,$(strip \
+            $(foreach p, $(sort $(dir $(wildcard \
+                $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), \
+              $(call FixPath, $p) \
+            ) \
+        ))
     export _NT_SYMBOL_PATH
-    $(info _NT_SYMBOL_PATH $(_NT_SYMBOL_PATH))
+    $(info _NT_SYMBOL_PATH=$(_NT_SYMBOL_PATH))
   endif
 endif
 
@@ -296,16 +300,32 @@ endef
 
 # Helper function to determine if a test specification is a special test
 #
-# It is a special test if it is "special:" followed by a test name.
+# It is a special test if it is "special:" followed by a test name,
+# if it is "make:" or "make-" followed by a make test, or any of the special test names
+# as a single word.
 define ParseSpecialTestSelection
   $(if $(filter special:%, $1), \
     $1 \
+  ) \
+  $(if $(filter make%, $1), \
+    $(if $(filter make:%, $1), \
+      special:$(strip $1) \
+    ) \
+    $(if $(filter make-%, $1), \
+      special:$(patsubst make-%,make:%, $1) \
+    ) \
+    $(if $(filter make, $1), \
+      special:make:all \
+    )
+  ) \
+  $(if $(filter hotspot-internal failure-handler, $1), \
+    special:$(strip $1) \
   )
 endef
 
 ifeq ($(TEST), )
   $(info No test selection given in TEST!)
-  $(info Please use e.g. 'run-test TEST=tier1' or 'run-test-tier1')
+  $(info Please use e.g. 'make test TEST=tier1' or 'make test-tier1')
   $(info See doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
@@ -659,9 +679,13 @@ define SetupRunSpecialTestBody
         $$(JDK_IMAGE_DIR)/bin/java -XX:+ExecuteInternalVMTests \
         -XX:+ShowMessageBoxOnError -version
   else ifeq ($$($1_TEST_NAME), failure-handler)
-    $1_TEST_COMMAND_LINE := \
-        ($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f \
-        BuildFailureHandler.gmk test)
+    ifeq ($(BUILD_FAILURE_HANDLER), true)
+      $1_TEST_COMMAND_LINE := \
+          ($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f \
+          BuildFailureHandler.gmk test)
+    else
+      $$(error Cannot test failure handler if it is not built)
+    endif
   else ifeq ($$($1_TEST_NAME), make)
     $1_TEST_COMMAND_LINE := \
         ($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f \

@@ -37,12 +37,6 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_OBJECT:
   case T_ARRAY: {
     if (in_heap) {
-#ifdef AARCH64
-      if (UseCompressedOops) {
-        __ ldr_w(dst, src);
-        __ decode_heap_oop(dst);
-      } else
-#endif // AARCH64
       {
         __ ldr(dst, src);
       }
@@ -59,13 +53,9 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_INT:     __ ldr_s32   (dst, src); break;
   case T_ADDRESS: __ ldr       (dst, src); break;
   case T_LONG:
-#ifdef AARCH64
-    __ ldr                     (dst, src); break;
-#else
     assert(dst == noreg, "only to ltos");
     __ add                     (src.index(), src.index(), src.base());
     __ ldmia                   (src.index(), RegisterSet(R0_tos_lo) | RegisterSet(R1_tos_hi));
-#endif // AARCH64
     break;
 #ifdef __SOFTFP__
   case T_FLOAT:
@@ -102,15 +92,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_OBJECT:
   case T_ARRAY: {
     if (in_heap) {
-#ifdef AARCH64
-      if (UseCompressedOops) {
-        assert(!dst.uses(src), "not enough registers");
-        if (!is_null) {
-          __ encode_heap_oop(src);
-        }
-        __ str_w(val, obj);
-      } else
-#endif // AARCH64
       {
       __ str(val, obj);
       }
@@ -130,13 +111,9 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_INT:     __ str       (val, obj); break;
   case T_ADDRESS: __ str       (val, obj); break;
   case T_LONG:
-#ifdef AARCH64
-    __ str                     (val, obj); break;
-#else // AARCH64
     assert(val == noreg, "only tos");
     __ add                     (obj.index(), obj.index(), obj.base());
     __ stmia                   (obj.index(), RegisterSet(R0_tos_lo) | RegisterSet(R1_tos_hi));
-#endif // AARCH64
     break;
 #ifdef __SOFTFP__
   case T_FLOAT:
@@ -188,7 +165,7 @@ void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Regi
     assert_different_registers(obj, obj_end, top_addr, heap_end);
   }
 
-  bool load_const = AARCH64_ONLY(false) NOT_AARCH64(VM_Version::supports_movw() ); // TODO-AARCH64 check performance
+  bool load_const = VM_Version::supports_movw();
   if (load_const) {
     __ mov_address(top_addr, (address)Universe::heap()->top_addr(), symbolic_Relocation::eden_top_reference);
   } else {
@@ -197,13 +174,7 @@ void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Regi
   // Calculate new heap_top by adding the size of the object
   Label retry;
   __ bind(retry);
-
-#ifdef AARCH64
-  __ ldxr(obj, top_addr);
-#else
   __ ldr(obj, Address(top_addr));
-#endif // AARCH64
-
   __ ldr(heap_end, Address(top_addr, (intptr_t)ch->end_addr() - (intptr_t)ch->top_addr()));
   __ add_rc(obj_end, obj, size_expression);
   // Check if obj_end wrapped around, i.e., obj_end < obj. If yes, jump to the slow case.
@@ -213,13 +184,8 @@ void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Regi
   __ cmp(obj_end, heap_end);
   __ b(slow_case, hi);
 
-#ifdef AARCH64
-  __ stxr(heap_end/*scratched*/, obj_end, top_addr);
-  __ cbnz_w(heap_end, retry);
-#else
   __ atomic_cas_bool(obj, obj_end, top_addr, 0, heap_end/*scratched*/);
   __ b(retry, ne);
-#endif // AARCH64
 
   incr_allocated_bytes(masm, size_expression, tmp1);
 }
@@ -239,11 +205,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj, Regi
 }
 
 void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, RegisterOrConstant size_in_bytes, Register tmp) {
-#ifdef AARCH64
-  __ ldr(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  __ add_rc(tmp, tmp, size_in_bytes);
-  __ str(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-#else
   // Bump total bytes allocated by this thread
   Label done;
 
@@ -281,5 +242,4 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, RegisterOrC
 
   // Unborrow the Rthread
   __ sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
-#endif // AARCH64
 }

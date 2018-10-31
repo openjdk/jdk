@@ -37,22 +37,12 @@
     sender_sp_offset                                 =  2,
 
     // Interpreter frames
-#ifdef AARCH64
-    interpreter_frame_gp_saved_result_offset         =  4, // for native calls only
-    interpreter_frame_fp_saved_result_offset         =  3, // for native calls only
-#endif
     interpreter_frame_oop_temp_offset                =  2, // for native calls only
 
     interpreter_frame_sender_sp_offset               = -1,
-#ifdef AARCH64
-    interpreter_frame_stack_top_offset               = interpreter_frame_sender_sp_offset - 1,
-    interpreter_frame_extended_sp_offset             = interpreter_frame_stack_top_offset - 1,
-    interpreter_frame_method_offset                  = interpreter_frame_extended_sp_offset - 1,
-#else
     // outgoing sp before a call to an invoked method
     interpreter_frame_last_sp_offset                 = interpreter_frame_sender_sp_offset - 1,
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
-#endif // AARCH64
     interpreter_frame_mirror_offset                  = interpreter_frame_method_offset - 1,
     interpreter_frame_mdp_offset                     = interpreter_frame_mirror_offset - 1,
     interpreter_frame_cache_offset                   = interpreter_frame_mdp_offset - 1,
@@ -64,7 +54,7 @@
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,
 
     // Entry frames
-    entry_frame_call_wrapper_offset                  =  AARCH64_ONLY(2) NOT_AARCH64(0)
+    entry_frame_call_wrapper_offset                  =  0
   };
 
   intptr_t ptr_at(int offset) const {
@@ -107,9 +97,7 @@
 
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
-#ifndef AARCH64
   frame(intptr_t* sp, intptr_t* fp);
-#endif // !AARCH64
 
   void init(intptr_t* sp, intptr_t* fp, address pc);
 
@@ -119,18 +107,11 @@
 
   inline address* sender_pc_addr() const;
 
-#ifdef AARCH64
-  // Used by template based interpreter deoptimization
-  void interpreter_frame_set_stack_top(intptr_t* stack_top);
-  void interpreter_frame_set_extended_sp(intptr_t* sp);
-
-#else
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
-#endif // AARCH64
 
   // helper to update a map with callee-saved FP
   static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);

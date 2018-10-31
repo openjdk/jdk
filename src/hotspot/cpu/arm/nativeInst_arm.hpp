@@ -30,11 +30,7 @@
 #include "runtime/os.hpp"
 
 
-#ifdef AARCH64
-#include "nativeInst_arm_64.hpp"
-#else
 #include "nativeInst_arm_32.hpp"
-#endif
 
 
 #endif // CPU_ARM_VM_NATIVEINST_ARM_HPP

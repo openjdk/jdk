@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 4936763 8184359
+ * @bug 4936763 8184359 8205476
  * @summary KeyAgreement Test with all supported algorithms from JCE.
  *          Arguments order <KeyExchangeAlgorithm> <KeyGenAlgorithm> <Provider>
  *          It removes com/sun/crypto/provider/KeyAgreement/DHGenSecretKey.java
@@ -150,5 +150,17 @@ public class KeyAgreementTest {
         if (!Arrays.equals(secret1, secret2)) {
             throw new Exception("KeyAgreement secret mismatch.");
         }
+
+        // ensure that a new secret cannot be produced before the next doPhase
+        try {
+            ka2.generateSecret();
+            throw new RuntimeException("state not reset");
+        } catch (IllegalStateException ex) {
+            // this is expected
+        }
+
+        // calling doPhase and then generateSecret should succeed
+        ka2.doPhase(kp1.getPublic(), true);
+        ka2.generateSecret();
     }
 }

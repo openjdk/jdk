@@ -108,15 +108,18 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     jvmtiEnv* jvmti;
     JNIEnv* jni;
 
-    if (!NSK_VERIFY((options = (Options*) nsk_aod_createOptions(optionsString)) != NULL))
+    options = (Options*) nsk_aod_createOptions(optionsString);
+    if (!NSK_VERIFY(options != NULL))
         return JNI_ERR;
 
     agentName = nsk_aod_getOptionValue(options, NSK_AOD_AGENT_NAME_OPTION);
 
-    if ((jni = (JNIEnv*) nsk_aod_createJNIEnv(vm)) == NULL)
+    jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
+    if (jni == NULL)
         return JNI_ERR;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("attach045-agent01-eventsCounterMonitor", &eventsCounterMonitor))) {

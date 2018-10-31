@@ -25,6 +25,10 @@
 #ifndef SHARE_UTILITIES_CONCURRENT_HASH_TABLE_HPP
 #define SHARE_UTILITIES_CONCURRENT_HASH_TABLE_HPP
 
+#include "memory/allocation.hpp"
+#include "utilities/globalCounter.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 // A mostly concurrent-hash-table where the read-side is wait-free, inserts are
 // CAS and deletes mutual exclude each other on per bucket-basis. VALUE is the
 // type kept inside each Node and CONFIG contains hash and allocation methods.
@@ -247,6 +251,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
    protected:
     Thread* _thread;
     ConcurrentHashTable<VALUE, CONFIG, F>* _cht;
+    GlobalCounter::CSContext _cs_context;
    public:
     ScopedCS(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* cht);
     ~ScopedCS();

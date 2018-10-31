@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8076221
+ * @bug 8076221 8211883
  * @summary Check if weak cipher suites are disabled
  * @modules jdk.crypto.ec
  * @run main/othervm DisabledAlgorithms default
@@ -60,9 +60,9 @@ public class DisabledAlgorithms {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
 
-    // supported RC4 cipher suites
+    // supported RC4, NULL, and anon cipher suites
     // it does not contain KRB5 cipher suites because they need a KDC
-    private static final String[] rc4_ciphersuites = new String[] {
+    private static final String[] rc4_null_anon_ciphersuites = new String[] {
         "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
         "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
         "SSL_RSA_WITH_RC4_128_SHA",
@@ -70,7 +70,31 @@ public class DisabledAlgorithms {
         "TLS_ECDH_RSA_WITH_RC4_128_SHA",
         "SSL_RSA_WITH_RC4_128_MD5",
         "TLS_ECDH_anon_WITH_RC4_128_SHA",
-        "SSL_DH_anon_WITH_RC4_128_MD5"
+        "SSL_DH_anon_WITH_RC4_128_MD5",
+        "SSL_RSA_WITH_NULL_MD5",
+        "SSL_RSA_WITH_NULL_SHA",
+        "TLS_RSA_WITH_NULL_SHA256",
+        "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+        "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
+        "TLS_ECDH_RSA_WITH_NULL_SHA",
+        "TLS_ECDHE_RSA_WITH_NULL_SHA",
+        "TLS_ECDH_anon_WITH_NULL_SHA",
+        "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+        "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+        "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+        "SSL_DH_anon_WITH_DES_CBC_SHA",
+        "SSL_DH_anon_WITH_RC4_128_MD5",
+        "TLS_DH_anon_WITH_AES_128_CBC_SHA",
+        "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+        "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
+        "TLS_DH_anon_WITH_AES_256_CBC_SHA",
+        "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
+        "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
+        "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
+        "TLS_ECDH_anon_WITH_NULL_SHA",
+        "TLS_ECDH_anon_WITH_RC4_128_SHA"
     };
 
     public static void main(String[] args) throws Exception {
@@ -89,8 +113,9 @@ public class DisabledAlgorithms {
                 System.out.println("jdk.tls.disabledAlgorithms = "
                         + Security.getProperty("jdk.tls.disabledAlgorithms"));
 
-                // check if RC4 cipher suites can't be used by default
-                checkFailure(rc4_ciphersuites);
+                // check if RC4, NULL, and anon cipher suites
+                // can't be used by default
+                checkFailure(rc4_null_anon_ciphersuites);
                 break;
             case "empty":
                 // reset jdk.tls.disabledAlgorithms
@@ -98,9 +123,9 @@ public class DisabledAlgorithms {
                 System.out.println("jdk.tls.disabledAlgorithms = "
                         + Security.getProperty("jdk.tls.disabledAlgorithms"));
 
-                // check if RC4 cipher suites can be used
+                // check if RC4, NULL, and anon cipher suites can be used
                 // if jdk.tls.disabledAlgorithms is empty
-                checkSuccess(rc4_ciphersuites);
+                checkSuccess(rc4_null_anon_ciphersuites);
                 break;
             default:
                 throw new RuntimeException("Wrong parameter: " + args[0]);

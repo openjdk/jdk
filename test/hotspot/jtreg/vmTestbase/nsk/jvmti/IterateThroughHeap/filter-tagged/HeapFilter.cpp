@@ -529,7 +529,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks event_callbacks;
   const char *type;
 
-  if(!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL)) {
+  jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+  if (!NSK_VERIFY(jvmti != NULL)) {
     return JNI_ERR;
   }
 

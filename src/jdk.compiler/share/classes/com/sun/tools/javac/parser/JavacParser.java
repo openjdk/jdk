@@ -2255,25 +2255,11 @@ public class JavacParser implements Parser {
             }
             return e;
         } else if (token.kind == LPAREN) {
-            JCNewClass newClass = classCreatorRest(newpos, null, typeArgs, t);
-            if (newClass.def != null) {
-                assert newClass.def.mods.annotations.isEmpty();
-                if (newAnnotations.nonEmpty()) {
-                    // Add type and declaration annotations to the new class;
-                    // com.sun.tools.javac.code.TypeAnnotations.TypeAnnotationPositions.visitNewClass(JCNewClass)
-                    // will later remove all type annotations and only leave the
-                    // declaration annotations.
-                    newClass.def.mods.pos = earlier(newClass.def.mods.pos, newAnnotations.head.pos);
-                    newClass.def.mods.annotations = newAnnotations;
-                }
-            } else {
-                // handle type annotations for instantiations
-                if (newAnnotations.nonEmpty()) {
-                    t = insertAnnotationsToMostInner(t, newAnnotations, false);
-                    newClass.clazz = t;
-                }
+            // handle type annotations for instantiations and anonymous classes
+            if (newAnnotations.nonEmpty()) {
+                t = insertAnnotationsToMostInner(t, newAnnotations, false);
             }
-            return newClass;
+            return classCreatorRest(newpos, null, typeArgs, t);
         } else {
             setErrorEndPos(token.pos);
             reportSyntaxError(token.pos, Errors.Expected2(LPAREN, LBRACKET));

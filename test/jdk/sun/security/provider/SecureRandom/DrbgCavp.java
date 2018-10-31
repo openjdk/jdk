@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,9 @@ import java.util.zip.ZipInputStream;
 import static java.security.DrbgParameters.Capability.*;
 
 /**
- * The Known-output DRBG test. The test vector can be obtained from
- * http://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip.
+ * The Known-output DRBG test. The test vector can be downloaded from
+ * https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/drbg/drbgtestvectors.zip.
+ * The test is described on https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Random-Number-Generators.
  *
  * Manually run this test with
  *

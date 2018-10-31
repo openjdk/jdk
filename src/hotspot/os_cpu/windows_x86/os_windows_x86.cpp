@@ -212,10 +212,6 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-void os::initialize_thread(Thread* thr) {
-// Nothing to do.
-}
-
 // Atomics and Stub Functions
 
 typedef int32_t   xchg_func_t            (int32_t,  volatile int32_t*);

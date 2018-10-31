@@ -104,17 +104,16 @@ public:
   template <class T> void do_oop_ext(T* ref);
   template <class T> void push_on_queue(T* ref);
 
-  template <class T> void update_rs(HeapRegion* from, T* p, oop o) {
-    assert(!HeapRegion::is_in_same_region(p, o), "Caller should have filtered out cross-region references already.");
-    // If the field originates from the to-space, we don't need to include it
-    // in the remembered set updates. Also, if we are not tracking the remembered
-    // set in the destination region, do not bother either.
-    if (!from->is_young() && _g1h->heap_region_containing((HeapWord*)o)->rem_set()->is_tracked()) {
-      size_t card_index = ct()->index_for(p);
-      // If the card hasn't been added to the buffer, do it.
-      if (ct()->mark_card_deferred(card_index)) {
-        dirty_card_queue().enqueue((jbyte*)ct()->byte_for_index(card_index));
-      }
+  template <class T> void enqueue_card_if_tracked(T* p, oop o) {
+    assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
+    assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+    if (!_g1h->heap_region_containing((HeapWord*)o)->rem_set()->is_tracked()) {
+      return;
+    }
+    size_t card_index = ct()->index_for(p);
+    // If the card hasn't been added to the buffer, do it.
+    if (ct()->mark_card_deferred(card_index)) {
+      dirty_card_queue().enqueue((jbyte*)ct()->byte_for_index(card_index));
     }
   }
 

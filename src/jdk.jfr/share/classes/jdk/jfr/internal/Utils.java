@@ -267,7 +267,7 @@ public final class Utils {
         return (long) (nanos * JVM.getJVM().getTimeConversionFactor());
     }
 
-    static synchronized EventHandler getHandler(Class<? extends Event> eventClass) {
+    static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
         try {
             Field f = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
@@ -278,7 +278,7 @@ public final class Utils {
         }
     }
 
-    static synchronized void setHandler(Class<? extends Event> eventClass, EventHandler handler) {
+    static synchronized void setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler) {
         Utils.ensureValidEventSubclass(eventClass);
         try {
             Field field = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
@@ -322,7 +322,7 @@ public final class Utils {
     static List<Field> getVisibleEventFields(Class<?> clazz) {
         Utils.ensureValidEventSubclass(clazz);
         List<Field> fields = new ArrayList<>();
-        for (Class<?> c = clazz; c != Event.class; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 // skip private field in base classes
                 if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
@@ -334,10 +334,10 @@ public final class Utils {
     }
 
     public static void ensureValidEventSubclass(Class<?> eventClass) {
-        if (Event.class.isAssignableFrom(eventClass) && Modifier.isAbstract(eventClass.getModifiers())) {
+        if (jdk.internal.event.Event.class.isAssignableFrom(eventClass) && Modifier.isAbstract(eventClass.getModifiers())) {
             throw new IllegalArgumentException("Abstract event classes are not allowed");
         }
-        if (eventClass == Event.class || !Event.class.isAssignableFrom(eventClass)) {
+        if (eventClass == Event.class || eventClass == jdk.internal.event.Event.class || !jdk.internal.event.Event.class.isAssignableFrom(eventClass)) {
             throw new IllegalArgumentException("Must be a subclass to " + Event.class.getName());
         }
     }
@@ -366,7 +366,7 @@ public final class Utils {
         }
     }
 
-    public static void ensureInitialized(Class<? extends Event> eventClass) {
+    public static void ensureInitialized(Class<? extends jdk.internal.event.Event> eventClass) {
         SecuritySupport.ensureClassIsInitialized(eventClass);
     }
 
@@ -497,6 +497,50 @@ public final class Utils {
             }
         }
         return eventName;
+    }
+
+    public static void verifyMirror(Class<?> mirror, Class<?> real) {
+        Class<?> cMirror = Objects.requireNonNull(mirror);
+        Class<?> cReal = Objects.requireNonNull(real);
+
+        while (cReal != null) {
+            Map<String, Field> mirrorFields = new HashMap<>();
+            if (cMirror != null) {
+                for (Field f : cMirror.getDeclaredFields()) {
+                    if (isSupportedType(f.getType())) {
+                        mirrorFields.put(f.getName(), f);
+                    }
+                }
+            }
+            for (Field realField : cReal.getDeclaredFields()) {
+                if (isSupportedType(realField.getType())) {
+                    String fieldName = realField.getName();
+                    Field mirrorField = mirrorFields.get(fieldName);
+                    if (mirrorField == null) {
+                        throw new InternalError("Missing mirror field for " + cReal.getName() + "#" + fieldName);
+                    }
+                    if (realField.getModifiers() != mirrorField.getModifiers()) {
+                        throw new InternalError("Incorrect modifier for mirror field "+ cMirror.getName() + "#" + fieldName);
+                    }
+                    mirrorFields.remove(fieldName);
+                }
+            }
+            if (!mirrorFields.isEmpty()) {
+                throw new InternalError(
+                        "Found additional fields in mirror class " + cMirror.getName() + " " + mirrorFields.keySet());
+            }
+            if (cMirror != null) {
+                cMirror = cMirror.getSuperclass();
+            }
+            cReal = cReal.getSuperclass();
+        }
+    }
+
+    private static boolean isSupportedType(Class<?> type) {
+        if (Modifier.isTransient(type.getModifiers()) || Modifier.isStatic(type.getModifiers())) {
+            return false;
+        }
+        return Type.isValidJavaFieldType(type.getName());
     }
 
     public static String makeFilename(Recording recording) {

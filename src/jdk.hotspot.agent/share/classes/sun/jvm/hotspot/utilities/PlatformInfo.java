@@ -72,17 +72,6 @@ public class PlatformInfo {
   public static String getCPU() throws UnsupportedPlatformException {
     String cpu = System.getProperty("os.arch");
 
-    // Let any additional CPU mangling fire first
-    try {
-      Class pic = Class.forName("sun.jvm.hotspot.utilities.PlatformInfoClosed");
-      AltPlatformInfo api = (AltPlatformInfo) pic.newInstance();
-      if (api.knownCPU(cpu)) {
-        return api.getCPU(cpu);
-      }
-    } catch (Exception e) {
-       // Ignored
-    }
-
     // Check that CPU is supported
     if (!knownCPU(cpu)) {
        throw new UnsupportedPlatformException("CPU type " + cpu + " not yet supported");

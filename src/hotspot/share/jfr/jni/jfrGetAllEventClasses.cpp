@@ -133,7 +133,7 @@ jobject JfrEventClasses::get_all_event_classes(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   initialize(THREAD);
   assert(empty_java_util_arraylist != NULL, "should have been setup already!");
-  static const char jdk_jfr_event_name[] = "jdk/jfr/Event";
+  static const char jdk_jfr_event_name[] = "jdk/internal/event/Event";
   unsigned int unused_hash = 0;
   Symbol* const event_klass_name = SymbolTable::lookup_only(jdk_jfr_event_name, sizeof jdk_jfr_event_name - 1, unused_hash);
 

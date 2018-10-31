@@ -131,7 +131,7 @@ OVERVIEW
     where
 
         majorVer - major version of class files for generated concrete classes
-            values: ver49, ver50, ver51, ver52
+            values: ver49, ver52
 
         methodFlags - additional access flags for methods in generated classes
             values:

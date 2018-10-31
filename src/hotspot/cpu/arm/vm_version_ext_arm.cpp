@@ -49,11 +49,7 @@ void VM_Version_Ext::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-#ifdef AARCH64
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
-#else
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "ARM%d", _arm_arch);
-#endif
   snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _features_string);
   _initialized = true;
 }

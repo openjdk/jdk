@@ -243,7 +243,7 @@ void VMThread::run() {
   assert(this == vm_thread(), "check");
 
   this->initialize_named_thread();
-  this->record_stack_base_and_size();
+
   // Notify_lock wait checks on active_handles() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify

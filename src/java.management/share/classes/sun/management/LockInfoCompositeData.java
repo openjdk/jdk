@@ -26,6 +26,7 @@
 package sun.management;
 
 import java.lang.management.LockInfo;
+import java.util.Map;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -57,17 +58,13 @@ public class LockInfoCompositeData extends LazyCompositeData {
     }
 
     protected CompositeData getCompositeData() {
-        // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
-        // LOCK_INFO_ATTRIBUTES!
-        final Object[] lockInfoItemValues = {
-            new String(lock.getClassName()),
-            lock.getIdentityHashCode(),
-        };
+        Map<String,Object> items = Map.of(
+            CLASS_NAME,         lock.getClassName(),
+            IDENTITY_HASH_CODE, lock.getIdentityHashCode()
+        );
 
         try {
-            return new CompositeDataSupport(LOCK_INFO_COMPOSITE_TYPE,
-                                            LOCK_INFO_ATTRIBUTES,
-                                            lockInfoItemValues);
+            return new CompositeDataSupport(LOCK_INFO_COMPOSITE_TYPE, items);
         } catch (OpenDataException e) {
             // Should never reach here
             throw Util.newException(e);
@@ -91,10 +88,6 @@ public class LockInfoCompositeData extends LazyCompositeData {
 
     private static final String CLASS_NAME         = "className";
     private static final String IDENTITY_HASH_CODE = "identityHashCode";
-    private static final String[] LOCK_INFO_ATTRIBUTES = {
-        CLASS_NAME,
-        IDENTITY_HASH_CODE,
-    };
 
     /*
      * Returns a LockInfo object mapped from the given CompositeData.

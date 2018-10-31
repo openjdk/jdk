@@ -53,6 +53,7 @@ public class AlignIndent {
         test1();
         test2();
         test3();
+        test4();
     }
 
     /*
@@ -151,6 +152,18 @@ public class AlignIndent {
                     }
                 }
             }
+        }
+    }
+
+    /*
+     * JDK-8212694: Using Raw String Literals with align() and Integer.MIN_VALUE causes out of memory error
+     */
+    static void test4() {
+        try {
+            String str = "\n    A\n".align(Integer.MIN_VALUE);
+        } catch (OutOfMemoryError ex) {
+            System.err.println("align(Integer.MIN_VALUE) not clipping indentation");
+            throw new RuntimeException();
         }
     }
 

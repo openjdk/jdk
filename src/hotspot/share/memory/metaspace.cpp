@@ -1291,10 +1291,9 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     if (DumpSharedSpaces) {
       // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
       // We should abort to avoid generating a potentially bad archive.
-      tty->print_cr("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
-          MetaspaceObj::type_name(type), word_size * BytesPerWord);
-      tty->print_cr("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize);
-      vm_exit(1);
+      vm_exit_during_cds_dumping(err_msg("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
+          MetaspaceObj::type_name(type), word_size * BytesPerWord),
+        err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
     }
     report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
     assert(HAS_PENDING_EXCEPTION, "sanity");

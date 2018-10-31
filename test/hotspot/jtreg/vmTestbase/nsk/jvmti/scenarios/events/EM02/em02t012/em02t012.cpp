@@ -52,7 +52,8 @@ Java_nsk_jvmti_scenarios_events_EM02_em02t012_setThread(JNIEnv *jni_env,
                         jobject o, jthread thrd) {
 
     /* make thread accessable for a long time */
-    NSK_JNI_VERIFY(jni_env, (testedThread = jni_env->NewGlobalRef(thrd)) != NULL);
+    testedThread = jni_env->NewGlobalRef(thrd);
+    NSK_JNI_VERIFY(jni_env, testedThread != NULL);
 }
 
 static void
@@ -502,7 +503,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {

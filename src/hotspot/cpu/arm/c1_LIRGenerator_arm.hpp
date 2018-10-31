@@ -27,7 +27,3 @@
 
   void make_div_by_zero_check(LIR_Opr right_arg, BasicType type, CodeEmitInfo* info);
 
-#ifdef AARCH64
-  // the helper for arithmetic
-  void add_constant(LIR_Opr src, jlong c, LIR_Opr dest);
-#endif // AARCH64

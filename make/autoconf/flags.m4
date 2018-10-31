@@ -34,7 +34,7 @@ m4_include([flags-other.m4])
 AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
 [
   AC_ARG_WITH(abi-profile, [AS_HELP_STRING([--with-abi-profile],
-      [specify ABI profile for ARM builds (arm-vfp-sflt,arm-vfp-hflt,arm-sflt, armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64) @<:@toolchain dependent@:>@ ])])
+      [specify ABI profile for ARM builds (arm-vfp-sflt,arm-vfp-hflt,arm-sflt, armv5-vfp-sflt,armv6-vfp-hflt,aarch64) @<:@toolchain dependent@:>@ ])])
 
   if test "x$with_abi_profile" != x; then
     if test "x$OPENJDK_TARGET_CPU" != xarm && \
@@ -61,10 +61,6 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv6-vfp-hflt; then
       ARM_FLOAT_TYPE=vfp-hflt
       ARM_ARCH_TYPE_FLAGS='-march=armv6 -marm'
-    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm64; then
-      # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
-      ARM_FLOAT_TYPE=
-      ARM_ARCH_TYPE_FLAGS=
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xaarch64; then
       # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
       ARM_FLOAT_TYPE=

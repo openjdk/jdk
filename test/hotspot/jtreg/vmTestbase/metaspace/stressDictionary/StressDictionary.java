@@ -29,7 +29,7 @@
  *
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm metaspace.stressDictionary.StressDictionary -stressTime 30
+ * @run main/othervm/timeout=300 metaspace.stressDictionary.StressDictionary -stressTime 30
  */
 
 package metaspace.stressDictionary;
@@ -123,10 +123,53 @@ public class StressDictionary extends GCTestBase {
             tasks.add(this.new RegularWorker());
         }
         ExecutorService executorService = Executors.newCachedThreadPool();
+        List<Future<Object>> results = null;
         try {
-            executorService.invokeAll(tasks);
+            results = executorService.invokeAll(tasks);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+
+        int act_results = results.size();
+        int exp_results = NUMBER_OF_CORRUPTING_THREADS +
+                          NUMBER_OF_NOT_CORRUPTING_THREADS;
+        if (act_results == exp_results) {
+            System.err.println("INFO: There are " + act_results + " results.");
+        } else {
+            throw new RuntimeException("Wrong # of results from invokeAll(); "
+                                       + "exp_results=" + exp_results + "; "
+                                       + "act_results=" + act_results + ".");
+        }
+
+        int cancelled_cnt = 0;
+        int not_done_cnt = 0;
+        for (int i = 0; i < act_results; i++) {
+            if (!results.get(i).isDone()) {
+                not_done_cnt++;
+                System.err.println("ERROR: task #" + i + " is not done.");
+            }
+            if (results.get(i).isCancelled()) {
+                cancelled_cnt++;
+                System.err.println("ERROR: task #" + i + " was canceled.");
+            }
+        }
+
+        if (cancelled_cnt == 0) {
+            System.err.println("INFO: no tasks were cancelled.");
+        }
+        if (not_done_cnt == 0) {
+            System.err.println("INFO: all tasks are done.");
+        }
+        if (cancelled_cnt != 0 && not_done_cnt != 0) {
+            throw new RuntimeException(cancelled_cnt
+                                       + " tasks were cancelled and "
+                                       + not_done_cnt
+                                       + " tasks are not done.");
+        } else if (cancelled_cnt != 0) {
+            throw new RuntimeException(cancelled_cnt
+                                       + " tasks were cancelled.");
+        } else if (not_done_cnt != 0) {
+            throw new RuntimeException(not_done_cnt + " tasks are not done.");
         }
     }
 

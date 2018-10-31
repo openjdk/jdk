@@ -79,7 +79,6 @@ void Compiler::initialize() {
 }
 
 int Compiler::code_buffer_size() {
-  assert(SegmentedCodeCache, "Should be only used with a segmented code cache");
   return Compilation::desired_max_code_buffer_size() + Compilation::desired_max_constant_size();
 }
 
@@ -90,10 +89,7 @@ BufferBlob* Compiler::init_buffer_blob() {
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
-  int code_buffer_size = Compilation::desired_max_code_buffer_size() +
-    Compilation::desired_max_constant_size();
-
-  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size);
+  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
   if (buffer_blob != NULL) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }

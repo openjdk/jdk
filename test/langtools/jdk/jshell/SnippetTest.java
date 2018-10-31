@@ -73,7 +73,7 @@ public class SnippetTest extends KullaTesting {
     }
 
     public void testVarDeclarationKey() {
-        assertVarKeyMatch("int a;", false, "a", VAR_DECLARATION_SUBKIND, "int", added(VALID));
+        assertVarKeyMatch("int a;", true, "a", VAR_DECLARATION_SUBKIND, "int", added(VALID));
     }
 
     public void testVarDeclarationWithInitializerKey() {

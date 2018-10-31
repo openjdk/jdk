@@ -114,8 +114,6 @@ void GCTaskThread::print_task_time_stamps() {
 // for tasks to be enqueued for execution.
 
 void GCTaskThread::run() {
-  // Set up the thread for stack overflow support
-  this->record_stack_base_and_size();
   this->initialize_named_thread();
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {

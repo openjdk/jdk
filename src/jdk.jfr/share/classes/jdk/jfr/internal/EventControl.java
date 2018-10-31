@@ -41,7 +41,6 @@ import java.util.Set;
 import jdk.internal.module.Modules;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Enabled;
-import jdk.jfr.Event;
 import jdk.jfr.Name;
 import jdk.jfr.Period;
 import jdk.jfr.SettingControl;
@@ -109,7 +108,7 @@ public final class EventControl {
         }
     }
 
-    EventControl(PlatformEventType es, Class<? extends Event> eventClass) {
+    EventControl(PlatformEventType es, Class<? extends jdk.internal.event.Event> eventClass) {
         this(es);
         defineSettings(eventClass);
     }

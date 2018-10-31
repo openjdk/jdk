@@ -250,7 +250,7 @@ public abstract class Snippet {
          * @jls 8.3. VariableDeclarator without VariableInitializer in
          * FieldDeclaration.
          */
-        VAR_DECLARATION_SUBKIND(Kind.VAR),
+        VAR_DECLARATION_SUBKIND(Kind.VAR, true, true),
 
         /**
          * A variable declaration with an initializer expression. A

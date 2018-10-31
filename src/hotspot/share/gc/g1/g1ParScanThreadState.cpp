@@ -203,7 +203,7 @@ void G1ParScanThreadState::report_promotion_event(InCSetState const dest_state,
   if (alloc_buf->contains(obj_ptr)) {
     _g1h->_gc_tracer_stw->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
                                                              dest_state.value() == InCSetState::Old,
-                                                             alloc_buf->word_sz());
+                                                             alloc_buf->word_sz() * HeapWordSize);
   } else {
     _g1h->_gc_tracer_stw->report_promotion_outside_plab_event(old->klass(), word_sz * HeapWordSize, age,
                                                               dest_state.value() == InCSetState::Old);
@@ -265,7 +265,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
 
   const oop obj = oop(obj_ptr);
-  const oop forward_ptr = old->forward_to_atomic(obj, memory_order_relaxed);
+  const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
 
@@ -311,8 +311,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       oop* old_p = set_partial_array_mask(old);
       do_oop_partial_array(old_p);
     } else {
-      HeapRegion* const to_region = _g1h->heap_region_containing(obj_ptr);
-      _scanner.set_region(to_region);
+      G1ScanInYoungSetter x(&_scanner, dest_state.is_young());
       obj->oop_iterate_backwards(&_scanner);
     }
     return obj;
@@ -355,7 +354,7 @@ void G1ParScanThreadStateSet::flush() {
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
-  oop forward_ptr = old->forward_to_atomic(old, memory_order_relaxed);
+  oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
@@ -367,7 +366,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);
 
-    _scanner.set_region(r);
+    G1ScanInYoungSetter x(&_scanner, r->is_young());
     old->oop_iterate_backwards(&_scanner);
 
     return old;

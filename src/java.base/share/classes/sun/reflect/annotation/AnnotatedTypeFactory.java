@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import static sun.reflect.annotation.TypeAnnotation.*;
 
@@ -125,6 +127,12 @@ public final class AnnotatedTypeFactory {
             EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY, null);
     static final AnnotatedType[] EMPTY_ANNOTATED_TYPE_ARRAY = new AnnotatedType[0];
 
+    /*
+     * Note that if additional subclasses of AnnotatedTypeBaseImpl are
+     * added, the equals methods of AnnotatedTypeBaseImpl will need to
+     * be updated to properly implement the equals contract.
+     */
+
     private static class AnnotatedTypeBaseImpl implements AnnotatedType {
         private final Type type;
         private final AnnotatedElement decl;
@@ -207,25 +215,26 @@ public final class AnnotatedTypeFactory {
         @Override // java.lang.Object
         public String toString() {
             // Reusable toString implementation, but needs to be
-            // specialized for quirks of arrays.
-            return annotationsToString(getAnnotations(), false) + type.toString();
+            // specialized for quirks of arrays and interior types of
+            // wildcards, etc.
+            return annotationsToString(getAnnotations(), false) +
+                ((type instanceof Class) ? type.getTypeName(): type.toString());
         }
 
         protected String annotationsToString(Annotation[] annotations, boolean leadingSpace) {
             if (annotations != null && annotations.length > 0) {
-                StringJoiner sj = new StringJoiner(" ");
-                if (leadingSpace) {
-                    sj.add(""); // Add a space
-                }
+                StringBuffer sb = new StringBuffer();
 
-                for (Annotation annotation : annotations) {
-                    sj.add(annotation.toString());
-                }
+                sb.append(Stream.of(annotations).
+                          map(Annotation::toString).
+                          collect(Collectors.joining(" ")));
 
-                if (!leadingSpace) {
-                    sj.add("");
-                }
-                return sj.toString();
+                if (leadingSpace)
+                    sb.insert(0, " ");
+                else
+                    sb.append(" ");
+
+                return sb.toString();
             } else {
                 return "";
             }
@@ -377,6 +386,13 @@ public final class AnnotatedTypeFactory {
             return (TypeVariable)getType();
         }
 
+        // For toString, the declaration of a type variable should
+        // including information about its bounds, etc. However, the
+        // use of a type variable should not. For that reason, it is
+        // acceptable for the toString implementation of
+        // AnnotatedTypeVariableImpl to use the inherited
+        // implementation from AnnotatedTypeBaseImpl.
+
         @Override
         public boolean equals(Object o) {
             if (o instanceof AnnotatedTypeVariable) {
@@ -442,6 +458,23 @@ public final class AnnotatedTypeFactory {
 
         private ParameterizedType getParameterizedType() {
             return (ParameterizedType)getType();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(annotationsToString(getAnnotations(), false));
+
+            Type t = getParameterizedType().getRawType();
+            sb.append(t.getTypeName());
+
+            AnnotatedType[] typeArgs = getAnnotatedActualTypeArguments();
+            if (typeArgs.length > 0) {
+                sb.append(Stream.of(typeArgs).map(AnnotatedType::toString).
+                          collect(Collectors.joining(", ", "<", ">")));
+            }
+
+            return sb.toString();
         }
 
         @Override
@@ -522,6 +555,42 @@ public final class AnnotatedTypeFactory {
         private boolean hasUpperBounds() {
             return hasUpperBounds;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(annotationsToString(getAnnotations(), false));
+            sb.append("?");
+
+            // Note that the wildcard API is written to accommodate
+            // multiple bounds for wildcards, but at the time of
+            // writing only a single bound is allowed in the
+            // language.
+            AnnotatedType[] bounds = getAnnotatedLowerBounds();
+            if (bounds.length > 0) {
+                sb.append(" super ");
+            } else {
+                bounds = getAnnotatedUpperBounds();
+                if (bounds.length > 0) {
+                    if (bounds.length == 1) {
+                        // Check for and elide " extends java.lang.Object" if a lone
+                        // Object bound is not annotated.
+                        AnnotatedType bound = bounds[0];
+                        if (bound.getType().equals(Object.class) &&
+                            bound.getAnnotations().length == 0) {
+                            return sb.toString();
+                        }
+                    }
+                    sb.append(" extends ");
+                }
+            }
+
+            sb.append(Stream.of(bounds).map(AnnotatedType::toString).
+                      collect(Collectors.joining(" & ")));
+
+            return sb.toString();
+        }
+
 
         @Override
         public boolean equals(Object o) {

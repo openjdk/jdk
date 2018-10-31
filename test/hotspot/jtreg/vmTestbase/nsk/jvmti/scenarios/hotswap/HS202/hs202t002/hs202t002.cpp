@@ -57,7 +57,7 @@ void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
                                 jmethodID method,
                                 jboolean was_popped_by_exception,
                                 jvalue return_value) {
-    if ( was_popped_by_exception ) {
+    if (was_popped_by_exception) {
         char * name;
         char * signature;
         char * generic ;
@@ -70,7 +70,7 @@ void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
             nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                                   sizeof(fileName)/sizeof(char));
             jvmti_env->GetMethodDeclaringClass(method, &cls);
-            if ( nsk_jvmti_redefineClass(jvmti_env, cls,fileName) == NSK_TRUE ) {
+            if (nsk_jvmti_redefineClass(jvmti_env, cls,fileName) == NSK_TRUE) {
                 nsk_printf(" Agent:: redefine class success ..\n");
                 nsk_printf("Agent::SUSPENDING>> \n");
                 err=jvmti_env->SuspendThread(thread);
@@ -102,14 +102,14 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     nsk_printf("Agent:: VM.. Started..\n");
     redefineNumber=0;
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if ( rc!= JNI_OK ) {
+    if (rc!= JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
         memset(&caps, 0, sizeof(caps));
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
             nsk_printf("# error agent Failed to parse options \n");
             return JNI_ERR;
         }
@@ -143,7 +143,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_popThreadFrame(JNIEnv
     jint state;
     nsk_printf("Agent:: POPPING THE FRAME..\n");
     jvmti->GetThreadState(thread, &state);
-    if ( state & JVMTI_THREAD_STATE_SUSPENDED) {
+    if (state & JVMTI_THREAD_STATE_SUSPENDED) {
         err = jvmti->PopFrame(thread);
         if (err == JVMTI_ERROR_NONE) {
             nsk_printf("Agent:: PopFrame succeeded..\n");

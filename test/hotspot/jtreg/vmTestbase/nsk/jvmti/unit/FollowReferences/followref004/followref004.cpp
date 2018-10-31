@@ -84,7 +84,7 @@ jint JNICALL primitiveFieldCallback(
                g_refKindStr[reference_kind],
                (long) class_tag,
                (long) DEREF(tag_ptr),
-               (int ) value_type);
+               (int) value_type);
 
     fflush(0);
 
@@ -109,8 +109,8 @@ jint JNICALL arrayPrimitiveValueCallback(
     printf("    arrayPrimitiveValueCallback: class_tag=%-3ld, tag=%-3ld, len=%d, type=%c\n",
            (long) class_tag,
            (long) DEREF(tag_ptr),
-           (int ) element_count,
-           (int ) element_type);
+           (int) element_count,
+           (int) element_type);
     fflush(0);
 
     markTagVisited(DEREF(tag_ptr));
@@ -131,7 +131,7 @@ jint JNICALL stringPrimitiveValueCallback(
     printf("stringPrimitiveValueCallback: class_tag=%-3ld, tag=%-3ld, len=%d\n",
            (long) class_tag,
            (long) DEREF(tag_ptr),
-           (int ) value_length);
+           (int) value_length);
     fflush(0);
 
     markTagVisited(DEREF(tag_ptr));
@@ -146,16 +146,16 @@ static void createGlobalRefs(JNIEnv * jni)
 {
     jclass klass;
 
-    if  ( ! NSK_JNI_VERIFY(jni, (klass = jni->FindClass(JAVA_LANG_STRING_CLASS_NAME)) != NULL) ) {
+    if  (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(JAVA_LANG_STRING_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if ( ! NSK_JNI_VERIFY(jni, (g_jniGlobalRef = jni->NewGlobalRef(klass)) != NULL) ) {
+    if (!NSK_JNI_VERIFY(jni, (g_jniGlobalRef = jni->NewGlobalRef(klass)) != NULL)) {
         nsk_jvmti_setFailStatus();
     }
 
-    if ( ! NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = jni->NewWeakGlobalRef(klass)) != NULL) ) {
+    if (!NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = jni->NewWeakGlobalRef(klass)) != NULL)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -185,7 +185,7 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
                                       &g_heapCallbacks,
                                       (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NONE) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_NONE)) {
         nsk_jvmti_setFailStatus();
     }
 

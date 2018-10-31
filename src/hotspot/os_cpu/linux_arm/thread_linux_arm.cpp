@@ -32,17 +32,12 @@
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-#ifdef AARCH64
-  assert (_anchor.last_Java_pc() != NULL, "pc should be stored");
-  return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
-#else
   if (_anchor.last_Java_pc() != NULL) {
     return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
   } else {
     // This will pick up pc from sp
     return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp());
   }
-#endif // AARCH64
 }
 
 void JavaThread::cache_global_variables() {
@@ -84,7 +79,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
-  if (jt->has_last_Java_frame() AARCH64_ONLY(&& jt->last_Java_pc() != NULL)) {
+  if (jt->has_last_Java_frame()) {
     *fr_addr = jt->pd_last_frame();
     return true;
   }

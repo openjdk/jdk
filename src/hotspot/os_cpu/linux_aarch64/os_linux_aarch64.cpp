@@ -106,9 +106,6 @@ char* os::non_memory_address_word() {
   return (char*) 0xffffffffffff;
 }
 
-void os::initialize_thread(Thread *thr) {
-}
-
 address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
 #ifdef BUILTIN_SIM
   return (address)uc->uc_mcontext.gregs[REG_PC];

@@ -182,3 +182,7 @@ ifeq ($(OPENJDK_BUILD_OS), solaris)
   SED := gsed
   TAR := gtar
 endif
+
+ifeq ($(OPENJDK_BUILD_OS), windows)
+  CYGPATH := cygpath
+endif

@@ -914,6 +914,19 @@ void FileMapInfo::map_heap_regions_impl() {
     return;
   }
 
+  if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
+    ShouldNotReachHere(); // CDS should have been disabled.
+    // The archived objects are mapped at JVM start-up, but we don't know if
+    // j.l.String or j.l.Class might be replaced by the ClassFileLoadHook,
+    // which would make the archived String or mirror objects invalid. Let's be safe and not
+    // use the archived objects. These 2 classes are loaded during the JVMTI "early" stage.
+    //
+    // If JvmtiExport::has_early_class_hook_env() is false, the classes of some objects
+    // in the archived subgraphs may be replaced by the ClassFileLoadHook. But that's OK
+    // because we won't install an archived object subgraph if the klass of any of the
+    // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
+  }
+
   MemRegion heap_reserved = Universe::heap()->reserved_region();
 
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
@@ -1224,6 +1237,15 @@ bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
 
+  if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
+    // CDS assumes that no classes resolved in SystemDictionary::resolve_well_known_classes
+    // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
+    // during the JVMTI "early" stage, so we can still use CDS if
+    // JvmtiExport::has_early_class_hook_env() is false.
+    FileMapInfo::fail_continue("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+    return false;
+  }
+
   if (!open_for_read()) {
     return false;
   }
@@ -1355,6 +1377,8 @@ bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
 
 // Unmap mapped regions of shared space.
 void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
+  MetaspaceObj::set_shared_metaspace_range(NULL, NULL);
+
   FileMapInfo *map_info = FileMapInfo::current_info();
   if (map_info) {
     map_info->fail_continue("%s", msg);

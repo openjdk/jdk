@@ -65,20 +65,21 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_loadClass(JNIEnv *jni_env,
     jmethodID methodID;
     jclass loadedClass;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(loader)) != NULL)) {
+    klass = jni_env->GetObjectClass(loader);
+    if (!NSK_JNI_VERIFY(jni_env, klass != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni_env,
-            (methodID = jni_env->GetMethodID(
-                klass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;")) != NULL)) {
+    methodID = jni_env->GetMethodID(
+            klass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    if (!NSK_JNI_VERIFY(jni_env, methodID != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
 
-    if (!NSK_JNI_VERIFY(jni_env, (loadedClass = (jclass)
-            jni_env->CallObjectMethod(loader, methodID, className)) != NULL)) {
+    loadedClass = (jclass) jni_env->CallObjectMethod(loader, methodID, className);
+    if (!NSK_JNI_VERIFY(jni_env, loadedClass != NULL)) {
         nsk_jvmti_setFailStatus();
         return NULL;
     }
@@ -96,8 +97,8 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_prepareClass(JNIEnv *jni_env,
                         jobject o, jclass klass) {
     jfieldID fieldID;
 
-    if (!NSK_JNI_VERIFY(jni_env, (fieldID =
-            jni_env->GetStaticFieldID(klass, "toProvokePreparation", "I")) != NULL)) {
+    fieldID = jni_env->GetStaticFieldID(klass, "toProvokePreparation", "I");
+    if (!NSK_JNI_VERIFY(jni_env, fieldID != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -116,18 +117,19 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_startThread(JNIEnv *jni_env,
     jclass klass;
     jmethodID methodID;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(thread)) != NULL)) {
+    klass = jni_env->GetObjectClass(thread);
+    if (!NSK_JNI_VERIFY(jni_env, klass != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            jni_env->GetMethodID(klass, "start", "()V")) != NULL)) {
+    methodID = jni_env->GetMethodID(klass, "start", "()V");
+    if (!NSK_JNI_VERIFY(jni_env, methodID != NULL)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID)) ) {
+    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -228,7 +230,8 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     jvmtiPhase phase;
 
 
-    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(thread)) != NULL)) {
+    classObject = jni_env->GetObjectClass(thread);
+    if (!NSK_JNI_VERIFY(jni_env, classObject != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -521,7 +524,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
     classLoaderCount = nsk_jvmti_findOptionIntValue(CLASS_LOADER_COUNT_PARAM, 10);
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {

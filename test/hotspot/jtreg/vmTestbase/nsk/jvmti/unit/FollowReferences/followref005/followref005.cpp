@@ -51,7 +51,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY)) {
         NSK_COMPLAIN1("FollowReferences() returned %i", retCode);
         nsk_jvmti_setFailStatus();
     }
@@ -61,28 +61,28 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                                         &g_wrongHeapCallbacks,
                                         (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY)) {
         NSK_COMPLAIN1("IterateThroughHeap() returned %i", retCode);
         nsk_jvmti_setFailStatus();
     }
 
     retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, &tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY)) {
         NSK_COMPLAIN1("GetTag() returned %i", retCode);
         nsk_jvmti_setFailStatus();
     }
 
     retCode = jvmti->SetTag((jobject) &g_wrongHeapCallbacks, tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY)) {
         NSK_COMPLAIN1("SetTag() returned %i", retCode);
         nsk_jvmti_setFailStatus();
     }
 
     retCode = jvmti->GetObjectsWithTags(1, &tag, &cnt, &pObjs, &pObjTags);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_MUST_POSSESS_CAPABILITY)) {
         NSK_COMPLAIN1("GetObjectsWithTags() returned %i", retCode);
         nsk_jvmti_setFailStatus();
     }

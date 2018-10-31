@@ -33,17 +33,6 @@ FloatRegister LIR_OprDesc::as_double_reg() const {
   return as_FloatRegister(fpu_regnrLo());
 }
 
-#ifdef AARCH64
-// Reg2 unused.
-LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
-  assert(as_FloatRegister(reg2) == fnoreg, "Not used on this platform");
-  return (LIR_Opr)(intptr_t)((reg1 << LIR_OprDesc::reg1_shift) |
-                             (reg1 << LIR_OprDesc::reg2_shift) |
-                             LIR_OprDesc::double_type          |
-                             LIR_OprDesc::fpu_register         |
-                             LIR_OprDesc::double_size);
-}
-#else
 LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
   assert(as_FloatRegister(reg2) != fnoreg, "Arm32 holds double in two regs.");
   return (LIR_Opr)(intptr_t)((reg1 << LIR_OprDesc::reg1_shift) |
@@ -52,22 +41,12 @@ LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
                              LIR_OprDesc::fpu_register         |
                              LIR_OprDesc::double_size);
 }
-#endif
 
 #ifndef PRODUCT
 void LIR_Address::verify() const {
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
 #endif
-#ifdef AARCH64
-  if (base()->type() == T_INT) {
-    assert(index()->is_single_cpu() && (index()->type() == T_INT), "wrong index operand");
-  } else {
-    assert(index()->is_illegal() || index()->is_double_cpu() ||
-           (index()->is_single_cpu() && (index()->is_oop_register() || index()->type() == T_INT)), "wrong index operand");
-    assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA, "wrong type for addresses");
-  }
-#else
   assert(disp() == 0 || index()->is_illegal(), "can't have both");
   // Note: offsets higher than 4096 must not be rejected here. They can
   // be handled by the back-end or will be rejected if not.
@@ -81,6 +60,5 @@ void LIR_Address::verify() const {
   assert(base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
          "wrong type for addresses");
 #endif
-#endif // AARCH64
 }
 #endif // PRODUCT

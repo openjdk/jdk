@@ -82,21 +82,21 @@ public class CDSTestUtils {
      *
      * Instead, the test case should be written as
      *
-     *      CCDSTestUtils.run(args).assertNormalExit("Hi");
+     *      CDSTestUtils.run(args).assertNormalExit("Hi");
      *
      * EXAMPLES/HOWTO
      *
      * 1. For simple substring matching:
      *
-     *      CCDSTestUtils.run(args).assertNormalExit("Hi");
-     *      CCDSTestUtils.run(args).assertNormalExit("a", "b", "x");
-     *      CCDSTestUtils.run(args).assertAbnormalExit("failure 1", "failure2");
+     *      CDSTestUtils.run(args).assertNormalExit("Hi");
+     *      CDSTestUtils.run(args).assertNormalExit("a", "b", "x");
+     *      CDSTestUtils.run(args).assertAbnormalExit("failure 1", "failure2");
      *
      * 2. For more complex output matching: using Lambda expressions
      *
-     *      CCDSTestUtils.run(args)
+     *      CDSTestUtils.run(args)
      *         .assertNormalExit(output -> output.shouldNotContain("this should not be printed");
-     *      CCDSTestUtils.run(args)
+     *      CDSTestUtils.run(args)
      *         .assertAbnormalExit(output -> {
      *             output.shouldNotContain("this should not be printed");
      *             output.shouldHaveExitValue(123);
@@ -104,13 +104,13 @@ public class CDSTestUtils {
      *
      * 3. Chaining several checks:
      *
-     *      CCDSTestUtils.run(args)
+     *      CDSTestUtils.run(args)
      *         .assertNormalExit(output -> output.shouldNotContain("this should not be printed")
      *         .assertNormalExit("should have this", "should have that");
      *
      * 4. [Rare use case] if a test sometimes exit normally, and sometimes abnormally:
      *
-     *      CCDSTestUtils.run(args)
+     *      CDSTestUtils.run(args)
      *         .ifNormalExit("ths string is printed when exiting with 0")
      *         .ifAbNormalExit("ths string is printed when exiting with 1");
      *
@@ -388,9 +388,11 @@ public class CDSTestUtils {
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
-        if (opts.archiveName == null)
-            opts.archiveName = getDefaultArchiveName();
-        cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
+        if (!opts.useSystemArchive) {
+            if (opts.archiveName == null)
+                opts.archiveName = getDefaultArchiveName();
+            cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
+        }
 
         if (opts.useVersion)
             cmd.add("-version");

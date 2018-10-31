@@ -33,12 +33,17 @@ class ClassListParser;
 
 class ClassLoaderExt: public ClassLoader { // AllStatic
 public:
+  static bool should_verify(int classpath_index) {
+    CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
+    NOT_CDS(return false;)
+  }
+
+#if INCLUDE_CDS
+private:
   enum SomeConstants {
     max_classpath_index = 0x7fff
   };
 
-private:
-#if INCLUDE_CDS
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
   static void setup_app_search_path(); // Only when -Xshare:dump
   static void process_module_table(ModuleEntryTable* met, TRAPS);
@@ -54,27 +59,19 @@ private:
 
   static bool _has_app_classes;
   static bool _has_platform_classes;
-#endif
 
-public:
-  CDS_ONLY(static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates);)
-
-  static bool should_verify(int classpath_index) {
-    CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
-    NOT_CDS(return false;)
-  }
-  // Called by JVMTI code to add boot classpath
-  static void append_boot_classpath(ClassPathEntry* new_entry);
-
-  static void setup_search_paths() NOT_CDS_RETURN;
-  static void setup_module_paths(TRAPS) NOT_CDS_RETURN;
-
-#if INCLUDE_CDS
-private:
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS);
   static ClassPathEntry* find_classpath_entry_from_cache(const char* path, TRAPS);
 
 public:
+  static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates);
+
+  // Called by JVMTI code to add boot classpath
+  static void append_boot_classpath(ClassPathEntry* new_entry);
+
+  static void setup_search_paths();
+  static void setup_module_paths(TRAPS);
+
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {
     // Remove all the new-line continuations (which wrap long lines at 72 characters, see
     // http://docs.oracle.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest), so

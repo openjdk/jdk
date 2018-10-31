@@ -66,7 +66,6 @@ typedef VMRegImpl* VMReg;
 #define R9_IS_SCRATCHED 0
 #endif
 
-#ifndef AARCH64
 // FP_REG_NUM
 //
 // The ARM ABI does not state which register is used for the frame pointer.
@@ -77,7 +76,6 @@ typedef VMRegImpl* VMReg;
 // Default: FP is R11
 #define FP_REG_NUM 11
 #endif
-#endif // AARCH64
 
 // ALIGN_WIDE_ARGUMENTS
 //
@@ -113,32 +111,6 @@ typedef VMRegImpl* VMReg;
 #define R14    ((Register)14)
 #define R15    ((Register)15)
 
-#ifdef AARCH64
-
-#define R16    ((Register)16)
-#define R17    ((Register)17)
-#define R18    ((Register)18)
-#define R19    ((Register)19)
-#define R20    ((Register)20)
-#define R21    ((Register)21)
-#define R22    ((Register)22)
-#define R23    ((Register)23)
-#define R24    ((Register)24)
-#define R25    ((Register)25)
-#define R26    ((Register)26)
-#define R27    ((Register)27)
-#define R28    ((Register)28)
-#define R29    ((Register)29)
-#define R30    ((Register)30)
-#define ZR     ((Register)31)
-#define SP     ((Register)32)
-
-#define FP     R29
-#define LR     R30
-
-#define altFP_7_11 R7
-
-#else // !AARCH64
 
 #define FP     ((Register)FP_REG_NUM)
 
@@ -158,7 +130,6 @@ typedef VMRegImpl* VMReg;
 #define LR     R14
 #define PC     R15
 
-#endif // !AARCH64
 
 
 class RegisterImpl;
@@ -171,11 +142,7 @@ inline Register as_Register(int encoding) {
 class RegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-#ifdef AARCH64
-    number_of_gprs = 31,
-    zr_sp_encoding = 31,
-#endif
-    number_of_registers = AARCH64_ONLY(number_of_gprs + 2) NOT_AARCH64(16)
+    number_of_registers = 16
   };
 
   Register successor() const      { return as_Register(encoding() + 1); }
@@ -188,19 +155,10 @@ class RegisterImpl : public AbstractRegisterImpl {
   int   encoding() const          { assert(is_valid(), "invalid register"); return value(); }
   const char* name() const;
 
-#ifdef AARCH64
-  int encoding_with_zr() const   { assert (is_valid_gpr_or_zr(), "invalid register"); return (this == ZR) ? zr_sp_encoding : value(); }
-  int encoding_with_sp() const   { assert (is_valid_gpr_or_sp(), "invalid register"); return (this == SP) ? zr_sp_encoding : value(); }
-#endif
 
   // testers
   bool is_valid() const           { return 0 <= value() && value() < number_of_registers; }
 
-#ifdef AARCH64
-  bool is_valid_gpr()       const  { return (0 <= value() && value() < number_of_gprs); }
-  bool is_valid_gpr_or_zr() const  { return is_valid_gpr() || (this == ZR); }
-  bool is_valid_gpr_or_sp() const  { return is_valid_gpr() || (this == SP); }
-#endif
 };
 
 CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
@@ -217,11 +175,7 @@ inline FloatRegister as_FloatRegister(int encoding) {
 class FloatRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-#ifdef AARCH64
-    number_of_registers = 32
-#else
     number_of_registers = NOT_COMPILER2(32) COMPILER2_PRESENT(64)
-#endif
   };
 
   inline friend FloatRegister as_FloatRegister(int encoding);
@@ -234,7 +188,6 @@ class FloatRegisterImpl : public AbstractRegisterImpl {
 
   const char* name() const;
 
-#ifndef AARCH64
   int hi_bits() const {
     return (encoding() >> 1) & 0xf;
   }
@@ -246,54 +199,10 @@ class FloatRegisterImpl : public AbstractRegisterImpl {
   int hi_bit() const {
     return encoding() >> 5;
   }
-#endif // !AARCH64
 };
 
 CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg, (-1));
 
-#ifdef AARCH64
-
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V0,     ( 0));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V1,     ( 1));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V2,     ( 2));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V3,     ( 3));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V4,     ( 4));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V5,     ( 5));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V6,     ( 6));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V7,     ( 7));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V8,     ( 8));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V9,     ( 9));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V10,    (10));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V11,    (11));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V12,    (12));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V13,    (13));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V14,    (14));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V15,    (15));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V16,    (16));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V17,    (17));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V18,    (18));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V19,    (19));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V20,    (20));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V21,    (21));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V22,    (22));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V23,    (23));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V24,    (24));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V25,    (25));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V26,    (26));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V27,    (27));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V28,    (28));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V29,    (29));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V30,    (30));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, V31,    (31));
-
-#define S0       V0
-#define S1_reg   V1
-#define Stemp    V31
-
-#define D0       V0
-#define D1       V1
-
-#else // AARCH64
 
 /*
  * S1-S6 are named with "_reg" suffix to avoid conflict with
@@ -366,16 +275,15 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, D29,    (58));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, D30,    (60));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, D31,    (62));
 
-#endif // AARCH64
 
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
     log_vmregs_per_word = LogBytesPerWord - LogBytesPerInt, // VMRegs are of 4-byte size
 #ifdef COMPILER2
-    log_bytes_per_fpr  = AARCH64_ONLY(4) NOT_AARCH64(2), // quad vectors
+    log_bytes_per_fpr  = 2, // quad vectors
 #else
-    log_bytes_per_fpr  = AARCH64_ONLY(3) NOT_AARCH64(2), // double vectors
+    log_bytes_per_fpr  = 2, // double vectors
 #endif
     log_words_per_fpr  = log_bytes_per_fpr - LogBytesPerWord,
     words_per_fpr      = 1 << log_words_per_fpr,
@@ -388,16 +296,12 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
     max_gpr0 = num_gpr,
     num_fpr  = FloatRegisterImpl::number_of_registers << log_vmregs_per_fpr,
     max_fpr0 = max_gpr0 + num_fpr,
-    number_of_registers = num_gpr + num_fpr +
-                          // TODO-AARCH64 revise
-                          1+1 // APSR and FPSCR so that c2's REG_COUNT <= ConcreteRegisterImpl::number_of_registers
+    number_of_registers = num_gpr + num_fpr + 1+1 // APSR and FPSCR so that c2's REG_COUNT <= ConcreteRegisterImpl::number_of_registers
   };
 
   static const int max_gpr;
   static const int max_fpr;
 };
-
-// TODO-AARCH64 revise the following definitions
 
 class VFPSystemRegisterImpl;
 typedef VFPSystemRegisterImpl* VFPSystemRegister;
@@ -414,33 +318,21 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 /*
  * Register definitions shared across interpreter and compiler
  */
-#define Rexception_obj   AARCH64_ONLY(R19) NOT_AARCH64(R4)
-#define Rexception_pc    AARCH64_ONLY(R20) NOT_AARCH64(R5)
-
-#ifdef AARCH64
-#define Rheap_base       R27
-#endif // AARCH64
+#define Rexception_obj   R4
+#define Rexception_pc    R5
 
 /*
  * Interpreter register definitions common to C++ and template interpreters.
  */
-#ifdef AARCH64
-#define Rlocals          R23
-#define Rmethod          R26
-#define Rthread          R28
-#define Rtemp            R16
-#define Rtemp2           R17
-#else
 #define Rlocals          R8
 #define Rmethod          R9
 #define Rthread          R10
 #define Rtemp            R12
-#endif // AARCH64
 
 // Interpreter calling conventions
 
-#define Rparams          AARCH64_ONLY(R8)  NOT_AARCH64(SP)
-#define Rsender_sp       AARCH64_ONLY(R19) NOT_AARCH64(R4)
+#define Rparams          SP
+#define Rsender_sp       R4
 
 // JSR292
 //  Note: R5_mh is needed only during the call setup, including adapters
@@ -479,25 +371,23 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 #define D1_tmp                 D1
 
 // Temporary registers saved across VM calls (according to C calling conventions)
-#define Rtmp_save0             AARCH64_ONLY(R19) NOT_AARCH64(R4)
-#define Rtmp_save1             AARCH64_ONLY(R20) NOT_AARCH64(R5)
+#define Rtmp_save0             R4
+#define Rtmp_save1             R5
 
 // Cached TOS value
 #define R0_tos                 R0
 
-#ifndef AARCH64
 #define R0_tos_lo              R0
 #define R1_tos_hi              R1
-#endif
 
 #define S0_tos                 S0
 #define D0_tos                 D0
 
 // Dispatch table
-#define RdispatchTable         AARCH64_ONLY(R22) NOT_AARCH64(R6)
+#define RdispatchTable         R6
 
 // Bytecode pointer
-#define Rbcp                   AARCH64_ONLY(R24) NOT_AARCH64(altFP_7_11)
+#define Rbcp                   altFP_7_11
 
 // Pre-loaded next bytecode for the dispatch
 #define R3_bytecode            R3
@@ -507,7 +397,7 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 #define R4_ArrayIndexOutOfBounds_index   R4
 
 // Interpreter expression stack top
-#define Rstack_top             AARCH64_ONLY(R25) NOT_AARCH64(SP)
+#define Rstack_top             SP
 
 /*
  * Linux 32-bit ARM C ABI Register calling conventions
@@ -529,28 +419,14 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
  *   R13 (SP)   Stack Pointer                 callee
  *   R14 (LR)   Link register
  *   R15 (PC)   Program Counter
- *
- * TODO-AARCH64: document AArch64 ABI
- *
  */
 #define c_rarg0  R0
 #define c_rarg1  R1
 #define c_rarg2  R2
 #define c_rarg3  R3
 
-#ifdef AARCH64
-#define c_rarg4  R4
-#define c_rarg5  R5
-#define c_rarg6  R6
-#define c_rarg7  R7
-#endif
 
-#ifdef AARCH64
-#define GPR_PARAMS    8
-#define FPR_PARAMS    8
-#else
 #define GPR_PARAMS    4
-#endif
 
 
 // Java ABI
@@ -560,11 +436,5 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 #define j_rarg2  c_rarg2
 #define j_rarg3  c_rarg3
 
-#ifdef AARCH64
-#define j_rarg4  c_rarg4
-#define j_rarg5  c_rarg5
-#define j_rarg6  c_rarg6
-#define j_rarg7  c_rarg7
-#endif
 
 #endif // CPU_ARM_VM_REGISTER_ARM_HPP

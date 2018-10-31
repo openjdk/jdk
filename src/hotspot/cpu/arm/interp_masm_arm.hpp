@@ -63,48 +63,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void check_and_handle_earlyret();
 
   // Interpreter-specific registers
-#if defined(AARCH64) && defined(ASSERT)
-
-#define check_stack_top()               _check_stack_top("invalid Rstack_top at " __FILE__ ":" XSTR(__LINE__))
-#define check_stack_top_on_expansion()  _check_stack_top("invalid Rstack_top at " __FILE__ ":" XSTR(__LINE__), VerifyInterpreterStackTop)
-#define check_extended_sp(tmp)          _check_extended_sp(tmp, "SP does not match extended SP in frame at " __FILE__ ":" XSTR(__LINE__))
-#define check_no_cached_stack_top(tmp)  _check_no_cached_stack_top(tmp, "stack_top is already cached in frame at " __FILE__ ":" XSTR(__LINE__))
-
-  void _check_stack_top(const char* msg, bool enabled = true) {
-      if (enabled) {
-          Label L;
-          cmp(SP, Rstack_top);
-          b(L, ls);
-          stop(msg);
-          bind(L);
-      }
-  }
-
-  void _check_extended_sp(Register tmp, const char* msg) {
-      Label L;
-      ldr(tmp, Address(FP, frame::interpreter_frame_extended_sp_offset * wordSize));
-      cmp(SP, tmp);
-      b(L, eq);
-      stop(msg);
-      bind(L);
-  }
-
-  void _check_no_cached_stack_top(Register tmp, const char* msg) {
-      Label L;
-      ldr(tmp, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize));
-      cbz(tmp, L);
-      stop(msg);
-      bind(L);
-  }
-
-#else
 
   inline void check_stack_top() {}
   inline void check_stack_top_on_expansion() {}
   inline void check_extended_sp(Register tmp) {}
   inline void check_no_cached_stack_top(Register tmp) {}
 
-#endif // AARCH64 && ASSERT
 
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
@@ -112,13 +76,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_method()                                    { ldr(Rmethod, Address(FP, frame::interpreter_frame_method_offset * wordSize)); }
   void restore_dispatch();
 
-#ifdef AARCH64
-  void save_stack_top()                                    { check_stack_top(); str(Rstack_top, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize)); }
-  void clear_cached_stack_top()                            { str(ZR, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize)); }
-  void restore_stack_top()                                 { ldr(Rstack_top, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize)); clear_cached_stack_top(); check_stack_top(); }
-  void cut_sp_before_call()                                { align_reg(SP, Rstack_top, StackAlignmentInBytes); }
-  void restore_sp_after_call(Register tmp)                 { ldr(tmp, Address(FP, frame::interpreter_frame_extended_sp_offset * wordSize)); mov(SP, tmp); }
-#endif
 
   // Helpers for runtime call arguments/results
   void get_const(Register reg)                             { ldr(reg, Address(Rmethod, Method::const_offset())); }
@@ -145,21 +102,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
-#ifdef AARCH64
-  void pop_l(Register r = R0_tos);
-#else
   void pop_l(Register lo = R0_tos_lo, Register hi = R1_tos_hi);
-#endif
   void pop_f(FloatRegister fd);
   void pop_d(FloatRegister fd);
 
   void push_ptr(Register r);
   void push_i(Register r = R0_tos);
-#ifdef AARCH64
-  void push_l(Register r = R0_tos);
-#else
   void push_l(Register lo = R0_tos_lo, Register hi = R1_tos_hi);
-#endif
   void push_f();
   void push_d();
 
@@ -168,7 +117,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Transition state -> vtos. Blows Rtemp.
   void push(TosState state);
 
-#ifndef AARCH64
   // The following methods are overridden to allow overloaded calls to
   //   MacroAssembler::push/pop(Register)
   //   MacroAssembler::push/pop(RegisterSet)
@@ -183,7 +131,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void convert_retval_to_tos(TosState state);
   // Converts TOS cached value to return value in R0/R1 (according to interpreter calling conventions).
   void convert_tos_to_retval(TosState state);
-#endif
 
   // JVMTI ForceEarlyReturn support
   void load_earlyret_value(TosState state);
@@ -194,12 +141,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void empty_expression_stack() {
       ldr(Rstack_top, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
       check_stack_top();
-#ifdef AARCH64
-      clear_cached_stack_top();
-#else
       // NULL last_sp until next java call
       str(zero_register(Rtemp), Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
   }
 
   // Helpers for swap and dup

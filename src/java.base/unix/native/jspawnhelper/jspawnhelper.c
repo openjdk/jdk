@@ -49,7 +49,10 @@ extern int errno;
 #define ERR_ARGS 3
 
 void error (int fd, int err) {
-    write (fd, &err, sizeof(err));
+    if (write (fd, &err, sizeof(err)) != sizeof(err)) {
+        /* Not sure what to do here. I have no one to speak to. */
+        exit(0x80 + err);
+    }
     exit (1);
 }
 

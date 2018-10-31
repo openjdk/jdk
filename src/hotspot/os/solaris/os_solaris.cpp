@@ -199,6 +199,10 @@ static inline stack_t get_stack_info() {
   return st;
 }
 
+static void _handle_uncaught_cxx_exception() {
+  VMError::report_and_die("An uncaught C++ exception");
+}
+
 bool os::is_primordial_thread(void) {
   int r = thr_main();
   guarantee(r == 0 || r == 1, "CR6501650 or CR6493689");
@@ -724,6 +728,11 @@ static thread_t main_thread;
 
 // Thread start routine for all newly created threads
 extern "C" void* thread_native_entry(void* thread_addr) {
+
+  Thread* thread = (Thread*)thread_addr;
+
+  thread->record_stack_base_and_size();
+
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -734,7 +743,6 @@ extern "C" void* thread_native_entry(void* thread_addr) {
   alloca(((pid ^ counter++) & 7) * 128);
 
   int prio;
-  Thread* thread = (Thread*)thread_addr;
 
   thread->initialize_thread_current();
 
@@ -775,7 +783,13 @@ extern "C" void* thread_native_entry(void* thread_addr) {
   // initialize signal mask for this thread
   os::Solaris::hotspot_sigmask(thread);
 
-  thread->run();
+  os::Solaris::init_thread_fpu_state();
+  std::set_terminate(_handle_uncaught_cxx_exception);
+
+  thread->call_run();
+
+  // Note: at this point the thread object may already have deleted itself.
+  // Do not dereference it from here on out.
 
   // One less thread is executing
   // When the VMThread gets here, the main thread may have already exited
@@ -785,15 +799,6 @@ extern "C" void* thread_native_entry(void* thread_addr) {
   }
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
-
-  // If a thread has not deleted itself ("delete this") as part of its
-  // termination sequence, we have to ensure thread-local-storage is
-  // cleared before we actually terminate. No threads should ever be
-  // deleted asynchronously with respect to their termination.
-  if (Thread::current_or_null_safe() != NULL) {
-    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
-    thread->clear_thread_current();
-  }
 
   if (UseDetachedThreads) {
     thr_exit(NULL);
@@ -1090,67 +1095,58 @@ sigset_t* os::Solaris::vm_signals() {
   return &vm_sigs;
 }
 
-void _handle_uncaught_cxx_exception() {
-  VMError::report_and_die("An uncaught C++ exception");
-}
+// CR 7190089: on Solaris, primordial thread's stack needs adjusting.
+// Without the adjustment, stack size is incorrect if stack is set to unlimited (ulimit -s unlimited).
+void os::Solaris::correct_stack_boundaries_for_primordial_thread(Thread* thr) {
+  assert(is_primordial_thread(), "Call only for primordial thread");
 
+  JavaThread* jt = (JavaThread *)thr;
+  assert(jt != NULL, "Sanity check");
+  size_t stack_size;
+  address base = jt->stack_base();
+  if (Arguments::created_by_java_launcher()) {
+    // Use 2MB to allow for Solaris 7 64 bit mode.
+    stack_size = JavaThread::stack_size_at_create() == 0
+      ? 2048*K : JavaThread::stack_size_at_create();
 
-// First crack at OS-specific initialization, from inside the new thread.
-void os::initialize_thread(Thread* thr) {
-  if (is_primordial_thread()) {
-    JavaThread* jt = (JavaThread *)thr;
-    assert(jt != NULL, "Sanity check");
-    size_t stack_size;
-    address base = jt->stack_base();
-    if (Arguments::created_by_java_launcher()) {
-      // Use 2MB to allow for Solaris 7 64 bit mode.
-      stack_size = JavaThread::stack_size_at_create() == 0
-        ? 2048*K : JavaThread::stack_size_at_create();
-
-      // There are rare cases when we may have already used more than
-      // the basic stack size allotment before this method is invoked.
-      // Attempt to allow for a normally sized java_stack.
-      size_t current_stack_offset = (size_t)(base - (address)&stack_size);
-      stack_size += ReservedSpace::page_align_size_down(current_stack_offset);
-    } else {
-      // 6269555: If we were not created by a Java launcher, i.e. if we are
-      // running embedded in a native application, treat the primordial thread
-      // as much like a native attached thread as possible.  This means using
-      // the current stack size from thr_stksegment(), unless it is too large
-      // to reliably setup guard pages.  A reasonable max size is 8MB.
-      size_t current_size = current_stack_size();
-      // This should never happen, but just in case....
-      if (current_size == 0) current_size = 2 * K * K;
-      stack_size = current_size > (8 * K * K) ? (8 * K * K) : current_size;
-    }
-    address bottom = align_up(base - stack_size, os::vm_page_size());;
-    stack_size = (size_t)(base - bottom);
-
-    assert(stack_size > 0, "Stack size calculation problem");
-
-    if (stack_size > jt->stack_size()) {
-#ifndef PRODUCT
-      struct rlimit limits;
-      getrlimit(RLIMIT_STACK, &limits);
-      size_t size = adjust_stack_size(base, (size_t)limits.rlim_cur);
-      assert(size >= jt->stack_size(), "Stack size problem in main thread");
-#endif
-      tty->print_cr("Stack size of %d Kb exceeds current limit of %d Kb.\n"
-                    "(Stack sizes are rounded up to a multiple of the system page size.)\n"
-                    "See limit(1) to increase the stack size limit.",
-                    stack_size / K, jt->stack_size() / K);
-      vm_exit(1);
-    }
-    assert(jt->stack_size() >= stack_size,
-           "Attempt to map more stack than was allocated");
-    jt->set_stack_size(stack_size);
+    // There are rare cases when we may have already used more than
+    // the basic stack size allotment before this method is invoked.
+    // Attempt to allow for a normally sized java_stack.
+    size_t current_stack_offset = (size_t)(base - (address)&stack_size);
+    stack_size += ReservedSpace::page_align_size_down(current_stack_offset);
+  } else {
+    // 6269555: If we were not created by a Java launcher, i.e. if we are
+    // running embedded in a native application, treat the primordial thread
+    // as much like a native attached thread as possible.  This means using
+    // the current stack size from thr_stksegment(), unless it is too large
+    // to reliably setup guard pages.  A reasonable max size is 8MB.
+    size_t current_size = os::current_stack_size();
+    // This should never happen, but just in case....
+    if (current_size == 0) current_size = 2 * K * K;
+    stack_size = current_size > (8 * K * K) ? (8 * K * K) : current_size;
   }
+  address bottom = align_up(base - stack_size, os::vm_page_size());;
+  stack_size = (size_t)(base - bottom);
 
-  // With the T2 libthread (T1 is no longer supported) threads are always bound
-  // and we use stackbanging in all cases.
+  assert(stack_size > 0, "Stack size calculation problem");
 
-  os::Solaris::init_thread_fpu_state();
-  std::set_terminate(_handle_uncaught_cxx_exception);
+  if (stack_size > jt->stack_size()) {
+#ifndef PRODUCT
+    struct rlimit limits;
+    getrlimit(RLIMIT_STACK, &limits);
+    size_t size = adjust_stack_size(base, (size_t)limits.rlim_cur);
+    assert(size >= jt->stack_size(), "Stack size problem in main thread");
+#endif
+    tty->print_cr("Stack size of %d Kb exceeds current limit of %d Kb.\n"
+                  "(Stack sizes are rounded up to a multiple of the system page size.)\n"
+                  "See limit(1) to increase the stack size limit.",
+                  stack_size / K, jt->stack_size() / K);
+    vm_exit(1);
+  }
+  assert(jt->stack_size() >= stack_size,
+         "Attempt to map more stack than was allocated");
+  jt->set_stack_size(stack_size);
+
 }
 
 

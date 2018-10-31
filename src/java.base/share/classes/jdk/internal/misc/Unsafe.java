@@ -3716,4 +3716,92 @@ public final class Unsafe {
     private native int getLoadAverage0(double[] loadavg, int nelems);
     private native boolean unalignedAccess0();
     private native boolean isBigEndian0();
+
+
+    // The following deprecated methods are used by JSR 166.
+
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getObject(Object o, long offset) {
+        return getReference(o, offset);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getObjectVolatile(Object o, long offset) {
+        return getReferenceVolatile(o, offset);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getObjectAcquire(Object o, long offset) {
+        return getReferenceAcquire(o, offset);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getObjectOpaque(Object o, long offset) {
+        return getReferenceOpaque(o, offset);
+    }
+
+
+    @Deprecated(since="12", forRemoval=true)
+    public final void putObject(Object o, long offset, Object x) {
+        putReference(o, offset, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final void putObjectVolatile(Object o, long offset, Object x) {
+        putReferenceVolatile(o, offset, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final void putObjectOpaque(Object o, long offset, Object x) {
+        putReferenceOpaque(o, offset, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final void putObjectRelease(Object o, long offset, Object x) {
+        putReferenceRelease(o, offset, x);
+    }
+
+
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getAndSetObject(Object o, long offset, Object newValue) {
+        return getAndSetReference(o, offset, newValue);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getAndSetObjectAcquire(Object o, long offset, Object newValue) {
+        return getAndSetReferenceAcquire(o, offset, newValue);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object getAndSetObjectRelease(Object o, long offset, Object newValue) {
+        return getAndSetReferenceRelease(o, offset, newValue);
+    }
+
+
+    @Deprecated(since="12", forRemoval=true)
+    public final boolean compareAndSetObject(Object o, long offset, Object expected, Object x) {
+        return compareAndSetReference(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object compareAndExchangeObject(Object o, long offset, Object expected, Object x) {
+        return compareAndExchangeReference(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object compareAndExchangeObjectAcquire(Object o, long offset, Object expected, Object x) {
+        return compareAndExchangeReferenceAcquire(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final Object compareAndExchangeObjectRelease(Object o, long offset, Object expected, Object x) {
+        return compareAndExchangeReferenceRelease(o, offset, expected, x);
+    }
+
+
+    @Deprecated(since="12", forRemoval=true)
+    public final boolean weakCompareAndSetObject(Object o, long offset, Object expected, Object x) {
+        return weakCompareAndSetReference(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final boolean weakCompareAndSetObjectAcquire(Object o, long offset, Object expected, Object x) {
+        return weakCompareAndSetReferenceAcquire(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final boolean weakCompareAndSetObjectPlain(Object o, long offset, Object expected, Object x) {
+        return weakCompareAndSetReferencePlain(o, offset, expected, x);
+    }
+    @Deprecated(since="12", forRemoval=true)
+    public final boolean weakCompareAndSetObjectRelease(Object o, long offset, Object expected, Object x) {
+        return weakCompareAndSetReferenceRelease(o, offset, expected, x);
+    }
 }

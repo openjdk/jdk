@@ -50,7 +50,7 @@ static const char* THREAD_CLS_SIGNATURE = "Lnsk/jvmti/scenarios/allocation/AP06/
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
+heapRootCallback(jvmtiHeapRootKind root_kind,
                   jlong class_tag,
                   jlong size,
                   jlong* tag_ptr,
@@ -75,15 +75,15 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     if (*tag_ptr == threadTag) {
         NSK_DISPLAY4("stackReferenceCallback: root kind=%s, "
@@ -107,13 +107,13 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     return JVMTI_ITERATION_ABORT;
 }
@@ -122,7 +122,7 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP06_ap06t001Thread_setTag( JNIEnv* jni, jobject obj) {
+Java_nsk_jvmti_scenarios_allocation_AP06_ap06t001Thread_setTag(JNIEnv* jni, jobject obj) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, threadTag))) {
         nsk_jvmti_setFailStatus();
@@ -180,19 +180,19 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         if (rootJNILocalCount != 1) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN1("JVMTI_HEAP_ROOT_JNI_LOCAL root kind was returned wrong %d times "
-                          "while iteration with IterateOverReachableObjects.\n\n", rootJNILocalCount );
+                          "while iteration with IterateOverReachableObjects.\n\n", rootJNILocalCount);
         }
 
         if (rootJNIGlobalCount != 1) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN1("JVMTI_HEAP_ROOT_JNI_GLOBAL root kind was returned wrong %d times "
-                          "while iteration with IterateOverReachableObjects.\n\n", rootJNIGlobalCount );
+                          "while iteration with IterateOverReachableObjects.\n\n", rootJNIGlobalCount);
         }
 
         if (rootThreadCount != 1) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN1("JVMTI_HEAP_ROOT_THREAD root kind was returned wrong %d times "
-                          "while iteration with IterateOverReachableObjects.\n\n", rootThreadCount );
+                          "while iteration with IterateOverReachableObjects.\n\n", rootThreadCount);
         }
 
     } while (0);

@@ -1297,15 +1297,26 @@ public class TypeAnnotations {
             super.visitTypeParameter(tree);
         }
 
-        private void copyNewClassAnnotationsToOwner(JCNewClass tree) {
+        private void propagateNewClassAnnotationsToOwner(JCNewClass tree) {
             Symbol sym = tree.def.sym;
-            final TypeAnnotationPosition pos =
-                TypeAnnotationPosition.newObj(tree.pos);
-            ListBuffer<Attribute.TypeCompound> newattrs = new ListBuffer<>();
+            // The anonymous class' synthetic class declaration is itself an inner class,
+            // so the type path is one INNER_TYPE entry deeper than that of the
+            // lexically enclosing class.
+            List<TypePathEntry> depth =
+                    locateNestedTypes(sym.owner.enclClass().type, new ListBuffer<>())
+                            .append(TypePathEntry.INNER_TYPE).toList();
+            TypeAnnotationPosition pos =
+                    TypeAnnotationPosition.newObj(depth, /* currentLambda= */ null, tree.pos);
 
+            ListBuffer<Attribute.TypeCompound> newattrs = new ListBuffer<>();
+            List<TypePathEntry> expectedLocation =
+                    locateNestedTypes(tree.clazz.type, new ListBuffer<>()).toList();
             for (Attribute.TypeCompound old : sym.getRawTypeAttributes()) {
-                newattrs.append(new Attribute.TypeCompound(old.type, old.values,
-                                                           pos));
+                // Only propagate type annotations from the top-level supertype,
+                // (including if the supertype is an inner class).
+                if (old.position.location.equals(expectedLocation)) {
+                    newattrs.append(new Attribute.TypeCompound(old.type, old.values, pos));
+                }
             }
 
             sym.owner.appendUniqueTypeAttributes(newattrs.toList());
@@ -1313,27 +1324,8 @@ public class TypeAnnotations {
 
         @Override
         public void visitNewClass(JCNewClass tree) {
-            if (tree.def != null &&
-                    !tree.def.mods.annotations.isEmpty()) {
-                JCClassDecl classdecl = tree.def;
-                TypeAnnotationPosition pos;
-
-                if (classdecl.extending == tree.clazz) {
-                    pos = TypeAnnotationPosition.classExtends(tree.pos);
-                } else if (classdecl.implementing.contains(tree.clazz)) {
-                    final int index = classdecl.implementing.indexOf(tree.clazz);
-                    pos = TypeAnnotationPosition.classExtends(index, tree.pos);
-                } else {
-                    // In contrast to CLASS elsewhere, typarams cannot occur here.
-                    throw new AssertionError("Could not determine position of tree " + tree);
-                }
-                Type before = classdecl.sym.type;
-                separateAnnotationsKinds(classdecl, tree.clazz.type, classdecl.sym, pos);
-                copyNewClassAnnotationsToOwner(tree);
-                // classdecl.sym.type now contains an annotated type, which
-                // is not what we want there.
-                // TODO: should we put this type somewhere in the superclass/interface?
-                classdecl.sym.type = before;
+            if (tree.def != null && tree.def.sym != null) {
+                propagateNewClassAnnotationsToOwner(tree);
             }
 
             scan(tree.encl);

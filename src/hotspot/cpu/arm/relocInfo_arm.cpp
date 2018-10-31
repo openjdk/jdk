@@ -35,21 +35,6 @@
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
   NativeMovConstReg* ni = nativeMovConstReg_at(addr());
-#if defined(AARCH64) && defined(COMPILER2)
-  if (ni->is_movz()) {
-    assert(type() == relocInfo::oop_type, "!");
-    if (verify_only) {
-      uintptr_t d = ni->data();
-      guarantee((d >> 32) == 0, "not narrow oop");
-      narrowOop no = d;
-      oop o = CompressedOops::decode(no);
-      guarantee(cast_from_oop<intptr_t>(o) == (intptr_t)x, "instructions must match");
-    } else {
-      ni->set_data((intptr_t)x);
-    }
-    return;
-  }
-#endif
   if (verify_only) {
     guarantee(ni->data() == (intptr_t)(x + o), "instructions must match");
   } else {
@@ -69,21 +54,16 @@ address Relocation::pd_call_destination(address orig_addr) {
 
   RawNativeInstruction* ni = rawNativeInstruction_at(pc);
 
-#if (!defined(AARCH64))
-  if (NOT_AARCH64(ni->is_add_lr()) AARCH64_ONLY(ni->is_adr_aligned_lr())) {
-    // On arm32, skip the optional 'add LR, PC, #offset'
+  if (ni->is_add_lr()) {
+    // Skip the optional 'add LR, PC, #offset'
     // (Allowing the jump support code to handle fat_call)
     pc = ni->next_raw_instruction_address();
     ni = nativeInstruction_at(pc);
   }
-#endif
 
-  if (AARCH64_ONLY(ni->is_call()) NOT_AARCH64(ni->is_bl())) {
-    // For arm32, fat_call are handled by is_jump for the new 'ni',
+  if (ni->is_bl()) {
+    // Fat_call are handled by is_jump for the new 'ni',
     // requiring only to support is_bl.
-    //
-    // For AARCH64, skipping a leading adr is not sufficient
-    // to reduce calls to a simple bl.
     return rawNativeCall_at(pc)->destination(adj);
   }
 
@@ -98,21 +78,16 @@ void Relocation::pd_set_call_destination(address x) {
   address pc = addr();
   NativeInstruction* ni = nativeInstruction_at(pc);
 
-#if (!defined(AARCH64))
-  if (NOT_AARCH64(ni->is_add_lr()) AARCH64_ONLY(ni->is_adr_aligned_lr())) {
-    // On arm32, skip the optional 'add LR, PC, #offset'
+  if (ni->is_add_lr()) {
+    // Skip the optional 'add LR, PC, #offset'
     // (Allowing the jump support code to handle fat_call)
     pc = ni->next_raw_instruction_address();
     ni = nativeInstruction_at(pc);
   }
-#endif
 
-  if (AARCH64_ONLY(ni->is_call()) NOT_AARCH64(ni->is_bl())) {
-    // For arm32, fat_call are handled by is_jump for the new 'ni',
+  if (ni->is_bl()) {
+    // Fat_call are handled by is_jump for the new 'ni',
     // requiring only to support is_bl.
-    //
-    // For AARCH64, skipping a leading adr is not sufficient
-    // to reduce calls to a simple bl.
     rawNativeCall_at(pc)->set_destination(x);
     return;
   }
@@ -138,15 +113,6 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 
 void metadata_Relocation::pd_fix_value(address x) {
   assert(! addr_in_const(), "Do not use");
-#ifdef AARCH64
-#ifdef COMPILER2
-  NativeMovConstReg* ni = nativeMovConstReg_at(addr());
-  if (ni->is_mov_slow()) {
-    return;
-  }
-#endif
-  set_value(x);
-#else
   if (!VM_Version::supports_movw()) {
     set_value(x);
 #ifdef ASSERT
@@ -165,5 +131,4 @@ void metadata_Relocation::pd_fix_value(address x) {
     // assert(ni->data() == (int)x, "metadata relocation mismatch");
 #endif
   }
-#endif // !AARCH64
 }

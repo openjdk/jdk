@@ -105,11 +105,12 @@ getStaticObjField(const char* className, const char* objFieldName,
     jfieldID fieldID;
     jclass klass = NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(className)) != NULL))
+    klass = jni->FindClass(className);
+    if (!NSK_JNI_VERIFY(jni, klass != NULL))
         return NULL;
 
-    if (!NSK_JNI_VERIFY(jni, (fieldID =
-            jni->GetStaticFieldID(klass, objFieldName, signature)) != NULL))
+    fieldID = jni->GetStaticFieldID(klass, objFieldName, signature);
+    if (!NSK_JNI_VERIFY(jni, fieldID != NULL))
         return NULL;
 
     return jni->GetStaticObjectField(klass, fieldID);
@@ -119,42 +120,46 @@ getStaticObjField(const char* className, const char* objFieldName,
 
 static int prepare() {
 
-    if (!NSK_VERIFY((mainThread = findThread(MAIN_THREAD_NAME))!= NULL)) {
+    mainThread = findThread(MAIN_THREAD_NAME);
+    if (!NSK_VERIFY(mainThread != NULL)) {
         NSK_COMPLAIN1("<%s> thread not found\n", MAIN_THREAD_NAME);
         return NSK_FALSE;
     }
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (mainThread = jni->NewGlobalRef(mainThread)) != NULL))
+    mainThread = jni->NewGlobalRef(mainThread);
+    if (!NSK_JNI_VERIFY(jni, mainThread != NULL))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY((startObject =
-            getStaticObjField(DEBUGEE_CLASS_NAME, START_FIELD_NAME,
-                                    OBJECT_FIELD_SIG)) != NULL))
-        return NSK_FALSE;
-
-    /*make object accessable for a long time*/
-    if (!NSK_JNI_VERIFY(jni, (startObject = jni->NewGlobalRef(startObject)) != NULL))
-        return NSK_FALSE;
-
-
-    if (!NSK_VERIFY((endObject =
-            getStaticObjField(DEBUGEE_CLASS_NAME, END_FIELD_NAME,
-                                    OBJECT_FIELD_SIG)) != NULL))
+    startObject = getStaticObjField(DEBUGEE_CLASS_NAME, START_FIELD_NAME, OBJECT_FIELD_SIG);
+    if (!NSK_VERIFY(startObject != NULL))
         return NSK_FALSE;
 
     /*make object accessable for a long time*/
-    if (!NSK_JNI_VERIFY(jni, (endObject = jni->NewGlobalRef(endObject)) != NULL))
+    startObject = jni->NewGlobalRef(startObject);
+    if (!NSK_JNI_VERIFY(jni, startObject != NULL))
         return NSK_FALSE;
 
 
-    if (!NSK_VERIFY((debuggeeThread =
-            (jthread)getStaticObjField(DEBUGEE_CLASS_NAME, THREAD_FIELD_NAME,
-                                    THREAD_FIELD_SIG)) != NULL))
+    endObject = getStaticObjField(DEBUGEE_CLASS_NAME, END_FIELD_NAME, OBJECT_FIELD_SIG);
+    if (!NSK_VERIFY(endObject != NULL))
+        return NSK_FALSE;
+
+    /*make object accessable for a long time*/
+    endObject = jni->NewGlobalRef(endObject);
+    if (!NSK_JNI_VERIFY(jni, endObject != NULL))
+        return NSK_FALSE;
+
+
+    debuggeeThread = (jthread) getStaticObjField(DEBUGEE_CLASS_NAME,
+                                                 THREAD_FIELD_NAME,
+                                                 THREAD_FIELD_SIG);
+    if (!NSK_VERIFY(debuggeeThread != NULL))
         return NSK_FALSE;
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (debuggeeThread = jni->NewGlobalRef(debuggeeThread)) != NULL))
+    debuggeeThread = jni->NewGlobalRef(debuggeeThread);
+    if (!NSK_JNI_VERIFY(jni, debuggeeThread != NULL))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -751,7 +756,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {

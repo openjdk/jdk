@@ -30,16 +30,10 @@
 // (see globals.hpp)
 //
 define_pd_global(bool, DontYieldALot,            false);
-#ifdef AARCH64
-define_pd_global(intx, CompilerThreadStackSize,  1024);
-define_pd_global(intx, ThreadStackSize,          1024);
-define_pd_global(intx, VMThreadStackSize,        1024);
-#else
 define_pd_global(intx, CompilerThreadStackSize,  512);
 // System default ThreadStackSize appears to be 512 which is too big.
 define_pd_global(intx, ThreadStackSize,          320);
 define_pd_global(intx, VMThreadStackSize,        512);
-#endif // AARCH64
 
 define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 

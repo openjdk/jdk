@@ -125,15 +125,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, bool for_comp
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
     __ ldr_s32(Rtemp, Address(Rthread, JavaThread::interp_only_mode_offset()));
-#ifdef AARCH64
-    Label L;
-    __ cbz(Rtemp, L);
-    __ indirect_jump(Address(Rmethod, Method::interpreter_entry_offset()), Rtemp);
-    __ bind(L);
-#else
     __ cmp(Rtemp, 0);
     __ ldr(PC, Address(Rmethod, Method::interpreter_entry_offset()), ne);
-#endif // AARCH64
   }
   const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
                                                      Method::from_interpreted_offset();
@@ -268,11 +261,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
       DEBUG_ONLY(rdx_param_size = noreg);
     }
     Register rbx_member = rbx_method;  // MemberName ptr; incoming method ptr is dead now
-#ifdef AARCH64
-    __ ldr(rbx_member, Address(Rparams, Interpreter::stackElementSize, post_indexed));
-#else
     __ pop(rbx_member);
-#endif
     generate_method_handle_dispatch(_masm, iid, rcx_recv, rbx_member, not_for_compiler_entry);
   }
   return entry_point;
@@ -288,22 +277,15 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register rbx_method = Rmethod;   // eventual target of this invocation
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = (for_compiler_entry ? saved_last_sp_register() : R1_tmp);
-  Register temp2 = AARCH64_ONLY(R9) NOT_AARCH64(R8);
+  Register temp2 = R8;
   Register temp3 = Rtemp; // R12/R16
-  Register temp4 = AARCH64_ONLY(Rtemp2) NOT_AARCH64(R5);
+  Register temp4 = R5;
   if (for_compiler_entry) {
     assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
-#ifdef AARCH64
-    assert_different_registers(temp1, j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
-    assert_different_registers(temp2, j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
-    assert_different_registers(temp3, j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
-    assert_different_registers(temp4, j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
-#else
     assert_different_registers(temp1, j_rarg0, j_rarg1, j_rarg2, j_rarg3);
     assert_different_registers(temp2, j_rarg0, j_rarg1, j_rarg2, j_rarg3);
     assert_different_registers(temp3, j_rarg0, j_rarg1, j_rarg2, j_rarg3);
     assert_different_registers(temp4, j_rarg0, j_rarg1, j_rarg2, j_rarg3);
-#endif // AARCH64
   }
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
@@ -353,12 +335,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ load_heap_oop(temp2_defc, member_clazz);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
         __ verify_klass_ptr(temp2_defc);
-#ifdef AARCH64
-        // TODO-AARCH64
-        __ b(L_ok);
-#else
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, noreg, L_ok);
-#endif
         // If we get here, the type check failed!
         __ stop("receiver class disagrees with MemberName.clazz");
         __ bind(L_ok);
@@ -484,13 +461,9 @@ enum {
   // the slop defends against false alarms due to fencepost errors
 };
 
-#ifdef AARCH64
-const int trace_mh_nregs = 32; // R0-R30, PC
-#else
 const int trace_mh_nregs = 15;
 const Register trace_mh_regs[trace_mh_nregs] =
   {R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, LR, PC};
-#endif // AARCH64
 
 void trace_method_handle_stub(const char* adaptername,
                               intptr_t* saved_regs,
@@ -501,7 +474,7 @@ void trace_method_handle_stub(const char* adaptername,
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   intptr_t* entry_sp = (intptr_t*) &saved_regs[trace_mh_nregs]; // just after the saved regs
   intptr_t* saved_sp = (intptr_t*)  saved_regs[Rsender_sp->encoding()]; // save of Rsender_sp
-  intptr_t* last_sp  = (intptr_t*)  saved_bp[AARCH64_ONLY(frame::interpreter_frame_stack_top_offset) NOT_AARCH64(frame::interpreter_frame_last_sp_offset)];
+  intptr_t* last_sp  = (intptr_t*)  saved_bp[frame::interpreter_frame_last_sp_offset];
   intptr_t* base_sp  = last_sp;
 
   intptr_t    mh_reg = (intptr_t)saved_regs[R5_mh->encoding()];
@@ -517,13 +490,9 @@ void trace_method_handle_stub(const char* adaptername,
     tty->print(" reg dump: ");
     int i;
     for (i = 0; i < trace_mh_nregs; i++) {
-      if (i > 0 && i % AARCH64_ONLY(2) NOT_AARCH64(4) == 0)
+      if (i > 0 && i % 4 == 0)
         tty->print("\n   + dump: ");
-#ifdef AARCH64
-      const char* reg_name = (i == trace_mh_nregs-1) ? "pc" : as_Register(i)->name();
-#else
       const char* reg_name = trace_mh_regs[i]->name();
-#endif
       tty->print(" %s: " INTPTR_FORMAT, reg_name, p2i((void *)saved_regs[i]));
     }
     tty->cr();

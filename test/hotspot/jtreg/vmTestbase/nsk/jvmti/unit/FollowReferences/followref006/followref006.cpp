@@ -55,7 +55,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_CLASS ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_CLASS)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -80,7 +80,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
                                       (const void *) &g_fakeUserData);
 
     // Accept both JVMTI_ERROR_INVALID_OBJECT and JVMTI_ERROR_NONE
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT || retCode == JVMTI_ERROR_NONE ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT || retCode == JVMTI_ERROR_NONE)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -92,7 +92,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
                                       NULL,
                                       (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -101,7 +101,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
                             &tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -109,7 +109,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     retCode = jvmti->GetTag(NULL, &tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -117,7 +117,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, NULL);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -127,7 +127,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     retCode = jvmti->SetTag((jobject) &g_wrongHeapCallbacks,  /* invalid inital object */
                             tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -135,7 +135,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     retCode = jvmti->GetTag(NULL, &tag);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -162,7 +162,7 @@ static void checkNoObjIterated(JNIEnv* jni, jvmtiEnv* jvmti, const char * szClas
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
-    if ( ! NSK_VERIFY(retCode == JVMTI_ERROR_NONE ) ) {
+    if (!NSK_VERIFY(retCode == JVMTI_ERROR_NONE)) {
         nsk_jvmti_setFailStatus();
     }
 

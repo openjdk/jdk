@@ -92,6 +92,11 @@ import sun.util.calendar.CalendarDate;
  * Japan introduced the Gregorian calendar starting with Meiji 6.
  * Only Meiji and later eras are supported;
  * dates before Meiji 6, January 1 are not supported.
+ * The number of the valid eras may increase, as new eras may be
+ * defined by the Japanese government. Once an era is defined,
+ * subsequent versions of this class will add a singleton instance
+ * for it. The defined era is expected to have a consecutive integer
+ * associated with it.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -195,9 +200,13 @@ public final class JapaneseEra
     /**
      * Obtains an instance of {@code JapaneseEra} from an {@code int} value.
      * <p>
-     * The {@link #SHOWA} era that contains 1970-01-01 (ISO calendar system) has the value 1
+     * The {@link #SHOWA} era that contains 1970-01-01 (ISO calendar system) has the value 1.
      * Later era is numbered 2 ({@link #HEISEI}). Earlier eras are numbered 0 ({@link #TAISHO}),
      * -1 ({@link #MEIJI}), only Meiji and later eras are supported.
+     * <p>
+     * In addition to the known era singletons, values for additional
+     * eras may be defined. Those values are the {@link Era#getValue()}
+     * of corresponding eras from the {@link #values()} method.
      *
      * @param japaneseEra  the era to represent
      * @return the {@code JapaneseEra} singleton, not null
@@ -216,6 +225,8 @@ public final class JapaneseEra
      * <p>
      * The string must match exactly the name of the era.
      * (Extraneous whitespace characters are not permitted.)
+     * <p>
+     * Valid era names are the names of eras returned from {@link #values()}.
      *
      * @param japaneseEra  the japaneseEra name; non-null
      * @return the {@code JapaneseEra} singleton, never null
@@ -232,7 +243,9 @@ public final class JapaneseEra
     }
 
     /**
-     * Returns an array of JapaneseEras.
+     * Returns an array of JapaneseEras. The array may contain eras defined
+     * by the Japanese government beyond the known era singletons.
+     *
      * <p>
      * This method may be used to iterate over the JapaneseEras as follows:
      * <pre>

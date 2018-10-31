@@ -63,7 +63,7 @@ enum SignatureScheme {
                                     "EC",
                                     NamedGroup.SECP384_R1,
                                     ProtocolVersion.PROTOCOLS_TO_13),
-    ECDSA_SECP512R1_SHA512  (0x0603, "ecdsa_secp512r1_sha512",
+    ECDSA_SECP521R1_SHA512  (0x0603, "ecdsa_secp521r1_sha512",
                                     "SHA512withECDSA",
                                     "EC",
                                     NamedGroup.SECP521_R1,

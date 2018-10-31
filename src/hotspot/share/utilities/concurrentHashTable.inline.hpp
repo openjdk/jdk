@@ -208,9 +208,10 @@ inline ConcurrentHashTable<VALUE, CONFIG, F>::
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<VALUE, CONFIG, F>::
   ScopedCS::ScopedCS(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* cht)
-    : _thread(thread), _cht(cht)
+    : _thread(thread),
+      _cht(cht),
+      _cs_context(GlobalCounter::critical_section_begin(_thread))
 {
-  GlobalCounter::critical_section_begin(_thread);
   // This version is published now.
   if (OrderAccess::load_acquire(&_cht->_invisible_epoch) != NULL) {
     OrderAccess::release_store_fence(&_cht->_invisible_epoch, (Thread*)NULL);
@@ -221,7 +222,7 @@ template <typename VALUE, typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<VALUE, CONFIG, F>::
   ScopedCS::~ScopedCS()
 {
-  GlobalCounter::critical_section_end(_thread);
+  GlobalCounter::critical_section_end(_thread, _cs_context);
 }
 
 // BaseConfig
@@ -502,7 +503,7 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
   // concurrent single deletes. The _invisible_epoch can only be used by the
   // owner of _resize_lock, us here. There we should not changed it in our
   // own read-side.
-  GlobalCounter::critical_section_begin(thread);
+  GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(thread);
   for (size_t bucket_it = start_idx; bucket_it < stop_idx; bucket_it++) {
     Bucket* bucket = table->get_bucket(bucket_it);
     Bucket* prefetch_bucket = (bucket_it+1) < stop_idx ?
@@ -514,7 +515,7 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
         continue;
     }
 
-    GlobalCounter::critical_section_end(thread);
+    GlobalCounter::critical_section_end(thread, cs_context);
     // We left critical section but the bucket cannot be removed while we hold
     // the _resize_lock.
     bucket->lock();
@@ -530,9 +531,9 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
       Node::destroy_node(ndel[node_it]);
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
-    GlobalCounter::critical_section_begin(thread);
+    cs_context = GlobalCounter::critical_section_begin(thread);
   }
-  GlobalCounter::critical_section_end(thread);
+  GlobalCounter::critical_section_end(thread, cs_context);
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>

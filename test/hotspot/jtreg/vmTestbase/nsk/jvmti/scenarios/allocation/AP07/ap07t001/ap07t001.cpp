@@ -47,11 +47,11 @@ static const jlong IGNORE_TAG = (jlong)10l;
 
 /* jvmtiHeapRootCallback */
 jvmtiIterationControl JNICALL
-heapRootCallback( jvmtiHeapRootKind root_kind,
-                  jlong class_tag,
-                  jlong size,
-                  jlong* tag_ptr,
-                  void* user_data) {
+heapRootCallback(jvmtiHeapRootKind root_kind,
+                 jlong class_tag,
+                 jlong size,
+                 jlong* tag_ptr,
+                 void* user_data) {
 
     if (*tag_ptr > 0) {
         NSK_DISPLAY2("heapRootCallback: root kind=%s, tag=%d\n", TranslateRootKind(root_kind), (long)*tag_ptr);
@@ -61,15 +61,15 @@ heapRootCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiStackReferenceCallback */
 jvmtiIterationControl JNICALL
-stackReferenceCallback( jvmtiHeapRootKind root_kind,
-                        jlong     class_tag,
-                        jlong     size,
-                        jlong*    tag_ptr,
-                        jlong     thread_tag,
-                        jint      depth,
-                        jmethodID method,
-                        jint      slot,
-                        void*     user_data) {
+stackReferenceCallback(jvmtiHeapRootKind root_kind,
+                       jlong     class_tag,
+                       jlong     size,
+                       jlong*    tag_ptr,
+                       jlong     thread_tag,
+                       jint      depth,
+                       jmethodID method,
+                       jint      slot,
+                       void*     user_data) {
 
     if (*tag_ptr > 0) {
         NSK_DISPLAY2("stackReferenceCallback: root kind=%s, tag=%d\n", TranslateRootKind(root_kind), (long)*tag_ptr);
@@ -80,13 +80,13 @@ stackReferenceCallback( jvmtiHeapRootKind root_kind,
 
 /* jvmtiObjectReferenceCallback */
 jvmtiIterationControl JNICALL
-objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
-                         jlong  class_tag,
-                         jlong  size,
-                         jlong* tag_ptr,
-                         jlong  referrer_tag,
-                         jint   referrer_index,
-                         void*  user_data) {
+objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
+                        jlong  class_tag,
+                        jlong  size,
+                        jlong* tag_ptr,
+                        jlong  referrer_tag,
+                        jint   referrer_index,
+                        void*  user_data) {
 
     if (*tag_ptr > 0) {
         NSK_DISPLAY2("objectReferenceCallback: reference kind=%s, tag=%d\n", TranslateObjectRefKind(reference_kind), (long)*tag_ptr);
@@ -106,10 +106,10 @@ objectReferenceCallback( jvmtiObjectReferenceKind reference_kind,
 /************************/
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP07_ap07t001_setTag( JNIEnv* jni,
-                                                          jobject obj,
-                                                          jobject target,
-                                                          jlong   tag ) {
+Java_nsk_jvmti_scenarios_allocation_AP07_ap07t001_setTag(JNIEnv* jni,
+                                                         jobject obj,
+                                                         jobject target,
+                                                         jlong   tag) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
@@ -117,7 +117,7 @@ Java_nsk_jvmti_scenarios_allocation_AP07_ap07t001_setTag( JNIEnv* jni,
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_allocation_AP07_ap07t001_setRoot( JNIEnv* jni, jobject obj) {
+Java_nsk_jvmti_scenarios_allocation_AP07_ap07t001_setRoot(JNIEnv* jni, jobject obj) {
     if (!NSK_JNI_VERIFY(jni, (root = jni->NewGlobalRef(obj)) != NULL))
         nsk_jvmti_setFailStatus();
 }

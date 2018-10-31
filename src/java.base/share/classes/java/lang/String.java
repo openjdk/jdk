@@ -2821,7 +2821,6 @@ public final class String
      * <p>
      * If {@code n == 0} then the line remains unchanged. However, line
      * terminators are still normalized.
-     * <p>
      *
      * @param n  number of leading
      *           {@link Character#isWhitespace(int) white space characters}
@@ -2968,7 +2967,9 @@ public final class String
                              .mapToInt(String::indexOfNonWhitespace)
                              .min()
                              .orElse(0);
-        return indent(n - outdent, true);
+        // overflow-conscious code
+        int indent = n - outdent;
+        return indent(indent > n ? Integer.MIN_VALUE : indent, true);
     }
 
     /**

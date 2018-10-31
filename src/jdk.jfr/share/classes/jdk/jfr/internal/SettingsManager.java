@@ -37,7 +37,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
 
-import jdk.jfr.Event;
 import jdk.jfr.internal.handlers.EventHandler;
 
 final class SettingsManager {
@@ -152,9 +151,9 @@ final class SettingsManager {
         }
     }
 
-    public void updateRetransform(List<Class<? extends Event>> eventClasses) {
+    public void updateRetransform(List<Class<? extends jdk.internal.event.Event>> eventClasses) {
         List<Class<?>> classes = new ArrayList<>();
-        for(Class<? extends Event> eventClass: eventClasses) {
+        for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
             EventHandler eh = Utils.getHandler(eventClass);
             if (eh != null ) {
                 PlatformEventType eventType = eh.getPlatformEventType();

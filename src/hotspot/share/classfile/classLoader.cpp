@@ -1471,16 +1471,16 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     // if no protocol prefix is found, path is the same as stream->source()
     char* path = skip_uri_protocol(src);
     char* canonical_class_src_path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-    if (!get_canonical_path(path, canonical_class_src_path, JVM_MAXPATHLEN)) {
-      tty->print_cr("Bad pathname %s. CDS dump aborted.", path);
-      vm_exit(1);
-    }
+    bool success = get_canonical_path(path, canonical_class_src_path, JVM_MAXPATHLEN);
+    // The path is from the ClassFileStream. Since a ClassFileStream has been created successfully in functions
+    // such as ClassLoader::load_class(), its source path must be valid.
+    assert(success, "must be valid path");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
-      if (!get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN)) {
-        tty->print_cr("Bad pathname %s. CDS dump aborted.", ent->name());
-        vm_exit(1);
-      }
+      success = get_canonical_path(ent->name(), canonical_path_table_entry, JVM_MAXPATHLEN);
+      // A shared path has been validated during its creation in ClassLoader::create_class_path_entry(),
+      // it must be valid here.
+      assert(success, "must be valid path");
       // If the path (from the class stream source) is the same as the shared
       // class or module path, then we have a match.
       if (strcmp(canonical_path_table_entry, canonical_class_src_path) == 0) {

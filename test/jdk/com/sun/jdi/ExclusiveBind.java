@@ -27,113 +27,39 @@
  *          at the same time.
  * @library /test/lib
  *
- * @modules java.management
- *          jdk.jdi
- * @build VMConnection ExclusiveBind HelloWorld
+ * @build ExclusiveBind HelloWorld
  * @run driver ExclusiveBind
  */
-import java.net.ServerSocket;
-import com.sun.jdi.Bootstrap;
-import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.Connector;
-import com.sun.jdi.connect.AttachingConnector;
-
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Utils;
+import lib.jdb.Debuggee;
 
 public class ExclusiveBind {
     /*
-     * Find a connector by name
-     */
-    private static Connector findConnector(String name) {
-        List connectors = Bootstrap.virtualMachineManager().allConnectors();
-        Iterator iter = connectors.iterator();
-        while (iter.hasNext()) {
-            Connector connector = (Connector)iter.next();
-            if (connector.name().equals(name)) {
-                return connector;
-            }
-        }
-        return null;
-    }
-
-    /*
-     * Launch (in server mode) a debuggee with the given address and
-     * suspend mode.
-     */
-    private static ProcessBuilder prepareLauncher(String address, boolean suspend, String class_name) throws Exception {
-        List<String> args = new ArrayList<>();
-        for(String dbgOption : VMConnection.getDebuggeeVMOptions().split(" ")) {
-            if (!dbgOption.trim().isEmpty()) {
-                args.add(dbgOption);
-            }
-        }
-        String lib = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=";
-        if (suspend) {
-            lib += "y";
-        } else {
-            lib += "n";
-        }
-        lib += ",address=" + address;
-
-        args.add(lib);
-        args.add(class_name);
-
-        return ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
-    }
-
-    /*
-     * - pick a TCP port
-     * - Launch a debuggee in server=y,suspend=y,address=${port}
-     * - Launch a second debuggee in server=y,suspend=n with the same port
+     * - Launch a debuggee with server=y,suspend=y
+     * - Parse listening port
+     * - Launch a second debuggee in server=y,suspend=n with the parsed port
      * - Second debuggee should fail with an error (address already in use)
      * - For clean-up we attach to the first debuggee and resume it.
      */
     public static void main(String args[]) throws Exception {
-        // find a free port
-        ServerSocket ss = new ServerSocket(0);
-        int port = ss.getLocalPort();
-        ss.close();
-
-        String address = String.valueOf(port);
-
         // launch the first debuggee
-        ProcessBuilder process1 = prepareLauncher(address, true, "HelloWorld");
-        // start the debuggee and wait for the "ready" message
-        Process p = ProcessTools.startProcess(
-                "process1",
-                process1,
-                line -> line.equals("Listening for transport dt_socket at address: " + address),
-                Utils.adjustTimeout(5000),
-                TimeUnit.MILLISECONDS
-        );
+        try (Debuggee process1 = Debuggee.launcher("HelloWorld").launch("process1")) {
+            // launch a second debuggee with the same address
+            ProcessBuilder process2 = Debuggee.launcher("HelloWorld")
+                    .setSuspended(false)
+                    .setAddress(process1.getAddress())
+                    .prepare();
 
-        // launch a second debuggee with the same address
-        ProcessBuilder process2 = prepareLauncher(address, false, "HelloWorld");
+            // get exit status from second debuggee
+            int exitCode = ProcessTools.startProcess("process2", process2).waitFor();
 
-        // get exit status from second debuggee
-        int exitCode = ProcessTools.startProcess("process2", process2).waitFor();
-
-        // clean-up - attach to first debuggee and resume it
-        AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
-        Map conn_args = conn.defaultArguments();
-        Connector.IntegerArgument port_arg =
-            (Connector.IntegerArgument)conn_args.get("port");
-        port_arg.setValue(port);
-        VirtualMachine vm = conn.attach(conn_args);
-        vm.resume();
-
-        // if the second debuggee ran to completion then we've got a problem
-        if (exitCode == 0) {
-            throw new RuntimeException("Test failed - second debuggee didn't fail to bind");
-        } else {
-            System.out.println("Test passed - second debuggee correctly failed to bind");
+            // if the second debuggee ran to completion then we've got a problem
+            if (exitCode == 0) {
+                throw new RuntimeException("Test failed - second debuggee didn't fail to bind");
+            } else {
+                System.out.println("Test passed - second debuggee correctly failed to bind");
+            }
         }
     }
 }

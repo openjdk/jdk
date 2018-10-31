@@ -46,6 +46,13 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
+
 CompilationPolicy* CompilationPolicy::_policy;
 elapsedTimer       CompilationPolicy::_accumulated_time;
 bool               CompilationPolicy::_in_vm_startup;
@@ -222,6 +229,19 @@ void NonTieredCompPolicy::initialize() {
     // max(log2(8)-1,1) = 2 compiler threads on an 8-way machine.
     // May help big-app startup time.
     _compiler_count = MAX2(log2_intptr(os::active_processor_count())-1,1);
+    // Make sure there is enough space in the code cache to hold all the compiler buffers
+    size_t buffer_size = 1;
+#ifdef COMPILER1
+    buffer_size = is_client_compilation_mode_vm() ? Compiler::code_buffer_size() : buffer_size;
+#endif
+#ifdef COMPILER2
+    buffer_size = is_server_compilation_mode_vm() ? C2Compiler::initial_code_buffer_size() : buffer_size;
+#endif
+    int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
+    if (_compiler_count > max_count) {
+      // Lower the compiler count such that all buffers fit into the code cache
+      _compiler_count = MAX2(max_count, 1);
+    }
     FLAG_SET_ERGO(intx, CICompilerCount, _compiler_count);
   } else {
     _compiler_count = CICompilerCount;

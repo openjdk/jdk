@@ -70,50 +70,38 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <sys/stat.h>
-# include <sys/select.h>
-# include <pthread.h>
-# include <signal.h>
-# include <errno.h>
 # include <dlfcn.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/resource.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <inttypes.h>
+# include <poll.h>
 # include <pthread.h>
+# include <pwd.h>
+# include <signal.h>
+# include <stdint.h>
+# include <stdio.h>
+# include <string.h>
+# include <sys/ioctl.h>
+# include <sys/mman.h>
+# include <sys/param.h>
+# include <sys/resource.h>
+# include <sys/socket.h>
 # include <sys/stat.h>
+# include <sys/syscall.h>
+# include <sys/sysctl.h>
 # include <sys/time.h>
 # include <sys/times.h>
-# include <sys/utsname.h>
-# include <sys/socket.h>
+# include <sys/types.h>
 # include <sys/wait.h>
 # include <time.h>
-# include <pwd.h>
-# include <poll.h>
-# include <fcntl.h>
-# include <string.h>
-# include <sys/param.h>
-# include <sys/sysctl.h>
-# include <sys/ipc.h>
-# include <sys/shm.h>
-#ifndef __APPLE__
-# include <link.h>
-#endif
-# include <stdint.h>
-# include <inttypes.h>
-# include <sys/ioctl.h>
-# include <sys/syscall.h>
+# include <unistd.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
   #include <elf.h>
 #endif
 
 #ifdef __APPLE__
-  #include <mach/mach.h> // semaphore_* API
   #include <mach-o/dyld.h>
-  #include <sys/proc_info.h>
-  #include <objc/objc-auto.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -124,8 +112,6 @@
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
-#define LARGEPAGES_BIT (1 << 6)
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
@@ -644,6 +630,9 @@ static uint64_t locate_unique_thread_id(mach_port_t mach_thread_port) {
 
 // Thread start routine for all newly created threads
 static void *thread_native_entry(Thread *thread) {
+
+  thread->record_stack_base_and_size();
+
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -696,19 +685,14 @@ static void *thread_native_entry(Thread *thread) {
   }
 
   // call one more level start routine
-  thread->run();
+  thread->call_run();
+
+  // Note: at this point the thread object may already have deleted itself.
+  // Prevent dereferencing it from here on out.
+  thread = NULL;
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
-
-  // If a thread has not deleted itself ("delete this") as part of its
-  // termination sequence, we have to ensure thread-local-storage is
-  // cleared before we actually terminate. No threads should ever be
-  // deleted asynchronously with respect to their termination.
-  if (Thread::current_or_null_safe() != NULL) {
-    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
-    thread->clear_thread_current();
-  }
 
   return 0;
 }
@@ -2118,95 +2102,27 @@ void os::large_page_init() {
 
 
 char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
-  fatal("This code is not used or maintained.");
-
-  // "exec" is passed in but not used.  Creating the shared image for
-  // the code cache doesn't have an SHM_X executable permission to check.
-  assert(UseLargePages && UseSHM, "only for SHM large pages");
-
-  key_t key = IPC_PRIVATE;
-  char *addr;
-
-  bool warn_on_failure = UseLargePages &&
-                         (!FLAG_IS_DEFAULT(UseLargePages) ||
-                          !FLAG_IS_DEFAULT(LargePageSizeInBytes));
-
-  // Create a large shared memory region to attach to based on size.
-  // Currently, size is the total size of the heap
-  int shmid = shmget(key, bytes, IPC_CREAT|SHM_R|SHM_W);
-  if (shmid == -1) {
-    // Possible reasons for shmget failure:
-    // 1. shmmax is too small for Java heap.
-    //    > check shmmax value: cat /proc/sys/kernel/shmmax
-    //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
-    // 2. not enough large page memory.
-    //    > check available large pages: cat /proc/meminfo
-    //    > increase amount of large pages:
-    //          echo new_value > /proc/sys/vm/nr_hugepages
-    //      Note 1: different Bsd may use different name for this property,
-    //            e.g. on Redhat AS-3 it is "hugetlb_pool".
-    //      Note 2: it's possible there's enough physical memory available but
-    //            they are so fragmented after a long run that they can't
-    //            coalesce into large pages. Try to reserve large pages when
-    //            the system is still "fresh".
-    if (warn_on_failure) {
-      warning("Failed to reserve shared memory (errno = %d).", errno);
-    }
-    return NULL;
-  }
-
-  // attach to the region
-  addr = (char*)shmat(shmid, req_addr, 0);
-  int err = errno;
-
-  // Remove shmid. If shmat() is successful, the actual shared memory segment
-  // will be deleted when it's detached by shmdt() or when the process
-  // terminates. If shmat() is not successful this will remove the shared
-  // segment immediately.
-  shmctl(shmid, IPC_RMID, NULL);
-
-  if ((intptr_t)addr == -1) {
-    if (warn_on_failure) {
-      warning("Failed to attach shared memory (errno = %d).", err);
-    }
-    return NULL;
-  }
-
-  // The memory is committed
-  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
-
-  return addr;
+  fatal("os::reserve_memory_special should not be called on BSD.");
+  return NULL;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr(Tracker::release);
-    // detaching the SHM segment will also delete it, see reserve_memory_special()
-    int rslt = shmdt(base);
-    if (rslt == 0) {
-      tkr.record((address)base, bytes);
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return shmdt(base) == 0;
-  }
+  fatal("os::release_memory_special should not be called on BSD.");
+  return false;
 }
 
 size_t os::large_page_size() {
   return _large_page_size;
 }
 
-// HugeTLBFS allows application to commit large page memory on demand;
-// with SysV SHM the entire memory region must be allocated as shared
-// memory.
 bool os::can_commit_large_page_memory() {
-  return UseHugeTLBFS;
+  // Does not matter, we do not support huge pages.
+  return false;
 }
 
 bool os::can_execute_large_page_memory() {
-  return UseHugeTLBFS;
+  // Does not matter, we do not support huge pages.
+  return false;
 }
 
 char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {

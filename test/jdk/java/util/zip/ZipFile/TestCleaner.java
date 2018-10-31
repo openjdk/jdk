@@ -31,8 +31,6 @@
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 import jdk.internal.vm.annotation.DontInline;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -53,34 +51,6 @@ public class TestCleaner {
             return addr.getLong(obj);
         } catch (Exception x) {
             return -1;
-        }
-    }
-
-    private static class SubclassedInflater extends Inflater {
-        CountDownLatch endCountDown;
-
-        SubclassedInflater(CountDownLatch endCountDown) {
-            this.endCountDown = endCountDown;
-        }
-
-        @Override
-        public void end() {
-            super.end();
-            endCountDown.countDown();
-        }
-    }
-
-    private static class SubclassedDeflater extends Deflater {
-        CountDownLatch endCountDown;
-
-        SubclassedDeflater(CountDownLatch endCountDown) {
-            this.endCountDown = endCountDown;
-        }
-
-        @Override
-        public void end() {
-            super.end();
-            endCountDown.countDown();
         }
     }
 
@@ -124,44 +94,6 @@ public class TestCleaner {
         if (cnt != 0)
             throw new RuntimeException("cleaner failed to clean : " + cnt);
 
-        // test subclassed Deflater/Inflater, for behavioral compatibility.
-        // should be removed if the finalize() method is finally removed.
-        var endCountDown = new CountDownLatch(20);
-        for (int i = 0; i < 10; i++) {
-            var def = new SubclassedDeflater(endCountDown);
-            def.setInput("hello".getBytes());
-            def.finish();
-            n = def.deflate(buf1);
-
-            var inf = new SubclassedInflater(endCountDown);
-            inf.setInput(buf1, 0, n);
-            n = inf.inflate(buf2);
-            if (!"hello".equals(new String(buf2, 0, n))) {
-                throw new RuntimeException("compression/decompression failed");
-            }
-        }
-        while (!endCountDown.await(10, TimeUnit.MILLISECONDS)) {
-            System.gc();
-        }
-        if (endCountDown.getCount() != 0)
-            throw new RuntimeException("finalizer failed to clean : " +
-                endCountDown.getCount());
-    }
-
-    private static class SubclassedZipFile extends ZipFile {
-        CountDownLatch closeCountDown;
-
-        SubclassedZipFile(File f, CountDownLatch closeCountDown)
-            throws IOException {
-            super(f);
-            this.closeCountDown = closeCountDown;
-        }
-
-        @Override
-        public void close() throws IOException {
-            closeCountDown.countDown();
-            super.close();
-        }
     }
 
     @DontInline
@@ -198,27 +130,6 @@ public class TestCleaner {
         }
     }
 
-    @DontInline
-    private static void openAndCloseSubZipFile(File zip, CountDownLatch closeCountDown)
-        throws Throwable {
-        try {
-            try (var fos = new FileOutputStream(zip);
-                 var zos = new ZipOutputStream(fos)) {
-                zos.putNextEntry(new ZipEntry("hello"));
-                zos.write("hello".getBytes(US_ASCII));
-                zos.closeEntry();
-            }
-            var zf = new SubclassedZipFile(zip, closeCountDown);
-            var es = zf.entries();
-            while (es.hasMoreElements()) {
-                zf.getInputStream(es.nextElement()).read();
-            }
-            es = null;
-            zf = null;
-        } finally {
-            zip.delete();
-        }
-    }
 
     private static void testZipFile() throws Throwable {
         File dir = new File(System.getProperty("test.dir", "."));
@@ -241,16 +152,5 @@ public class TestCleaner {
                 throw new RuntimeException("cleaner failed to clean zipfile.");
             }
         }
-
-        // test subclassed ZipFile, for behavioral compatibility.
-        // should be removed if the finalize() method is finally removed.
-        var closeCountDown = new CountDownLatch(1);
-        openAndCloseSubZipFile(zip, closeCountDown);
-        while (!closeCountDown.await(10, TimeUnit.MILLISECONDS)) {
-            System.gc();
-        }
-        if (closeCountDown.getCount() != 0)
-            throw new RuntimeException("finalizer failed to clean : " +
-                closeCountDown.getCount());
     }
 }

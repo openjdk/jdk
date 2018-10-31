@@ -42,9 +42,9 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
   jvmti_env->GetClassSignature(klass, &className, &generic);
   if (strcmp(className,CLASS_NAME) == 0) {
       char fileName[512];
-      nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL );
+      nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL);
       nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
-      if ( nsk_jvmti_redefineClass(jvmti_env, klass, fileName ) == NSK_TRUE ) {
+      if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName) == NSK_TRUE) {
           nsk_printf("Redefine successful ..\n");
       } else {
           nsk_printf("Redefine failed ..     \n");
@@ -69,14 +69,14 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
 
     nsk_printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if ( rc!= JNI_OK ) {
+    if (rc!= JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
 
-        if ( nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
             nsk_printf("# error agent Failed to parse options \n");
             return JNI_ERR;
         }
@@ -94,8 +94,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if ( nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE,
-                    NULL) == NSK_TRUE ) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE,
+                    NULL) == NSK_TRUE) {
             nsk_printf(" Enabled. noftification..");
         } else {
             nsk_printf(" Failed to Enable ..");

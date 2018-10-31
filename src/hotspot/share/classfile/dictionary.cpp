@@ -468,7 +468,7 @@ bool Dictionary::is_valid_protection_domain(unsigned int hash,
 #if INCLUDE_CDS
 static bool is_jfr_event_class(Klass *k) {
   while (k) {
-    if (k->name()->equals("jdk/jfr/Event")) {
+    if (k->name()->equals("jdk/internal/event/Event")) {
       return true;
     }
     k = k->super();

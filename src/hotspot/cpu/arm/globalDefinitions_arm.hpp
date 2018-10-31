@@ -25,19 +25,7 @@
 #ifndef CPU_ARM_VM_GLOBALDEFINITIONS_ARM_HPP
 #define CPU_ARM_VM_GLOBALDEFINITIONS_ARM_HPP
 
-#ifdef AARCH64
-#define AARCH64_ONLY(code) code
-#define AARCH64_ONLY_ARG(arg) , arg
-#define NOT_AARCH64(code)
-#define NOT_AARCH64_ARG(arg)
-#else
-#define AARCH64_ONLY(code)
-#define AARCH64_ONLY_ARG(arg)
-#define NOT_AARCH64(code) code
-#define NOT_AARCH64_ARG(arg) , arg
-#endif
-
-const int StackAlignmentInBytes = AARCH64_ONLY(16) NOT_AARCH64(8);
+const int StackAlignmentInBytes = 8;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
@@ -49,24 +37,19 @@ const bool HaveVFP = false;
 const bool HaveVFP = true;
 #endif
 
-#if defined(__ARM_PCS_VFP) || defined(AARCH64)
+#if defined(__ARM_PCS_VFP)
 #define __ABI_HARD__
 #endif
 
-#if defined(__ARM_ARCH_7A__) || defined(AARCH64)
+#if defined(__ARM_ARCH_7A__)
 #define SUPPORTS_NATIVE_CX8
 #endif
 
 #define STUBROUTINES_MD_HPP    "stubRoutines_arm.hpp"
 #define INTERP_MASM_MD_HPP     "interp_masm_arm.hpp"
 #define TEMPLATETABLE_MD_HPP   "templateTable_arm.hpp"
-#ifdef AARCH64
-#define ADGLOBALS_MD_HPP       "adfiles/adGlobals_arm_64.hpp"
-#define AD_MD_HPP              "adfiles/ad_arm_64.hpp"
-#else
 #define ADGLOBALS_MD_HPP       "adfiles/adGlobals_arm_32.hpp"
 #define AD_MD_HPP              "adfiles/ad_arm_32.hpp"
-#endif
 #define C1_LIRGENERATOR_MD_HPP "c1_LIRGenerator_arm.hpp"
 
 #ifdef TARGET_COMPILER_gcc

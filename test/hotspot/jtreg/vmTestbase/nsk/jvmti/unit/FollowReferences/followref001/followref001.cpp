@@ -681,7 +681,7 @@ jint JNICALL primitiveFieldCallback(
                ref_kind_str[reference_kind],
                (long) class_tag,
                (long) DEREF(tag_ptr),
-               (int ) value_type);
+               (int) value_type);
     fflush(0);
     return 0;
 } /* primitiveFieldCallback */
@@ -700,8 +700,8 @@ jint JNICALL arrayPrimitiveValueCallback(
            " tag=%-3ld, len=%d, type=%c\n",
            (long) class_tag,
            (long) DEREF(tag_ptr),
-           (int ) element_count,
-           (int ) element_type);
+           (int) element_count,
+           (int) element_type);
     fflush(0);
     return 0;
 } /* arrayPrimitiveValueCallback */
@@ -718,7 +718,7 @@ jint JNICALL stringPrimitiveValueCallback(
     printf("stringPrimitiveValueCallback: class_tag=%-3ld, tag=%-3ld, len=%d\n",
            (long) class_tag,
            (long) DEREF(tag_ptr),
-           (int ) value_length);
+           (int) value_length);
     fflush(0);
     return 0;
 } /* stringPrimitiveValueCallback */

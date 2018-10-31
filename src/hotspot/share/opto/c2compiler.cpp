@@ -604,7 +604,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   return true;
 }
 
-int C2Compiler::initial_code_buffer_size() {
-  assert(SegmentedCodeCache, "Should be only used with a segmented code cache");
-  return Compile::MAX_inst_size + Compile::MAX_locs_size + initial_const_capacity;
+int C2Compiler::initial_code_buffer_size(int const_size) {
+  // See Compile::init_scratch_buffer_blob
+  int locs_size = sizeof(relocInfo) * Compile::MAX_locs_size;
+  int slop = 2 * CodeSection::end_slop(); // space between sections
+  return Compile::MAX_inst_size + Compile::MAX_stubs_size + const_size + slop + locs_size;
 }

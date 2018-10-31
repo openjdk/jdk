@@ -65,7 +65,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   address entry = __ pc();
 
   // callee-save register for saving LR, shared with generate_native_entry
-  const Register Rsaved_ret_addr = AARCH64_ONLY(R21) NOT_AARCH64(Rtmp_save0);
+  const Register Rsaved_ret_addr = Rtmp_save0;
 
   __ mov(Rsaved_ret_addr, LR);
 
@@ -73,24 +73,6 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ mov(R2, Rlocals);
   __ mov(R3, SP);
 
-#ifdef AARCH64
-  // expand expr. stack and extended SP to avoid cutting SP in call_VM
-  __ mov(Rstack_top, SP);
-  __ str(Rstack_top, Address(FP, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ check_stack_top();
-
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), R1, R2, R3, false);
-
-  __ ldp(ZR,      c_rarg1, Address(SP, 2*wordSize, post_indexed));
-  __ ldp(c_rarg2, c_rarg3, Address(SP, 2*wordSize, post_indexed));
-  __ ldp(c_rarg4, c_rarg5, Address(SP, 2*wordSize, post_indexed));
-  __ ldp(c_rarg6, c_rarg7, Address(SP, 2*wordSize, post_indexed));
-
-  __ ldp_d(V0, V1, Address(SP, 2*wordSize, post_indexed));
-  __ ldp_d(V2, V3, Address(SP, 2*wordSize, post_indexed));
-  __ ldp_d(V4, V5, Address(SP, 2*wordSize, post_indexed));
-  __ ldp_d(V6, V7, Address(SP, 2*wordSize, post_indexed));
-#else
 
   // Safer to save R9 (when scratched) since callers may have been
   // written assuming R9 survives. This is suboptimal but
@@ -110,7 +92,6 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // eliminate any gain imposed by avoiding 8 double word loads.
   __ fldmiad(SP, FloatRegisterSet(D0, 8), writeback);
 #endif // __ABI_HARD__
-#endif // AARCH64
 
   __ ret(Rsaved_ret_addr);
 
@@ -129,10 +110,6 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   address entry_point = __ pc();
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp);
-  __ restore_stack_top();
-#endif
 
   __ empty_expression_stack();
 
@@ -274,16 +251,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   __ interp_verify_oop(R0_tos, state, __FILE__, __LINE__);
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp);  // Restore SP to extended SP
-  __ restore_stack_top();
-#else
   // Restore stack bottom in case i2c adjusted stack
   __ ldr(SP, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
   // and NULL it as marker that SP is now tos until next java call
   __ mov(Rtemp, (int)NULL_WORD);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
 
   __ restore_method();
   __ restore_bcp();
@@ -299,9 +271,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ check_stack_top();
   __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
 
-#ifndef AARCH64
   __ convert_retval_to_tos(state);
-#endif // !AARCH64
 
  __ check_and_handle_popframe();
  __ check_and_handle_earlyret();
@@ -317,15 +287,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 
   __ interp_verify_oop(R0_tos, state, __FILE__, __LINE__);
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp);  // Restore SP to extended SP
-  __ restore_stack_top();
-#else
   // The stack is not extended by deopt but we must NULL last_sp as this
   // entry is like a "return".
   __ mov(Rtemp, 0);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
 
   __ restore_method();
   __ restore_bcp();
@@ -351,32 +316,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 }
 
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
-#ifdef AARCH64
-  address entry = __ pc();
-  switch (type) {
-    case T_BOOLEAN:
-      __ tst(R0, 0xff);
-      __ cset(R0, ne);
-      break;
-    case T_CHAR   : __ zero_extend(R0, R0, 16);  break;
-    case T_BYTE   : __ sign_extend(R0, R0,  8);  break;
-    case T_SHORT  : __ sign_extend(R0, R0, 16);  break;
-    case T_INT    : // fall through
-    case T_LONG   : // fall through
-    case T_VOID   : // fall through
-    case T_FLOAT  : // fall through
-    case T_DOUBLE : /* nothing to do */          break;
-    case T_OBJECT :
-      // retrieve result from frame
-      __ ldr(R0, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize));
-      // and verify it
-      __ verify_oop(R0);
-      break;
-    default       : ShouldNotReachHere();
-  }
-  __ ret();
-  return entry;
-#else
   // Result handlers are not used on 32-bit ARM
   // since the returned value is already in appropriate format.
   __ should_not_reach_here();  // to avoid empty code block
@@ -384,7 +323,6 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   // The result handler non-zero indicates an object is returned and this is
   // used in the native entry code.
   return type == T_OBJECT ? (address)(-1) : NULL;
-#endif // AARCH64
 }
 
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
@@ -466,11 +404,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow,
 
     __ add(Ricnt, Ricnt, InvocationCounter::count_increment);
 
-#ifdef AARCH64
-    __ andr(Rbcnt, Rbcnt, (unsigned int)InvocationCounter::count_mask_value); // mask out the status bits
-#else
     __ bic(Rbcnt, Rbcnt, ~InvocationCounter::count_mask_value); // mask out the status bits
-#endif // AARCH64
 
     __ str_32(Ricnt, invocation_counter);            // save invocation count
     __ add(Ricnt, Ricnt, Rbcnt);                     // add both counters
@@ -522,13 +456,12 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // Registers on entry:
   //
   // R3 = number of additional locals
-  // R11 = max expression stack slots (AArch64 only)
   // Rthread
   // Rmethod
   // Registers used: R0, R1, R2, Rtemp.
 
   const Register Radditional_locals = R3;
-  const Register RmaxStack = AARCH64_ONLY(R11) NOT_AARCH64(R2);
+  const Register RmaxStack = R2;
 
   // monitor entry size
   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
@@ -545,10 +478,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   __ ldr(R0, Address(Rthread, Thread::stack_base_offset()));
   __ ldr(R1, Address(Rthread, Thread::stack_size_offset()));
-#ifndef AARCH64
   __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
   __ ldrh(RmaxStack, Address(Rtemp, ConstMethod::max_stack_offset()));
-#endif // !AARCH64
   __ sub_slow(Rtemp, SP, overhead_size + reserved_pages + guard_pages + Method::extra_stack_words());
 
   // reserve space for additional locals
@@ -562,16 +493,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   __ cmp(Rtemp, R0);
 
-#ifdef AARCH64
-  Label L;
-  __ b(L, hi);
-  __ mov(SP, Rsender_sp);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry());
-  __ bind(L);
-#else
   __ mov(SP, Rsender_sp, ls);  // restore SP
   __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
-#endif // AARCH64
 }
 
 
@@ -595,14 +518,9 @@ void TemplateInterpreterGenerator::lock_method() {
   // get synchronization object
   { Label done;
     __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
-#ifdef AARCH64
-    __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0))); // get receiver (assume this is frequent case)
-    __ tbz(Rtemp, JVM_ACC_STATIC_BIT, done);
-#else
     __ tst(Rtemp, JVM_ACC_STATIC);
     __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0)), eq); // get receiver (assume this is frequent case)
     __ b(done, eq);
-#endif // AARCH64
     __ load_mirror(R0, Rmethod, Rtemp);
     __ bind(done);
     __ resolve(IS_NOT_NULL, R0);
@@ -610,12 +528,6 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // add space for monitor & lock
 
-#ifdef AARCH64
-  __ check_extended_sp(Rtemp);
-  __ sub(SP, SP, entry_size);                  // adjust extended SP
-  __ mov(Rtemp, SP);
-  __ str(Rtemp, Address(FP, frame::interpreter_frame_extended_sp_offset * wordSize));
-#endif // AARCH64
 
   __ sub(Rstack_top, Rstack_top, entry_size);
   __ check_stack_top_on_expansion();
@@ -628,90 +540,6 @@ void TemplateInterpreterGenerator::lock_method() {
   __ lock_object(R1);
 }
 
-#ifdef AARCH64
-
-//
-// Generate a fixed interpreter frame. This is identical setup for interpreted methods
-// and for native methods hence the shared code.
-//
-// On entry:
-//   R10 = ConstMethod
-//   R11 = max expr. stack (in slots), if !native_call
-//
-// On exit:
-//   Rbcp, Rstack_top are initialized, SP is extended
-//
-void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  // Incoming registers
-  const Register RconstMethod = R10;
-  const Register RmaxStack = R11;
-  // Temporary registers
-  const Register RextendedSP = R0;
-  const Register Rcache = R1;
-  const Register Rmdp = ProfileInterpreter ? R2 : ZR;
-
-  // Generates the following stack layout (stack grows up in this picture):
-  //
-  // [ expr. stack bottom ]
-  // [ saved Rbcp         ]
-  // [ current Rlocals    ]
-  // [ cache              ]
-  // [ mdx                ]
-  // [ mirror             ]
-  // [ Method*            ]
-  // [ extended SP        ]
-  // [ expr. stack top    ]
-  // [ sender_sp          ]
-  // [ saved FP           ] <--- FP
-  // [ saved LR           ]
-
-  // initialize fixed part of activation frame
-  __ stp(FP, LR, Address(SP, -2*wordSize, pre_indexed));
-  __ mov(FP, SP);                                     // establish new FP
-
-  // setup Rbcp
-  if (native_call) {
-    __ mov(Rbcp, ZR);                                 // bcp = 0 for native calls
-  } else {
-    __ add(Rbcp, RconstMethod, in_bytes(ConstMethod::codes_offset())); // get codebase
-  }
-
-  // Rstack_top & RextendedSP
-  __ sub(Rstack_top, SP, 10*wordSize);
-  if (native_call) {
-    __ sub(RextendedSP, Rstack_top, align_up(wordSize, StackAlignmentInBytes));    // reserve 1 slot for exception handling
-  } else {
-    __ sub(RextendedSP, Rstack_top, AsmOperand(RmaxStack, lsl, Interpreter::logStackElementSize));
-    __ align_reg(RextendedSP, RextendedSP, StackAlignmentInBytes);
-  }
-  __ mov(SP, RextendedSP);
-  __ check_stack_top();
-
-  // Load Rmdp
-  if (ProfileInterpreter) {
-    __ ldr(Rtemp, Address(Rmethod, Method::method_data_offset()));
-    __ tst(Rtemp, Rtemp);
-    __ add(Rtemp, Rtemp, in_bytes(MethodData::data_offset()));
-    __ csel(Rmdp, ZR, Rtemp, eq);
-  }
-
-  // Load Rcache
-  __ ldr(Rtemp, Address(RconstMethod, ConstMethod::constants_offset()));
-  __ ldr(Rcache, Address(Rtemp, ConstantPool::cache_offset_in_bytes()));
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(Rtemp, Rmethod, Rtemp);
-
-  // Build fixed frame
-  __ stp(Rstack_top, Rbcp, Address(FP, -10*wordSize));
-  __ stp(Rlocals, Rcache,  Address(FP,  -8*wordSize));
-  __ stp(Rmdp, Rtemp,          Address(FP,  -6*wordSize));
-  __ stp(Rmethod, RextendedSP, Address(FP,  -4*wordSize));
-  __ stp(ZR, Rsender_sp,   Address(FP,  -2*wordSize));
-  assert(frame::interpreter_frame_initial_sp_offset == -10, "interpreter frame broken");
-  assert(frame::interpreter_frame_stack_top_offset  == -2, "stack top broken");
-}
-
-#else // AARCH64
 
 //
 // Generate a fixed interpreter frame. This is identical setup for interpreted methods
@@ -773,7 +601,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ str(SP, Address(SP, 0));                          // set expression stack bottom
 }
 
-#endif // AARCH64
 
 // End of helpers
 
@@ -802,7 +629,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 //
 // Stack layout immediately at entry
 //
-// [ optional padding(*)] <--- SP (AArch64)
 // [ parameter n        ] <--- Rparams (SP on 32-bit ARM)
 //   ...
 // [ parameter 1        ]
@@ -816,7 +642,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // local variables follow incoming parameters immediately; i.e.
 // the return address is saved at the end of the locals.
 //
-// [ reserved stack (*) ] <--- SP (AArch64)
 // [ expr. stack        ] <--- Rstack_top (SP on 32-bit ARM)
 // [ monitor entry      ]
 //   ...
@@ -832,10 +657,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // 32-bit ARM:
 // [ last_sp            ]
 //
-// AArch64:
-// [ extended SP (*)    ]
-// [ stack top (*)      ]
-//
 // [ sender_sp          ]
 // [ saved FP           ] <--- FP
 // [ saved LR           ]
@@ -846,8 +667,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // [ parameter n        ]
 //   ...
 // [ parameter 1        ] <--- Rlocals
-//
-// (*) - AArch64 only
 //
 
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
@@ -925,29 +744,18 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   address entry_point = __ pc();
 
   // Register allocation
-  const Register Rsize_of_params = AARCH64_ONLY(R20) NOT_AARCH64(R6);
-  const Register Rsig_handler    = AARCH64_ONLY(R21) NOT_AARCH64(Rtmp_save0 /* R4 */);
-  const Register Rnative_code    = AARCH64_ONLY(R22) NOT_AARCH64(Rtmp_save1 /* R5 */);
-  const Register Rresult_handler = AARCH64_ONLY(Rsig_handler) NOT_AARCH64(R6);
+  const Register Rsize_of_params = R6;
+  const Register Rsig_handler    = Rtmp_save0;   // R4
+  const Register Rnative_code    = Rtmp_save1;   // R5
+  const Register Rresult_handler = R6;
 
-#ifdef AARCH64
-  const Register RconstMethod = R10; // also used in generate_fixed_frame (should match)
-  const Register Rsaved_result = Rnative_code;
-  const FloatRegister Dsaved_result = V8;
-#else
   const Register Rsaved_result_lo = Rtmp_save0;  // R4
   const Register Rsaved_result_hi = Rtmp_save1;  // R5
   FloatRegister saved_result_fp;
-#endif // AARCH64
 
 
-#ifdef AARCH64
-  __ ldr(RconstMethod, Address(Rmethod, Method::const_offset()));
-  __ ldrh(Rsize_of_params,  Address(RconstMethod, ConstMethod::size_of_parameters_offset()));
-#else
   __ ldr(Rsize_of_params, Address(Rmethod, Method::const_offset()));
   __ ldrh(Rsize_of_params,  Address(Rsize_of_params, ConstMethod::size_of_parameters_offset()));
-#endif // AARCH64
 
   // native calls don't need the stack size check since they have no expression stack
   // and the arguments are already on the stack and we only add a handful of words
@@ -957,19 +765,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sub(Rlocals, Rparams, wordSize);
   __ add(Rlocals, Rlocals, AsmOperand(Rsize_of_params, lsl, Interpreter::logStackElementSize));
 
-#ifdef AARCH64
-  int extra_stack_reserve = 2*wordSize; // extra space for oop_temp
-  if(__ can_post_interpreter_events()) {
-    // extra space for saved results
-    extra_stack_reserve += 2*wordSize;
-  }
-  // reserve extra stack space and nullify oop_temp slot
-  __ stp(ZR, ZR, Address(SP, -extra_stack_reserve, pre_indexed));
-#else
   // reserve stack space for oop_temp
   __ mov(R0, 0);
   __ push(R0);
-#endif // AARCH64
 
   generate_fixed_frame(true); // Note: R9 is now saved in the frame
 
@@ -1065,15 +863,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Allocate stack space for arguments
 
-#ifdef AARCH64
-  __ sub(Rtemp, SP, Rsize_of_params, ex_uxtw, LogBytesPerWord);
-  __ align_reg(SP, Rtemp, StackAlignmentInBytes);
-
-  // Allocate more stack space to accomodate all arguments passed on GP and FP registers:
-  // 8 * wordSize for GPRs
-  // 8 * wordSize for FPRs
-  int reg_arguments = align_up(8*wordSize + 8*wordSize, StackAlignmentInBytes);
-#else
 
   // C functions need aligned stack
   __ bic(SP, SP, StackAlignmentInBytes - 1);
@@ -1093,12 +882,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // It is also used for JNIEnv & class additional parameters.
   int reg_arguments = 4 * wordSize;
 #endif // __ABI_HARD__
-#endif // AARCH64
 
   __ sub(SP, SP, reg_arguments);
 
 
-  // Note: signature handler blows R4 (32-bit ARM) or R21 (AArch64) besides all scratch registers.
+  // Note: signature handler blows R4 besides all scratch registers.
   // See AbstractInterpreterGenerator::generate_slow_signature_handler().
   __ call(Rsig_handler);
 #if R9_IS_SCRATCHED
@@ -1134,18 +922,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 #endif
 
-#ifdef AARCH64
-  __ mov(Rtemp, _thread_in_native);
-  __ add(Rtemp2, Rthread, in_bytes(JavaThread::thread_state_offset()));
-  // STLR is used to force all preceding writes to be observed prior to thread state change
-  __ stlr_w(Rtemp, Rtemp2);
-#else
   // Force all preceding writes to be observed prior to thread state change
   __ membar(MacroAssembler::StoreStore, Rtemp);
 
   __ mov(Rtemp, _thread_in_native);
   __ str(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
-#endif // AARCH64
 
   __ call(Rnative_code);
 #if R9_IS_SCRATCHED
@@ -1167,10 +948,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ldr_global_s32(Rtemp, SafepointSynchronize::address_of_state());
 
   // Protect the return value in the interleaved code: save it to callee-save registers.
-#ifdef AARCH64
-  __ mov(Rsaved_result, R0);
-  __ fmov_d(Dsaved_result, D0);
-#else
   __ mov(Rsaved_result_lo, R0);
   __ mov(Rsaved_result_hi, R1);
 #ifdef __ABI_HARD__
@@ -1180,26 +957,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #else
   saved_result_fp = fnoreg;
 #endif // __ABI_HARD__
-#endif // AARCH64
 
   {
     __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
     __ cmp(Rtemp, SafepointSynchronize::_not_synchronized);
     __ cond_cmp(R3, 0, eq);
 
-#ifdef AARCH64
-    Label L;
-    __ b(L, eq);
-    __ mov(R0, Rthread);
-    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none);
-    __ bind(L);
-#else
   __ mov(R0, Rthread, ne);
   __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none, ne);
 #if R9_IS_SCRATCHED
   __ restore_method();
 #endif
-#endif // AARCH64
   }
 
   // Perform Native->Java thread transition
@@ -1217,15 +985,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Unbox oop result, e.g. JNIHandles::resolve result if it's an oop.
   {
     Label Lnot_oop;
-#ifdef AARCH64
-    __ mov_slow(Rtemp, AbstractInterpreter::result_handler(T_OBJECT));
-    __ cmp(Rresult_handler, Rtemp);
-    __ b(Lnot_oop, ne);
-#else // !AARCH64
     // For ARM32, Rresult_handler is -1 for oop result, 0 otherwise.
     __ cbz(Rresult_handler, Lnot_oop);
-#endif // !AARCH64
-    Register value = AARCH64_ONLY(Rsaved_result) NOT_AARCH64(Rsaved_result_lo);
+    Register value = Rsaved_result_lo;
     __ resolve_jobject(value,   // value
                        Rtemp,   // tmp1
                        R1_tmp); // tmp2
@@ -1234,43 +996,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(Lnot_oop);
   }
 
-#ifdef AARCH64
-  // Restore SP (drop native parameters area), to keep SP in sync with extended_sp in frame
-  __ restore_sp_after_call(Rtemp);
-  __ check_stack_top();
-#endif // AARCH64
 
   // reguard stack if StackOverflow exception happened while in native.
   {
     __ ldr_u32(Rtemp, Address(Rthread, JavaThread::stack_guard_state_offset()));
     __ cmp_32(Rtemp, JavaThread::stack_guard_yellow_reserved_disabled);
-#ifdef AARCH64
-    Label L;
-    __ b(L, ne);
-    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages), relocInfo::none);
-    __ bind(L);
-#else
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages), relocInfo::none, eq);
 #if R9_IS_SCRATCHED
   __ restore_method();
 #endif
-#endif // AARCH64
   }
 
   // check pending exceptions
   {
     __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
-#ifdef AARCH64
-    Label L;
-    __ cbz(Rtemp, L);
-    __ mov_pc_to(Rexception_pc);
-    __ b(StubRoutines::forward_exception_entry());
-    __ bind(L);
-#else
     __ cmp(Rtemp, 0);
     __ mov(Rexception_pc, PC, ne);
     __ b(StubRoutines::forward_exception_entry(), ne);
-#endif // AARCH64
   }
 
   if (synchronized) {
@@ -1284,19 +1026,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   //       the exception handler code notifies the runtime of method exits
   //       too. If this happens before, method entry/exit notifications are
   //       not properly paired (was bug - gri 11/22/99).
-#ifdef AARCH64
-  __ notify_method_exit(vtos, InterpreterMacroAssembler::NotifyJVMTI, true, Rsaved_result, noreg, Dsaved_result);
-#else
   __ notify_method_exit(vtos, InterpreterMacroAssembler::NotifyJVMTI, true, Rsaved_result_lo, Rsaved_result_hi, saved_result_fp);
-#endif // AARCH64
 
   // Restore the result. Oop result is restored from the stack.
-#ifdef AARCH64
-  __ mov(R0, Rsaved_result);
-  __ fmov_d(D0, Dsaved_result);
-
-  __ blr(Rresult_handler);
-#else
   __ cmp(Rresult_handler, 0);
   __ ldr(R0, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize), ne);
   __ mov(R0, Rsaved_result_lo, eq);
@@ -1316,18 +1048,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 #endif // ASSERT
-#endif // AARCH64
 
   // Restore FP/LR, sender_sp and return
-#ifdef AARCH64
-  __ ldr(Rtemp, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
-  __ ldp(FP, LR, Address(FP));
-  __ mov(SP, Rtemp);
-#else
   __ mov(Rtemp, FP);
   __ ldmia(FP, RegisterSet(FP) | RegisterSet(LR));
   __ ldr(SP, Address(Rtemp, frame::interpreter_frame_sender_sp_offset * wordSize));
-#endif // AARCH64
 
   __ ret();
 
@@ -1354,12 +1079,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   address entry_point = __ pc();
 
-  const Register RconstMethod = AARCH64_ONLY(R10) NOT_AARCH64(R3);
+  const Register RconstMethod = R3;
 
-#ifdef AARCH64
-  const Register RmaxStack = R11;
-  const Register RlocalsBase = R12;
-#endif // AARCH64
 
   __ ldr(RconstMethod, Address(Rmethod, Method::const_offset()));
 
@@ -1372,48 +1093,10 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   __ sub(R3, R3, R2); // number of additional locals
 
-#ifdef AARCH64
-  // setup RmaxStack
-  __ ldrh(RmaxStack, Address(RconstMethod, ConstMethod::max_stack_offset()));
-  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
-  // none of which are at the same time, so we just need to make sure there is enough room
-  // for the biggest user:
-  //   -reserved slot for exception handler
-  //   -reserved slots for JSR292. Method::extra_stack_entries() is the size.
-  //   -3 reserved slots so get_method_counters() can save some registers before call_VM().
-  __ add(RmaxStack, RmaxStack, MAX2(3, Method::extra_stack_entries()));
-#endif // AARCH64
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
 
-#ifdef AARCH64
-
-  // allocate space for locals
-  {
-    __ sub(RlocalsBase, Rparams, AsmOperand(R3, lsl, Interpreter::logStackElementSize));
-    __ align_reg(SP, RlocalsBase, StackAlignmentInBytes);
-  }
-
-  // explicitly initialize locals
-  {
-    Label zero_loop, done;
-    __ cbz(R3, done);
-
-    __ tbz(R3, 0, zero_loop);
-    __ subs(R3, R3, 1);
-    __ str(ZR, Address(RlocalsBase, wordSize, post_indexed));
-    __ b(done, eq);
-
-    __ bind(zero_loop);
-    __ subs(R3, R3, 2);
-    __ stp(ZR, ZR, Address(RlocalsBase, 2*wordSize, post_indexed));
-    __ b(zero_loop, ne);
-
-    __ bind(done);
-  }
-
-#else
   // allocate space for locals
   // explicitly initialize locals
 
@@ -1439,7 +1122,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ push(R0, ge);
 
   __ b(loop, gt);
-#endif // AARCH64
 
   // initialize fixed part of activation frame
   generate_fixed_frame(false);
@@ -1554,11 +1236,9 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   Interpreter::_rethrow_exception_entry = __ pc();
   // Rexception_obj: exception
 
-#ifndef AARCH64
   // Clear interpreter_frame_last_sp.
   __ mov(Rtemp, 0);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // !AARCH64
 
 #if R9_IS_SCRATCHED
   __ restore_method();
@@ -1567,9 +1247,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ restore_dispatch();
   __ restore_locals();
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp);
-#endif // AARCH64
 
   // Entry point for exceptions thrown within interpreter code
   Interpreter::_throw_exception_entry = __ pc();
@@ -1606,9 +1283,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   //
    Interpreter::_remove_activation_preserving_args_entry = __ pc();
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp); // restore SP to extended SP
-#endif // AARCH64
 
   __ empty_expression_stack();
 
@@ -1635,9 +1309,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ ldr(R0, Address(FP, frame::return_addr_offset * wordSize));
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), R0);
     __ cbnz_32(R0, caller_not_deoptimized);
-#ifdef AARCH64
-    __ NOT_TESTED();
-#endif
 
     // Compute size of arguments for saving when returning to deoptimized caller
     __ restore_method();
@@ -1672,7 +1343,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* install_monitor_exception */ false,
                        /* notify_jvmdi */ false);
 
-#ifndef AARCH64
   // Finish with popframe handling
   // A previous I2C followed by a deoptimization might have moved the
   // outgoing arguments further up the stack. PopFrame expects the
@@ -1691,17 +1361,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ mov(R0, Rthread);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), R0, R1, R2);
   __ reset_last_Java_frame(Rtemp);
-#endif // !AARCH64
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp);
-  __ restore_stack_top();
-#else
   // Restore the last_sp and null it out
   __ ldr(SP, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
   __ mov(Rtemp, (int)NULL_WORD);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
 
   __ restore_bcp();
   __ restore_dispatch();
@@ -1778,9 +1442,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state) {
   address entry = __ pc();
 
-#ifdef AARCH64
-  __ restore_sp_after_call(Rtemp); // restore SP to extended SP
-#endif // AARCH64
 
   __ restore_bcp();
   __ restore_dispatch();
@@ -1801,13 +1462,11 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
                        false, /* install_monitor_exception */
                        true); /* notify_jvmdi */
 
-#ifndef AARCH64
   // According to interpreter calling conventions, result is returned in R0/R1,
   // so ftos (S0) and dtos (D0) are moved to R0/R1.
   // This conversion should be done after remove_activation, as it uses
   // push(state) & pop(state) to preserve return value.
   __ convert_tos_to_retval(state);
-#endif // !AARCH64
   __ ret();
 
   return entry;
@@ -1830,7 +1489,7 @@ void TemplateInterpreterGenerator::set_vtos_entry_points (Template* t, address& 
 
   lep = __ pc(); __ push(ltos); __ b(L);
 
-  if (AARCH64_ONLY(true) NOT_AARCH64(VerifyOops)) {  // can't share atos entry with itos on AArch64 or if VerifyOops
+  if (VerifyOops) {  // can't share atos entry if VerifyOops
     aep = __ pc(); __ push(atos); __ b(L);
   } else {
     aep = __ pc();              // fall through
@@ -1858,11 +1517,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
   // pass tosca registers as arguments
   __ mov(R2, R0_tos);
-#ifdef AARCH64
-  __ mov(R3, ZR);
-#else
   __ mov(R3, R1_tos_hi);
-#endif // AARCH64
   __ mov(R1, LR);       // save return address
 
   // call tracer

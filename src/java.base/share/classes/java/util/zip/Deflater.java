@@ -89,13 +89,6 @@ import sun.nio.ch.DirectBuffer;
  * to perform cleanup should be modified to use alternative cleanup mechanisms such
  * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
  *
- * @implSpec
- * If this {@code Deflater} has been subclassed and the {@code end} method has been
- * overridden, the {@code end} method will be called by the finalization when the
- * deflater is unreachable. But the subclasses should not depend on this specific
- * implementation; the finalization is not reliable and the {@code finalize} method
- * is deprecated to be removed.
- *
  * @see         Inflater
  * @author      David Connelly
  * @since 1.1
@@ -204,8 +197,8 @@ public class Deflater {
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
-        this.zsRef = DeflaterZStreamRef.get(this,
-                                    init(level, DEFAULT_STRATEGY, nowrap));
+        this.zsRef = new DeflaterZStreamRef(this,
+                init(level, DEFAULT_STRATEGY, nowrap));
     }
 
     /**
@@ -901,21 +894,6 @@ public class Deflater {
         }
     }
 
-    /**
-     * Closes the compressor when garbage is collected.
-     *
-     * @deprecated The {@code finalize} method has been deprecated and will be
-     *     removed. It is implemented as a no-op. Subclasses that override
-     *     {@code finalize} in order to perform cleanup should be modified to use
-     *     alternative cleanup mechanisms and to remove the overriding {@code finalize}
-     *     method. The recommended cleanup for compressor is to explicitly call
-     *     {@code end} method when it is no longer in use. If the {@code end} is
-     *     not invoked explicitly the resource of the compressor will be released
-     *     when the instance becomes unreachable.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    protected void finalize() {}
-
     private void ensureOpen() {
         assert Thread.holdsLock(zsRef);
         if (zsRef.address() == 0)
@@ -977,43 +955,5 @@ public class Deflater {
             }
         }
 
-        /*
-         * If {@code Deflater} has been subclassed and the {@code end} method is
-         * overridden, uses {@code finalizer} mechanism for resource cleanup. So
-         * {@code end} method can be called when the {@code Deflater} is unreachable.
-         * This mechanism will be removed when the {@code finalize} method is
-         * removed from {@code Deflater}.
-         */
-        static DeflaterZStreamRef get(Deflater owner, long addr) {
-            Class<?> clz = owner.getClass();
-            while (clz != Deflater.class) {
-                try {
-                    clz.getDeclaredMethod("end");
-                    return new FinalizableZStreamRef(owner, addr);
-                } catch (NoSuchMethodException nsme) {}
-                clz = clz.getSuperclass();
-            }
-            return new DeflaterZStreamRef(owner, addr);
-        }
-
-        private static class FinalizableZStreamRef extends DeflaterZStreamRef {
-            final Deflater owner;
-
-            FinalizableZStreamRef (Deflater owner, long addr) {
-                super(null, addr);
-                this.owner = owner;
-            }
-
-            @Override
-            void clean() {
-                run();
-            }
-
-            @Override
-            @SuppressWarnings("deprecation")
-            protected void finalize() {
-                owner.end();
-            }
-        }
     }
 }

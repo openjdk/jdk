@@ -31,6 +31,8 @@ import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -75,24 +77,19 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     }
 
     protected CompositeData getCompositeData() {
-        // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
-        // STACK_TRACE_ELEMENT_ATTRIBUTES!
-        final Object[] stackTraceElementItemValues = {
-            // JDK 5 attributes
-            ste.getClassName(),
-            ste.getMethodName(),
-            ste.getFileName(),
-            ste.getLineNumber(),
-            ste.isNativeMethod(),
-            // JDK 9 attributes
-            ste.getClassLoaderName(),
-            ste.getModuleName(),
-            ste.getModuleVersion(),
-        };
+        // values may be null; so can't use Map.of
+        Map<String,Object> items = new HashMap<>();
+        items.put(CLASS_LOADER_NAME, ste.getClassLoaderName());
+        items.put(MODULE_NAME,       ste.getModuleName());
+        items.put(MODULE_VERSION,    ste.getModuleVersion());
+        items.put(CLASS_NAME,        ste.getClassName());
+        items.put(METHOD_NAME,       ste.getMethodName());
+        items.put(FILE_NAME,         ste.getFileName());
+        items.put(LINE_NUMBER,       ste.getLineNumber());
+        items.put(NATIVE_METHOD,     ste.isNativeMethod());
+
         try {
-            return new CompositeDataSupport(STACK_TRACE_ELEMENT_COMPOSITE_TYPE,
-                                            STACK_TRACE_ELEMENT_ATTRIBUTES,
-                                            stackTraceElementItemValues);
+            return new CompositeDataSupport(STACK_TRACE_ELEMENT_COMPOSITE_TYPE, items);
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
@@ -123,10 +120,6 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         MODULE_VERSION,
     };
 
-    private static final String[] STACK_TRACE_ELEMENT_ATTRIBUTES =
-        Stream.of(V5_ATTRIBUTES, V9_ATTRIBUTES).flatMap(Arrays::stream)
-              .toArray(String[]::new);
-
     private static final CompositeType STACK_TRACE_ELEMENT_COMPOSITE_TYPE;
     private static final CompositeType V5_COMPOSITE_TYPE;
     static {
@@ -152,9 +145,6 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
 
     static CompositeType v5CompositeType() {
         return V5_COMPOSITE_TYPE;
-    }
-    static CompositeType compositeType() {
-        return STACK_TRACE_ELEMENT_COMPOSITE_TYPE;
     }
 
     /**

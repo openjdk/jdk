@@ -231,8 +231,6 @@ class SparsePRT {
   RSHashTable* _cur;
   RSHashTable* _next;
 
-  HeapRegion* _hr;
-
   enum SomeAdditionalPrivateConstants {
     InitialCapacity = 16
   };
@@ -254,7 +252,7 @@ class SparsePRT {
   static SparsePRT* volatile _head_expanded_list;
 
 public:
-  SparsePRT(HeapRegion* hr);
+  SparsePRT();
 
   ~SparsePRT();
 

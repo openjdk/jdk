@@ -78,26 +78,19 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // R1 - object handle
   // R2 - jfieldID
 
-  const Register Rsafepoint_counter_addr = AARCH64_ONLY(R4) NOT_AARCH64(R3);
-  const Register Robj = AARCH64_ONLY(R5) NOT_AARCH64(R1);
-  const Register Rres = AARCH64_ONLY(R6) NOT_AARCH64(R0);
-#ifndef AARCH64
+  const Register Rsafepoint_counter_addr = R3;
+  const Register Robj = R1;
+  const Register Rres = R0;
   const Register Rres_hi = R1;
-#endif // !AARCH64
   const Register Rsafept_cnt = Rtemp;
   const Register Rsafept_cnt2 = Rsafepoint_counter_addr;
-  const Register Rtmp1 = AARCH64_ONLY(R7) NOT_AARCH64(R3); // same as Rsafepoint_counter_addr on 32-bit ARM
-  const Register Rtmp2 = AARCH64_ONLY(R8) NOT_AARCH64(R2); // same as jfieldID on 32-bit ARM
+  const Register Rtmp1 = R3; // same as Rsafepoint_counter_addr
+  const Register Rtmp2 = R2; // same as jfieldID
 
-#ifdef AARCH64
-  assert_different_registers(Rsafepoint_counter_addr, Rsafept_cnt, Robj, Rres, Rtmp1, Rtmp2, R0, R1, R2, LR);
-  assert_different_registers(Rsafept_cnt2, Rsafept_cnt, Rres, R0, R1, R2, LR);
-#else
   assert_different_registers(Rsafepoint_counter_addr, Rsafept_cnt, Robj, Rres, LR);
   assert_different_registers(Rsafept_cnt, R1, R2, Rtmp1, LR);
   assert_different_registers(Rsafepoint_counter_addr, Rsafept_cnt, Rres, Rres_hi, Rtmp2, LR);
   assert_different_registers(Rsafept_cnt2, Rsafept_cnt, Rres, Rres_hi, LR);
-#endif // AARCH64
 
   address fast_entry;
 
@@ -112,29 +105,17 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Label slow_case;
   __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
 
-#ifndef AARCH64
   __ push(RegisterSet(R0, R3));  // save incoming arguments for slow case
-#endif // !AARCH64
 
   __ ldr_s32(Rsafept_cnt, Address(Rsafepoint_counter_addr));
   __ tbnz(Rsafept_cnt, 0, slow_case);
 
-#ifdef AARCH64
-  // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andr(R1, R1, ~JNIHandles::weak_tag_mask);
-#else
   __ bic(R1, R1, JNIHandles::weak_tag_mask);
-#endif
 
   // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
   __ andr(Rtmp1, Rsafept_cnt, (unsigned)1);
   __ ldr(Robj, Address(R1, Rtmp1));
 
-#ifdef AARCH64
-  __ add(Robj, Robj, AsmOperand(R2, lsr, 2));
-  Address field_addr = Address(Robj);
-#else
   Address field_addr;
   if (type != T_BOOLEAN
       && type != T_INT
@@ -148,7 +129,6 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   } else {
     field_addr = Address(Robj, R2, lsr, 2);
   }
-#endif // AARCH64
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
 
@@ -175,12 +155,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 #ifndef __ABI_HARD__
     case T_DOUBLE:
 #endif
-#ifdef AARCH64
-      __ ldr(Rres, field_addr);
-#else
       // Safe to use ldrd since long and double fields are 8-byte aligned
       __ ldrd(Rres, field_addr);
-#endif // AARCH64
       break;
 #ifdef __ABI_HARD__
     case T_FLOAT:
@@ -195,38 +171,28 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   }
 
   // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
-#if defined(__ABI_HARD__) && !defined(AARCH64)
+#ifdef __ABI_HARD__
   if (type == T_FLOAT || type == T_DOUBLE) {
     __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
     __ fmrrd(Rres, Rres_hi, D0);
     __ eor(Rtmp2, Rres, Rres);
     __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
   } else
-#endif // __ABI_HARD__ && !AARCH64
+#endif // __ABI_HARD__
   {
-#ifndef AARCH64
     __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
-#endif // !AARCH64
     __ eor(Rtmp2, Rres, Rres);
     __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
   }
   __ cmp(Rsafept_cnt2, Rsafept_cnt);
-#ifdef AARCH64
-  __ b(slow_case, ne);
-  __ mov(R0, Rres);
-  __ ret();
-#else
   // discards saved R0 R1 R2 R3
   __ add(SP, SP, 4 * wordSize, eq);
   __ bx(LR, eq);
-#endif // AARCH64
 
   slowcase_entry_pclist[count++] = __ pc();
 
   __ bind(slow_case);
-#ifndef AARCH64
   __ pop(RegisterSet(R0, R3));
-#endif // !AARCH64
   // thumb mode switch handled by MacroAssembler::jump if needed
   __ jump(slow_case_addr, relocInfo::none, Rtemp);
 

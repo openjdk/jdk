@@ -71,10 +71,11 @@ public class Type implements Comparable<Type> {
     private final String name;
     private final String superType;
     private final boolean constantPool;
-    private final long id;
     private final ArrayList<ValueDescriptor> fields = new ArrayList<>();
     private Boolean simpleType; // calculated lazy
     private boolean remove = true;
+    private long id;
+
     /**
      * Creates a type
      *
@@ -317,5 +318,9 @@ public class Type implements Comparable<Type> {
 
     public boolean getRemove() {
         return remove;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

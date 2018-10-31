@@ -262,8 +262,12 @@ public final class SecuritySupport {
         Modules.addExports(JFR_MODULE, Utils.HANDLERS_PACKAGE_NAME, clazz.getModule());
     }
 
-    public static void registerEvent(Class<? extends Event> eventClass) {
-        doPrivileged(() -> FlightRecorder.register(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
+    public static void registerEvent(Class<? extends jdk.internal.event.Event> eventClass) {
+        doPrivileged(() ->  MetadataRepository.getInstance().register(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
+    }
+
+    public static void registerMirror(Class<? extends Event> eventClass) {
+        doPrivileged(() ->  MetadataRepository.getInstance().registerMirror(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
     }
 
     static boolean getBooleanProperty(String propertyName) {

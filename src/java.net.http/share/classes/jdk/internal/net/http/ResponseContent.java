@@ -46,7 +46,7 @@ import static java.lang.String.format;
 class ResponseContent {
 
     final HttpResponse.BodySubscriber<?> pusher;
-    final int contentLength;
+    final long contentLength;
     final HttpHeaders headers;
     // this needs to run before we complete the body
     // so that connection can be returned to pool
@@ -54,7 +54,7 @@ class ResponseContent {
     private final String dbgTag;
 
     ResponseContent(HttpConnection connection,
-                    int contentLength,
+                    long contentLength,
                     HttpHeaders h,
                     HttpResponse.BodySubscriber<?> userSubscriber,
                     Runnable onFinished)
@@ -474,14 +474,14 @@ class ResponseContent {
     }
 
     class FixedLengthBodyParser implements BodyParser {
-        final int contentLength;
+        final long contentLength;
         final Consumer<Throwable> onComplete;
         final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         final String dbgTag = ResponseContent.this.dbgTag + "/FixedLengthBodyParser";
-        volatile int remaining;
+        volatile long remaining;
         volatile Throwable closedExceptionally;
         volatile AbstractSubscription sub;
-        FixedLengthBodyParser(int contentLength, Consumer<Throwable> onComplete) {
+        FixedLengthBodyParser(long contentLength, Consumer<Throwable> onComplete) {
             this.contentLength = this.remaining = contentLength;
             this.onComplete = onComplete;
         }
@@ -527,7 +527,7 @@ class ResponseContent {
             }
             boolean completed = false;
             try {
-                int unfulfilled = remaining;
+                long unfulfilled = remaining;
                 if (debug.on())
                     debug.log("Parser got %d bytes (%d remaining / %d)",
                               b.remaining(), unfulfilled, contentLength);
@@ -541,7 +541,7 @@ class ResponseContent {
                     // demand.
                     boolean hasDemand = sub.demand().tryDecrement();
                     assert hasDemand;
-                    int amount = Math.min(b.remaining(), unfulfilled);
+                    int amount = (int)Math.min(b.remaining(), unfulfilled); // safe cast
                     unfulfilled = remaining -= amount;
                     ByteBuffer buffer = Utils.sliceWithLimitedCapacity(b, amount);
                     pusher.onNext(List.of(buffer.asReadOnlyBuffer()));

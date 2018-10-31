@@ -62,46 +62,6 @@ public:
   // branch to the runtime. The slot at R14/R30_offset is for the value of LR
   // in case it's live in the method we are coming from.
 
-#ifdef AARCH64
-
-  //
-  // On AArch64 registers save area has the following layout:
-  //
-  // |---------------------|
-  // | return address (LR) |
-  // | FP                  |
-  // |---------------------|
-  // | V31                 |
-  // | ...                 |
-  // | V0                  |
-  // |---------------------|
-  // | padding             |
-  // | R30 (LR live value) |
-  // |---------------------|
-  // | R27                 |
-  // | ...                 |
-  // | R0                  |
-  // |---------------------| <-- SP
-  //
-
-  enum RegisterLayout {
-    number_of_saved_gprs = 28,
-    number_of_saved_fprs = FloatRegisterImpl::number_of_registers,
-    words_per_fpr = ConcreteRegisterImpl::words_per_fpr,
-
-    R0_offset  = 0,
-    R30_offset = R0_offset + number_of_saved_gprs,
-    D0_offset  = R30_offset + 2,
-    FP_offset  = D0_offset + number_of_saved_fprs * words_per_fpr,
-    LR_offset  = FP_offset + 1,
-
-    reg_save_size = LR_offset + 1,
-  };
-
-  static const int Rmethod_offset;
-  static const int Rtemp_offset;
-
-#else
 
   enum RegisterLayout {
     fpu_save_size = FloatRegisterImpl::number_of_registers,
@@ -139,7 +99,6 @@ public:
   // (altFP_7_11 is the one amoung R7 and R11 which is not FP)
 #define SAVED_BASE_REGS (RegisterSet(R0, R6) | RegisterSet(R8, R9) | RegisterSet(R12) | R14 | altFP_7_11)
 
-#endif // AARCH64
 
   //  When LR may be live in the nmethod from which we are comming
   //  then lr_saved is true, the return address is saved before the
@@ -154,10 +113,6 @@ public:
 };
 
 
-#ifdef AARCH64
-const int RegisterSaver::Rmethod_offset = RegisterSaver::R0_offset + Rmethod->encoding();
-const int RegisterSaver::Rtemp_offset   = RegisterSaver::R0_offset + Rtemp->encoding();
-#endif // AARCH64
 
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
@@ -168,47 +123,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map = new OopMap(VMRegImpl::slots_per_word * (*total_frame_words), 0);
 
-#ifdef AARCH64
-  assert((reg_save_size * wordSize) % StackAlignmentInBytes == 0, "SP should be aligned");
-
-  if (lr_saved) {
-    // LR was stashed here, so that jump could use it as a scratch reg
-    __ ldr(LR, Address(SP, 0));
-    // There are two words on the stack top:
-    //  [SP + 0]: placeholder for FP
-    //  [SP + wordSize]: saved return address
-    __ str(FP, Address(SP, 0));
-  } else {
-    __ raw_push(FP, LR);
-  }
-
-  __ sub(SP, SP, (reg_save_size - 2) * wordSize);
-
-  for (int i = 0; i < number_of_saved_gprs; i += 2) {
-    int offset = R0_offset + i;
-    __ stp(as_Register(i), as_Register(i+1), Address(SP, offset * wordSize));
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + 0) * VMRegImpl::slots_per_word), as_Register(i)->as_VMReg());
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + 1) * VMRegImpl::slots_per_word), as_Register(i+1)->as_VMReg());
-  }
-
-  __ str(R30, Address(SP, R30_offset * wordSize));
-  map->set_callee_saved(VMRegImpl::stack2reg(R30_offset * VMRegImpl::slots_per_word), R30->as_VMReg());
-
-  for (int i = 0; i < number_of_saved_fprs; i += 2) {
-    int offset1 = D0_offset + i * words_per_fpr;
-    int offset2 = offset1 + words_per_fpr;
-    Address base(SP, offset1 * wordSize);
-    if (words_per_fpr == 2) {
-      // pair of "wide" quad vector registers
-      __ stp_q(as_FloatRegister(i), as_FloatRegister(i+1), base);
-    } else {
-      // pair of double vector registers
-      __ stp_d(as_FloatRegister(i), as_FloatRegister(i+1), base);
-    }
-    map->set_callee_saved(VMRegImpl::stack2reg(offset1 * VMRegImpl::slots_per_word), as_FloatRegister(i)->as_VMReg());
-    map->set_callee_saved(VMRegImpl::stack2reg(offset2 * VMRegImpl::slots_per_word), as_FloatRegister(i+1)->as_VMReg());
-  }
-#else
   if (lr_saved) {
     __ push(RegisterSet(FP));
   } else {
@@ -252,38 +166,11 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
       map->set_callee_saved(VMRegImpl::stack2reg(i + 1), as_FloatRegister(i)->as_VMReg()->next());
     }
   }
-#endif // AARCH64
 
   return map;
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr) {
-#ifdef AARCH64
-  for (int i = 0; i < number_of_saved_gprs; i += 2) {
-    __ ldp(as_Register(i), as_Register(i+1), Address(SP, (R0_offset + i) * wordSize));
-  }
-
-  __ ldr(R30, Address(SP, R30_offset * wordSize));
-
-  for (int i = 0; i < number_of_saved_fprs; i += 2) {
-    Address base(SP, (D0_offset + i * words_per_fpr) * wordSize);
-    if (words_per_fpr == 2) {
-      // pair of "wide" quad vector registers
-      __ ldp_q(as_FloatRegister(i), as_FloatRegister(i+1), base);
-    } else {
-      // pair of double vector registers
-      __ ldp_d(as_FloatRegister(i), as_FloatRegister(i+1), base);
-    }
-  }
-
-  __ add(SP, SP, (reg_save_size - 2) * wordSize);
-
-  if (restore_lr) {
-    __ raw_pop(FP, LR);
-  } else {
-    __ ldr(FP, Address(SP, 0));
-  }
-#else
   if (HaveVFP) {
     __ fldmiad(SP, FloatRegisterSet(D0, 16), writeback);
     if (VM_Version::has_vfp3_32()) {
@@ -303,58 +190,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr
   } else {
     __ pop(RegisterSet(FP));
   }
-#endif // AARCH64
 }
 
-#ifdef AARCH64
-
-static void push_result_registers(MacroAssembler* masm, BasicType ret_type) {
-  if (ret_type == T_DOUBLE || ret_type == T_FLOAT) {
-    __ str_d(D0, Address(SP, -2*wordSize, pre_indexed));
-  } else {
-    __ raw_push(R0, ZR);
-  }
-}
-
-static void pop_result_registers(MacroAssembler* masm, BasicType ret_type) {
-  if (ret_type == T_DOUBLE || ret_type == T_FLOAT) {
-    __ ldr_d(D0, Address(SP, 2*wordSize, post_indexed));
-  } else {
-    __ raw_pop(R0, ZR);
-  }
-}
-
-static void push_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) {
-  __ raw_push(R0, R1);
-  __ raw_push(R2, R3);
-  __ raw_push(R4, R5);
-  __ raw_push(R6, R7);
-
-  assert(FPR_PARAMS == 8, "adjust this code");
-  assert((0 <= fp_regs_in_arguments) && (fp_regs_in_arguments <= FPR_PARAMS), "should be");
-
-  if (fp_regs_in_arguments > 6) __ stp_d(V6, V7, Address(SP, -2 * wordSize, pre_indexed));
-  if (fp_regs_in_arguments > 4) __ stp_d(V4, V5, Address(SP, -2 * wordSize, pre_indexed));
-  if (fp_regs_in_arguments > 2) __ stp_d(V2, V3, Address(SP, -2 * wordSize, pre_indexed));
-  if (fp_regs_in_arguments > 0) __ stp_d(V0, V1, Address(SP, -2 * wordSize, pre_indexed));
-}
-
-static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) {
-  assert(FPR_PARAMS == 8, "adjust this code");
-  assert((0 <= fp_regs_in_arguments) && (fp_regs_in_arguments <= FPR_PARAMS), "should be");
-
-  if (fp_regs_in_arguments > 0) __ ldp_d(V0, V1, Address(SP, 2 * wordSize, post_indexed));
-  if (fp_regs_in_arguments > 2) __ ldp_d(V2, V3, Address(SP, 2 * wordSize, post_indexed));
-  if (fp_regs_in_arguments > 4) __ ldp_d(V4, V5, Address(SP, 2 * wordSize, post_indexed));
-  if (fp_regs_in_arguments > 6) __ ldp_d(V6, V7, Address(SP, 2 * wordSize, post_indexed));
-
-  __ raw_pop(R6, R7);
-  __ raw_pop(R4, R5);
-  __ raw_pop(R2, R3);
-  __ raw_pop(R0, R1);
-}
-
-#else // AARCH64
 
 static void push_result_registers(MacroAssembler* masm, BasicType ret_type) {
 #ifdef __ABI_HARD__
@@ -405,7 +242,6 @@ static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) 
   __ pop(RegisterSet(R0, R3));
 }
 
-#endif // AARCH64
 
 
 // Is vector's size (in bytes) bigger than a size saved by default?
@@ -429,73 +265,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs2,
                                         int total_args_passed) {
   assert(regs2 == NULL, "not needed on arm");
-#ifdef AARCH64
-  int slot = 0; // counted in 32-bit VMReg slots
-  int reg = 0;
-  int fp_reg = 0;
-  for (int i = 0; i < total_args_passed; i++) {
-    switch (sig_bt[i]) {
-    case T_SHORT:
-    case T_CHAR:
-    case T_BYTE:
-    case T_BOOLEAN:
-    case T_INT:
-      if (reg < GPR_PARAMS) {
-        Register r = as_Register(reg);
-        regs[i].set1(r->as_VMReg());
-        reg++;
-      } else {
-        regs[i].set1(VMRegImpl::stack2reg(slot));
-        slot+=2;
-      }
-      break;
-    case T_LONG:
-      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
-      // fall through
-    case T_ARRAY:
-    case T_OBJECT:
-    case T_ADDRESS:
-      if (reg < GPR_PARAMS) {
-        Register r = as_Register(reg);
-        regs[i].set2(r->as_VMReg());
-        reg++;
-      } else {
-        regs[i].set2(VMRegImpl::stack2reg(slot));
-        slot+=2;
-      }
-      break;
-    case T_FLOAT:
-      if (fp_reg < FPR_PARAMS) {
-        FloatRegister r = as_FloatRegister(fp_reg);
-        regs[i].set1(r->as_VMReg());
-        fp_reg++;
-      } else {
-        regs[i].set1(VMRegImpl::stack2reg(slot));
-        slot+=2;
-      }
-      break;
-    case T_DOUBLE:
-      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
-      if (fp_reg < FPR_PARAMS) {
-        FloatRegister r = as_FloatRegister(fp_reg);
-        regs[i].set2(r->as_VMReg());
-        fp_reg++;
-      } else {
-        regs[i].set2(VMRegImpl::stack2reg(slot));
-        slot+=2;
-      }
-      break;
-    case T_VOID:
-      assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-      regs[i].set_bad();
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
-  return slot;
-
-#else // AARCH64
 
   int slot = 0;
   int ireg = 0;
@@ -592,17 +361,12 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
   return slot;
-#endif // AARCH64
 }
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed,
                                            int is_outgoing) {
-#ifdef AARCH64
-  // C calling convention on AArch64 is good enough.
-  return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
-#else
 #ifdef __SOFTFP__
   // soft float is the same as the C calling convention.
   return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
@@ -685,7 +449,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
   if (slot & 1) slot++;
   return slot;
-#endif // AARCH64
 }
 
 static void patch_callers_callsite(MacroAssembler *masm) {
@@ -694,25 +457,15 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ ldr(Rtemp, Address(Rmethod, Method::code_offset()));
   __ cbz(Rtemp, skip);
 
-#ifdef AARCH64
-  push_param_registers(masm, FPR_PARAMS);
-  __ raw_push(LR, ZR);
-#else
   // Pushing an even number of registers for stack alignment.
   // Selecting R9, which had to be saved anyway for some platforms.
   __ push(RegisterSet(R0, R3) | R9 | LR);
-#endif // AARCH64
 
   __ mov(R0, Rmethod);
   __ mov(R1, LR);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
 
-#ifdef AARCH64
-  __ raw_pop(LR, ZR);
-  pop_param_registers(masm, FPR_PARAMS);
-#else
   __ pop(RegisterSet(R0, R3) | R9 | LR);
-#endif // AARCH64
 
   __ bind(skip);
 }
@@ -739,57 +492,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   Address callee_target_addr(Rthread, JavaThread::callee_target_offset());
   __ str(Rmethod, callee_target_addr);
 
-#ifdef AARCH64
-
-  assert_different_registers(tmp, R0, R1, R2, R3, R4, R5, R6, R7, Rsender_sp, Rmethod);
-  assert_different_registers(tmp, R0, R1, R2, R3, R4, R5, R6, R7, Rsender_sp, Rparams);
-
-  if (comp_args_on_stack) {
-    __ sub_slow(SP, SP, align_up(comp_args_on_stack * VMRegImpl::stack_slot_size, StackAlignmentInBytes));
-  }
-
-  for (int i = 0; i < total_args_passed; i++) {
-    if (sig_bt[i] == T_VOID) {
-      assert(i > 0 && (sig_bt[i-1] == T_LONG || sig_bt[i-1] == T_DOUBLE), "missing half");
-      continue;
-    }
-    assert(!regs[i].second()->is_valid() || regs[i].first()->next() == regs[i].second(), "must be ordered");
-
-    int expr_slots_count = (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) ? 2 : 1;
-    Address source_addr(Rparams, Interpreter::expr_offset_in_bytes(total_args_passed - expr_slots_count - i));
-
-    VMReg r = regs[i].first();
-    bool full_word = regs[i].second()->is_valid();
-
-    if (r->is_stack()) {
-      if (full_word) {
-        __ ldr(tmp, source_addr);
-        __ str(tmp, Address(SP, r->reg2stack() * VMRegImpl::stack_slot_size));
-      } else {
-        __ ldr_w(tmp, source_addr);
-        __ str_w(tmp, Address(SP, r->reg2stack() * VMRegImpl::stack_slot_size));
-      }
-    } else if (r->is_Register()) {
-      if (full_word) {
-        __ ldr(r->as_Register(), source_addr);
-      } else {
-        __ ldr_w(r->as_Register(), source_addr);
-      }
-    } else if (r->is_FloatRegister()) {
-      if (sig_bt[i] == T_DOUBLE) {
-        __ ldr_d(r->as_FloatRegister(), source_addr);
-      } else {
-        __ ldr_s(r->as_FloatRegister(), source_addr);
-      }
-    } else {
-      assert(!r->is_valid() && !regs[i].second()->is_valid(), "must be");
-    }
-  }
-
-  __ ldr(tmp, Address(Rmethod, Method::from_compiled_offset()));
-  __ br(tmp);
-
-#else
 
   assert_different_registers(tmp, R0, R1, R2, R3, Rsender_sp, Rmethod);
 
@@ -851,7 +553,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ ldr(Rmethod, callee_target_addr);
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
 
-#endif // AARCH64
 }
 
 static void gen_c2i_adapter(MacroAssembler *masm,
@@ -866,56 +567,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ mov(Rsender_sp, SP); // not yet saved
 
-#ifdef AARCH64
-
-  int extraspace = align_up(total_args_passed * Interpreter::stackElementSize, StackAlignmentInBytes);
-  if (extraspace) {
-    __ sub(SP, SP, extraspace);
-  }
-
-  for (int i = 0; i < total_args_passed; i++) {
-    if (sig_bt[i] == T_VOID) {
-      assert(i > 0 && (sig_bt[i-1] == T_LONG || sig_bt[i-1] == T_DOUBLE), "missing half");
-      continue;
-    }
-
-    int expr_slots_count = (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) ? 2 : 1;
-    Address dest_addr(SP, Interpreter::expr_offset_in_bytes(total_args_passed - expr_slots_count - i));
-
-    VMReg r = regs[i].first();
-    bool full_word = regs[i].second()->is_valid();
-
-    if (r->is_stack()) {
-      if (full_word) {
-        __ ldr(tmp, Address(SP, r->reg2stack() * VMRegImpl::stack_slot_size + extraspace));
-        __ str(tmp, dest_addr);
-      } else {
-        __ ldr_w(tmp, Address(SP, r->reg2stack() * VMRegImpl::stack_slot_size + extraspace));
-        __ str_w(tmp, dest_addr);
-      }
-    } else if (r->is_Register()) {
-      if (full_word) {
-        __ str(r->as_Register(), dest_addr);
-      } else {
-        __ str_w(r->as_Register(), dest_addr);
-      }
-    } else if (r->is_FloatRegister()) {
-      if (sig_bt[i] == T_DOUBLE) {
-        __ str_d(r->as_FloatRegister(), dest_addr);
-      } else {
-        __ str_s(r->as_FloatRegister(), dest_addr);
-      }
-    } else {
-      assert(!r->is_valid() && !regs[i].second()->is_valid(), "must be");
-    }
-  }
-
-  __ mov(Rparams, SP);
-
-  __ ldr(tmp, Address(Rmethod, Method::interpreter_entry_offset()));
-  __ br(tmp);
-
-#else
 
   int extraspace = total_args_passed * Interpreter::stackElementSize;
   if (extraspace) {
@@ -965,7 +616,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ ldr(PC, Address(Rmethod, Method::interpreter_entry_offset()));
 
-#endif // AARCH64
 }
 
 AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
@@ -981,26 +631,17 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
-  const Register receiver_klass = AARCH64_ONLY(R8) NOT_AARCH64(R4);
+  const Register receiver_klass = R4;
 
   __ load_klass(receiver_klass, receiver);
   __ ldr(holder_klass, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
   __ ldr(Rmethod, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
   __ cmp(receiver_klass, holder_klass);
 
-#ifdef AARCH64
-  Label ic_miss;
-  __ b(ic_miss, ne);
-  __ ldr(Rtemp, Address(Rmethod, Method::code_offset()));
-  __ cbz(Rtemp, skip_fixup);
-  __ bind(ic_miss);
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, Rtemp);
-#else
   __ ldr(Rtemp, Address(Rmethod, Method::code_offset()), eq);
   __ cmp(Rtemp, 0, eq);
   __ b(skip_fixup, eq);
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
-#endif // AARCH64
 
   address c2i_entry = __ pc();
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
@@ -1201,10 +842,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(verified);
   int vep_offset = __ pc() - start;
 
-#ifdef AARCH64
-  // Extra nop for MT-safe patching in NativeJump::patch_verified_entry
-  __ nop();
-#endif // AARCH64
 
   if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {
     // Object.hashCode, System.identityHashCode can pull the hashCode from the header word
@@ -1217,15 +854,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (method->intrinsic_id() == vmIntrinsics::_identityHashCode) {
       assert(method->is_static(), "method should be static");
       // return 0 for null reference input, return val = R0 = obj_reg = 0
-#ifdef AARCH64
-      Label Continue;
-      __ cbnz(obj_reg, Continue);
-      __ ret();
-      __ bind(Continue);
-#else
       __ cmp(obj_reg, 0);
       __ bx(LR, eq);
-#endif
     }
 
     __ ldr(Rtemp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -1238,16 +868,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ tbnz(Rtemp, exact_log2(markOopDesc::biased_lock_bit_in_place), slow_case);
     }
 
-#ifdef AARCH64
-    __ ands(Rtemp, Rtemp, (uintx)markOopDesc::hash_mask_in_place);
-    __ b(slow_case, eq);
-    __ logical_shift_right(R0, Rtemp, markOopDesc::hash_shift);
-    __ ret();
-#else
     __ bics(Rtemp, Rtemp, ~markOopDesc::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markOopDesc::hash_shift), ne);
     __ bx(LR, ne);
-#endif // AARCH64
 
     __ bind(slow_case);
   }
@@ -1279,12 +902,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         assert(i != 0, "Incoming receiver is always in a register");
         __ ldr(Rtemp, Address(FP, reg2offset_in(src)));
         __ cmp(Rtemp, 0);
-#ifdef AARCH64
-        __ add(Rtemp, FP, reg2offset_in(src));
-        __ csel(Rtemp, ZR, Rtemp, eq);
-#else
         __ add(Rtemp, FP, reg2offset_in(src), ne);
-#endif // AARCH64
         __ str(Rtemp, Address(SP, reg2offset_out(dst)));
         int offset_in_older_frame = src->reg2stack() + SharedRuntime::out_preserve_stack_slots();
         map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + stack_slots));
@@ -1297,14 +915,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         }
         oop_handle_offset += VMRegImpl::slots_per_word;
 
-#ifdef AARCH64
-        __ cmp(src->as_Register(), 0);
-        __ add(Rtemp, SP, offset);
-        __ csel(dst->is_stack() ? Rtemp : dst->as_Register(), ZR, Rtemp, eq);
-        if (dst->is_stack()) {
-          __ str(Rtemp, Address(SP, reg2offset_out(dst)));
-        }
-#else
         if (dst->is_stack()) {
           __ movs(Rtemp, src->as_Register());
           __ add(Rtemp, SP, offset, ne);
@@ -1313,30 +923,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
           __ movs(dst->as_Register(), src->as_Register());
           __ add(dst->as_Register(), SP, offset, ne);
         }
-#endif // AARCH64
       }
     }
 
     case T_VOID:
       break;
 
-#ifdef AARCH64
-    case T_FLOAT:
-    case T_DOUBLE: {
-      VMReg src = in_regs[i].first();
-      VMReg dst = out_regs[i + extra_args].first();
-      if (src->is_stack()) {
-        assert(dst->is_stack(), "must be");
-        __ ldr(Rtemp, Address(FP, reg2offset_in(src)));
-        __ str(Rtemp, Address(SP, reg2offset_out(dst)));
-      } else {
-        assert(src->is_FloatRegister() && dst->is_FloatRegister(), "must be");
-        assert(src->as_FloatRegister() == dst->as_FloatRegister(), "must be");
-        fp_regs_in_arguments++;
-      }
-      break;
-    }
-#else // AARCH64
 
 #ifdef __SOFTFP__
     case T_DOUBLE:
@@ -1509,7 +1101,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       break;
     }
 #endif // __ABI_HARD__
-#endif // AARCH64
 
     default: {
       assert(in_sig_bt[i] != T_ADDRESS, "found T_ADDRESS in java args");
@@ -1544,16 +1135,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   assert(((__ pc()) - start) == __ offset(), "warning: start differs from code_begin");
   oop_maps->add_gc_map(pc_offset, map);
 
-#ifndef AARCH64
   // Order last_Java_pc store with the thread state transition (to _thread_in_native)
   __ membar(MacroAssembler::StoreStore, Rtemp);
-#endif // !AARCH64
 
   // RedefineClasses() tracing support for obsolete method entry
   if (log_is_enabled(Trace, redefine, class, obsolete)) {
-#ifdef AARCH64
-    __ NOT_TESTED();
-#endif
     __ save_caller_save_registers();
     __ mov(R0, Rthread);
     __ mov_metadata(R1, method());
@@ -1561,10 +1147,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ restore_caller_save_registers();
   }
 
-  const Register sync_handle = AARCH64_ONLY(R20) NOT_AARCH64(R5);
-  const Register sync_obj    = AARCH64_ONLY(R21) NOT_AARCH64(R6);
-  const Register disp_hdr    = AARCH64_ONLY(R22) NOT_AARCH64(altFP_7_11);
-  const Register tmp         = AARCH64_ONLY(R23) NOT_AARCH64(R8);
+  const Register sync_handle = R5;
+  const Register sync_obj    = R6;
+  const Register disp_hdr    = altFP_7_11;
+  const Register tmp         = R8;
 
   Label slow_lock, slow_lock_biased, lock_done, fast_lock;
   if (method->is_synchronized()) {
@@ -1580,35 +1166,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     const Register mark = tmp;
-#ifdef AARCH64
-    __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
-
-    __ ldr(mark, sync_obj);
-
-    // Test if object is already locked
-    assert(markOopDesc::unlocked_value == 1, "adjust this code");
-    __ tbnz(mark, exact_log2(markOopDesc::unlocked_value), fast_lock);
-
-    // Check for recursive lock
-    // See comments in InterpreterMacroAssembler::lock_object for
-    // explanations on the fast recursive locking check.
-    __ mov(Rtemp, SP);
-    __ sub(Rtemp, mark, Rtemp);
-    intptr_t mask = ((intptr_t)3) - ((intptr_t)os::vm_page_size());
-    Assembler::LogicalImmediate imm(mask, false);
-    __ ands(Rtemp, Rtemp, imm);
-    __ b(slow_lock, ne);
-
-    // Recursive locking: store 0 into a lock record
-    __ str(ZR, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-    __ b(lock_done);
-
-    __ bind(fast_lock);
-    __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-
-    __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-#else
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
     // That would be acceptable as either CAS or slow case path is taken in that case
 
@@ -1635,7 +1192,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
 
     __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-#endif // AARCH64
 
     __ bind(lock_done);
   }
@@ -1645,13 +1201,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Perform thread state transition
   __ mov(Rtemp, _thread_in_native);
-#ifdef AARCH64
-  // stlr instruction is used to force all preceding writes to be observed prior to thread state change
-  __ add(Rtemp2, Rthread, in_bytes(JavaThread::thread_state_offset()));
-  __ stlr_w(Rtemp, Rtemp2);
-#else
   __ str(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
-#endif // AARCH64
 
   // Finally, call the native method
   __ call(method->native_function());
@@ -1713,37 +1263,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ ldr(LR, Address(Rthread, JavaThread::active_handles_offset()));
   __ reset_last_Java_frame(Rtemp); // sets Rtemp to 0 on 32-bit ARM
 
-#ifdef AARCH64
-  __ str_32(ZR, Address(LR, JNIHandleBlock::top_offset_in_bytes()));
-  if (CheckJNICalls) {
-    __ str(ZR, Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
-  }
-
-
-  switch (ret_type) {
-  case T_BOOLEAN:
-    __ tst(R0, 0xff);
-    __ cset(R0, ne);
-    break;
-  case T_CHAR   : __ zero_extend(R0, R0, 16);  break;
-  case T_BYTE   : __ sign_extend(R0, R0,  8);  break;
-  case T_SHORT  : __ sign_extend(R0, R0, 16);  break;
-  case T_INT    : // fall through
-  case T_LONG   : // fall through
-  case T_VOID   : // fall through
-  case T_FLOAT  : // fall through
-  case T_DOUBLE : /* nothing to do */          break;
-  case T_OBJECT : // fall through
-  case T_ARRAY  : break; // See JNIHandles::resolve below
-  default:
-    ShouldNotReachHere();
-  }
-#else
   __ str_32(Rtemp, Address(LR, JNIHandleBlock::top_offset_in_bytes()));
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
-#endif // AARCH64
 
   // Unbox oop result, e.g. JNIHandles::resolve value in R0.
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
@@ -1756,23 +1279,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
   __ mov(SP, FP);
 
-#ifdef AARCH64
-  Label except;
-  __ cbnz(Rtemp, except);
-  __ raw_pop(FP, LR);
-  __ ret();
-
-  __ bind(except);
-  // Pop the frame and forward the exception. Rexception_pc contains return address.
-  __ raw_pop(FP, Rexception_pc);
-#else
   __ cmp(Rtemp, 0);
   // Pop the frame and return if no exception pending
   __ pop(RegisterSet(FP) | RegisterSet(PC), eq);
   // Pop the frame and forward the exception. Rexception_pc contains return address.
   __ ldr(FP, Address(SP, wordSize, post_indexed), ne);
   __ ldr(Rexception_pc, Address(SP, wordSize, post_indexed), ne);
-#endif // AARCH64
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
   // Safepoint operation and/or pending suspend request is in progress.
@@ -1852,9 +1364,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 // activation for use during deoptimization
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {
   int extra_locals_size = (callee_locals - callee_parameters) * Interpreter::stackElementWords;
-#ifdef AARCH64
-  extra_locals_size = align_up(extra_locals_size, StackAlignmentInBytes/BytesPerWord);
-#endif // AARCH64
   return extra_locals_size;
 }
 
@@ -1867,11 +1376,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
-#ifdef AARCH64
-  CodeBuffer buffer("deopt_blob", 1024+256, 1);
-#else
   CodeBuffer buffer("deopt_blob", 1024, 1024);
-#endif
   int frame_size_in_words;
   OopMapSet* oop_maps;
   int reexecute_offset;
@@ -1880,9 +1385,9 @@ void SharedRuntime::generate_deopt_blob() {
 
   MacroAssembler* masm = new MacroAssembler(&buffer);
   Label cont;
-  const Register Rkind   = AARCH64_ONLY(R21) NOT_AARCH64(R9); // caller-saved on 32bit
-  const Register Rublock = AARCH64_ONLY(R22) NOT_AARCH64(R6);
-  const Register Rsender = AARCH64_ONLY(R23) NOT_AARCH64(altFP_7_11);
+  const Register Rkind   = R9; // caller-saved
+  const Register Rublock = R6;
+  const Register Rsender = altFP_7_11;
   assert_different_registers(Rkind, Rublock, Rsender, Rexception_obj, Rexception_pc, R0, R1, R2, R3, R8, Rtemp);
 
   address start = __ pc();
@@ -1972,9 +1477,7 @@ void SharedRuntime::generate_deopt_blob() {
   // This frame is going away.  Fetch return value, so we can move it to
   // a new frame.
   __ ldr(R0, Address(SP, RegisterSaver::R0_offset * wordSize));
-#ifndef AARCH64
   __ ldr(R1, Address(SP, RegisterSaver::R1_offset * wordSize));
-#endif // !AARCH64
 #ifndef __SOFTFP__
   __ ldr_double(D0, Address(SP, RegisterSaver::D0_offset * wordSize));
 #endif
@@ -1986,34 +1489,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
   __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
 
-#ifdef AARCH64
-  // Pop deoptimized frame. Make sure to restore the initial saved FP/LR of the caller.
-  // They are needed for correct stack walking during stack overflow handling.
-  // Also, restored FP is saved in the bottom interpreter frame (LR is reloaded from unroll block).
-  __ sub(Rtemp, Rtemp, 2*wordSize);
-  __ add(SP, SP, Rtemp, ex_uxtx);
-  __ raw_pop(FP, LR);
-
-#ifdef ASSERT
-  { Label L;
-    __ ldr(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ cmp(FP, Rtemp);
-    __ b(L, eq);
-    __ stop("FP restored from deoptimized frame does not match FP stored in unroll block");
-    __ bind(L);
-  }
-  { Label L;
-    __ ldr(Rtemp, Address(R2));
-    __ cmp(LR, Rtemp);
-    __ b(L, eq);
-    __ stop("LR restored from deoptimized frame does not match the 1st PC in unroll block");
-    __ bind(L);
-  }
-#endif // ASSERT
-
-#else
   __ add(SP, SP, Rtemp);
-#endif // AARCH64
 
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
@@ -2021,7 +1497,6 @@ void SharedRuntime::generate_deopt_blob() {
   // trigger a fault. Verify that it does not on non product builds.
   // See if it is enough stack to push deoptimized frames
   if (UseStackBanging) {
-#ifndef AARCH64
     // The compiled method that we are deoptimizing was popped from the stack.
     // If the stack bang results in a stack overflow, we don't return to the
     // method that is being deoptimized. The stack overflow exception is
@@ -2029,14 +1504,12 @@ void SharedRuntime::generate_deopt_blob() {
     // from the caller in LR and restore FP.
     __ ldr(LR, Address(R2, 0));
     __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-#endif // !AARCH64
     __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
     __ arm_stack_overflow_check(R8, Rtemp);
   }
 #endif
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
 
-#ifndef AARCH64
   // Pick up the initial fp we should save
   // XXX Note: was ldr(FP, Address(FP));
 
@@ -2048,15 +1521,10 @@ void SharedRuntime::generate_deopt_blob() {
   // Deoptimization::fetch_unroll_info computes the right FP value and
   // stores it in Rublock.initial_info. This has been activated for ARM.
   __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-#endif // !AARCH64
 
   __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
   __ mov(Rsender, SP);
-#ifdef AARCH64
-  __ sub(SP, SP, Rtemp, ex_uxtx);
-#else
   __ sub(SP, SP, Rtemp);
-#endif // AARCH64
 
   // Push interpreter frames in a loop
   Label loop;
@@ -2068,19 +1536,11 @@ void SharedRuntime::generate_deopt_blob() {
   __ mov(FP, SP);
   __ sub(Rtemp, Rtemp, 2*wordSize);
 
-#ifdef AARCH64
-  __ sub(SP, SP, Rtemp, ex_uxtx);
-#else
   __ sub(SP, SP, Rtemp);
-#endif // AARCH64
 
   __ str(Rsender, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
-#ifdef AARCH64
-  __ str(ZR, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize));
-#else
   __ mov(LR, 0);
   __ str(LR, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
 
   __ subs(R8, R8, 1);                               // decrement counter
   __ mov(Rsender, SP);
@@ -2094,15 +1554,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Restore frame locals after moving the frame
   __ str(R0, Address(SP, RegisterSaver::R0_offset * wordSize));
-#ifndef AARCH64
   __ str(R1, Address(SP, RegisterSaver::R1_offset * wordSize));
-#endif // !AARCH64
 
 #ifndef __SOFTFP__
   __ str_double(D0, Address(SP, RegisterSaver::D0_offset * wordSize));
 #endif // !__SOFTFP__
 
-#ifndef AARCH64
 #ifdef ASSERT
   // Reload Rkind from the UnrollBlock and check that it was not overwritten (Rkind is not callee-saved)
   { Label L;
@@ -2112,7 +1569,6 @@ void SharedRuntime::generate_deopt_blob() {
     __ stop("Rkind was overwritten");
     __ bind(L);
   }
-#endif
 #endif
 
   // Call unpack_frames with proper arguments
@@ -2130,9 +1586,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Collect return values, pop self-frame and jump to interpreter
   __ ldr(R0, Address(SP, RegisterSaver::R0_offset * wordSize));
-#ifndef AARCH64
   __ ldr(R1, Address(SP, RegisterSaver::R1_offset * wordSize));
-#endif // !AARCH64
   // Interpreter floats controlled by __SOFTFP__, but compiler
   // float return value registers controlled by __ABI_HARD__
   // This matters for vfp-sflt builds.
@@ -2149,12 +1603,7 @@ void SharedRuntime::generate_deopt_blob() {
 #endif // !__SOFTFP__
   __ mov(SP, FP);
 
-#ifdef AARCH64
-  __ raw_pop(FP, LR);
-  __ ret();
-#else
   __ pop(RegisterSet(FP) | RegisterSet(PC));
-#endif // AARCH64
 
   __ flush();
 
@@ -2183,8 +1632,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #endif
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);
-  const Register Rublock = AARCH64_ONLY(R22) NOT_AARCH64(R6);
-  const Register Rsender = AARCH64_ONLY(R23) NOT_AARCH64(altFP_7_11);
+  const Register Rublock = R6;
+  const Register Rsender = altFP_7_11;
   assert_different_registers(Rublock, Rsender, Rexception_obj, R0, R1, R2, R3, R8, Rtemp);
 
   //
@@ -2240,34 +1689,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
   __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
 
-#ifdef AARCH64
-  // Pop deoptimized frame. Make sure to restore the initial saved FP/LR of the caller.
-  // They are needed for correct stack walking during stack overflow handling.
-  // Also, restored FP is saved in the bottom interpreter frame (LR is reloaded from unroll block).
-  __ sub(Rtemp, Rtemp, 2*wordSize);
-  __ add(SP, SP, Rtemp, ex_uxtx);
-  __ raw_pop(FP, LR);
-
-#ifdef ASSERT
-  { Label L;
-    __ ldr(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ cmp(FP, Rtemp);
-    __ b(L, eq);
-    __ stop("FP restored from deoptimized frame does not match FP stored in unroll block");
-    __ bind(L);
-  }
-  { Label L;
-    __ ldr(Rtemp, Address(R2));
-    __ cmp(LR, Rtemp);
-    __ b(L, eq);
-    __ stop("LR restored from deoptimized frame does not match the 1st PC in unroll block");
-    __ bind(L);
-  }
-#endif // ASSERT
-
-#else
   __ add(SP, SP, Rtemp);
-#endif //AARCH64
 
   // See if it is enough stack to push deoptimized frames
 #ifdef ASSERT
@@ -2275,7 +1697,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
   if (UseStackBanging) {
-#ifndef AARCH64
     // The compiled method that we are deoptimizing was popped from the stack.
     // If the stack bang results in a stack overflow, we don't return to the
     // method that is being deoptimized. The stack overflow exception is
@@ -2283,7 +1704,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     // from the caller in LR and restore FP.
     __ ldr(LR, Address(R2, 0));
     __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-#endif // !AARCH64
     __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
     __ arm_stack_overflow_check(R8, Rtemp);
   }
@@ -2291,15 +1711,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
   __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
   __ mov(Rsender, SP);
-#ifdef AARCH64
-  __ sub(SP, SP, Rtemp, ex_uxtx);
-#else
   __ sub(SP, SP, Rtemp);
-#endif
-#ifndef AARCH64
   //  __ ldr(FP, Address(FP));
   __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-#endif // AARCH64
 
   // Push interpreter frames in a loop
   Label loop;
@@ -2311,19 +1725,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ mov(FP, SP);
   __ sub(Rtemp, Rtemp, 2*wordSize);
 
-#ifdef AARCH64
-  __ sub(SP, SP, Rtemp, ex_uxtx);
-#else
   __ sub(SP, SP, Rtemp);
-#endif // AARCH64
 
   __ str(Rsender, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
-#ifdef AARCH64
-  __ str(ZR, Address(FP, frame::interpreter_frame_stack_top_offset * wordSize));
-#else
   __ mov(LR, 0);
   __ str(LR, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#endif // AARCH64
   __ subs(R8, R8, 1);                               // decrement counter
   __ mov(Rsender, SP);
   __ b(loop, ne);
@@ -2342,12 +1748,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ reset_last_Java_frame(Rtemp);
 
   __ mov(SP, FP);
-#ifdef AARCH64
-  __ raw_pop(FP, LR);
-  __ ret();
-#else
   __ pop(RegisterSet(FP) | RegisterSet(PC));
-#endif
 
   masm->flush();
   _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, NULL, 2 /* LR+FP */);
@@ -2376,12 +1777,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   oop_maps = new OopMapSet();
 
   if (!cause_return) {
-#ifdef AARCH64
-    __ raw_push(LR, LR);
-#else
     __ sub(SP, SP, 4); // make room for LR which may still be live
                        // here if we are coming from a c2 method
-#endif // AARCH64
   }
 
   OopMap* map = RegisterSaver::save_live_registers(masm, &frame_size_words, !cause_return);
@@ -2406,20 +1803,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
   __ cmp(Rtemp, 0);
 
-#ifdef AARCH64
-  RegisterSaver::restore_live_registers(masm, cause_return);
-  Register ret_addr = cause_return ? LR : Rtemp;
-  if (!cause_return) {
-    __ raw_pop(FP, ret_addr);
-  }
-
-  Label throw_exception;
-  __ b(throw_exception, ne);
-  __ br(ret_addr);
-
-  __ bind(throw_exception);
-  __ mov(Rexception_pc, ret_addr);
-#else // AARCH64
   if (!cause_return) {
     RegisterSaver::restore_live_registers(masm, false);
     __ pop(PC, eq);
@@ -2429,7 +1812,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ bx(LR, eq);
     __ mov(Rexception_pc, LR);
   }
-#endif // AARCH64
 
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 

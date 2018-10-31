@@ -473,10 +473,10 @@ ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 #
 
 define DeclareRunTestRecipe
-  run-test-$1:
+  test-$1:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
 
-  exploded-run-test-$1:
+  exploded-test-$1:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
 	    TEST="$1" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
@@ -484,8 +484,8 @@ endef
 
 # ALL_NAMED_TESTS is defined in FindTests.gmk
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
-ALL_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
-ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-run-test-, $(ALL_NAMED_TESTS))
+ALL_TEST_TARGETS := $(addprefix test-, $(ALL_NAMED_TESTS))
+ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_NAMED_TESTS))
 
 ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
@@ -520,13 +520,6 @@ test-image-hotspot-jtreg-graal:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregGraalUnit.gmk \
 	     test-image-hotspot-jtreg-graal)
 
-run-test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
-
-exploded-run-test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
-	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
-
 ifeq ($(BUILD_GTEST), true)
   test-image-hotspot-gtest:
 	+($(CD) $(TOPDIR)/make/hotspot/test && $(MAKE) $(MAKE_ARGS) -f GtestImage.gmk)
@@ -541,11 +534,6 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
 	    -f BuildFailureHandler.gmk build)
 
-  # Runs the tests for the failure handler jtreg extension
-  test-failure-handler:
-	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
-	    -f BuildFailureHandler.gmk test)
-
   # Copies the failure handler jtreg extension into the test image
   test-image-failure-handler:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
@@ -556,40 +544,19 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
     test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
-    test-image-hotspot-jtreg-graal build-test-hotspot-jtreg-graal \
-    run-test exploded-run-test
+    test-image-hotspot-jtreg-graal build-test-hotspot-jtreg-graal
 
 ################################################################################
 # Run tests
 
-# Run tests specified by $(TEST), or the default test set.
 test:
-	$(call RunTests, $(TEST), $(JDK_IMAGE_DIR))
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
 
-test-hotspot-jtreg:
-	$(call RunTests, "hotspot_all", $(JDK_IMAGE_DIR))
+exploded-test:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
-test-hotspot-jtreg-native:
-	$(call RunTests, "hotspot_native_sanity", $(JDK_IMAGE_DIR))
-
-test-hotspot-internal:
-	$(call RunTests, "hotspot_internal", $(JDK_OUTPUTDIR))
-
-test-hotspot-gtest:
-	$(call RunTests, "hotspot_gtest", $(JDK_OUTPUTDIR))
-
-test-jdk-jtreg-native:
-	$(call RunTests, "jdk_native_sanity", $(JDK_IMAGE_DIR))
-
-test-make:
-	($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
-
-test-compile-commands:
-	($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk test-compile-commands)
-
-ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
-    test-hotspot-internal test-hotspot-gtest test-jdk-jtreg-native test-make \
-    test-compile-commands
+ALL_TARGETS += test exploded-test
 
 ################################################################################
 # Bundles
@@ -874,14 +841,18 @@ else
 
   docs-zip: docs-jdk
 
+  # Tests
   test: jdk-image test-image
 
-  run-test: jdk-image test-image
-  exploded-run-test: exploded-image test-image
+  exploded-test: exploded-image test-image
+
+  test-make: clean-test-make compile-commands
+
+  test-make-compile-commands: compile-commands
 
   # Declare dependency for all generated test targets
-  $(foreach t, $(ALL_TEST_TARGETS), $(eval $t: jdk-image test-image))
-  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
+  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
+  $(foreach t, $(filter-out exploded-test-make%, $(ALL_EXPLODED_TEST_TARGETS)), $(eval $t: exploded-image test-image))
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
@@ -890,15 +861,9 @@ else
 
   interim-image: $(INTERIM_JMOD_TARGETS)
 
-  test-make: clean-test-make
-
-  test-compile-commands: compile-commands
-
   build-test-lib: exploded-image-optimize
 
   build-test-failure-handler: interim-langtools
-
-  test-failure-handler: build-test-failure-handler
 
   test-image-failure-handler: build-test-failure-handler
 
@@ -916,12 +881,6 @@ else
   test-image-hotspot-jtreg-graal: build-test-hotspot-jtreg-graal
 
   test-image-hotspot-gtest: hotspot
-
-  test-hotspot-internal: exploded-image
-
-  test-hotspot-jtreg: jdk-image test-image
-
-  test-hotspot-gtest: exploded-image test-image-hotspot-gtest
 
   install: product-images
 
@@ -1090,6 +1049,30 @@ bundles: all-bundles
 all: all-images
 
 ALL_TARGETS += default jdk images docs bundles all
+
+# Aliases used for running tests.
+
+# Let "run-test" be an alias for "test"
+$(foreach t, $(ALL_NAMED_TESTS), $(eval run-test-$t: test-$t))
+$(foreach t, $(ALL_NAMED_TESTS), $(eval exploded-run-test-$t: exploded-test-$t))
+RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS)) \
+    $(addprefix exploded-run-test-, $(ALL_NAMED_TESTS))
+
+run-test: test
+exploded-run-test: exploded-test
+
+# "make check" is a common idiom for running basic testing
+check: test-tier1
+
+# Keep some old names as aliases
+test-hotspot-jtreg: test-hotspot_all
+test-hotspot-jtreg-native: test-hotspot_native_sanity
+test-hotspot-gtest: exploded-test-gtest
+test-jdk-jtreg-native: test-jdk_native_sanity
+
+ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
+    test-hotspot-jtreg test-hotspot-jtreg-native test-hotspot-gtest \
+    test-jdk-jtreg-native
 
 ################################################################################
 ################################################################################

@@ -141,7 +141,8 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     jvmtiPhase phase;
 
 
-    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(thread)) != NULL)) {
+    classObject = jni_env->GetObjectClass(thread);
+    if (!NSK_JNI_VERIFY(jni_env, classObject != NULL)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -428,7 +429,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
     classLoaderCount = nsk_jvmti_findOptionIntValue(CLASS_LOADER_COUNT_PARAM, 10);
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
+    if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {

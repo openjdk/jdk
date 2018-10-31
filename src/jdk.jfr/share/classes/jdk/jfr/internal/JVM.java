@@ -106,11 +106,11 @@ public final class JVM {
     public native void endRecording();
 
     /**
-     * Return a list of all classes deriving from {@link Event}
+     * Return a list of all classes deriving from {@link jdk.internal.event.Event}
      *
      * @return list of event classes.
      */
-    public native List<Class<? extends Event>> getAllEventClasses();
+    public native List<Class<? extends jdk.internal.event.Event>> getAllEventClasses();
 
     /**
      * Return a count of the number of unloaded classes deriving from {@link Event}

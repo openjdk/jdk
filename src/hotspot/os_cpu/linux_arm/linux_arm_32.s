@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -19,15 +19,15 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-# 
+#
 
-	
+
         # NOTE WELL!  The _Copy functions are called directly
 	# from server-compiler-generated code via CallLeafNoFP,
 	# which means that they *must* either not use floating
 	# point or use it in the same manner as does the server
 	# compiler.
-	
+
         .globl _Copy_conjoint_bytes
 	.type _Copy_conjoint_bytes, %function
         .globl _Copy_arrayof_conjoint_bytes

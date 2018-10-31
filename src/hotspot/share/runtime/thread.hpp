@@ -397,11 +397,15 @@ class Thread: public ThreadShadow {
 
   // Manage Thread::current()
   void initialize_thread_current();
-  void clear_thread_current(); // TLS cleanup needed before threads terminate
+  static void clear_thread_current(); // TLS cleanup needed before threads terminate
+
+ protected:
+  // To be implemented by children.
+  virtual void run() = 0;
 
  public:
-  // thread entry point
-  virtual void run();
+  // invokes <ChildThreadClass>::run(), with common preparations and cleanups.
+  void call_run();
 
   // Testers
   virtual bool is_VM_thread()       const            { return false; }
@@ -643,6 +647,7 @@ protected:
   void    set_stack_size(size_t size)  { _stack_size = size; }
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
+  void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
 
   bool    on_local_stack(address adr) const {
     // QQQ this has knowledge of direction, ought to be a stack method
@@ -1264,10 +1269,6 @@ class JavaThread: public Thread {
 
   bool has_handshake() const {
     return _handshake.has_operation();
-  }
-
-  void cancel_handshake() {
-    _handshake.cancel(this);
   }
 
   void handshake_process_by_self() {

@@ -46,9 +46,9 @@ JNIEXPORT void JNICALL
         char fileName[512];
         nsk_jvmti_getFileName(0, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
-        if ( nsk_jvmti_redefineClass(jvmti, klass, fileName ) == NSK_TRUE ) {
+        if (nsk_jvmti_redefineClass(jvmti, klass, fileName) == NSK_TRUE) {
             nsk_printf("Agent:: Successfully redefined..");
-            if ( nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE ) {
+            if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
                 nsk_printf(" Agent :: NOTIFICATIONS ARE DISABLED \n");
             } else {
                 nsk_printf(" Agent :: Failed to disabled \n");
@@ -75,13 +75,13 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jvmtiEnv * jvmti;
     nsk_printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if ( rc!= JNI_OK ) {
+    if (rc!= JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE ) {
+        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
             nsk_printf("# error agent Failed to parse options \n");
             return JNI_ERR;
         }
@@ -96,8 +96,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if ( nsk_jvmti_enableNotification(jvmti,
-                    JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE ) {
+        if (nsk_jvmti_enableNotification(jvmti,
+                    JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
             nsk_printf("Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Error in Eanableing Notifications..");
