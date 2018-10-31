@@ -799,7 +799,7 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc7.3.0-OEL6.4+1.0",
+        linux_x64: "gcc7.3.0-OEL6.4+1.1",
         macosx_x64: "Xcode9.4-MacOSX10.13+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",

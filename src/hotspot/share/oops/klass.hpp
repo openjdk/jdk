@@ -284,9 +284,8 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass(bool log = false) const;
-  Klass* next_sibling(bool log = false) const;
-
+  Klass* subklass() const              { return _subklass; }
+  Klass* next_sibling() const          { return _next_sibling; }
   InstanceKlass* superklass() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 

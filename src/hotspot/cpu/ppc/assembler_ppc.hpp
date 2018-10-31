@@ -535,6 +535,9 @@ class Assembler : public AbstractAssembler {
     XVMULSP_OPCODE = (60u << OPCODE_SHIFT |   80u << 3),
     XVMULDP_OPCODE = (60u << OPCODE_SHIFT |  112u << 3),
 
+    // Deliver A Random Number (introduced with POWER9)
+    DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
+
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
     VPKSHSS_OPCODE = (4u  << OPCODE_SHIFT |  398u     ),
@@ -1072,6 +1075,7 @@ class Assembler : public AbstractAssembler {
   static int frt(      int         x)  { return  opp_u_field(x,             10,  6); }
   static int fxm(      int         x)  { return  opp_u_field(x,             19, 12); }
   static int l10(      int         x)  { return  opp_u_field(x,             10, 10); }
+  static int l14(      int         x)  { return  opp_u_field(x,             15, 14); }
   static int l15(      int         x)  { return  opp_u_field(x,             15, 15); }
   static int l910(     int         x)  { return  opp_u_field(x,             10,  9); }
   static int e1215(    int         x)  { return  opp_u_field(x,             15, 12); }
@@ -2219,6 +2223,9 @@ class Assembler : public AbstractAssembler {
   inline void mtfprd(   FloatRegister   d, Register a);
   inline void mtfprwa(  FloatRegister   d, Register a);
   inline void mffprd(   Register        a, FloatRegister d);
+
+  // Deliver A Random Number (introduced with POWER9)
+  inline void darn( Register d, int l = 1 /*L=CRN*/);
 
   // AES (introduced with Power 8)
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);

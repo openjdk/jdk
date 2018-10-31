@@ -110,6 +110,7 @@ RPM_LIST := \
     libXext libXext-devel \
     libXtst libXtst-devel \
     libXrender libXrender-devel \
+    libXrandr libXrandr-devel \
     freetype freetype-devel \
     libXt libXt-devel \
     libSM libSM-devel \

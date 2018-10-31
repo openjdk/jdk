@@ -627,7 +627,6 @@ C2V_END
 C2V_VMENTRY(jboolean, hasFinalizableSubclass,(JNIEnv *, jobject, jobject jvmci_type))
   Klass* klass = CompilerToVM::asKlass(jvmci_type);
   assert(klass != NULL, "method must not be called for primitive types");
-  MutexLocker ml(Compile_lock);
   return Dependencies::find_finalizable_subclass(klass) != NULL;
 C2V_END
 
