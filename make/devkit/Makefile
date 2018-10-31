@@ -36,7 +36,7 @@
 # By default this Makefile will build a native toolchain for the current
 # platform if called with something like this:
 #
-# make tars
+# make tars BASE_OS=OEL6
 #
 # To build the full set of crosstools for additional platforms, use a command
 # line looking like this:
