@@ -34,7 +34,7 @@
 #ifndef HEADLESS
 #include <X11/extensions/Xdbe.h>
 #include <X11/XKBlib.h>
-#include "Xrandr.h"
+#include <X11/extensions/Xrandr.h>
 #include "GLXGraphicsConfig.h"
 #endif /* !HEADLESS */
 
