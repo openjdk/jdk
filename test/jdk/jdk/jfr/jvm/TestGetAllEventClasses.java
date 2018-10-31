@@ -104,8 +104,9 @@ public class TestGetAllEventClasses {
     }
 
     @SafeVarargs
+    @SuppressWarnings("rawtypes")
     private static void assertEvents(JVM jvm, boolean inclusion, Class<? extends Event>... targetEvents) {
-        final List<Class<? extends Event>> list = jvm.getAllEventClasses();
+        final List list = jvm.getAllEventClasses();
         for (Class<? extends Event> ev : targetEvents) {
            if (list.contains(ev)) {
                if (inclusion) {

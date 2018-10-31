@@ -129,7 +129,6 @@ class PhasesIterator {
 };
 
 class GCTimer : public ResourceObj {
-  NOT_PRODUCT(friend class GCTimerTest;)
  protected:
   Ticks _gc_start;
   Ticks _gc_end;

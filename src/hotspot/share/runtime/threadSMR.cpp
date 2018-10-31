@@ -989,11 +989,6 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
     // Retry the whole scenario.
   }
 
-  if (ThreadLocalHandshakes) {
-    // The thread is about to be deleted so cancel any handshake.
-    thread->cancel_handshake();
-  }
-
   delete thread;
   if (EnableThreadSMRStatistics) {
     timer.stop();

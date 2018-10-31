@@ -51,6 +51,9 @@ import jdk.jfr.internal.Utils;
 
 public final class JDKEvents {
 
+    private static final Class<?>[] mirrorEventClasses = {
+    };
+
     private static final Class<?>[] eventClasses = {
         FileForceEvent.class,
         FileReadEvent.class,
@@ -90,6 +93,9 @@ public final class JDKEvents {
                 Modules.addExports(jdkJfrModule, Utils.EVENTS_PACKAGE_NAME, javaBaseModule);
                 Modules.addExports(jdkJfrModule, Utils.INSTRUMENT_PACKAGE_NAME, javaBaseModule);
                 Modules.addExports(jdkJfrModule, Utils.HANDLERS_PACKAGE_NAME, javaBaseModule);
+                for (Class<?> mirrorEventClass : mirrorEventClasses) {
+                    SecuritySupport.registerMirror(((Class<? extends Event>)mirrorEventClass));
+                }
                 for (Class<?> eventClass : eventClasses) {
                     SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
                 }

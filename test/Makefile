@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,16 @@
 # Makefile to run tests from multiple sibling directories
 #
 
+$(info WARNING: This way of running tests ("cd test && make") is deprecated)
+$(info Please use "make test TEST=..." instead. See doc/testing.md for details)
+
 # Macro to run a test target in a subdir
 define SUBDIR_TEST # subdirectory target
 if [ -d $1 ] ; then \
   if [ -r $1/Makefile ] ; then \
     $(MAKE) --no-print-directory -k -C $1 $2 ; \
+    echo 'WARNING: This way of running tests ("cd test && make") is deprecated' ; \
+    echo 'Please use "make test TEST=..." instead. See doc/testing.md for details' ; \
   else \
     echo "ERROR: File does not exist: $1/Makefile"; \
     exit 1; \

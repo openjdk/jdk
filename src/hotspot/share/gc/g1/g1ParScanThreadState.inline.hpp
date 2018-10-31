@@ -61,9 +61,12 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
   assert(obj != NULL, "Must be");
-  if (!HeapRegion::is_in_same_region(p, obj)) {
-    HeapRegion* from = _g1h->heap_region_containing(p);
-    update_rs(from, p, obj);
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    return;
+  }
+  HeapRegion* from = _g1h->heap_region_containing(p);
+  if (!from->is_young()) {
+    enqueue_card_if_tracked(p, obj);
   }
 }
 
@@ -109,7 +112,9 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
     // so that the heap remains parsable in case of evacuation failure.
     to_obj_array->set_length(end);
   }
-  _scanner.set_region(_g1h->heap_region_containing(to_obj));
+
+  HeapRegion* hr = _g1h->heap_region_containing(to_obj);
+  G1ScanInYoungSetter x(&_scanner, hr->is_young());
   // Process indexes [start,end). It will also process the header
   // along with the first chunk (i.e., the chunk with start == 0).
   // Note that at this point the length field of to_obj_array is not

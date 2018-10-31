@@ -88,7 +88,7 @@ package jdk.jfr;
 @Enabled(true)
 @StackTrace(true)
 @Registered(true)
-abstract public class Event {
+abstract public class Event extends jdk.internal.event.Event {
     /**
      * Sole constructor, for invocation by subclass constructors, typically
      * implicit.

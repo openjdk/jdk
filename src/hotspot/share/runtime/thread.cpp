@@ -4276,9 +4276,6 @@ bool Threads::destroy_vm() {
   before_exit(thread);
 
   thread->exit(true);
-  // thread will never call smr_delete, instead of implicit cancel
-  // in wait_for_vm_thread_exit we do it explicit.
-  thread->cancel_handshake();
 
   // Stop VM thread.
   {

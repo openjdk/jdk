@@ -38,6 +38,9 @@
 
 #ifdef TIERED
 
+#include "c1/c1_Compiler.hpp"
+#include "opto/c2compiler.hpp"
+
 template<CompLevel level>
 bool TieredThresholdPolicy::call_predicate_helper(int i, int b, double scale, Method* method) {
   double threshold_scaling;
@@ -215,6 +218,7 @@ void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
 
 void TieredThresholdPolicy::initialize() {
   int count = CICompilerCount;
+  bool c1_only = TieredStopAtLevel < CompLevel_full_optimization;
 #ifdef _LP64
   // Turn on ergonomic compiler count selection
   if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
@@ -225,6 +229,15 @@ void TieredThresholdPolicy::initialize() {
     int log_cpu = log2_intptr(os::active_processor_count());
     int loglog_cpu = log2_intptr(MAX2(log_cpu, 1));
     count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
+    // Make sure there is enough space in the code cache to hold all the compiler buffers
+    size_t c1_size = Compiler::code_buffer_size();
+    size_t c2_size = C2Compiler::initial_code_buffer_size();
+    size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
+    int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
+    if (count > max_count) {
+      // Lower the compiler count such that all buffers fit into the code cache
+      count = MAX2(max_count, c1_only ? 1 : 2);
+    }
     FLAG_SET_ERGO(intx, CICompilerCount, count);
   }
 #else
@@ -241,7 +254,7 @@ void TieredThresholdPolicy::initialize() {
   }
 #endif
 
-  if (TieredStopAtLevel < CompLevel_full_optimization) {
+  if (c1_only) {
     // No C2 compiler thread required
     set_c1_count(count);
   } else {

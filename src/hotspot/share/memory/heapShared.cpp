@@ -417,6 +417,11 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
         Klass* resolved_k = SystemDictionary::resolve_or_null(
                                               (obj_k)->name(), THREAD);
         if (resolved_k != obj_k) {
+          assert(!SystemDictionary::is_well_known_klass(resolved_k),
+                 "shared well-known classes must not be replaced by JVMTI ClassFileLoadHook");
+          ResourceMark rm(THREAD);
+          log_info(cds, heap)("Failed to load subgraph because %s was not loaded from archive",
+                              resolved_k->external_name());
           return;
         }
         if ((obj_k)->is_instance_klass()) {

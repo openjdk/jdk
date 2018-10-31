@@ -61,9 +61,7 @@ public class ValueTaglet extends BaseTaglet {
      * Construct a new ValueTaglet.
      */
     public ValueTaglet() {
-        super(VALUE.tagName, true,
-                EnumSet.of(Site.OVERVIEW, Site.PACKAGE, Site.TYPE, Site.CONSTRUCTOR,
-                    Site.METHOD, Site.FIELD)); // not Site.MODULE at this time!
+        super(VALUE.tagName, true, EnumSet.allOf(Site.class));
     }
 
     /**

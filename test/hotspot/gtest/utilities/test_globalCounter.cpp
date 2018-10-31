@@ -47,11 +47,11 @@ public:
   void main_run() {
     _wrt_start->signal();
     while (!_exit) {
-      GlobalCounter::critical_section_begin(this);
+      GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(this);
       volatile TestData* test = OrderAccess::load_acquire(_test);
       long value = OrderAccess::load_acquire(&test->test_value);
       ASSERT_EQ(value, GOOD_VALUE);
-      GlobalCounter::critical_section_end(this);
+      GlobalCounter::critical_section_end(this, cs_context);
       {
         GlobalCounter::CriticalSection cs(this);
         volatile TestData* test = OrderAccess::load_acquire(_test);

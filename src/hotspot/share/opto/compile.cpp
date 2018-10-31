@@ -544,9 +544,7 @@ void Compile::init_scratch_buffer_blob(int const_size) {
 
     ResourceMark rm;
     _scratch_const_size = const_size;
-    int locs_size = sizeof(relocInfo) * MAX_locs_size;
-    int slop = 2 * CodeSection::end_slop(); // space between sections
-    int size = (MAX_inst_size + MAX_stubs_size + _scratch_const_size + slop + locs_size);
+    int size = C2Compiler::initial_code_buffer_size(const_size);
     blob = BufferBlob::create("Compile::scratch_buffer", size);
     // Record the buffer blob for next time.
     set_scratch_buffer_blob(blob);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,6 @@
 
 ifndef _MAINSUPPORT_GMK
 _MAINSUPPORT_GMK := 1
-
-# Run the tests specified by $1, with PRODUCT_HOME specified by $2
-# JT_JAVA is picked up by the jtreg launcher and used to run Jtreg itself.
-define RunTests
-	($(CD) $(TOPDIR)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
-	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(strip $2) \
-	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
-	    ALT_OUTPUTDIR=$(OUTPUTDIR) TEST_JOBS=$(TEST_JOBS) \
-	    JT_JAVA=$(BOOT_JDK) JIB_JAR=$(JIB_JAR) \
-	    JOBS=$(JOBS) $1) || true
-endef
 
 define CleanDocs
 	@$(PRINTF) "Cleaning docs ..."

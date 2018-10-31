@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,12 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *env, jclass class_beeing_redefine
         *new_class_data_len = class_data_len;
         *new_class_data = new_data;
 
-        fprintf(stderr, "Rewriting done. Replaced %d occurrence(s)\n", count);
+        fprintf(stderr, "Rewriting done. Replaced %d occurrence(s) of \"%s\" to \"%s\"\n", count, FROM, TO);
       }
     }
 }
+
+static int early = 0;
 
 static jint init_options(char *options) {
   char* class_name;
@@ -102,6 +104,10 @@ static jint init_options(char *options) {
   char* to;
 
   fprintf(stderr, "Agent library loaded with options = %s\n", options);
+  if (options != NULL && strncmp(options, "-early,", 7) == 0) {
+    early = 1;
+    options += 7;
+  }
   if ((class_name = options) != NULL &&
       (from = strchr(class_name, ',')) != NULL && (from[1] != 0)) {
     *from = 0;
@@ -132,12 +138,26 @@ static jint init_options(char *options) {
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   int rc;
+  jvmtiCapabilities caps;
 
   if ((rc = (*jvm)->GetEnv(jvm, (void **)&jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
     fprintf(stderr, "Unable to create jvmtiEnv, GetEnv failed, error = %d\n", rc);
     return JNI_ERR;
   }
   if ((rc = init_options(options)) != JNI_OK) {
+    return JNI_ERR;
+  }
+
+  memset(&caps, 0, sizeof(caps));
+
+  caps.can_redefine_classes = 1;
+  if (early) {
+    fprintf(stderr, "can_generate_all_class_hook_events/can_generate_early_vmstart/can_generate_early_class_hook_events == 1\n");
+    caps.can_generate_all_class_hook_events = 1;
+    caps.can_generate_early_class_hook_events = 1;
+  }
+  if ((rc = (*jvmti)->AddCapabilities(jvmti, &caps)) != JNI_OK) {
+    fprintf(stderr, "AddCapabilities failed, error = %d\n", rc);
     return JNI_ERR;
   }
 

@@ -361,8 +361,8 @@ void SparsePRT::cleanup_all() {
 }
 
 
-SparsePRT::SparsePRT(HeapRegion* hr) :
-  _hr(hr), _expanded(false), _next_expanded(NULL)
+SparsePRT::SparsePRT() :
+  _expanded(false), _next_expanded(NULL)
 {
   _cur = new RSHashTable(InitialCapacity);
   _next = _cur;

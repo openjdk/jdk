@@ -52,7 +52,8 @@ public class CheckArchivedModuleApp {
         boolean expectArchivedConfiguration = "yes".equals(args[1]);
         // -XX:+EnableJVMCI adds extra system modules, in which case the system
         // module objects are not archived.
-        if (wb.getBooleanVMFlag("EnableJVMCI")) {
+        Boolean enableJVMCI = wb.getBooleanVMFlag("EnableJVMCI");
+        if (enableJVMCI != null && enableJVMCI) {
             expectArchivedDescriptors = false;
             expectArchivedConfiguration = false;
         }

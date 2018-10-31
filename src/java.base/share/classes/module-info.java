@@ -136,6 +136,8 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to
         jdk.jfr;
+    exports jdk.internal.event to
+        jdk.jfr;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to

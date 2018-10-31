@@ -468,9 +468,6 @@ private:
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  // Resize the heap if necessary after a full collection.
-  void resize_if_necessary_after_full_collection();
-
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
@@ -527,6 +524,8 @@ public:
     assert(_g1mm != NULL, "should have been initialized");
     return _g1mm;
   }
+
+  void resize_heap_if_necessary();
 
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;
@@ -1120,6 +1119,7 @@ public:
 
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
+  inline HeapRegion* region_at_or_null(uint index) const;
 
   // Return the next region (by index) that is part of the same
   // humongous object that hr is part of.
@@ -1156,6 +1156,11 @@ public:
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
   inline HeapRegion* heap_region_containing(const T addr) const;
+
+  // Returns the HeapRegion that contains addr, or NULL if that is an uncommitted
+  // region. addr must not be NULL.
+  template <class T>
+  inline HeapRegion* heap_region_containing_or_null(const T addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly

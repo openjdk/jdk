@@ -76,22 +76,43 @@ static traceid next_class_loader_data_id() {
   return atomic_inc(&cld_id_counter) << TRACE_ID_SHIFT;
 }
 
+static bool found_jdk_internal_event_klass = false;
 static bool found_jdk_jfr_event_klass = false;
 
 static void check_klass(const Klass* klass) {
   assert(klass != NULL, "invariant");
-  if (found_jdk_jfr_event_klass) {
+  if (found_jdk_internal_event_klass && found_jdk_jfr_event_klass) {
     return;
   }
+  static const Symbol* jdk_internal_event_sym = NULL;
+  if (jdk_internal_event_sym == NULL) {
+    // setup when loading the first TypeArrayKlass (Universe::genesis) hence single threaded invariant
+    jdk_internal_event_sym = SymbolTable::new_permanent_symbol("jdk/internal/event/Event", Thread::current());
+  }
+  assert(jdk_internal_event_sym != NULL, "invariant");
+
   static const Symbol* jdk_jfr_event_sym = NULL;
   if (jdk_jfr_event_sym == NULL) {
     // setup when loading the first TypeArrayKlass (Universe::genesis) hence single threaded invariant
     jdk_jfr_event_sym = SymbolTable::new_permanent_symbol("jdk/jfr/Event", Thread::current());
   }
   assert(jdk_jfr_event_sym != NULL, "invariant");
-  if (jdk_jfr_event_sym == klass->name() && klass->class_loader() == NULL) {
-    found_jdk_jfr_event_klass = true;
-    JfrTraceId::tag_as_jdk_jfr_event(klass);
+  const Symbol* const klass_name = klass->name();
+
+  if (!found_jdk_internal_event_klass) {
+    if (jdk_internal_event_sym == klass_name && klass->class_loader() == NULL) {
+      found_jdk_internal_event_klass = true;
+      JfrTraceId::tag_as_jdk_jfr_event(klass);
+      return;
+    }
+  }
+
+  if (!found_jdk_jfr_event_klass) {
+    if (jdk_jfr_event_sym == klass_name && klass->class_loader() == NULL) {
+      found_jdk_jfr_event_klass = true;
+      JfrTraceId::tag_as_jdk_jfr_event(klass);
+      return;
+    }
   }
 }
 

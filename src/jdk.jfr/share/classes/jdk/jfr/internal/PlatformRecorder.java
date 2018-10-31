@@ -81,15 +81,14 @@ public final class PlatformRecorder {
         Logger.log(JFR_SYSTEM, INFO, "Registered JDK events");
         JDKEvents.addInstrumentation();
         startDiskMonitor();
-        SecuritySupport.registerEvent(ActiveRecordingEvent.class);
         activeRecordingEvent = EventType.getEventType(ActiveRecordingEvent.class);
-        SecuritySupport.registerEvent(ActiveSettingEvent.class);
         activeSettingEvent = EventType.getEventType(ActiveSettingEvent.class);
         shutdownHook = SecuritySupport.createThreadWitNoPermissions("JFR: Shutdown Hook", new ShutdownHook(this));
         SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());
         SecuritySupport.registerShutdownHook(shutdownHook);
         timer = createTimer();
     }
+
 
     private static Timer createTimer() {
         try {

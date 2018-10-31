@@ -56,11 +56,6 @@ tools/javac/warnings/suppress/TypeAnnotations.java                              
 tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
 tools/javac/importscope/T8193717.java                                           8203925    generic-all    the test requires too much memory
 
-
-tools/javac/options/smokeTests/OptionSmokeTest.java                             8205493    generic-all    hard-coded release values in strings
-
-tools/javac/file/zip/8003512/LoadClassFromJava6CreatedJarTest.java              8206874    generic-all    test requires a JDK 6 environment to be useful
-
 ###########################################################################
 #
 # javap

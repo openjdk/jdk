@@ -239,10 +239,9 @@ size_t OtherRegionsTable::_mod_max_fine_entries_mask = 0;
 size_t OtherRegionsTable::_fine_eviction_stride = 0;
 size_t OtherRegionsTable::_fine_eviction_sample_size = 0;
 
-OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
+OtherRegionsTable::OtherRegionsTable(Mutex* m) :
   _g1h(G1CollectedHeap::heap()),
   _m(m),
-  _hr(hr),
   _coarse_map(G1CollectedHeap::heap()->max_regions(), mtGC),
   _n_coarse_entries(0),
   _fine_grain_regions(NULL),
@@ -250,7 +249,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   _first_all_fine_prts(NULL),
   _last_all_fine_prts(NULL),
   _fine_eviction_start(0),
-  _sparse_table(hr)
+  _sparse_table()
 {
   typedef PerRegionTable* PerRegionTablePtr;
 
@@ -348,15 +347,6 @@ CardIdx_t OtherRegionsTable::card_within_region(OopOrNarrowOopStar within_region
 }
 
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
-  uint cur_hrm_ind = _hr->hrm_index();
-
-  uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift;
-
-  if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
-    assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
-    return;
-  }
-
   // Note that this may be a continued H region.
   HeapRegion* from_hr = _g1h->heap_region_containing(from);
   RegionIdx_t from_hrm_ind = (RegionIdx_t) from_hr->hrm_index();
@@ -569,10 +559,6 @@ size_t OtherRegionsTable::fl_mem_size() {
   return PerRegionTable::fl_mem_size();
 }
 
-void OtherRegionsTable::clear_fcc() {
-  G1FromCardCache::clear(_hr->hrm_index());
-}
-
 void OtherRegionsTable::clear() {
   // if there are no entries, skip this step
   if (_first_all_fine_prts != NULL) {
@@ -590,8 +576,6 @@ void OtherRegionsTable::clear() {
   }
   _n_fine_entries = 0;
   _n_coarse_entries = 0;
-
-  clear_fcc();
 }
 
 bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
@@ -627,9 +611,14 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
   : _bot(bot),
     _code_roots(),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
-    _other_regions(hr, &_m),
+    _other_regions(&_m),
+    _hr(hr),
     _state(Untracked)
 {
+}
+
+void HeapRegionRemSet::clear_fcc() {
+  G1FromCardCache::clear(_hr->hrm_index());
 }
 
 void HeapRegionRemSet::setup_remset_size() {
@@ -659,6 +648,7 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   if (!only_cardset) {
     _code_roots.clear();
   }
+  clear_fcc();
   _other_regions.clear();
   set_state_empty();
   assert(occupied_locked() == 0, "Should be clear.");
@@ -751,7 +741,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
       _coarse_cur_region_cur_card = 0;
       HeapWord* r_bot =
         _g1h->region_at((uint) _coarse_cur_region_index)->bottom();
-      _cur_region_card_offset = _bot->index_for(r_bot);
+      _cur_region_card_offset = _bot->index_for_raw(r_bot);
     } else {
       return false;
     }
@@ -792,7 +782,7 @@ void HeapRegionRemSetIterator::switch_to_prt(PerRegionTable* prt) {
   _fine_cur_prt = prt;
 
   HeapWord* r_bot = _fine_cur_prt->hr()->bottom();
-  _cur_region_card_offset = _bot->index_for(r_bot);
+  _cur_region_card_offset = _bot->index_for_raw(r_bot);
 
   // The bitmap scan for the PRT always scans from _cur_region_cur_card + 1.
   // To avoid special-casing this start case, and not miss the first bitmap

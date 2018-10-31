@@ -49,7 +49,6 @@ import java.util.stream.Stream;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Description;
-import jdk.jfr.Event;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
@@ -240,7 +239,7 @@ public final class TypeLibrary {
         // STRUCT
         String superType = null;
         boolean eventType = false;
-        if (Event.class.isAssignableFrom(clazz)) {
+        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
             superType = Type.SUPER_TYPE_EVENT;
             eventType= true;
         }
@@ -488,5 +487,9 @@ public final class TypeLibrary {
             }
             aQ.addAll(ae.getAnnotationElements());
         }
+    }
+
+    public void removeType(long id) {
+        types.remove(id);
     }
 }

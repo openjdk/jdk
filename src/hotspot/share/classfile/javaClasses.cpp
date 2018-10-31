@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -125,7 +126,7 @@ static void compute_offset(int &dest_offset,
   if (ik == NULL) {
     ResourceMark rm;
     log_error(class)("Mismatch JDK version for field: %s type: %s", name_symbol->as_C_string(), signature_symbol->as_C_string());
-    vm_exit_during_initialization("Invalid layout of preloaded class");
+    vm_exit_during_initialization("Invalid layout of well-known class");
   }
 
   if (!ik->find_local_field(name_symbol, signature_symbol, &fd) || fd.is_static() != is_static) {
@@ -138,7 +139,7 @@ static void compute_offset(int &dest_offset,
     LogStream ls(lt.error());
     ik->print_on(&ls);
 #endif //PRODUCT
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:class+load=info to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of well-known class: use -Xlog:class+load=info to see the origin of the problem class");
   }
   dest_offset = fd.offset();
 }
@@ -151,7 +152,7 @@ static void compute_offset(int& dest_offset, InstanceKlass* ik,
   if (name == NULL) {
     ResourceMark rm;
     log_error(class)("Name %s should be in the SymbolTable since its class is loaded", name_string);
-    vm_exit_during_initialization("Invalid layout of preloaded class", ik->external_name());
+    vm_exit_during_initialization("Invalid layout of well-known class", ik->external_name());
   }
   compute_offset(dest_offset, ik, name, signature_symbol, is_static);
 }
@@ -1196,7 +1197,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle class_loader, Handle module,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
-  // see more details in SystemDictionary::resolve_preloaded_classes().
+  // see more details in SystemDictionary::resolve_well_known_classes().
   if (!SystemDictionary::Class_klass_loaded()) {
     assert(fixup_mirror_list() != NULL, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
@@ -4250,12 +4251,19 @@ void JavaClasses::compute_hard_coded_offsets() {
 // Compute non-hard-coded field offsets of all the classes in this file
 void JavaClasses::compute_offsets() {
   if (UseSharedSpaces) {
-    return; // field offsets are loaded from archive
+    assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
+                                              JvmtiExport::has_early_class_hook_env()),
+           "JavaClasses::compute_offsets() must be called in early JVMTI phase.");
+    // None of the classes used by the rest of this function can be replaced by
+    // JMVTI ClassFileLoadHook.
+    // We are safe to use the archived offsets, which have already been restored
+    // by JavaClasses::serialize_offsets, without computing the offsets again.
+    return;
   }
 
   // We have already called the compute_offsets() of the
   // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String and java_lang_Class)
-  // earlier inside SystemDictionary::resolve_preloaded_classes()
+  // earlier inside SystemDictionary::resolve_well_known_classes()
   BASIC_JAVA_CLASSES_DO_PART2(DO_COMPUTE_OFFSETS);
 
   // generated interpreter code wants to know about the offsets we just computed:
@@ -4356,7 +4364,7 @@ int InjectedField::compute_offset() {
     tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
   }
 #endif //PRODUCT
-  vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:class+load=info to see the origin of the problem class");
+  vm_exit_during_initialization("Invalid layout of well-known class: use -Xlog:class+load=info to see the origin of the problem class");
   return -1;
 }
 

@@ -82,12 +82,13 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
   const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
-  } else {
-    if (HeapRegion::is_in_same_region(p, obj)) {
+  } else if (!HeapRegion::is_in_same_region(p, obj)) {
+    handle_non_cset_obj_common(state, p, obj);
+    assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
+    if (_scanning_in_young == True) {
       return;
     }
-    handle_non_cset_obj_common(state, p, obj);
-    _par_scan_state->update_rs(_from, p, obj);
+    _par_scan_state->enqueue_card_if_tracked(p, obj);
   }
 }
 
@@ -172,13 +173,9 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_work(T* p) {
     // Since the source is always from outside the collection set, here we implicitly know
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
-  } else {
-    HeapRegion* to = _g1h->heap_region_containing(obj);
-    if (_from == to) {
-      return;
-    }
+  } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(state, p, obj);
-    to->rem_set()->add_reference(p, _worker_i);
+    _par_scan_state->enqueue_card_if_tracked(p, obj);
   }
 }
 
@@ -193,10 +190,7 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_work(T* p) {
   const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
-  } else {
-    if (HeapRegion::is_in_same_region(p, obj)) {
-      return;
-    }
+  } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(state, p, obj);
   }
 }

@@ -47,6 +47,16 @@ inline HeapRegion* HeapRegionManager::at(uint index) const {
   return hr;
 }
 
+inline HeapRegion* HeapRegionManager::at_or_null(uint index) const {
+  if (!is_available(index)) {
+    return NULL;
+  }
+  HeapRegion* hr = _regions.get_by_index(index);
+  assert(hr != NULL, "All available regions must have a HeapRegion but index %u has not.", index);
+  assert(hr->hrm_index() == index, "sanity");
+  return hr;
+}
+
 inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) const {
   uint index = hr->hrm_index();
   assert(is_available(index), "pre-condition");
