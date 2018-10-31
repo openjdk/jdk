@@ -32,7 +32,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 /**
  * @test
- * @bug 8189604
+ * @bug 8189604 8208702
  * @run main/othervm -Djava.awt.headless=false HangDuringStaticInitialization
  * @run main/othervm -Djava.awt.headless=true HangDuringStaticInitialization
  */

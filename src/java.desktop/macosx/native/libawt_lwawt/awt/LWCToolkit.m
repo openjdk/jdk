@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ static long eventCount;
     if ([event type] != NSScrollWheel) {
         return 0;
     }
-    
+
     if ([event phase]) {
         // process a phase of manual scrolling
         switch ([event phase]) {
@@ -804,3 +804,30 @@ Java_sun_lwawt_macosx_LWCToolkit_isEmbedded
     return isEmbedded ? JNI_TRUE : JNI_FALSE;
 }
 
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    isInAquaSession
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_lwawt_macosx_LWCToolkit_isInAquaSession
+(JNIEnv *env, jclass klass) {
+    // copied from java.base/macosx/native/libjava/java_props_macosx.c
+    // environment variable to bypass the aqua session check
+    char *ev = getenv("AWT_FORCE_HEADFUL");
+    if (ev && (strncasecmp(ev, "true", 4) == 0)) {
+        // if "true" then tell the caller we're in an Aqua session without
+        // actually checking
+        return JNI_TRUE;
+    }
+    // Is the WindowServer available?
+    SecuritySessionId session_id;
+    SessionAttributeBits session_info;
+    OSStatus status = SessionGetInfo(callerSecuritySession, &session_id, &session_info);
+    if (status == noErr) {
+        if (session_info & sessionHasGraphicAccess) {
+            return JNI_TRUE;
+        }
+    }
+    return JNI_FALSE;
+}

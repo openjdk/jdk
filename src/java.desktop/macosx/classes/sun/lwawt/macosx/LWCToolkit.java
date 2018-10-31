@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,44 @@
 
 package sun.lwawt.macosx;
 
-import com.apple.laf.AquaMenuBarUI;
-import java.awt.peer.TaskbarPeer;
-import java.awt.*;
+import java.awt.AWTError;
+import java.awt.CheckboxMenuItem;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Desktop;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.EventQueue;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.RenderingHints;
+import java.awt.Robot;
+import java.awt.SystemTray;
+import java.awt.Taskbar;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
-import java.awt.dnd.*;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.InvalidDnDOperationException;
+import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
@@ -37,21 +70,54 @@ import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.awt.peer.*;
-import java.lang.reflect.*;
-import java.net.URL;
-import java.security.*;
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.awt.peer.CheckboxMenuItemPeer;
+import java.awt.peer.DesktopPeer;
+import java.awt.peer.DialogPeer;
+import java.awt.peer.FileDialogPeer;
+import java.awt.peer.FontPeer;
+import java.awt.peer.MenuBarPeer;
+import java.awt.peer.MenuItemPeer;
+import java.awt.peer.MenuPeer;
+import java.awt.peer.PopupMenuPeer;
+import java.awt.peer.RobotPeer;
+import java.awt.peer.SystemTrayPeer;
+import java.awt.peer.TaskbarPeer;
+import java.awt.peer.TrayIconPeer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
+
 import javax.swing.UIManager;
 
-import sun.awt.*;
+import com.apple.laf.AquaMenuBarUI;
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.CGraphicsConfig;
+import sun.awt.CGraphicsDevice;
+import sun.awt.LightweightFrame;
+import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.opengl.OGLRenderQueue;
-import sun.lwawt.*;
+import sun.lwawt.LWComponentPeer;
+import sun.lwawt.LWCursorManager;
+import sun.lwawt.LWToolkit;
+import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
+import sun.lwawt.PlatformComponent;
+import sun.lwawt.PlatformDropTarget;
+import sun.lwawt.PlatformWindow;
+import sun.lwawt.SecurityWarningWindow;
 import sun.security.action.GetBooleanAction;
 
 @SuppressWarnings("serial") // JDK implementation class
@@ -96,6 +162,10 @@ public final class LWCToolkit extends LWToolkit {
                 return platformResources;
             }
         });
+
+        if (!GraphicsEnvironment.isHeadless() && !isInAquaSession()) {
+            throw new AWTError("WindowServer is not available");
+        }
 
         AWTAccessor.getToolkitAccessor().setPlatformResources(platformResources);
 
@@ -793,6 +863,13 @@ public final class LWCToolkit extends LWToolkit {
      * @return true if AWT toolkit is embedded, false otherwise
      */
     public static native boolean isEmbedded();
+
+    /**
+     * Returns true if the WindowServer is available, false otherwise.
+     *
+     * @return true if the WindowServer is available, false otherwise
+     */
+    private static native boolean isInAquaSession();
 
     /*
      * Activates application ignoring other apps.
