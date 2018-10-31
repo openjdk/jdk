@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,13 +53,13 @@
  *         and an <a href="http://www.iso.org">ISO (International Organization
  *         for Standardization)</a> standard.
  *     </li>
- *     <li><strong><a href="http://www.schematron.com/">Schematron</a></strong> -
+ *     <li><strong><a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/c055982_ISO_IEC_19757-3_2016.zip">Schematron</a></strong> -
  *         a rules-based XML schema language. Whereas DTD, WXS, and RNG are designed
  *         to express the structure of a content model, Schematron is designed to
  *         enforce individual rules that are difficult or impossible to express
  *         with other schema languages. Schematron is intended to supplement a
  *         schema written in structural schema language such as the aforementioned.
- *         Schematron is in the process of becoming an ISO standard.
+ *         Schematron is <a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/index.html">an ISO standard</a>.
  *     </li>
  * </ul>
  * <p>
