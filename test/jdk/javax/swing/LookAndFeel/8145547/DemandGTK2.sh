@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #   @summary  Try to force GTK2. We must bail out to GTK3 (if any) if no 2 available.
 #
 #   @key headful
+#   @bug 8156128 8212903
 #   @compile ProvokeGTK.java
 #   @requires os.family == "linux"
 #   @run shell/timeout=400 DemandGTK2.sh
@@ -61,12 +62,12 @@ then
         exit 1
     fi
     echo "No GTK 2 library found: we should bail out to 3"
-    strace -o strace.log -fe open ${TESTJAVA}/bin/java  -cp ${TESTCLASSPATH}  -Djdk.gtk.version=2 ProvokeGTK
+    strace -o strace.log -fe open,openat ${TESTJAVA}/bin/java  -cp ${TESTCLASSPATH}  -Djdk.gtk.version=2 ProvokeGTK
     EXECRES=$?
     grep  'libgtk-3.*=\ *[0-9]*$' strace.log > logg
 else
     echo "There is GTK 2 library: we should use it"
-    strace -o strace.log -fe open ${TESTJAVA}/bin/java  -cp ${TESTCLASSPATH}  -Djdk.gtk.version=2 ProvokeGTK
+    strace -o strace.log -fe open,openat ${TESTJAVA}/bin/java  -cp ${TESTCLASSPATH}  -Djdk.gtk.version=2 ProvokeGTK
     EXECRES=$?
     grep  'libgtk-x11.*=\ *[0-9]*$' strace.log > logg
 fi
