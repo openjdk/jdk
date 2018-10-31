@@ -76,7 +76,6 @@ class OtherRegionsTable {
 
   G1CollectedHeap* _g1h;
   Mutex*           _m;
-  HeapRegion*      _hr;
 
   // These are protected by "_m".
   CHeapBitMap _coarse_map;
@@ -124,11 +123,8 @@ class OtherRegionsTable {
   bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
 public:
-  // Clear the from_card_cache entries for this region.
-  void clear_fcc();
-  // Create a new remembered set for the given heap region. The given mutex should
-  // be used to ensure consistency.
-  OtherRegionsTable(HeapRegion* hr, Mutex* m);
+  // Create a new remembered set. The given mutex is used to ensure consistency.
+  OtherRegionsTable(Mutex* m);
 
   // Returns the card index of the given within_region pointer relative to the bottom
   // of the given heap region.
@@ -181,6 +177,10 @@ private:
   Mutex _m;
 
   OtherRegionsTable _other_regions;
+
+  HeapRegion* _hr;
+
+  void clear_fcc();
 
 public:
   HeapRegionRemSet(G1BlockOffsetTable* bot, HeapRegion* hr);
@@ -243,18 +243,18 @@ public:
     if (_state == Untracked) {
       return;
     }
-    _other_regions.clear_fcc();
+    clear_fcc();
     _state = Untracked;
   }
 
   void set_state_updating() {
     guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(), "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
-    _other_regions.clear_fcc();
+    clear_fcc();
     _state = Updating;
   }
 
   void set_state_complete() {
-    _other_regions.clear_fcc();
+    clear_fcc();
     _state = Complete;
   }
 
@@ -269,6 +269,15 @@ public:
     if (state == Untracked) {
       return;
     }
+
+    uint cur_idx = _hr->hrm_index();
+    uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift;
+
+    if (G1FromCardCache::contains_or_replace(tid, cur_idx, from_card)) {
+      assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
+      return;
+    }
+
     _other_regions.add_reference(from, tid);
   }
 
