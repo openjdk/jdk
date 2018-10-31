@@ -287,54 +287,50 @@ class ClassLoaderDataGraphIterator : public StackObj {
   Handle           _holder;
   Thread*          _thread;
 
-  void hold_next() {
-    if (_next != NULL) {
-      _holder = Handle(_thread, _next->holder_phantom());
-    }
-  }
 public:
   ClassLoaderDataGraphIterator() : _next(ClassLoaderDataGraph::_head) {
     _thread = Thread::current();
     assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-    hold_next();
-  }
-
-  bool repeat() const {
-    return _next != NULL;
   }
 
   ClassLoaderData* get_next() {
-    ClassLoaderData* next = _next;
-    if (_next != NULL) {
-      _next = _next->next();
-      hold_next();
+    ClassLoaderData* cld = _next;
+    // Skip already unloaded CLD for concurrent unloading.
+    while (cld != NULL && !cld->is_alive()) {
+      cld = cld->next();
     }
-    return next;
+    if (cld != NULL) {
+      // Keep cld that is being returned alive.
+      _holder = Handle(_thread, cld->holder_phantom());
+      _next = cld->next();
+    } else {
+      _next = NULL;
+    }
+    return cld;
   }
+
+
 };
 
 // These functions assume that the caller has locked the ClassLoaderDataGraph_lock
 // if they are not calling the function from a safepoint.
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->classes_do(klass_closure);
   }
 }
 
 void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->classes_do(f);
   }
 }
 
 void ClassLoaderDataGraph::methods_do(void f(Method*)) {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->methods_do(f);
   }
 }
@@ -342,8 +338,7 @@ void ClassLoaderDataGraph::methods_do(void f(Method*)) {
 void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->modules_do(f);
   }
 }
@@ -361,8 +356,7 @@ void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
 void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->packages_do(f);
   }
 }
@@ -379,8 +373,7 @@ void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
 
 void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->loaded_classes_do(klass_closure);
   }
 }
@@ -404,8 +397,7 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
 }
 
 #define FOR_ALL_DICTIONARY(X)   ClassLoaderDataGraphIterator iter; \
-                                ClassLoaderData* X; \
-                                while ((X = iter.get_next()) != NULL) \
+                                while (ClassLoaderData* X = iter.get_next()) \
                                   if (X->dictionary() != NULL)
 
 // Walk classes in the loaded class dictionaries in various forms.
@@ -696,16 +688,14 @@ extern "C" int print_loader_data_graph() {
 
 void ClassLoaderDataGraph::verify() {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->verify();
   }
 }
 
 void ClassLoaderDataGraph::print_on(outputStream * const out) {
   ClassLoaderDataGraphIterator iter;
-  while (iter.repeat()) {
-    ClassLoaderData* cld = iter.get_next();
+  while (ClassLoaderData* cld = iter.get_next()) {
     cld->print_on(out);
   }
 }
