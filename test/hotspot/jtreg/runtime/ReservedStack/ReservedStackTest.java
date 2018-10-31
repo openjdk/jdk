@@ -232,6 +232,19 @@ public class ReservedStackTest {
         }
     }
 
+    private static boolean isAlwaysSupportedPlatform() {
+        return Platform.isAix() ||
+            (Platform.isLinux() &&
+             (Platform.isPPC() || Platform.isS390x() || Platform.isX64() ||
+              Platform.isX86() || Platform.isAArch64())) ||
+            Platform.isOSX() ||
+            Platform.isSolaris();
+    }
+
+    private static boolean isNeverSupportedPlatform() {
+        return !isAlwaysSupportedPlatform();
+    }
+
     private static boolean isSupportedPlatform;
 
     private static void initIsSupportedPlatform() throws Exception {
@@ -256,8 +269,16 @@ public class ReservedStackTest {
 
         // Do a sanity check. Some platforms we know are always supported. Make sure
         // we didn't determine that one of those platforms is not supported.
-        if (!isSupportedPlatform) {
+        if (!isSupportedPlatform && isAlwaysSupportedPlatform()) {
             String msg  = "This platform should be supported: " + Platform.getOsArch();
+            System.err.println("FAILED: " +  msg);
+            throw new RuntimeException(msg);
+        }
+
+        // And some platforms we know are never supported. Make sure
+        // we didn't determine that one of those platforms is supported.
+        if (isSupportedPlatform && isNeverSupportedPlatform()) {
+            String msg  = "This platform should not be supported: " + Platform.getOsArch();
             System.err.println("FAILED: " +  msg);
             throw new RuntimeException(msg);
         }
