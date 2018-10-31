@@ -334,7 +334,7 @@ void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_i
 
 void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card) {
   HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
-  _scan_objs_on_card_cl->set_region(card_region);
+  assert(!card_region->is_young(), "Should not scan card in young region %u", region_idx_for_card);
   card_region->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
   _scan_objs_on_card_cl->trim_queue_partially();
   _cards_scanned++;
@@ -494,7 +494,7 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   if (G1HotCardCache::default_use_cache()) {
     G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::ScanHCC, worker_i);
 
-    G1ScanObjsDuringUpdateRSClosure scan_hcc_cl(_g1h, pss, worker_i);
+    G1ScanObjsDuringUpdateRSClosure scan_hcc_cl(_g1h, pss);
     G1RefineCardClosure refine_card_cl(_g1h, &scan_hcc_cl);
     _g1h->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
@@ -503,7 +503,7 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   {
     G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::UpdateRS, worker_i);
 
-    G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss, worker_i);
+    G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss);
     G1RefineCardClosure refine_card_cl(_g1h, &update_rs_cl);
     _g1h->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 
@@ -729,7 +729,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   HeapRegion* const card_region = _g1h->region_at(card_region_idx);
-  update_rs_cl->set_region(card_region);
+  assert(!card_region->is_young(), "Should not scan card in young region %u", card_region_idx);
   bool card_processed = card_region->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
   return true;

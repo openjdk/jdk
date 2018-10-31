@@ -43,7 +43,6 @@ class G1ScanClosureBase : public BasicOopIterateClosure {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadState* _par_scan_state;
-  HeapRegion* _from;
 
   G1ScanClosureBase(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state);
   ~G1ScanClosureBase() { }
@@ -56,24 +55,19 @@ protected:
 public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
-  void set_region(HeapRegion* from) { _from = from; }
-
   inline void trim_queue_partially();
 };
 
 // Used during the Update RS phase to refine remaining cards in the DCQ during garbage collection.
-class G1ScanObjsDuringUpdateRSClosure: public G1ScanClosureBase {
-  uint _worker_i;
-
+class G1ScanObjsDuringUpdateRSClosure : public G1ScanClosureBase {
 public:
   G1ScanObjsDuringUpdateRSClosure(G1CollectedHeap* g1h,
-                                  G1ParScanThreadState* pss,
-                                  uint worker_i) :
-    G1ScanClosureBase(g1h, pss), _worker_i(worker_i) { }
+                                  G1ParScanThreadState* pss) :
+    G1ScanClosureBase(g1h, pss) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
 // Used during the Scan RS phase to scan cards from the remembered set during garbage collection.
@@ -90,9 +84,13 @@ public:
 
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
+  bool _scanning_in_young;
+
 public:
   G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1h, par_scan_state) { }
+    G1ScanClosureBase(g1h, par_scan_state), _scanning_in_young(false) { }
+
+  void set_scanning_in_young(bool scanning_in_young) { _scanning_in_young = scanning_in_young; }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }

@@ -38,7 +38,7 @@ G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* pa
 { }
 
 G1ScanClosureBase::G1ScanClosureBase(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-  _g1h(g1h), _par_scan_state(par_scan_state), _from(NULL)
+  _g1h(g1h), _par_scan_state(par_scan_state)
 { }
 
 void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
