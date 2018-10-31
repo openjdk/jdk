@@ -60,7 +60,6 @@ class HandshakeState {
   bool vmthread_can_process_handshake(JavaThread* target);
 
   void clear_handshake(JavaThread* thread);
-  void cancel_inner(JavaThread* thread);
 
   void process_self_inner(JavaThread* thread);
 public:
@@ -72,19 +71,13 @@ public:
     return _operation != NULL;
   }
 
-  void cancel(JavaThread* thread) {
-    if (!_thread_in_process_handshake) {
-      FlagSetting fs(_thread_in_process_handshake, true);
-      cancel_inner(thread);
-    }
-  }
-
   void process_by_self(JavaThread* thread) {
     if (!_thread_in_process_handshake) {
       FlagSetting fs(_thread_in_process_handshake, true);
       process_self_inner(thread);
     }
   }
+
   void process_by_vmthread(JavaThread* target);
 };
 

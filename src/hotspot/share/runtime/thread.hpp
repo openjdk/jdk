@@ -1271,10 +1271,6 @@ class JavaThread: public Thread {
     return _handshake.has_operation();
   }
 
-  void cancel_handshake() {
-    _handshake.cancel(this);
-  }
-
   void handshake_process_by_self() {
     _handshake.process_by_self(this);
   }
