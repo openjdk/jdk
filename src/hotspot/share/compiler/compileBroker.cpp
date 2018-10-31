@@ -1501,8 +1501,9 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
 
     bool progress;
     if (jvmci_compiler_thread != NULL) {
-      // If the JVMCI compiler thread is not blocked, we deem it to be making progress.
-      progress = jvmci_compiler_thread->thread_state() != _thread_blocked;
+      // If the JVMCI compiler thread is not blocked or suspended, we deem it to be making progress.
+      progress = jvmci_compiler_thread->thread_state() != _thread_blocked &&
+        !jvmci_compiler_thread->is_external_suspend();
     } else {
       // Still waiting on JVMCI compiler queue. This thread may be holding a lock
       // that all JVMCI compiler threads are blocked on. We use the counter for
