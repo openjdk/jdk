@@ -27,10 +27,7 @@
  * for an example.
  */
 
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -105,24 +102,6 @@ public class ClassUnloadCommon {
             return path.toUri().toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    // Get data for pre-compiled class file to load.
-    public static byte[] getClassData(String name) {
-        try {
-           String TempName = name.replaceAll("\\.", "/");
-           String currentDir = System.getProperty("test.classes");
-           String filename = currentDir + File.separator + TempName + ".class";
-           System.out.println("filename is " + filename);
-           FileInputStream fis = new FileInputStream(filename);
-           byte[] b = new byte[5000];
-           int cnt = fis.read(b, 0, 5000);
-           byte[] c = new byte[cnt];
-           for (int i=0; i<cnt; i++) c[i] = b[i];
-              return c;
-        } catch (IOException e) {
-           return null;
         }
     }
 }

@@ -57,7 +57,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
   _has_finalizer = access_flags.has_finalizer();
-  _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
+  _has_subklass = ik->subklass() != NULL;
   _init_state = ik->init_state();
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
@@ -146,10 +146,9 @@ void ciInstanceKlass::compute_shared_init_state() {
 // ciInstanceKlass::compute_shared_has_subklass
 bool ciInstanceKlass::compute_shared_has_subklass() {
   GUARDED_VM_ENTRY(
-    MutexLocker ml(Compile_lock);
     InstanceKlass* ik = get_instanceKlass();
-    _has_subklass = ik->subklass() != NULL ? subklass_true : subklass_false;
-    return _has_subklass == subklass_true;
+    _has_subklass = ik->subklass() != NULL;
+    return _has_subklass;
   )
 }
 
@@ -375,7 +374,6 @@ ciInstanceKlass* ciInstanceKlass::unique_concrete_subklass() {
   if (!is_abstract())   return NULL; // Only applies to abstract classes.
   if (!has_subklass())  return NULL; // Must have at least one subklass.
   VM_ENTRY_MARK;
-  MutexLocker ml(Compile_lock);
   InstanceKlass* ik = get_instanceKlass();
   Klass* up = ik->up_cast_abstract();
   assert(up->is_instance_klass(), "must be InstanceKlass");
@@ -390,7 +388,6 @@ ciInstanceKlass* ciInstanceKlass::unique_concrete_subklass() {
 bool ciInstanceKlass::has_finalizable_subclass() {
   if (!is_loaded())     return true;
   VM_ENTRY_MARK;
-  MutexLocker ml(Compile_lock);
   return Dependencies::find_finalizable_subclass(get_instanceKlass()) != NULL;
 }
 
@@ -580,7 +577,7 @@ bool ciInstanceKlass::is_leaf_type() {
   if (is_shared()) {
     return is_final();  // approximately correct
   } else {
-    return !has_subklass() && (nof_implementors() == 0);
+    return !_has_subklass && (nof_implementors() == 0);
   }
 }
 
