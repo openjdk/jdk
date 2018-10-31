@@ -1645,13 +1645,8 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
       ClassLoaderDataGraph::unlocked_loaded_classes_do(&check_closure);
     } while (check_closure.made_progress());
 
-    if (IgnoreUnverifiableClassesDuringDump) {
-      // IgnoreUnverifiableClassesDuringDump is enabled by default.
-      // Unverifiable classes will not be included in the CDS archive.
-      SystemDictionary::remove_classes_in_error_state();
-    } else {
-      vm_exit_during_cds_dumping("Please remove the unverifiable classes from your class list and try again");
-    }
+    // Unverifiable classes will not be included in the CDS archive.
+    SystemDictionary::remove_classes_in_error_state();
   }
 }
 

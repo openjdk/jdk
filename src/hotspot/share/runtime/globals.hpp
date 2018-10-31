@@ -2433,10 +2433,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
-  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, true,              \
-          "Do not quit -Xshare:dump even if we encounter unverifiable "     \
-          "classes. Just exclude them from the shared dictionary.")         \
-                                                                            \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \
