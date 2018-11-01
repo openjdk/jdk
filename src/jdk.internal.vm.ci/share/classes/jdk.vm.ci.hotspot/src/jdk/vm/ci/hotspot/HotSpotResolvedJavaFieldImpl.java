@@ -125,7 +125,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         if (currentType instanceof UnresolvedJavaType) {
             // Don't allow unresolved types to hang around forever
             UnresolvedJavaType unresolvedType = (UnresolvedJavaType) currentType;
-            ResolvedJavaType resolved = unresolvedType.resolve(holder);
+            ResolvedJavaType resolved = holder.lookupType(unresolvedType, false);
             if (resolved != null) {
                 type = resolved;
             }
