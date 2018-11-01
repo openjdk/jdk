@@ -346,38 +346,4 @@ class MutexUnlockerEx: StackObj {
   }
 };
 
-#ifndef PRODUCT
-//
-// A special MutexLocker that allows:
-//   - reentrant locking
-//   - locking out of order
-//
-// Only to be used for verify code, where we can relax out dead-lock
-// detection code a bit (unsafe, but probably ok). This code is NEVER to
-// be included in a product version.
-//
-class VerifyMutexLocker: StackObj {
- private:
-  Monitor * _mutex;
-  bool   _reentrant;
- public:
-  VerifyMutexLocker(Monitor * mutex) {
-    _mutex     = mutex;
-    _reentrant = mutex->owned_by_self();
-    if (!_reentrant) {
-      // We temp. disable strict safepoint checking, while we require the lock
-      FlagSetting fs(StrictSafepointChecks, false);
-      _mutex->lock();
-    }
-  }
-
-  ~VerifyMutexLocker() {
-    if (!_reentrant) {
-      _mutex->unlock();
-    }
-  }
-};
-
-#endif
-
 #endif // SHARE_VM_RUNTIME_MUTEXLOCKER_HPP

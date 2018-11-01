@@ -30,6 +30,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencies.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -60,9 +61,9 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -640,6 +641,10 @@ void* Universe::non_oop_word() {
   return (void*)_non_oop_bits;
 }
 
+static void initialize_global_behaviours() {
+  CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
+}
+
 jint universe_init() {
   assert(!Universe::_fully_initialized, "called after initialize_vtables");
   guarantee(1 << LogHeapWordSize == sizeof(HeapWord),
@@ -651,6 +656,8 @@ jint universe_init() {
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
   JavaClasses::compute_hard_coded_offsets();
+
+  initialize_global_behaviours();
 
   jint status = Universe::initialize_heap();
   if (status != JNI_OK) {

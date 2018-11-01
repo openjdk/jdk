@@ -953,7 +953,7 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
 
 
 void nmethod::verify_clean_inline_caches() {
-  assert_locked_or_safepoint(CompiledIC_lock);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
 
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
@@ -2115,14 +2115,11 @@ void nmethod::verify() {
 void nmethod::verify_interrupt_point(address call_site) {
   // Verify IC only when nmethod installation is finished.
   if (!is_not_installed()) {
-    Thread *cur = Thread::current();
-    if (CompiledIC_lock->owner() == cur ||
-        ((cur->is_VM_thread() || cur->is_ConcurrentGC_thread()) &&
-         SafepointSynchronize::is_at_safepoint())) {
+    if (CompiledICLocker::is_safe(this)) {
       CompiledIC_at(this, call_site);
       CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
     } else {
-      MutexLocker ml_verify (CompiledIC_lock);
+      CompiledICLocker ml_verify(this);
       CompiledIC_at(this, call_site);
     }
   }
@@ -2819,7 +2816,7 @@ void nmethod::print_calls(outputStream* st) {
     switch (iter.type()) {
     case relocInfo::virtual_call_type:
     case relocInfo::opt_virtual_call_type: {
-      VerifyMutexLocker mc(CompiledIC_lock);
+      CompiledICLocker ml_verify(this);
       CompiledIC_at(&iter)->print();
       break;
     }

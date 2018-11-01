@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/oop.inline.hpp"
@@ -189,8 +190,9 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
 void NativeCall::set_destination_mt_safe(address dest) {
-  assert(Patching_lock->is_locked() ||
-         SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
+  assert((Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         CompiledICLocker::is_safe(addr_at(0)),
+         "concurrent code patching");
   // set_destination uses set_long_at which does the ICache::invalidate
   set_destination(dest);
 }
