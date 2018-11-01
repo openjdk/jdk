@@ -21,6 +21,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for Asia and environs
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -29,7 +31,7 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2017-01-13):
+# From Paul Eggert (2018-06-19):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -58,7 +60,8 @@
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
 #
-# The following alphabetic abbreviations appear in these tables:
+# The following alphabetic abbreviations appear in these tables
+# (corrections are welcome):
 #	     std  dst
 #	     LMT	Local Mean Time
 #	2:00 EET  EEST	Eastern European Time
@@ -67,11 +70,13 @@
 #	7:00 WIB	west Indonesia (Waktu Indonesia Barat)
 #	8:00 WITA	central Indonesia (Waktu Indonesia Tengah)
 #	8:00 CST	China
+#	8:00 PST  PDT*	Philippine Standard Time
 #	8:30 KST  KDT	Korea when at +0830
 #	9:00 WIT	east Indonesia (Waktu Indonesia Timur)
 #	9:00 JST  JDT	Japan
 #	9:00 KST  KDT	Korea when at +09
 #	9:30 ACST	Australian Central Standard Time
+# *I invented the abbreviation PDT; see "Philippines" below.
 # Otherwise, these tables typically use numeric abbreviations like +03
 # and +0330 for integer hour and minute UT offsets.  Although earlier
 # editions invented alphabetic time zone abbreviations for every
@@ -304,6 +309,29 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 
 # China
 
+# From Paul Eggert (2018-10-02):
+# The following comes from Table 1 of:
+# Li Yu. Research on the daylight saving movement in 1940s Shanghai.
+# Nanjing Journal of Social Sciences. 2014;(2):144-50.
+# http://oversea.cnki.net/kns55/detail.aspx?dbname=CJFD2014&filename=NJSH201402020
+# The table lists dates only; I am guessing 00:00 and 24:00 transition times.
+# Also, the table lists the planned end of DST in 1949, but the corresponding
+# zone line cuts this off on May 28, when the Communists took power.
+#
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Shang	1940	only	-	Jun	 1	 0:00	1:00	D
+Rule	Shang	1940	only	-	Oct	12	24:00	0	S
+Rule	Shang	1941	only	-	Mar	15	 0:00	1:00	D
+Rule	Shang	1941	only	-	Nov	 1	24:00	0	S
+Rule	Shang	1942	only	-	Jan	31	 0:00	1:00	D
+Rule	Shang	1945	only	-	Sep	 1	24:00	0	S
+Rule	Shang	1946	only	-	May	15	 0:00	1:00	D
+Rule	Shang	1946	only	-	Sep	30	24:00	0	S
+Rule	Shang	1947	only	-	Apr	15	 0:00	1:00	D
+Rule	Shang	1947	only	-	Oct	31	24:00	0	S
+Rule	Shang	1948	1949	-	May	 1	 0:00	1:00	D
+Rule	Shang	1948	1949	-	Sep	30	24:00	0	S #plan
+
 # From Guy Harris:
 # People's Republic of China.  Yes, they really have only one time zone.
 
@@ -330,18 +358,33 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 # time - sort of", Los Angeles Times, 1986-05-05 ... [says] that China began
 # observing daylight saving time in 1986.
 
-# From Paul Eggert (2014-06-30):
-# Shanks & Pottenger have China switching to a single time zone in 1980, but
-# this doesn't seem to be correct.  They also write that China observed summer
-# DST from 1986 through 1991, which seems to match the above commentary, so
-# go with them for DST rules as follows:
+# From P Chan (2018-05-07):
+# The start and end time of DST in China [from 1986 on] should be 2:00
+# (i.e. 2:00 to 3:00 at the start and 2:00 to 1:00 at the end)....
+# Government notices about summer time:
+#
+# 1986-04-12 http://www.zj.gov.cn/attach/zfgb/198608.pdf p.21-22
+# (To establish summer time from 1986. On 4 May, set the clocks ahead one hour
+# at 2 am. On 14 September, set the clocks backward one hour at 2 am.)
+#
+# 1987-02-15 http://www.gov.cn/gongbao/shuju/1987/gwyb198703.pdf p.114
+# (Summer time in 1987 to start from 12 April until 13 September)
+#
+# 1987-09-09 http://www.gov.cn/gongbao/shuju/1987/gwyb198721.pdf p.709
+# (From 1988, summer time to start from 2 am of the first Sunday of mid-April
+# until 2 am of the first Sunday of mid-September)
+#
+# 1992-03-03 http://www.gov.cn/gongbao/shuju/1992/gwyb199205.pdf p.152
+# (To suspend summer time from 1992)
+#
+# The first page of People's Daily on 12 April 1988 stating that summer time
+# to begin on 17 April.
+# http://data.people.com.cn/pic/101p/1988/04/1988041201.jpg
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Shang	1940	only	-	Jun	 3	0:00	1:00	D
-Rule	Shang	1940	1941	-	Oct	 1	0:00	0	S
-Rule	Shang	1941	only	-	Mar	16	0:00	1:00	D
-Rule	PRC	1986	only	-	May	 4	0:00	1:00	D
-Rule	PRC	1986	1991	-	Sep	Sun>=11	0:00	0	S
-Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
+Rule	PRC	1986	only	-	May	 4	 2:00	1:00	D
+Rule	PRC	1986	1991	-	Sep	Sun>=11	 2:00	0	S
+Rule	PRC	1987	1991	-	Apr	Sun>=11	 2:00	1:00	D
 
 # From Anthony Fok (2001-12-20):
 # BTW, I did some research on-line and found some info regarding these five
@@ -363,10 +406,11 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Alois Treindl kindly sent me translations of the following two sources:
 #
 # (1)
-# Guo Qingsheng (National Time-Service Center, CAS, Xi'an 710600, China)
+# Guo Qing-sheng (National Time-Service Center, CAS, Xi'an 710600, China)
 # Beijing Time at the Beginning of the PRC
 # China Historical Materials of Science and Technology
-# (Zhongguo ke ji shi liao, 中国科技史料), Vol. 24, No. 1 (2003)
+# (Zhongguo ke ji shi liao, 中国科技史料). 2003;24(1):5-9.
+# http://oversea.cnki.net/kcms/detail/detail.aspx?filename=ZGKS200301000&dbname=CJFD2003
 # It gives evidence that at the beginning of the PRC, Beijing time was
 # officially apparent solar time!  However, Guo also says that the
 # evidence is dubious, as the relevant institute of astronomy had not
@@ -543,7 +587,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Beijing time, used throughout China; represented by Shanghai.
 Zone	Asia/Shanghai	8:05:43	-	LMT	1901
-			8:00	Shang	C%sT	1949
+			8:00	Shang	C%sT	1949 May 28
 			8:00	PRC	C%sT
 # Xinjiang time, used by many in western China; represented by Ürümqi / Ürümchi
 # / Wulumuqi.  (Please use Asia/Shanghai if you prefer Beijing time.)
@@ -772,24 +816,140 @@ Zone	Asia/Taipei	8:06:00 -	LMT	1896 Jan  1
 			8:00	Taiwan	C%sT
 
 # Macau (Macao, Aomen)
+#
+# From P Chan (2018-05-10):
+# * LegisMac
+#   http://legismac.safp.gov.mo/legismac/descqry/Descqry.jsf?lang=pt
+#   A database for searching titles of legal documents of Macau in
+#   Chinese and Portuguese.  The term "HORÁRIO DE VERÃO" can be used for
+#   searching decrees about summer time.
+# * Archives of Macao
+#   http://www.archives.gov.mo/en/bo/
+#   It contains images of old official gazettes.
+# * The Macao Meteorological and Geophysical Bureau have a page listing the
+#   summer time history.  But it is not complete and has some mistakes.
+#   http://www.smg.gov.mo/smg/geophysics/e_t_Summer%20Time.htm
+# Macau adopted GMT+8 on 30 Oct 1904 to follow Hong Kong.  Clocks were
+# advanced by 25 minutes and 50 seconds.  Which means the LMT used was
+# +7:34:10.  As stated in the "Portaria No. 204" dated 21 October 1904
+# and published in the Official Gazette on 29 October 1904.
+# http://igallery.icm.gov.mo/Images/Archives/BO/MO_AH_PUB_BO_1904_10/MO_AH_PUB_BO_1904_10_00025_Grey.JPG
+#
+# Therefore the 1911 decree of Portugal did not change time in Macau.
+#
+# From LegisMac, here is a list of decrees that changed the time ...
+# [Decree Gazette-no. date; titles omitted in this quotation]
+#	DIL 732 BOCM 51 1941.12.20
+#	DIL 764 BOCM 9S 1942.04.30
+#	DIL 781 BOCM 21 1942.10.10
+#	PT 3434 BOCM 8S 1943.04.17
+#	PT 3504 BOCM 20 1943.09.25
+#	PT 3843 BOCM 39 1945.09.29
+#	PT 3961 BOCM 17 1946.04.27
+#	PT 4026 BOCM 39 1946.09.28
+#	PT 4153 BOCM 16 1947.04.10
+#	PT 4271 BOCM 48 1947.11.29
+#	PT 4374 BOCM 18 1948.05.01
+#	PT 4465 BOCM 44 1948.10.30
+#	PT 4590 BOCM 14 1949.04.02
+#	PT 4666 BOCM 44 1949.10.29
+#	PT 4771 BOCM 12 1950.03.25
+#	PT 4838 BOCM 43 1950.10.28
+#	PT 4946 BOCM 12 1951.03.24
+#	PT 5025 BO 43 1951.10.27
+#	PT 5149 BO 14 1952.04.05
+#	PT 5251 BO 43 1952.10.25
+#	PT 5366 BO 13 1953.03.28
+#	PT 5444 BO 44 1953.10.31
+#	PT 5540 BO 12 1954.03.20
+#	PT 5589 BO 44 1954.10.30
+#	PT 5676 BO 12 1955.03.19
+#	PT 5739 BO 45 1955.11.05
+#	PT 5823 BO 11 1956.03.17
+#	PT 5891 BO 44 1956.11.03
+#	PT 5981 BO 12 1957.03.23
+#	PT 6064 BO 43 1957.10.26
+#	PT 6172 BO 12 1958.03.22
+#	PT 6243 BO 43 1958.10.25
+#	PT 6341 BO 12 1959.03.21
+#	PT 6411 BO 43 1959.10.24
+#	PT 6514 BO 11 1960.03.12
+#	PT 6584 BO 44 1960.10.29
+#	PT 6721 BO 10 1961.03.11
+#	PT 6815 BO 43 1961.10.28
+#	PT 6947 BO 10 1962.03.10
+#	PT 7080 BO 43 1962.10.27
+#	PT 7218 BO 12 1963.03.23
+#	PT 7340 BO 43 1963.10.26
+#	PT 7491 BO 11 1964.03.14
+#	PT 7664 BO 43 1964.10.24
+#	PT 7846 BO 15 1965.04.10
+#	PT 7979 BO 42 1965.10.16
+#	PT 8146 BO 15 1966.04.09
+#	PT 8252 BO 41 1966.10.08
+#	PT 8429 BO 15 1967.04.15
+#	PT 8540 BO 41 1967.10.14
+#	PT 8735 BO 15 1968.04.13
+#	PT 8860 BO 41 1968.10.12
+#	PT 9035 BO 16 1969.04.19
+#	PT 9156 BO 42 1969.10.18
+#	PT 9328 BO 15 1970.04.11
+#	PT 9418 BO 41 1970.10.10
+#	PT 9587 BO 14 1971.04.03
+#	PT 9702 BO 41 1971.10.09
+#	PT 38-A/72 BO 14 1972.04.01
+#	PT 126-A/72 BO 41 1972.10.07
+#	PT 61/73 BO 14 1973.04.07
+#	PT 182/73 BO 40 1973.10.06
+#	PT 282/73 BO 51 1973.12.22
+#	PT 177/74 BO 41 1974.10.12
+#	PT 51/75 BO 15 1975.04.12
+#	PT 173/75 BO 41 1975.10.11
+#	PT 67/76/M BO 14 1976.04.03
+#	PT 169/76/M BO 41 1976.10.09
+#	PT 78/79/M BO 19 1979.05.12
+#	PT 166/79/M BO 42 1979.10.20
+# Note that DIL 732 does not belong to "HORÁRIO DE VERÃO" according to
+# LegisMac.... Note that between 1942 and 1945, the time switched
+# between GMT+9 and GMT+10.  Also in 1965 and 1965 the DST ended at 2:30am.
+
+# From Paul Eggert (2018-05-10):
+# The 1904 decree says that Macau changed from the meridian of
+# Fortaleza do Monte, presumably the basis for the 7:34:10 for LMT.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Macau	1961	1962	-	Mar	Sun>=16	3:30	1:00	D
-Rule	Macau	1961	1964	-	Nov	Sun>=1	3:30	0	S
-Rule	Macau	1963	only	-	Mar	Sun>=16	0:00	1:00	D
-Rule	Macau	1964	only	-	Mar	Sun>=16	3:30	1:00	D
-Rule	Macau	1965	only	-	Mar	Sun>=16	0:00	1:00	D
-Rule	Macau	1965	only	-	Oct	31	0:00	0	S
-Rule	Macau	1966	1971	-	Apr	Sun>=16	3:30	1:00	D
-Rule	Macau	1966	1971	-	Oct	Sun>=16	3:30	0	S
-Rule	Macau	1972	1974	-	Apr	Sun>=15	0:00	1:00	D
-Rule	Macau	1972	1973	-	Oct	Sun>=15	0:00	0	S
-Rule	Macau	1974	1977	-	Oct	Sun>=15	3:30	0	S
-Rule	Macau	1975	1977	-	Apr	Sun>=15	3:30	1:00	D
-Rule	Macau	1978	1980	-	Apr	Sun>=15	0:00	1:00	D
-Rule	Macau	1978	1980	-	Oct	Sun>=15	0:00	0	S
-# See Europe/Lisbon for info about the 1912 transition.
+Rule	Macau	1942	1943	-	Apr	30	23:00	1:00	-
+Rule	Macau	1942	only	-	Nov	17	23:00	0	-
+Rule	Macau	1943	only	-	Sep	30	23:00	0	S
+Rule	Macau	1946	only	-	Apr	30	23:00s	1:00	D
+Rule	Macau	1946	only	-	Sep	30	23:00s	0	S
+Rule	Macau	1947	only	-	Apr	19	23:00s	1:00	D
+Rule	Macau	1947	only	-	Nov	30	23:00s	0	S
+Rule	Macau	1948	only	-	May	 2	23:00s	1:00	D
+Rule	Macau	1948	only	-	Oct	31	23:00s	0	S
+Rule	Macau	1949	1950	-	Apr	Sat>=1	23:00s	1:00	D
+Rule	Macau	1949	1950	-	Oct	lastSat	23:00s	0	S
+Rule	Macau	1951	only	-	Mar	31	23:00s	1:00	D
+Rule	Macau	1951	only	-	Oct	28	23:00s	0	S
+Rule	Macau	1952	1953	-	Apr	Sat>=1	23:00s	1:00	D
+Rule	Macau	1952	only	-	Nov	 1	23:00s	0	S
+Rule	Macau	1953	1954	-	Oct	lastSat	23:00s	0	S
+Rule	Macau	1954	1956	-	Mar	Sat>=17	23:00s	1:00	D
+Rule	Macau	1955	only	-	Nov	 5	23:00s	0	S
+Rule	Macau	1956	1964	-	Nov	Sun>=1	03:30	0	S
+Rule	Macau	1957	1964	-	Mar	Sun>=18	03:30	1:00	D
+Rule	Macau	1965	1973	-	Apr	Sun>=16	03:30	1:00	D
+Rule	Macau	1965	1966	-	Oct	Sun>=16	02:30	0	S
+Rule	Macau	1967	1976	-	Oct	Sun>=16	03:30	0	S
+Rule	Macau	1973	only	-	Dec	30	03:30	1:00	D
+Rule	Macau	1975	1976	-	Apr	Sun>=16	03:30	1:00	D
+Rule	Macau	1979	only	-	May	13	03:30	1:00	D
+Rule	Macau	1979	only	-	Oct	Sun>=16	03:30	0	S
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Macau	7:34:20 -	LMT	1911 Dec 31 16:00u
+Zone	Asia/Macau	7:34:10 -	LMT	1904 Oct 30
+			8:00	-	CST	1941 Dec 21 23:00
+			9:00	Macau	+09/+10	1945 Sep 30 24:00
 			8:00	Macau	C%sT
 
 
@@ -1494,9 +1654,29 @@ Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 # http://www.shugiin.go.jp/internet/itdb_housei.nsf/html/houritsu/00719500331039.htm
 # ... In summary, it is written as follows.  From 24:00 on the first Saturday
 # in May, until 0:00 on the day after the second Saturday in September.
+
+# From Phake Nick (2018-09-27):
+# [T]he webpage authored by National Astronomical Observatory of Japan
+# https://eco.mtk.nao.ac.jp/koyomi/wiki/BBFEB9EF2FB2C6BBFEB9EF.html
+# ... mentioned that using Showa 23 (year 1948) as example, 13pm of September
+# 11 in summer time will equal to 0am of September 12 in standard time.
+# It cited a document issued by the Liaison Office which briefly existed
+# during the postwar period of Japan, where the detail on implementation
+# of the summer time is described in the document.
+# https://eco.mtk.nao.ac.jp/koyomi/wiki/BBFEB9EF2FB2C6BBFEB9EFB2C6BBFEB9EFA4CEBCC2BBDCA4CBA4C4A4A4A4C6.pdf
+# The text in the document do instruct a fall back to occur at
+# September 11, 13pm in summer time, while ordinary citizens can
+# change the clock before they sleep.
+#
+# From Paul Eggert (2018-09-27):
+# This instruction is equivalent to "Sat>=8 25:00", so use that.  zic treats
+# it like "Sun>=9 01:00", which is not quite the same but is the best we can
+# do in any POSIX or C platform.  The "25:00" assumes zic from 2007 or later,
+# which should be safe now.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Japan	1948	only	-	May	Sat>=1	24:00	1:00	D
-Rule	Japan	1948	1951	-	Sep	Sun>=9	 0:00	0	S
+Rule	Japan	1948	1951	-	Sep	Sun>=9	 1:00	0	S
 Rule	Japan	1949	only	-	Apr	Sat>=1	24:00	1:00	D
 Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 
@@ -1878,7 +2058,7 @@ Zone	Asia/Aqtobe	3:48:40	-	LMT	1924 May  2
 			5:00	-	+05
 # Mangghystaū (KZ-MAN)
 # Aqtau was not founded until 1963, but it represents an inhabited region,
-# so include time stamps before 1963.
+# so include timestamps before 1963.
 Zone	Asia/Aqtau	3:21:04	-	LMT	1924 May  2
 			4:00	-	+04	1930 Jun 21
 			5:00	-	+05	1981 Oct  1
@@ -2018,6 +2198,10 @@ Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 # Assembly, as published in Rodong Sinmun.
 # From Tim Parenti (2018-04-29):
 # It appears to be the front page story at the top in the right-most column.
+#
+# From Paul Eggert (2018-05-04):
+# The BBC reported that the transition was from 23:30 to 24:00 today.
+# https://www.bbc.com/news/world-asia-44010705
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
@@ -2030,7 +2214,7 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
 			9:00	-	JST	1945 Aug 24
 			9:00	-	KST	2015 Aug 15 00:00
-			8:30	-	KST	2018 May  5
+			8:30	-	KST	2018 May  4 23:30
 			9:00	-	KST
 
 ###############################################################################
@@ -2780,19 +2964,35 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # Philippine Star 2014-08-05
 # http://www.philstar.com/headlines/2014/08/05/1354152/pnoy-urged-declare-use-daylight-saving-time
 
+# From Paul Goyette (2018-06-15):
+# In the Philippines, there is a national law, Republic Act No. 10535
+# which declares the official time here as "Philippine Standard Time".
+# The act [1] even specifies use of PST as the abbreviation, although
+# the FAQ provided by PAGASA [2] uses the "acronym PhST to distinguish
+# it from the Pacific Standard Time (PST)."
+# [1] http://www.officialgazette.gov.ph/2013/05/15/republic-act-no-10535/
+# [2] https://www1.pagasa.dost.gov.ph/index.php/astronomy/philippine-standard-time#republic-act-10535
+#
+# From Paul Eggert (2018-06-19):
+# I surveyed recent news reports, and my impression is that "PST" is
+# more popular among reliable English-language news sources.  This is
+# not just a measure of Google hit counts: it's also the sizes and
+# influence of the sources.  There is no current abbreviation for DST,
+# so use "PDT", the usual American style.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Phil	1936	only	-	Nov	1	0:00	1:00	-
-Rule	Phil	1937	only	-	Feb	1	0:00	0	-
-Rule	Phil	1954	only	-	Apr	12	0:00	1:00	-
-Rule	Phil	1954	only	-	Jul	1	0:00	0	-
-Rule	Phil	1978	only	-	Mar	22	0:00	1:00	-
-Rule	Phil	1978	only	-	Sep	21	0:00	0	-
+Rule	Phil	1936	only	-	Nov	1	0:00	1:00	D
+Rule	Phil	1937	only	-	Feb	1	0:00	0	S
+Rule	Phil	1954	only	-	Apr	12	0:00	1:00	D
+Rule	Phil	1954	only	-	Jul	1	0:00	0	S
+Rule	Phil	1978	only	-	Mar	22	0:00	1:00	D
+Rule	Phil	1978	only	-	Sep	21	0:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Manila	-15:56:00 -	LMT	1844 Dec 31
 			8:04:00 -	LMT	1899 May 11
-			8:00	Phil	+08/+09	1942 May
-			9:00	-	+09	1944 Nov
-			8:00	Phil	+08/+09
+			8:00	Phil	P%sT	1942 May
+			9:00	-	JST	1944 Nov
+			8:00	Phil	P%sT
 
 # Qatar
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2803,14 +3003,33 @@ Link Asia/Qatar Asia/Bahrain
 
 # Saudi Arabia
 #
-# From Paul Eggert (2014-07-15):
+# From Paul Eggert (2018-08-29):
 # Time in Saudi Arabia and other countries in the Arabian peninsula was not
-# standardized until relatively recently; we don't know when, and possibly it
+# standardized until 1968 or so; we don't know exactly when, and possibly it
 # has never been made official.  Richard P Hunt, in "Islam city yielding to
 # modern times", New York Times (1961-04-09), p 20, wrote that only airlines
 # observed standard time, and that people in Jeddah mostly observed quasi-solar
 # time, doing so by setting their watches at sunrise to 6 o'clock (or to 12
 # o'clock for "Arab" time).
+#
+# Timekeeping differed depending on who you were and which part of Saudi
+# Arabia you were in.  In 1969, Elias Antar wrote that although a common
+# practice had been to set one's watch to 12:00 (i.e., midnight) at sunset -
+# which meant that the time on one side of a mountain could differ greatly from
+# the time on the other side - many foreigners set their watches to 6pm
+# instead, while airlines instead used UTC +03 (except in Dhahran, where they
+# used UTC +04), Aramco used UTC +03 with DST, and the Trans-Arabian Pipe Line
+# Company used Aramco time in eastern Saudi Arabia and airline time in western.
+# (The American Military Aid Advisory Group used plain UTC.)  Antar writes,
+# "A man named Higgins, so the story goes, used to run a local power
+# station. One day, the whole thing became too much for Higgins and he
+# assembled his staff and laid down the law. 'I've had enough of this,' he
+# shrieked. 'It is now 12 o'clock Higgins Time, and from now on this station is
+# going to run on Higgins Time.' And so, until last year, it did."  See:
+# Antar E. Dinner at When? Saudi Aramco World, 1969 March/April. 2-3.
+# http://archive.aramcoworld.com/issue/196902/dinner.at.when.htm
+# newspapers.com says a similar story about Higgins was published in the Port
+# Angeles (WA) Evening News, 1965-03-10, page 5, but I lack access to the text.
 #
 # The TZ database cannot represent quasi-solar time; airline time is the best
 # we can do.  The 1946 foreign air news digest of the U.S. Civil Aeronautics
@@ -2821,7 +3040,8 @@ Link Asia/Qatar Asia/Bahrain
 #
 # Shanks & Pottenger also state that until 1968-05-01 Saudi Arabia had two
 # time zones; the other zone, at UT +04, was in the far eastern part of
-# the country.  Ignore this, as it's before our 1970 cutoff.
+# the country.  Presumably this is documenting airline time.  Ignore this,
+# as it's before our 1970 cutoff.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14

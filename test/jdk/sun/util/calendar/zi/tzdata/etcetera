@@ -21,12 +21,14 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for ships at sea and other miscellany
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
 # These entries are mostly present for historical reasons, so that
 # people in areas not otherwise covered by the tz files could "zic -l"
-# to a time zone that was right for their area.  These days, the
+# to a timezone that was right for their area.  These days, the
 # tz files cover almost all the inhabited world, and the only practical
 # need now for the entries that are not on UTC are for ships at sea
 # that cannot use POSIX TZ settings.
