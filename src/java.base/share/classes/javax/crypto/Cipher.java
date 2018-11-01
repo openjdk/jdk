@@ -492,6 +492,12 @@ public class Cipher {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @apiNote
+     * It is recommended to use a transformation that fully specifies the
+     * algorithm, mode, and padding. By not doing so, the provider will
+     * use a default for the mode and padding which may not meet the security
+     * requirements of your application.
+     *
      * @implNote
      * The JDK Reference Implementation additionally uses the
      * {@code jdk.security.provider.preferred}
@@ -499,6 +505,9 @@ public class Cipher {
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * See also the Cipher Transformations section of the {@extLink
+     * security_guide_jdk_providers JDK Providers} document for information
+     * on the transformation defaults used by JDK providers.
      *
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
@@ -578,6 +587,17 @@ public class Cipher {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @apiNote
+     * It is recommended to use a transformation that fully specifies the
+     * algorithm, mode, and padding. By not doing so, the provider will
+     * use a default for the mode and padding which may not meet the security
+     * requirements of your application.
+     *
+     * @implNote
+     * See the Cipher Transformations section of the {@extLink
+     * security_guide_jdk_providers JDK Providers} document for information
+     * on the transformation defaults used by JDK providers.
+     *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
@@ -637,6 +657,17 @@ public class Cipher {
      * CipherSpi implementation from the specified Provider
      * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
+     *
+     * @apiNote
+     * It is recommended to use a transformation that fully specifies the
+     * algorithm, mode, and padding. By not doing so, the provider will
+     * use a default for the mode and padding which may not meet the security
+     * requirements of your application.
+     *
+     * @implNote
+     * See the Cipher Transformations section of the {@extLink
+     * security_guide_jdk_providers JDK Providers} document for information
+     * on the transformation defaults used by JDK providers.
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
