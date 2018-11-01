@@ -46,7 +46,8 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jvmti.scenarios.hotswap.HS204.hs204t001.hs204t001
+ * @build ExecDriver
+ *      nsk.jvmti.scenarios.hotswap.HS204.hs204t001.hs204t001
  *
  * @comment compile newclassXX to bin/newclassXX
  * @run driver nsk.share.ExtraClassesBuilder

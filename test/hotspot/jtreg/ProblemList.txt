@@ -185,8 +185,6 @@ vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
 vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java 8016181 generic-all
 vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
-vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java 8204506,8203350 generic-all
-vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t001/hs204t001.java 6813266 generic-all
 vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java 8051349 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach034/TestDescription.java 8042145 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
