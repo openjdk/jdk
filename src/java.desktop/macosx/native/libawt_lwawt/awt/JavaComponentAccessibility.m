@@ -465,8 +465,9 @@ static NSObject *sAttributeNamesLOCK = nil;
     }
 
     // if it's a pagetab / radiobutton, it has a value but no min/max value.
+    // if it is a slider, supplying only the value makes it to voice out the value instead of percentages
     BOOL hasAxValue = attributeStatesArray[2];
-    if ([javaRole isEqualToString:@"pagetab"] || [javaRole isEqualToString:@"radiobutton"]) {
+    if ([javaRole isEqualToString:@"pagetab"] || [javaRole isEqualToString:@"radiobutton"] || [javaRole isEqualToString:@"slider"]) {
         [attributeNames addObject:NSAccessibilityValueAttribute];
     } else {
         // if not a pagetab/radio button, and it has a value, it has a min/max/current value.
