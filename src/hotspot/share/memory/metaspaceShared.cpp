@@ -1207,10 +1207,6 @@ private:
 
 public:
   static void copy_and_compact() {
-    // We should no longer allocate anything from the metaspace, so that
-    // we can have a stable set of MetaspaceObjs to work with.
-    Metaspace::freeze();
-
     ResourceMark rm;
     SortedSymbolClosure the_ssc; // StackObj
     _ssc = &the_ssc;
@@ -1356,6 +1352,14 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  // We should no longer allocate anything from the metaspace, so that:
+  //
+  // (1) Metaspace::allocate might trigger GC if we have run out of
+  //     committed metaspace, but we can't GC because we're running
+  //     in the VM thread.
+  // (2) ArchiveCompactor needs to work with a stable set of MetaspaceObjs.
+  Metaspace::freeze();
+
   Thread* THREAD = VMThread::vm_thread();
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -1419,8 +1423,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // We don't support archiving unsafe anonymous classes. Verify that they are not stored in
   // any dictionaries.
   NOT_PRODUCT(assert_no_unsafe_anonymous_classes_in_dictionaries());
-
-  SystemDictionaryShared::finalize_verification_constraints();
 
   ArchiveCompactor::initialize();
   ArchiveCompactor::copy_and_compact();
@@ -1716,6 +1718,8 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     tty->print_cr("Rewriting and linking classes: done");
 
     SystemDictionary::clear_invoke_method_table();
+
+    SystemDictionaryShared::finalize_verification_constraints();
 
     VM_PopulateDumpSharedSpace op;
     VMThread::execute(&op);
