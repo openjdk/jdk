@@ -12519,7 +12519,7 @@ public class GB18030
                             dst.put(getChar(offset));
                         else if (offset >= 0x830D && offset <= 0x93A8)
                             dst.put((char)(offset + 0x6557));
-                        else if (offset >= 0x93A9 && offset <= 0x99F9)
+                        else if (offset >= 0x93A9 && offset <= 0x99FB)
                             dst.put(getChar(offset));
                         // Supplemental UCS planes handled via surrogates
                         else if (offset >= 0x2E248 && offset < 0x12E248) {
