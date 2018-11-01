@@ -61,7 +61,7 @@ import org.w3c.dom.DOMException;
  * from other sources that could provide specific support for specialized
  * extension functions or variables as would be defined by other
  * specifications.
- * <p>See also the <a href='http://www.w3.org/2002/08/WD-DOM-Level-3-XPath-20020820'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
  */
 public interface XPathEvaluator {
     /**
