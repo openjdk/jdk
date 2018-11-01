@@ -55,6 +55,14 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * <ul>
  * <li><a href="http://www.unicode.org">http://www.unicode.org</a>
  * </ul>
+ * <p>
+ * The code point, U+32FF, is reserved by the Unicode Consortium
+ * to represent the Japanese square character for the new era that begins
+ * May 2019. Relevant methods in the Character class return the same
+ * properties as for the existing Japanese era characters (e.g., U+337E for
+ * "Meizi"). For the details of the code point, refer to
+ * <a href="http://blog.unicode.org/2018/09/new-japanese-era.html">
+ * http://blog.unicode.org/2018/09/new-japanese-era.html</a>.
  *
  * <h3><a id="unicode">Unicode Character Representations</a></h3>
  *
