@@ -5557,12 +5557,8 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
 // that is reported is when the test tries to allocate at a particular location but gets a
 // different valid one. A NULL return value at this point is not considered an error but may
 // be legitimate.
-// If -XX:+VerboseInternalVMTests is enabled, print some explanatory messages.
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
-    if (VerboseInternalVMTests) {
-      tty->print("Skipping test because large pages are disabled");
-    }
     return;
   }
   // save current value of globals
@@ -5576,10 +5572,6 @@ void TestReserveMemorySpecial_test() {
   const size_t large_allocation_size = os::large_page_size() * 4;
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
   if (result == NULL) {
-    if (VerboseInternalVMTests) {
-      tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
-                          large_allocation_size);
-    }
   } else {
     os::release_memory_special(result, large_allocation_size);
 
@@ -5589,10 +5581,6 @@ void TestReserveMemorySpecial_test() {
     char* expected_location = result + os::large_page_size();
     char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
     if (actual_location == NULL) {
-      if (VerboseInternalVMTests) {
-        tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
-                            expected_location, large_allocation_size);
-      }
     } else {
       // release memory
       os::release_memory_special(actual_location, expected_allocation_size);

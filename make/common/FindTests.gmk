@@ -79,7 +79,7 @@ MAKE_TEST_TARGETS := $(shell $(MAKE) -s --no-print-directory $(MAKE_ARGS) \
 ALL_NAMED_TESTS += $(addprefix make-, $(MAKE_TEST_TARGETS))
 
 # Add special tests
-ALL_NAMED_TESTS += hotspot-internal failure-handler make
+ALL_NAMED_TESTS += failure-handler make
 
 ################################################################################
 

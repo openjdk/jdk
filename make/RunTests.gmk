@@ -405,7 +405,7 @@ define ParseSpecialTestSelection
       special:make:all \
     )
   ) \
-  $(if $(filter hotspot-internal failure-handler, $1), \
+  $(if $(filter failure-handler, $1), \
     special:$(strip $1) \
   )
 endef
@@ -779,11 +779,7 @@ define SetupRunSpecialTestBody
     $1_TEST_ARGS :=
   endif
 
-  ifeq ($$($1_TEST_NAME), hotspot-internal)
-    $1_TEST_COMMAND_LINE := \
-        $$(JDK_IMAGE_DIR)/bin/java -XX:+ExecuteInternalVMTests \
-        -XX:+ShowMessageBoxOnError -version
-  else ifeq ($$($1_TEST_NAME), failure-handler)
+  ifeq ($$($1_TEST_NAME), failure-handler)
     ifeq ($(BUILD_FAILURE_HANDLER), true)
       $1_TEST_COMMAND_LINE := \
           ($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f \

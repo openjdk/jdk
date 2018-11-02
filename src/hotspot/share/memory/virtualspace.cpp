@@ -1059,14 +1059,6 @@ void VirtualSpace::print() {
 
 #ifndef PRODUCT
 
-#define test_log(...) \
-  do {\
-    if (VerboseInternalVMTests) { \
-      tty->print_cr(__VA_ARGS__); \
-      tty->flush(); \
-    }\
-  } while (false)
-
 class TestReservedSpace : AllStatic {
  public:
   static void small_page_write(void* addr, size_t size) {
@@ -1087,16 +1079,12 @@ class TestReservedSpace : AllStatic {
   }
 
   static void test_reserved_space1(size_t size, size_t alignment) {
-    test_log("test_reserved_space1(%p)", (void*) (uintptr_t) size);
-
     assert(is_aligned(size, alignment), "Incorrect input parameters");
 
     ReservedSpace rs(size,          // size
                      alignment,     // alignment
                      UseLargePages, // large
                      (char *)NULL); // requested_address
-
-    test_log(" rs.special() == %d", rs.special());
 
     assert(rs.base() != NULL, "Must be");
     assert(rs.size() == size, "Must be");
@@ -1112,13 +1100,9 @@ class TestReservedSpace : AllStatic {
   }
 
   static void test_reserved_space2(size_t size) {
-    test_log("test_reserved_space2(%p)", (void*)(uintptr_t)size);
-
     assert(is_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
 
     ReservedSpace rs(size);
-
-    test_log(" rs.special() == %d", rs.special());
 
     assert(rs.base() != NULL, "Must be");
     assert(rs.size() == size, "Must be");
@@ -1131,9 +1115,6 @@ class TestReservedSpace : AllStatic {
   }
 
   static void test_reserved_space3(size_t size, size_t alignment, bool maybe_large) {
-    test_log("test_reserved_space3(%p, %p, %d)",
-        (void*)(uintptr_t)size, (void*)(uintptr_t)alignment, maybe_large);
-
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
       assert((size_t)os::vm_page_size() == os::large_page_size(), "Test needs further refinement");
@@ -1146,8 +1127,6 @@ class TestReservedSpace : AllStatic {
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
 
     ReservedSpace rs(size, alignment, large, false);
-
-    test_log(" rs.special() == %d", rs.special());
 
     assert(rs.base() != NULL, "Must be");
     assert(rs.size() == size, "Must be");

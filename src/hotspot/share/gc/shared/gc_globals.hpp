@@ -372,12 +372,6 @@
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  notproduct(bool, ExecuteInternalVMTests, false,                           \
-          "Enable execution of internal VM tests")                          \
-                                                                            \
-  notproduct(bool, VerboseInternalVMTests, false,                           \
-          "Turn on logging for internal VM tests.")                         \
-                                                                            \
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
                                                                             \
