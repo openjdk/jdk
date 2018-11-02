@@ -209,6 +209,7 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   return map;
 }
 
+#if INCLUDE_AOT
 AOTOopRecorder::AOTOopRecorder(Arena* arena, bool deduplicate) : OopRecorder(arena, deduplicate) {
   _meta_refs = new GrowableArray<jobject>();
 }
@@ -268,6 +269,7 @@ void AOTOopRecorder::record_meta_ref(jobject o, int index) {
   assert(index == _meta_refs->length(), "must be last");
   _meta_refs->append(o);
 }
+#endif // INCLUDE_AOT
 
 void* CodeInstaller::record_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS) {
   /*
@@ -555,6 +557,7 @@ void CodeInstaller::initialize_dependencies(oop compiled_code, OopRecorder* reco
   }
 }
 
+#if INCLUDE_AOT
 RelocBuffer::~RelocBuffer() {
   if (_buffer != NULL) {
     FREE_C_HEAP_ARRAY(char, _buffer);
@@ -593,9 +596,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
   // Get instructions and constants CodeSections early because we need it.
   _instructions = buffer.insts();
   _constants = buffer.consts();
-#if INCLUDE_AOT
   buffer.set_immutable_PIC(_immutable_pic_compilation);
-#endif
 
   initialize_fields(target(), JNIHandles::resolve(compiled_code_obj), CHECK_OK);
   JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, false, CHECK_OK);
@@ -618,6 +619,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
   reloc_buffer->set_size(size);
   return JVMCIEnv::ok;
 }
+#endif // INCLUDE_AOT
 
 // constructor used to create a method
 JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS) {
@@ -769,6 +771,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
           }
         }
       }
+#if INCLUDE_AOT
       if (UseAOT && site->is_a(site_Call::klass())) {
         oop target = site_Call::target(site);
         InstanceKlass* target_klass = InstanceKlass::cast(target->klass());
@@ -777,6 +780,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
           aot_call_stubs++;
         }
       }
+#endif
     }
   }
   int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
@@ -1278,10 +1282,12 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, Handle si
       if (!_immutable_pic_compilation) {
         pd_patch_MetaspaceConstant(pc_offset, constant, CHECK);
       }
+#if INCLUDE_AOT
     } else if (constant->is_a(HotSpotSentinelConstant::klass())) {
       if (!_immutable_pic_compilation) {
         JVMCI_ERROR("sentinel constant not supported for normal compiles: %s", constant->klass()->signature_name());
       }
+#endif
     } else {
       JVMCI_ERROR("unknown constant type in data patch: %s", constant->klass()->signature_name());
     }

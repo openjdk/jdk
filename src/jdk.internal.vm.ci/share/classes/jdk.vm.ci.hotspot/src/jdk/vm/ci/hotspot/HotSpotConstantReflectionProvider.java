@@ -42,7 +42,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     protected final HotSpotJVMCIRuntime runtime;
     protected final HotSpotMethodHandleAccessProvider methodHandleAccess;
-    protected final HotSpotMemoryAccessProviderImpl memoryAccess;
+    private final HotSpotMemoryAccessProviderImpl memoryAccess;
 
     public HotSpotConstantReflectionProvider(HotSpotJVMCIRuntime runtime) {
         this.runtime = runtime;

@@ -47,7 +47,7 @@ public class LocalVariableTable {
 
     /**
      * Gets a description of a local variable that occupies the bytecode frame slot indexed by
-     * {@code slot} and is live at the bytecode index {@code bci}
+     * {@code slot} and is live at the bytecode index {@code bci}.
      *
      * @return a description of the requested local variable or null if no such variable matches
      *         {@code slot} and {@code bci}
@@ -74,7 +74,7 @@ public class LocalVariableTable {
     }
 
     /**
-     * Gets a description of all the local variables live at the bytecode index {@code bci}
+     * Gets a description of all the local variables live at the bytecode index {@code bci}.
      */
     public Local[] getLocalsAt(int bci) {
         List<Local> result = new ArrayList<>();

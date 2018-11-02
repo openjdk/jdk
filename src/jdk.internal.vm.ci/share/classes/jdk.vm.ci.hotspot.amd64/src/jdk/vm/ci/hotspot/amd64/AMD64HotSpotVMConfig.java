@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@ package jdk.vm.ci.hotspot.amd64;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 
+/**
+ * Used to access AMD64 specific native configuration details.
+ */
 class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     AMD64HotSpotVMConfig(HotSpotVMConfigStore config) {

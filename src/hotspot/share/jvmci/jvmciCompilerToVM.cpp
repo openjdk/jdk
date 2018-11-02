@@ -714,6 +714,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
 C2V_END
 
 C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject compiled_code, jobject metadata))
+#if INCLUDE_AOT
   ResourceMark rm;
   HandleMark hm;
 
@@ -783,6 +784,9 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   HotSpotMetaData::set_exceptionBytes(metadata_handle, exceptionArrayOop());
 
   return result;
+#else
+  THROW_MSG_0(vmSymbols::java_lang_InternalError(), "unimplemented");
+#endif
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv *jniEnv, jobject))
@@ -1426,12 +1430,16 @@ C2V_VMENTRY(int, methodDataProfileDataSize, (JNIEnv*, jobject, jlong metaspace_m
 C2V_END
 
 C2V_VMENTRY(jlong, getFingerprint, (JNIEnv*, jobject, jlong metaspace_klass))
+#if INCLUDE_AOT
   Klass *k = CompilerToVM::asKlass(metaspace_klass);
   if (k->is_instance_klass()) {
     return InstanceKlass::cast(k)->get_stored_fingerprint();
   } else {
     return 0;
   }
+#else
+  THROW_MSG_0(vmSymbols::java_lang_InternalError(), "unimplemented");
+#endif
 C2V_END
 
 C2V_VMENTRY(jobject, getHostClass, (JNIEnv*, jobject, jobject jvmci_type))

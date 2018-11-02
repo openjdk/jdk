@@ -126,8 +126,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = r28;
     public static final Register fp = r29;
 
-    private static final RegisterArray reservedRegisters
-        = new RegisterArray(rscratch1, rscratch2, threadRegister, fp, lr, r31, zr, sp);
+    private static final RegisterArray reservedRegisters = new RegisterArray(rscratch1, rscratch2, threadRegister, fp, lr, r31, zr, sp);
 
     private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         RegisterArray allRegisters = arch.getAvailableValueRegisters();

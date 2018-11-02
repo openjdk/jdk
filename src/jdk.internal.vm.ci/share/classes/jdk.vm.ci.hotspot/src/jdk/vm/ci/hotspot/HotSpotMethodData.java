@@ -579,8 +579,9 @@ final class HotSpotMethodData {
 
             totalCount += getMethodsNotRecordedExecutionCount(data, position);
 
-            // Fixup the case of C1's inability to optimize profiling of a statically bindable call site.
-            // If it's a monomorphic call site, attribute all the counts to the first type (if any is recorded).
+            // Fixup the case of C1's inability to optimize profiling of a statically bindable call
+            // site. If it's a monomorphic call site, attribute all the counts to the first type (if
+            // any is recorded).
             if (entries == 1) {
                 counts[0] = totalCount;
             }

@@ -98,7 +98,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
     }
 
     /**
-     * An assumption that a given class has no subclasses implementing {@code Object#finalize()}).
+     * An assumption that a given class has no subclasses implementing {@link Object#finalize()}).
      */
     public static final class NoFinalizableSubclass extends Assumption {
 

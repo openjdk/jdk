@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,6 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
 
     int layoutHelper();
 
-    long getFingerprint();
-
     @Override
     HotSpotResolvedObjectType getEnclosingType();
 
@@ -127,4 +125,11 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
       return isUnsafeAnonymous();
     }
 
+    /**
+     * Gets the fingerprint for this type.
+     *
+     * @return the value of the fingerprint ({@code 0} for arrays and synthetic classes or if the VM
+     *         does not support fingerprints)
+     */
+    long getFingerprint();
 }

@@ -58,7 +58,8 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
     boolean hasReservedStackAccess();
 
     /**
-     * Sets flags on {@code method} indicating that it should never be inlined or compiled by the VM.
+     * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
+     * VM.
      */
     void setNotInlinableOrCompilable();
 

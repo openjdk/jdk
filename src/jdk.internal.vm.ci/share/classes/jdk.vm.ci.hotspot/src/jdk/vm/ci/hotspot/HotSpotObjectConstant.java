@@ -91,4 +91,7 @@ public interface HotSpotObjectConstant extends JavaConstant, HotSpotConstant, VM
      *         {@code null}
      */
     Object asObject(ResolvedJavaType type);
+
+    @Override
+    String toValueString();
 }

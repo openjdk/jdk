@@ -24,8 +24,8 @@ package jdk.vm.ci.hotspot;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.SpeculationLog;

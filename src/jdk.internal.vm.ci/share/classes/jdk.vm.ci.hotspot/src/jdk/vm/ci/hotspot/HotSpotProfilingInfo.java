@@ -28,7 +28,7 @@ import jdk.vm.ci.meta.JavaTypeProfile;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.TriState;
 
-public final class HotSpotProfilingInfo implements ProfilingInfo {
+final class HotSpotProfilingInfo implements ProfilingInfo {
 
     private final HotSpotMethodData methodData;
     private final HotSpotResolvedJavaMethod method;
@@ -42,7 +42,7 @@ public final class HotSpotProfilingInfo implements ProfilingInfo {
     private boolean includeNormal;
     private boolean includeOSR;
 
-    public HotSpotProfilingInfo(HotSpotMethodData methodData, HotSpotResolvedJavaMethod method, boolean includeNormal, boolean includeOSR) {
+    HotSpotProfilingInfo(HotSpotMethodData methodData, HotSpotResolvedJavaMethod method, boolean includeNormal, boolean includeOSR) {
         this.methodData = methodData;
         this.method = method;
         this.includeNormal = includeNormal;

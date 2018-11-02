@@ -22,11 +22,11 @@
  */
 package jdk.vm.ci.meta;
 
+import java.lang.reflect.Modifier;
+
 import static java.lang.reflect.Modifier.PRIVATE;
 import static java.lang.reflect.Modifier.PROTECTED;
 import static java.lang.reflect.Modifier.PUBLIC;
-
-import java.lang.reflect.Modifier;
 
 /**
  * A Java element (i.e., a class, interface, field or method) that is described by a set of Java
