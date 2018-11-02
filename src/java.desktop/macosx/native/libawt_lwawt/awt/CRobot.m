@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,7 @@ Java_sun_lwawt_macosx_CRobot_initRobot
  */
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CRobot_mouseEvent
-(JNIEnv *env, jobject peer,
- jint displayID, jint mouseLastX, jint mouseLastY, jint buttonsState,
+(JNIEnv *env, jobject peer, jint mouseLastX, jint mouseLastY, jint buttonsState,
  jboolean isButtonsDownState, jboolean isMouseMove)
 {
     JNF_COCOA_ENTER(env);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,11 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Window;
+import java.awt.geom.Rectangle2D;
 import java.util.Objects;
+
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
@@ -45,6 +48,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     private volatile int displayID;
     private volatile double xResolution;
     private volatile double yResolution;
+    private volatile Rectangle bounds;
     private volatile int scale;
 
     // Array of all GraphicsConfig instances for this device
@@ -61,18 +65,8 @@ public final class CGraphicsDevice extends GraphicsDevice
     public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
         configs = new GraphicsConfiguration[] {
-            CGLGraphicsConfig.getConfig(this, 0)
+            CGLGraphicsConfig.getConfig(this, displayID, 0)
         };
-    }
-
-    /**
-     * Returns CGDirectDisplayID, which is the same id as @"NSScreenNumber" in
-     * NSScreen.
-     *
-     * @return CoreGraphics display id.
-     */
-    public int getCGDisplayID() {
-        return displayID;
     }
 
     /**
@@ -118,6 +112,10 @@ public final class CGraphicsDevice extends GraphicsDevice
         return yResolution;
     }
 
+    Rectangle getBounds() {
+        return bounds.getBounds();
+    }
+
     public Insets getScreenInsets() {
         // the insets are queried synchronously and are not cached
         // since there are no Quartz or Cocoa means to receive notifications
@@ -140,6 +138,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     public void displayChanged() {
         xResolution = nativeGetXResolution(displayID);
         yResolution = nativeGetYResolution(displayID);
+        bounds = nativeGetBounds(displayID).getBounds(); //does integer rounding
         initScaleFactor();
         //TODO configs/fullscreenWindow/modes?
     }
@@ -273,4 +272,6 @@ public final class CGraphicsDevice extends GraphicsDevice
     private static native double nativeGetYResolution(int displayID);
 
     private static native Insets nativeGetScreenInsets(int displayID);
+
+    private static native Rectangle2D nativeGetBounds(int displayID);
 }

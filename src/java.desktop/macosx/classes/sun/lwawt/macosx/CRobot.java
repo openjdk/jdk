@@ -25,12 +25,15 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
-import java.awt.peer.*;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.peer.RobotPeer;
 
 import sun.awt.CGraphicsDevice;
 
-class CRobot implements RobotPeer {
+final class CRobot implements RobotPeer {
+
     private static final int MOUSE_LOCATION_UNKNOWN      = -1;
 
     private final CGraphicsDevice fDevice;
@@ -65,8 +68,7 @@ class CRobot implements RobotPeer {
         mouseLastX = x;
         mouseLastY = y;
 
-        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
-                   mouseButtonsState, true, true);
+        mouseEvent(mouseLastX, mouseLastY, mouseButtonsState, true, true);
     }
 
     /**
@@ -79,8 +81,7 @@ class CRobot implements RobotPeer {
     public void mousePress(int buttons) {
         mouseButtonsState |= buttons;
         checkMousePos();
-        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
-                   buttons, true, false);
+        mouseEvent(mouseLastX, mouseLastY, buttons, true, false);
     }
 
     /**
@@ -93,8 +94,7 @@ class CRobot implements RobotPeer {
     public void mouseRelease(int buttons) {
         mouseButtonsState &= ~buttons;
         checkMousePos();
-        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
-                   buttons, false, false);
+        mouseEvent(mouseLastX, mouseLastY, buttons, false, false);
     }
 
     /**
@@ -193,8 +193,7 @@ class CRobot implements RobotPeer {
     }
 
     private native void initRobot();
-    private native void mouseEvent(int displayID, int lastX, int lastY,
-                                   int buttonsState,
+    private native void mouseEvent(int lastX, int lastY, int buttonsState,
                                    boolean isButtonsDownState,
                                    boolean isMouseMove);
     private native void keyEvent(int javaKeyCode, boolean keydown);
