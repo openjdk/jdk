@@ -382,7 +382,8 @@ public final class Constructor<T> extends Executable {
      * including type parameters.  The string is formatted as the
      * constructor access modifiers, if any, followed by an
      * angle-bracketed comma separated list of the constructor's type
-     * parameters, if any, followed by the fully-qualified name of the
+     * parameters, if any, including  informative bounds of the
+     * type parameters, if any, followed by the fully-qualified name of the
      * declaring class, followed by a parenthesized, comma-separated
      * list of the constructor's generic formal parameter types.
      *

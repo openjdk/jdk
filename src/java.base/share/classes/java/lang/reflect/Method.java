@@ -436,10 +436,11 @@ public final class Method extends Executable {
     }
 
     /**
-     * Returns a string describing this {@code Method}, including
-     * type parameters.  The string is formatted as the method access
+     * Returns a string describing this {@code Method}, including type
+     * parameters.  The string is formatted as the method access
      * modifiers, if any, followed by an angle-bracketed
      * comma-separated list of the method's type parameters, if any,
+     * including informative bounds of the type parameters, if any,
      * followed by the method's generic return type, followed by a
      * space, followed by the class declaring the method, followed by
      * a period, followed by the method name, followed by a

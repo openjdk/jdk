@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6298888 6992705 8161500
+ * @bug 6298888 6992705 8161500 6304578
  * @summary Check Class.toGenericString()
  * @author Joseph D. Darcy
  */
@@ -43,12 +43,20 @@ public class GenericStringTest {
         String[][] nested = {{""}};
         int[][]    intArray = {{1}};
 
-        failures += checkToGenericString(int.class, "int");
-        failures += checkToGenericString(void.class, "void");
-        failures += checkToGenericString(args.getClass(), "java.lang.String[]");
-        failures += checkToGenericString(nested.getClass(), "java.lang.String[][]");
-        failures += checkToGenericString(intArray.getClass(), "int[][]");
-        failures += checkToGenericString(java.util.Map.class, "public abstract interface java.util.Map<K,V>");
+        Map<Class<?>, String> testCases =
+            Map.of(int.class,                          "int",
+                   void.class,                         "void",
+                   args.getClass(),                    "java.lang.String[]",
+                   nested.getClass(),                  "java.lang.String[][]",
+                   intArray.getClass(),                "int[][]",
+                   java.lang.Enum.class,               "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>",
+                   java.util.Map.class,                "public abstract interface java.util.Map<K,V>",
+                   java.util.EnumMap.class,            "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>",
+                   java.util.EventListenerProxy.class, "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>");
+
+        for (Map.Entry<Class<?>, String> testCase : testCases.entrySet()) {
+            failures += checkToGenericString(testCase.getKey(), testCase.getValue());
+        }
 
         Field f = GenericStringTest.class.getDeclaredField("mixed");
         // The expected value includes "<K,V>" rather than
@@ -74,7 +82,7 @@ public class GenericStringTest {
     private static int checkToGenericString(Class<?> clazz, String expected) {
         String genericString = clazz.toGenericString();
         if (!genericString.equals(expected)) {
-            System.err.printf("Unexpected Class.toGenericString output; expected '%s', got '%s'.%n",
+            System.err.printf("Unexpected Class.toGenericString output; expected %n\t'%s',%n got %n\t'%s'.%n",
                               expected,
                               genericString);
             return 1;

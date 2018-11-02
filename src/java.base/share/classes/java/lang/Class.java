@@ -59,6 +59,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
@@ -200,7 +202,8 @@ public final class Class<T> implements java.io.Serializable,
      * and {@code class}, {@code enum}, {@code interface}, or
      * <code>&#64;</code>{@code interface}, as appropriate), followed
      * by the type's name, followed by an angle-bracketed
-     * comma-separated list of the type's type parameters, if any.
+     * comma-separated list of the type's type parameters, if any,
+     * including informative bounds on the type parameters, if any.
      *
      * A space is used to separate modifiers from one another and to
      * separate any modifiers from the kind of type. The modifiers
@@ -262,17 +265,25 @@ public final class Class<T> implements java.io.Serializable,
 
             TypeVariable<?>[] typeparms = component.getTypeParameters();
             if (typeparms.length > 0) {
-                StringJoiner sj = new StringJoiner(",", "<", ">");
-                for(TypeVariable<?> typeparm: typeparms) {
-                    sj.add(typeparm.getTypeName());
-                }
-                sb.append(sj.toString());
+                sb.append(Stream.of(typeparms).map(Class::typeVarBounds).
+                          collect(Collectors.joining(",", "<", ">")));
             }
 
             for (int i = 0; i < arrayDepth; i++)
                 sb.append("[]");
 
             return sb.toString();
+        }
+    }
+
+    static String typeVarBounds(TypeVariable<?> typeVar) {
+        Type[] bounds = typeVar.getBounds();
+        if (bounds.length == 1 && bounds[0].equals(Object.class)) {
+            return typeVar.getName();
+        } else {
+            return typeVar.getName() + " extends " +
+                Stream.of(bounds).map(Type::getTypeName).
+                collect(Collectors.joining(" & "));
         }
     }
 
@@ -3399,14 +3410,14 @@ public final class Class<T> implements java.io.Serializable,
      * Helper method to get the method name from arguments.
      */
     private String methodToString(String name, Class<?>[] argTypes) {
-        StringJoiner sj = new StringJoiner(", ", getName() + "." + name + "(", ")");
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName() + "." + name + "(");
         if (argTypes != null) {
-            for (int i = 0; i < argTypes.length; i++) {
-                Class<?> c = argTypes[i];
-                sj.add((c == null) ? "null" : c.getName());
-            }
+            Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
+                collect(Collectors.joining(","));
         }
-        return sj.toString();
+        sb.append(")");
+        return sb.toString();
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */

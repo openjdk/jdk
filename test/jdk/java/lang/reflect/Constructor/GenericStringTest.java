@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106 8161500 8162539
+ * @bug 5033583 6316717 6470106 8161500 8162539 6304578
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -87,7 +87,13 @@ class TestClass1 {
     protected <S, T> TestClass1(S s, T t) throws Exception{}
 
     @ExpectedGenericString(
-   "<E> TestClass1() throws E")
+   "protected <V extends java.lang.Number & java.lang.Runnable> TestClass1(V)")
+    @ExpectedString(
+   "protected TestClass1(java.lang.Number)")
+    protected <V extends Number & Runnable> TestClass1(V v){}
+
+    @ExpectedGenericString(
+   "<E extends java.lang.Exception> TestClass1() throws E")
     @ExpectedString(
    "TestClass1() throws java.lang.Exception")
     <E extends Exception> TestClass1() throws E {}
