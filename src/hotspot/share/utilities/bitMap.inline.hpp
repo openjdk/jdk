@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
@@ -141,151 +142,83 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
   }
 }
 
+template<BitMap::bm_word_t flip, bool aligned_right>
+inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(l_index, r_index);
+  assert(!aligned_right || is_word_aligned(r_index), "r_index not aligned");
+
+  // The first word often contains an interesting bit, either due to
+  // density or because of features of the calling algorithm.  So it's
+  // important to examine that first word with a minimum of fuss,
+  // minimizing setup time for later words that will be wasted if the
+  // first word is indeed interesting.
+
+  // The benefit from aligned_right being true is relatively small.
+  // It saves a couple instructions in the setup for the word search
+  // loop.  It also eliminates the range check on the final result.
+  // However, callers often have a comparison with r_index, and
+  // inlining often allows the two comparisons to be combined; it is
+  // important when !aligned_right that return paths either return
+  // r_index or a value dominated by a comparison with r_index.
+  // aligned_right is still helpful when the caller doesn't have a
+  // range check because features of the calling algorithm guarantee
+  // an interesting bit will be present.
+
+  if (l_index < r_index) {
+    // Get the word containing l_index, and shift out low bits.
+    idx_t index = word_index(l_index);
+    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
+    if ((cword & 1) != 0) {
+      // The first bit is similarly often interesting. When it matters
+      // (density or features of the calling algorithm make it likely
+      // the first bit is set), going straight to the next clause compares
+      // poorly with doing this check first; count_trailing_zeros can be
+      // relatively expensive, plus there is the additional range check.
+      // But when the first bit isn't set, the cost of having tested for
+      // it is relatively small compared to the rest of the search.
+      return l_index;
+    } else if (cword != 0) {
+      // Flipped and shifted first word is non-zero.
+      idx_t result = l_index + count_trailing_zeros(cword);
+      if (aligned_right || (result < r_index)) return result;
+      // Result is beyond range bound; return r_index.
+    } else {
+      // Flipped and shifted first word is zero.  Word search through
+      // aligned up r_index for a non-zero flipped word.
+      idx_t limit = aligned_right
+        ? word_index(r_index)
+        : (word_index(r_index - 1) + 1); // Align up, knowing r_index > 0.
+      while (++index < limit) {
+        cword = map(index) ^ flip;
+        if (cword != 0) {
+          idx_t result = bit_index(index) + count_trailing_zeros(cword);
+          if (aligned_right || (result < r_index)) return result;
+          // Result is beyond range bound; return r_index.
+          assert((index + 1) == limit, "invariant");
+          break;
+        }
+      }
+      // No bits in range; return r_index.
+    }
+  }
+  return r_index;
+}
+
 inline BitMap::idx_t
 BitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {
-  assert(l_offset <= size(), "BitMap index out of bounds");
-  assert(r_offset <= size(), "BitMap index out of bounds");
-  assert(l_offset <= r_offset, "l_offset > r_offset ?");
-
-  if (l_offset == r_offset) {
-    return l_offset;
-  }
-  idx_t   index = word_index(l_offset);
-  idx_t r_index = word_index(r_offset-1) + 1;
-  idx_t res_offset = l_offset;
-
-  // check bits including and to the _left_ of offset's position
-  idx_t pos = bit_in_word(res_offset);
-  bm_word_t res = map(index) >> pos;
-  if (res != 0) {
-    // find the position of the 1-bit
-    for (; !(res & 1); res_offset++) {
-      res = res >> 1;
-    }
-
-#ifdef ASSERT
-    // In the following assert, if r_offset is not bitamp word aligned,
-    // checking that res_offset is strictly less than r_offset is too
-    // strong and will trip the assert.
-    //
-    // Consider the case where l_offset is bit 15 and r_offset is bit 17
-    // of the same map word, and where bits [15:16:17:18] == [00:00:00:01].
-    // All the bits in the range [l_offset:r_offset) are 0.
-    // The loop that calculates res_offset, above, would yield the offset
-    // of bit 18 because it's in the same map word as l_offset and there
-    // is a set bit in that map word above l_offset (i.e. res != NoBits).
-    //
-    // In this case, however, we can assert is that res_offset is strictly
-    // less than size() since we know that there is at least one set bit
-    // at an offset above, but in the same map word as, r_offset.
-    // Otherwise, if r_offset is word aligned then it will not be in the
-    // same map word as l_offset (unless it equals l_offset). So either
-    // there won't be a set bit between l_offset and the end of it's map
-    // word (i.e. res == NoBits), or res_offset will be less than r_offset.
-
-    idx_t limit = is_word_aligned(r_offset) ? r_offset : size();
-    assert(res_offset >= l_offset && res_offset < limit, "just checking");
-#endif // ASSERT
-    return MIN2(res_offset, r_offset);
-  }
-  // skip over all word length 0-bit runs
-  for (index++; index < r_index; index++) {
-    res = map(index);
-    if (res != 0) {
-      // found a 1, return the offset
-      for (res_offset = bit_index(index); !(res & 1); res_offset++) {
-        res = res >> 1;
-      }
-      assert(res & 1, "tautology; see loop condition");
-      assert(res_offset >= l_offset, "just checking");
-      return MIN2(res_offset, r_offset);
-    }
-  }
-  return r_offset;
+  return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
 inline BitMap::idx_t
 BitMap::get_next_zero_offset(idx_t l_offset, idx_t r_offset) const {
-  assert(l_offset <= size(), "BitMap index out of bounds");
-  assert(r_offset <= size(), "BitMap index out of bounds");
-  assert(l_offset <= r_offset, "l_offset > r_offset ?");
-
-  if (l_offset == r_offset) {
-    return l_offset;
-  }
-  idx_t   index = word_index(l_offset);
-  idx_t r_index = word_index(r_offset-1) + 1;
-  idx_t res_offset = l_offset;
-
-  // check bits including and to the _left_ of offset's position
-  idx_t pos = bit_in_word(res_offset);
-  bm_word_t res = ~map(index) >> pos; // flip bits and shift for l_offset
-
-  if (res != 0) {
-    // find the position of the 1-bit
-    for (; !(res & 1); res_offset++) {
-      res = res >> 1;
-    }
-    assert(res_offset >= l_offset, "just checking");
-    return MIN2(res_offset, r_offset);
-  }
-  // skip over all word length 1-bit runs
-  for (index++; index < r_index; index++) {
-    res = map(index);
-    if (res != ~(bm_word_t)0) {
-      // found a 0, return the offset
-      for (res_offset = index << LogBitsPerWord; res & 1;
-           res_offset++) {
-        res = res >> 1;
-      }
-      assert(!(res & 1), "tautology; see loop condition");
-      assert(res_offset >= l_offset, "just checking");
-      return MIN2(res_offset, r_offset);
-    }
-  }
-  return r_offset;
+  return get_next_bit_impl<find_zeros_flip, false>(l_offset, r_offset);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const
-{
-  verify_range(l_offset, r_offset);
-  assert(bit_in_word(r_offset) == 0, "r_offset not word-aligned");
-
-  if (l_offset == r_offset) {
-    return l_offset;
-  }
-  idx_t   index = word_index(l_offset);
-  idx_t r_index = word_index(r_offset);
-  idx_t res_offset = l_offset;
-
-  // check bits including and to the _left_ of offset's position
-  bm_word_t res = map(index) >> bit_in_word(res_offset);
-  if (res != 0) {
-    // find the position of the 1-bit
-    for (; !(res & 1); res_offset++) {
-      res = res >> 1;
-    }
-    assert(res_offset >= l_offset &&
-           res_offset < r_offset, "just checking");
-    return res_offset;
-  }
-  // skip over all word length 0-bit runs
-  for (index++; index < r_index; index++) {
-    res = map(index);
-    if (res != 0) {
-      // found a 1, return the offset
-      for (res_offset = bit_index(index); !(res & 1); res_offset++) {
-        res = res >> 1;
-      }
-      assert(res & 1, "tautology; see loop condition");
-      assert(res_offset >= l_offset && res_offset < r_offset, "just checking");
-      return res_offset;
-    }
-  }
-  return r_offset;
+BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const {
+  return get_next_bit_impl<find_ones_flip, true>(l_offset, r_offset);
 }
-
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each
 // bit in the mask is 0 if the bit is in the range, 1 if not in the range.  The
