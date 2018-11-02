@@ -74,6 +74,10 @@ inline bool ZAddress::is_finalizable(uintptr_t value) {
   return value & ZAddressMetadataFinalizable;
 }
 
+inline bool ZAddress::is_finalizable_good(uintptr_t value) {
+  return is_finalizable(value) && is_good(value ^ ZAddressMetadataFinalizable);
+}
+
 inline bool ZAddress::is_remapped(uintptr_t value) {
   return value & ZAddressMetadataRemapped;
 }

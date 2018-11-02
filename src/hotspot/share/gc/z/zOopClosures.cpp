@@ -28,54 +28,31 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-static void z_verify_loaded_object(const oop* p, const oop obj) {
-  guarantee(ZOop::is_good_or_null(obj),
-            "Bad oop " PTR_FORMAT " found at " PTR_FORMAT ", expected " PTR_FORMAT,
-            p2i(obj), p2i(p), p2i(ZOop::good(obj)));
-  guarantee(oopDesc::is_oop_or_null(obj),
-            "Bad object " PTR_FORMAT " found at " PTR_FORMAT,
-            p2i(obj), p2i(p));
-}
-
-OopIterateClosure::ReferenceIterationMode ZVerifyHeapOopClosure::reference_iteration_mode() {
-  // Don't visit the j.l.Reference.referents for this verification closure,
-  // since they are cleaned concurrently after ZHeap::mark_end(), and can
-  // therefore not be verified at this point.
-  return DO_FIELDS_EXCEPT_REFERENT;
-}
-
-void ZVerifyHeapOopClosure::do_oop(oop* p) {
-  guarantee(ZHeap::heap()->is_in((uintptr_t)p), "oop* " PTR_FORMAT " not in heap", p2i(p));
-
-  const oop obj = RawAccess<>::oop_load(p);
-  z_verify_loaded_object(p, obj);
-}
-
-void ZVerifyHeapOopClosure::do_oop(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
-ZVerifyRootOopClosure::ZVerifyRootOopClosure() {
-  // This closure should only be used from ZHeap::mark_end(),
-  // when all roots should have been fixed by the fixup_partial_loads().
+void ZVerifyOopClosure::do_oop(oop* p) {
+  guarantee(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   guarantee(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
+  guarantee(!ZResurrection::is_blocked(), "Invalid phase");
+
+  const oop o = RawAccess<>::oop_load(p);
+  if (o != NULL) {
+    guarantee(ZOop::is_good(o) || ZOop::is_finalizable_good(o),
+              "Bad oop " PTR_FORMAT " found at " PTR_FORMAT ", expected " PTR_FORMAT,
+              p2i(o), p2i(p), p2i(ZOop::good(o)));
+    guarantee(oopDesc::is_oop(ZOop::good(o)),
+              "Bad object " PTR_FORMAT " found at " PTR_FORMAT,
+              p2i(o), p2i(p));
+  }
 }
 
-void ZVerifyRootOopClosure::do_oop(oop* p) {
-  guarantee(!ZHeap::heap()->is_in((uintptr_t)p), "oop* " PTR_FORMAT " in heap", p2i(p));
-
-  const oop obj = RawAccess<>::oop_load(p);
-  z_verify_loaded_object(p, obj);
-}
-
-void ZVerifyRootOopClosure::do_oop(narrowOop* p) {
+void ZVerifyOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
 
 void ZVerifyObjectClosure::do_object(oop o) {
-  ZVerifyHeapOopClosure cl;
+  ZVerifyOopClosure cl;
   o->oop_iterate(&cl);
 }

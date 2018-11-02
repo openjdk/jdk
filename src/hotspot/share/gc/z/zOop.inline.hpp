@@ -40,8 +40,8 @@ inline bool ZOop::is_good(oop o) {
   return ZAddress::is_good(to_address(o));
 }
 
-inline bool ZOop::is_good_or_null(oop o) {
-  return ZAddress::is_good_or_null(to_address(o));
+inline bool ZOop::is_finalizable_good(oop o) {
+  return ZAddress::is_finalizable_good(to_address(o));
 }
 
 inline oop ZOop::good(oop o) {
