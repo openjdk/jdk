@@ -149,7 +149,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
 $(function() {
     $("#search").catcomplete({
         minLength: 1,
-        delay: 100,
+        delay: 300,
         source: function(request, response) {
             var result = new Array();
             var presult = new Array();
