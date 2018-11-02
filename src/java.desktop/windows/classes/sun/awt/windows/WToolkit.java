@@ -72,6 +72,8 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import sun.awt.util.PerformanceLogger;
 import sun.font.FontManager;
@@ -810,21 +812,34 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
+    private static ExecutorService displayChangeExecutor;
+
     /*
      * Called from Toolkit native code when a WM_DISPLAYCHANGE occurs.
      * Have Win32GraphicsEnvironment execute the display change code on the
      * Event thread.
      */
     public static void displayChanged() {
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                if (lge instanceof DisplayChangedListener) {
-                    ((DisplayChangedListener) lge).displayChanged();
-                }
+        final Runnable runnable = () -> {
+            Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            if (lge instanceof DisplayChangedListener) {
+                ((DisplayChangedListener) lge).displayChanged();
             }
-        });
+        };
+        if (AppContext.getAppContext() != null) {
+            // Common case, standalone application
+            EventQueue.invokeLater(runnable);
+        } else {
+            if (displayChangeExecutor == null) {
+                // No synchronization, called on the Toolkit thread only
+                displayChangeExecutor = Executors.newFixedThreadPool(1, r -> {
+                    Thread t = Executors.defaultThreadFactory().newThread(r);
+                    t.setDaemon(true);
+                    return t;
+                });
+            }
+            displayChangeExecutor.submit(runnable);
+        }
     }
 
     /**
