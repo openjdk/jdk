@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.Window;
 
 /**
  * @test
- * @bug 8165769
+ * @bug 8165769 8198001
  * @key headful
  */
 public final class WrongParentAfterRemoveMenu {
