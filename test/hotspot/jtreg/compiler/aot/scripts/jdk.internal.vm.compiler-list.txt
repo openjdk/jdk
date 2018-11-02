@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,27 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
+#
 exclude org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyCallNode.*
 exclude org.graalvm.compiler.hotspot.replacements.AESCryptSubstitutions.*
 exclude org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions.crypt(Ljava/lang/Object;[BII[BILjava/lang/Object;ZZ)V
+exclude org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayAllocationSize(III)I
+exclude org.graalvm.compiler.hotspot.replacements.PluginFactory_HotSpotReplacementsUtil\$config.execute(.*).*
+exclude org.graalvm.compiler.hotspot.replacements.PluginFactory_HotSpotReplacementsUtil\$getWordKind.execute(.*).*
+exclude org.graalvm.compiler.hotspot.replacements.PluginFactory_HotSpotReplacementsUtil\$getConfig.execute(.*).
+#
 exclude org.graalvm.compiler.hotspot.stubs.StubUtil.printf(.*).*
 exclude org.graalvm.compiler.hotspot.stubs.StubUtil.decipher(J)V
 exclude org.graalvm.compiler.hotspot.stubs.StubUtil.fatal(.*).*
+#
+exclude org.graalvm.compiler.nodes.java.NewArrayNode.newUninitializedArray(Ljava/lang/Class;I)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newUninitializedArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.PiNode.piCastNonNull(Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
 #
 exclude org.graalvm.compiler.replacements.nodes.ArrayEqualsNode.equals(.*).*
 exclude org.graalvm.compiler.replacements.Log.print.*
 exclude org.graalvm.compiler.replacements.ReplacementsUtil.*
 exclude org.graalvm.compiler.replacements.SnippetCounter.*
 exclude org.graalvm.compiler.replacements.SnippetCounterNode.*
-#
-exclude org.graalvm.compiler.nodes.java.NewArrayNode.newUninitializedArray(Ljava/lang/Class;I)Ljava/lang/Object;
-exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newUninitializedArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
-exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
-exclude org.graalvm.compiler.nodes.PiNode.piCastNonNull(Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
+exclude org.graalvm.compiler.replacements.SnippetIntegerHistogram.inc(J)V

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -95,12 +95,12 @@ endef
 # $1: The output file name
 # $2..$N: The lines to output to the file
 define CreateNewSpec
-  $(if $(strip $(26)), \
+  $(if $(strip $(30)), \
     $(error Internal makefile error: \
       Too many arguments to macro, please update CreateNewSpec in RunTestsPrebuilt.gmk) \
   ) \
   $(shell $(RM) $1) \
-  $(foreach i, $(call sequence, 2, 25), \
+  $(foreach i, $(call sequence, 2, 29), \
     $(if $(strip $($i)), \
       $(call AppendFile, $(strip $($i)), $1) \
     ) \
@@ -235,6 +235,34 @@ ifeq ($(NUM_CORES), )
   NUM_CORES := 1
 endif
 
+# Setup LD for AOT support
+ifneq ($(DEVKIT_HOME), )
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    LD := $(DEVKIT_HOME)/VC/bin/x64/link
+    LIBRARY_PREFIX :=
+    SHARED_LIBRARY_SUFFIX := .dll
+    EXE_SUFFIX := .exe
+  else ifeq ($(OPENJDK_TARGET_OS), linux)
+    LD := $(DEVKIT_HOME)/bin/ld
+    LIBRARY_PREFIX := lib
+    SHARED_LIBRARY_SUFFIX := .so
+    EXE_SUFFIX :=
+  else ifeq ($(OPENJDK_TARGET_OS), macosx)
+    LD := $(DEVKIT_HOME)/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
+    LIBRARY_PREFIX := lib
+    SHARED_LIBRARY_SUFFIX := .dylib
+    EXE_SUFFIX :=
+  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+    # Prefer system linker for AOT on Solaris.
+    LD := ld
+    LIBRARY_PREFIX := lib
+    SHARED_LIBRARY_SUFFIX := .so
+    EXE_SUFFIX :=
+  endif
+else
+  LD := ld
+endif
+
 ################################################################################
 # Generate the ephemeral spec file
 ################################################################################
@@ -270,6 +298,10 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     OPENJDK_TARGET_CPU_BITS := $(OPENJDK_TARGET_CPU_BITS), \
     OPENJDK_TARGET_CPU_ENDIAN := $(OPENJDK_TARGET_CPU_ENDIAN), \
     NUM_CORES := $(NUM_CORES), \
+    LD := $(LD), \
+    LIBRARY_PREFIX := $(LIBRARY_PREFIX), \
+    SHARED_LIBRARY_SUFFIX := $(SHARED_LIBRARY_SUFFIX), \
+    EXE_SUFFIX := $(EXE_SUFFIX), \
     include $(TOPDIR)/make/RunTestsPrebuiltSpec.gmk, \
     $(CUSTOM_NEW_SPEC_LINE), \
 )
