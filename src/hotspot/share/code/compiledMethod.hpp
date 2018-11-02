@@ -147,6 +147,9 @@ protected:
 
   bool _is_far_code; // Code is far from CodeCache.
                      // Have to use far call instructions to call it from code in CodeCache.
+
+  volatile uint8_t _is_unloading_state;      // Local state used to keep track of whether unloading is happening or not
+
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -202,7 +205,7 @@ public:
 
   virtual address verified_entry_point() const = 0;
   virtual void log_identity(xmlStream* log) const = 0;
-  virtual void log_state_change(oop cause = NULL) const = 0;
+  virtual void log_state_change() const = 0;
   virtual bool make_not_used() = 0;
   virtual bool make_not_entrant() = 0;
   virtual bool make_entrant() = 0;
@@ -333,17 +336,13 @@ public:
 
   static address get_deopt_original_pc(const frame* fr);
 
-  // GC unloading support
-  // Cleans unloaded klasses and unloaded nmethods in inline caches
-  bool unload_nmethod_caches(bool parallel, bool class_unloading_occurred);
-
   // Inline cache support for class unloading and nmethod unloading
  private:
-  bool cleanup_inline_caches_impl(bool parallel, bool unloading_occurred, bool clean_all);
+  void cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
  public:
-  bool cleanup_inline_caches(bool clean_all = false) {
+  void cleanup_inline_caches(bool clean_all) {
     // Serial version used by sweeper and whitebox test
-    return cleanup_inline_caches_impl(false, false, clean_all);
+    cleanup_inline_caches_impl(false, clean_all);
   }
 
   virtual void clear_inline_caches();
@@ -373,53 +372,32 @@ public:
   virtual void metadata_do(void f(Metadata*)) = 0;
 
   // GC support
-
-  void set_unloading_next(CompiledMethod* next) { _unloading_next = next; }
-  CompiledMethod* unloading_next()              { return _unloading_next; }
-
  protected:
   address oops_reloc_begin() const;
+
  private:
   void static clean_ic_if_metadata_is_dead(CompiledIC *ic);
 
   void clean_ic_stubs();
 
  public:
-  virtual void do_unloading(BoolObjectClosure* is_alive);
-  //  The parallel versions are used by G1.
-  virtual bool do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred);
-  virtual void do_unloading_parallel_postponed();
+  // GC unloading support
+  // Cleans unloaded klasses and unloaded nmethods in inline caches
 
-  static unsigned char global_unloading_clock()   { return _global_unloading_clock; }
-  static void increase_unloading_clock();
+  bool is_unloading();
 
-  void set_unloading_clock(unsigned char unloading_clock);
-  unsigned char unloading_clock();
-
-protected:
-  virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive) = 0;
-#if INCLUDE_JVMCI
-  virtual bool do_unloading_jvmci() = 0;
-#endif
+  void unload_nmethod_caches(bool class_unloading_occurred);
+  void clear_unloading_state();
+  virtual void do_unloading(bool unloading_occurred) { }
 
 private:
-  // GC support to help figure out if an nmethod has been
-  // cleaned/unloaded by the current GC.
-  static unsigned char _global_unloading_clock;
-
-  volatile unsigned char _unloading_clock;   // Incremented after GC unloaded/cleaned the nmethod
-
   PcDesc* find_pc_desc(address pc, bool approximate) {
     return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));
   }
 
 protected:
-  union {
-    // Used by G1 to chain nmethods.
-    CompiledMethod* _unloading_next;
-    // Used by non-G1 GCs to chain nmethods.
-    nmethod* _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
-  };
+  // Used by some GCs to chain nmethods.
+  nmethod* _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
 };
 
 #endif //SHARE_VM_CODE_COMPILEDMETHOD_HPP

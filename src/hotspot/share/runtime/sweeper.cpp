@@ -702,7 +702,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     if (cm->is_alive()) {
       // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
       CompiledICLocker ml(cm);
-      cm->cleanup_inline_caches();
+      cm->cleanup_inline_caches(false);
       SWEEP(cm);
     }
     return result;
@@ -748,7 +748,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     } else {
       // Still alive, clean up its inline caches
       CompiledICLocker ml(cm);
-      cm->cleanup_inline_caches();
+      cm->cleanup_inline_caches(false);
       SWEEP(cm);
     }
   } else if (cm->is_unloaded()) {
@@ -758,7 +758,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
       // Clean ICs of unloaded nmethods as well because they may reference other
       // unloaded nmethods that may be flushed earlier in the sweeper cycle.
       CompiledICLocker ml(cm);
-      cm->cleanup_inline_caches();
+      cm->cleanup_inline_caches(false);
     }
     if (cm->is_osr_method()) {
       SWEEP(cm);
@@ -779,7 +779,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     }
     // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
     CompiledICLocker ml(cm);
-    cm->cleanup_inline_caches();
+    cm->cleanup_inline_caches(false);
     SWEEP(cm);
   }
   return result;
