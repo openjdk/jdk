@@ -42,7 +42,6 @@ void InternalVMTests::run_test(const char* name, void (*test)()) {
 
 void InternalVMTests::run() {
   tty->print_cr("Running internal VM tests");
-  run_unit_test(TestReserveMemorySpecial_test);
   tty->print_cr("All internal VM tests passed");
 }
 
