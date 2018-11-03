@@ -27,6 +27,7 @@
 
 #include "runtime/os.hpp"
 #include "runtime/flags/flagSetting.hpp"
+#include "runtime/globals_extension.hpp"
 #include "unittest.hpp"
 
 namespace {
