@@ -22,7 +22,8 @@
  */
 
 /* @test
-   @bug 8192888
+   @key headful
+   @bug 8192888 8213261
    @summary Verifies getBaseline causes NPE for Nimbus L&F
    @run main AllSwingComponentsBaselineTest
  */
@@ -58,7 +59,9 @@ public class AllSwingComponentsBaselineTest {
             BasicButtonUI bbUI = (BasicButtonUI) UIManager.getUI(b);
             bbUI.getBaseline(b, b.getHeight(), b.getWidth());
         } finally {
-            frame.dispose();
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 }
