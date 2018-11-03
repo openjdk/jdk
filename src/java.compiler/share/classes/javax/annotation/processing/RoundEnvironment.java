@@ -143,17 +143,44 @@ public interface RoundEnvironment {
      * simply because a {@code module-info} file for that module was
      * created.
      *
+     * <p> Note: An implementation of this method typically performs
+     * an internal conversion from the runtime reflective
+     * representation of an annotation type as a {@code Class} object
+     * to a different representation used for annotation
+     * processing. The set of annotation types present in the runtime
+     * context may differ from the set of annotation types present in
+     * the context of annotation processing in a particular
+     * environmental configuration. If an runtime annotation type is
+     * not present in the annotation processing context, the situation
+     * is not treated as an error and no elements are found for that
+     * annotation type.
+     *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,
      * or an empty set if there are none
      * @throws IllegalArgumentException if the argument does not
      * represent an annotation type
+     *
+     * @see javax.lang.model.AnnotatedConstruct#getAnnotation(Class)
+     * @see javax.lang.model.AnnotatedConstruct#getAnnotationsByType(Class)
      */
     Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a);
 
     /**
      * Returns the elements annotated with one or more of the given
      * annotation types.
+     *
+     * <p> Note: An implementation of this method typically performs
+     * an internal conversion from the runtime reflective
+     * representation of an annotation type as a {@code Class} object
+     * to a different representation used for annotation
+     * processing. The set of annotation types present in the runtime
+     * context may differ from the set of annotation types present in
+     * the context of annotation processing in a particular
+     * environmental configuration. If an runtime annotation type is
+     * not present in the annotation processing context, the situation
+     * is not treated as an error and no elements are found for that
+     * annotation type.
      *
      * @apiNote This method may be useful when processing repeating
      * annotations by looking for an annotation type and its
@@ -172,6 +199,10 @@ public interface RoundEnvironment {
      * @throws IllegalArgumentException if the any elements of the
      * argument set do not represent an annotation type
      * @jls 9.6.3 Repeatable Annotation Types
+     *
+     * @see javax.lang.model.AnnotatedConstruct#getAnnotation(Class)
+     * @see javax.lang.model.AnnotatedConstruct#getAnnotationsByType(Class)
+     *
      * @since 9
      */
     default Set<? extends Element> getElementsAnnotatedWithAny(Set<Class<? extends Annotation>> annotations){
