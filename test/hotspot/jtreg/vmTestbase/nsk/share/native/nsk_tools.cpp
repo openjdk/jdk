@@ -163,7 +163,7 @@ void nsk_lvcomplain(const char file[], int line,
       } else if (strlen(msg_buf2) != 0) {
         msg_buf2[strlen(msg_buf2)-1] = '\n'; // Make sure we have a newline char at the end.
       }
-      (void) nsk_printf("The following fake exception stacktrace is for failuire analysis. \n");
+      (void) nsk_printf("The following fake exception stacktrace is for failure analysis. \n");
       (void) nsk_printf("nsk.share.Fake_Exception_for_RULE_Creation: ");
       if (file != NULL) {
         (void) nsk_printf("(%s:%d) ", file_basename(file), line);

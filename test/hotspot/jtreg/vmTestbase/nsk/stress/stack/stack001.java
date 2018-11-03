@@ -34,7 +34,7 @@
  * COMMENTS
  *     Kestrel for Solaris_JDK_1.3-b10 crashes while trying to execute
  *     this test with Client HS VM.
- *     See lots of bugs concerning similar failuires:
+ *     See lots of bugs concerning similar failures:
  *     Evaluated:
  *     4217960 [native stack overflow bug] reflection test causes crash
  *     Accepted:
