@@ -992,6 +992,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * During VM initialization, java.lang.Integer.IntegerCache.high property
      * may be set and saved in the private system properties in the
      * jdk.internal.misc.VM class.
+     *
+     * WARNING: The cache is archived with CDS and reloaded from the shared
+     * archive at runtime. The archived cache (Integer[]) and Integer objects
+     * reside in the closed archive heap regions. Care should be taken when
+     * changing the implementation and the cache array should not be assigned
+     * with new Integer object(s) after initialization.
      */
 
     private static class IntegerCache {

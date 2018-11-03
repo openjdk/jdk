@@ -55,7 +55,6 @@ private:
 
   // The string table
   static StringTable* _the_table;
-  static volatile bool _shared_string_mapped;
   static volatile bool _alt_hash;
 
 private:
@@ -166,8 +165,6 @@ private:
   static void copy_shared_string_table(CompactHashtableWriter* ch_table) NOT_CDS_JAVA_HEAP_RETURN;
  public:
   static oop create_archived_string(oop s, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static void set_shared_string_mapped() { _shared_string_mapped = true; }
-  static bool shared_string_mapped()     { return _shared_string_mapped; }
   static void shared_oops_do(OopClosure* f) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_to_archive() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
