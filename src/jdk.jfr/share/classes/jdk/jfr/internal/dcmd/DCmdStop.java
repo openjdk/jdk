@@ -56,7 +56,7 @@ final class DCmdStop extends AbstractDCmd {
      * @throws DCmdException if recording could not be stopped
      */
     public String execute(String name, String filename) throws DCmdException {
-        if (LogTag.JFR_DCMD.shouldLog(LogLevel.DEBUG)) {
+        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdStart: name=" + name + ", filename=" + filename);
         }
 

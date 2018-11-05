@@ -446,6 +446,12 @@ void JfrStartFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
       assert(element != NULL, "invariant");
       JfrJavaSupport::set_array_element(settings, element, i, CHECK);
     }
+  } else {
+    settings = JfrJavaSupport::new_string_array(1, CHECK);
+    assert(settings != NULL, "invariant");
+    jobject element = JfrJavaSupport::new_string("default", CHECK);
+    assert(element != NULL, "invariant");
+    JfrJavaSupport::set_array_element(settings, element, 0, CHECK);
   }
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdStart";

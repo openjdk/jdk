@@ -70,7 +70,7 @@ final class DCmdDump extends AbstractDCmd {
      * @throws DCmdException if the dump could not be completed
      */
     public String execute(String name, String filename, Long maxAge, Long maxSize, String begin, String end, Boolean pathToGcRoots) throws DCmdException {
-        if (LogTag.JFR_DCMD.shouldLog(LogLevel.DEBUG)) {
+        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG,
                     "Executing DCmdDump: name=" + name +
                     ", filename=" + filename +

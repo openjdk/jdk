@@ -81,4 +81,7 @@ public final class JVMSupport {
     public static boolean isNotAvailable() {
         return notAvailable;
     }
+
+    public static void tryToInitializeJVM() {
+    }
 }

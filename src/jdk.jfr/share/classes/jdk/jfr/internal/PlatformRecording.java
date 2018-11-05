@@ -453,7 +453,7 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     private void setSettings(Map<String, String> settings, boolean update) {
-        if (LogTag.JFR_SETTING.shouldLog(LogLevel.INFO.level) && update) {
+        if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO) && update) {
             TreeMap<String, String> ordered = new TreeMap<>(settings);
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "New settings for recording \"" + getName() + "\" (" + getId() + ")");
             for (Map.Entry<String, String> entry : ordered.entrySet()) {

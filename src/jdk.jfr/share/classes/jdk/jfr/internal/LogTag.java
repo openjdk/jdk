@@ -80,19 +80,11 @@ public enum LogTag {
     JFR_DCMD(10);
 
     /* set from native side */
-    private volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized
+    volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized
 
     final int id;
 
     LogTag(int tagId) {
         id = tagId;
-    }
-
-    public boolean shouldLog(int level) {
-        return level >= tagSetLevel;
-    }
-
-    public boolean shouldLog(LogLevel logLevel) {
-        return shouldLog(logLevel.level);
     }
 }

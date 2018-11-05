@@ -79,7 +79,7 @@ final class MetadataReader {
         descriptor.gmtOffset = time.attribute(MetadataDescriptor.ATTRIBUTE_GMT_OFFSET, 1);
         descriptor.locale = time.attribute(MetadataDescriptor.ATTRIBUTE_LOCALE, "");
         descriptor.root = root;
-        if (LogTag.JFR_SYSTEM_PARSER.shouldLog(LogLevel.TRACE.level)) {
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE)) {
              List<Type> ts = new ArrayList<>(types.values());
              Collections.sort(ts, (x,y) -> x.getName().compareTo(y.getName()));
              for (Type t : ts) {

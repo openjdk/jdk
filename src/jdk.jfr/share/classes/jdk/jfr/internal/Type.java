@@ -271,7 +271,7 @@ public class Type implements Comparable<Type> {
     }
 
     void log(String action, LogTag logTag, LogLevel level) {
-        if (logTag.shouldLog(level.level) && !isSimpleType()) {
+        if (Logger.shouldLog(logTag, level) && !isSimpleType()) {
             Logger.log(logTag, LogLevel.TRACE, action + " " + typeText() + " " + getLogName() + " {");
             for (ValueDescriptor v : getFields()) {
                 String array = v.isArray() ? "[]" : "";
@@ -279,7 +279,7 @@ public class Type implements Comparable<Type> {
             }
             Logger.log(logTag, LogLevel.TRACE, "}");
         } else {
-            if (logTag.shouldLog(LogLevel.INFO.level) && !isSimpleType()) {
+            if (Logger.shouldLog(logTag, LogLevel.INFO) && !isSimpleType()) {
                 Logger.log(logTag, LogLevel.INFO, action + " " + typeText() + " " + getLogName());
             }
         }
