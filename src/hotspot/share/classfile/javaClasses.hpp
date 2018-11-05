@@ -1186,7 +1186,7 @@ public:
   static void         set_target(          oop site, oop target);
   static void         set_target_volatile( oop site, oop target);
 
-  static oop              context(oop site);
+  static oop context_no_keepalive(oop site);
 
   // Testers
   static bool is_subclass(Klass* klass) {
