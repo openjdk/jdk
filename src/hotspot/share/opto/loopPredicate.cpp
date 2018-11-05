@@ -301,6 +301,73 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry, bo
   return clone_loop_predicates(old_entry, new_entry, clone_limit_check, this, &this->_igvn);
 }
 
+void PhaseIdealLoop::clone_loop_predicates_fix_mem(ProjNode* dom_proj , ProjNode* proj,
+                                                   PhaseIdealLoop* loop_phase,
+                                                   PhaseIterGVN* igvn) {
+  Compile* C = NULL;
+  if (loop_phase != NULL) {
+    igvn = &loop_phase->igvn();
+  }
+  C = igvn->C;
+  ProjNode* other_dom_proj = dom_proj->in(0)->as_Multi()->proj_out(1-dom_proj->_con);
+  Node* dom_r = other_dom_proj->unique_ctrl_out();
+  if (dom_r->is_Region()) {
+    assert(dom_r->unique_ctrl_out()->is_Call(), "unc expected");
+    ProjNode* other_proj = proj->in(0)->as_Multi()->proj_out(1-proj->_con);
+    Node* r = other_proj->unique_ctrl_out();
+    assert(r->is_Region() && r->unique_ctrl_out()->is_Call(), "cloned predicate should have caused region to be added");
+    for (DUIterator_Fast imax, i = dom_r->fast_outs(imax); i < imax; i++) {
+      Node* dom_use = dom_r->fast_out(i);
+      if (dom_use->is_Phi() && dom_use->bottom_type() == Type::MEMORY) {
+        assert(dom_use->in(0) == dom_r, "");
+        Node* phi = NULL;
+        for (DUIterator_Fast jmax, j = r->fast_outs(jmax); j < jmax; j++) {
+          Node* use = r->fast_out(j);
+          if (use->is_Phi() && use->bottom_type() == Type::MEMORY &&
+              use->adr_type() == dom_use->adr_type()) {
+            assert(use->in(0) == r, "");
+            assert(phi == NULL, "only one phi");
+            phi = use;
+          }
+        }
+        if (phi == NULL) {
+          const TypePtr* adr_type = dom_use->adr_type();
+          int alias = C->get_alias_index(adr_type);
+          Node* call = r->unique_ctrl_out();
+          Node* mem = call->in(TypeFunc::Memory);
+          MergeMemNode* mm = NULL;
+          if (mem->is_MergeMem()) {
+            mm = mem->clone()->as_MergeMem();
+            if (adr_type == TypePtr::BOTTOM) {
+              mem = mem->as_MergeMem()->base_memory();
+            } else {
+              mem = mem->as_MergeMem()->memory_at(alias);
+            }
+          } else {
+            mm = MergeMemNode::make(mem);
+          }
+          phi = PhiNode::make(r, mem, Type::MEMORY, adr_type);
+          if (adr_type == TypePtr::BOTTOM) {
+            mm->set_base_memory(phi);
+          } else {
+            mm->set_memory_at(alias, phi);
+          }
+          if (loop_phase != NULL) {
+            loop_phase->register_new_node(mm, r);
+            loop_phase->register_new_node(phi, r);
+          } else {
+            igvn->register_new_node_with_optimizer(mm);
+            igvn->register_new_node_with_optimizer(phi);
+          }
+          igvn->replace_input_of(call, TypeFunc::Memory, mm);
+        }
+        igvn->replace_input_of(phi, r->find_edge(other_proj), dom_use->in(dom_r->find_edge(other_dom_proj)));
+      }
+    }
+  }
+}
+
+
 // Clone loop predicates to cloned loops (peeled, unswitched, split_if).
 Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry,
                                                 bool clone_limit_check,
@@ -333,13 +400,23 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry,
   }
   if (predicate_proj != NULL) { // right pattern that can be used by loop predication
     // clone predicate
-    new_entry = clone_predicate(predicate_proj, new_entry,
-                                Deoptimization::Reason_predicate,
-                                loop_phase, igvn);
-    assert(new_entry != NULL && new_entry->is_Proj(), "IfTrue or IfFalse after clone predicate");
+    ProjNode* proj = clone_predicate(predicate_proj, new_entry,
+                                     Deoptimization::Reason_predicate,
+                                     loop_phase, igvn);
+    assert(proj != NULL, "IfTrue or IfFalse after clone predicate");
+    new_entry = proj;
     if (TraceLoopPredicate) {
       tty->print("Loop Predicate cloned: ");
       debug_only( new_entry->in(0)->dump(); );
+    }
+    if (profile_predicate_proj != NULL) {
+      // A node that produces memory may be out of loop and depend on
+      // a profiled predicates. In that case the memory state at the
+      // end of profiled predicates and at the end of predicates are
+      // not the same. The cloned predicates are dominated by the
+      // profiled predicates but may have the wrong memory
+      // state. Update it.
+      clone_loop_predicates_fix_mem(profile_predicate_proj, proj, loop_phase, igvn);
     }
   }
   if (profile_predicate_proj != NULL) { // right pattern that can be used by loop predication
