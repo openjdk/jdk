@@ -293,6 +293,20 @@ address CompiledMethod::oops_reloc_begin() const {
   // first few bytes.  If an oop in the old code was there, that oop
   // should not get GC'd.  Skip the first few bytes of oops on
   // not-entrant methods.
+  if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+      code_begin() + frame_complete_offset() >
+      verified_entry_point() + NativeJump::instruction_size)
+  {
+    // If we have a frame_complete_offset after the native jump, then there
+    // is no point trying to look for oops before that. This is a requirement
+    // for being allowed to scan oops concurrently.
+    return code_begin() + frame_complete_offset();
+  }
+
+  // It is not safe to read oops concurrently using entry barriers, if their
+  // location depend on whether the nmethod is entrant or not.
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() == NULL, "Not safe oop scan");
+
   address low_boundary = verified_entry_point();
   if (!is_in_use() && is_nmethod()) {
     low_boundary += NativeJump::instruction_size;
