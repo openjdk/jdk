@@ -26,7 +26,7 @@ package compiler.c2.aarch64;
 import java.lang.reflect.Field;
 import jdk.internal.misc.Unsafe;
 
-class TestUnsafeVolatileCAS
+class TestUnsafeVolatileCAE
 {
     public volatile int f_int = 0;
     public volatile Integer f_obj = Integer.valueOf(0);
@@ -48,11 +48,11 @@ class TestUnsafeVolatileCAS
 
     static {
         try {
-            f_int_field = TestUnsafeVolatileCAS.class.getField("f_int");
-            f_obj_field = TestUnsafeVolatileCAS.class.getField("f_obj");
-            f_long_field = TestUnsafeVolatileCAS.class.getField("f_long");
-            f_byte_field = TestUnsafeVolatileCAS.class.getField("f_byte");
-            f_short_field = TestUnsafeVolatileCAS.class.getField("f_short");
+            f_int_field = TestUnsafeVolatileCAE.class.getField("f_int");
+            f_obj_field = TestUnsafeVolatileCAE.class.getField("f_obj");
+            f_long_field = TestUnsafeVolatileCAE.class.getField("f_long");
+            f_byte_field = TestUnsafeVolatileCAE.class.getField("f_byte");
+            f_short_field = TestUnsafeVolatileCAE.class.getField("f_short");
             f_int_off = unsafe.objectFieldOffset(f_int_field);
             f_obj_off = unsafe.objectFieldOffset(f_obj_field);
             f_long_off = unsafe.objectFieldOffset(f_long_field);
@@ -66,69 +66,68 @@ class TestUnsafeVolatileCAS
 
     public static void main(String[] args)
     {
-        final TestUnsafeVolatileCAS t = new TestUnsafeVolatileCAS();
+        final TestUnsafeVolatileCAE t = new TestUnsafeVolatileCAE();
         for (int i = 0; i < 100_000; i++) {
             t.f_int = -1;
-            t.testInt(-1, i);
-            if (t.f_int != i) {
+            int res = t.testInt(-1, i);
+            if (res != -1 || t.f_int != i) {
                 throw new RuntimeException("bad result!");
             }
         }
         for (int i = 0; i < 100_000; i++) {
             t.f_long = -1;
-            t.testLong(-1, i);
-            if (t.f_long != i) {
+            long res = t.testLong(-1, i);
+            if (res != -1 || t.f_long != i) {
                 throw new RuntimeException("bad result!");
             }
         }
         for (int i = 0; i < 100_000; i++) {
             t.f_byte = -1;
             byte i_b = (byte)i;
-            t.testByte((byte)-1, i_b);
-            if (t.f_byte != i_b) {
+            byte res = t.testByte((byte)-1, i_b);
+            if (res != (byte)-1 || t.f_byte != i_b) {
                 throw new RuntimeException("bad result!");
             }
         }
         for (int i = 0; i < 100_000; i++) {
             t.f_short = -1;
             short i_s = (short)i;
-            t.testShort((byte)-1, i_s);
-            if (t.f_short != i_s) {
+            short res = t.testShort((byte)-1, i_s);
+            if (res != (short)-1 || t.f_short != i_s) {
                 throw new RuntimeException("bad result!");
             }
         }
         Integer minusOne = Integer.valueOf(-1);
         for (int i = 0; i < 100_000; i++) {
             t.f_obj = minusOne;
-            t.testObj(minusOne, Integer.valueOf(i));
-            if (t.f_obj != i) {
+            Object res = t.testObj(minusOne, Integer.valueOf(i));
+            if (res != minusOne || t.f_obj != i) {
                 throw new RuntimeException("bad result!");
             }
         }
     }
 
-    public void testInt(int x, int i)
+    public int testInt(int x, int i)
     {
-        unsafe.compareAndSetInt(this, f_int_off, x, i);
+        return unsafe.compareAndExchangeInt(this, f_int_off, x, i);
     }
 
-    public void testObj(Object x, Object o)
+    public Object testObj(Object x, Object o)
     {
-        unsafe.compareAndSetReference(this, f_obj_off, x, o);
+        return unsafe.compareAndExchangeReference(this, f_obj_off, x, o);
+    }
+    public long testLong(long x, long i)
+    {
+        return unsafe.compareAndExchangeLong(this, f_long_off, x, i);
     }
 
-    public void testLong(long x, long i)
+    public byte testByte(byte x, byte i)
     {
-        unsafe.compareAndSetLong(this, f_long_off, x, i);
+        return unsafe.compareAndExchangeByte(this, f_byte_off, x, i);
     }
 
-    public void testByte(byte x, byte i)
+    public short testShort(short x, short i)
     {
-        unsafe.compareAndSetByte(this, f_byte_off, x, i);
-    }
-
-    public void testShort(short x, short i)
-    {
-        unsafe.compareAndSetShort(this, f_short_off, x, i);
+        return unsafe.compareAndExchangeShort(this, f_short_off, x, i);
     }
 }
