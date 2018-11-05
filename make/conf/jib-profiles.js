@@ -201,10 +201,15 @@ var getJibProfiles = function (input) {
     data.configuration_make_arg = "CONF_NAME=";
 
     // Exclude list to use when Jib creates a source bundle
-    data.src_bundle_excludes = "./build .build webrev* */webrev* */*/webrev* */*/*/webrev* .hg */.hg */*/.hg */*/*/.hg";
+    data.src_bundle_excludes = [
+        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork", "{,**/}JTreport",
+        "{,**/}.git"
+    ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
-    data.conf_bundle_includes = "*/conf/jib-profiles.* make/autoconf/version-numbers"
+    data.conf_bundle_includes = [
+        "make/autoconf/version-numbers",
+    ];
 
     // Define some common values
     var common = getJibProfilesCommon(input, data);
