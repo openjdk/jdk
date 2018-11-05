@@ -48,7 +48,8 @@ class ExceptionCache : public CHeapObj<mtCode> {
   address  _pc[cache_size];
   address  _handler[cache_size];
   volatile int _count;
-  ExceptionCache* _next;
+  ExceptionCache* volatile _next;
+  ExceptionCache* _purge_list_next;
 
   inline address pc_at(int index);
   void set_pc_at(int index, address a)      { assert(index >= 0 && index < cache_size,""); _pc[index] = a; }
@@ -65,8 +66,10 @@ class ExceptionCache : public CHeapObj<mtCode> {
   ExceptionCache(Handle exception, address pc, address handler);
 
   Klass*    exception_type()                { return _exception_type; }
-  ExceptionCache* next()                    { return _next; }
-  void      set_next(ExceptionCache *ec)    { _next = ec; }
+  ExceptionCache* next();
+  void      set_next(ExceptionCache *ec);
+  ExceptionCache* purge_list_next()                 { return _purge_list_next; }
+  void      set_purge_list_next(ExceptionCache *ec) { _purge_list_next = ec; }
 
   address match(Handle exception, address pc);
   bool    match_exception_with_space(Handle exception) ;
@@ -293,11 +296,14 @@ public:
   virtual Metadata** metadata_addr_at(int index) const = 0;
   virtual void    set_original_pc(const frame* fr, address pc) = 0;
 
+protected:
   // Exception cache support
-  // Note: _exception_cache may be read concurrently. We rely on memory_order_consume here.
+  // Note: _exception_cache may be read and cleaned concurrently.
   ExceptionCache* exception_cache() const         { return _exception_cache; }
+  ExceptionCache* exception_cache_acquire() const;
   void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
-  void release_set_exception_cache(ExceptionCache *ec);
+
+public:
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
   void clean_exception_cache();

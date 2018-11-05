@@ -244,6 +244,7 @@ ExceptionCache::ExceptionCache(Handle exception, address pc, address handler) {
   _count = 0;
   _exception_type = exception->klass();
   _next = NULL;
+  _purge_list_next = NULL;
 
   add_address_and_handler(pc,handler);
 }
@@ -291,6 +292,14 @@ bool ExceptionCache::add_address_and_handler(address addr, address handler) {
     return true;
   }
   return false;
+}
+
+ExceptionCache* ExceptionCache::next() {
+  return Atomic::load(&_next);
+}
+
+void ExceptionCache::set_next(ExceptionCache *ec) {
+  Atomic::store(ec, &_next);
 }
 
 //-----------------------------------------------------------------------------

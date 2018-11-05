@@ -72,8 +72,9 @@
 // existing ones, make sure to adapt the dtrace scripts (jhelper.d) for
 // Solaris and BSD.
 
-class OopClosure;
+class ExceptionCache;
 class KlassDepChange;
+class OopClosure;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
@@ -93,6 +94,8 @@ class CodeCache : AllStatic {
   static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
   static nmethod* _scavenge_root_nmethods;              // linked via nm->scavenge_root_link()
   static uint8_t _unloading_cycle;                      // Global state for recognizing old nmethods that need to be unloaded
+
+  static ExceptionCache* volatile _exception_cache_purge_list;
 
   static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
   static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
@@ -192,6 +195,8 @@ class CodeCache : AllStatic {
   static uint16_t unloading_cycle() { return _unloading_cycle; }
   static void increment_unloading_cycle();
   static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
+  static void release_exception_cache(ExceptionCache* entry);
+  static void purge_exception_caches();
 
   // Apply f to every live code blob in scavengable nmethods. Prune nmethods
   // from the list of scavengable nmethods if f->fix_relocations() and a nmethod

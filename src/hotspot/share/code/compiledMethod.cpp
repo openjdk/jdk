@@ -103,34 +103,84 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 
+ExceptionCache* CompiledMethod::exception_cache_acquire() const {
+  return OrderAccess::load_acquire(&_exception_cache);
+}
+
 void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
   assert(new_entry != NULL,"Must be non null");
   assert(new_entry->next() == NULL, "Must be null");
 
-  ExceptionCache *ec = exception_cache();
-  if (ec != NULL) {
-    new_entry->set_next(ec);
+  for (;;) {
+    ExceptionCache *ec = exception_cache();
+    if (ec != NULL) {
+      Klass* ex_klass = ec->exception_type();
+      if (!ex_klass->is_loader_alive()) {
+        // We must guarantee that entries are not inserted with new next pointer
+        // edges to ExceptionCache entries with dead klasses, due to bad interactions
+        // with concurrent ExceptionCache cleanup. Therefore, the inserts roll
+        // the head pointer forward to the first live ExceptionCache, so that the new
+        // next pointers always point at live ExceptionCaches, that are not removed due
+        // to concurrent ExceptionCache cleanup.
+        ExceptionCache* next = ec->next();
+        if (Atomic::cmpxchg(next, &_exception_cache, ec) == ec) {
+          CodeCache::release_exception_cache(ec);
+        }
+        continue;
+      }
+      ec = exception_cache();
+      if (ec != NULL) {
+        new_entry->set_next(ec);
+      }
+    }
+    if (Atomic::cmpxchg(new_entry, &_exception_cache, ec) == ec) {
+      return;
+    }
   }
-  release_set_exception_cache(new_entry);
 }
 
 void CompiledMethod::clean_exception_cache() {
+  // For each nmethod, only a single thread may call this cleanup function
+  // at the same time, whether called in STW cleanup or concurrent cleanup.
+  // Note that if the GC is processing exception cache cleaning in a concurrent phase,
+  // then a single writer may contend with cleaning up the head pointer to the
+  // first ExceptionCache node that has a Klass* that is alive. That is fine,
+  // as long as there is no concurrent cleanup of next pointers from concurrent writers.
+  // And the concurrent writers do not clean up next pointers, only the head.
+  // Also note that concurent readers will walk through Klass* pointers that are not
+  // alive. That does not cause ABA problems, because Klass* is deleted after
+  // a handshake with all threads, after all stale ExceptionCaches have been
+  // unlinked. That is also when the CodeCache::exception_cache_purge_list()
+  // is deleted, with all ExceptionCache entries that were cleaned concurrently.
+  // That similarly implies that CAS operations on ExceptionCache entries do not
+  // suffer from ABA problems as unlinking and deletion is separated by a global
+  // handshake operation.
   ExceptionCache* prev = NULL;
-  ExceptionCache* curr = exception_cache();
+  ExceptionCache* curr = exception_cache_acquire();
 
   while (curr != NULL) {
     ExceptionCache* next = curr->next();
 
-    Klass* ex_klass = curr->exception_type();
-    if (ex_klass != NULL && !ex_klass->is_loader_alive()) {
+    if (!curr->exception_type()->is_loader_alive()) {
       if (prev == NULL) {
-        set_exception_cache(next);
+        // Try to clean head; this is contended by concurrent inserts, that
+        // both lazily clean the head, and insert entries at the head. If
+        // the CAS fails, the operation is restarted.
+        if (Atomic::cmpxchg(next, &_exception_cache, curr) != curr) {
+          prev = NULL;
+          curr = exception_cache_acquire();
+          continue;
+        }
       } else {
+        // It is impossible to during cleanup connect the next pointer to
+        // an ExceptionCache that has not been published before a safepoint
+        // prior to the cleanup. Therefore, release is not required.
         prev->set_next(next);
       }
-      delete curr;
       // prev stays the same.
+
+      CodeCache::release_exception_cache(curr);
     } else {
       prev = curr;
     }
@@ -145,7 +195,7 @@ address CompiledMethod::handler_for_exception_and_pc(Handle exception, address p
   // We never grab a lock to read the exception cache, so we may
   // have false negatives. This is okay, as it can only happen during
   // the first few exception lookups for a given nmethod.
-  ExceptionCache* ec = exception_cache();
+  ExceptionCache* ec = exception_cache_acquire();
   while (ec != NULL) {
     address ret_val;
     if ((ret_val = ec->match(exception,pc)) != NULL) {
@@ -172,13 +222,11 @@ void CompiledMethod::add_handler_for_exception_and_pc(Handle exception, address 
   }
 }
 
-//-------------end of code for ExceptionCache--------------
-
 // private method for handling exception cache
 // These methods are private, and used to manipulate the exception cache
 // directly.
 ExceptionCache* CompiledMethod::exception_cache_entry_for_exception(Handle exception) {
-  ExceptionCache* ec = exception_cache();
+  ExceptionCache* ec = exception_cache_acquire();
   while (ec != NULL) {
     if (ec->match_exception_with_space(exception)) {
       return ec;
@@ -187,6 +235,8 @@ ExceptionCache* CompiledMethod::exception_cache_entry_for_exception(Handle excep
   }
   return NULL;
 }
+
+//-------------end of code for ExceptionCache--------------
 
 bool CompiledMethod::is_at_poll_return(address pc) {
   RelocIterator iter(this, pc, pc+1);

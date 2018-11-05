@@ -41,10 +41,6 @@ inline bool CompiledMethod::is_deopt_entry(address pc) {
     ;
 }
 
-inline void CompiledMethod::release_set_exception_cache(ExceptionCache *ec) {
-  OrderAccess::release_store(&_exception_cache, ec);
-}
-
 // -----------------------------------------------------------------------------
 // CompiledMethod::get_deopt_original_pc
 //

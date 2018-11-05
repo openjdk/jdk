@@ -145,6 +145,7 @@ address CodeCache::_low_bound = 0;
 address CodeCache::_high_bound = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
+ExceptionCache* volatile CodeCache::_exception_cache_purge_list = NULL;
 
 // Initialize arrays of CodeHeap subsets
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
@@ -893,6 +894,34 @@ void CodeCache::verify_icholder_relocations() {
   assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
          CompiledICHolder::live_count(), "must agree");
 #endif
+}
+
+// Defer freeing of concurrently cleaned ExceptionCache entries until
+// after a global handshake operation.
+void CodeCache::release_exception_cache(ExceptionCache* entry) {
+  if (SafepointSynchronize::is_at_safepoint()) {
+    delete entry;
+  } else {
+    for (;;) {
+      ExceptionCache* purge_list_head = Atomic::load(&_exception_cache_purge_list);
+      entry->set_purge_list_next(purge_list_head);
+      if (Atomic::cmpxchg(entry, &_exception_cache_purge_list, purge_list_head) == purge_list_head) {
+        break;
+      }
+    }
+  }
+}
+
+// Delete exception caches that have been concurrently unlinked,
+// followed by a global handshake operation.
+void CodeCache::purge_exception_caches() {
+  ExceptionCache* curr = _exception_cache_purge_list;
+  while (curr != NULL) {
+    ExceptionCache* next = curr->purge_list_next();
+    delete curr;
+    curr = next;
+  }
+  _exception_cache_purge_list = NULL;
 }
 
 void CodeCache::gc_prologue() { }
