@@ -117,19 +117,19 @@ public interface LSOutput {
 
     /**
      *  The character encoding to use for the output. The encoding must be a
-     * string acceptable for an XML encoding declaration ([<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>] section
+     * string acceptable for an XML encoding declaration ([<a href='https://www.w3.org/TR/xml/'>XML 1.0</a>] section
      * 4.3.3 "Character Encoding in Entities"), it is recommended that
      * character encodings registered (as charsets) with the Internet
-     * Assigned Numbers Authority [<a href='ftp://ftp.isi.edu/in-notes/iana/assignments/character-sets'>IANA-CHARSETS</a>]
+     * Assigned Numbers Authority [<a href='http://www.iana.org/assignments/character-sets/character-sets.xhtml'>IANA-CHARSETS</a>]
      *  should be referred to using their registered names.
      */
     public String getEncoding();
     /**
      *  The character encoding to use for the output. The encoding must be a
-     * string acceptable for an XML encoding declaration ([<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>] section
+     * string acceptable for an XML encoding declaration ([<a href='https://www.w3.org/TR/xml/'>XML 1.0</a>] section
      * 4.3.3 "Character Encoding in Entities"), it is recommended that
      * character encodings registered (as charsets) with the Internet
-     * Assigned Numbers Authority [<a href='ftp://ftp.isi.edu/in-notes/iana/assignments/character-sets'>IANA-CHARSETS</a>]
+     * Assigned Numbers Authority [<a href='http://www.iana.org/assignments/character-sets/character-sets.xhtml'>IANA-CHARSETS</a>]
      *  should be referred to using their registered names.
      */
     public void setEncoding(String encoding);
