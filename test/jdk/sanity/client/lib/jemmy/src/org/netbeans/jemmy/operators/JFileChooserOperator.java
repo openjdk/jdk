@@ -43,6 +43,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListModel;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
@@ -340,6 +341,13 @@ public class JFileChooserOperator extends JComponentOperator
      * @return a component being used to display directory content.
      */
     public Component getFileList() {
+        int index = 0;
+        // In GTK and Motif L&F, there are two JLists, one is to list folders
+        // and second one one is to list files
+        if (UIManager.getLookAndFeel().getID().equals("Motif")
+                || UIManager.getLookAndFeel().getID().equals("GTK")) {
+            index =1;
+        }
         return innerSearcher.
                 findComponent(new ComponentChooser() {
                     @Override
@@ -357,7 +365,7 @@ public class JFileChooserOperator extends JComponentOperator
                     public String toString() {
                         return "JFileChooserOperator.getFileList.ComponentChooser{description = " + getDescription() + '}';
                     }
-                });
+                }, index);
     }
 
     /**
@@ -433,7 +441,15 @@ public class JFileChooserOperator extends JComponentOperator
         getQueueTool().waitEmpty();
         output.printTrace("Go home in JFileChooser\n    : "
                 + toStringSource());
-        JButtonOperator homeOper = new JButtonOperator(getHomeButton());
+        AbstractButtonOperator homeOper;
+        // In Windows and Windows Classic L&F, there is no 'Go Home' button,
+        // but there is a toggle button to go desktop. In Windows platform
+        // 'Go Home' button usually navigates to Desktop only.
+        if(UIManager.getLookAndFeel().getID().equals("Windows")) {
+            homeOper =new JToggleButtonOperator(this, 1);
+        } else {
+            homeOper = new JButtonOperator(getHomeButton());
+        }
         homeOper.copyEnvironment(this);
         homeOper.setOutput(output.createErrorOutput());
         homeOper.push();

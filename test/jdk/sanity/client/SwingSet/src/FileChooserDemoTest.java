@@ -40,19 +40,26 @@ import static com.sun.swingset3.demos.filechooser.FileChooserDemo.getFlipVertica
 import static com.sun.swingset3.demos.filechooser.FileChooserDemo.getLastAppliedFilterId;
 import static com.sun.swingset3.demos.filechooser.FileChooserDemo.getRotateLeftCount;
 import static com.sun.swingset3.demos.filechooser.FileChooserDemo.getRotateRightCount;
+
 import java.awt.Container;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.testng.annotations.Test;
+import javax.swing.UIManager;
+
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JFrameOperator;
+import org.netbeans.jemmy.operators.JPopupMenuOperator;
+import org.netbeans.jemmy.operators.JRadioButtonMenuItemOperator;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JComboBoxOperator;
 import org.netbeans.jemmy.operators.JToggleButtonOperator;
 import org.netbeans.jemmy.operators.JFileChooserOperator;
 import org.netbeans.jemmy.operators.JDialogOperator;
+import org.netbeans.jemmy.operators.JComponentOperator.JComponentByTipFinder;
 import org.netbeans.jemmy.util.Platform;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Listeners;
@@ -72,7 +79,7 @@ import org.jemmy2ext.JemmyExt.ByToolTipChooser;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.filechooser.FileChooserDemo
- * @run testng FileChooserDemoTest
+ * @run testng/timeout=600 FileChooserDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class FileChooserDemoTest {
@@ -83,8 +90,8 @@ public class FileChooserDemoTest {
     public static final String IMAGE = "duke.jpg";
     private static final String YES = "Yes";
     private static final String NO = "No";
-    private static final String SCRATCH = "scratch";
     private static final String OPEN = "Open";
+    private static final String OK = "OK";
     private static final String CANCEL = "Cancel";
     private static final String USER_HOME = "user.home";
     private static final String DESKTOP = "Desktop";
@@ -116,8 +123,9 @@ public class FileChooserDemoTest {
         Files.copy(IMAGE_DIR.resolve(IMAGE), TEST_WORK_DIR.resolve(IMAGE));
     }
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
         new ClassReference(FileChooserDemo.class.getCanonicalName()).startApplication();
         frame = new JFrameOperator(DEMO_TITLE);
         initializeSelectImageButtons();
@@ -131,13 +139,15 @@ public class FileChooserDemoTest {
     private void checkSelectImage() throws Exception {
         selectImageButton.push();
         fileChooser = new JFileChooserOperator(JFileChooserOperator.findJFileChooser((Container) frame.getSource()));
-        // In Mac, JFileChooser does not have "Go Home","Up One Level","Get Details","Get List" buttons.
-        if (!Platform.isOSX()) {
-            initializeFileChooserButtons();
+        // In Aqua, GTK and Motif L&Fs, JFileChooser does not have
+        // "Go Home", "Up One Level", "Get Details", "Get List" buttons.
+        if (!UIManager.getLookAndFeel().getID().equals("Aqua")
+                && !UIManager.getLookAndFeel().getID().equals("Motif")
+                && !UIManager.getLookAndFeel().getID().equals("GTK")) {
             File previousDirectory = fileChooser.getCurrentDirectory();
             fileChooser.goHome();
             // In Windows, pressing goHome navigates to Desktop inside the home directory.
-            // This seems to be the expected behavior for windows.
+            // This is the expected behavior for windows.
             if (!Platform.isWindows()) {
                 waitCurrentPath(Paths.get(System.getProperty(USER_HOME)));
             } else {
@@ -145,15 +155,32 @@ public class FileChooserDemoTest {
             }
             fileChooser.setCurrentDirectory(previousDirectory);
             fileChooser.rescanCurrentDirectory();
-            upLevelButton.push();
-            waitCurrentPath(previousDirectory.getParentFile().toPath());
-            fileChooser.enterSubDir(SCRATCH);
-            getListToggleButton.push();
-            getListToggleButton.waitSelected(true);
-            getDetailsToggleButton.push();
-            getDetailsToggleButton.waitSelected(true);
-            getListToggleButton.push();
-            fileChooser.rescanCurrentDirectory();
+            // In Windows and Windows Classic L&F, List and Details views are
+            // implemented as a popup menu item
+            if(UIManager.getLookAndFeel().getID().equals("Windows")) {
+                JButtonOperator popupButton = new JButtonOperator(fileChooser, new JComponentByTipFinder(
+                        UIManager.getString("FileChooser.viewMenuButtonToolTipText", fileChooser.getLocale())));
+                popupButton.push();
+                JPopupMenuOperator popup = new JPopupMenuOperator();
+                popup.pushKey(KeyEvent.VK_ENTER);
+                JRadioButtonMenuItemOperator detailsMenuItem = new JRadioButtonMenuItemOperator(popup, 1);
+                detailsMenuItem.push();
+                detailsMenuItem.waitSelected(true);
+                popupButton.push();
+                JRadioButtonMenuItemOperator listMenuItem = new JRadioButtonMenuItemOperator(popup);
+                listMenuItem.push();
+                listMenuItem.waitSelected(true);
+            } else {
+                initializeFileChooserButtons();
+                upLevelButton.push();
+                waitCurrentPath(previousDirectory.getParentFile().toPath());
+                fileChooser.setCurrentDirectory(previousDirectory);
+                fileChooser.rescanCurrentDirectory();
+                getDetailsToggleButton.push();
+                getDetailsToggleButton.waitSelected(true);
+                getListToggleButton.push();
+                getListToggleButton.waitSelected(true);
+            }
             // Wait for the count of number of files to be 1
             fileChooser.waitFileCount(1);
             fileChooser.selectFile(IMAGE);
@@ -245,7 +272,13 @@ public class FileChooserDemoTest {
     private void initializeSelectWithPreviewDialog() {
         fileChooser = new JFileChooserOperator();
         fileChooserDialog = new JDialogOperator(OPEN);
-        openButton = new JButtonOperator(fileChooser, OPEN);
+        String openButtonText = OPEN;
+        // In GTK and Motif L&F, open button text is 'OK'
+        if (UIManager.getLookAndFeel().getID().equals("Motif")
+                || UIManager.getLookAndFeel().getID().equals("GTK")) {
+            openButtonText = OK;
+        }
+        openButton = new JButtonOperator(fileChooser, openButtonText);
         cancelButton = new JButtonOperator(fileChooser, CANCEL);
     }
 
@@ -281,9 +314,9 @@ public class FileChooserDemoTest {
     }
 
     private void waitCurrentPath(Path expectedPath) {
-        Path currentPath = fileChooser.getCurrentDirectory().toPath();
         //Wait for the current path to be same as expected path
-        fileChooser.waitState(chooser -> currentPath.equals(expectedPath));
+        fileChooser.waitState(chooser -> fileChooser.getCurrentDirectory().toPath().equals(expectedPath));
     }
 
 }
+
