@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,31 @@
  */
 
 /*
- * See OldMappingTest.sh
+ * @test
+ * @bug 6466476
+ * @summary Compatibility test for the old JDK ID mapping and Olson IDs
+ * @comment Expecting the new (Olson compatible) mapping (default)
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=null OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping="" OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=no OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=No OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=NO OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=false OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=False OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=FALSE OldIDMappingTest -new
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=Hello OldIDMappingTest -new
+ * @comment Expecting the old mapping
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=true OldIDMappingTest -old
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=True OldIDMappingTest -old
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=TRUE OldIDMappingTest -old
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=yes OldIDMappingTest -old
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=Yes OldIDMappingTest -old
+ * @run main/othervm -Dsun.timezone.ids.oldmapping=YES OldIDMappingTest -old
  */
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 
 public class OldIDMappingTest {
     private static final String MAPPING_PROPERTY_NAME = "sun.timezone.ids.oldmapping";
@@ -62,8 +82,9 @@ public class OldIDMappingTest {
                 TimeZone tz = TimeZone.getTimeZone(oldmap.get(id));
                 if (useOldMapping) {
                     if (!tzAlias.hasSameRules(tz)) {
-                        throw new RuntimeException("OLDMAP: " + MAPPING_PROPERTY_NAME + "=" + prop + ": "
-                                                   + id + " isn't an alias of " + oldmap.get(id));
+                        throw new RuntimeException("OLDMAP: " + MAPPING_PROPERTY_NAME
+                                + "=" + prop + ": " + id
+                                + " isn't an alias of " + oldmap.get(id));
                     }
                     if (count == 0) {
                         System.out.println("    " + id + " => " + oldmap.get(id));
@@ -79,13 +100,15 @@ public class OldIDMappingTest {
                         continue;
                     }
                     if (tzAlias.hasSameRules(tz)) {
-                        throw new RuntimeException("NEWMAP: " + MAPPING_PROPERTY_NAME + "=" + prop + ": "
-                                                   + id + " is an alias of " + oldmap.get(id));
+                        throw new RuntimeException("NEWMAP: " + MAPPING_PROPERTY_NAME
+                                + "=" + prop + ": " + id
+                                + " is an alias of " + oldmap.get(id));
                     }
                     tz = TimeZone.getTimeZone(newmap.get(id));
                     if (!tzAlias.hasSameRules(tz)) {
-                        throw new RuntimeException("NEWMAP: " + MAPPING_PROPERTY_NAME + "=" + prop + ": "
-                                                   + id + " isn't an alias of " + newmap.get(id));
+                        throw new RuntimeException("NEWMAP: " + MAPPING_PROPERTY_NAME
+                                + "=" + prop + ": " + id
+                                + " isn't an alias of " + newmap.get(id));
                     }
                     if (count == 0) {
                         System.out.println("    " + id + " => " + newmap.get(id));
