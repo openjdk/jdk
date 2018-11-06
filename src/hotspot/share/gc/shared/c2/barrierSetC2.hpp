@@ -54,6 +54,7 @@ const DecoratorSet C2_TIGHLY_COUPLED_ALLOC   = DECORATOR_LAST << 9;
 // Loads and stores from an arraycopy being optimized
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 
+class Compile;
 class GraphKit;
 class IdealKit;
 class Node;
@@ -272,7 +273,13 @@ public:
   // If the BarrierSetC2 state has kept macro nodes in its compilation unit state to be
   // expanded later, then now is the time to do so.
   virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const { return false; }
-  virtual void verify_gc_barriers(bool post_parse) const {}
+
+  enum CompilePhase {
+    BeforeOptimize, /* post_parse = true */
+    BeforeExpand, /* post_parse = false */
+    BeforeCodeGen
+  };
+  virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

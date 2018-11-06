@@ -163,6 +163,10 @@ private:
   void expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBarrierNode *barrier) const;
   const TypeFunc* load_barrier_Type() const;
 
+#ifdef ASSERT
+  void verify_gc_barriers(bool post_parse) const;
+#endif
+
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access,
@@ -204,7 +208,7 @@ public:
   static void loop_optimize_gc_barrier(PhaseIdealLoop* phase, Node* node, bool last_round);
 
 #ifdef ASSERT
-  virtual void verify_gc_barriers(bool post_parse) const;
+  virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const;
 #endif
 };
 

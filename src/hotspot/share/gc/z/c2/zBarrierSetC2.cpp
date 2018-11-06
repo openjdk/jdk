@@ -1464,6 +1464,12 @@ static bool look_for_barrier(Node* n, bool post_parse, VectorSet& visited) {
   return true;
 }
 
+void ZBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
+  if (phase == BarrierSetC2::BeforeCodeGen) return;
+  bool post_parse = phase == BarrierSetC2::BeforeOptimize;
+  verify_gc_barriers(post_parse);
+}
+
 void ZBarrierSetC2::verify_gc_barriers(bool post_parse) const {
   ZBarrierSetC2State* s = state();
   Compile* C = Compile::current();
