@@ -34,15 +34,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangModuleAccess;
+import jdk.internal.access.SharedSecrets;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 /**
  * @test
  * @bug 8142968 8173381
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.access
  * @modules java.base/jdk.internal.module
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @build ModuleTargetHelper

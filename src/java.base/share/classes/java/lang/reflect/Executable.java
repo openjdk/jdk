@@ -33,7 +33,7 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;

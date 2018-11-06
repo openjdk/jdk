@@ -25,7 +25,7 @@
  * @test
  * @bug 8141615
  * @summary Tests new public methods at ConstantPool
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.reflect
  * @library /test/lib
  * @compile ConstantPoolTestDummy.jasm
@@ -36,9 +36,9 @@ package jdk.internal.reflect.constantPool;
 
 import java.util.HashMap;
 import java.util.Map;
-import jdk.internal.misc.SharedSecrets;
-import jdk.test.lib.Asserts;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.ConstantPool;
+import jdk.test.lib.Asserts;
 
 public class ConstantPoolTest {
 

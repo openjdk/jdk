@@ -58,9 +58,9 @@ import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.JavaUtilZipFileAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
@@ -1071,7 +1071,7 @@ class ZipFile implements ZipConstants, Closeable {
                 }
              }
         );
-        JLA = jdk.internal.misc.SharedSecrets.getJavaLangAccess();
+        JLA = SharedSecrets.getJavaLangAccess();
         isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 

@@ -25,8 +25,8 @@
 
 package java.lang.invoke;
 
-import jdk.internal.misc.JavaLangInvokeAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;

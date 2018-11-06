@@ -25,8 +25,8 @@
 
 package java.net;
 
-import jdk.internal.misc.JavaNetSocketAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetSocketAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.io.FileDescriptor;
 import java.io.IOException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,26 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
-import java.net.ServerSocket;
-import java.net.SocketImpl;
+import java.io.IOException;
+import java.net.URL;
+import java.security.CodeSource;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
-public interface JavaNetSocketAccess {
-    /**
-     * Creates a ServerSocket associated with the given SocketImpl.
-     */
-    ServerSocket newServerSocket(SocketImpl impl);
-
-    /*
-     * Constructs a SocketImpl instance of the given class.
-     */
-    SocketImpl newSocketImpl(Class<? extends SocketImpl> implClass);
+public interface JavaUtilJarAccess {
+    public boolean jarFileHasClassPathAttribute(JarFile jar) throws IOException;
+    public CodeSource[] getCodeSources(JarFile jar, URL url);
+    public CodeSource getCodeSource(JarFile jar, URL url, String name);
+    public Enumeration<String> entryNames(JarFile jar, CodeSource[] cs);
+    public Enumeration<JarEntry> entries2(JarFile jar);
+    public void setEagerValidation(JarFile jar, boolean eager);
+    public List<Object> getManifestDigests(JarFile jar);
+    public Attributes getTrustedAttributes(Manifest man, String name);
+    public void ensureInitialization(JarFile jar);
 }

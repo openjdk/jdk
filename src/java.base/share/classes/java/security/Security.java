@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
 
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;

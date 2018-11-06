@@ -3128,8 +3128,8 @@ public final class Files {
      */
     private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
-    private static final jdk.internal.misc.JavaLangAccess JLA =
-            jdk.internal.misc.SharedSecrets.getJavaLangAccess();
+    private static final jdk.internal.access.JavaLangAccess JLA =
+            jdk.internal.access.SharedSecrets.getJavaLangAccess();
 
     /**
      * Reads all the bytes from an input stream. Uses {@code initialSize} as a hint

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,24 @@
  * questions.
  */
 
-/**
- * SharedSecrets interface used for the access from java.text.Bidi
- */
+package jdk.internal.access;
 
-package jdk.internal.misc;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-public interface JavaAWTFontAccess {
+public interface JavaNetInetAddressAccess {
+    /**
+     * Return the original application specified hostname of
+     * the given InetAddress object.
+     */
+    String getOriginalHostName(InetAddress ia);
 
-    // java.awt.font.TextAttribute constants
-    public Object getTextAttributeConstant(String name);
-
-    // java.awt.font.NumericShaper
-    public void shape(Object shaper, char[] text, int start, int count);
+    /**
+     * Get the InetAddress of the provided host. If an InetAddress is provided
+     * then it will be the default address returned for all calls to either
+     * form of getByName. This is required to maintain consistency when
+     * caching addresses and hostnames.
+     */
+    InetAddress getByName(String hostName, InetAddress hostAddress)
+            throws UnknownHostException;
 }

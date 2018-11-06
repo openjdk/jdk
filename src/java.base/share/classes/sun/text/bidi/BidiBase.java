@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ import java.lang.reflect.Array;
 import java.text.AttributedCharacterIterator;
 import java.text.Bidi;
 import java.util.Arrays;
-import jdk.internal.misc.JavaAWTFontAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaAWTFontAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.text.normalizer.UBiDiProps;
 import sun.text.normalizer.UCharacter;
 import sun.text.normalizer.UTF16;

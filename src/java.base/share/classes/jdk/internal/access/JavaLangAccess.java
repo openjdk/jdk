@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
 import java.lang.annotation.Annotation;
 import java.lang.module.ModuleDescriptor;

@@ -30,7 +30,7 @@ package java.nio.channels.spi;
 
 import java.io.IOException;
 import java.nio.channels.*;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.Interruptible;
 
 
@@ -203,7 +203,7 @@ public abstract class AbstractInterruptibleChannel
     }
 
 
-    // -- jdk.internal.misc.SharedSecrets --
+    // -- jdk.internal.access.SharedSecrets --
     static void blockedOn(Interruptible intr) {         // package-private
         SharedSecrets.getJavaLangAccess().blockedOn(intr);
     }

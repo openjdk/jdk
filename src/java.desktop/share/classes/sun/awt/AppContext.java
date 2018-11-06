@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
 
-import jdk.internal.misc.JavaAWTAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaAWTAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;

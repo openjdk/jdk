@@ -47,8 +47,8 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.ServicesCatalog.ServiceProvider;

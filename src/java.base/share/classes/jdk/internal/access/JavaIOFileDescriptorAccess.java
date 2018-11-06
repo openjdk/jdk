@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.access;
 
-package jdk.internal.misc;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
-import java.io.ObjectInputFilter;
+import jdk.internal.ref.PhantomCleanable;
 
-/**
- * Access to the alternative ObjectInputFilter.Config.createFilter2 for RMI.
+/*
+ * @author Chris Hegarty
  */
-public interface JavaObjectInputFilterAccess {
-    /**
-     * Creates a filter from the pattern.
-     */
-    ObjectInputFilter createFilter2(String pattern);
+
+public interface JavaIOFileDescriptorAccess {
+    public void set(FileDescriptor fdo, int fd);
+    public int get(FileDescriptor fdo);
+    public void setAppend(FileDescriptor fdo, boolean append);
+    public boolean getAppend(FileDescriptor fdo);
+    public void close(FileDescriptor fdo) throws IOException;
+    public void registerCleanup(FileDescriptor fdo);
+    public void registerCleanup(FileDescriptor fdo, PhantomCleanable<FileDescriptor> cleanable);
+    public void unregisterCleanup(FileDescriptor fdo);
+
+    // Only valid on Windows
+    public void setHandle(FileDescriptor fdo, long handle);
+    public long getHandle(FileDescriptor fdo);
 }

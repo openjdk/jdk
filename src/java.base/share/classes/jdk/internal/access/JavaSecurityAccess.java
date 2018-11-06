@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
+package jdk.internal.access;
 
-import jdk.internal.ref.PhantomCleanable;
+import java.security.AccessControlContext;
+import java.security.PermissionCollection;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
-/*
- * @author Chris Hegarty
- */
+public interface JavaSecurityAccess {
 
-public interface JavaIOFileDescriptorAccess {
-    public void set(FileDescriptor fdo, int fd);
-    public int get(FileDescriptor fdo);
-    public void setAppend(FileDescriptor fdo, boolean append);
-    public boolean getAppend(FileDescriptor fdo);
-    public void close(FileDescriptor fdo) throws IOException;
-    public void registerCleanup(FileDescriptor fdo);
-    public void registerCleanup(FileDescriptor fdo, PhantomCleanable<FileDescriptor> cleanable);
-    public void unregisterCleanup(FileDescriptor fdo);
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext stack,
+                                  AccessControlContext context);
 
-    // Only valid on Windows
-    public void setHandle(FileDescriptor fdo, long handle);
-    public long getHandle(FileDescriptor fdo);
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext context);
+
+    ProtectionDomain[] getProtectDomains(AccessControlContext context);
+
+    interface ProtectionDomainCache {
+        void put(ProtectionDomain pd, PermissionCollection pc);
+        PermissionCollection get(ProtectionDomain pd);
+    }
+
+    /**
+     * Returns the ProtectionDomainCache.
+     */
+    ProtectionDomainCache getProtectionDomainCache();
 }

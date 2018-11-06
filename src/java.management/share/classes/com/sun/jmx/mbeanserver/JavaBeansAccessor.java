@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ package com.sun.jmx.mbeanserver;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import jdk.internal.misc.JavaBeansAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaBeansAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A centralized place for gaining access to java.beans related functionality -

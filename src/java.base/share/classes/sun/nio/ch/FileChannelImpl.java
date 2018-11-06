@@ -43,9 +43,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.JavaNioAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
 

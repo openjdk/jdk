@@ -47,8 +47,8 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 

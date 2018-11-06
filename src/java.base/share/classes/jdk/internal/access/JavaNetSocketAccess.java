@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,19 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
-import java.net.URI;
+import java.net.ServerSocket;
+import java.net.SocketImpl;
 
-public interface JavaNetUriAccess {
+public interface JavaNetSocketAccess {
     /**
-     * Create a URI of pre-validated scheme and path.
+     * Creates a ServerSocket associated with the given SocketImpl.
      */
-    URI create(String scheme, String path);
+    ServerSocket newServerSocket(SocketImpl impl);
+
+    /*
+     * Constructs a SocketImpl instance of the given class.
+     */
+    SocketImpl newSocketImpl(Class<? extends SocketImpl> implClass);
 }

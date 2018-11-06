@@ -46,8 +46,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.internal.misc.JavaNetInetAddressAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetInetAddressAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;

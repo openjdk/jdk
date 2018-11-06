@@ -27,7 +27,7 @@ package java.util;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * An unbounded priority {@linkplain Queue queue} based on a priority heap.

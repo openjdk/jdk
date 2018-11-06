@@ -40,8 +40,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Function;
 import jdk.internal.loader.ClassLoaderValue;
-import jdk.internal.misc.JavaUtilResourceBundleAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaUtilResourceBundleAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * The Level class defines a set of standard logging levels that

@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangModuleAccess;
+import jdk.internal.access.SharedSecrets;
 
 import static jdk.internal.module.ClassFileConstants.*;
 

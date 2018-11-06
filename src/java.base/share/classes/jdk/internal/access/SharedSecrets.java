@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
 import javax.crypto.SealedObject;
 import java.io.ObjectInputFilter;
@@ -36,6 +36,7 @@ import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
+import jdk.internal.misc.Unsafe;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without

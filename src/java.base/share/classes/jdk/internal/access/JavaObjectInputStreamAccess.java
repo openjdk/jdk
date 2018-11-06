@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
 
-import java.net.URL;
-import java.net.URLStreamHandler;
+package jdk.internal.access;
 
-public interface JavaNetURLAccess {
-    URLStreamHandler getHandler(URL u);
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+
+/**
+ * Interface to specify methods for accessing {@code ObjectInputStream}.
+ */
+@FunctionalInterface
+public interface JavaObjectInputStreamAccess {
+    void checkArray(ObjectInputStream ois, Class<?> arrayType, int arrayLength)
+        throws InvalidClassException;
 }

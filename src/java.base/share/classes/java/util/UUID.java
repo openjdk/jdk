@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.util;
 
 import java.security.*;
 
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).

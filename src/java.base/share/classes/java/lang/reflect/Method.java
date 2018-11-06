@@ -26,7 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;

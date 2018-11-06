@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.ObjectInputFilter;
 
-public interface JavaIORandomAccessFileAccess {
-    public RandomAccessFile openAndDelete(File file, String mode)
-        throws IOException;
+/**
+ * Access to the alternative ObjectInputFilter.Config.createFilter2 for RMI.
+ */
+public interface JavaObjectInputFilterAccess {
+    /**
+     * Creates a filter from the pattern.
+     */
+    ObjectInputFilter createFilter2(String pattern);
 }

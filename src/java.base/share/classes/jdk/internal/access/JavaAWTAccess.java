@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
  * questions.
  */
 
-package jdk.internal.misc;
+package jdk.internal.access;
 
-import java.io.Console;
-import java.nio.charset.Charset;
+public interface JavaAWTAccess {
 
-public interface JavaIOAccess {
-    public Console console();
-    public Charset charset();
+    // Returns the AppContext used for applet logging isolation, or null if
+    // no isolation is required.
+    // If there's no applet, or if the caller is a stand alone application,
+    // or running in the main app context, returns null.
+    // Otherwise, returns the AppContext of the calling applet.
+    public Object getAppletContext();
 }

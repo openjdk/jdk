@@ -33,8 +33,8 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Defines extended socket options, beyond those defined in

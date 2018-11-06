@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
 import java.text.Normalizer;
-import jdk.internal.misc.JavaNetUriAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetUriAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.ThreadLocalCoders;
 
 import java.lang.Character;             // for javadoc

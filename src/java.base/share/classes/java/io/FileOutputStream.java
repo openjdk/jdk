@@ -26,8 +26,8 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
 
 

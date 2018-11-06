@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.invoke.MethodType;
-import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;

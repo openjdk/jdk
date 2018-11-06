@@ -27,10 +27,10 @@ package java.net;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import sun.security.action.GetPropertyAction;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
 
 /**
  * On Windows system we simply delegate to native methods.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
+package jdk.internal.access;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.SealedObject;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.net.URL;
+import java.net.URLStreamHandler;
 
-public interface JavaxCryptoSealedObjectAccess {
-    ObjectInputStream getExtObjectInputStream(
-            SealedObject sealed, Cipher cipher)
-            throws BadPaddingException, IllegalBlockSizeException, IOException;
+public interface JavaNetURLAccess {
+    URLStreamHandler getHandler(URL u);
 }

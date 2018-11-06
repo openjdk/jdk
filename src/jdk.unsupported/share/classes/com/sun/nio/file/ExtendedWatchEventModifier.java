@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.nio.file;
 
 import java.nio.file.WatchEvent.Modifier;
-import sun.nio.fs.ExtendedOptions;
+import jdk.internal.misc.FileSystemOption;
 
 /**
  * Defines <em>extended</em> watch event modifiers supported on some platforms
@@ -40,9 +40,9 @@ public enum ExtendedWatchEventModifier implements Modifier {
     /**
      * Register a file tree instead of a single directory.
      */
-    FILE_TREE(ExtendedOptions.FILE_TREE);
+    FILE_TREE(FileSystemOption.FILE_TREE);
 
-    ExtendedWatchEventModifier(ExtendedOptions.InternalOption<Void> option) {
+    ExtendedWatchEventModifier(FileSystemOption<Void> option) {
         option.register(this);
     }
 }

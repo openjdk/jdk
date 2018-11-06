@@ -30,7 +30,7 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.util.Enumeration;
 import java.util.List;
-import jdk.internal.misc.JavaUtilJarAccess;
+import jdk.internal.access.JavaUtilJarAccess;
 
 class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
     public boolean jarFileHasClassPathAttribute(JarFile jar) throws IOException {

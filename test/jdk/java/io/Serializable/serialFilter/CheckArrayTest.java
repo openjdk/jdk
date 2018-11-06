@@ -28,11 +28,8 @@ import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.InvalidClassException;
 
-import java.util.Hashtable;
+import jdk.internal.access.SharedSecrets;
 
-import jdk.internal.misc.SharedSecrets;
-
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -40,7 +37,7 @@ import org.testng.Assert;
 /* @test
  * @build CheckArrayTest SerialFilterTest
  * @bug 8203368
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.access
  * @run testng CheckArrayTest
  *
  * @summary Test the SharedSecret access to ObjectInputStream.checkArray works

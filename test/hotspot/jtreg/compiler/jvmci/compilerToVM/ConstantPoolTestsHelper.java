@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import compiler.jvmci.common.testcases.MultipleImplementer2;
 import compiler.jvmci.common.testcases.MultipleImplementersInterface;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.TestedCPEntry;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;

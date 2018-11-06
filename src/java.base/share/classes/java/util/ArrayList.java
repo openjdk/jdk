@@ -28,7 +28,7 @@ package java.util;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Resizable-array implementation of the {@code List} interface.  Implements
