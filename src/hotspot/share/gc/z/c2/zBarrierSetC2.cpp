@@ -474,10 +474,10 @@ bool LoadBarrierNode::has_true_uses() const {
 
 // == Accesses ==
 
-Node* ZBarrierSetC2::make_cas_loadbarrier(C2AtomicAccess& access) const {
+Node* ZBarrierSetC2::make_cas_loadbarrier(C2AtomicParseAccess& access) const {
   assert(!UseCompressedOops, "Not allowed");
   CompareAndSwapNode* cas = (CompareAndSwapNode*)access.raw_access();
-  PhaseGVN& gvn = access.kit()->gvn();
+  PhaseGVN& gvn = access.gvn();
   Compile* C = Compile::current();
   GraphKit* kit = access.kit();
 
@@ -566,7 +566,7 @@ Node* ZBarrierSetC2::make_cas_loadbarrier(C2AtomicAccess& access) const {
   return phi;
 }
 
-Node* ZBarrierSetC2::make_cmpx_loadbarrier(C2AtomicAccess& access) const {
+Node* ZBarrierSetC2::make_cmpx_loadbarrier(C2AtomicParseAccess& access) const {
   CompareAndExchangePNode* cmpx = (CompareAndExchangePNode*)access.raw_access();
   GraphKit* kit = access.kit();
   PhaseGVN& gvn = kit->gvn();
@@ -665,7 +665,7 @@ Node* ZBarrierSetC2::load_barrier(GraphKit* kit, Node* val, Node* adr, bool weak
   }
 }
 
-static bool barrier_needed(C2Access access) {
+static bool barrier_needed(C2Access& access) {
   return ZBarrierSet::barrier_needed(access.decorators(), access.type());
 }
 
@@ -677,7 +677,9 @@ Node* ZBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) co
 
   bool weak = (access.decorators() & ON_WEAK_OOP_REF) != 0;
 
-  GraphKit* kit = access.kit();
+  assert(access.is_parse_access(), "entry not supported at optimization time");
+  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+  GraphKit* kit = parse_access.kit();
   PhaseGVN& gvn = kit->gvn();
   Node* adr = access.addr().node();
   Node* heap_base_oop = access.base();
@@ -707,11 +709,11 @@ Node* ZBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) co
     }
     return p;
   } else {
-    return load_barrier(access.kit(), p, access.addr().node(), weak, true, true);
+    return load_barrier(parse_access.kit(), p, access.addr().node(), weak, true, true);
   }
 }
 
-Node* ZBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicAccess& access, Node* expected_val,
+Node* ZBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                     Node* new_val, const Type* val_type) const {
   Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, val_type);
   if (!barrier_needed(access)) {
@@ -722,7 +724,7 @@ Node* ZBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicAccess& access, Node
   return make_cmpx_loadbarrier(access);
 }
 
-Node* ZBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicAccess& access, Node* expected_val,
+Node* ZBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
   Node* result = BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   if (!barrier_needed(access)) {
@@ -746,7 +748,7 @@ Node* ZBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicAccess& access, Nod
   return load_store;
 }
 
-Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicAccess& access, Node* new_val, const Type* val_type) const {
+Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const {
   Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, new_val, val_type);
   if (!barrier_needed(access)) {
     return result;
@@ -755,7 +757,9 @@ Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicAccess& access, Node* new_v
   Node* load_store = access.raw_access();
   Node* adr = access.addr().node();
 
-  return load_barrier(access.kit(), load_store, adr, false, false, false);
+  assert(access.is_parse_access(), "entry not supported at optimization time");
+  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+  return load_barrier(parse_access.kit(), load_store, adr, false, false, false);
 }
 
 // == Macro Expansion ==

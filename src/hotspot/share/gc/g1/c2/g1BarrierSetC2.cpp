@@ -594,8 +594,6 @@ void G1BarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* off
 
 Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   DecoratorSet decorators = access.decorators();
-  GraphKit* kit = access.kit();
-
   Node* adr = access.addr().node();
   Node* obj = access.base();
 
@@ -606,7 +604,8 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
   bool need_cpu_mem_bar = !is_unordered || mismatched || !in_heap;
 
-  Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : kit->top();
+  Node* top = Compile::current()->top();
+  Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
   Node* load = CardTableBarrierSetC2::load_at_resolved(access, val_type);
 
   // If we are reading the value of the referent field of a Reference
@@ -616,11 +615,15 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
   bool need_read_barrier = in_heap && (on_weak ||
-                                       (unknown && offset != kit->top() && obj != kit->top()));
+                                       (unknown && offset != top && obj != top));
 
   if (!access.is_oop() || !need_read_barrier) {
     return load;
   }
+
+  assert(access.is_parse_access(), "entry not supported at optimization time");
+  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+  GraphKit* kit = parse_access.kit();
 
   if (on_weak) {
     // Use the pre-barrier to record the value in the referent field

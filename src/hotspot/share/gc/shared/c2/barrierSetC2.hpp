@@ -49,6 +49,10 @@ const DecoratorSet C2_UNSAFE_ACCESS          = DECORATOR_LAST << 6;
 const DecoratorSet C2_WRITE_ACCESS           = DECORATOR_LAST << 7;
 // This denotes that the access reads state.
 const DecoratorSet C2_READ_ACCESS            = DECORATOR_LAST << 8;
+// A nearby allocation?
+const DecoratorSet C2_TIGHLY_COUPLED_ALLOC   = DECORATOR_LAST << 9;
+// Loads and stores from an arraycopy being optimized
+const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 
 class GraphKit;
 class IdealKit;
@@ -88,7 +92,6 @@ public:
 // BarrierSetC2 backend hierarchy, for loads and stores, to reduce boiler plate.
 class C2Access: public StackObj {
 protected:
-  GraphKit*         _kit;
   DecoratorSet      _decorators;
   BasicType         _type;
   Node*             _base;
@@ -96,22 +99,17 @@ protected:
   Node*             _raw_access;
 
   void fixup_decorators();
-  void* barrier_set_state() const;
 
 public:
-  C2Access(GraphKit* kit, DecoratorSet decorators,
+  C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
-    _kit(kit),
     _decorators(decorators),
     _type(type),
     _base(base),
     _addr(addr),
     _raw_access(NULL)
-  {
-    fixup_decorators();
-  }
+  {}
 
-  GraphKit* kit() const           { return _kit; }
   DecoratorSet decorators() const { return _decorators; }
   Node* base() const              { return _base; }
   C2AccessValuePtr& addr() const  { return _addr; }
@@ -126,23 +124,48 @@ public:
   MemNode::MemOrd mem_node_mo() const;
   bool needs_cpu_membar() const;
 
+  virtual PhaseGVN& gvn() const = 0;
+  virtual bool is_parse_access() const { return false; }
+  virtual bool is_opt_access() const { return false; }
+};
+
+// C2Access for parse time calls to the BarrierSetC2 backend.
+class C2ParseAccess: public C2Access {
+protected:
+  GraphKit*         _kit;
+
+  void* barrier_set_state() const;
+
+public:
+  C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
+                BasicType type, Node* base, C2AccessValuePtr& addr) :
+    C2Access(decorators, type, base, addr),
+    _kit(kit) {
+    fixup_decorators();
+  }
+
+  GraphKit* kit() const           { return _kit; }
+
   template <typename T>
   T barrier_set_state_as() const {
     return reinterpret_cast<T>(barrier_set_state());
   }
+
+  virtual PhaseGVN& gvn() const;
+  virtual bool is_parse_access() const { return true; }
 };
 
 // This class wraps a bunch of context parameters thare are passed around in the
 // BarrierSetC2 backend hierarchy, for atomic accesses, to reduce boiler plate.
-class C2AtomicAccess: public C2Access {
+class C2AtomicParseAccess: public C2ParseAccess {
   Node* _memory;
   uint  _alias_idx;
   bool  _needs_pinning;
 
 public:
-  C2AtomicAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
+  C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
                  Node* base, C2AccessValuePtr& addr, uint alias_idx) :
-    C2Access(kit, decorators, type, base, addr),
+    C2ParseAccess(kit, decorators, type, base, addr),
     _memory(NULL),
     _alias_idx(alias_idx),
     _needs_pinning(true) {}
@@ -157,6 +180,31 @@ public:
   void set_needs_pinning(bool value)    { _needs_pinning = value; }
 };
 
+// C2Access for optimization time calls to the BarrierSetC2 backend.
+class C2OptAccess: public C2Access {
+  PhaseGVN& _gvn;
+  MergeMemNode* _mem;
+  Node* _ctl;
+
+public:
+  C2OptAccess(PhaseGVN& gvn, Node* ctl, MergeMemNode* mem, DecoratorSet decorators,
+              BasicType type, Node* base, C2AccessValuePtr& addr) :
+    C2Access(decorators, type, base, addr),
+    _gvn(gvn), _mem(mem), _ctl(ctl) {
+    fixup_decorators();
+  }
+
+
+  MergeMemNode* mem() const { return _mem; }
+  Node* ctl() const { return _ctl; }
+  // void set_mem(Node* mem) { _mem = mem; }
+  void set_ctl(Node* ctl) { _ctl = ctl; }
+
+  virtual PhaseGVN& gvn() const { return _gvn; }
+  virtual bool is_opt_access() const { return true; }
+};
+
+
 // This is the top-level class for the backend of the Access API in C2.
 // The top-level class is responsible for performing raw accesses. The
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
@@ -167,25 +215,25 @@ protected:
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
 
-  virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicAccess& access, Node* expected_val,
+  virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                Node* new_val, const Type* val_type) const;
-  virtual Node* atomic_cmpxchg_bool_at_resolved(C2AtomicAccess& access, Node* expected_val,
+  virtual Node* atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                 Node* new_val, const Type* value_type) const;
-  virtual Node* atomic_xchg_at_resolved(C2AtomicAccess& access, Node* new_val, const Type* val_type) const;
-  virtual Node* atomic_add_at_resolved(C2AtomicAccess& access, Node* new_val, const Type* val_type) const;
-  void pin_atomic_op(C2AtomicAccess& access) const;
+  virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
+  virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
+  void pin_atomic_op(C2AtomicParseAccess& access) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual Node* store_at(C2Access& access, C2AccessValue& val) const;
   virtual Node* load_at(C2Access& access, const Type* val_type) const;
 
-  virtual Node* atomic_cmpxchg_val_at(C2AtomicAccess& access, Node* expected_val,
+  virtual Node* atomic_cmpxchg_val_at(C2AtomicParseAccess& access, Node* expected_val,
                                       Node* new_val, const Type* val_type) const;
-  virtual Node* atomic_cmpxchg_bool_at(C2AtomicAccess& access, Node* expected_val,
+  virtual Node* atomic_cmpxchg_bool_at(C2AtomicParseAccess& access, Node* expected_val,
                                        Node* new_val, const Type* val_type) const;
-  virtual Node* atomic_xchg_at(C2AtomicAccess& access, Node* new_val, const Type* value_type) const;
-  virtual Node* atomic_add_at(C2AtomicAccess& access, Node* new_val, const Type* value_type) const;
+  virtual Node* atomic_xchg_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
+  virtual Node* atomic_add_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
 
@@ -203,6 +251,7 @@ public:
     Expansion
   };
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const { return false; }
+  virtual void clone_barrier_at_expansion(ArrayCopyNode* ac, Node* call, PhaseIterGVN& igvn) const;
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barriers() const { return false; }

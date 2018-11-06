@@ -148,6 +148,28 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
   return get_length_if_constant(phase);
 }
 
+Node* ArrayCopyNode::load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* adr, const TypePtr* adr_type, const Type *type, BasicType bt) {
+  DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY;
+  C2AccessValuePtr addr(adr, adr_type);
+  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
+  Node* res = bs->load_at(access, type);
+  ctl = access.ctl();
+  return res;
+}
+
+void ArrayCopyNode::store(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* adr, const TypePtr* adr_type, Node* val, const Type *type, BasicType bt) {
+  DecoratorSet decorators = C2_WRITE_ACCESS | IN_HEAP | C2_ARRAY_COPY;
+  if (is_alloc_tightly_coupled()) {
+    decorators |= C2_TIGHLY_COUPLED_ALLOC;
+  }
+  C2AccessValuePtr addr(adr, adr_type);
+  C2AccessValue value(val, type);
+  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
+  bs->store_at(access, value);
+  ctl = access.ctl();
+}
+
+
 Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int count) {
   if (!is_clonebasic()) {
     return NULL;
@@ -182,6 +204,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
   assert(ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem, "too many fields");
 
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   for (int i = 0; i < count; i++) {
     ciField* field = ik->nonstatic_field_at(i);
     int fieldidx = phase->C->alias_type(field)->index();
@@ -203,11 +226,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
       type = Type::get_const_basic_type(bt);
     }
 
-    Node* v = LoadNode::make(*phase, ctl, mem->memory_at(fieldidx), next_src, adr_type, type, bt, MemNode::unordered);
-    v = phase->transform(v);
-    Node* s = StoreNode::make(*phase, ctl, mem->memory_at(fieldidx), next_dest, adr_type, v, bt, MemNode::unordered);
-    s = phase->transform(s);
-    mem->set_memory_at(fieldidx, s);
+    Node* v = load(bs, phase, ctl, mem, next_src, adr_type, type, bt);
+    store(bs, phase, ctl, mem, next_dest, adr_type, v, type, bt);
   }
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
@@ -368,28 +388,18 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
   if (!forward_ctl->is_top()) {
     // copy forward
     mm = mm->clone()->as_MergeMem();
-    uint alias_idx_src = phase->C->get_alias_index(atp_src);
-    uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
-    Node *start_mem_src = mm->memory_at(alias_idx_src);
-    Node *start_mem_dest = mm->memory_at(alias_idx_dest);
-    Node* mem = start_mem_dest;
-    bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
-      Node* v = LoadNode::make(*phase, forward_ctl, start_mem_src, adr_src, atp_src, value_type, copy_type, MemNode::unordered);
-      v = phase->transform(v);
-      mem = StoreNode::make(*phase, forward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
-      mem = phase->transform(mem);
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      Node* v = load(bs, phase, forward_ctl, mm, adr_src, atp_src, value_type, copy_type);
+      store(bs, phase, forward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
       for (int i = 1; i < count; i++) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
-        v = LoadNode::make(*phase, forward_ctl, same_alias ? mem : start_mem_src, next_src, atp_src, value_type, copy_type, MemNode::unordered);
-        v = phase->transform(v);
-        mem = StoreNode::make(*phase, forward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
-        mem = phase->transform(mem);
+        v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
+        store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
-      mm->set_memory_at(alias_idx_dest, mem);
     } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);
@@ -416,31 +426,20 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
   if (!backward_ctl->is_top()) {
     // copy backward
     mm = mm->clone()->as_MergeMem();
-    uint alias_idx_src = phase->C->get_alias_index(atp_src);
-    uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
-    Node *start_mem_src = mm->memory_at(alias_idx_src);
-    Node *start_mem_dest = mm->memory_at(alias_idx_dest);
-    Node* mem = start_mem_dest;
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
-    bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
-        Node* v = LoadNode::make(*phase, backward_ctl, same_alias ? mem : start_mem_src, next_src, atp_src, value_type, copy_type, MemNode::unordered);
-        v = phase->transform(v);
-        mem = StoreNode::make(*phase, backward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
-        mem = phase->transform(mem);
+        Node* v = load(bs, phase, backward_ctl, mm, next_src, atp_src, value_type, copy_type);
+        store(bs, phase, backward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
-      Node* v = LoadNode::make(*phase, backward_ctl, same_alias ? mem : start_mem_src, adr_src, atp_src, value_type, copy_type, MemNode::unordered);
-      v = phase->transform(v);
-      mem = StoreNode::make(*phase, backward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
-      mem = phase->transform(mem);
-      mm->set_memory_at(alias_idx_dest, mem);
+      Node* v = load(bs, phase, backward_ctl, mm, adr_src, atp_src, value_type, copy_type);
+      store(bs, phase, backward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
     } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);

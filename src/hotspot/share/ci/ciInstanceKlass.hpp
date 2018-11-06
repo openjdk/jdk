@@ -202,6 +202,8 @@ public:
     return _has_injected_fields > 0 ? true : false;
   }
 
+  bool has_object_fields() const;
+
   // nth nonstatic field (presented by ascending address)
   ciField* nonstatic_field_at(int i) {
     assert(_nonstatic_fields != NULL, "");

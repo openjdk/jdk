@@ -156,8 +156,8 @@ public:
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
   ZBarrierSetC2State* state() const;
-  Node* make_cas_loadbarrier(C2AtomicAccess& access) const;
-  Node* make_cmpx_loadbarrier(C2AtomicAccess& access) const;
+  Node* make_cas_loadbarrier(C2AtomicParseAccess& access) const;
+  Node* make_cmpx_loadbarrier(C2AtomicParseAccess& access) const;
   void expand_loadbarrier_basic(PhaseMacroExpand* phase, LoadBarrierNode *barrier) const;
   void expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrierNode* barrier) const;
   void expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBarrierNode *barrier) const;
@@ -165,15 +165,15 @@ private:
 
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
-  virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicAccess& access,
+  virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access,
                                                Node* expected_val,
                                                Node* new_val,
                                                const Type* val_type) const;
-  virtual Node* atomic_cmpxchg_bool_at_resolved(C2AtomicAccess& access,
+  virtual Node* atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
                                                 Node* expected_val,
                                                 Node* new_val,
                                                 const Type* value_type) const;
-  virtual Node* atomic_xchg_at_resolved(C2AtomicAccess& access,
+  virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access,
                                         Node* new_val,
                                         const Type* val_type) const;
 
