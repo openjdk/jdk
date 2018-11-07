@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,4 +126,15 @@ tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {
 
 th {
   background: #DDF;
+}
+
+table.centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.centered td {
+  text-align: left;
+}
+.centered {
+  text-align: center;
 }
