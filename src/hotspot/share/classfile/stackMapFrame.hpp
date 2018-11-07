@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class StackMapFrame : public ResourceObj {
 
   ClassVerifier* _verifier;  // the verifier verifying this method
 
-  StackMapFrame(const StackMapFrame& cp) : ResourceObj(cp),
+  StackMapFrame(const StackMapFrame& cp) :
       _offset(cp._offset), _locals_size(cp._locals_size),
       _stack_size(cp._stack_size), _stack_mark(cp._stack_mark),
       _max_locals(cp._max_locals), _max_stack(cp._max_stack),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ void Dict::doubhash(void) {
 
 //------------------------------Dict-----------------------------------------
 // Deep copy a dictionary.
-Dict::Dict( const Dict &d ) : ResourceObj(d), _arena(d._arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
+Dict::Dict( const Dict &d ) : _arena(d._arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
   memcpy( (void*)_bin, (void*)d._bin, sizeof(bucket)*_size );
   for( uint i=0; i<_size; i++ ) {
