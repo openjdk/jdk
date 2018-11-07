@@ -778,6 +778,9 @@ Node* G1BarrierSetC2::step_over_gc_barrier(Node* c) const {
 
 #ifdef ASSERT
 void G1BarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
+  if (phase != BarrierSetC2::BeforeCodeGen) {
+    return;
+  }
   // Verify G1 pre-barriers
   const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
 
