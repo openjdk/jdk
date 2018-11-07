@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OPTO_ARRAYCOPYNODE_HPP
 #define SHARE_VM_OPTO_ARRAYCOPYNODE_HPP
 
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/callnode.hpp"
 
 class GraphKit;
