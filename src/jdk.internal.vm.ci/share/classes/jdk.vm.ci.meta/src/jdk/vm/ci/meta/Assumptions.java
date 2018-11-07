@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
     }
 
     /**
-     * An assumption that a given class has no subclasses implementing {@link Object#finalize()}).
+     * An assumption that a given class has no subclasses implementing {@code Object#finalize()}).
      */
     public static final class NoFinalizableSubclass extends Assumption {
 

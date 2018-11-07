@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,14 @@ class SPARCHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
+    // @formatter:off
     // CPU capabilities:
     //
     // FIXME: Using a 64-bit value is insufficient to support future capability
     //        sets (including co-processor capabilities such as DAX).
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 
+    //
     // SPARC specific values:
     //
     // NOTE: Values changed into an enumeration (that do indeed fit within a
@@ -97,4 +99,5 @@ class SPARCHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final boolean useBlockZeroing = getFlag("UseBlockZeroing", Boolean.class);
     final int blockZeroingLowLimit = getFlag("BlockZeroingLowLimit", Integer.class);
+    // @formatter:on
 }

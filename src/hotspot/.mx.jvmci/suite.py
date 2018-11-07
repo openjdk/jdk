@@ -43,6 +43,9 @@ suite = {
     "jdk.vm.ci.services" : {
       "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
+      "imports" : [
+        "jdk.internal.misc"
+      ],
       "javaCompliance" : "9+",
       "checkstyleVersion" : "8.8",
       "workingSets" : "API,JVMCI",

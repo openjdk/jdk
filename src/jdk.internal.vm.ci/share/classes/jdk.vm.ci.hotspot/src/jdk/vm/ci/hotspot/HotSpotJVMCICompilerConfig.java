@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import java.util.Set;
+
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -30,7 +32,6 @@ import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.JVMCIServiceLocator;
-import jdk.vm.ci.services.internal.ReflectionAccessJDK;
 
 final class HotSpotJVMCICompilerConfig {
 
@@ -90,7 +91,7 @@ final class HotSpotJVMCICompilerConfig {
                 // Auto select a single available compiler
                 for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
                     if (factory == null) {
-                        ReflectionAccessJDK.openJVMCITo(f.getClass());
+                        openJVMCITo(f.getClass().getModule());
                         factory = f;
                     } else {
                         // Multiple factories seen - cancel auto selection
@@ -106,5 +107,21 @@ final class HotSpotJVMCICompilerConfig {
             compilerFactory = factory;
         }
         return compilerFactory;
+    }
+
+    /**
+     * Opens all JVMCI packages to {@code otherModule}.
+     */
+    private static void openJVMCITo(Module otherModule) {
+        Module jvmci = HotSpotJVMCICompilerConfig.class.getModule();
+        if (jvmci != otherModule) {
+            Set<String> packages = jvmci.getPackages();
+            for (String pkg : packages) {
+                boolean opened = jvmci.isOpen(pkg, otherModule);
+                if (!opened) {
+                    jvmci.addOpens(pkg, otherModule);
+                }
+            }
+        }
     }
 }
