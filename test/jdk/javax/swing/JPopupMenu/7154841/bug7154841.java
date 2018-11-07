@@ -25,9 +25,10 @@
  * @test
  * @key headful
  * @bug 7154841
+ * @requires (os.family == "mac")
  * @summary JPopupMenu is overlapped by a Dock on Mac OS X
- * @author Petr Pchelko
  * @library /test/lib
+ *          /test/jdk/lib/testlibrary/
  * @build ExtendedRobot jdk.test.lib.Platform
  * @run main bug7154841
  */

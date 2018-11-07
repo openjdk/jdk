@@ -474,7 +474,6 @@ java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.html 82
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.html 8202882 linux-all
-java/awt/MenuBar/8007006/bug8007006.java 8202886 macosx-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
@@ -493,7 +492,6 @@ java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
 java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris-all
-java/awt/MenuBar/8007006/bug8007006.java 8213122 windows-all
 # below test fails only on Win 7
 java/awt/font/FontNames/LocaleFamilyNames.java 8213129 windows-all
 
@@ -821,9 +819,6 @@ javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JComboBox/WindowsComboBoxSize/WindowsComboBoxSizeTest.java 8213116 windows-all
-javax/swing/JComboBox/4199622/bug4199622.java 8213122 windows-all
-javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java 8213122 windows-all,macosx-all
-javax/swing/JPopupMenu/7154841/bug7154841.java 8213122 windows-all,macosx-all
 javax/swing/GraphicsConfigNotifier/StalePreferredSize.java 8213121 macosx-all
 javax/swing/JButton/4368790/bug4368790.java 8213123 macosx-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all

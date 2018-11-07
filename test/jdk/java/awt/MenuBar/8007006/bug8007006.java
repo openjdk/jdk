@@ -25,10 +25,10 @@
  * @test
  * @key headful
  * @bug 8007006
+ * @requires (os.family == "mac")
  * @summary [macosx] Closing subwindow loses main window menus.
- * @author Leonid Romanov
  * @library /test/lib
- * @build ExtendedRobot jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform
  * @run main bug8007006
  */
 
@@ -40,6 +40,7 @@ import jdk.test.lib.Platform;
 public class bug8007006 {
     private static Frame frame1;
     private static Frame frame2;
+    private static volatile boolean isActionPerformed;
 
     public static void main(String[] args) throws Exception {
         if (!Platform.isOSX()) {
@@ -49,46 +50,19 @@ public class bug8007006 {
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
 
-        ExtendedRobot robot = new ExtendedRobot();
-        robot.setAutoDelay(50);
+        Robot robot = new Robot();
+        robot.setAutoDelay(300);
 
         createAndShowGUI();
-        robot.waitForIdle(1500);
-
+        robot.waitForIdle();
         frame2.dispose();
-
-        robot.waitForIdle(1500);
-
-
-        // open "Apple" menu (the leftmost one)
-        robot.keyPress(KeyEvent.VK_META);
-        robot.keyPress(KeyEvent.VK_SHIFT);
-        robot.keyPress(KeyEvent.VK_SLASH);
-        robot.keyRelease(KeyEvent.VK_SLASH);
-        robot.keyRelease(KeyEvent.VK_SHIFT);
-        robot.keyRelease(KeyEvent.VK_META);
-
-        // Select our menu
-        robot.keyPress(KeyEvent.VK_LEFT);
-        robot.keyRelease(KeyEvent.VK_LEFT);
-
-        // Select menu item
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-
         robot.waitForIdle();
 
-        MenuBar mbar = frame1.getMenuBar();
-        Menu menu = mbar.getMenu(0);
-        CheckboxMenuItem item = (CheckboxMenuItem)menu.getItem(0);
-        boolean isChecked = item.getState();
+        performMenuItemTest(robot);
 
         frame1.dispose();
-
-        if (isChecked) {
-            throw new Exception("Test failed: menu item remained checked");
+        if (!isActionPerformed) {
+            throw new Exception("Test failed: menu item action was not performed");
         }
     }
 
@@ -106,14 +80,51 @@ public class bug8007006 {
     }
 
     private static MenuBar createMenuBar() {
-        MenuBar mbar = new MenuBar();
-        Menu menu = new Menu("Menu");
-        MenuItem item = new CheckboxMenuItem("Checked", true);
-
+        // A very long name makes it more likely that the robot will hit the
+        // menu
+        Menu menu = new Menu("TestTestTestTestTestTestTestTestTestTest");
+        MenuItem item = new MenuItem("TestTestTestTestTestTestTestTestTestTest");
+        item.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ev) {
+                isActionPerformed = true;
+            }
+        });
         menu.add(item);
-        mbar.add(menu);
-
-        return mbar;
+        MenuBar mb = new MenuBar();
+        mb.add(menu);
+        return mb;
     }
 
+    private static void performMenuItemTest(Robot robot) {
+        // Find the menu on the screen menu bar
+        // The location depends upon the application name which is the name
+        // of the first menu.
+        // Unfortunately, the application name can vary based on how the
+        // application is run.
+        // The work around is to make the menu and the menu item names very
+        // long.
+        int menuBarX = 250;
+        int menuBarY = 11;
+        int menuItemX = menuBarX;
+        int menuItemY = 34;
+        robot.mouseMove(menuBarX, menuBarY);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseMove(menuItemX, menuItemY);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        waitForAction();
+    }
+
+    private static void waitForAction() {
+        try {
+            for (int i = 0; i < 10; i++) {
+                if (isActionPerformed) {
+                    return;
+                }
+                Thread.sleep(100);
+            }
+        } catch (InterruptedException ex) {
+        }
+    }
 }

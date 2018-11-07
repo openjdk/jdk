@@ -27,10 +27,9 @@
    @bug 4199622
    @requires (os.family == "windows")
    @summary RFE: JComboBox shouldn't send ActionEvents for keyboard navigation
-   @author Vladislav Karnaukhov
    @library /test/lib
    @modules java.desktop/com.sun.java.swing.plaf.windows
-   @build jdk.test.libr.Platform
+   @build jdk.test.lib.Platform
    @run main bug4199622
  */
 
