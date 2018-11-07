@@ -283,6 +283,11 @@ public:
     BeforeCodeGen
   };
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
+
+  virtual bool flatten_gc_alias_type(const TypePtr*& adr_type) const { return false; }
+#ifdef ASSERT
+  virtual bool verify_gc_alias_type(const TypePtr* adr_type, int offset) const { return false; }
+#endif
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP
