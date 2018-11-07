@@ -621,10 +621,6 @@ JVM_GetMethodParameters(JNIEnv *env, jobject method);
  */
 
 JNIEXPORT jobject JNICALL
-JVM_DoPrivileged(JNIEnv *env, jclass cls,
-                 jobject action, jobject context, jboolean wrapException);
-
-JNIEXPORT jobject JNICALL
 JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobject JNICALL

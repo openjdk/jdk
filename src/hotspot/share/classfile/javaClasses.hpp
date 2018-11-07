@@ -1241,8 +1241,6 @@ class java_security_AccessControlContext: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
 
-  static bool is_authorized(Handle context);
-
   // Debugging/initialization
   friend class JavaClasses;
 };
@@ -1315,8 +1313,6 @@ class java_lang_System : AllStatic {
   static int  in_offset_in_bytes();
   static int out_offset_in_bytes();
   static int err_offset_in_bytes();
-
-  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;

@@ -55,7 +55,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/nativeLookup.hpp"
-#include "prims/privilegedStack.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -1166,155 +1165,6 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
 JVM_END
 
 
-static bool is_authorized(Handle context, InstanceKlass* klass, TRAPS) {
-  // If there is a security manager and protection domain, check the access
-  // in the protection domain, otherwise it is authorized.
-  if (java_lang_System::has_security_manager()) {
-
-    // For bootstrapping, if pd implies method isn't in the JDK, allow
-    // this context to revert to older behavior.
-    // In this case the isAuthorized field in AccessControlContext is also not
-    // present.
-    if (Universe::protection_domain_implies_method() == NULL) {
-      return true;
-    }
-
-    // Whitelist certain access control contexts
-    if (java_security_AccessControlContext::is_authorized(context)) {
-      return true;
-    }
-
-    oop prot = klass->protection_domain();
-    if (prot != NULL) {
-      // Call pd.implies(new SecurityPermission("createAccessControlContext"))
-      // in the new wrapper.
-      methodHandle m(THREAD, Universe::protection_domain_implies_method());
-      Handle h_prot(THREAD, prot);
-      JavaValue result(T_BOOLEAN);
-      JavaCallArguments args(h_prot);
-      JavaCalls::call(&result, m, &args, CHECK_false);
-      return (result.get_jboolean() != 0);
-    }
-  }
-  return true;
-}
-
-// Create an AccessControlContext with a protection domain with null codesource
-// and null permissions - which gives no permissions.
-oop create_dummy_access_control_context(TRAPS) {
-  InstanceKlass* pd_klass = SystemDictionary::ProtectionDomain_klass();
-  // Call constructor ProtectionDomain(null, null);
-  Handle obj = JavaCalls::construct_new_instance(pd_klass,
-                          vmSymbols::codesource_permissioncollection_signature(),
-                          Handle(), Handle(), CHECK_NULL);
-
-  // new ProtectionDomain[] {pd};
-  objArrayOop context = oopFactory::new_objArray(pd_klass, 1, CHECK_NULL);
-  context->obj_at_put(0, obj());
-
-  // new AccessControlContext(new ProtectionDomain[] {pd})
-  objArrayHandle h_context(THREAD, context);
-  oop acc = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
-  return acc;
-}
-
-JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, jobject context, jboolean wrapException))
-  JVMWrapper("JVM_DoPrivileged");
-
-  if (action == NULL) {
-    THROW_MSG_0(vmSymbols::java_lang_NullPointerException(), "Null action");
-  }
-
-  // Compute the frame initiating the do privileged operation and setup the privileged stack
-  vframeStream vfst(thread);
-  vfst.security_get_caller_frame(1);
-
-  if (vfst.at_end()) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "no caller?");
-  }
-
-  Method* method        = vfst.method();
-  InstanceKlass* klass  = method->method_holder();
-
-  // Check that action object understands "Object run()"
-  Handle h_context;
-  if (context != NULL) {
-    h_context = Handle(THREAD, JNIHandles::resolve(context));
-    bool authorized = is_authorized(h_context, klass, CHECK_NULL);
-    if (!authorized) {
-      // Create an unprivileged access control object and call it's run function
-      // instead.
-      oop noprivs = create_dummy_access_control_context(CHECK_NULL);
-      h_context = Handle(THREAD, noprivs);
-    }
-  }
-
-  // Check that action object understands "Object run()"
-  Handle object (THREAD, JNIHandles::resolve(action));
-
-  // get run() method
-  Method* m_oop = object->klass()->uncached_lookup_method(
-                                           vmSymbols::run_method_name(),
-                                           vmSymbols::void_object_signature(),
-                                           Klass::find_overpass);
-
-  // See if there is a default method for "Object run()".
-  if (m_oop == NULL && object->klass()->is_instance_klass()) {
-    InstanceKlass* iklass = InstanceKlass::cast(object->klass());
-    m_oop = iklass->lookup_method_in_ordered_interfaces(
-                                           vmSymbols::run_method_name(),
-                                           vmSymbols::void_object_signature());
-  }
-
-  methodHandle m (THREAD, m_oop);
-  if (m.is_null() || !m->is_method() || !m()->is_public() || m()->is_static() || m()->is_abstract()) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "No run method");
-  }
-
-  // Stack allocated list of privileged stack elements
-  PrivilegedElement pi;
-  if (!vfst.at_end()) {
-    pi.initialize(&vfst, h_context(), thread->privileged_stack_top(), CHECK_NULL);
-    thread->set_privileged_stack_top(&pi);
-  }
-
-
-  // invoke the Object run() in the action object. We cannot use call_interface here, since the static type
-  // is not really known - it is either java.security.PrivilegedAction or java.security.PrivilegedExceptionAction
-  Handle pending_exception;
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args(object);
-  JavaCalls::call(&result, m, &args, THREAD);
-
-  // done with action, remove ourselves from the list
-  if (!vfst.at_end()) {
-    assert(thread->privileged_stack_top() != NULL && thread->privileged_stack_top() == &pi, "wrong top element");
-    thread->set_privileged_stack_top(thread->privileged_stack_top()->next());
-  }
-
-  if (HAS_PENDING_EXCEPTION) {
-    pending_exception = Handle(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    // JVMTI has already reported the pending exception
-    // JVMTI internal flag reset is needed in order to report PrivilegedActionException
-    if (THREAD->is_Java_thread()) {
-      JvmtiExport::clear_detected_exception((JavaThread*) THREAD);
-    }
-    if ( pending_exception->is_a(SystemDictionary::Exception_klass()) &&
-        !pending_exception->is_a(SystemDictionary::RuntimeException_klass())) {
-      // Throw a java.security.PrivilegedActionException(Exception e) exception
-      JavaCallArguments args(pending_exception);
-      THROW_ARG_0(vmSymbols::java_security_PrivilegedActionException(),
-                  vmSymbols::exception_void_signature(),
-                  &args);
-    }
-  }
-
-  if (pending_exception.not_null()) THROW_OOP_0(pending_exception());
-  return JNIHandles::make_local(env, (oop) result.get_jobject());
-JVM_END
-
-
 // Returns the inherited_access_control_context field of the running thread.
 JVM_ENTRY(jobject, JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetInheritedAccessControlContext");
@@ -1349,25 +1199,35 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   // duplicate consecutive protection domains into a single one, as
   // well as stopping when we hit a privileged frame.
 
-  // Use vframeStream to iterate through Java frames
-  vframeStream vfst(thread);
-
   oop previous_protection_domain = NULL;
   Handle privileged_context(thread, NULL);
   bool is_privileged = false;
   oop protection_domain = NULL;
 
-  for(; !vfst.at_end(); vfst.next()) {
+  // Iterate through Java frames
+  RegisterMap reg_map(thread);
+  javaVFrame *vf = thread->last_java_vframe(&reg_map);
+  for (; vf != NULL; vf = vf->java_sender()) {
     // get method of frame
-    Method* method = vfst.method();
-    intptr_t* frame_id   = vfst.frame_id();
+    Method* method = vf->method();
 
-    // check the privileged frames to see if we have a match
-    if (thread->privileged_stack_top() && thread->privileged_stack_top()->frame_id() == frame_id) {
+    // stop at the first privileged frame
+    if (method->method_holder() == SystemDictionary::AccessController_klass() &&
+      method->name() == vmSymbols::executePrivileged_name())
+    {
       // this frame is privileged
       is_privileged = true;
-      privileged_context = Handle(thread, thread->privileged_stack_top()->privileged_context());
-      protection_domain  = thread->privileged_stack_top()->protection_domain();
+
+      javaVFrame *priv = vf;                        // executePrivileged
+      javaVFrame *caller_fr = priv->java_sender();  // doPrivileged
+      caller_fr = caller_fr->java_sender();         // caller
+
+      StackValueCollection* locals = priv->locals();
+      privileged_context = locals->obj_at(1);
+      Handle caller      = locals->obj_at(2);
+
+      Klass *caller_klass = java_lang_Class::as_Klass(caller());
+      protection_domain  = caller_klass->protection_domain();
     } else {
       protection_domain = method->method_holder()->protection_domain();
     }

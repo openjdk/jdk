@@ -137,7 +137,6 @@ class Universe: AllStatic {
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
-  static LatestMethodCache* _pd_implies_cache;         // method for checking protection domain attributes
   static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
   static LatestMethodCache* _do_stack_walk_cache;      // method for stack walker callback
 
@@ -322,7 +321,6 @@ class Universe: AllStatic {
   static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
-  static Method*      protection_domain_implies_method() { return _pd_implies_cache->get_method(); }
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }

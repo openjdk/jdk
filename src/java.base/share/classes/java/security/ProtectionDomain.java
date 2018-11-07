@@ -394,11 +394,6 @@ public class ProtectionDomain {
         return false;
     }
 
-    // called by the VM -- do not remove
-    boolean impliesCreateAccessControlContext() {
-        return implies(SecurityConstants.CREATE_ACC_PERMISSION);
-    }
-
     /**
      * Convert a ProtectionDomain to a String.
      */

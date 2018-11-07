@@ -52,7 +52,6 @@ JVM_CurrentTimeMillis
 JVM_DefineClass
 JVM_DefineClassWithSource
 JVM_DesiredAssertionStatus
-JVM_DoPrivileged
 JVM_DumpAllStacks
 JVM_DumpThreads
 JVM_FillInStackTrace

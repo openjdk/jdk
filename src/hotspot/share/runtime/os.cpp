@@ -44,7 +44,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
-#include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1091,14 +1090,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   // Check if addr belongs to a Java thread.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    // Check for privilege stack
-    if (thread->privileged_stack_top() != NULL &&
-        thread->privileged_stack_top()->contains(addr)) {
-      st->print_cr(INTPTR_FORMAT " is pointing into the privilege stack "
-                   "for thread: " INTPTR_FORMAT, p2i(addr), p2i(thread));
-      if (verbose) thread->print_on(st);
-      return;
-    }
     // If the addr is a java thread print information about that.
     if (addr == (address)thread) {
       if (verbose) {

@@ -1882,14 +1882,9 @@ class JavaThread: public Thread {
   void thread_main_inner();
 
  private:
-  // PRIVILEGED STACK
-  PrivilegedElement*  _privileged_stack_top;
   GrowableArray<oop>* _array_for_gc;
  public:
 
-  // Returns the privileged_stack information.
-  PrivilegedElement* privileged_stack_top() const       { return _privileged_stack_top; }
-  void set_privileged_stack_top(PrivilegedElement *e)   { _privileged_stack_top = e; }
   void register_array_for_gc(GrowableArray<oop>* array) { _array_for_gc = array; }
 
  public:

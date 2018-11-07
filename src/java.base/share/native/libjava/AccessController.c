@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,48 +34,13 @@
 #include "jvm.h"
 #include "java_security_AccessController.h"
 
-/*
- * Class:     java_security_AccessController
- * Method:    doPrivileged
- * Signature: (Ljava/security/PrivilegedAction;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2
-  (JNIEnv *env, jclass cls, jobject action)
+JNIEXPORT jobject JNICALL
+Java_java_security_AccessController_getProtectionDomain(
+                                                              JNIEnv *env,
+                                                              jclass cls,
+                                                              jclass caller)
 {
-    return JVM_DoPrivileged(env, cls, action, NULL, JNI_FALSE);
-}
-
-/*
- * Class:     java_security_AccessController
- * Method:    doPrivileged
- * Signature: (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2
-  (JNIEnv *env, jclass cls, jobject action, jobject context)
-{
-    return JVM_DoPrivileged(env, cls, action, context, JNI_FALSE);
-}
-
-/*
- * Class:     java_security_AccessController
- * Method:    doPrivileged
- * Signature: (Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2
-  (JNIEnv *env, jclass cls, jobject action)
-{
-    return JVM_DoPrivileged(env, cls, action, NULL, JNI_TRUE);
-}
-
-/*
- * Class:     java_security_AccessController
- * Method:    doPrivileged
- * Signature: (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2Ljava_security_AccessControlContext_2
-  (JNIEnv *env, jclass cls, jobject action, jobject context)
-{
-    return JVM_DoPrivileged(env, cls, action, context, JNI_TRUE);
+    return JVM_GetProtectionDomain(env, caller);
 }
 
 JNIEXPORT jobject JNICALL

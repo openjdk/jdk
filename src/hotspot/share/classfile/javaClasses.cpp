@@ -3786,12 +3786,6 @@ void java_security_AccessControlContext::serialize_offsets(SerializeClosure* f) 
 }
 #endif
 
-bool java_security_AccessControlContext::is_authorized(Handle context) {
-  assert(context.not_null() && context->klass() == SystemDictionary::AccessControlContext_klass(), "Invalid type");
-  assert(_isAuthorized_offset != -1, "should be set");
-  return context->bool_field(_isAuthorized_offset) != 0;
-}
-
 oop java_security_AccessControlContext::create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS) {
   assert(_isPrivileged_offset != 0, "offsets should have been initialized");
   // Ensure klass is initialized
@@ -3974,13 +3968,6 @@ void java_lang_System::serialize_offsets(SerializeClosure* f) {
 int java_lang_System::in_offset_in_bytes() { return static_in_offset; }
 int java_lang_System::out_offset_in_bytes() { return static_out_offset; }
 int java_lang_System::err_offset_in_bytes() { return static_err_offset; }
-
-
-bool java_lang_System::has_security_manager() {
-  InstanceKlass* ik = SystemDictionary::System_klass();
-  oop base = ik->static_field_base_raw();
-  return base->obj_field(static_security_offset) != NULL;
-}
 
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
