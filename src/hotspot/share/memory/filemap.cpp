@@ -209,6 +209,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
+  _shared_base_address = SharedBaseAddress;
 }
 
 void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) {
@@ -533,6 +534,7 @@ bool FileMapInfo::init_from_file(int fd) {
   }
 
   _file_offset += (long)n;
+  SharedBaseAddress = _header->_shared_base_address;
   return true;
 }
 
@@ -666,7 +668,8 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 //             +-- gap
 size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
                                                GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                               int first_region_id, int max_num_regions) {
+                                               int first_region_id, int max_num_regions,
+                                               bool print_log) {
   assert(max_num_regions <= 2, "Only support maximum 2 memory regions");
 
   int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
@@ -687,8 +690,10 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
       total_size += size;
     }
 
-    log_info(cds)("Archive heap region %d " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
-                  i, p2i(start), p2i(start + size), size);
+    if (print_log) {
+      log_info(cds)("Archive heap region %d " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
+                    i, p2i(start), p2i(start + size), size);
+    }
     write_region(i, start, size, false, false);
     if (size > 0) {
       space_at(i)->_oopmap = oopmaps->at(arr_idx)._oopmap;

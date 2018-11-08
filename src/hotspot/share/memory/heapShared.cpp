@@ -391,9 +391,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
       record->init(&info);
 
       unsigned int hash = primitive_hash<Klass*>(klass);
-      uintx deltax = MetaspaceShared::object_delta(record);
-      guarantee(deltax <= MAX_SHARED_DELTA, "must not be");
-      u4 delta = u4(deltax);
+      u4 delta = MetaspaceShared::object_delta_u4(record);
       _writer->add(hash, delta);
     }
     return true; // keep on iterating
@@ -417,7 +415,7 @@ void HeapShared::write_subgraph_info_table() {
   int num_buckets = CompactHashtableWriter::default_num_buckets(d_table->_count);
   CompactHashtableWriter writer(num_buckets, &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
-  _dump_time_subgraph_info_table->iterate(&copy);
+  d_table->iterate(&copy);
 
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
@@ -433,7 +431,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
   unsigned int hash = primitive_hash<Klass*>(k);
-  ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
+  const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.

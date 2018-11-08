@@ -244,8 +244,6 @@ class CompactHashtable : public SimpleCompactHashtable {
   }
 
 public:
-  CompactHashtable() : SimpleCompactHashtable() {}
-
   // Lookup a value V from the compact table using key K
   inline V lookup(K key, unsigned int hash, int len) const {
     if (_entry_count > 0) {
@@ -299,7 +297,52 @@ public:
       }
     }
   }
+
+  void print_table_statistics(outputStream* st, const char* name) {
+    st->print_cr("%s statistics:", name);
+    int total_entries = 0;
+    int max_bucket = 0;
+    for (u4 i = 0; i < _bucket_count; i++) {
+      u4 bucket_info = _buckets[i];
+      int bucket_type = BUCKET_TYPE(bucket_info);
+      int bucket_size;
+
+      if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
+        bucket_size = 1;
+      } else {
+        bucket_size = (BUCKET_OFFSET(_buckets[i + 1]) - BUCKET_OFFSET(bucket_info)) / 2;
+      }
+      total_entries += bucket_size;
+      if (max_bucket < bucket_size) {
+        max_bucket = bucket_size;
+      }
+    }
+    st->print_cr("Number of buckets       : %9d", _bucket_count);
+    st->print_cr("Number of entries       : %9d", total_entries);
+    st->print_cr("Maximum bucket size     : %9d", max_bucket);
+  }
 };
+
+////////////////////////////////////////////////////////////////////////
+//
+// OffsetCompactHashtable -- This is used to store many types of objects
+// in the CDS archive. On 64-bit platforms, we save space by using a 32-bit
+// offset from the CDS base address.
+
+template <typename V>
+V read_value_from_compact_hashtable(address base_address, u4 offset) {
+  return (V)(base_address + offset);
+}
+
+template <
+  typename K,
+  typename V,
+  bool (*EQUALS)(V value, K key, int len)
+  >
+class OffsetCompactHashtable : public CompactHashtable<
+    K, V, read_value_from_compact_hashtable<V>, EQUALS> {
+};
+
 
 ////////////////////////////////////////////////////////////////////////
 //

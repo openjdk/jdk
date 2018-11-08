@@ -36,13 +36,12 @@
     Handling of the classes in the AppCDS archive
 
     To ensure safety and to simplify the implementation, archived classes are
-    "segregated" into several types. The following rules describe how they
+    "segregated" into 2 types. The following rules describe how they
     are stored and looked up.
 
 [1] Category of archived classes
 
-    There are 3 disjoint groups of classes stored in the AppCDS archive. They are
-    categorized as by their SharedDictionaryEntry::loader_type()
+    There are 2 disjoint groups of classes stored in the AppCDS archive:
 
     BUILTIN:              These classes may be defined ONLY by the BOOT/PLATFORM/APP
                           loaders.
@@ -83,112 +82,39 @@
     Bar id: 3 super: 0 interfaces: 1 source: /foo.jar
 
 
-[3] Identifying the loader_type of archived classes in the shared dictionary
-
-    Each archived Klass* C is associated with a SharedDictionaryEntry* E
+[3] Identifying the category of archived classes
 
     BUILTIN:              (C->shared_classpath_index() >= 0)
-    UNREGISTERED:         (C->shared_classpath_index() <  0)
+    UNREGISTERED:         (C->shared_classpath_index() == UNREGISTERED_INDEX (-9999))
 
 [4] Lookup of archived classes at run time:
 
     (a) BUILTIN loaders:
 
-        Search the shared directory for a BUILTIN class with a matching name.
+        search _builtin_dictionary
 
     (b) UNREGISTERED loaders:
 
-        The search originates with SystemDictionaryShared::lookup_from_stream().
-
-        Search the shared directory for a UNREGISTERED class with a matching
-        (name, clsfile_len, clsfile_crc32) tuple.
+        search _unregistered_dictionary for an entry that matches the
+        (name, clsfile_len, clsfile_crc32).
 
 ===============================================================================*/
 #define UNREGISTERED_INDEX -9999
 
 class ClassFileStream;
+class DumpTimeSharedClassInfo;
+class DumpTimeSharedClassTable;
+class RunTimeSharedClassInfo;
+class RunTimeSharedDictionary;
 
-// Archived classes need extra information not needed by traditionally loaded classes.
-// To keep footprint small, we add these in the dictionary entry instead of the InstanceKlass.
-class SharedDictionaryEntry : public DictionaryEntry {
-
+class SystemDictionaryShared: public SystemDictionary {
 public:
-  enum LoaderType {
-    LT_BUILTIN,
-    LT_UNREGISTERED
-  };
-
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
     FROM_IS_ARRAY           = 1 << 1,
     FROM_IS_OBJECT          = 1 << 2
   };
 
-  int             _id;
-  int             _clsfile_size;
-  int             _clsfile_crc32;
-  void*           _verifier_constraints; // FIXME - use a union here to avoid type casting??
-  void*           _verifier_constraint_flags;
-
-  // See "Identifying the loader_type of archived classes" comments above.
-  LoaderType loader_type() const {
-    InstanceKlass* k = instance_klass();
-
-    if ((k->shared_classpath_index() != UNREGISTERED_INDEX)) {
-      return LT_BUILTIN;
-    } else {
-      return LT_UNREGISTERED;
-    }
-  }
-
-  SharedDictionaryEntry* next() {
-    return (SharedDictionaryEntry*)(DictionaryEntry::next());
-  }
-
-  bool is_builtin() const {
-    return loader_type() == LT_BUILTIN;
-  }
-  bool is_unregistered() const {
-    return loader_type() == LT_UNREGISTERED;
-  }
-
-  void add_verification_constraint(Symbol* name,
-         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
-  int finalize_verification_constraints();
-  void check_verification_constraints(InstanceKlass* klass, TRAPS);
-  void metaspace_pointers_do(MetaspaceClosure* it) NOT_CDS_RETURN;
-};
-
-class SharedDictionary : public Dictionary {
-  SharedDictionaryEntry* get_entry_for_builtin_loader(const Symbol* name) const;
-  SharedDictionaryEntry* get_entry_for_unregistered_loader(const Symbol* name,
-                                                           int clsfile_size,
-                                                           int clsfile_crc32) const;
-
-  // Convenience functions
-  SharedDictionaryEntry* bucket(int index) const {
-    return (SharedDictionaryEntry*)(Dictionary::bucket(index));
-  }
-
-public:
-  SharedDictionaryEntry* find_entry_for(InstanceKlass* klass);
-
-  bool add_non_builtin_klass(const Symbol* class_name,
-                             ClassLoaderData* loader_data,
-                             InstanceKlass* obj);
-
-  void update_entry(InstanceKlass* klass, int id);
-
-  InstanceKlass* find_class_for_builtin_loader(const Symbol* name) const;
-  InstanceKlass* find_class_for_unregistered_loader(const Symbol* name,
-                                            int clsfile_size,
-                                            int clsfile_crc32) const;
-  bool class_exists_for_unregistered_loader(const Symbol* name) {
-    return (get_entry_for_unregistered_loader(name, -1, -1) != NULL);
-  }
-};
-
-class SystemDictionaryShared: public SystemDictionary {
 private:
   // These _shared_xxxs arrays are used to initialize the java.lang.Package and
   // java.security.ProtectionDomain objects associated with each shared class.
@@ -282,8 +208,17 @@ private:
                                  Handle class_loader,
                                  Handle protection_domain,
                                  TRAPS);
-  static void finalize_verification_constraints_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static void write_dictionary(RunTimeSharedDictionary* dictionary, bool is_builtin);
+  static bool is_jfr_event_class(InstanceKlass *k);
+  static void warn_excluded(InstanceKlass* k, const char* reason);
+
+  DEBUG_ONLY(static bool _checked_excluded_classes;)
 public:
+  static InstanceKlass* find_builtin_class(Symbol* class_name);
+
+  static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* dict, Symbol* name);
+
   // Called by PLATFORM/APP loader only
   static InstanceKlass* find_or_load_shared_class(Symbol* class_name,
                                                Handle class_loader,
@@ -311,8 +246,7 @@ public:
     return NULL;
   }
 
-  static bool add_non_builtin_klass(Symbol* class_name, ClassLoaderData* loader_data,
-                                    InstanceKlass* k, TRAPS);
+  static bool add_unregistered_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,
                                                 Symbol* class_name,
                                                 Handle class_loader,
@@ -320,36 +254,17 @@ public:
                                                 bool is_superclass,
                                                 TRAPS);
 
-  static size_t dictionary_entry_size() {
-    return (DumpSharedSpaces) ? sizeof(SharedDictionaryEntry) : sizeof(DictionaryEntry);
-  }
-  static void init_shared_dictionary_entry(InstanceKlass* k, DictionaryEntry* entry) NOT_CDS_RETURN;
-  static bool is_builtin(DictionaryEntry* ent) {
-    // Can't use virtual function is_builtin because DictionaryEntry doesn't initialize
-    // vtable because it's not constructed properly.
-    SharedDictionaryEntry* entry = (SharedDictionaryEntry*)ent;
-    return entry->is_builtin();
+  static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+
+  static Dictionary* boot_loader_dictionary() {
+    return ClassLoaderData::the_null_class_loader_data()->dictionary();
   }
 
-  // For convenient access to the SharedDictionaryEntry's of the archived classes.
-  static SharedDictionary* shared_dictionary() {
-    assert(!DumpSharedSpaces, "not for dumping");
-    return (SharedDictionary*)SystemDictionary::shared_dictionary();
-  }
-
-  static SharedDictionary* boot_loader_dictionary() {
-    return (SharedDictionary*)ClassLoaderData::the_null_class_loader_data()->dictionary();
-  }
-
-  static void update_shared_entry(InstanceKlass* klass, int id) {
-    assert(DumpSharedSpaces, "sanity");
-    assert((SharedDictionary*)(klass->class_loader_data()->dictionary()) != NULL, "sanity");
-    ((SharedDictionary*)(klass->class_loader_data()->dictionary()))->update_entry(klass, id);
-  }
-
+  static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
 
-  static InstanceKlass* lookup_from_stream(const Symbol* class_name,
+  static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,
                                            Handle protection_domain,
                                            const ClassFileStream* st,
@@ -366,9 +281,23 @@ public:
   static bool add_verification_constraint(InstanceKlass* k, Symbol* name,
                   Symbol* from_name, bool from_field_is_protected,
                   bool from_is_array, bool from_is_object) NOT_CDS_RETURN_(false);
-  static void finalize_verification_constraints() NOT_CDS_RETURN;
   static void check_verification_constraints(InstanceKlass* klass,
-                                              TRAPS) NOT_CDS_RETURN;
+                                             TRAPS) NOT_CDS_RETURN;
+  static bool is_builtin(InstanceKlass* k) {
+    return (k->shared_classpath_index() != UNREGISTERED_INDEX);
+  }
+  static bool should_be_excluded(InstanceKlass* k);
+  static void check_excluded_classes();
+  static void validate_before_archiving(InstanceKlass* k);
+  static bool is_excluded_class(InstanceKlass* k);
+  static void dumptime_classes_do(class MetaspaceClosure* it);
+  static void write_to_archive();
+  static void serialize_dictionary_headers(class SerializeClosure* soc);
+  static void print() { return print_on(tty); }
+  static void print_on(outputStream* st) NOT_CDS_RETURN;
+  static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
+
+  DEBUG_ONLY(static bool checked_excluded_classes() {return _checked_excluded_classes;})
 };
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

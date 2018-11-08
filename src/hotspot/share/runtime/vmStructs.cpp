@@ -404,6 +404,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \
                                                                                                                                      \
+     static_field(MetaspaceObj,                _shared_metaspace_base,                        void*)                                 \
+     static_field(MetaspaceObj,                _shared_metaspace_top,                         void*)                                 \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
@@ -460,7 +462,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                           \
      static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \

@@ -313,27 +313,6 @@ public class InstanceKlass extends Klass {
     return shouldStoreFingerprint() || isShared();
   }
 
-  public boolean isShared() {
-    VM vm = VM.getVM();
-    if (vm.isSharingEnabled()) {
-      // This is not the same implementation as the C++ function MetaspaceObj::is_shared()
-      //     bool MetaspaceObj::is_shared() const {
-      //       return MetaspaceShared::is_in_shared_space(this);
-      //     }
-      // However, MetaspaceShared::is_in_shared_space is complicated and hard to emulate in
-      // Java code, so let's do this by looking up from the shared dictionary. Of course,
-      // this works for shared InstanceKlass only and does not work for other types of
-      // MetaspaceObj in the CDS shared archive.
-      Dictionary sharedDictionary = vm.getSystemDictionary().sharedDictionary();
-      if (sharedDictionary != null) {
-        if (sharedDictionary.contains(this)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   public static long getHeaderSize() { return headerSize; }
 
   public short getFieldAccessFlags(int index) {

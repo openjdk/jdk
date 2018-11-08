@@ -1090,8 +1090,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
 
   if (k->is_instance_klass()) {
     InstanceKlass *ik = InstanceKlass::cast(k);
-    assert(ik->signers() == NULL && !k->has_signer_and_not_archived(),
-           "class with signer cannot be supported");
+    assert(ik->signers() == NULL, "class with signer should have been excluded");
 
     if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
           ik->is_shared_app_class())) {
