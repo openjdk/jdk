@@ -418,7 +418,7 @@ JVM_handle_linux_signal(int sig,
 
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }

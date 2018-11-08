@@ -579,7 +579,8 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         // QQQ It doesn't seem that we need to do this on x86 because we should be able
         // to return properly from the handler without this extra stuff on the back side.
 
-      else if (sig == SIGSEGV && info->si_code > 0 && !MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
+      else if (sig == SIGSEGV && info->si_code > 0 &&
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         // Determination of interpreter/vtable stub/compiled code null exception
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }

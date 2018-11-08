@@ -772,6 +772,7 @@ class MacroAssembler: public Assembler {
 
   void null_check(Register reg, Register tmp = Z_R0, int64_t offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);  // Implemented in shared file ?!
+  static bool uses_implicit_null_check(void* address);
 
   // Klass oop manipulations if compressed.
   void encode_klass_not_null(Register dst, Register src = noreg);

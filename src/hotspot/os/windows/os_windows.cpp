@@ -2492,7 +2492,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
           {
             // Null pointer exception.
-            if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr)) {
+            if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
               address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
               if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
             }

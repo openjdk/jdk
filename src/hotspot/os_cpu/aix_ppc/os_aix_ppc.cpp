@@ -409,7 +409,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       // SIGSEGV-based implicit null check in compiled code.
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc);
         }
@@ -612,5 +612,3 @@ bool os::platform_print_native_stack(outputStream* st, void* context, char *buf,
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }
-
-

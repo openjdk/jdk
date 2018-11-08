@@ -357,10 +357,15 @@ JVM_handle_linux_signal(int sig,
     }
 #endif
 
+    address addr = (address) info->si_addr;
+
+    // Make sure the high order byte is sign extended, as it may be masked away by the hardware.
+    if ((uintptr_t(addr) & (uintptr_t(1) << 55)) != 0) {
+      addr = address(uintptr_t(addr) | (uintptr_t(0xFF) << 56));
+    }
+
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
-      address addr = (address) info->si_addr;
-
       // check if fault address is within thread stack
       if (thread->on_local_stack(addr)) {
         // stack overflow
@@ -456,7 +461,7 @@ JVM_handle_linux_signal(int sig,
                                               SharedRuntime::
                                               IMPLICIT_DIVIDE_BY_ZERO);
       } else if (sig == SIGSEGV &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
+                 MacroAssembler::uses_implicit_null_check((void*)addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
           stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }

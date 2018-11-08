@@ -582,6 +582,7 @@ public:
 
   virtual void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
+  static bool uses_implicit_null_check(void* address);
 
   static address target_addr_for_insn(address insn_addr, unsigned insn);
   static address target_addr_for_insn(address insn_addr) {

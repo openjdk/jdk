@@ -659,6 +659,7 @@ class MacroAssembler: public Assembler {
   void get_vm_result_2(Register metadata_result);
 
   static bool needs_explicit_null_check(intptr_t offset);
+  static bool uses_implicit_null_check(void* address);
 
   // Trap-instruction-based checks.
   // Range checks can be distinguished from zero checks as they check 32 bit,

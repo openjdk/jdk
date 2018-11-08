@@ -416,9 +416,9 @@ inline static bool checkFPFault(address pc, int code,
   return false;
 }
 
-inline static bool checkNullPointer(address pc, intptr_t fault,
+inline static bool checkNullPointer(address pc, void* fault,
                                     JavaThread* thread, address* stub) {
-  if (!MacroAssembler::needs_explicit_null_check(fault)) {
+  if (MacroAssembler::uses_implicit_null_check(fault)) {
     // Determination of interpreter/vtable stub/compiled code null
     // exception
     *stub =
@@ -586,7 +586,7 @@ JVM_handle_linux_signal(int sig,
         }
 
         if ((sig == SIGSEGV) &&
-            checkNullPointer(pc, (intptr_t)info->si_addr, thread, &stub)) {
+            checkNullPointer(pc, info->si_addr, thread, &stub)) {
           break;
         }
       } while (0);
