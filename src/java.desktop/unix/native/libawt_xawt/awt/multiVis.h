@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* $XConsortium: multiVis.h /main/4 1996/10/14 15:04:12 swick $ */
 /** ------------------------------------------------------------------------
         This file contains routines for manipulating generic lists.
         Lists are implemented with a "harness".  In other words, each
@@ -36,16 +36,14 @@
  However, the following notice accompanied the original version of this
  file:
 
-Copyright (c) 1994 Hewlett-Packard Co.
-Copyright (c) 1996  X Consortium
+Copyright 1994 Hewlett-Packard Co.
+Copyright 1996, 1998  The Open Group
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+Permission to use, copy, modify, distribute, and sell this software and its
+documentation for any purpose is hereby granted without fee, provided that
+the above copyright notice appear in all copies and that both that
+copyright notice and this permission notice appear in supporting
+documentation.
 
 The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
@@ -53,38 +51,32 @@ in all copies or substantial portions of the Software.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-Except as contained in this notice, the name of the X Consortium shall
+Except as contained in this notice, the name of The Open Group shall
 not be used in advertising or otherwise to promote the sale, use or
 other dealings in this Software without prior written authorization
-from the X Consortium.
+from The Open Group.
 
  ------------------------------------------------------------------------ **/
 
-extern int32_t GetMultiVisualRegions(
-#if NeedFunctionPrototypes
-    Display *, Window, int32_t, int32_t, uint32_t,
-    uint32_t, int32_t *, int32_t *, XVisualInfo **, int32_t *,
-    OverlayInfo  **, int32_t *, XVisualInfo ***, list_ptr *,
-    list_ptr *, int32_t *
-#endif
+extern int GetMultiVisualRegions(
+    Display *, Window, int, int, unsigned int,
+    unsigned int, int *, int *, XVisualInfo **, int *,
+    OverlayInfo  **, int *, XVisualInfo ***, list_ptr *,
+    list_ptr *, int *
 );
 
 extern XImage *ReadAreaToImage(
-#if NeedFunctionPrototypes
-    Display *, Window, int32_t, int32_t, uint32_t,
-    uint32_t, int32_t, XVisualInfo *, int32_t,
-    OverlayInfo *, int32_t, XVisualInfo **, list_ptr,
-    list_ptr, int32_t, int32_t
-#endif
+    Display *, Window, int, int, unsigned int,
+    unsigned int, int, XVisualInfo *, int,
+    OverlayInfo *, int, XVisualInfo **, list_ptr,
+    list_ptr, int, int
 );
 
 extern void initFakeVisual(
-#if NeedFunctionPrototypes
     Visual *
-#endif
 );

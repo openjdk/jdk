@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* $XConsortium: list.c /main/4 1996/10/14 15:03:56 swick $ */
 /** ------------------------------------------------------------------------
         This file contains routines for manipulating generic lists.
         Lists are implemented with a "harness".  In other words, each
@@ -36,16 +36,14 @@
  However, the following notice accompanied the original version of this
  file:
 
-Copyright (c) 1994 Hewlett-Packard Co.
-Copyright (c) 1996  X Consortium
+Copyright 1994 Hewlett-Packard Co.
+Copyright 1996, 1998  The Open Group
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+Permission to use, copy, modify, distribute, and sell this software and its
+documentation for any purpose is hereby granted without fee, provided that
+the above copyright notice appear in all copies and that both that
+copyright notice and this permission notice appear in supporting
+documentation.
 
 The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
@@ -53,32 +51,28 @@ in all copies or substantial portions of the Software.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-Except as contained in this notice, the name of the X Consortium shall
+Except as contained in this notice, the name of The Open Group shall
 not be used in advertising or otherwise to promote the sale, use or
 other dealings in this Software without prior written authorization
-from the X Consortium.
+from The Open Group.
 
   ----------------------------------------------------------------------- **/
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "list.h"
 
 
 /** ------------------------------------------------------------------------
         Sets the pointers of the specified list to NULL.
     --------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
 void zero_list(list_ptr lp)
-#else
-void zero_list(lp)
-    list_ptr lp;
-#endif
 {
     lp->next = NULL;
     lp->ptr.item = NULL;
@@ -92,13 +86,7 @@ void zero_list(lp)
         and the next pointer in the new node is set to NULL.
         Returns 1 if successful, 0 if the malloc failed.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
-int32_t add_to_list(list_ptr lp, void *item)
-#else
-int32_t add_to_list(lp, item)
-    list_ptr lp;
-    void *item;
-#endif
+int add_to_list(list_ptr lp, void *item)
 {
     while (lp->next) {
         lp = lp->next;
@@ -118,11 +106,11 @@ int32_t add_to_list(lp, item)
         Creates a new list and sets its pointers to NULL.
         Returns a pointer to the new list.
     -------------------------------------------------------------------- **/
-list_ptr new_list ()
+list_ptr new_list (void)
 {
     list_ptr lp;
 
-    if (lp = (list_ptr) malloc( sizeof( list_item))) {
+    if ((lp = (list_ptr) malloc( sizeof( list_item)))) {
         lp->next = NULL;
         lp->ptr.item = NULL;
     }
@@ -140,38 +128,27 @@ list_ptr new_list ()
         curr pointer in the new list is the same as in the old list.
         Returns a pointer to the new list head.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
-list_ptr dup_list_head(list_ptr lp, int32_t start_at_curr)
-#else
-list_ptr dup_list_head(lp, start_at_curr)
-    list_ptr lp;
-    int32_t start_at_curr;
-#endif
+list_ptr dup_list_head(list_ptr lp, int start_at_curr)
 {
-    list_ptr new_list;
+    list_ptr new_listp;
 
-    if ((new_list = (list_ptr) malloc( sizeof( list_item))) == NULL) {
+    if ((new_listp = (list_ptr) malloc( sizeof( list_item))) == NULL) {
 
         return (list_ptr)NULL;
     }
-    new_list->next = start_at_curr ? lp->ptr.curr : lp->next;
-    new_list->ptr.curr = lp->ptr.curr;
+    new_listp->next = start_at_curr ? lp->ptr.curr : lp->next;
+    new_listp->ptr.curr = lp->ptr.curr;
 
-    return new_list;
+    return new_listp;
 }
 
 
 /** ------------------------------------------------------------------------
         Returns the number of items in the list.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
-uint32_t list_length(list_ptr lp)
-#else
-uint32_t list_length(lp)
-    list_ptr lp;
-#endif
+unsigned int list_length(list_ptr lp)
 {
-    uint32_t count = 0;
+    unsigned int count = 0;
 
     while (lp->next) {
         count++;
@@ -191,13 +168,7 @@ uint32_t list_length(lp)
         Returns a pointer to the item, so the caller can free it if it
         so desires.  If a match is not found, returns NULL.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
 void *delete_from_list(list_ptr lp, void *item)
-#else
-void *delete_from_list(lp, item)
-    list_ptr lp;
-    void *item;
-#endif
 {
     list_ptr new_next;
 
@@ -222,13 +193,7 @@ void *delete_from_list(lp, item)
         with new_list().  If free_items is true, each item pointed to
         from the node is freed, in addition to the node itself.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
-void delete_list(list_ptr lp, int32_t free_items)
-#else
-void delete_list(lp, free_items)
-    list_ptr lp;
-    int32_t free_items;
-#endif
+void delete_list(list_ptr lp, int free_items)
 {
     list_ptr del_node;
     void *item;
@@ -244,13 +209,7 @@ void delete_list(lp, free_items)
     }
 }
 
-#if NeedFunctionPrototypes
 void delete_list_destroying(list_ptr lp, void destructor(void *item))
-#else
-void delete_list_destroying(lp, destructor)
-    list_ptr lp;
-    void (*destructor)();
-#endif
 {
     list_ptr del_node;
     void *item;
@@ -272,12 +231,7 @@ void delete_list_destroying(lp, destructor)
         Sets the list head node's curr ptr to the first node in the list.
         Returns NULL if the list is empty.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
 void * first_in_list(list_ptr lp)
-#else
-void * first_in_list(lp)
-    list_ptr lp;
-#endif
 {
     if (! lp) {
 
@@ -294,12 +248,7 @@ void * first_in_list(lp)
         first_in_list must have been called prior.
         Returns NULL if no next item.
     -------------------------------------------------------------------- **/
-#if NeedFunctionPrototypes
 void * next_in_list(list_ptr lp)
-#else
-void * next_in_list(lp)
-    list_ptr lp;
-#endif
 {
     if (! lp) {
 
@@ -312,12 +261,8 @@ void * next_in_list(lp)
     return lp->ptr.curr ? lp->ptr.curr->ptr.item : NULL;
 }
 
-#if NeedFunctionPrototypes
-int32_t list_is_empty(list_ptr lp)
-#else
-int32_t list_is_empty(lp)
-    list_ptr lp;
-#endif
+int list_is_empty(list_ptr lp)
 {
     return (lp == NULL || lp->next == NULL);
 }
+
