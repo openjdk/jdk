@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ PROC_SRC_DIRS := $(patsubst %, $(SRC_DIR)/%/src, $(PROC_SRC_SUBDIRS))
 
 PROC_SRCS := $(filter %.java, $(call CacheFind, $(PROC_SRC_DIRS)))
 
-ALL_SRC_DIRS := $(wildcard $(SRC_DIR)/*/src)
+ALL_SRC_DIRS := $(SRC_DIR) $(wildcard $(SRC_DIR)/*/src)
 SOURCEPATH := $(call PathList, $(ALL_SRC_DIRS))
 
 PROCESSOR_JARS := \
@@ -81,23 +81,23 @@ PROCESSOR_PATH := $(call PathList, $(PROCESSOR_JARS))
 
 ADD_EXPORTS := \
     --add-modules jdk.internal.vm.ci \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.events=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspotvmconfig=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.inittimer=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.events=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspotvmconfig=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.inittimer=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.services=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler \
     #
 
 $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) $(PROCESSOR_JARS)
@@ -121,6 +121,7 @@ TARGETS += $(GENSRC_DIR)/_gensrc_proc_done
 ################################################################################
 
 $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
+	$(ECHO) "" > $@;
 	($(CD) $(GENSRC_DIR)/META-INF/providers && \
 	    p=""; \
 	    impl=""; \

@@ -690,16 +690,17 @@ else
   # copied and processed.
   java.desktop-gensrc-src: java.base-gensrc java.base-copy
 
-  # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
-  # needs classes from the current JDK.
-  jdk.internal.vm.ci-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.ci))
+  # The annotation processing for jdk.internal.vm.compiler
+  # and jdk.internal.vm.compiler.management needs classes from the current JDK.
   jdk.internal.vm.compiler-gensrc-src: $(addsuffix -java, \
       $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
+  jdk.internal.vm.compiler.management-gensrc-src: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler.management))
 
-  # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
+  # For these modules, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
   jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
+  jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
 
   jdk.jdeps-gendata: java rmic
 
