@@ -21,9 +21,6 @@
  * questions.
  */
 
-/*
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
@@ -34,13 +31,12 @@
 extern "C" {
 
 
-#define PASSED 0
+#define STATUS_PASSED 0
 #define STATUS_FAILED 2
 
 static jvmtiEnv *jvmti = NULL;
-static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
-static jint result = PASSED;
+static jint result = STATUS_PASSED;
 static jboolean printdump = JNI_FALSE;
 static jmethodID mid = NULL;
 static jvmtiLocalVariableEntry *table = NULL;
@@ -54,69 +50,112 @@ void print_LocalVariableEntry(jvmtiLocalVariableEntry *lvt_elem) {
   printf(", signature: %s\n", lvt_elem->signature);
 }
 
-void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
-        jthread thr, jmethodID method,
-        jboolean was_poped_by_exception, jvalue return_value) {
+static void
+test_locals(jvmtiEnv *jvmti, jthread thr, jlocation location) {
     jvmtiError err;
-    jint i;
-    jmethodID frame_method;
-    jlocation location;
     jint intVal;
+    jlong longVal;
     jfloat floatVal;
     jdouble doubleVal;
     jobject obj;
+    jint i;
 
-    if (mid == method) {
+    for (i = 0; i < entryCount; i++) {
+        if (table[i].start_location > location ||
+            table[i].start_location + table[i].length < location) {
+            continue;  /* The local variable is not visible */
+        }
+        print_LocalVariableEntry(&table[i]);
+        char sig = table[i].signature[0];
 
-        err = jvmti_env->GetFrameLocation(thr, 0,
-                                             &frame_method, &location);
-        if (err != JVMTI_ERROR_NONE) {
-            printf("\t failure: %s (%d)\n", TranslateError(err), err);
+        if (sig == 'Z' || sig == 'B' || sig == 'C' || sig == 'S') {
+            sig = 'I'; // covered by GetLocalInt
+        }
+        err = jvmti->GetLocalInt(thr, 0, table[i].slot, &intVal);
+        printf(" GetLocalInt:     %s (%d)\n", TranslateError(err), err);
+        if (err != JVMTI_ERROR_NONE && sig == 'I') {
+            printf("FAIL: GetLocalInt failed to get value of int\n");
             result = STATUS_FAILED;
-            return;
-        }
-        if (frame_method != method) {
-            printf("\t failure: GetFrameLocation returned wrong jmethodID\n");
+        } else if (err != JVMTI_ERROR_TYPE_MISMATCH && sig != 'I') {
+            printf("FAIL: GetLocalInt did not return JVMTI_ERROR_TYPE_MISMATCH for non-int\n");
             result = STATUS_FAILED;
-            return;
         }
 
-        printf("\n MethodExit: BEGIN %d, Current frame bci: %" LL "d\n\n",
-                ++methodExitCnt, location);
-        for (i = 0; i < entryCount; i++) {
-            if (table[i].start_location > location ||
-                table[i].start_location + table[i].length < location) {
-                continue;  /* The local variable is not visible */
-            }
-            print_LocalVariableEntry(&table[i]);
-
-            err = jvmti->GetLocalInt(thr, 0, table[i].slot, &intVal);
-            printf(" GetLocalInt:     %s (%d)\n", TranslateError(err), err);
-            if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'I') {
-                result = STATUS_FAILED;
-            }
-
-            err = jvmti->GetLocalFloat(thr, 0, table[i].slot, &floatVal);
-            printf(" GetLocalFloat:   %s (%d)\n", TranslateError(err), err);
-            if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'F') {
-                result = STATUS_FAILED;
-            }
-
-            err = jvmti->GetLocalDouble(thr, 0, table[i].slot, &doubleVal);
-            printf(" GetLocalDouble:  %s (%d)\n", TranslateError(err), err);
-            if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'D') {
-                result = STATUS_FAILED;
-            }
-
-            err = jvmti->GetLocalObject(thr, 0, table[i].slot, &obj);
-            printf(" GetLocalObject:  %s (%d)\n", TranslateError(err), err);
-            if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'L') {
-                result = STATUS_FAILED;
-            }
+        err = jvmti->GetLocalLong(thr, 0, table[i].slot, &longVal);
+        printf(" GetLocalLong:    %s (%d)\n", TranslateError(err), err);
+        if (err != JVMTI_ERROR_NONE && sig == 'J') {
+            printf("FAIL: GetLocalLong failed to get value of long\n");
+            result = STATUS_FAILED;
+        } else if (err != JVMTI_ERROR_TYPE_MISMATCH && sig != 'J') {
+            printf("FAIL: GetLocalLong did not return JVMTI_ERROR_TYPE_MISMATCH for non-long\n");
+            result = STATUS_FAILED;
         }
-        printf("\n MethodExit: END %d\n\n", methodExitCnt);
-        fflush(stdout);
+
+        err = jvmti->GetLocalFloat(thr, 0, table[i].slot, &floatVal);
+        printf(" GetLocalFloat:   %s (%d)\n", TranslateError(err), err);
+        if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'F') {
+            printf("FAIL: GetLocalFloat failed to get value of float\n");
+            result = STATUS_FAILED;
+        } else if (err != JVMTI_ERROR_TYPE_MISMATCH && table[i].signature[0] != 'F') {
+            printf("FAIL: GetLocalFloat did not return JVMTI_ERROR_TYPE_MISMATCH for non-float\n");
+            result = STATUS_FAILED;
+        }
+
+        err = jvmti->GetLocalDouble(thr, 0, table[i].slot, &doubleVal);
+        printf(" GetLocalDouble:  %s (%d)\n", TranslateError(err), err);
+        if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'D') {
+            printf("FAIL: GetLocalDouble failed to get value of double\n");
+            result = STATUS_FAILED;
+        } else if (err != JVMTI_ERROR_TYPE_MISMATCH && table[i].signature[0] != 'D') {
+            printf("FAIL: GetLocalDouble did not return JVMTI_ERROR_TYPE_MISMATCH for non-double\n");
+            result = STATUS_FAILED;
+        }
+
+        err = jvmti->GetLocalObject(thr, 0, table[i].slot, &obj);
+        printf(" GetLocalObject:  %s (%d)\n", TranslateError(err), err);
+        if (err != JVMTI_ERROR_NONE && table[i].signature[0] == 'L') {
+            printf("FAIL: GetLocalObject failed to get value of object\n");
+            result = STATUS_FAILED;
+        } else if (err != JVMTI_ERROR_TYPE_MISMATCH && table[i].signature[0] != 'L') {
+            printf("FAIL: GetLocalObject did not return JVMTI_ERROR_TYPE_MISMATCH for non-object\n");
+            result = STATUS_FAILED;
+        }
     }
+}
+
+static void JNICALL
+MethodExit(jvmtiEnv *jvmti_env,
+           JNIEnv *env,
+           jthread thr,
+           jmethodID method,
+           jboolean was_poped_by_exception,
+           jvalue return_value) {
+
+    jvmtiError err;
+    jlocation location;
+    jmethodID frame_method = NULL;
+
+    if (mid != method) {
+        return;
+    }
+    err = jvmti->GetFrameLocation(thr, 0, &frame_method, &location);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("\t failure: %s (%d)\n", TranslateError(err), err);
+        result = STATUS_FAILED;
+        return;
+    }
+    if (frame_method != method) {
+        printf("\t failure: GetFrameLocation returned wrong jmethodID\n");
+        result = STATUS_FAILED;
+        return;
+    }
+
+    printf("\n MethodExit: BEGIN %d\n",  ++methodExitCnt);
+
+    test_locals(jvmti, thr, location);
+
+    printf("\n MethodExit: END %d\n\n", methodExitCnt);
+    fflush(stdout);
 }
 
 #ifdef STATIC_BUILD
@@ -133,6 +172,7 @@ JNIEXPORT jint JNI_OnLoad_getlocal003(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
+    static jvmtiCapabilities caps;
 
     if (options != NULL && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
@@ -167,18 +207,19 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     if (!caps.can_access_local_variables) {
         printf("Warning: Access to local variables is not implemented\n");
-    } else if (caps.can_generate_method_exit_events) {
-        callbacks.MethodExit = &MethodExit;
-        err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-        if (err != JVMTI_ERROR_NONE) {
-            printf("(SetEventCallbacks) unexpected error: %s (%d)\n",
-                   TranslateError(err), err);
-            return JNI_ERR;
-        }
-    } else {
-        printf("Warning: MethodExit event is not implemented\n");
+        return JNI_ERR;
     }
-
+    if (!caps.can_generate_method_exit_events) {
+        printf("Warning: MethodExit event is not implemented\n");
+        return JNI_ERR;
+    }
+    callbacks.MethodExit = &MethodExit;
+    err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(SetEventCallbacks) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        return JNI_ERR;
+    }
     return JNI_OK;
 }
 
@@ -192,9 +233,6 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
         return;
     }
 
-    if (!caps.can_access_local_variables ||
-        !caps.can_generate_method_exit_events) return;
-
     mid = env->GetStaticMethodID(cls, "staticMeth", "(I)I");
     if (mid == NULL) {
         printf("Cannot find Method ID for staticMeth\n");
@@ -204,14 +242,13 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
 
     err = jvmti->GetLocalVariableTable(mid, &entryCount, &table);
     if (err != JVMTI_ERROR_NONE) {
-            printf("(GetLocalVariableTable) unexpected error: %s (%d)\n",
-                   TranslateError(err), err);
-            result = STATUS_FAILED;
-            return;
+        printf("(GetLocalVariableTable) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        result = STATUS_FAILED;
+        return;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_METHOD_EXIT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable metod exit event: %s (%d)\n",
                TranslateError(err), err);
@@ -232,8 +269,11 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
     int  overlap = 0;
 
     if (jvmti == NULL) {
+        printf("JVMTI client was not properly loaded!\n");
+        result = STATUS_FAILED;
         return;
     }
+    printf("\n checkLoc: START\n");
 
     mid = env->GetStaticMethodID(cls, "staticMeth", "(I)I");
     if (mid == NULL) {
@@ -255,20 +295,22 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
 
         err = jvmti->GetLocalInt(thr, 1, table[i].slot, &locVar);
 
-        printf(" GetLocalInt: %s (%d)\n", TranslateError(err), err);
         if (strcmp(table[i].name, "intArg") == 0) {
             if (err != JVMTI_ERROR_NONE) {
-               printf(" failure: JVMTI_ERROR_NONE is expected\n");
-               result = STATUS_FAILED;
+                printf(" GetLocalInt: %s (%d)\n", TranslateError(err), err);
+                printf(" failure: JVMTI_ERROR_NONE is expected\n");
+                result = STATUS_FAILED;
             }
         }
         else if (strcmp(table[i].name, "pi") == 0) {
             if (err != JVMTI_ERROR_TYPE_MISMATCH) {
-               printf(" failure: JVMTI_ERROR_TYPE_MISMATCH is expected\n");
-               result = STATUS_FAILED;
+                printf(" GetLocalInt: %s (%d)\n", TranslateError(err), err);
+                printf(" failure: JVMTI_ERROR_TYPE_MISMATCH is expected\n");
+                result = STATUS_FAILED;
             }
         } else {
             if (err != JVMTI_ERROR_INVALID_SLOT) {
+                printf(" GetLocalInt: %s (%d)\n", TranslateError(err), err);
                 printf(" failure: JVMTI_ERROR_INVALID_SLOT is expected\n");
                 result = STATUS_FAILED;
             }
@@ -290,7 +332,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
                continue; /* Everything is Ok */
            }
 
-           printf(" failure: locations of vars with slot #2 are overlaped:\n");
+           printf(" failure: locations of vars with slot #2 are overlapped:\n");
            print_LocalVariableEntry(&table[i]);
            print_LocalVariableEntry(&table[j]);
            overlap++;
@@ -298,8 +340,9 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
         }
     }
     if (!overlap) {
-        printf("\n Succes: locations of vars with slot #2 are NOT overlaped\n\n");
+        printf("\n Success: locations of vars with slot #2 are NOT overlapped\n");
     }
+    printf("\n checkLoc: END\n\n");
     fflush(stdout);
 }
 
