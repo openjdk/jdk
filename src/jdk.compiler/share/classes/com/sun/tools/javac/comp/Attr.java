@@ -2419,7 +2419,7 @@ public class Attr extends JCTree.Visitor {
                                                clazztype.getMetadata());
 
                 Env<AttrContext> diamondEnv = localEnv.dup(tree);
-                diamondEnv.info.selectSuper = cdef != null;
+                diamondEnv.info.selectSuper = cdef != null || tree.classDeclRemoved();
                 diamondEnv.info.pendingResolutionPhase = null;
 
                 //if the type of the instance creation expression is a class type
