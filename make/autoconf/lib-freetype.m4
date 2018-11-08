@@ -186,6 +186,9 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
           FREETYPE_BASE_DIR="$SYSROOT/usr"
           if (test "x$OPENJDK_TARGET_CPU_BITS" = "x64"); then
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-gnu], [well-known location])
+            if (test "x$FOUND_FREETYPE" != "xyes"); then
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib64], [well-known location])
+            fi
           else
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib/i386-linux-gnu], [well-known location])
             if (test "x$FOUND_FREETYPE" != "xyes"); then
