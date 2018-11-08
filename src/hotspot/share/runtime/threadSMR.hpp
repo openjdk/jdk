@@ -105,6 +105,7 @@ class ThreadsSMRSupport : AllStatic {
   static volatile uint         _deleted_thread_cnt;
   static volatile uint         _deleted_thread_time_max;
   static volatile uint         _deleted_thread_times;
+  static ThreadsList           _bootstrap_list;
   static ThreadsList* volatile _java_thread_list;
   static uint64_t              _java_thread_list_alloc_cnt;
   static uint64_t              _java_thread_list_free_cnt;
@@ -142,6 +143,7 @@ class ThreadsSMRSupport : AllStatic {
   static void add_thread(JavaThread *thread);
   static ThreadsList* get_java_thread_list();
   static bool is_a_protected_JavaThread_with_lock(JavaThread *thread);
+  static bool is_bootstrap_list(ThreadsList* list);
   static void remove_thread(JavaThread *thread);
   static void smr_delete(JavaThread *thread);
   static void update_tlh_stats(uint millis);
