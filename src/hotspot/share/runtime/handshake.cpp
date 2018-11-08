@@ -126,10 +126,6 @@ class VM_HandshakeOneThread: public VM_Handshake {
       return;
     }
 
-    if (!UseMembar) {
-      os::serialize_thread_states();
-    }
-
     log_trace(handshake)("Thread signaled, begin processing by VMThtread");
     jlong start_time = os::elapsed_counter();
     do {
@@ -171,10 +167,6 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     if (number_of_threads_issued < 1) {
       log_debug(handshake)("No threads to handshake.");
       return;
-    }
-
-    if (!UseMembar) {
-      os::serialize_thread_states();
     }
 
     log_debug(handshake)("Threads signaled, begin processing blocked threads by VMThtread");

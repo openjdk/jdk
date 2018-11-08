@@ -247,12 +247,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
-  /* UseMembar is theoretically a temp flag used for memory barrier      */ \
-  /* removal testing.  It was supposed to be removed before FCS but has  */ \
-  /* been re-added (see 6401008)                                         */ \
-  product_pd(bool, UseMembar,                                               \
-          "(Unstable) Issues membars on thread state transitions")          \
-                                                                            \
   develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \

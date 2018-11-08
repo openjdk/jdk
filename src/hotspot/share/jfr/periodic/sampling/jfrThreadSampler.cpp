@@ -359,9 +359,6 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
 
   bool ret = false;
   thread->set_trace_flag();
-  if (!UseMembar) {
-    os::serialize_thread_states();
-  }
   if (JAVA_SAMPLE == type) {
     if (thread_state_in_java(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);

@@ -2161,16 +2161,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     save_native_result(masm, ret_type, workspace_slot_offset); // Make Z_R2 available as work reg.
 
-    if (UseMembar) {
-      // Force this write out before the read below.
-      __ z_fence();
-    } else {
-      // Write serialization page so VM thread can do a pseudo remote membar.
-      // We use the current thread pointer to calculate a thread specific
-      // offset to write to within the page. This minimizes bus traffic
-      // due to cache line collision.
-      __ serialize_memory(Z_thread, Z_R1, Z_R2);
-    }
+    // Force this write out before the read below.
+    __ z_fence();
 
     __ safepoint_poll(sync, Z_R1);
 

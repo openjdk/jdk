@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,8 +70,6 @@ define_pd_global(intx,  StackReservedPages,          DEFAULT_STACK_RESERVED_PAGE
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
-
-define_pd_global(bool, UseMembar,            true);
 
 define_pd_global(bool, PreserveFramePointer, false);
 

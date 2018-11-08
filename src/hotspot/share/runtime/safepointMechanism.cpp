@@ -87,17 +87,6 @@ void SafepointMechanism::initialize_header(JavaThread* thread) {
   disarm_local_poll(thread);
 }
 
-void SafepointMechanism::initialize_serialize_page() {
-  if (!UseMembar) {
-    const size_t page_size = os::vm_page_size();
-    char* serialize_page = os::reserve_memory(page_size, NULL, page_size);
-    os::commit_memory_or_exit(serialize_page, page_size, false, "Unable to commit memory serialization page");
-    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(serialize_page));
-    os::set_memory_serialize_page((address)(serialize_page));
-  }
-}
-
 void SafepointMechanism::initialize() {
   pd_initialize();
-  initialize_serialize_page();
 }

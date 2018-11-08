@@ -130,11 +130,6 @@ public:
 #endif
 };
 
-// On POSIX platforms the signal handler is global so we just do the write.
-static void write_memory_serialize_page_with_handler(JavaThread* thread) {
-  write_memory_serialize_page(thread);
-}
-
 /*
  * Crash protection for the watcher thread. Wrap the callback
  * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp

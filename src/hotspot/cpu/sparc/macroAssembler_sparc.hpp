@@ -951,9 +951,6 @@ public:
   void breakpoint_trap();
   void breakpoint_trap(Condition c, CC cc);
 
-  // Support for serializing memory accesses between threads
-  void serialize_memory(Register thread, Register tmp1, Register tmp2);
-
   void safepoint_poll(Label& slow_path, bool a, Register thread_reg, Register temp_reg);
 
   // Stack frame creation/removal

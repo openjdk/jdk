@@ -1090,18 +1090,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()),
           _thread_in_native_trans);
 
-  if (UseMembar) {
-    // Force this write out before the read below
-    __ membar(Assembler::Membar_mask_bits(
-                Assembler::LoadLoad | Assembler::LoadStore |
-                Assembler::StoreLoad | Assembler::StoreStore));
-  } else {
-    // Write serialization page so VM thread can do a pseudo remote membar.
-    // We use the current thread pointer to calculate a thread specific
-    // offset to write to within the page. This minimizes bus traffic
-    // due to cache line collision.
-    __ serialize_memory(thread, rcx);
-  }
+  // Force this write out before the read below
+  __ membar(Assembler::Membar_mask_bits(
+              Assembler::LoadLoad | Assembler::LoadStore |
+              Assembler::StoreLoad | Assembler::StoreStore));
 
 #ifndef _LP64
   if (AlwaysRestoreFPU) {

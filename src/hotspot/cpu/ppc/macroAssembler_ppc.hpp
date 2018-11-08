@@ -395,11 +395,6 @@ class MacroAssembler: public Assembler {
   static bool is_load_from_polling_page(int instruction, void* ucontext/*may be NULL*/,
                                         address* polling_address_ptr = NULL);
 
-  // Check whether instruction is a write access to the memory
-  // serialization page realized by one of the instructions stw, stwu,
-  // stwx, or stwux.
-  static bool is_memory_serialization(int instruction, JavaThread* thread, void* ucontext);
-
   // Support for NULL-checks
   //
   // Generates code that causes a NULL OS exception if the content of reg is NULL.
@@ -644,9 +639,6 @@ class MacroAssembler: public Assembler {
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3,
                                    bool try_bias = UseBiasedLocking, bool use_rtm = false);
-
-  // Support for serializing memory accesses between threads
-  void serialize_memory(Register thread, Register tmp1, Register tmp2);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp_reg);

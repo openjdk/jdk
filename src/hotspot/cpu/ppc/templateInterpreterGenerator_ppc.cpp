@@ -1486,16 +1486,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_native_trans);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
-  // Write serialization page so that the VM thread can do a pseudo remote
-  // membar. We use the current thread pointer to calculate a thread
-  // specific offset to write to within the page. This minimizes bus
-  // traffic due to cache line collision.
-  else {
-    __ serialize_memory(R16_thread, R11_scratch1, R12_scratch2);
-  }
+  __ fence();
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).

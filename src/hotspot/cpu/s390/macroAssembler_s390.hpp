@@ -635,13 +635,6 @@ class MacroAssembler: public Assembler {
   // Extract poll register from instruction.
   static uint get_poll_register(address instr_loc);
 
-  // Check if instruction is a write access to the memory serialization page
-  // realized by one of the instructions stw, stwu, stwx, or stwux.
-  static bool is_memory_serialization(int instruction, JavaThread* thread, void* ucontext);
-
-  // Support for serializing memory accesses between threads.
-  void serialize_memory(Register thread, Register tmp1, Register tmp2);
-
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp_reg);
 

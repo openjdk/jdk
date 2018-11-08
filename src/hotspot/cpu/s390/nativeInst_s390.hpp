@@ -104,12 +104,6 @@ class NativeInstruction {
     return MacroAssembler::get_poll_register(addr_at(0));
   }
 
-  bool is_memory_serialization(JavaThread *thread, void *ucontext) {
-    // Is the current instruction a write access of thread to the
-    // memory serialization page?
-    return MacroAssembler::is_memory_serialization(long_at(0), thread, ucontext);
-  }
-
  public:
 
   // The output of __ breakpoint_trap().

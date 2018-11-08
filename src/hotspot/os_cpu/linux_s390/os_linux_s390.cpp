@@ -477,19 +477,6 @@ JVM_handle_linux_signal(int sig,
         return true;
       }
     }
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    // Info->si_addr need not be the exact address, it is only
-    // guaranteed to be on the same page as the address that caused
-    // the SIGSEGV.
-    if ((sig == SIGSEGV) && !UseMembar &&
-        (os::get_memory_serialize_page() ==
-         (address)((uintptr_t)info->si_addr & ~(os::vm_page_size()-1)))) {
-      return true;
-    }
   }
 
   if (stub != NULL) {

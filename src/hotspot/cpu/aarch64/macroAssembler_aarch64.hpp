@@ -975,9 +975,6 @@ public:
                                                 Register tmp,
                                                 int offset);
 
-  // Support for serializing memory accesses between threads
-  void serialize_memory(Register thread, Register tmp);
-
   // Arithmetics
 
   void addptr(const Address &dst, int32_t src);

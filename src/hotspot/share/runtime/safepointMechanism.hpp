@@ -52,7 +52,6 @@ class SafepointMechanism : public AllStatic {
   static inline void block_if_requested_local_poll(JavaThread *thread);
 
   static void default_initialize();
-  static void initialize_serialize_page();
 
   static void pd_initialize() NOT_AIX({ default_initialize(); });
 

@@ -288,10 +288,6 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
   return address(((uint64_t)insn_addr + (offset << 2)));
 }
 
-void MacroAssembler::serialize_memory(Register thread, Register tmp) {
-  dsb(Assembler::SY);
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path) {
   if (SafepointMechanism::uses_thread_local_poll()) {
     ldr(rscratch1, Address(rthread, Thread::polling_page_offset()));

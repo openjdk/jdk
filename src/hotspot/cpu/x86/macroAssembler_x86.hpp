@@ -644,9 +644,6 @@ class MacroAssembler: public Assembler {
                                                 Register tmp,
                                                 int offset);
 
-  // Support for serializing memory accesses between threads
-  void serialize_memory(Register thread, Register tmp);
-
   // If thread_reg is != noreg the code assumes the register passed contains
   // the thread (required on 64 bit).
   void safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg);

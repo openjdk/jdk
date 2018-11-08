@@ -439,10 +439,6 @@ inline static bool checkFastJNIAccess(address pc, address* stub) {
   return false;
 }
 
-inline static bool checkSerializePage(JavaThread* thread, address addr) {
-  return os::is_memory_serialize_page(thread, addr);
-}
-
 inline static bool checkZombie(sigcontext* uc, address* pc, address* stub) {
   if (nativeInstruction_at(*pc)->is_zombie()) {
     // zombie method (ld [%g0],%o7 instruction)
@@ -541,16 +537,6 @@ JVM_handle_linux_signal(int sig,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = address(SIG_PC(uc));
     npc = address(SIG_NPC(uc));
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    if ((sig == SIGSEGV) && checkSerializePage(thread, (address)info->si_addr)) {
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return 1;
-    }
 
     if (checkPrefetch(uc, pc)) {
       return 1;

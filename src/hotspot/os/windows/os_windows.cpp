@@ -2414,23 +2414,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif // _WIN64
 
-  // Check to see if we caught the safepoint code in the
-  // process of write protecting the memory serialization page.
-  // It write enables the page immediately after protecting it
-  // so just return.
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    if (t != NULL && t->is_Java_thread()) {
-      JavaThread* thread = (JavaThread*) t;
-      PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-      address addr = (address) exceptionRecord->ExceptionInformation[1];
-      if (os::is_memory_serialize_page(thread, addr)) {
-        // Block current thread until the memory serialize page permission restored.
-        os::block_on_serialize_page_trap();
-        return EXCEPTION_CONTINUE_EXECUTION;
-      }
-    }
-  }
-
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
@@ -5328,22 +5311,6 @@ bool os::find(address addr, outputStream* st) {
     result = true;
   }
   return result;
-}
-
-LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
-  DWORD exception_code = e->ExceptionRecord->ExceptionCode;
-
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    JavaThread* thread = JavaThread::current();
-    PEXCEPTION_RECORD exceptionRecord = e->ExceptionRecord;
-    address addr = (address) exceptionRecord->ExceptionInformation[1];
-
-    if (os::is_memory_serialize_page(thread, addr)) {
-      return EXCEPTION_CONTINUE_EXECUTION;
-    }
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
 }
 
 static jint initSock() {
