@@ -182,7 +182,7 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
     int     ret = IDNO;
     static jboolean headless = isHeadless();
 
-    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    DWORD fret= FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                   FORMAT_MESSAGE_FROM_SYSTEM |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL,
@@ -197,7 +197,9 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
     }
     // format the assertion message
     _snprintf(assertMsg, ASSERT_MSG_SIZE, AssertFmt, expr, file, line, lastError, msgBuffer);
-    LocalFree(msgBuffer);
+    if (fret != 0) {
+        LocalFree(msgBuffer);
+    }
 
     // tell the user the bad news
     fprintf(stderr, "*********************\n");

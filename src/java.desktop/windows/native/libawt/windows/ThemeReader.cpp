@@ -251,7 +251,7 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
         DWORD lastError = GetLastError();
         if (lastError != 0) {
             LPSTR msgBuffer = NULL;
-            FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            DWORD fret= FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                     FORMAT_MESSAGE_FROM_SYSTEM |
                     FORMAT_MESSAGE_IGNORE_INSERTS,
                     NULL,
@@ -261,8 +261,14 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
                     // it's an output parameter when allocate buffer is used
                     0,
                     NULL);
-            DTRACE_PRINTLN3("Error: hres=0x%x lastError=0x%x %s\n", hres,
+            if (fret != 0) {
+                DTRACE_PRINTLN3("Error: hres=0x%x lastError=0x%x %s\n", hres,
                                                 lastError, msgBuffer);
+                LocalFree(msgBuffer);
+            } else {
+                DTRACE_PRINTLN2("Error: hres=0x%x lastError=0x%x \n", hres,
+                                                lastError);
+            }
         }
     }
 #endif

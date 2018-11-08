@@ -66,6 +66,7 @@ char *printError(char *msg) {
     if (lpMsgBuf != NULL) {
         strncat((char *)retbuf, ": ", sizeof(retbuf) - strlen(retbuf) - 1);
         strncat((char *)retbuf, (char *)lpMsgBuf, sizeof(retbuf) - strlen(retbuf) - 1);
+        LocalFree(lpMsgBuf);
     }
     return (char *)retbuf;
 }
