@@ -546,47 +546,72 @@ void CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
   DEBUG_ONLY(metadata_do(check_class));
 }
 
-// The IsUnloadingStruct represents a tuple comprising a result of
-// IsUnloadingBehaviour::is_unloading() for a given unloading cycle.
-struct IsUnloadingStruct {
-  unsigned int _is_unloading:1;
-  unsigned int _unloading_cycle:2;
-};
+// The _is_unloading_state encodes a tuple comprising the unloading cycle
+// and the result of IsUnloadingBehaviour::is_unloading() fpr that cycle.
+// This is the bit layout of the _is_unloading_state byte: 00000CCU
+// CC refers to the cycle, which has 2 bits, and U refers to the result of
+// IsUnloadingBehaviour::is_unloading() for that unloading cycle.
 
-// The IsUnloadingUnion allows treating the tuple of the IsUnloadingStruct
-// like a uint8_t, making it possible to read and write the tuple atomically.
-union IsUnloadingUnion {
-  IsUnloadingStruct _inflated;
-  uint8_t _value;
+class IsUnloadingState: public AllStatic {
+  static const uint8_t _is_unloading_mask = 1;
+  static const uint8_t _is_unloading_shift = 0;
+  static const uint8_t _unloading_cycle_mask = 6;
+  static const uint8_t _unloading_cycle_shift = 1;
+
+  static uint8_t set_is_unloading(uint8_t state, bool value) {
+    state &= ~_is_unloading_mask;
+    if (value) {
+      state |= 1 << _is_unloading_shift;
+    }
+    assert(is_unloading(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+  static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
+    state &= ~_unloading_cycle_mask;
+    state |= value << _unloading_cycle_shift;
+    assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+public:
+  static bool is_unloading(uint8_t state) { return (state & _is_unloading_mask) >> _is_unloading_shift == 1; }
+  static uint8_t unloading_cycle(uint8_t state) { return (state & _unloading_cycle_mask) >> _unloading_cycle_shift; }
+
+  static uint8_t create(bool is_unloading, uint8_t unloading_cycle) {
+    uint8_t state = 0;
+    state = set_is_unloading(state, is_unloading);
+    state = set_unloading_cycle(state, unloading_cycle);
+    return state;
+  }
 };
 
 bool CompiledMethod::is_unloading() {
-  IsUnloadingUnion state;
-  state._value = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
-  if (state._inflated._is_unloading == 1) {
+  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
+  bool state_is_unloading = IsUnloadingState::is_unloading(state);
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
+  if (state_is_unloading) {
     return true;
   }
-  if (state._inflated._unloading_cycle == CodeCache::unloading_cycle()) {
-    return state._inflated._is_unloading == 1;
+  if (state_unloading_cycle == CodeCache::unloading_cycle()) {
+    return false;
   }
 
   // The IsUnloadingBehaviour is responsible for checking if there are any dead
   // oops in the CompiledMethod, by calling oops_do on it.
-  bool result = IsUnloadingBehaviour::current()->is_unloading(this);
+  state_unloading_cycle = CodeCache::unloading_cycle();
+  state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
 
-  state._inflated._unloading_cycle = CodeCache::unloading_cycle();
-  state._inflated._is_unloading = result ? 1 : 0;
+  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
 
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state._value);
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
 
-  return result;
+  return state_is_unloading;
 }
 
 void CompiledMethod::clear_unloading_state() {
-  IsUnloadingUnion state;
-  state._inflated._unloading_cycle = CodeCache::unloading_cycle();
-  state._inflated._is_unloading = 0;
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state._value);
+  uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
 }
 
 // Called to clean up after class unloading for live nmethods and from the sweeper
