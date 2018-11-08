@@ -485,7 +485,10 @@ endef
 # ALL_NAMED_TESTS is defined in FindTests.gmk
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
 ALL_TEST_TARGETS := $(addprefix test-, $(ALL_NAMED_TESTS))
-ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_NAMED_TESTS))
+
+# We only support the "exploded-test-gtest" shortcut
+ALL_EXPLODED_TESTS := gtest
+ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_EXPLODED_TESTS))
 
 ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
@@ -852,7 +855,7 @@ else
 
   # Declare dependency for all generated test targets
   $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
-  $(foreach t, $(filter-out exploded-test-make%, $(ALL_EXPLODED_TEST_TARGETS)), $(eval $t: exploded-image test-image))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
@@ -1054,9 +1057,7 @@ ALL_TARGETS += default jdk images docs bundles all
 
 # Let "run-test" be an alias for "test"
 $(foreach t, $(ALL_NAMED_TESTS), $(eval run-test-$t: test-$t))
-$(foreach t, $(ALL_NAMED_TESTS), $(eval exploded-run-test-$t: exploded-test-$t))
-RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS)) \
-    $(addprefix exploded-run-test-, $(ALL_NAMED_TESTS))
+RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
 
 run-test: test
 exploded-run-test: exploded-test
