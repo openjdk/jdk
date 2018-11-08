@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8179027
+ * @bug 8179027 8213116
  * @requires (os.family == "windows")
  * @summary JComboBox too small under Windows LAF
  * @run main WindowsComboBoxSizeTest
@@ -64,7 +64,6 @@ public class WindowsComboBoxSizeTest {
         });
         Robot robot = new Robot();
         robot.waitForIdle();
-
         try {
             test();
         } finally {
@@ -78,12 +77,12 @@ public class WindowsComboBoxSizeTest {
             if (comboBox.getSize().height != expected ) {
                 throw new RuntimeException(
                         "Wrong non-editable JComboBox height " +
-                                              comboBox.getSize().height);
+                                              comboBox.getSize().height + " expected " + expected);
             }
             if (comboBoxEd.getSize().height != expected ) {
                 throw new RuntimeException(
                         "Wrong editable JComboBox height " +
-                                            comboBoxEd.getSize().height);
+                                            comboBoxEd.getSize().height + " expected " + expected);
             }
         });
     }
