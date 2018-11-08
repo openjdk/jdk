@@ -91,6 +91,9 @@ import sun.nio.fs.AbstractFileSystemProvider;
  */
 
 public final class Files {
+    // buffer size used for reading and writing
+    private static final int BUFFER_SIZE = 8192;
+
     private Files() { }
 
     /**
@@ -1531,6 +1534,80 @@ public final class Files {
     }
 
     /**
+     * Finds and returns the position of the first mismatched byte in the content
+     * of two files, or {@code -1L} if there is no mismatch. The position will be
+     * in the inclusive range of {@code 0L} up to the size (in bytes) of the
+     * smaller file.
+     *
+     * <p> Two files are considered to match if they satisfy one of the following
+     * conditions:
+     * <ul>
+     * <li> The two paths locate the {@linkplain #isSameFile(Path, Path) same file},
+     *      even if two {@linkplain Path#equals(Object) equal} paths locate a file
+     *      does not exist, or </li>
+     * <li> The two files are the same size, and every byte in the first file
+     *      is identical to the corresponding byte in the second file. </li>
+     * </ul>
+     *
+     * <p> Otherwise there is a mismatch between the two files and the value
+     * returned by this method is:
+     * <ul>
+     * <li> The position of the first mismatched byte, or </li>
+     * <li> The size of the smaller file (in bytes) when the files are different
+     *      sizes and every byte of the smaller file is identical to the
+     *      corresponding byte of the larger file. </li>
+     * </ul>
+     *
+     * <p> This method may not be atomic with respect to other file system
+     * operations. This method is always <i>reflexive</i> (for {@code Path f},
+     * {@code mismatch(f,f)} returns {@code -1L}). If the file system and files
+     * remain static, then this method is <i>symmetric</i> (for two {@code Paths f}
+     * and {@code g}, {@code mismatch(f,g)} will return the same value as
+     * {@code mismatch(g,f)}).
+     *
+     * @param   path
+     *          the path to the first file
+     * @param   path2
+     *          the path to the second file
+     *
+     * @return  the position of the first mismatch or {@code -1L} if no mismatch
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to both files.
+     *
+     * @since 12
+     */
+    public static long mismatch(Path path, Path path2) throws IOException {
+        if (isSameFile(path, path2)) {
+            return -1;
+        }
+        byte[] buffer1 = new byte[BUFFER_SIZE];
+        byte[] buffer2 = new byte[BUFFER_SIZE];
+        try (InputStream in1 = Files.newInputStream(path);
+             InputStream in2 = Files.newInputStream(path2);) {
+            long totalRead = 0;
+            while (true) {
+                int nRead1 = in1.readNBytes(buffer1, 0, BUFFER_SIZE);
+                int nRead2 = in2.readNBytes(buffer2, 0, BUFFER_SIZE);
+
+                int i = Arrays.mismatch(buffer1, 0, nRead1, buffer2, 0, nRead2);
+                if (i > -1) {
+                    return totalRead + i;
+                }
+                if (nRead1 < BUFFER_SIZE) {
+                    // we've reached the end of the files, but found no mismatch
+                    return -1;
+                }
+                totalRead += nRead1;
+            }
+        }
+    }
+
+    /**
      * Tells whether or not a file is considered <em>hidden</em>. The exact
      * definition of hidden is platform or provider dependent. On UNIX for
      * example a file is considered to be hidden if its name begins with a
@@ -2802,8 +2879,6 @@ public final class Files {
 
     // -- Utility methods for simple usages --
 
-    // buffer size used for reading and writing
-    private static final int BUFFER_SIZE = 8192;
 
     /**
      * Opens a file for reading, returning a {@code BufferedReader} that may be
