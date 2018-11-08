@@ -1528,10 +1528,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
 // which in turn can mean large(r) numbers of objectmonitors in circulation.
 // This is an unfortunate aspect of this design.
 
-enum ManifestConstants {
-  ClearResponsibleAtSTW = 0
-};
-
 // Deflate a single monitor if not in-use
 // Return true if deflated, false if in-use
 bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
@@ -1544,7 +1540,6 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
   guarantee(mid->header()->is_neutral(), "invariant");
 
   if (mid->is_busy()) {
-    if (ClearResponsibleAtSTW) mid->_Responsible = NULL;
     deflated = false;
   } else {
     // Deflate the monitor if it is no longer being used
