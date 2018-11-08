@@ -162,7 +162,7 @@ class ThreadStateTransition : public StackObj {
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set
     // up to handle exceptions floating around at arbitrary points.
-    if (SafepointMechanism::poll(thread) || thread->is_suspend_after_native()) {
+    if (SafepointMechanism::should_block(thread) || thread->is_suspend_after_native()) {
       JavaThread::check_safepoint_and_suspend_for_native_trans(thread);
 
       // Clear unhandled oops anywhere where we could block, even if we don't.

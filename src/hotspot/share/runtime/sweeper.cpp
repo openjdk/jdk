@@ -386,7 +386,7 @@ void NMethodSweeper::force_sweep() {
  */
 void NMethodSweeper::handle_safepoint_request() {
   JavaThread* thread = JavaThread::current();
-  if (SafepointMechanism::poll(thread)) {
+  if (SafepointMechanism::should_block(thread)) {
     if (PrintMethodFlushing && Verbose) {
       tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
     }

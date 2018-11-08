@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ public:
 #endif
   }
 
-  // Call this method to see if this thread has depending poll and appropriate action should be taken
-  static inline bool poll(Thread* thread);
+  // Call this method to see if this thread should block for a safepoint.
+  static inline bool should_block(Thread* thread);
 
   // Blocks a thread until safepoint is completed
   static inline void block_if_requested(JavaThread* thread);

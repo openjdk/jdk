@@ -383,7 +383,7 @@ int Monitor::TrySpin(Thread * const Self) {
       jint rv = Self->rng[0];
       for (int k = Delay; --k >= 0;) {
         rv = MarsagliaXORV(rv);
-        if (SafepointMechanism::poll(Self)) return 0;
+        if (SafepointMechanism::should_block(Self)) return 0;
       }
       Self->rng[0] = rv;
     } else {
