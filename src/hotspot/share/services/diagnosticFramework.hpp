@@ -344,7 +344,6 @@ public:
 // management.cpp)
 class DCmdFactory: public CHeapObj<mtInternal> {
 private:
-  static Mutex*       _dcmdFactory_lock;
   static bool         _send_jmx_notification;
   static bool         _has_pending_jmx_notification;
   static DCmdFactory* _DCmdFactoryList;

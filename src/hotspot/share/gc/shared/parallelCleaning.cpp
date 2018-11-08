@@ -89,8 +89,6 @@ CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_icholder_relocations();
 }
 
-Monitor* CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock", false, Monitor::_safepoint_check_never);
-
 void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
   CompiledMethod* first;
   CompiledMethodIterator last;

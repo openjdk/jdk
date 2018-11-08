@@ -36,10 +36,6 @@
 #include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
-Monitor*              ThreadsSMRSupport::_delete_lock =
-                          new Monitor(Monitor::special, "Thread_SMR_delete_lock",
-                                      false /* allow_vm_block */,
-                                      Monitor::_safepoint_check_never);
 // The '_cnt', '_max' and '_times" fields are enabled via
 // -XX:+EnableThreadSMRStatistics:
 

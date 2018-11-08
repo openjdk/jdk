@@ -164,8 +164,6 @@ Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time thi
 Tickspan NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
 Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
 
-Monitor* NMethodSweeper::_stat_lock = new Monitor(Mutex::special, "Sweeper::Statistics", true, Monitor::_safepoint_check_sometimes);
-
 class MarkActivationClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
@@ -578,7 +576,7 @@ void NMethodSweeper::sweep_code_cache() {
   const Ticks sweep_end_counter = Ticks::now();
   const Tickspan sweep_time = sweep_end_counter - sweep_start_counter;
   {
-    MutexLockerEx mu(_stat_lock, Mutex::_no_safepoint_check_flag);
+    MutexLockerEx mu(NMethodSweeperStats_lock, Mutex::_no_safepoint_check_flag);
     _total_time_sweeping  += sweep_time;
     _total_time_this_sweep += sweep_time;
     _peak_sweep_fraction_time = MAX2(sweep_time, _peak_sweep_fraction_time);

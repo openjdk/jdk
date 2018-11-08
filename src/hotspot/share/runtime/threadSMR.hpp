@@ -91,7 +91,8 @@ class ThreadsSMRSupport : AllStatic {
   // The coordination between ThreadsSMRSupport::release_stable_list() and
   // ThreadsSMRSupport::smr_delete() uses the delete_lock in order to
   // reduce the traffic on the Threads_lock.
-  static Monitor*              _delete_lock;
+  static Monitor* delete_lock() { return ThreadsSMRDelete_lock; }
+
   // The '_cnt', '_max' and '_times" fields are enabled via
   // -XX:+EnableThreadSMRStatistics (see thread.cpp for a
   // description about each field):
@@ -121,7 +122,6 @@ class ThreadsSMRSupport : AllStatic {
   static void add_deleted_thread_times(uint add_value);
   static void add_tlh_times(uint add_value);
   static void clear_delete_notify();
-  static Monitor* delete_lock() { return _delete_lock; }
   static bool delete_notify();
   static void free_list(ThreadsList* threads);
   static void inc_deleted_thread_cnt();

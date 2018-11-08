@@ -321,7 +321,6 @@ class JfrThreadSampler : public NonJavaThread {
   int _cur_index;
   const u4 _max_frames;
   volatile bool _disenrolled;
-  static Monitor* _transition_block_lock;
 
   JavaThread* next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current);
   void task_stacktrace(JfrSampleType type, JavaThread** last_thread);
@@ -339,11 +338,9 @@ class JfrThreadSampler : public NonJavaThread {
 
  public:
   void run();
-  static Monitor* transition_block() { return _transition_block_lock; }
+  static Monitor* transition_block() { return JfrThreadSampler_lock; }
   static void on_javathread_suspend(JavaThread* thread);
 };
-
-Monitor* JfrThreadSampler::_transition_block_lock = new Monitor(Mutex::leaf, "Trace block", true, Monitor::_safepoint_check_never);
 
 static void clear_transition_block(JavaThread* jt) {
   jt->clear_trace_flag();

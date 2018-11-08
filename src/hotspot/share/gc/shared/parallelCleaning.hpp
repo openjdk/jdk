@@ -56,7 +56,6 @@ public:
 };
 
 class CodeCacheUnloadingTask {
-  static Monitor* _lock;
 
   CodeCache::UnloadingScope _unloading_scope;
   const bool                _unloading_occurred;
