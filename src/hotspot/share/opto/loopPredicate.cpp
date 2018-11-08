@@ -370,9 +370,9 @@ void PhaseIdealLoop::clone_loop_predicates_fix_mem(ProjNode* dom_proj , ProjNode
 
 // Clone loop predicates to cloned loops (peeled, unswitched, split_if).
 Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry,
-                                                bool clone_limit_check,
-                                                PhaseIdealLoop* loop_phase,
-                                                PhaseIterGVN* igvn) {
+                                            bool clone_limit_check,
+                                            PhaseIdealLoop* loop_phase,
+                                            PhaseIterGVN* igvn) {
 #ifdef ASSERT
   if (new_entry == NULL || !(new_entry->is_Proj() || new_entry->is_Region() || new_entry->is_SafePoint())) {
     if (new_entry != NULL)
@@ -385,7 +385,7 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry,
   ProjNode* limit_check_proj = NULL;
   limit_check_proj = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
   if (limit_check_proj != NULL) {
-    entry = entry->in(0)->in(0);
+    entry = skip_loop_predicates(entry);
   }
   ProjNode* profile_predicate_proj = NULL;
   ProjNode* predicate_proj = NULL;
@@ -467,7 +467,7 @@ Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
   Node* predicate = NULL;
   predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
   if (predicate != NULL) {
-    entry = entry->in(0)->in(0);
+    entry = skip_loop_predicates(entry);
   }
   if (UseProfiledLoopPredicate) {
     predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
@@ -1363,7 +1363,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   // Loop limit check predicate should be near the loop.
   loop_limit_proj = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
   if (loop_limit_proj != NULL) {
-    entry = loop_limit_proj->in(0)->in(0);
+    entry = skip_loop_predicates(loop_limit_proj);
   }
   bool has_profile_predicates = false;
   profile_predicate_proj = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);

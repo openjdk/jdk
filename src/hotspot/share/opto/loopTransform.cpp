@@ -1200,7 +1200,7 @@ void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* casti
     Node* predicate = NULL;
     predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
     if (predicate != NULL) {
-      entry = entry->in(0)->in(0);
+      entry = skip_loop_predicates(entry);
     }
     Node* profile_predicate = NULL;
     if (UseProfiledLoopPredicate) {
