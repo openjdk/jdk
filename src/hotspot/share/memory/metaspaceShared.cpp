@@ -1703,6 +1703,8 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
     log_info(cds)("Shared spaces: preloaded %d classes", class_count);
 
+    HeapShared::init_subgraph_entry_fields(THREAD);
+
     // Rewrite and link classes
     tty->print_cr("Rewriting and linking classes ...");
 
@@ -1714,7 +1716,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     tty->print_cr("Rewriting and linking classes: done");
 
     SystemDictionary::clear_invoke_method_table();
-    HeapShared::init_subgraph_entry_fields(THREAD);
 
     VM_PopulateDumpSharedSpace op;
     VMThread::execute(&op);

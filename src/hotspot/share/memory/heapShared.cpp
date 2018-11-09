@@ -886,6 +886,10 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     Klass* k = SystemDictionary::resolve_or_null(klass_name, THREAD);
     assert(k != NULL && !HAS_PENDING_EXCEPTION, "class must exist");
     InstanceKlass* ik = InstanceKlass::cast(k);
+    assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
+           "Only support boot classes");
+    ik->initialize(THREAD);
+    guarantee(!HAS_PENDING_EXCEPTION, "exception in initialize");
 
     ArchivableStaticFieldFinder finder(ik, field_name);
     ik->do_local_static_fields(&finder);
