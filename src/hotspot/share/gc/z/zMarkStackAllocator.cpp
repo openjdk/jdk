@@ -82,7 +82,7 @@ uintptr_t ZMarkStackSpace::alloc_space(size_t size) {
 }
 
 uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
-  ZLocker locker(&_expand_lock);
+  ZLocker<ZLock> locker(&_expand_lock);
 
   // Retry allocation before expanding
   uintptr_t addr = alloc_space(size);
