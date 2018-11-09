@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 package java.net;
 
 import java.security.cert.Certificate;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a cache response originally retrieved through secure
@@ -105,4 +107,27 @@ public abstract class SecureCacheResponse extends CacheResponse {
       * @see #getPeerPrincipal()
       */
      public abstract Principal getLocalPrincipal();
+
+    /**
+     * Returns an {@link Optional} containing the {@code SSLSession} in
+     * use on the original connection that retrieved the network resource.
+     * Returns an empty {@code Optional} if the underlying implementation
+     * does not support this method.
+     *
+     * @implSpec For compatibility, the default implementation of this
+     *           method returns an empty {@code Optional}.  Subclasses
+     *           should override this method with an appropriate
+     *           implementation since an application may need to access
+     *           additional parameters associated with the SSL session.
+     *
+     * @return   an {@link Optional} containing the {@code SSLSession} in
+     *           use on the original connection
+     *
+     * @see SSLSession
+     *
+     * @since 12
+     */
+    public Optional<SSLSession> getSSLSession() {
+        return Optional.empty();
+    }
 }

@@ -29,6 +29,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 /**
  * <code>HttpsURLConnection</code> extends <code>HttpURLConnection</code>
@@ -52,9 +53,7 @@ import java.security.cert.X509Certificate;
  *
  * @since 1.4
  */
-public abstract
-class HttpsURLConnection extends HttpURLConnection
-{
+public abstract class HttpsURLConnection extends HttpURLConnection {
     /**
      * Creates an <code>HttpsURLConnection</code> using the
      * URL specified.
@@ -377,5 +376,30 @@ class HttpsURLConnection extends HttpURLConnection
      */
     public SSLSocketFactory getSSLSocketFactory() {
         return sslSocketFactory;
+    }
+
+    /**
+     * Returns an {@link Optional} containing the {@code SSLSession} in
+     * use on this connection.  Returns an empty {@code Optional} if the
+     * underlying implementation does not support this method.
+     *
+     * @implSpec For compatibility, the default implementation of this
+     *           method returns an empty {@code Optional}.  Subclasses
+     *           should override this method with an appropriate
+     *           implementation since an application may need to access
+     *           additional parameters associated with the SSL session.
+     *
+     * @return   an {@link Optional} containing the {@code SSLSession} in
+     *           use on this connection.
+     *
+     * @throws   IllegalStateException if this method is called before
+     *           the connection has been established
+     *
+     * @see SSLSession
+     *
+     * @since 12
+     */
+    public Optional<SSLSession> getSSLSession() {
+        return Optional.empty();
     }
 }
