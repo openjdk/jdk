@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
  * @test
  * @bug 4965541
  * @summary verify that setSessionTimeout() with large values works
+ * @run main/othervm Timeout
  * @author Andreas Sterbenz
  */
+
+// The SunJSSE provider cannot use System Properties in samevm/agentvm mode.
+// Please run JSSE test in othervm mode.
 
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -36,32 +40,26 @@ import javax.net.ssl.SSLSessionContext;
 public class Timeout {
 
     public static void main(String[] args) throws Exception {
-//        try {
-            SSLServerSocketFactory ssf =
+        SSLServerSocketFactory ssf =
                 (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-            SSLServerSocket ss = (SSLServerSocket)ssf.createServerSocket();
+        try (SSLServerSocket ss = (SSLServerSocket)ssf.createServerSocket()) {
             String[] protocols = ss.getSupportedProtocols();
             for (int i = 0; i < protocols.length; i++) {
-//                try {
-                    if (protocols[i].equals("SSLv2Hello")) {
-                        continue;
-                    }
-                    SSLContext sslc = SSLContext.getInstance(protocols[i]);
-                    SSLSessionContext sslsc = sslc.getServerSessionContext();
-                    System.out.println("Protocol: " + protocols[i]);
-                    sslsc.setSessionTimeout(Integer.MAX_VALUE);
-                    int newtime = sslsc.getSessionTimeout();
-                    if (newtime != Integer.MAX_VALUE) {
-                        throw new Exception ("Expected timeout: " +
+                if (protocols[i].equals("SSLv2Hello")) {
+                    continue;
+                }
+                SSLContext sslc = SSLContext.getInstance(protocols[i]);
+                SSLSessionContext sslsc = sslc.getServerSessionContext();
+                System.out.println("Protocol: " + protocols[i]);
+                sslsc.setSessionTimeout(Integer.MAX_VALUE);
+                int newtime = sslsc.getSessionTimeout();
+                if (newtime != Integer.MAX_VALUE) {
+                    throw new Exception ("Expected timeout: " +
                             Integer.MAX_VALUE + ", got instead: " +
                             newtime);
-                    }
-//                } catch (Exception e) {
-//                }
+                }
             }
-//        } catch (Exception e) {
-//            System.out.println(e);
-//        }
+        }
         System.out.println("Finished");
     }
 }
