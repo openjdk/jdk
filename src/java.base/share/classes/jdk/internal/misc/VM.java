@@ -199,17 +199,16 @@ public class VM {
         // by the vm option -XX:MaxDirectMemorySize=<size>.
         // The maximum amount of allocatable direct buffer memory (in bytes)
         // from the system property sun.nio.MaxDirectMemorySize set by the VM.
+        // If not set or set to -1, the max memory will be used
         // The system property will be removed.
         String s = (String)props.remove("sun.nio.MaxDirectMemorySize");
-        if (s != null) {
-            if (s.equals("-1")) {
-                // -XX:MaxDirectMemorySize not given, take default
-                directMemory = Runtime.getRuntime().maxMemory();
-            } else {
-                long l = Long.parseLong(s);
-                if (l > -1)
-                    directMemory = l;
-            }
+        if (s == null || s.isEmpty() || s.equals("-1")) {
+            // -XX:MaxDirectMemorySize not given, take default
+            directMemory = Runtime.getRuntime().maxMemory();
+        } else {
+            long l = Long.parseLong(s);
+            if (l > -1)
+                directMemory = l;
         }
 
         // Check if direct buffers should be page aligned

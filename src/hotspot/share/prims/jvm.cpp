@@ -364,6 +364,8 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
   // System property list includes both user set via -D option and
   // jvm system specific properties.
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
+    if (strcmp(p->key(), "sun.nio.MaxDirectMemorySize") == 0)  // Can not be defined with -D
+      continue;
     PUTPROP(props, p->key(), p->value());
   }
 
@@ -371,14 +373,11 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
   // to the sun.nio.MaxDirectMemorySize property.
   // Do this after setting user properties to prevent people
   // from setting the value with a -D option, as requested.
-  {
-    if (FLAG_IS_DEFAULT(MaxDirectMemorySize)) {
-      PUTPROP(props, "sun.nio.MaxDirectMemorySize", "-1");
-    } else {
-      char as_chars[256];
-      jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
-      PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
-    }
+  // Leave empty if not supplied
+  if (!FLAG_IS_DEFAULT(MaxDirectMemorySize)) {
+    char as_chars[256];
+    jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
+    PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
   }
 
   // JVM monitoring and management support

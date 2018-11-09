@@ -211,7 +211,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     PUTPROP(props, "java.specification.vendor",
             JAVA_SPECIFICATION_VENDOR);
 
-    PUTPROP(props, "java.version", VERSION_SHORT);
     PUTPROP(props, "java.vendor", VENDOR);
     PUTPROP(props, "java.vendor.url", VENDOR_URL);
     PUTPROP(props, "java.vendor.url.bug", VENDOR_URL_BUG);
@@ -255,8 +254,10 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 
     /* unicode_encoding specifies the default endianness */
     PUTPROP(props, "sun.io.unicode.encoding", sprops->unicode_encoding);
-    PUTPROP(props, "sun.cpu.isalist",
-            (sprops->cpu_isalist ? sprops->cpu_isalist : ""));
+    if (sprops->cpu_isalist  != NULL) {
+        // leave undefined if none
+        PUTPROP(props, "sun.cpu.isalist", sprops->cpu_isalist);
+    }
     PUTPROP(props, "sun.cpu.endian",  sprops->cpu_endian);
 
 
@@ -330,8 +331,10 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
                     sprops->data_model);
 
     /* patch level */
-    PUTPROP(props, "sun.os.patch.level",  \
+    if (sprops->patch_level != NULL) {
+        PUTPROP(props, "sun.os.patch.level",  \
                     sprops->patch_level);
+    }
 
     /* Java2D properties */
     /* Note: java.awt.graphicsenv is an implementation private property which
@@ -354,9 +357,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 
     PUTPROP_ForPlatformNString(props, "user.name", sprops->user_name);
     PUTPROP_ForPlatformNString(props, "user.home", sprops->user_home);
-
-    PUTPROP(props, "user.timezone", sprops->timezone);
-
     PUTPROP_ForPlatformNString(props, "user.dir", sprops->user_dir);
 
     /* This is a sun. property as it is currently only set for Gnome and

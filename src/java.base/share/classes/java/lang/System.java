@@ -802,6 +802,7 @@ public final class System {
         if (props == null) {
             props = new Properties();
             initProperties(props);
+            VersionProps.init(props);
         }
         System.props = props;
     }
@@ -1973,6 +1974,7 @@ public final class System {
         // be put into it directly.
         props = new Properties(84);
         initProperties(props);  // initialized by the VM
+        VersionProps.init(props);
 
         // There are certain system configurations that may be controlled by
         // VM options such as the maximum amount of direct memory and
@@ -1992,7 +1994,6 @@ public final class System {
 
         lineSeparator = props.getProperty("line.separator");
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
-        VersionProps.init();
 
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);

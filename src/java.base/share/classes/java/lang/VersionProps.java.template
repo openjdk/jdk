@@ -29,6 +29,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 class VersionProps {
 
@@ -69,17 +70,13 @@ class VersionProps {
         (VENDOR_VERSION_STRING.length() > 0
          ? " " + VENDOR_VERSION_STRING : "");
 
-    static {
-        init();
-    }
-
-    public static void init() {
-        System.setProperty("java.version", java_version);
-        System.setProperty("java.version.date", java_version_date);
-        System.setProperty("java.runtime.version", java_runtime_version);
-        System.setProperty("java.runtime.name", java_runtime_name);
+    public static void init(Properties props) {
+        props.setProperty("java.version", java_version);
+        props.setProperty("java.version.date", java_version_date);
+        props.setProperty("java.runtime.version", java_runtime_version);
+        props.setProperty("java.runtime.name", java_runtime_name);
         if (VENDOR_VERSION_STRING.length() > 0)
-            System.setProperty("java.vendor.version", VENDOR_VERSION_STRING);
+            props.setProperty("java.vendor.version", VENDOR_VERSION_STRING);
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {

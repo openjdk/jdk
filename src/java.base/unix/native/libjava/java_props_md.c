@@ -399,7 +399,7 @@ GetJavaProperties(JNIEnv *env)
 #endif
 
     /* patches/service packs installed */
-    sprops.patch_level = "unknown";
+    sprops.patch_level = NULL;      // leave it undefined
 
     /* Java 2D/AWT properties */
 #ifdef MACOSX
@@ -488,19 +488,15 @@ GetJavaProperties(JNIEnv *env)
                     &(sprops.format_variant),
                     &(sprops.encoding))) {
         ParseLocale(env, LC_MESSAGES,
-                    &(sprops.language),
-                    &(sprops.script),
-                    &(sprops.country),
-                    &(sprops.variant),
+                    &(sprops.display_language),
+                    &(sprops.display_script),
+                    &(sprops.display_country),
+                    &(sprops.display_variant),
                     NULL);
     } else {
-        sprops.language = "en";
+        sprops.display_language = "en";
         sprops.encoding = "ISO8859-1";
     }
-    sprops.display_language = sprops.language;
-    sprops.display_script = sprops.script;
-    sprops.display_country = sprops.country;
-    sprops.display_variant = sprops.variant;
 
     /* ParseLocale failed with OOME */
     JNU_CHECK_EXCEPTION_RETURN(env, NULL);
@@ -543,18 +539,12 @@ GetJavaProperties(JNIEnv *env)
         }
     }
 
-    /* User TIMEZONE */
-    {
-        /*
-         * We defer setting up timezone until it's actually necessary.
-         * Refer to TimeZone.getDefault(). However, the system
-         * property is necessary to be able to be set by the command
-         * line interface -D. Here temporarily set a null string to
-         * timezone.
-         */
-        tzset();        /* for compatibility */
-        sprops.timezone = "";
-    }
+    /* User TIMEZONE
+     * We defer setting up timezone until it's actually necessary.
+     * Refer to TimeZone.getDefault(). The system property
+     * is able to be set by the command line interface -Duser.timezone.
+     */
+    tzset();        /* for compatibility */
 
     /* Current directory */
     {

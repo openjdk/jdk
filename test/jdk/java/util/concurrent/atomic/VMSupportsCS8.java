@@ -33,7 +33,8 @@ import java.lang.reflect.Field;
 
 public class VMSupportsCS8 {
     public static void main(String[] args) throws Exception {
-        if (System.getProperty("sun.cpu.isalist").matches
+        String isalist = System.getProperty("sun.cpu.isalist");
+        if (isalist != null && isalist.matches
             (".*\\b(sparcv9|pentium_pro|ia64|amd64).*")
             ||
             System.getProperty("os.arch").matches
