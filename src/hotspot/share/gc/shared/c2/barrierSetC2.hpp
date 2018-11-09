@@ -288,6 +288,9 @@ public:
 #ifdef ASSERT
   virtual bool verify_gc_alias_type(const TypePtr* adr_type, int offset) const { return false; }
 #endif
+
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const { return false; }
+
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

@@ -1304,6 +1304,7 @@ class Compile : public Phase {
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
   void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
   void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
   void eliminate_redundant_card_marks(Node* n);
 

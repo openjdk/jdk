@@ -1435,6 +1435,29 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
   return type == T_OBJECT || type == T_ARRAY;
 }
 
+bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode) const {
+  bool handled;
+  switch (opcode) {
+    case Op_LoadBarrierSlowReg:
+    case Op_LoadBarrierWeakSlowReg:
+#ifdef ASSERT
+      if (VerifyOptoOopOffsets) {
+        MemNode* mem  = n->as_Mem();
+        // Check to see if address types have grounded out somehow.
+        const TypeInstPtr* tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
+        ciInstanceKlass* k = tp->klass()->as_instance_klass();
+        bool oop_offset_is_sane = k->contains_field_offset(tp->offset());
+        assert(!tp || oop_offset_is_sane, "");
+      }
+#endif
+      handled = true;
+      break;
+    default:
+      handled = false;
+  }
+  return handled;
+}
+
 // == Verification ==
 
 #ifdef ASSERT

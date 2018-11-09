@@ -2792,6 +2792,18 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 #endif
   // Count FPU ops and common calls, implements item (3)
+  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop);
+  if (!gc_handled) {
+    final_graph_reshaping_main_switch(n, frc, nop);
+  }
+
+  // Collect CFG split points
+  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
+    frc._tests.push(n);
+  }
+}
+
+void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop) {
   switch( nop ) {
   // Count all float operations that may use FPU
   case Op_AddF:
@@ -2938,18 +2950,13 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   case Op_LoadL_unaligned:
   case Op_LoadPLocked:
   case Op_LoadP:
-#if INCLUDE_ZGC
-  case Op_LoadBarrierSlowReg:
-  case Op_LoadBarrierWeakSlowReg:
-#endif
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS: {
   handle_mem:
 #ifdef ASSERT
     if( VerifyOptoOopOffsets ) {
-      assert( n->is_Mem(), "" );
-      MemNode *mem  = (MemNode*)n;
+      MemNode* mem  = n->as_Mem();
       // Check to see if address types have grounded out somehow.
       const TypeInstPtr *tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
       assert( !tp || oop_offset_is_sane(tp), "" );
@@ -3467,15 +3474,10 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   }
   default:
-    assert( !n->is_Call(), "" );
-    assert( !n->is_Mem(), "" );
-    assert( nop != Op_ProfileBoolean, "should be eliminated during IGVN");
+    assert(!n->is_Call(), "");
+    assert(!n->is_Mem(), "");
+    assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
-  }
-
-  // Collect CFG split points
-  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
-    frc._tests.push(n);
   }
 }
 

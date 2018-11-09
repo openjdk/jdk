@@ -207,6 +207,8 @@ public:
   static void find_dominating_barriers(PhaseIterGVN& igvn);
   static void loop_optimize_gc_barrier(PhaseIdealLoop* phase, Node* node, bool last_round);
 
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const;
+
 #ifdef ASSERT
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const;
 #endif
