@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 6682046
+  @bug 6682046 8198002
   @summary Mixing code does not always recalculate shapes correctly when resizing components
   @author anthony.petrov@...: area=awt.mixing
   @library ../regtesthelpers
@@ -38,8 +38,12 @@
  * summary:  Mixing code does not always recalculate shapes correctly when resizing components
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.event.InputEvent;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class Validating

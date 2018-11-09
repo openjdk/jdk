@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -699,10 +699,13 @@ void AwtFrame::Reshape(int x, int y, int width, int height)
     // maximized state bit (matches Motif behaviour)
     // (calling ShowWindow(SW_RESTORE) would fire an
     //  activation event which we don't want)
-        LONG    style = GetStyle();
-        DASSERT(style & WS_MAXIMIZE);
-        style ^= WS_MAXIMIZE;
-        SetStyle(style);
+        HWND hWnd = GetHWnd();
+        if (hWnd != NULL && ::IsWindowVisible(hWnd)) {
+            LONG style = GetStyle();
+            DASSERT(style & WS_MAXIMIZE);
+            style ^= WS_MAXIMIZE;
+            SetStyle(style);
+        }
     }
 
     AwtWindow::Reshape(x, y, width, height);
