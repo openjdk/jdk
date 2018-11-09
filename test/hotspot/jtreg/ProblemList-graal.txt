@@ -179,3 +179,5 @@ org.graalvm.compiler.core.test.CountedLoopTest                   8211179
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
 
 org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
+
+org.graalvm.compiler.debug.test.TimerKeyTest                     8213598
