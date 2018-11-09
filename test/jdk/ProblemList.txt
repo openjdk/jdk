@@ -721,10 +721,8 @@ javax/swing/JComboBox/ConsumedKeyTest/ConsumedKeyTest.java 8067986 generic-all
 javax/swing/JComponent/6683775/bug6683775.java 8172337 generic-all
 javax/swing/JComboBox/6236162/bug6236162.java 8028707 windows-all,macosx-all
 javax/swing/text/html/parser/Test8017492.java 8022535 generic-all
-javax/swing/JButton/8151303/PressedIconTest.java 8198689 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java 8081476 windows-all,macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8198667 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 8013450 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
@@ -740,7 +738,6 @@ javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
 javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
-javax/swing/JComboBox/6607130/bug6607130.java 8196091 windows-all
 javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all,macosx-all
 javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
@@ -759,7 +756,6 @@ javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
 javax/swing/JTabbedPane/7024235/Test7024235.java 8028281 macosx-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
-javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8196098 windows-all
 javax/swing/plaf/basic/Test6984643.java 8198340 windows-all
 javax/swing/text/CSSBorder/6796710/bug6796710.java 8196099 windows-all
 javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
