@@ -478,16 +478,22 @@ BOOL AwtList::IsFocusingMouseMessage(MSG *pMsg)
 MsgRouting AwtList::HandleEvent(MSG *msg, BOOL synthetic)
 {
     if (IsFocusingMouseMessage(msg)) {
-        LONG item = static_cast<LONG>(SendListMessage(LB_ITEMFROMPOINT, 0, msg->lParam));
-        if (item != LB_ERR) {
-            if (isMultiSelect) {
-                if (IsItemSelected(item)) {
-                    Deselect(item);
-                } else {
-                    Select(item);
+        LONG count = GetCount();
+        if (count > 0) {
+            LONG item = static_cast<LONG>(SendListMessage(LB_ITEMFROMPOINT, 0, msg->lParam));
+            if (HIWORD(item) == 0) {
+                item = LOWORD(item);
+                if (item >= 0 && item < count) {
+                    if (isMultiSelect) {
+                        if (IsItemSelected(item)) {
+                            Deselect(item);
+                        } else {
+                            Select(item);
+                        }
+                    } else {
+                        Select(item);
+                    }
                 }
-            } else {
-                Select(item);
             }
         }
         delete msg;
