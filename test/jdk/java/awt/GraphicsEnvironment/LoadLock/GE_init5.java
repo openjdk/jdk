@@ -25,10 +25,10 @@
  * @test
  * @bug 7002839
  * @summary Static init deadlock Win32GraphicsEnvironment and WToolkit
- * @run main/othervm -Djava.awt.headless=true GE_init4
+ * @run main/othervm -Djava.awt.headless=true GE_init5
  */
 
-import java.awt.Toolkit;
+import java.awt.GraphicsEnvironment;
 
 public class GE_init5 {
     public static void main(String[] args) {
