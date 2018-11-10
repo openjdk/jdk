@@ -790,7 +790,6 @@ javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
 javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java 8042383 macosx-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099 macosx-all
 javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
-javax/swing/GroupLayout/6613904/bug6613904.java 8199072 generic-all
 javax/swing/JCheckBox/8032667/bug8032667_image_diff.java 8199063 macosx-all
 javax/swing/JComboBox/7031551/bug7031551.java 8199056 generic-all
 javax/swing/JScrollBar/6924059/bug6924059.java 8199078 generic-all

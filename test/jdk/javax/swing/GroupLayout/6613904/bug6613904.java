@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * @author Pavel Porvatov
  */
 
-import javax.swing.*;
+import javax.swing.GroupLayout;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class bug6613904 {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 GroupLayout groupLayout = new GroupLayout(new JPanel());
 
