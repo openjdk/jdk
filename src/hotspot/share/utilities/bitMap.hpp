@@ -72,6 +72,10 @@ class BitMap {
   static const bm_word_t find_ones_flip = 0;
   static const bm_word_t find_zeros_flip = ~(bm_word_t)0;
 
+  // Threshold for performing small range operation, even when large range
+  // operation was requested. Measured in words.
+  static const size_t small_range_words = 32;
+
  protected:
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
@@ -116,6 +120,8 @@ class BitMap {
   void      clear_large_range_of_words (idx_t beg, idx_t end);
 
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
+
+  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
 
   // The index of the first full word in a range.
   idx_t word_index_round_up(idx_t bit) const;
