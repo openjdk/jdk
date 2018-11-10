@@ -123,7 +123,7 @@ public class except011 {
      */
     private static int messages = 0;
 
-    private static final String className = "nsk.stress.except.except011.except011oops";
+    private static final String className = "nsk.stress.except.except011oops";
 
     /**
      * Re-call to the method <code>run(out)</code> (ignore <code>args[]</code>),
