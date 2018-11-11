@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,16 @@ import java.awt.peer.LightweightPeer;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Set;
 
-import sun.util.logging.PlatformLogger;
-
+import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
-import sun.awt.AWTAccessor;
 import sun.awt.TimedWindowEvent;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The default KeyboardFocusManager for AWT applications. Focus traversal is
@@ -813,7 +812,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     : NULL_WINDOW_WR;
                 typeAheadAssertions(currentFocusedWindow, we);
 
-                if (oppositeWindow == null) {
+                if (oppositeWindow == null && activeWindow != null) {
                     // Then we need to deactivate the active Window as well.
                     // No need to synthesize in other cases, because
                     // WINDOW_ACTIVATED will handle it if necessary.
