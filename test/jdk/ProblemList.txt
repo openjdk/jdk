@@ -742,7 +742,6 @@ javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all,macosx-all
 javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
-javax/swing/JEditorPane/5076514/bug5076514.java 8198321 generic-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/8002077/bug8002077.java 8196094 windows-all
 javax/swing/JFileChooser/DeserializedJFileChooser/DeserializedJFileChooserTest.java 8196095 generic-all
