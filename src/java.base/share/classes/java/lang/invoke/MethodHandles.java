@@ -3864,16 +3864,61 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      */
     public static
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
+        // In method types arguments start at index 0, while the LF
+        // editor have the MH receiver at position 0 - adjust appropriately.
+        final int MH_RECEIVER_OFFSET = 1;
         filterArgumentsCheckArity(target, pos, filters);
         MethodHandle adapter = target;
+
+        // keep track of currently matched filters, as to optimize repeated filters
+        int index = 0;
+        int[] positions = new int[filters.length];
+        MethodHandle filter = null;
+
         // process filters in reverse order so that the invocation of
         // the resulting adapter will invoke the filters in left-to-right order
         for (int i = filters.length - 1; i >= 0; --i) {
-            MethodHandle filter = filters[i];
-            if (filter == null)  continue;  // ignore null elements of filters
-            adapter = filterArgument(adapter, pos + i, filter);
+            MethodHandle newFilter = filters[i];
+            if (newFilter == null) continue;  // ignore null elements of filters
+
+            // flush changes on update
+            if (filter != newFilter) {
+                if (filter != null) {
+                    if (index > 1) {
+                        adapter = filterRepeatedArgument(adapter, filter, Arrays.copyOf(positions, index));
+                    } else {
+                        adapter = filterArgument(adapter, positions[0] - 1, filter);
+                    }
+                }
+                filter = newFilter;
+                index = 0;
+            }
+
+            filterArgumentChecks(target, pos + i, newFilter);
+            positions[index++] = pos + i + MH_RECEIVER_OFFSET;
+        }
+        if (index > 1) {
+            adapter = filterRepeatedArgument(adapter, filter, Arrays.copyOf(positions, index));
+        } else if (index == 1) {
+            adapter = filterArgument(adapter, positions[0] - 1, filter);
         }
         return adapter;
+    }
+
+    private static MethodHandle filterRepeatedArgument(MethodHandle adapter, MethodHandle filter, int[] positions) {
+        MethodType targetType = adapter.type();
+        MethodType filterType = filter.type();
+        BoundMethodHandle result = adapter.rebind();
+        Class<?> newParamType = filterType.parameterType(0);
+
+        Class<?>[] ptypes = targetType.ptypes().clone();
+        for (int pos : positions) {
+            ptypes[pos - 1] = newParamType;
+        }
+        MethodType newType = MethodType.makeImpl(targetType.rtype(), ptypes, true);
+
+        LambdaForm lform = result.editor().filterRepeatedArgumentForm(BasicType.basicType(newParamType), positions);
+        return result.copyWithExtendL(newType, lform, filter);
     }
 
     /*non-public*/ static
