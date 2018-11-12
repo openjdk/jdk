@@ -235,8 +235,8 @@ public class except003 {
 
         // Check ClassNotFoundException (negative):
         try {
-//          trash = Class.forName("nsk.stress.except.except003.except003$Abra$Cadabra"); //   correct - should pass
-            trash = Class.forName("nsk.stress.except.except003.except003.Abra.Cadabra"); // incorrect - should fail
+//          trash = Class.forName("nsk.stress.except.except003$Abra$Cadabra"); //   correct - should pass
+            trash = Class.forName("nsk.stress.except.except003.Abra.Cadabra"); // incorrect - should fail
             log[messages++] = "Failure: ClassNotFoundException (negative)";
             exitCode = 2;
         } catch (ClassNotFoundException cnfe) {
