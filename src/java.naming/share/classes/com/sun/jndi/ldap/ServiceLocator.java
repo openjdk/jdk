@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
 
 package com.sun.jndi.ldap;
 
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Random;
-import java.util.StringTokenizer;
-import java.util.List;
+import java.util.*;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -101,6 +97,23 @@ class ServiceLocator {
             }
         }
         return (domain.length() != 0) ? domain.toString() : null;
+    }
+
+    /**
+     * Locates the LDAP service for a given domain.
+     * Queries DNS for a list of LDAP Service Location Records (SRV) for a
+     * given domain name.
+     *
+     * @param domainName A string domain name.
+     * @param environment The possibly null environment of the context.
+     * @return An ordered list of hostports for the LDAP service or null if
+     *         the service has not been located.
+     */
+    static String[] getLdapService(String domainName, Map<?,?> environment) {
+        if (environment instanceof Hashtable) {
+            return getLdapService(domainName, (Hashtable)environment);
+        }
+        return getLdapService(domainName, new Hashtable<>(environment));
     }
 
     /**
