@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@
  *     <li><a href="http://www.w3.org/TR/xmlschema-2/#QName">
  *             XML Schema Part2: Datatypes specification</a>
  *     </li>
- *     <li><a href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
+ *     <li><a href="https://www.w3.org/TR/REC-xml-names/">
  *             Namespaces in XML</a>
  *     </li>
- *     <li><a href="http://www.w3.org/XML/xml-names-19990114-errata">
+ *     <li><a href="https://www.w3.org/XML/xml-names-19990114-errata.html">
  *             Namespaces in XML Errata</a>
  *     </li>
  * </ul>

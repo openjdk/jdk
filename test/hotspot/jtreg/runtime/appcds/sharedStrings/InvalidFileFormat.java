@@ -27,13 +27,9 @@
  * @summary Check most common errors in file format
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run driver InvalidFileFormat
- * @run main/othervm -XX:+UseStringDeduplication InvalidFileFormat
- * @run main/othervm -XX:-CompactStrings InvalidFileFormat
  */
 
 import java.io.File;
@@ -46,6 +42,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 // the previledge person in the server environment.
 public class InvalidFileFormat {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, InvalidFileFormat::test);
+    }
+
+    public static void test(String[] args) throws Exception {
         SharedStringsUtils.buildJar("HelloString");
 
         test("NonExistentFile.txt", "Unable to get hashtable dump file size");

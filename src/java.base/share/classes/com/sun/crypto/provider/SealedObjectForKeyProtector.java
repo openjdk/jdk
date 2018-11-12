@@ -25,7 +25,7 @@
 
 package com.sun.crypto.provider;
 
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 
 import java.io.*;
 import java.security.*;

@@ -485,7 +485,10 @@ endef
 # ALL_NAMED_TESTS is defined in FindTests.gmk
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
 ALL_TEST_TARGETS := $(addprefix test-, $(ALL_NAMED_TESTS))
-ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_NAMED_TESTS))
+
+# We only support the "exploded-test-gtest" shortcut
+ALL_EXPLODED_TESTS := gtest
+ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_EXPLODED_TESTS))
 
 ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
@@ -687,16 +690,17 @@ else
   # copied and processed.
   java.desktop-gensrc-src: java.base-gensrc java.base-copy
 
-  # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
-  # needs classes from the current JDK.
-  jdk.internal.vm.ci-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.ci))
+  # The annotation processing for jdk.internal.vm.compiler
+  # and jdk.internal.vm.compiler.management needs classes from the current JDK.
   jdk.internal.vm.compiler-gensrc-src: $(addsuffix -java, \
       $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
+  jdk.internal.vm.compiler.management-gensrc-src: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler.management))
 
-  # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
+  # For these modules, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
   jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
+  jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
 
   jdk.jdeps-gendata: java rmic
 
@@ -852,7 +856,7 @@ else
 
   # Declare dependency for all generated test targets
   $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
-  $(foreach t, $(filter-out exploded-test-make%, $(ALL_EXPLODED_TEST_TARGETS)), $(eval $t: exploded-image test-image))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
@@ -1054,9 +1058,7 @@ ALL_TARGETS += default jdk images docs bundles all
 
 # Let "run-test" be an alias for "test"
 $(foreach t, $(ALL_NAMED_TESTS), $(eval run-test-$t: test-$t))
-$(foreach t, $(ALL_NAMED_TESTS), $(eval exploded-run-test-$t: exploded-test-$t))
-RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS)) \
-    $(addprefix exploded-run-test-, $(ALL_NAMED_TESTS))
+RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
 
 run-test: test
 exploded-run-test: exploded-test

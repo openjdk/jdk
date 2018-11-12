@@ -48,7 +48,7 @@ import org.w3c.dom.DOMException;
 /**
  * The <code>XPathExpression</code> interface represents a parsed and resolved
  * XPath expression.
- * <p>See also the <a href='http://www.w3.org/2002/08/WD-DOM-Level-3-XPath-20020820'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
  */
 public interface XPathExpression {
     /**

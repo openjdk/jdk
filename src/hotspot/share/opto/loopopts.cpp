@@ -129,7 +129,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node *y = x->Identity(&_igvn);
+      Node *y = _igvn.apply_identity(x);
       if (y != x) {
         wins++;
         x = y;

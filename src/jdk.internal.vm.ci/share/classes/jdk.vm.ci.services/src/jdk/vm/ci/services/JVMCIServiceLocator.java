@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@ package jdk.vm.ci.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-
-import jdk.vm.ci.services.internal.ReflectionAccessJDK;
 
 /**
  * Service-provider class for the runtime to locate providers of JVMCI services where the latter are
@@ -61,7 +59,7 @@ public abstract class JVMCIServiceLocator {
     protected JVMCIServiceLocator() {
         this(checkPermission());
         Services.checkJVMCIEnabled();
-        ReflectionAccessJDK.openJVMCITo(getClass());
+        Services.openJVMCITo(getClass().getModule());
     }
 
     /**

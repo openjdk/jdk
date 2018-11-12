@@ -30,9 +30,11 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/compile.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/macros.hpp"
 
@@ -594,8 +596,6 @@ void G1BarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* off
 
 Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   DecoratorSet decorators = access.decorators();
-  GraphKit* kit = access.kit();
-
   Node* adr = access.addr().node();
   Node* obj = access.base();
 
@@ -606,7 +606,8 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
   bool need_cpu_mem_bar = !is_unordered || mismatched || !in_heap;
 
-  Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : kit->top();
+  Node* top = Compile::current()->top();
+  Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
   Node* load = CardTableBarrierSetC2::load_at_resolved(access, val_type);
 
   // If we are reading the value of the referent field of a Reference
@@ -616,11 +617,15 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
   bool need_read_barrier = in_heap && (on_weak ||
-                                       (unknown && offset != kit->top() && obj != kit->top()));
+                                       (unknown && offset != top && obj != top));
 
   if (!access.is_oop() || !need_read_barrier) {
     return load;
   }
+
+  assert(access.is_parse_access(), "entry not supported at optimization time");
+  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+  GraphKit* kit = parse_access.kit();
 
   if (on_weak) {
     // Use the pre-barrier to record the value in the referent field
@@ -770,3 +775,68 @@ Node* G1BarrierSetC2::step_over_gc_barrier(Node* c) const {
   }
   return c;
 }
+
+#ifdef ASSERT
+void G1BarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
+  if (phase != BarrierSetC2::BeforeCodeGen) {
+    return;
+  }
+  // Verify G1 pre-barriers
+  const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+
+  ResourceArea *area = Thread::current()->resource_area();
+  Unique_Node_List visited(area);
+  Node_List worklist(area);
+  // We're going to walk control flow backwards starting from the Root
+  worklist.push(compile->root());
+  while (worklist.size() > 0) {
+    Node* x = worklist.pop();
+    if (x == NULL || x == compile->top()) continue;
+    if (visited.member(x)) {
+      continue;
+    } else {
+      visited.push(x);
+    }
+
+    if (x->is_Region()) {
+      for (uint i = 1; i < x->req(); i++) {
+        worklist.push(x->in(i));
+      }
+    } else {
+      worklist.push(x->in(0));
+      // We are looking for the pattern:
+      //                            /->ThreadLocal
+      // If->Bool->CmpI->LoadB->AddP->ConL(marking_offset)
+      //              \->ConI(0)
+      // We want to verify that the If and the LoadB have the same control
+      // See GraphKit::g1_write_barrier_pre()
+      if (x->is_If()) {
+        IfNode *iff = x->as_If();
+        if (iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+          CmpNode *cmp = iff->in(1)->in(1)->as_Cmp();
+          if (cmp->Opcode() == Op_CmpI && cmp->in(2)->is_Con() && cmp->in(2)->bottom_type()->is_int()->get_con() == 0
+              && cmp->in(1)->is_Load()) {
+            LoadNode* load = cmp->in(1)->as_Load();
+            if (load->Opcode() == Op_LoadB && load->in(2)->is_AddP() && load->in(2)->in(2)->Opcode() == Op_ThreadLocal
+                && load->in(2)->in(3)->is_Con()
+                && load->in(2)->in(3)->bottom_type()->is_intptr_t()->get_con() == marking_offset) {
+
+              Node* if_ctrl = iff->in(0);
+              Node* load_ctrl = load->in(0);
+
+              if (if_ctrl != load_ctrl) {
+                // Skip possible CProj->NeverBranch in infinite loops
+                if ((if_ctrl->is_Proj() && if_ctrl->Opcode() == Op_CProj)
+                    && (if_ctrl->in(0)->is_MultiBranch() && if_ctrl->in(0)->Opcode() == Op_NeverBranch)) {
+                  if_ctrl = if_ctrl->in(0)->in(0);
+                }
+              }
+              assert(load_ctrl != NULL && if_ctrl == load_ctrl, "controls must match");
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif

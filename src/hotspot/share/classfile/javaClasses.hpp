@@ -912,6 +912,7 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop queue(oop ref);
   static inline void set_queue(oop ref, oop value);
   static bool is_referent_field(oop obj, ptrdiff_t offset);
+  static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
 };
 
@@ -1185,7 +1186,7 @@ public:
   static void         set_target(          oop site, oop target);
   static void         set_target_volatile( oop site, oop target);
 
-  static oop              context(oop site);
+  static oop context_no_keepalive(oop site);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1239,8 +1240,6 @@ class java_security_AccessControlContext: AllStatic {
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
-
-  static bool is_authorized(Handle context);
 
   // Debugging/initialization
   friend class JavaClasses;
@@ -1314,8 +1313,6 @@ class java_lang_System : AllStatic {
   static int  in_offset_in_bytes();
   static int out_offset_in_bytes();
   static int err_offset_in_bytes();
-
-  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;

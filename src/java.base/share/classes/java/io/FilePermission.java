@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.util.StringJoiner;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.internal.misc.JavaIOFilePermissionAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaIOFilePermissionAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.FilePermCompat;

@@ -30,6 +30,8 @@ import sun.invoke.util.Wrapper;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.invoke.LambdaForm.*;
@@ -86,7 +88,8 @@ class LambdaFormEditor {
                 LOCAL_TYPES = 14,
                 FOLD_SELECT_ARGS = 15,
                 FOLD_SELECT_ARGS_TO_VOID = 16,
-                FILTER_SELECT_ARGS = 17;
+                FILTER_SELECT_ARGS = 17,
+                REPEAT_FILTER_ARGS = 18;
 
         private static final boolean STRESS_TEST = false; // turn on to disable most packing
         private static final int
@@ -640,6 +643,104 @@ class LambdaFormEditor {
         form = makeArgumentCombinationForm(pos, filterType, false, false);
         return putInCache(key, form);
     }
+
+    /**
+     * This creates a LF that will repeatedly invoke some unary filter function
+     * at each of the given positions. This allows fewer LFs and BMH species
+     * classes to be generated in typical cases compared to building up the form
+     * by reapplying of {@code filterArgumentForm(int,BasicType)}, and should do
+     * no worse in the worst case.
+     */
+    LambdaForm filterRepeatedArgumentForm(BasicType newType, int... argPositions) {
+        assert (argPositions.length > 1);
+        byte[] keyArgs = new byte[argPositions.length + 2];
+        keyArgs[0] = Transform.REPEAT_FILTER_ARGS;
+        keyArgs[argPositions.length + 1] = (byte)newType.ordinal();
+        for (int i = 0; i < argPositions.length; i++) {
+            keyArgs[i + 1] = (byte)argPositions[i];
+        }
+        Transform key = new Transform(keyArgs);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity &&
+                    formParametersMatch(form, newType, argPositions));
+            return form;
+        }
+        BasicType oldType = lambdaForm.parameterType(argPositions[0]);
+        MethodType filterType = MethodType.methodType(oldType.basicTypeClass(),
+                newType.basicTypeClass());
+        form = makeRepeatedFilterForm(filterType, argPositions);
+        assert (formParametersMatch(form, newType, argPositions));
+        return putInCache(key, form);
+    }
+
+    private boolean formParametersMatch(LambdaForm form, BasicType newType, int... argPositions) {
+        for (int i : argPositions) {
+            if (form.parameterType(i) != newType) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private LambdaForm makeRepeatedFilterForm(MethodType combinerType, int... positions) {
+        assert (combinerType.parameterCount() == 1 &&
+                combinerType == combinerType.basicType() &&
+                combinerType.returnType() != void.class);
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        BoundMethodHandle.SpeciesData oldData = oldSpeciesData();
+        BoundMethodHandle.SpeciesData newData = newSpeciesData(L_TYPE);
+
+        // The newly created LF will run with a different BMH.
+        // Switch over any pre-existing BMH field references to the new BMH class.
+        Name oldBaseAddress = lambdaForm.parameter(0);  // BMH holding the values
+        buf.replaceFunctions(oldData.getterFunctions(), newData.getterFunctions(), oldBaseAddress);
+        Name newBaseAddress = oldBaseAddress.withConstraint(newData);
+        buf.renameParameter(0, newBaseAddress);
+
+        // Insert the new expressions at the end
+        int exprPos = lambdaForm.arity();
+        Name getCombiner = new Name(newData.getterFunction(oldData.fieldCount()), newBaseAddress);
+        buf.insertExpression(exprPos++, getCombiner);
+
+        // After inserting expressions, we insert parameters in order
+        // from lowest to highest, simplifying the calculation of where parameters
+        // and expressions are
+        var newParameters = new TreeMap<Name, Integer>(new Comparator<>() {
+            public int compare(Name n1, Name n2) {
+                return n1.index - n2.index;
+            }
+        });
+
+        // Insert combiner expressions in reverse order so that the invocation of
+        // the resulting form will invoke the combiners in left-to-right order
+        for (int i = positions.length - 1; i >= 0; --i) {
+            int pos = positions[i];
+            assert (pos > 0 && pos <= MethodType.MAX_JVM_ARITY && pos < lambdaForm.arity);
+
+            Name newParameter = new Name(pos, basicType(combinerType.parameterType(0)));
+            Object[] combinerArgs = {getCombiner, newParameter};
+
+            Name callCombiner = new Name(combinerType, combinerArgs);
+            buf.insertExpression(exprPos++, callCombiner);
+            newParameters.put(newParameter, exprPos);
+        }
+
+        // Mix in new parameters from left to right in the buffer (this doesn't change
+        // execution order
+        int offset = 0;
+        for (var entry : newParameters.entrySet()) {
+            Name newParameter = entry.getKey();
+            int from = entry.getValue();
+            buf.insertParameter(newParameter.index() + 1 + offset, newParameter);
+            buf.replaceParameterByCopy(newParameter.index() + offset, from + offset);
+            offset++;
+        }
+        return buf.endEdit();
+    }
+
 
     private LambdaForm makeArgumentCombinationForm(int pos,
                                                    MethodType combinerType,

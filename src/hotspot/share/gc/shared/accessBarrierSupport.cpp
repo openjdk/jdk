@@ -28,8 +28,16 @@
 #include "oops/access.hpp"
 
 DecoratorSet AccessBarrierSupport::resolve_unknown_oop_ref_strength(DecoratorSet decorators, oop base, ptrdiff_t offset) {
+  // Note that the referent in a FinalReference is technically not strong.
+  // However, it always behaves like one in practice. The two cases are:
+  //   1) A mutator calls Reference.get(). However, a mutator can only ever
+  //      see inactive FinalReferences, whose referents really are strong.
+  //   2) A GC heap walking operation. In this case the GC can see active
+  //      FinalReferences, but the GC always wants to follow the referent
+  //      as if it was strong.
   DecoratorSet ds = decorators & ~ON_UNKNOWN_OOP_REF;
-  if (!java_lang_ref_Reference::is_referent_field(base, offset)) {
+  if (!java_lang_ref_Reference::is_referent_field(base, offset) ||
+      java_lang_ref_Reference::is_final(base)) {
     ds |= ON_STRONG_OOP_REF;
   } else if (java_lang_ref_Reference::is_phantom(base)) {
     ds |= ON_PHANTOM_OOP_REF;

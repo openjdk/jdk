@@ -3,9 +3,7 @@
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,6 +19,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for North and Central America and environs
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -71,7 +71,7 @@
 #
 # Most of the US soon followed suit.  See:
 # Bartky IR. The adoption of standard time. Technol Cult 1989 Jan;30(1):25-56.
-# http://dx.doi.org/10.2307/3105430
+# https://dx.doi.org/10.2307/3105430
 
 # From Paul Eggert (2005-04-16):
 # That 1883 transition occurred at 12:00 new time, not at 12:00 old time.
@@ -460,6 +460,19 @@ Zone America/North_Dakota/Beulah -6:47:07 - LMT	1883 Nov 18 12:12:53
 # western South Dakota, far western Texas (El Paso County, Hudspeth County,
 # and Pine Springs and Nickel Creek in Culberson County), Utah, Wyoming
 #
+# From Paul Eggert (2018-10-25):
+# On 1921-03-04 federal law placed all of Texas into the central time zone.
+# However, El Paso ignored the law for decades and continued to observe
+# mountain time, on the grounds that that's what they had always done
+# and they weren't about to let the federal government tell them what to do.
+# Eventually the federal government gave in and changed the law on
+# 1970-04-10 to match what El Paso was actually doing.  Although
+# that's slightly after our 1970 cutoff, there is no need to create a
+# separate zone for El Paso since they were ignoring the law anyway.  See:
+# Long T. El Pasoans were time rebels, fought to stay in Mountain zone.
+# El Paso Times. 2018-10-24 06:40 -06.
+# https://www.elpasotimes.com/story/news/local/el-paso/2018/10/24/el-pasoans-were-time-rebels-fought-stay-mountain-zone/1744509002/
+#
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	Denver	1920	1921	-	Mar	lastSun	2:00	1:00	D
 Rule	Denver	1920	only	-	Oct	lastSun	2:00	0	S
@@ -729,9 +742,7 @@ Zone America/Adak	 12:13:22 -	LMT	1867 Oct 19 12:44:35
 Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00
 			-10:30	-	HST	1933 Apr 30  2:00
 			-10:30	1:00	HDT	1933 May 21 12:00
-			-10:30	-	HST	1942 Feb  9  2:00
-			-10:30	1:00	HDT	1945 Sep 30  2:00
-			-10:30	-	HST	1947 Jun  8  2:00
+			-10:30	US	H%sT	1947 Jun  8  2:00
 			-10:00	-	HST
 
 # Now we turn to US areas that have diverged from the consensus since 1970.

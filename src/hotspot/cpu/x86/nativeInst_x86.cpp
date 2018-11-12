@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/oop.inline.hpp"
@@ -257,8 +258,8 @@ void NativeCall::set_destination_mt_safe(address dest) {
   debug_only(verify());
   // Make sure patching code is locked.  No two threads can patch at the same
   // time but one may be executing this code.
-  assert(Patching_lock->is_locked() ||
-         SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
+  assert(Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint() ||
+         CompiledICLocker::is_safe(instruction_address()), "concurrent code patching");
   // Both C1 and C2 should now be generating code which aligns the patched address
   // to be within a single cache line.
   bool is_aligned = ((uintptr_t)displacement_address() + 0) / cache_line_size ==

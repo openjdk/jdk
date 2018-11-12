@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
  * @bug 4628726
  * @summary Test class redefinition at each event cross tested with other tests
  * @author Robert Field
- *
- * @modules java.corba
- *          jdk.jdi
  *
  * @run build TestScaffold VMConnection TargetAdapter TargetListener
  * @run compile -g AccessSpecifierTest.java

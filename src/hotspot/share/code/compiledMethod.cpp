@@ -27,6 +27,8 @@
 #include "code/compiledMethod.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/gcBehaviours.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -37,16 +39,29 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments)
+CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout,
+                               int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps,
+                               bool caller_must_gc_arguments)
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
-  _mark_for_deoptimization_status(not_marked), _method(method) {
+    _mark_for_deoptimization_status(not_marked),
+    _is_unloading_state(0),
+    _method(method)
+{
   init_defaults();
+  clear_unloading_state();
 }
 
-CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments)
-  : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
-  _mark_for_deoptimization_status(not_marked), _method(method) {
+CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, int size,
+                               int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size,
+                               OopMapSet* oop_maps, bool caller_must_gc_arguments)
+  : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
+             frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
+    _mark_for_deoptimization_status(not_marked),
+    _is_unloading_state(0),
+    _method(method)
+{
   init_defaults();
+  clear_unloading_state();
 }
 
 void CompiledMethod::init_defaults() {
@@ -54,7 +69,6 @@ void CompiledMethod::init_defaults() {
   _has_method_handle_invokes  = 0;
   _lazy_critical_native       = 0;
   _has_wide_vectors           = 0;
-  _unloading_clock            = 0;
 }
 
 bool CompiledMethod::is_method_handle_return(address return_pc) {
@@ -89,34 +103,84 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 
+ExceptionCache* CompiledMethod::exception_cache_acquire() const {
+  return OrderAccess::load_acquire(&_exception_cache);
+}
+
 void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
   assert(new_entry != NULL,"Must be non null");
   assert(new_entry->next() == NULL, "Must be null");
 
-  ExceptionCache *ec = exception_cache();
-  if (ec != NULL) {
-    new_entry->set_next(ec);
+  for (;;) {
+    ExceptionCache *ec = exception_cache();
+    if (ec != NULL) {
+      Klass* ex_klass = ec->exception_type();
+      if (!ex_klass->is_loader_alive()) {
+        // We must guarantee that entries are not inserted with new next pointer
+        // edges to ExceptionCache entries with dead klasses, due to bad interactions
+        // with concurrent ExceptionCache cleanup. Therefore, the inserts roll
+        // the head pointer forward to the first live ExceptionCache, so that the new
+        // next pointers always point at live ExceptionCaches, that are not removed due
+        // to concurrent ExceptionCache cleanup.
+        ExceptionCache* next = ec->next();
+        if (Atomic::cmpxchg(next, &_exception_cache, ec) == ec) {
+          CodeCache::release_exception_cache(ec);
+        }
+        continue;
+      }
+      ec = exception_cache();
+      if (ec != NULL) {
+        new_entry->set_next(ec);
+      }
+    }
+    if (Atomic::cmpxchg(new_entry, &_exception_cache, ec) == ec) {
+      return;
+    }
   }
-  release_set_exception_cache(new_entry);
 }
 
 void CompiledMethod::clean_exception_cache() {
+  // For each nmethod, only a single thread may call this cleanup function
+  // at the same time, whether called in STW cleanup or concurrent cleanup.
+  // Note that if the GC is processing exception cache cleaning in a concurrent phase,
+  // then a single writer may contend with cleaning up the head pointer to the
+  // first ExceptionCache node that has a Klass* that is alive. That is fine,
+  // as long as there is no concurrent cleanup of next pointers from concurrent writers.
+  // And the concurrent writers do not clean up next pointers, only the head.
+  // Also note that concurent readers will walk through Klass* pointers that are not
+  // alive. That does not cause ABA problems, because Klass* is deleted after
+  // a handshake with all threads, after all stale ExceptionCaches have been
+  // unlinked. That is also when the CodeCache::exception_cache_purge_list()
+  // is deleted, with all ExceptionCache entries that were cleaned concurrently.
+  // That similarly implies that CAS operations on ExceptionCache entries do not
+  // suffer from ABA problems as unlinking and deletion is separated by a global
+  // handshake operation.
   ExceptionCache* prev = NULL;
-  ExceptionCache* curr = exception_cache();
+  ExceptionCache* curr = exception_cache_acquire();
 
   while (curr != NULL) {
     ExceptionCache* next = curr->next();
 
-    Klass* ex_klass = curr->exception_type();
-    if (ex_klass != NULL && !ex_klass->is_loader_alive()) {
+    if (!curr->exception_type()->is_loader_alive()) {
       if (prev == NULL) {
-        set_exception_cache(next);
+        // Try to clean head; this is contended by concurrent inserts, that
+        // both lazily clean the head, and insert entries at the head. If
+        // the CAS fails, the operation is restarted.
+        if (Atomic::cmpxchg(next, &_exception_cache, curr) != curr) {
+          prev = NULL;
+          curr = exception_cache_acquire();
+          continue;
+        }
       } else {
+        // It is impossible to during cleanup connect the next pointer to
+        // an ExceptionCache that has not been published before a safepoint
+        // prior to the cleanup. Therefore, release is not required.
         prev->set_next(next);
       }
-      delete curr;
       // prev stays the same.
+
+      CodeCache::release_exception_cache(curr);
     } else {
       prev = curr;
     }
@@ -131,7 +195,7 @@ address CompiledMethod::handler_for_exception_and_pc(Handle exception, address p
   // We never grab a lock to read the exception cache, so we may
   // have false negatives. This is okay, as it can only happen during
   // the first few exception lookups for a given nmethod.
-  ExceptionCache* ec = exception_cache();
+  ExceptionCache* ec = exception_cache_acquire();
   while (ec != NULL) {
     address ret_val;
     if ((ret_val = ec->match(exception,pc)) != NULL) {
@@ -158,13 +222,11 @@ void CompiledMethod::add_handler_for_exception_and_pc(Handle exception, address 
   }
 }
 
-//-------------end of code for ExceptionCache--------------
-
 // private method for handling exception cache
 // These methods are private, and used to manipulate the exception cache
 // directly.
 ExceptionCache* CompiledMethod::exception_cache_entry_for_exception(Handle exception) {
-  ExceptionCache* ec = exception_cache();
+  ExceptionCache* ec = exception_cache_acquire();
   while (ec != NULL) {
     if (ec->match_exception_with_space(exception)) {
       return ec;
@@ -173,6 +235,8 @@ ExceptionCache* CompiledMethod::exception_cache_entry_for_exception(Handle excep
   }
   return NULL;
 }
+
+//-------------end of code for ExceptionCache--------------
 
 bool CompiledMethod::is_at_poll_return(address pc) {
   RelocIterator iter(this, pc, pc+1);
@@ -229,6 +293,20 @@ address CompiledMethod::oops_reloc_begin() const {
   // first few bytes.  If an oop in the old code was there, that oop
   // should not get GC'd.  Skip the first few bytes of oops on
   // not-entrant methods.
+  if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+      code_begin() + frame_complete_offset() >
+      verified_entry_point() + NativeJump::instruction_size)
+  {
+    // If we have a frame_complete_offset after the native jump, then there
+    // is no point trying to look for oops before that. This is a requirement
+    // for being allowed to scan oops concurrently.
+    return code_begin() + frame_complete_offset();
+  }
+
+  // It is not safe to read oops concurrently using entry barriers, if their
+  // location depend on whether the nmethod is entrant or not.
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() == NULL, "Not safe oop scan");
+
   address low_boundary = verified_entry_point();
   if (!is_in_use() && is_nmethod()) {
     low_boundary += NativeJump::instruction_size;
@@ -324,7 +402,7 @@ void CompiledMethod::clear_inline_caches() {
 
 // Clear ICStubs of all compiled ICs
 void CompiledMethod::clear_ic_stubs() {
-  assert_locked_or_safepoint(CompiledIC_lock);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
   RelocIterator iter(this);
   while(iter.next()) {
@@ -385,26 +463,6 @@ void CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
   ic->set_to_clean();
 }
 
-unsigned char CompiledMethod::_global_unloading_clock = 0;
-
-void CompiledMethod::increase_unloading_clock() {
-  _global_unloading_clock++;
-  if (_global_unloading_clock == 0) {
-    // _nmethods are allocated with _unloading_clock == 0,
-    // so 0 is never used as a clock value.
-    _global_unloading_clock = 1;
-  }
-}
-
-void CompiledMethod::set_unloading_clock(unsigned char unloading_clock) {
-  OrderAccess::release_store(&_unloading_clock, unloading_clock);
-}
-
-unsigned char CompiledMethod::unloading_clock() {
-  return OrderAccess::load_acquire(&_unloading_clock);
-}
-
-
 // static_stub_Relocations may have dangling references to
 // nmethods so trim them out here.  Otherwise it looks like
 // compiled code is maintaining a link to dead metadata.
@@ -438,84 +496,30 @@ void CompiledMethod::clean_ic_stubs() {
 #endif
 }
 
-// This is called at the end of the strong tracing/marking phase of a
-// GC to unload an nmethod if it contains otherwise unreachable
-// oops.
-
-void CompiledMethod::do_unloading(BoolObjectClosure* is_alive) {
-  // Make sure the oop's ready to receive visitors
-  assert(!is_zombie() && !is_unloaded(),
-         "should not call follow on zombie or unloaded nmethod");
-
-  address low_boundary = oops_reloc_begin();
-
-  if (do_unloading_oops(low_boundary, is_alive)) {
-    return;
-  }
-
-#if INCLUDE_JVMCI
-  if (do_unloading_jvmci()) {
-    return;
-  }
-#endif
-
-  // Cleanup exception cache and inline caches happens
-  // after all the unloaded methods are found.
-}
-
 // Clean references to unloaded nmethods at addr from this one, which is not unloaded.
 template <class CompiledICorStaticCall>
-static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from,
-                                         bool parallel, bool clean_all) {
+static void clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from,
+                                         bool clean_all) {
   // Ok, to lookup references to zombies here
   CodeBlob *cb = CodeCache::find_blob_unsafe(addr);
   CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
   if (nm != NULL) {
-    if (parallel && nm->unloading_clock() != CompiledMethod::global_unloading_clock()) {
-      // The nmethod has not been processed yet.
-      return true;
-    }
-
     // Clean inline caches pointing to both zombie and not_entrant methods
-    if (clean_all || !nm->is_in_use() || (nm->method()->code() != nm)) {
+    if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
       ic->set_to_clean(from->is_alive());
       assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", p2i(from), from->method()->name_and_sig_as_C_string());
     }
   }
-
-  return false;
 }
 
-static bool clean_if_nmethod_is_unloaded(CompiledIC *ic, CompiledMethod* from,
-                                         bool parallel, bool clean_all = false) {
-  return clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), from, parallel, clean_all);
+static void clean_if_nmethod_is_unloaded(CompiledIC *ic, CompiledMethod* from,
+                                         bool clean_all) {
+  clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), from, clean_all);
 }
 
-static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, CompiledMethod* from,
-                                         bool parallel, bool clean_all = false) {
-  return clean_if_nmethod_is_unloaded(csc, csc->destination(), from, parallel, clean_all);
-}
-
-bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred) {
-  ResourceMark rm;
-
-  // Make sure the oop's ready to receive visitors
-  assert(!is_zombie() && !is_unloaded(),
-         "should not call follow on zombie or unloaded nmethod");
-
-  address low_boundary = oops_reloc_begin();
-
-  if (do_unloading_oops(low_boundary, is_alive)) {
-    return false;
-  }
-
-#if INCLUDE_JVMCI
-  if (do_unloading_jvmci()) {
-    return false;
-  }
-#endif
-
-  return unload_nmethod_caches(/*parallel*/true, unloading_occurred);
+static void clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, CompiledMethod* from,
+                                         bool clean_all) {
+  clean_if_nmethod_is_unloaded(csc, csc->destination(), from, clean_all);
 }
 
 // Cleans caches in nmethods that point to either classes that are unloaded
@@ -525,29 +529,95 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
 // nmethods are unloaded.  Return postponed=true in the parallel case for
 // inline caches found that point to nmethods that are not yet visited during
 // the do_unloading walk.
-bool CompiledMethod::unload_nmethod_caches(bool parallel, bool unloading_occurred) {
+void CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
+  ResourceMark rm;
 
   // Exception cache only needs to be called if unloading occurred
   if (unloading_occurred) {
     clean_exception_cache();
   }
 
-  bool postponed = cleanup_inline_caches_impl(parallel, unloading_occurred, /*clean_all*/false);
+  cleanup_inline_caches_impl(unloading_occurred, false);
 
   // All static stubs need to be cleaned.
   clean_ic_stubs();
 
   // Check that the metadata embedded in the nmethod is alive
   DEBUG_ONLY(metadata_do(check_class));
+}
 
-  return postponed;
+// The _is_unloading_state encodes a tuple comprising the unloading cycle
+// and the result of IsUnloadingBehaviour::is_unloading() fpr that cycle.
+// This is the bit layout of the _is_unloading_state byte: 00000CCU
+// CC refers to the cycle, which has 2 bits, and U refers to the result of
+// IsUnloadingBehaviour::is_unloading() for that unloading cycle.
+
+class IsUnloadingState: public AllStatic {
+  static const uint8_t _is_unloading_mask = 1;
+  static const uint8_t _is_unloading_shift = 0;
+  static const uint8_t _unloading_cycle_mask = 6;
+  static const uint8_t _unloading_cycle_shift = 1;
+
+  static uint8_t set_is_unloading(uint8_t state, bool value) {
+    state &= ~_is_unloading_mask;
+    if (value) {
+      state |= 1 << _is_unloading_shift;
+    }
+    assert(is_unloading(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+  static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
+    state &= ~_unloading_cycle_mask;
+    state |= value << _unloading_cycle_shift;
+    assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+public:
+  static bool is_unloading(uint8_t state) { return (state & _is_unloading_mask) >> _is_unloading_shift == 1; }
+  static uint8_t unloading_cycle(uint8_t state) { return (state & _unloading_cycle_mask) >> _unloading_cycle_shift; }
+
+  static uint8_t create(bool is_unloading, uint8_t unloading_cycle) {
+    uint8_t state = 0;
+    state = set_is_unloading(state, is_unloading);
+    state = set_unloading_cycle(state, unloading_cycle);
+    return state;
+  }
+};
+
+bool CompiledMethod::is_unloading() {
+  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
+  bool state_is_unloading = IsUnloadingState::is_unloading(state);
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
+  if (state_is_unloading) {
+    return true;
+  }
+  if (state_unloading_cycle == CodeCache::unloading_cycle()) {
+    return false;
+  }
+
+  // The IsUnloadingBehaviour is responsible for checking if there are any dead
+  // oops in the CompiledMethod, by calling oops_do on it.
+  state_unloading_cycle = CodeCache::unloading_cycle();
+  state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
+
+  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+
+  return state_is_unloading;
+}
+
+void CompiledMethod::clear_unloading_state() {
+  uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
 }
 
 // Called to clean up after class unloading for live nmethods and from the sweeper
 // for all methods.
-bool CompiledMethod::cleanup_inline_caches_impl(bool parallel, bool unloading_occurred, bool clean_all) {
-  assert_locked_or_safepoint(CompiledIC_lock);
-  bool postponed = false;
+void CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
 
   // Find all calls in an nmethod and clear the ones that point to non-entrant,
@@ -564,55 +634,22 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool parallel, bool unloading_oc
         clean_ic_if_metadata_is_dead(CompiledIC_at(&iter));
       }
 
-      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, parallel, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all);
       break;
 
     case relocInfo::opt_virtual_call_type:
-      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, parallel, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all);
       break;
 
     case relocInfo::static_call_type:
-      postponed |= clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this, parallel, clean_all);
+      clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this, clean_all);
       break;
 
     case relocInfo::oop_type:
-      // handled by do_unloading_oops already
       break;
 
     case relocInfo::metadata_type:
       break; // nothing to do.
-
-    default:
-      break;
-    }
-  }
-
-  return postponed;
-}
-
-void CompiledMethod::do_unloading_parallel_postponed() {
-  ResourceMark rm;
-
-  // Make sure the oop's ready to receive visitors
-  assert(!is_zombie(),
-         "should not call follow on zombie nmethod");
-
-  RelocIterator iter(this, oops_reloc_begin());
-  while(iter.next()) {
-
-    switch (iter.type()) {
-
-    case relocInfo::virtual_call_type:
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, true);
-      break;
-
-    case relocInfo::opt_virtual_call_type:
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, true);
-      break;
-
-    case relocInfo::static_call_type:
-      clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this, true);
-      break;
 
     default:
       break;

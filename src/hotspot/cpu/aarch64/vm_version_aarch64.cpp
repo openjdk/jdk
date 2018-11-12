@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -217,11 +217,6 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
-#ifdef COMPILER2
-    if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
-    }
-#endif
   }
 
   // Cortex A53

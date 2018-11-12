@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package jdk.internal.misc;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.ref.Cleaner;
 import jdk.internal.vm.annotation.ForceInline;
+import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
@@ -3717,6 +3719,29 @@ public final class Unsafe {
     private native boolean unalignedAccess0();
     private native boolean isBigEndian0();
 
+
+    /**
+     * Invokes the given direct byte buffer's cleaner, if any.
+     *
+     * @param directBuffer a direct byte buffer
+     * @throws NullPointerException     if {@code directBuffer} is null
+     * @throws IllegalArgumentException if {@code directBuffer} is non-direct,
+     *                                  or is a {@link java.nio.Buffer#slice slice}, or is a
+     *                                  {@link java.nio.Buffer#duplicate duplicate}
+     */
+    public void invokeCleaner(java.nio.ByteBuffer directBuffer) {
+        if (!directBuffer.isDirect())
+            throw new IllegalArgumentException("buffer is non-direct");
+
+        DirectBuffer db = (DirectBuffer) directBuffer;
+        if (db.attachment() != null)
+            throw new IllegalArgumentException("duplicate or slice");
+
+        Cleaner cleaner = db.cleaner();
+        if (cleaner != null) {
+            cleaner.clean();
+        }
+    }
 
     // The following deprecated methods are used by JSR 166.
 

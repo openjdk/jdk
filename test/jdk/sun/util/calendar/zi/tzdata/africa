@@ -3,9 +3,7 @@
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,6 +19,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for Africa and environs
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -29,7 +29,7 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2017-04-09):
+# From Paul Eggert (2018-05-27):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -74,13 +74,15 @@
 # I vaguely recall 'WAT' also being used for -01 in the past but
 # cannot now come up with solid citations.
 #
-# I invented the following abbreviations; corrections are welcome!
-#	 +02	WAST	West Africa Summer Time (no longer used)
-#	 +03	CAST	Central Africa Summer Time (no longer used)
-#	 +03	SAST	South Africa Summer Time (no longer used)
+# I invented the following abbreviations in the 1990s:
+#	 +02	WAST	West Africa Summer Time
+#	 +03	CAST	Central Africa Summer Time
+#	 +03	SAST	South Africa Summer Time
 #	 +03	EAT	East Africa Time
-# 'EAT' also seems to have caught on; the others are rare but are paired
-# with better-attested non-DST abbreviations.
+# 'EAT' seems to have caught on and is in current timestamps, and though
+# the other abbreviations are rarer and are only in past timestamps,
+# they are paired with better-attested non-DST abbreviations.
+# Corrections are welcome.
 
 # Algeria
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -385,6 +387,13 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 # Eritrea
 # Ethiopia
 # See Africa/Nairobi.
+#
+# Unfortunately tzdb records only Western clock time in use in Ethiopia,
+# as the tzdb format is not up to properly recording a common Ethiopian
+# timekeeping practice that is based on solar time.  See:
+# Mortada D. If you have a meeting in Ethiopia, you'd better double
+# check the time. PRI's The World. 2015-01-30 15:15 -05.
+# https://www.pri.org/stories/2015-01-30/if-you-have-meeting-ethiopia-you-better-double-check-time
 
 # Gabon
 # See Africa/Lagos.
@@ -856,94 +865,61 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # <https://lnt.ma/le-maroc-reculera-dune-heure-le-dimanche-14-juin/> agrees
 # with the patch.
 
-# From Paul Eggert (2015-06-08):
-# For now, guess that later spring and fall transitions will use 2015's rules,
-# and guess that Morocco will switch to standard time at 03:00 the last
-# Sunday before Ramadan, and back to DST at 02:00 the first Sunday after
-# Ramadan.  To implement this, transition dates for 2016 through 2037 were
-# determined by running the following program under GNU Emacs 24.3, with the
-# results integrated by hand into the table below.
-# (let ((islamic-year 1437))
-#   (require 'cal-islam)
-#   (while (< islamic-year 1460)
-#     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (calendar-islamic-to-absolute (list 10 1 islamic-year)))
-#           (sunday 0))
-#       (while (/= sunday (mod (setq a (1- a)) 7)))
-#       (while (/= sunday (mod b 7))
-#         (setq b (1+ b)))
-#       (setq a (calendar-gregorian-from-absolute a))
-#       (setq b (calendar-gregorian-from-absolute b))
-#       (insert
-#        (format
-#         (concat "Rule\tMorocco\t%d\tonly\t-\t%s\t%2d\t 3:00\t0\t-\n"
-#                 "Rule\tMorocco\t%d\tonly\t-\t%s\t%2d\t 2:00\t1:00\tS\n")
-#         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
-#         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
-#     (setq islamic-year (+ 1 islamic-year))))
+# From Mohamed Essedik Najd (2018-10-26):
+# Today, a Moroccan government council approved the perpetual addition
+# of 60 minutes to the regular Moroccan timezone.
+# From Brian Inglis (2018-10-26):
+# http://www.maroc.ma/fr/actualites/le-conseil-de-gouvernement-adopte-un-projet-de-decret-relatif-lheure-legale-stipulant-le
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-
-Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
+Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
 Rule	Morocco	1939	only	-	Nov	19	 0:00	0	-
-Rule	Morocco	1940	only	-	Feb	25	 0:00	1:00	S
+Rule	Morocco	1940	only	-	Feb	25	 0:00	1:00	-
 Rule	Morocco	1945	only	-	Nov	18	 0:00	0	-
-Rule	Morocco	1950	only	-	Jun	11	 0:00	1:00	S
+Rule	Morocco	1950	only	-	Jun	11	 0:00	1:00	-
 Rule	Morocco	1950	only	-	Oct	29	 0:00	0	-
-Rule	Morocco	1967	only	-	Jun	 3	12:00	1:00	S
+Rule	Morocco	1967	only	-	Jun	 3	12:00	1:00	-
 Rule	Morocco	1967	only	-	Oct	 1	 0:00	0	-
-Rule	Morocco	1974	only	-	Jun	24	 0:00	1:00	S
+Rule	Morocco	1974	only	-	Jun	24	 0:00	1:00	-
 Rule	Morocco	1974	only	-	Sep	 1	 0:00	0	-
-Rule	Morocco	1976	1977	-	May	 1	 0:00	1:00	S
+Rule	Morocco	1976	1977	-	May	 1	 0:00	1:00	-
 Rule	Morocco	1976	only	-	Aug	 1	 0:00	0	-
 Rule	Morocco	1977	only	-	Sep	28	 0:00	0	-
-Rule	Morocco	1978	only	-	Jun	 1	 0:00	1:00	S
+Rule	Morocco	1978	only	-	Jun	 1	 0:00	1:00	-
 Rule	Morocco	1978	only	-	Aug	 4	 0:00	0	-
-Rule	Morocco	2008	only	-	Jun	 1	 0:00	1:00	S
+Rule	Morocco	2008	only	-	Jun	 1	 0:00	1:00	-
 Rule	Morocco	2008	only	-	Sep	 1	 0:00	0	-
-Rule	Morocco	2009	only	-	Jun	 1	 0:00	1:00	S
+Rule	Morocco	2009	only	-	Jun	 1	 0:00	1:00	-
 Rule	Morocco	2009	only	-	Aug	21	 0:00	0	-
-Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
+Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	-
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
-Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
+Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	-
 Rule	Morocco	2011	only	-	Jul	31	 0:00	0	-
-Rule	Morocco	2012	2013	-	Apr	lastSun	 2:00	1:00	S
+Rule	Morocco	2012	2013	-	Apr	lastSun	 2:00	1:00	-
 Rule	Morocco	2012	only	-	Jul	20	 3:00	0	-
-Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	S
+Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	-
 Rule	Morocco	2012	only	-	Sep	30	 3:00	0	-
 Rule	Morocco	2013	only	-	Jul	 7	 3:00	0	-
-Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	S
-Rule	Morocco	2013	max	-	Oct	lastSun	 3:00	0	-
-Rule	Morocco	2014	2021	-	Mar	lastSun	 2:00	1:00	S
+Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	-
+Rule	Morocco	2013	2018	-	Oct	lastSun	 3:00	0	-
+Rule	Morocco	2014	2018	-	Mar	lastSun	 2:00	1:00	-
 Rule	Morocco	2014	only	-	Jun	28	 3:00	0	-
-Rule	Morocco	2014	only	-	Aug	 2	 2:00	1:00	S
+Rule	Morocco	2014	only	-	Aug	 2	 2:00	1:00	-
 Rule	Morocco	2015	only	-	Jun	14	 3:00	0	-
-Rule	Morocco	2015	only	-	Jul	19	 2:00	1:00	S
+Rule	Morocco	2015	only	-	Jul	19	 2:00	1:00	-
 Rule	Morocco	2016	only	-	Jun	 5	 3:00	0	-
-Rule	Morocco	2016	only	-	Jul	10	 2:00	1:00	S
+Rule	Morocco	2016	only	-	Jul	10	 2:00	1:00	-
 Rule	Morocco	2017	only	-	May	21	 3:00	0	-
-Rule	Morocco	2017	only	-	Jul	 2	 2:00	1:00	S
+Rule	Morocco	2017	only	-	Jul	 2	 2:00	1:00	-
 Rule	Morocco	2018	only	-	May	13	 3:00	0	-
-Rule	Morocco	2018	only	-	Jun	17	 2:00	1:00	S
-Rule	Morocco	2019	only	-	May	 5	 3:00	0	-
-Rule	Morocco	2019	only	-	Jun	 9	 2:00	1:00	S
-Rule	Morocco	2020	only	-	Apr	19	 3:00	0	-
-Rule	Morocco	2020	only	-	May	24	 2:00	1:00	S
-Rule	Morocco	2021	only	-	Apr	11	 3:00	0	-
-Rule	Morocco	2021	only	-	May	16	 2:00	1:00	S
-Rule	Morocco	2022	only	-	May	 8	 2:00	1:00	S
-Rule	Morocco	2023	only	-	Apr	23	 2:00	1:00	S
-Rule	Morocco	2024	only	-	Apr	14	 2:00	1:00	S
-Rule	Morocco	2025	only	-	Apr	 6	 2:00	1:00	S
-Rule	Morocco	2026	max	-	Mar	lastSun	 2:00	1:00	S
-Rule	Morocco	2036	only	-	Oct	19	 3:00	0	-
-Rule	Morocco	2037	only	-	Oct	 4	 3:00	0	-
+Rule	Morocco	2018	only	-	Jun	17	 2:00	1:00	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
-			 0:00	Morocco	WE%sT	1984 Mar 16
-			 1:00	-	CET	1986
-			 0:00	Morocco	WE%sT
+			 0:00	Morocco	+00/+01	1984 Mar 16
+			 1:00	-	+01	1986
+			 0:00	Morocco	+00/+01	2018 Oct 27
+			 1:00	-	+01
 
 # Western Sahara
 #
@@ -958,7 +934,8 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 			-1:00	-	-01	1976 Apr 14
-			 0:00	Morocco	WE%sT
+			 0:00	Morocco	+00/+01	2018 Oct 27
+			 1:00	-	+01
 
 # Mozambique
 #

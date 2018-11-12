@@ -151,11 +151,19 @@ public:
   // Other clients must use serial iteration.
   template<bool concurrent, bool is_const> class ParState;
 
-  // Block cleanup functions are for the exclusive use of the GC.
-  // Both stop deleting if there is an in-progress concurrent iteration.
-  // Concurrent deletion locks both the _allocation_mutex and the _active_mutex.
-  void delete_empty_blocks_safepoint();
-  void delete_empty_blocks_concurrent();
+  // Service thread cleanup support.
+  // Stops deleting if there is an in-progress concurrent iteration.
+  // Locks both the _allocation_mutex and the _active_mutex, and may
+  // safepoint.  Deletion may be throttled, with only some available
+  // work performed, in order to allow other Service thread subtasks
+  // to run.  Returns true if there may be more work to do, false if
+  // nothing to do.
+  bool delete_empty_blocks();
+
+  // Service thread cleanup support.
+  // Called by the service thread (while holding Service_lock) to test
+  // whether a call to delete_empty_blocks should be made.
+  bool needs_delete_empty_blocks() const;
 
   // Debugging and logging support.
   const char* name() const;
@@ -208,7 +216,9 @@ private:
   const char* _name;
   ActiveArray* _active_array;
   AllocationList _allocation_list;
+AIX_ONLY(public:)               // xlC 12 on AIX doesn't implement C++ DR45.
   Block* volatile _deferred_updates;
+AIX_ONLY(private:)
 
   Mutex* _allocation_mutex;
   Mutex* _active_mutex;
@@ -222,9 +232,18 @@ private:
   // mutable because this gets set even for const iteration.
   mutable int _concurrent_iteration_count;
 
+  volatile uint _needs_cleanup;
+
+  bool try_add_block();
+  Block* block_for_allocation();
+
   Block* find_block_or_null(const oop* ptr) const;
   void delete_empty_block(const Block& block);
   bool reduce_deferred_updates();
+  void notify_needs_cleanup();
+AIX_ONLY(public:)               // xlC 12 on AIX doesn't implement C++ DR45.
+  void record_needs_cleanup();
+AIX_ONLY(private:)
 
   // Managing _active_array.
   bool expand_active_array();

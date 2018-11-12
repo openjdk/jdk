@@ -230,7 +230,7 @@ class Thread implements Runnable {
     private volatile Interruptible blocker;
     private final Object blockerLock = new Object();
 
-    /* Set the blocker field; invoked via jdk.internal.misc.SharedSecrets
+    /* Set the blocker field; invoked via jdk.internal.access.SharedSecrets
      * from java.nio code
      */
     static void blockedOn(Interruptible b) {

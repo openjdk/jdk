@@ -71,7 +71,7 @@ public class VerifyStackTrace {
             "3: VerifyStackTrace$Handle.run(VerifyStackTrace.java:158)\n" +
             "4: VerifyStackTrace.invoke(VerifyStackTrace.java:188)\n" +
             "5: VerifyStackTrace$1.run(VerifyStackTrace.java:218)\n" +
-            "6: java.base/java.security.AccessController.doPrivileged(Native Method)\n" +
+            "6: java.base/java.security.AccessController.doPrivileged(AccessController.java:310)\n" +
             "7: VerifyStackTrace.test(VerifyStackTrace.java:227)\n" +
             "8: VerifyStackTrace.main(VerifyStackTrace.java:182)\n";
 
@@ -105,7 +105,7 @@ public class VerifyStackTrace {
             "7: java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
             "8: java.base/java.lang.reflect.Method.invoke(Method.java:520)\n" +
             "9: VerifyStackTrace$1.run(VerifyStackTrace.java:220)\n" +
-            "10: java.base/java.security.AccessController.doPrivileged(Native Method)\n" +
+            "10: java.base/java.security.AccessController.doPrivileged(AccessController.java:310)\n" +
             "11: VerifyStackTrace.test(VerifyStackTrace.java:229)\n" +
             "12: VerifyStackTrace.main(VerifyStackTrace.java:185)\n";
 
@@ -142,9 +142,10 @@ public class VerifyStackTrace {
             "10: java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
             "11: java.base/java.lang.reflect.Method.invoke(Method.java:520)\n" +
             "12: VerifyStackTrace$1.run(VerifyStackTrace.java:222)\n" +
-            "13: java.base/java.security.AccessController.doPrivileged(Native Method)\n" +
-            "14: VerifyStackTrace.test(VerifyStackTrace.java:231)\n" +
-            "15: VerifyStackTrace.main(VerifyStackTrace.java:188)\n";
+            "13: java.base/java.security.AccessController.executePrivileged(AccessController.java:759)\n" +
+            "14: java.base/java.security.AccessController.doPrivileged(AccessController.java:310)\n" +
+            "15: VerifyStackTrace.test(VerifyStackTrace.java:231)\n" +
+            "16: VerifyStackTrace.main(VerifyStackTrace.java:188)\n";
 
         @Override public StackWalker walker() { return walker;}
         @Override public String description() { return description;}

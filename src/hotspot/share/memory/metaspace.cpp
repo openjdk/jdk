@@ -1260,6 +1260,8 @@ size_t Metaspace::align_word_size_up(size_t word_size) {
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type, TRAPS) {
   assert(!_frozen, "sanity");
+  assert(!(DumpSharedSpaces && THREAD->is_VM_thread()), "sanity");
+
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
     return NULL;  // caller does a CHECK_NULL too
@@ -1277,12 +1279,10 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
-    if (is_init_completed() && !(DumpSharedSpaces && THREAD->is_VM_thread())) {
+    if (is_init_completed()) {
       // Only start a GC if the bootstrapping has completed.
-      // Also, we cannot GC if we are at the end of the CDS dumping stage which runs inside
-      // the VM thread.
-
-      // Try to clean out some memory and retry.
+      // Try to clean out some heap memory and retry. This can prevent premature
+      // expansion of the metaspace.
       result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
     }
   }
@@ -1408,6 +1408,7 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 }
 
 ClassLoaderMetaspace::~ClassLoaderMetaspace() {
+  Metaspace::assert_not_frozen();
   DEBUG_ONLY(Atomic::inc(&g_internal_statistics.num_metaspace_deaths));
   delete _vsm;
   if (Metaspace::using_class_space()) {
@@ -1626,165 +1627,6 @@ class TestMetaspaceUtilsTest : AllStatic {
 void TestMetaspaceUtils_test() {
   TestMetaspaceUtilsTest::test();
 }
-
-class TestVirtualSpaceNodeTest {
-  static void chunk_up(size_t words_left, size_t& num_medium_chunks,
-                                          size_t& num_small_chunks,
-                                          size_t& num_specialized_chunks) {
-    num_medium_chunks = words_left / MediumChunk;
-    words_left = words_left % MediumChunk;
-
-    num_small_chunks = words_left / SmallChunk;
-    words_left = words_left % SmallChunk;
-    // how many specialized chunks can we get?
-    num_specialized_chunks = words_left / SpecializedChunk;
-    assert(words_left % SpecializedChunk == 0, "should be nothing left");
-  }
-
- public:
-  static void test() {
-    MutexLockerEx ml(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-    const size_t vsn_test_size_words = MediumChunk  * 4;
-    const size_t vsn_test_size_bytes = vsn_test_size_words * BytesPerWord;
-
-    // The chunk sizes must be multiples of eachother, or this will fail
-    STATIC_ASSERT(MediumChunk % SmallChunk == 0);
-    STATIC_ASSERT(SmallChunk % SpecializedChunk == 0);
-
-    { // No committed memory in VSN
-      ChunkManager cm(false);
-      VirtualSpaceNode vsn(false, vsn_test_size_bytes);
-      vsn.initialize();
-      vsn.retire(&cm);
-      assert(cm.sum_free_chunks_count() == 0, "did not commit any memory in the VSN");
-    }
-
-    { // All of VSN is committed, half is used by chunks
-      ChunkManager cm(false);
-      VirtualSpaceNode vsn(false, vsn_test_size_bytes);
-      vsn.initialize();
-      vsn.expand_by(vsn_test_size_words, vsn_test_size_words);
-      vsn.get_chunk_vs(MediumChunk);
-      vsn.get_chunk_vs(MediumChunk);
-      vsn.retire(&cm);
-      assert(cm.sum_free_chunks_count() == 2, "should have been memory left for 2 medium chunks");
-      assert(cm.sum_free_chunks() == 2*MediumChunk, "sizes should add up");
-    }
-
-    const size_t page_chunks = 4 * (size_t)os::vm_page_size() / BytesPerWord;
-    // This doesn't work for systems with vm_page_size >= 16K.
-    if (page_chunks < MediumChunk) {
-      // 4 pages of VSN is committed, some is used by chunks
-      ChunkManager cm(false);
-      VirtualSpaceNode vsn(false, vsn_test_size_bytes);
-
-      vsn.initialize();
-      vsn.expand_by(page_chunks, page_chunks);
-      vsn.get_chunk_vs(SmallChunk);
-      vsn.get_chunk_vs(SpecializedChunk);
-      vsn.retire(&cm);
-
-      // committed - used = words left to retire
-      const size_t words_left = page_chunks - SmallChunk - SpecializedChunk;
-
-      size_t num_medium_chunks, num_small_chunks, num_spec_chunks;
-      chunk_up(words_left, num_medium_chunks, num_small_chunks, num_spec_chunks);
-
-      assert(num_medium_chunks == 0, "should not get any medium chunks");
-      assert(cm.sum_free_chunks_count() == (num_small_chunks + num_spec_chunks), "should be space for 3 chunks");
-      assert(cm.sum_free_chunks() == words_left, "sizes should add up");
-    }
-
-    { // Half of VSN is committed, a humongous chunk is used
-      ChunkManager cm(false);
-      VirtualSpaceNode vsn(false, vsn_test_size_bytes);
-      vsn.initialize();
-      vsn.expand_by(MediumChunk * 2, MediumChunk * 2);
-      vsn.get_chunk_vs(MediumChunk + SpecializedChunk); // Humongous chunks will be aligned up to MediumChunk + SpecializedChunk
-      vsn.retire(&cm);
-
-      const size_t words_left = MediumChunk * 2 - (MediumChunk + SpecializedChunk);
-      size_t num_medium_chunks, num_small_chunks, num_spec_chunks;
-      chunk_up(words_left, num_medium_chunks, num_small_chunks, num_spec_chunks);
-
-      assert(num_medium_chunks == 0, "should not get any medium chunks");
-      assert(cm.sum_free_chunks_count() == (num_small_chunks + num_spec_chunks), "should be space for 3 chunks");
-      assert(cm.sum_free_chunks() == words_left, "sizes should add up");
-    }
-
-  }
-
-#define assert_is_available_positive(word_size) \
-  assert(vsn.is_available(word_size), \
-         #word_size ": " PTR_FORMAT " bytes were not available in " \
-         "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-         (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end()));
-
-#define assert_is_available_negative(word_size) \
-  assert(!vsn.is_available(word_size), \
-         #word_size ": " PTR_FORMAT " bytes should not be available in " \
-         "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-         (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end()));
-
-  static void test_is_available_positive() {
-    // Reserve some memory.
-    VirtualSpaceNode vsn(false, os::vm_allocation_granularity());
-    assert(vsn.initialize(), "Failed to setup VirtualSpaceNode");
-
-    // Commit some memory.
-    size_t commit_word_size = os::vm_allocation_granularity() / BytesPerWord;
-    bool expanded = vsn.expand_by(commit_word_size, commit_word_size);
-    assert(expanded, "Failed to commit");
-
-    // Check that is_available accepts the committed size.
-    assert_is_available_positive(commit_word_size);
-
-    // Check that is_available accepts half the committed size.
-    size_t expand_word_size = commit_word_size / 2;
-    assert_is_available_positive(expand_word_size);
-  }
-
-  static void test_is_available_negative() {
-    // Reserve some memory.
-    VirtualSpaceNode vsn(false, os::vm_allocation_granularity());
-    assert(vsn.initialize(), "Failed to setup VirtualSpaceNode");
-
-    // Commit some memory.
-    size_t commit_word_size = os::vm_allocation_granularity() / BytesPerWord;
-    bool expanded = vsn.expand_by(commit_word_size, commit_word_size);
-    assert(expanded, "Failed to commit");
-
-    // Check that is_available doesn't accept a too large size.
-    size_t two_times_commit_word_size = commit_word_size * 2;
-    assert_is_available_negative(two_times_commit_word_size);
-  }
-
-  static void test_is_available_overflow() {
-    // Reserve some memory.
-    VirtualSpaceNode vsn(false, os::vm_allocation_granularity());
-    assert(vsn.initialize(), "Failed to setup VirtualSpaceNode");
-
-    // Commit some memory.
-    size_t commit_word_size = os::vm_allocation_granularity() / BytesPerWord;
-    bool expanded = vsn.expand_by(commit_word_size, commit_word_size);
-    assert(expanded, "Failed to commit");
-
-    // Calculate a size that will overflow the virtual space size.
-    void* virtual_space_max = (void*)(uintptr_t)-1;
-    size_t bottom_to_max = pointer_delta(virtual_space_max, vsn.bottom(), 1);
-    size_t overflow_size = bottom_to_max + BytesPerWord;
-    size_t overflow_word_size = overflow_size / BytesPerWord;
-
-    // Check that is_available can handle the overflow.
-    assert_is_available_negative(overflow_word_size);
-  }
-
-  static void test_is_available() {
-    TestVirtualSpaceNodeTest::test_is_available_positive();
-    TestVirtualSpaceNodeTest::test_is_available_negative();
-    TestVirtualSpaceNodeTest::test_is_available_overflow();
-  }
-};
 
 #endif // !PRODUCT
 

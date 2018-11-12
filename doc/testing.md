@@ -108,11 +108,7 @@ present, then `gtest:all` will be equivalent to `gtest:all/server`.
 
 A handful of odd tests that are not covered by any other testing framework are
 accessible using the `special:` test descriptor. Currently, this includes
-`hotspot-internal`, `failure-handler` and `make`.
-
-  * Hotspot legacy internal testing (run using `-XX:+ExecuteInternalVMTests`)
-    is run using `special:hotspot-internal` or just `hotspot-internal` as test
-    descriptor, and will only work on a debug JVM.
+`failure-handler` and `make`.
 
   * Failure handler testing is run using `special:failure-handler` or just
     `failure-handler` as test descriptor.

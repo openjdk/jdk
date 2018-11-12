@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,10 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
-import jdk.internal.misc.JavaNetHttpCookieAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetHttpCookieAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * An HttpCookie object represents an HTTP cookie, which carries state

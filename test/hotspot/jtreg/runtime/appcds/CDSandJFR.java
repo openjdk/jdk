@@ -30,7 +30,7 @@
  * @modules jdk.jfr
  * @build Hello GetFlightRecorder
  * @run driver ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
- * @run driver CDSandJFR
+ * @run driver/timeout=500 CDSandJFR
  */
 
 import jdk.test.lib.BuildHelper;

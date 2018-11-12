@@ -44,7 +44,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
-#include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -72,8 +71,6 @@
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
-volatile int32_t* os::_mem_serialize_page = NULL;
-uintptr_t         os::_serialize_page_mask = 0;
 volatile unsigned int os::_rand_seed      = 1;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
@@ -1091,14 +1088,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   // Check if addr belongs to a Java thread.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    // Check for privilege stack
-    if (thread->privileged_stack_top() != NULL &&
-        thread->privileged_stack_top()->contains(addr)) {
-      st->print_cr(INTPTR_FORMAT " is pointing into the privilege stack "
-                   "for thread: " INTPTR_FORMAT, p2i(addr), p2i(thread));
-      if (verbose) thread->print_on(st);
-      return;
-    }
     // If the addr is a java thread print information about that.
     if (addr == (address)thread) {
       if (verbose) {
@@ -1358,49 +1347,6 @@ char** os::split_path(const char* path, int* n) {
   FREE_C_HEAP_ARRAY(char, inpath);
   *n = count;
   return opath;
-}
-
-void os::set_memory_serialize_page(address page) {
-  int count = log2_intptr(sizeof(class JavaThread)) - log2_intptr(64);
-  _mem_serialize_page = (volatile int32_t *)page;
-  // We initialize the serialization page shift count here
-  // We assume a cache line size of 64 bytes
-  assert(SerializePageShiftCount == count, "JavaThread size changed; "
-         "SerializePageShiftCount constant should be %d", count);
-  set_serialize_page_mask((uintptr_t)(vm_page_size() - sizeof(int32_t)));
-}
-
-static volatile intptr_t SerializePageLock = 0;
-
-// This method is called from signal handler when SIGSEGV occurs while the current
-// thread tries to store to the "read-only" memory serialize page during state
-// transition.
-void os::block_on_serialize_page_trap() {
-  log_debug(safepoint)("Block until the serialize page permission restored");
-
-  // When VMThread is holding the SerializePageLock during modifying the
-  // access permission of the memory serialize page, the following call
-  // will block until the permission of that page is restored to rw.
-  // Generally, it is unsafe to manipulate locks in signal handlers, but in
-  // this case, it's OK as the signal is synchronous and we know precisely when
-  // it can occur.
-  Thread::muxAcquire(&SerializePageLock, "set_memory_serialize_page");
-  Thread::muxRelease(&SerializePageLock);
-}
-
-// Serialize all thread state variables
-void os::serialize_thread_states() {
-  // On some platforms such as Solaris & Linux, the time duration of the page
-  // permission restoration is observed to be much longer than expected  due to
-  // scheduler starvation problem etc. To avoid the long synchronization
-  // time and expensive page trap spinning, 'SerializePageLock' is used to block
-  // the mutator thread if such case is encountered. See bug 6546278 for details.
-  Thread::muxAcquire(&SerializePageLock, "serialize_thread_states");
-  os::protect_memory((char *)os::get_memory_serialize_page(),
-                     os::vm_page_size(), MEM_PROT_READ);
-  os::protect_memory((char *)os::get_memory_serialize_page(),
-                     os::vm_page_size(), MEM_PROT_RW);
-  Thread::muxRelease(&SerializePageLock);
 }
 
 // Returns true if the current stack pointer is above the stack shadow

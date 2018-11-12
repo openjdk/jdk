@@ -25,7 +25,7 @@
 
 package javax.crypto;
 
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 
 import java.io.*;
 import java.security.AlgorithmParameters;

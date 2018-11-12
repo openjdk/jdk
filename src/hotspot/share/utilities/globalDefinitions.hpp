@@ -164,15 +164,6 @@ const int BitsPerSize_t      = size_tSize * BitsPerByte;
 // Size of a char[] needed to represent a jint as a string in decimal.
 const int jintAsStringSize = 12;
 
-// In fact this should be
-// log2_intptr(sizeof(class JavaThread)) - log2_intptr(64);
-// see os::set_memory_serialize_page()
-#ifdef _LP64
-const int SerializePageShiftCount = 4;
-#else
-const int SerializePageShiftCount = 3;
-#endif
-
 // An opaque struct of heap-word width, so that HeapWord* can be a generic
 // pointer into the heap.  We require that object sizes be measured in
 // units of heap words, so that that
@@ -925,7 +916,6 @@ class LocationValue;
 class ConstantValue;
 class IllegalValue;
 
-class PrivilegedElement;
 class MonitorArray;
 
 class MonitorInfo;

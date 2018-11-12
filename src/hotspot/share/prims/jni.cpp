@@ -86,7 +86,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
-#include "utilities/internalVMTests.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
@@ -3977,9 +3976,6 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
     VMError::test_error_handler();
-    if (ExecuteInternalVMTests) {
-      InternalVMTests::run();
-    }
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.

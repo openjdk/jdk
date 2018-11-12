@@ -61,6 +61,21 @@ class BitMap {
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
+  // Helper for get_next_{zero,one}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  template<bm_word_t flip, bool aligned_right>
+  inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
+
+  // Values for get_next_bit_impl flip parameter.
+  static const bm_word_t find_ones_flip = 0;
+  static const bm_word_t find_zeros_flip = ~(bm_word_t)0;
+
+  // Threshold for performing small range operation, even when large range
+  // operation was requested. Measured in words.
+  static const size_t small_range_words = 32;
+
  protected:
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
@@ -105,6 +120,8 @@ class BitMap {
   void      clear_large_range_of_words (idx_t beg, idx_t end);
 
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
+
+  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
 
   // The index of the first full word in a range.
   idx_t word_index_round_up(idx_t bit) const;

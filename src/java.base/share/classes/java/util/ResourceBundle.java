@@ -66,8 +66,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
-import jdk.internal.misc.JavaUtilResourceBundleAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaUtilResourceBundleAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import sun.security.action.GetPropertyAction;

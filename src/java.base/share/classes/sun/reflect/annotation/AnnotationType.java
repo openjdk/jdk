@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
 
 /**
  * Represents an annotation type at run time.  Used to type-check annotations

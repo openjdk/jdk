@@ -100,8 +100,6 @@ class os: AllStatic {
  private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
-  static volatile int32_t * _mem_serialize_page;
-  static uintptr_t          _serialize_page_mask;
  public:
   static size_t             _page_sizes[page_sizes_max];
 
@@ -419,54 +417,6 @@ class os: AllStatic {
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);
   static bool    is_readable_range(const void* from, const void* to);
-
-  // Routines used to serialize the thread state without using membars
-  static void    serialize_thread_states();
-
-  // Since we write to the serialize page from every thread, we
-  // want stores to be on unique cache lines whenever possible
-  // in order to minimize CPU cross talk.  We pre-compute the
-  // amount to shift the thread* to make this offset unique to
-  // each thread.
-  static int     get_serialize_page_shift_count() {
-    return SerializePageShiftCount;
-  }
-
-  static void     set_serialize_page_mask(uintptr_t mask) {
-    _serialize_page_mask = mask;
-  }
-
-  static unsigned int  get_serialize_page_mask() {
-    return _serialize_page_mask;
-  }
-
-  static void    set_memory_serialize_page(address page);
-
-  static address get_memory_serialize_page() {
-    return (address)_mem_serialize_page;
-  }
-
-  static inline void write_memory_serialize_page(JavaThread *thread) {
-    uintptr_t page_offset = ((uintptr_t)thread >>
-                            get_serialize_page_shift_count()) &
-                            get_serialize_page_mask();
-    *(volatile int32_t *)((uintptr_t)_mem_serialize_page+page_offset) = 1;
-  }
-
-  static bool    is_memory_serialize_page(JavaThread *thread, address addr) {
-    if (UseMembar) return false;
-    // Previously this function calculated the exact address of this
-    // thread's serialize page, and checked if the faulting address
-    // was equal.  However, some platforms mask off faulting addresses
-    // to the page size, so now we just check that the address is
-    // within the page.  This makes the thread argument unnecessary,
-    // but we retain the NULL check to preserve existing behavior.
-    if (thread == NULL) return false;
-    address page = (address) _mem_serialize_page;
-    return addr >= page && addr < (page + os::vm_page_size());
-  }
-
-  static void block_on_serialize_page_trap();
 
   // threads
 

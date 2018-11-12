@@ -285,38 +285,4 @@ public:
   }
 };
 
-template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F> {
- friend class VMStructs;
- protected:
-
-  enum {
-    rehash_count = 100,
-    rehash_multiple = 60
-  };
-
-  // Check that the table is unbalanced
-  bool check_rehash_table(int count);
-
- public:
-  RehashableHashtable(int table_size, int entry_size)
-    : Hashtable<T, F>(table_size, entry_size) { }
-
-  RehashableHashtable(int table_size, int entry_size,
-                   HashtableBucket<F>* buckets, int number_of_entries)
-    : Hashtable<T, F>(table_size, entry_size, buckets, number_of_entries) { }
-
-
-  // Function to move these elements into the new table.
-  void move_to(RehashableHashtable<T, F>* new_table);
-  static bool use_alternate_hashcode();
-  static juint seed();
-
- private:
-  static juint _seed;
-};
-
-template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
-template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::seed() { return _seed; };
-template <class T, MEMFLAGS F> bool  RehashableHashtable<T, F>::use_alternate_hashcode() { return _seed != 0; };
-
 #endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

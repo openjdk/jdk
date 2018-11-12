@@ -127,10 +127,10 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
 }
 
 void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
-  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
   assert(stub != NULL, "stub not found");
+  assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + NativeCall::get_IC_pos_in_java_to_interp_stub());
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());

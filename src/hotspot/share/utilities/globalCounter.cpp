@@ -61,11 +61,6 @@ void GlobalCounter::write_synchronize() {
   // Atomic::add must provide fence since we have storeload dependency.
   uintx gbl_cnt = Atomic::add(COUNTER_INCREMENT, &_global_counter._counter);
 
-  // Handle bootstrap
-  if (Threads::number_of_threads() == 0) {
-    return;
-  }
-
   // Do all RCU threads.
   CounterThreadCheck ctc(gbl_cnt);
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {

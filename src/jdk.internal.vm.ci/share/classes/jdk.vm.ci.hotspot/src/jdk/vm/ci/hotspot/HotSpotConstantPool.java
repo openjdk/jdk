@@ -646,7 +646,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
         }
     }
 
-    /*
+    /**
      * Converts a raw index from the bytecodes to a constant pool index (not a cache index).
      *
      * @param rawIndex index from the bytecode
@@ -760,6 +760,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     /**
      * Determines if {@code type} contains signature polymorphic methods.
      */
+    @SuppressFBWarnings(value = "LI_LAZY_INIT_STATIC", justification = "signaturePolymorphicHolders is a cache, not a singleton that must be constructed exactly once" +
+                    "and compiler re-ordering is not an issue due to the VM call")
     static boolean isSignaturePolymorphicHolder(final ResolvedJavaType type) {
         String name = type.getName();
         if (signaturePolymorphicHolders == null) {

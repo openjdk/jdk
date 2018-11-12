@@ -1302,35 +1302,6 @@ bool MacroAssembler::is_load_from_polling_page(int instruction, void* ucontext,
 #endif
 }
 
-bool MacroAssembler::is_memory_serialization(int instruction, JavaThread* thread, void* ucontext) {
-#ifdef LINUX
-  ucontext_t* uc = (ucontext_t*) ucontext;
-
-  if (is_stwx(instruction) || is_stwux(instruction)) {
-    int ra = inv_ra_field(instruction);
-    int rb = inv_rb_field(instruction);
-
-    // look up content of ra and rb in ucontext
-    address ra_val=(address)uc->uc_mcontext.regs->gpr[ra];
-    long rb_val=(long)uc->uc_mcontext.regs->gpr[rb];
-    return os::is_memory_serialize_page(thread, ra_val+rb_val);
-  } else if (is_stw(instruction) || is_stwu(instruction)) {
-    int ra = inv_ra_field(instruction);
-    int d1 = inv_d1_field(instruction);
-
-    // look up content of ra in ucontext
-    address ra_val=(address)uc->uc_mcontext.regs->gpr[ra];
-    return os::is_memory_serialize_page(thread, ra_val+d1);
-  } else {
-    return false;
-  }
-#else
-  // workaround not needed on !LINUX :-)
-  ShouldNotCallThis();
-  return false;
-#endif
-}
-
 void MacroAssembler::bang_stack_with_offset(int offset) {
   // When increasing the stack, the old stack pointer will be written
   // to the new top of stack according to the PPC64 abi.
@@ -3044,27 +3015,6 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(cont);
   // flag == EQ indicates success
   // flag == NE indicates failure
-}
-
-// Write serialization page so VM thread can do a pseudo remote membar.
-// We use the current thread pointer to calculate a thread specific
-// offset to write to within the page. This minimizes bus traffic
-// due to cache line collision.
-void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register tmp2) {
-  srdi(tmp2, thread, os::get_serialize_page_shift_count());
-
-  int mask = os::vm_page_size() - sizeof(int);
-  if (Assembler::is_simm(mask, 16)) {
-    andi(tmp2, tmp2, mask);
-  } else {
-    lis(tmp1, (int)((signed short) (mask >> 16)));
-    ori(tmp1, tmp1, mask & 0x0000ffff);
-    andr(tmp2, tmp2, tmp1);
-  }
-
-  load_const(tmp1, (long) os::get_memory_serialize_page());
-  release();
-  stwx(R0, tmp1, tmp2);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {

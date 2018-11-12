@@ -2685,33 +2685,6 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
   return 0;
 }
 
-bool MacroAssembler::is_memory_serialization(int instruction, JavaThread* thread, void* ucontext) {
-  ShouldNotCallThis();
-  return false;
-}
-
-// Write serialization page so VM thread can do a pseudo remote membar
-// We use the current thread pointer to calculate a thread specific
-// offset to write to within the page. This minimizes bus traffic
-// due to cache line collision.
-void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register tmp2) {
-  assert_different_registers(tmp1, tmp2);
-  z_sllg(tmp2, thread, os::get_serialize_page_shift_count());
-  load_const_optimized(tmp1, (long) os::get_memory_serialize_page());
-
-  int mask = os::get_serialize_page_mask();
-  if (Immediate::is_uimm16(mask)) {
-    z_nill(tmp2, mask);
-    z_llghr(tmp2, tmp2);
-  } else {
-    z_nilf(tmp2, mask);
-    z_llgfr(tmp2, tmp2);
-  }
-
-  z_release();
-  z_st(Z_R0, 0, tmp2, tmp1);
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
     const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);

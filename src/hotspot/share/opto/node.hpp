@@ -457,9 +457,10 @@ protected:
 
   // Strip away casting.  (It is depth-limited.)
   Node* uncast() const;
-  // Return whether two Nodes are equivalent, after stripping casting
-  // and GC barriers.
-  bool eqv_uncast(const Node* n) const;
+  // Return whether two Nodes are equivalent, after stripping casting.
+  bool eqv_uncast(const Node* n) const {
+    return (this->uncast() == n->uncast());
+  }
 
   // Find out of current node that matches opcode.
   Node* find_out_with(int opcode);

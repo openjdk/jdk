@@ -30,6 +30,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencies.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -60,9 +61,9 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -105,7 +106,6 @@ oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
-LatestMethodCache* Universe::_pd_implies_cache         = NULL;
 LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
 LatestMethodCache* Universe::_do_stack_walk_cache     = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
@@ -229,7 +229,6 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
 
   _finalizer_register_cache->metaspace_pointers_do(it);
   _loader_addClass_cache->metaspace_pointers_do(it);
-  _pd_implies_cache->metaspace_pointers_do(it);
   _throw_illegal_access_error_cache->metaspace_pointers_do(it);
   _do_stack_walk_cache->metaspace_pointers_do(it);
 }
@@ -271,7 +270,6 @@ void Universe::serialize(SerializeClosure* f) {
   f->do_ptr((void**)&_the_empty_instance_klass_array);
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
-  _pd_implies_cache->serialize(f);
   _throw_illegal_access_error_cache->serialize(f);
   _do_stack_walk_cache->serialize(f);
 }
@@ -640,6 +638,10 @@ void* Universe::non_oop_word() {
   return (void*)_non_oop_bits;
 }
 
+static void initialize_global_behaviours() {
+  CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
+}
+
 jint universe_init() {
   assert(!Universe::_fully_initialized, "called after initialize_vtables");
   guarantee(1 << LogHeapWordSize == sizeof(HeapWord),
@@ -651,6 +653,8 @@ jint universe_init() {
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
   JavaClasses::compute_hard_coded_offsets();
+
+  initialize_global_behaviours();
 
   jint status = Universe::initialize_heap();
   if (status != JNI_OK) {
@@ -680,7 +684,6 @@ jint universe_init() {
   // Metaspace::initialize_shared_spaces() tries to populate them.
   Universe::_finalizer_register_cache = new LatestMethodCache();
   Universe::_loader_addClass_cache    = new LatestMethodCache();
-  Universe::_pd_implies_cache         = new LatestMethodCache();
   Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
   Universe::_do_stack_walk_cache = new LatestMethodCache();
 
@@ -933,12 +936,6 @@ void Universe::initialize_known_methods(TRAPS) {
                           SystemDictionary::ClassLoader_klass(),
                           "addClass",
                           vmSymbols::class_void_signature(), false, CHECK);
-
-  // Set up method for checking protection domain
-  initialize_known_method(_pd_implies_cache,
-                          SystemDictionary::ProtectionDomain_klass(),
-                          "impliesCreateAccessControlContext",
-                          vmSymbols::void_boolean_signature(), false, CHECK);
 
   // Set up method for stack walking
   initialize_known_method(_do_stack_walk_cache,

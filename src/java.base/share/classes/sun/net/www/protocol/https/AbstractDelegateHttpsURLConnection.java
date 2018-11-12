@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.net.SecureCacheResponse;
 import java.security.Principal;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import sun.net.www.http.*;
 import sun.net.www.protocol.http.HttpURLConnection;
@@ -296,4 +298,19 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         }
     }
 
+    SSLSession getSSLSession() {
+        if (cachedResponse != null) {
+            Optional<SSLSession> option =
+                    ((SecureCacheResponse)cachedResponse).getSSLSession();
+            if (option.isPresent()) {
+                return option.orElseThrow();
+            }
+        }
+
+        if (http == null) {
+            throw new IllegalStateException("connection not yet open");
+        }
+
+        return ((HttpsClient)http).getSSLSession();
+    }
 }

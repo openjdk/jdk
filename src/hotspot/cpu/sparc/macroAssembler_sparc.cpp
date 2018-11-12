@@ -236,24 +236,6 @@ void MacroAssembler::breakpoint_trap() {
   trap(ST_RESERVED_FOR_USER_0);
 }
 
-// Write serialization page so VM thread can do a pseudo remote membar
-// We use the current thread pointer to calculate a thread specific
-// offset to write to within the page. This minimizes bus traffic
-// due to cache line collision.
-void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register tmp2) {
-  srl(thread, os::get_serialize_page_shift_count(), tmp2);
-  if (Assembler::is_simm13(os::vm_page_size())) {
-    and3(tmp2, (os::vm_page_size() - sizeof(int)), tmp2);
-  }
-  else {
-    set((os::vm_page_size() - sizeof(int)), tmp1);
-    and3(tmp2, tmp1, tmp2);
-  }
-  set(os::get_memory_serialize_page(), tmp1);
-  st(G0, tmp1, tmp2);
-}
-
-
 void MacroAssembler::safepoint_poll(Label& slow_path, bool a, Register thread_reg, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
     ldx(Address(thread_reg, Thread::polling_page_offset()), temp_reg, 0);

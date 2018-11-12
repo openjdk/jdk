@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ import javax.management.DynamicMBean;
  * Virtual Machine is modified, the {@code DiagnosticCommandMBean} emits
  * a {@link javax.management.Notification} with a
  * {@linkplain javax.management.Notification#getType() type} of
- * <a href="{@docRoot}/javax/management/MBeanInfo.html#info-changed">
+ * <a href="{@docRoot}/java.management/javax/management/MBeanInfo.html#info-changed">
  * {@code "jmx.mbean.info.changed"}</a> and a
  * {@linkplain javax.management.Notification#getUserData() userData} that
  * is the new {@code MBeanInfo}.

@@ -9263,6 +9263,18 @@ instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %}
 
 // And Memory with Register
+instruct andB_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
+%{
+  match(Set dst (StoreB dst (AndI (LoadB dst) src)));
+  effect(KILL cr);
+
+  ins_cost(150);
+  format %{ "andb    $dst, $src\t# byte" %}
+  opcode(0x20);
+  ins_encode(REX_breg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct andI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (AndI (LoadI dst) src)));
@@ -9444,6 +9456,18 @@ instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %}
 
 // Or Memory with Register
+instruct orB_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
+%{
+  match(Set dst (StoreB dst (OrI (LoadB dst) src)));
+  effect(KILL cr);
+
+  ins_cost(150);
+  format %{ "orb    $dst, $src\t# byte" %}
+  opcode(0x08);
+  ins_encode(REX_breg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct orI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (OrI (LoadI dst) src)));
@@ -9520,6 +9544,18 @@ instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %}
 
 // Xor Memory with Register
+instruct xorB_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
+%{
+  match(Set dst (StoreB dst (XorI (LoadB dst) src)));
+  effect(KILL cr);
+
+  ins_cost(150);
+  format %{ "xorb    $dst, $src\t# byte" %}
+  opcode(0x30);
+  ins_encode(REX_breg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct xorI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (XorI (LoadI dst) src)));
@@ -11889,9 +11925,9 @@ instruct compB_mem_imm(rFlagsReg cr, memory mem, immI8 imm)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
-instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI0 zero)
+instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
 %{
-  match(Set cr (CmpI (AndI (LoadB mem) imm) zero));
+  match(Set cr (CmpI (AndI (LoadUB mem) imm) zero));
 
   ins_cost(125);
   format %{ "testb   $mem, $imm" %}

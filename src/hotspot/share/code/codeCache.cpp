@@ -144,8 +144,8 @@ class CodeBlob_sizes {
 address CodeCache::_low_bound = 0;
 address CodeCache::_high_bound = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
-bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
+ExceptionCache* volatile CodeCache::_exception_cache_purge_list = NULL;
 
 // Initialize arrays of CodeHeap subsets
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
@@ -683,17 +683,11 @@ int CodeCache::alignment_offset() {
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
 void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
+  UnloadingScope scope(is_alive);
   CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    iter.method()->do_unloading(is_alive);
+    iter.method()->do_unloading(unloading_occurred);
   }
-
-  // Now that all the unloaded nmethods are known, cleanup caches
-  // before CLDG is purged.
-  // This is another code cache walk but it is moved from gc_epilogue.
-  // G1 does a parallel walk of the nmethods so cleans them up
-  // as it goes and doesn't call this.
-  do_unloading_nmethod_caches(unloading_occurred);
 }
 
 void CodeCache::blobs_do(CodeBlobClosure* f) {
@@ -902,34 +896,48 @@ void CodeCache::verify_icholder_relocations() {
 #endif
 }
 
+// Defer freeing of concurrently cleaned ExceptionCache entries until
+// after a global handshake operation.
+void CodeCache::release_exception_cache(ExceptionCache* entry) {
+  if (SafepointSynchronize::is_at_safepoint()) {
+    delete entry;
+  } else {
+    for (;;) {
+      ExceptionCache* purge_list_head = Atomic::load(&_exception_cache_purge_list);
+      entry->set_purge_list_next(purge_list_head);
+      if (Atomic::cmpxchg(entry, &_exception_cache_purge_list, purge_list_head) == purge_list_head) {
+        break;
+      }
+    }
+  }
+}
+
+// Delete exception caches that have been concurrently unlinked,
+// followed by a global handshake operation.
+void CodeCache::purge_exception_caches() {
+  ExceptionCache* curr = _exception_cache_purge_list;
+  while (curr != NULL) {
+    ExceptionCache* next = curr->purge_list_next();
+    delete curr;
+    curr = next;
+  }
+  _exception_cache_purge_list = NULL;
+}
+
 void CodeCache::gc_prologue() { }
 
 void CodeCache::gc_epilogue() {
   prune_scavenge_root_nmethods();
 }
 
+uint8_t CodeCache::_unloading_cycle = 1;
 
-void CodeCache::do_unloading_nmethod_caches(bool class_unloading_occurred) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  // Even if classes are not unloaded, there may have been some nmethods that are
-  // unloaded because oops in them are no longer reachable.
-  NOT_DEBUG(if (needs_cache_clean() || class_unloading_occurred)) {
-    CompiledMethodIterator iter;
-    while(iter.next_alive()) {
-      CompiledMethod* cm = iter.method();
-      assert(!cm->is_unloaded(), "Tautology");
-      DEBUG_ONLY(if (needs_cache_clean() || class_unloading_occurred)) {
-        // Clean up both unloaded klasses from nmethods and unloaded nmethods
-        // from inline caches.
-        cm->unload_nmethod_caches(/*parallel*/false, class_unloading_occurred);
-      }
-      DEBUG_ONLY(cm->verify());
-      DEBUG_ONLY(cm->verify_oop_relocations());
-    }
+void CodeCache::increment_unloading_cycle() {
+  if (_unloading_cycle == 1) {
+    _unloading_cycle = 2;
+  } else {
+    _unloading_cycle = 1;
   }
-
-  set_needs_cache_clean(false);
-  verify_icholder_relocations();
 }
 
 void CodeCache::verify_oops() {

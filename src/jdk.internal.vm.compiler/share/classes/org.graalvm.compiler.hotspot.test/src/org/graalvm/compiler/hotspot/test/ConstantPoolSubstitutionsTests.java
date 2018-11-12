@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
     }
 
     private static Object getConstantPoolForObject() {
-        String miscPackage = Java8OrEarlier ? "sun.misc" : "jdk.internal.misc";
+        String miscPackage = Java8OrEarlier ? "sun.misc"
+            : (Java11OrEarlier ? "jdk.internal.misc" : "jdk.internal.access");
         try {
             Class<?> sharedSecretsClass = Class.forName(miscPackage + ".SharedSecrets");
             Class<?> javaLangAccessClass = Class.forName(miscPackage + ".JavaLangAccess");
@@ -114,7 +115,10 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
             Object javaBaseModule = JLModule.fromClass(String.class);
             Object cModule = JLModule.fromClass(c);
             uncheckedAddExports(javaBaseModule, "jdk.internal.reflect", cModule);
-            uncheckedAddExports(javaBaseModule, "jdk.internal.misc", cModule);
+            if (Java11OrEarlier)
+                uncheckedAddExports(javaBaseModule, "jdk.internal.misc", cModule);
+            else
+                uncheckedAddExports(javaBaseModule, "jdk.internal.access", cModule);
         }
     }
 

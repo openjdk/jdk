@@ -70,7 +70,7 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     public void initialize(int keySize, SecureRandom random) {
         try {
             initialize(new RSAKeyGenParameterSpec(keySize,
-                    RSAKeyGenParameterSpec.F4), null);
+                    RSAKeyGenParameterSpec.F4), random);
         } catch (InvalidAlgorithmParameterException iape) {
             throw new InvalidParameterException(iape.getMessage());
         }

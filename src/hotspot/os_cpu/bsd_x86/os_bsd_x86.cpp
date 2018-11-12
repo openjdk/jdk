@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,7 +580,7 @@ JVM_handle_bsd_signal(int sig,
       // 64-bit Darwin may also use a SIGBUS (seen with compressed oops).
       // Catching SIGBUS here prevents the implicit SIGBUS NULL check below from
       // being called, so only do so if the implicit NULL check is not necessary.
-      } else if (sig == SIGBUS && MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
+      } else if (sig == SIGBUS && !MacroAssembler::uses_implicit_null_check(info->si_addr)) {
 #else
       } else if (sig == SIGBUS /* && info->si_code == BUS_OBJERR */) {
 #endif
@@ -655,7 +655,7 @@ JVM_handle_bsd_signal(int sig,
         }
 #endif // AMD64
       } else if ((sig == SIGSEGV || sig == SIGBUS) &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
+                 MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
           stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
@@ -673,17 +673,6 @@ JVM_handle_bsd_signal(int sig,
       if (addr != (address)-1) {
         stub = addr;
       }
-    }
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    if ((sig == SIGSEGV || sig == SIGBUS) &&
-        os::is_memory_serialize_page(thread, (address) info->si_addr)) {
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return true;
     }
   }
 

@@ -506,6 +506,7 @@ public class TTY implements EventNotifier {
                             showPrompt = false;
                             evaluator.commandNext();
                         } else if (cmd.equals("kill")) {
+                            showPrompt = false;        // asynchronous command
                             evaluator.commandKill(t);
                         } else if (cmd.equals("interrupt")) {
                             evaluator.commandInterrupt(t);

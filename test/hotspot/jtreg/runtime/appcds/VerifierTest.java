@@ -102,17 +102,17 @@ public class VerifierTest implements Opcodes {
     }
 
     static void testset_0(String jar, String[] noAppClasses, String[] appClasses) throws Exception {
-        // Dumping should fail if the IgnoreUnverifiableClassesDuringDump
-        // option is not enabled.
-        OutputAnalyzer output = TestCommon.dump(jar, appClasses,
-                            CDS_LOGGING,
-                            "-XX:+UnlockDiagnosticVMOptions",
-                            "-XX:-IgnoreUnverifiableClassesDuringDump");
-        output.shouldContain("Please remove the unverifiable classes");
-        output.shouldHaveExitValue(1);
-
-        // By default, bad classes should be ignored during dumping.
-        TestCommon.testDump(jar, appClasses);
+        // Unverifiable classes won't be included in the CDS archive.
+        // Dumping should not fail.
+        OutputAnalyzer output = TestCommon.dump(jar, appClasses);
+        output.shouldHaveExitValue(0);
+        if (output.getStdout().contains("Loading clases to share")) {
+            // last entry in appClasses[] is a verifiable class
+            for (int i = 0; i < (appClasses.length - 1); i++) {
+                output.shouldContain("Verification failed for " + appClasses[i]);
+                output.shouldContain("Removed error class: " + appClasses[i]);
+            }
+        }
     }
 
     static void checkRuntimeOutput(OutputAnalyzer output, String expected) throws Exception {

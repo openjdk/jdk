@@ -47,8 +47,8 @@ import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import jdk.internal.misc.JavaNetInetAddressAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetInetAddressAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Implementation of an SSL socket.
@@ -1229,7 +1229,7 @@ public final class SSLSocketImpl
         // identification.  Use the application original specified
         // hostname or IP address instead.
 
-        // Get the original hostname via jdk.internal.misc.SharedSecrets
+        // Get the original hostname via jdk.internal.access.SharedSecrets
         InetAddress inetAddress = getInetAddress();
         if (inetAddress == null) {      // not connected
             return;

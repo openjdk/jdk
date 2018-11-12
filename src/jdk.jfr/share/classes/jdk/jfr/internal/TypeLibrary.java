@@ -68,7 +68,7 @@ public final class TypeLibrary {
 
     private TypeLibrary(List<Type> jvmTypes) {
         visitReachable(jvmTypes, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
-        if (LogTag.JFR_SYSTEM_METADATA.shouldLog(LogLevel.INFO.level)) {
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO)) {
             Stream<Type> s = types.values().stream().sorted((x, y) -> Long.compare(x.getId(), y.getId()));
             s.forEach(t -> t.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO));
         }
@@ -422,7 +422,7 @@ public final class TypeLibrary {
         for (Type type :  types.values()) {
             if (type.getRemove() && !Type.isDefinedByJVM(type.getId())) {
                 removeIds.add(type.getId());
-                if (LogTag.JFR_METADATA.shouldLog(LogLevel.TRACE.level)) {
+                if (Logger.shouldLog(LogTag.JFR_METADATA, LogLevel.TRACE)) {
                     Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Removed obsolete metadata " + type.getName());
                 }
             }

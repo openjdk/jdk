@@ -263,14 +263,24 @@ void BitMap::clear_range(idx_t beg, idx_t end) {
   }
 }
 
+bool BitMap::is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word) {
+  // There is little point to call large version on small ranges.
+  // Need to check carefully, keeping potential idx_t underflow in mind.
+  // The threshold should be at least one word.
+  STATIC_ASSERT(small_range_words >= 1);
+  return (beg_full_word + small_range_words >= end_full_word);
+}
+
 void BitMap::set_large_range(idx_t beg, idx_t end) {
   verify_range(beg, end);
 
   idx_t beg_full_word = word_index_round_up(beg);
   idx_t end_full_word = word_index(end);
 
-  assert(end_full_word - beg_full_word >= 32,
-         "the range must include at least 32 bytes");
+  if (is_small_range_of_words(beg_full_word, end_full_word)) {
+    set_range(beg, end);
+    return;
+  }
 
   // The range includes at least one full word.
   set_range_within_word(beg, bit_index(beg_full_word));
@@ -284,7 +294,7 @@ void BitMap::clear_large_range(idx_t beg, idx_t end) {
   idx_t beg_full_word = word_index_round_up(beg);
   idx_t end_full_word = word_index(end);
 
-  if (end_full_word - beg_full_word < 32) {
+  if (is_small_range_of_words(beg_full_word, end_full_word)) {
     clear_range(beg, end);
     return;
   }
@@ -368,8 +378,10 @@ void BitMap::par_at_put_large_range(idx_t beg, idx_t end, bool value) {
   idx_t beg_full_word = word_index_round_up(beg);
   idx_t end_full_word = word_index(end);
 
-  assert(end_full_word - beg_full_word >= 32,
-         "the range must include at least 32 bytes");
+  if (is_small_range_of_words(beg_full_word, end_full_word)) {
+    par_at_put_range(beg, end, value);
+    return;
+  }
 
   // The range includes at least one full word.
   par_put_range_within_word(beg, bit_index(beg_full_word), value);

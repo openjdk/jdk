@@ -635,18 +635,8 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
 //   JVMTI_ERROR_TYPE_MISMATCH
 // Returns: 'true' - everything is Ok, 'false' - error code
 
-bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
+bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   Method* method_oop = jvf->method();
-  if (!method_oop->has_localvariable_table()) {
-    // Just to check index boundaries
-    jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
-    if (_index < 0 || _index + extra_slot >= method_oop->max_locals()) {
-      _result = JVMTI_ERROR_INVALID_SLOT;
-      return false;
-    }
-    return true;
-  }
-
   jint num_entries = method_oop->localvariable_table_length();
   if (num_entries == 0) {
     _result = JVMTI_ERROR_INVALID_SLOT;
@@ -711,6 +701,35 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
   return true;
 }
 
+bool VM_GetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
+  Method* method_oop = jvf->method();
+  jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
+
+  if (_index < 0 || _index + extra_slot >= method_oop->max_locals()) {
+    _result = JVMTI_ERROR_INVALID_SLOT;
+    return false;
+  }
+  StackValueCollection *locals = _jvf->locals();
+  BasicType slot_type = locals->at(_index)->type();
+
+  if (slot_type == T_CONFLICT) {
+    _result = JVMTI_ERROR_INVALID_SLOT;
+    return false;
+  }
+  if (extra_slot) {
+    BasicType extra_slot_type = locals->at(_index + 1)->type();
+    if (extra_slot_type != T_INT) {
+      _result = JVMTI_ERROR_INVALID_SLOT;
+      return false;
+    }
+  }
+  if (_type != slot_type && (_type == T_OBJECT || slot_type != T_INT)) {
+    _result = JVMTI_ERROR_TYPE_MISMATCH;
+    return false;
+  }
+  return true;
+}
+
 static bool can_be_deoptimized(vframe* vf) {
   return (vf->is_compiled_frame() && vf->fr().can_be_deoptimized());
 }
@@ -719,8 +738,9 @@ bool VM_GetOrSetLocal::doit_prologue() {
   _jvf = get_java_vframe();
   NULL_CHECK(_jvf, false);
 
-  if (_jvf->method()->is_native()) {
-    if (getting_receiver() && !_jvf->method()->is_static()) {
+  Method* method_oop = _jvf->method();
+  if (method_oop->is_native()) {
+    if (getting_receiver() && !method_oop->is_static()) {
       return true;
     } else {
       _result = JVMTI_ERROR_OPAQUE_FRAME;
@@ -728,8 +748,10 @@ bool VM_GetOrSetLocal::doit_prologue() {
     }
   }
 
-  if (!check_slot_type(_jvf)) {
-    return false;
+  if (method_oop->has_localvariable_table()) {
+    return check_slot_type_lvt(_jvf);
+  } else {
+    return check_slot_type_no_lvt(_jvf);
   }
   return true;
 }
@@ -795,12 +817,6 @@ void VM_GetOrSetLocal::doit() {
       _value.l = JNIHandles::make_local(_calling_thread, receiver);
     } else {
       StackValueCollection *locals = _jvf->locals();
-
-      if (locals->at(_index)->type() == T_CONFLICT) {
-        memset(&_value, 0, sizeof(_value));
-        _value.l = NULL;
-        return;
-      }
 
       switch (_type) {
         case T_INT:    _value.i = locals->int_at   (_index);   break;

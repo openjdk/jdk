@@ -25,8 +25,8 @@
 
 package java.net;
 
-import jdk.internal.misc.JavaNetSocketAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNetSocketAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -76,10 +76,15 @@ class ServerSocket implements java.io.Closeable {
     private boolean oldImpl = false;
 
     /**
-     * Package-private constructor to create a ServerSocket associated with
-     * the given SocketImpl.
+     * Creates a server socket with a user-specified {@code SocketImpl}.
+     *
+     * @param      impl an instance of a SocketImpl to use on the ServerSocket.
+     *
+     * @throws     NullPointerException if impl is {@code null}.
+     *
+     * @since 12
      */
-    ServerSocket(SocketImpl impl) {
+    protected ServerSocket(SocketImpl impl) {
         this.impl = impl;
         impl.setServerSocket(this);
     }
@@ -988,8 +993,8 @@ class ServerSocket implements java.io.Closeable {
         return getImpl().getOption(name);
     }
 
-    private static Set<SocketOption<?>> options;
-    private static boolean optionsSet = false;
+    // cache of unmodifiable impl options. Possibly set racy, in impl we trust
+    private volatile Set<SocketOption<?>> options;
 
     /**
      * Returns a set of the socket options supported by this server socket.
@@ -1003,19 +1008,17 @@ class ServerSocket implements java.io.Closeable {
      * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
-        synchronized (ServerSocket.class) {
-            if (optionsSet) {
-                return options;
-            }
-            try {
-                SocketImpl impl = getImpl();
-                options = Collections.unmodifiableSet(impl.supportedOptions());
-            } catch (IOException e) {
-                options = Collections.emptySet();
-            }
-            optionsSet = true;
-            return options;
+        Set<SocketOption<?>> so = options;
+        if (so != null)
+            return so;
+
+        try {
+            SocketImpl impl = getImpl();
+            options = Collections.unmodifiableSet(impl.supportedOptions());
+        } catch (IOException e) {
+            options = Collections.emptySet();
         }
+        return options;
     }
 
     static {

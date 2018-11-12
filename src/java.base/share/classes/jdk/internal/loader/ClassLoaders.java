@@ -33,8 +33,8 @@ import java.security.CodeSource;
 import java.security.PermissionCollection;
 import java.util.jar.Manifest;
 
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 
 /**

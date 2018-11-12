@@ -3,9 +3,7 @@
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,6 +19,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for South America and environs
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -415,7 +415,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	-
 # standard time, so let's do that here too.  This does not change UTC
 # offsets, only tm_isdst and the time zone abbreviations.  One minor
 # plus is that this silences a zic complaint that there's no POSIX TZ
-# setting for time stamps past 2038.
+# setting for timestamps past 2038.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
@@ -948,6 +948,14 @@ Rule	Brazil	2016	2022	-	Feb	Sun>=15	0:00	0	-
 # ... https://www.timeanddate.com/news/time/brazil-delays-dst-2018.html
 # From Steffen Thorsen (2017-12-20):
 # http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/D9242.htm
+#
+# From Fábio Gomes (2018-10-04):
+# The Brazilian president just announced a new change on this year DST.
+# It was scheduled to start on November 4th and it was changed to November 18th.
+# From Rodrigo Brüning Wessler (2018-10-15):
+# The Brazilian government just announced that the change in DST was
+# canceled....  Maybe the president Michel Temer also woke up one hour
+# earlier today. :)
 Rule	Brazil	2018	max	-	Nov	Sun>=1	0:00	1:00	-
 Rule	Brazil	2023	only	-	Feb	Sun>=22	0:00	0	-
 Rule	Brazil	2024	2025	-	Feb	Sun>=15	0:00	0	-
@@ -1254,6 +1262,24 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # they will switch from -03 to -04 one hour after Santiago does that day.
 # For now, assume that they will not revert.
 
+# From Juan Correa (2018-08-13):
+# As of moments ago, the Ministry of Energy in Chile has announced the new
+# schema for DST. ...  Announcement in video (in Spanish):
+# https://twitter.com/MinEnergia/status/1029000399129374720
+# From Yonathan Dossow (2018-08-13):
+# The video says "first Saturday of September", we all know it means Sunday at
+# midnight.
+# From Tim Parenti (2018-08-13):
+# Translating the captions on the video at 0:44-0:55, "We want to announce as
+# Government that from 2019, Winter Time will be increased to 5 months, between
+# the first Saturday of April and the first Saturday of September."
+# At 2:08-2:20, "The Magallanes region will maintain its current time, as
+# decided by the citizens during 2017, but our Government will promote a
+# regional dialogue table to gather their opinion on this matter."
+# https://twitter.com/MinEnergia/status/1029009354001973248
+# "We will keep the new time policy unchanged for at least the next 4 years."
+# So we extend the new rules on Saturdays at 24:00 mainland time indefinitely.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
@@ -1287,8 +1313,10 @@ Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	-
 Rule	Chile	2012	2014	-	Apr	Sun>=23	3:00u	0	-
 Rule	Chile	2012	2014	-	Sep	Sun>=2	4:00u	1:00	-
-Rule	Chile	2016	max	-	May	Sun>=9	3:00u	0	-
-Rule	Chile	2016	max	-	Aug	Sun>=9	4:00u	1:00	-
+Rule	Chile	2016	2018	-	May	Sun>=9	3:00u	0	-
+Rule	Chile	2016	2018	-	Aug	Sun>=9	4:00u	1:00	-
+Rule	Chile	2019	max	-	Apr	Sun>=2	3:00u	0	-
+Rule	Chile	2019	max	-	Sep	Sun>=2	4:00u	1:00	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

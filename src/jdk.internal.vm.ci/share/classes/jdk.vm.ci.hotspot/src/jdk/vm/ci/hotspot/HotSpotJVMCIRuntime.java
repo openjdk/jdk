@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import jdk.internal.misc.VM;
@@ -240,16 +239,16 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return runtime().getHostJVMCIBackend().getCodeCache().getTarget().wordJavaKind;
     }
 
-    protected final CompilerToVM compilerToVm;
+    final CompilerToVM compilerToVm;
 
     protected final HotSpotVMConfigStore configStore;
-    protected final HotSpotVMConfig config;
+    private final HotSpotVMConfig config;
     private final JVMCIBackend hostBackend;
 
     private final JVMCICompilerFactory compilerFactory;
     private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
-    protected final HotSpotJVMCIMetaAccessContext metaAccessContext;
+    final HotSpotJVMCIMetaAccessContext metaAccessContext;
 
     /**
      * Stores the result of {@link HotSpotJVMCICompilerFactory#getCompilationLevelAdjustment} so
@@ -324,7 +323,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         if (Option.PrintConfig.getBoolean()) {
-            printConfig(configStore, compilerToVm);
+            configStore.printConfig();
         }
     }
 
@@ -343,11 +342,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return configStore;
     }
 
-    public HotSpotVMConfig getConfig() {
+    HotSpotVMConfig getConfig() {
         return config;
     }
 
-    public CompilerToVM getCompilerToVM() {
+    CompilerToVM getCompilerToVM() {
         return compilerToVm;
     }
 
@@ -575,41 +574,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
         for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compiledCode);
-        }
-    }
-
-    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "no localization here please!")
-    private static void printConfigLine(CompilerToVM vm, String format, Object... args) {
-        String line = String.format(format, args);
-        byte[] lineBytes = line.getBytes();
-        vm.writeDebugOutput(lineBytes, 0, lineBytes.length);
-        vm.flushDebugOutput();
-    }
-
-    private static void printConfig(HotSpotVMConfigStore store, CompilerToVM vm) {
-        TreeMap<String, VMField> fields = new TreeMap<>(store.getFields());
-        for (VMField field : fields.values()) {
-            if (!field.isStatic()) {
-                printConfigLine(vm, "[vmconfig:instance field] %s %s {offset=%d[0x%x]}%n", field.type, field.name, field.offset, field.offset);
-            } else {
-                String value = field.value == null ? "null" : field.value instanceof Boolean ? field.value.toString() : String.format("%d[0x%x]", field.value, field.value);
-                printConfigLine(vm, "[vmconfig:static field] %s %s = %s {address=0x%x}%n", field.type, field.name, value, field.address);
-            }
-        }
-        TreeMap<String, VMFlag> flags = new TreeMap<>(store.getFlags());
-        for (VMFlag flag : flags.values()) {
-            printConfigLine(vm, "[vmconfig:flag] %s %s = %s%n", flag.type, flag.name, flag.value);
-        }
-        TreeMap<String, Long> addresses = new TreeMap<>(store.getAddresses());
-        for (Map.Entry<String, Long> e : addresses.entrySet()) {
-            printConfigLine(vm, "[vmconfig:address] %s = %d[0x%x]%n", e.getKey(), e.getValue(), e.getValue());
-        }
-        TreeMap<String, Long> constants = new TreeMap<>(store.getConstants());
-        for (Map.Entry<String, Long> e : constants.entrySet()) {
-            printConfigLine(vm, "[vmconfig:constant] %s = %d[0x%x]%n", e.getKey(), e.getValue(), e.getValue());
-        }
-        for (VMIntrinsicMethod e : store.getIntrinsics()) {
-            printConfigLine(vm, "[vmconfig:intrinsic] %d = %s.%s %s%n", e.id, e.declaringClass, e.name, e.descriptor);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,7 @@
 #include <signal.h>
 #include <string.h>
 
-#if defined(__solaris__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <spawn.h>
-#endif
 
 #include "childproc.h"
 
@@ -390,7 +388,6 @@ forkChild(ChildStuff *c) {
     return resultPid;
 }
 
-#if defined(__solaris__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
@@ -473,7 +470,6 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
      * via the statement below */
     return resultPid;
 }
-#endif
 
 /*
  * Start a child process running function childProcess.
@@ -489,10 +485,8 @@ startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 #endif
       case MODE_FORK:
         return forkChild(c);
-#if defined(__solaris__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
       case MODE_POSIX_SPAWN:
         return spawnChild(env, process, c, helperpath);
-#endif
       default:
         return -1;
     }

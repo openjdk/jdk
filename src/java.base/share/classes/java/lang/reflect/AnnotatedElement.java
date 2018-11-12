@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import sun.reflect.annotation.AnnotationType;
  * exactly one annotation whose value element contains <i>A</i> and whose
  * type is the containing annotation type of <i>A</i> 's type.
  *
- * <li>An annotation <i>A</i> is present on an element <i>E</i> if either:
+ * <li>An annotation <i>A</i> is <em>present</em> on an element <i>E</i> if either:
  *
  * <ul>
  *
@@ -145,8 +145,8 @@ import sun.reflect.annotation.AnnotationType;
  * </tbody>
  * </table>
  *
- * <p>For an invocation of {@code get[Declared]AnnotationsByType( Class <
- * T >)}, the order of annotations which are directly or indirectly
+ * <p>For an invocation of {@code get[Declared]AnnotationsByType(Class <T>)},
+ * the order of annotations which are directly or indirectly
  * present on an element <i>E</i> is computed as if indirectly present
  * annotations on <i>E</i> are directly present on <i>E</i> in place
  * of their container annotation, in the order in which they appear in

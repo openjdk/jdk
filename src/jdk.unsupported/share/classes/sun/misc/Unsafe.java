@@ -27,10 +27,8 @@ package sun.misc;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.VM;
-import jdk.internal.ref.Cleaner;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -1234,13 +1232,6 @@ public final class Unsafe {
         if (!directBuffer.isDirect())
             throw new IllegalArgumentException("buffer is non-direct");
 
-        DirectBuffer db = (DirectBuffer)directBuffer;
-        if (db.attachment() != null)
-            throw new IllegalArgumentException("duplicate or slice");
-
-        Cleaner cleaner = db.cleaner();
-        if (cleaner != null) {
-            cleaner.clean();
-        }
+        theInternalUnsafe.invokeCleaner(directBuffer);
     }
 }

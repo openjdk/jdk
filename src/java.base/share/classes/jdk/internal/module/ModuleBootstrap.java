@@ -51,10 +51,9 @@ import java.util.stream.Collectors;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaLangModuleAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
 
 /**

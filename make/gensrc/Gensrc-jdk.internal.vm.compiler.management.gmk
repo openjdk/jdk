@@ -1,0 +1,101 @@
+#
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)
+SRC_DIR := $(TOPDIR)/src/$(MODULE)/share/classes
+
+################################################################################
+
+PROC_SRC_SUBDIRS := \
+    org.graalvm.compiler.hotspot.management \
+    #
+
+PROC_SRC_DIRS := $(patsubst %, $(SRC_DIR)/%/src, $(PROC_SRC_SUBDIRS))
+
+PROC_SRCS := $(filter %.java, $(call CacheFind, $(PROC_SRC_DIRS)))
+
+ALL_SRC_DIRS := $(SRC_DIR) $(wildcard $(SRC_DIR)/*/src)
+SOURCEPATH := $(call PathList, $(ALL_SRC_DIRS))
+
+PROCESSOR_JARS := \
+    $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.serviceprovider.processor.jar \
+    #
+PROCESSOR_PATH := $(call PathList, $(PROCESSOR_JARS))
+
+$(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) $(PROCESSOR_JARS)
+	$(call MakeDir, $(@D))
+	$(eval $(call ListPathsSafely,PROC_SRCS,$(@D)/_gensrc_proc_files))
+	$(JAVA) $(NEW_JAVAC) \
+	    -XDignore.symbol.file \
+	    --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none \
+	    -sourcepath $(SOURCEPATH) \
+	    -implicit:none \
+	    -proc:only \
+	    -processorpath $(PROCESSOR_PATH) \
+	    -d $(GENSRC_DIR) \
+	    -s $(GENSRC_DIR) \
+	    @$(@D)/_gensrc_proc_files
+	$(TOUCH) $@
+
+TARGETS += $(GENSRC_DIR)/_gensrc_proc_done
+
+################################################################################
+
+$(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
+	$(ECHO) "" > $@;
+	($(CD) $(GENSRC_DIR)/META-INF/providers && \
+	    p=""; \
+	    impl=""; \
+	    for i in $$($(GREP) '^' * | $(SORT) -t ':' -k 2 | $(SED) 's/:.*//'); do \
+	      c=$$($(CAT) $$i | $(TR) -d '\n\r'); \
+	      if test x$$p != x$$c; then \
+                if test x$$p != x; then \
+	          $(ECHO) "    ;" >> $@; \
+	        fi; \
+	        $(ECHO) "provides $$c with" >> $@; \
+                p=$$c; \
+	        impl=""; \
+	      fi; \
+              if test x$$impl != x; then \
+	        $(ECHO) "  , $$i" >> $@; \
+              else \
+	        $(ECHO) "    $$i" >> $@; \
+              fi; \
+              impl=$$i; \
+	    done); \
+	$(ECHO) "    ;" >> $@;
+
+TARGETS += $(GENSRC_DIR)/module-info.java.extra
+
+################################################################################
+
+all: $(TARGETS)
+
+.PHONY: default all

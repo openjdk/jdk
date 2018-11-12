@@ -43,13 +43,19 @@ public class BytecodePosition {
      *
      * @param caller the parent position
      * @param method the method
-     * @param bci a BCI within the method
+     * @param bci a BCI such that {@code method.codeSize() == 0 || bci < method.getCodeSize()}. That
+     *            is, if code size is 0 then allow any value, otherwise the bci must be less than
+     *            the code size.
      */
     public BytecodePosition(BytecodePosition caller, ResolvedJavaMethod method, int bci) {
         assert method != null;
         this.caller = caller;
         this.method = method;
         this.bci = bci;
+        int codeSize = method.getCodeSize();
+        if (codeSize != 0 && bci >= codeSize) {
+            throw new IllegalArgumentException(String.format("bci %d is out of range for %s %d bytes", bci, method.format("%H.%n(%p)"), codeSize));
+        }
     }
 
     /**

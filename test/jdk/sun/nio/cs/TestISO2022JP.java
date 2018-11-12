@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4626545 4879522 4913711 4119445 8042125
+ * @bug 4626545 4879522 4913711 4119445 8042125 8211382
  * @summary Check full coverage encode/decode for ISO-2022-JP
  * @modules jdk.charsets
  */
@@ -646,6 +646,18 @@ public class TestISO2022JP {
         String expectedStr = "\uffe2\u22a5\u221a\u222b\u2252\u2261\u2220\u2235\u2229\u222a";
         if (!new String(encoded, "x-windows-iso2022jp").equals(expectedStr)) {
                throw new Exception("MSISO2022JP Decoder error");
+        }
+        // Test for 11 iso2022jp decoder
+        encoded = new byte[] {
+            (byte)0x1B, (byte)0x28, (byte)0x49, (byte)0x60,
+            (byte)0x1B, (byte)0x28, (byte)0x42,
+        };
+        String unexpectedStr = "\uffa0";
+        expectedStr = "\ufffd";
+        if (new String(encoded, "ISO2022JP").equals(unexpectedStr)) {
+               throw new Exception("ISO2022JP Decoder error: \\uFFA0");
+        } else if (!new String(encoded, "ISO2022JP").equals(expectedStr)) {
+               throw new Exception("ISO2022JP Decoder error: \\uFFFD");
         }
     }
 }

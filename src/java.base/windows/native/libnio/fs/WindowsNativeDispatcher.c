@@ -311,8 +311,10 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile0(JNIEnv* env, jclass this,
     HANDLE handle = FindFirstFileW(lpFileName, &data);
     if (handle != INVALID_HANDLE_VALUE) {
         jstring name = (*env)->NewString(env, data.cFileName, (jsize)wcslen(data.cFileName));
-        if (name == NULL)
+        if (name == NULL) {
+            FindClose(handle);
             return;
+        }
         (*env)->SetLongField(env, obj, findFirst_handle, ptr_to_jlong(handle));
         (*env)->SetObjectField(env, obj, findFirst_name, name);
         (*env)->SetIntField(env, obj, findFirst_attributes, data.dwFileAttributes);
@@ -362,8 +364,10 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstStream0(JNIEnv* env, jclass thi
     handle = FindFirstStreamW(lpFileName, FindStreamInfoStandard, &data, 0);
     if (handle != INVALID_HANDLE_VALUE) {
         jstring name = (*env)->NewString(env, data.cStreamName, (jsize)wcslen(data.cStreamName));
-        if (name == NULL)
+        if (name == NULL) {
+            FindClose(handle);
             return;
+        }
         (*env)->SetLongField(env, obj, findStream_handle, ptr_to_jlong(handle));
         (*env)->SetObjectField(env, obj, findStream_name, name);
     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106 8004979 8161500 8162539
+ * @bug 5033583 6316717 6470106 8004979 8161500 8162539 6304578
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -103,6 +103,10 @@ class TestClass1 {
     @ExpectedGenericString(
    "protected <S,T> S TestClass1.method4(S,T) throws java.lang.Exception")
     protected <S, T> S method4(S s, T t) throws Exception {return null;}
+
+    @ExpectedGenericString(
+   "public static <T> T TestClass1.max(java.util.Collection<? extends T>,java.util.Comparator<? super T>)")
+    public static <T> T max(Collection<? extends T> coll, Comparator<? super T> comp) {return null;}
 }
 
 class TestClass2<E, F extends Exception> {
@@ -139,6 +143,10 @@ class TestClass2<E, F extends Exception> {
     @ExpectedGenericString(
    "public <K,V> java.util.Map<K, V> TestClass2.method8()")
     public <K, V> Map<K, V> method8() {return null;}
+
+    @ExpectedGenericString(
+   "public <V extends java.lang.Number & java.lang.Runnable> java.util.Set<V> TestClass2.method9(V)")
+    public <V extends Number & Runnable> Set<V> method9(V v) {return null;}
 }
 
 class Roebling implements Comparable<Roebling> {

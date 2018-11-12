@@ -213,16 +213,7 @@ void SafepointSynchronize::begin() {
   //     writes and reads of both the safepoint state and the Java
   //     threads state is critical.  In order to guarantee that the
   //     memory writes are serialized with respect to each other,
-  //     the VM thread issues a memory barrier instruction
-  //     (on MP systems).  In order to avoid the overhead of issuing
-  //     a memory barrier for each Java thread making native calls, each Java
-  //     thread performs a write to a single memory page after changing
-  //     the thread state.  The VM thread performs a sequence of
-  //     mprotect OS calls which forces all previous writes from all
-  //     Java threads to be serialized.  This is done in the
-  //     os::serialize_thread_states() call.  This has proven to be
-  //     much more efficient than executing a membar instruction
-  //     on every call to native code.
+  //     the VM thread issues a memory barrier instruction.
   //  3. Running compiled Code
   //     Compiled code reads a global (Safepoint Polling) page that
   //     is set to fault if we are trying to get to a safepoint.
@@ -250,11 +241,6 @@ void SafepointSynchronize::begin() {
       }
     }
     OrderAccess::fence(); // storestore|storeload, global state -> local state
-
-    // Flush all thread states to memory
-    if (!UseMembar) {
-      os::serialize_thread_states();
-    }
 
     if (SafepointMechanism::uses_global_page_poll()) {
       // Make interpreter safepoint aware

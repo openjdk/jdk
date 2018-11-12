@@ -51,7 +51,7 @@ import org.w3c.dom.DOMException;
  * node. Since evaluation of an XPath expression can result in various
  * result types, this object makes it possible to discover and manipulate
  * the type and value of the result.
- * <p>See also the <a href='http://www.w3.org/2002/08/WD-DOM-Level-3-XPath-20020820'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
  */
 public interface XPathResult {
     // XPathResultType

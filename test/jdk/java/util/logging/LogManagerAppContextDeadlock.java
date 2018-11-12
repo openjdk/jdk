@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import jdk.internal.misc.JavaAWTAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaAWTAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * @test
  * @bug 8065991
  * @summary check that when LogManager is initialized, a deadlock similar
  *          to that described in 8065709 will not occur.
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.access
  *          java.logging
  *          java.management
  * @run main/othervm LogManagerAppContextDeadlock UNSECURE
@@ -349,7 +349,7 @@ public class LogManagerAppContextDeadlock {
             // FileHandlers because we're passing invalid parameters
             // which will make the creation fail...
             permissions = new Permissions();
-            permissions.add(new RuntimePermission("accessClassInPackage.jdk.internal.misc"));
+            permissions.add(new RuntimePermission("accessClassInPackage.jdk.internal.access"));
 
             // these are used for configuring the test itself...
             allPermissions = new Permissions();

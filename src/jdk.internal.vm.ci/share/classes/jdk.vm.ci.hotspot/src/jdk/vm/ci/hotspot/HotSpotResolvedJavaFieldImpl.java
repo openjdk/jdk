@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-
-import jdk.internal.vm.annotation.Stable;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
@@ -125,7 +123,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         if (currentType instanceof UnresolvedJavaType) {
             // Don't allow unresolved types to hang around forever
             UnresolvedJavaType unresolvedType = (UnresolvedJavaType) currentType;
-            ResolvedJavaType resolved = unresolvedType.resolve(holder);
+            ResolvedJavaType resolved = holder.lookupType(unresolvedType, false);
             if (resolved != null) {
                 type = resolved;
             }
@@ -149,9 +147,9 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     /**
-     * Checks if this field has the {@link Stable} annotation.
+     * Checks if this field has the {@code Stable} annotation.
      *
-     * @return true if field has {@link Stable} annotation, false otherwise
+     * @return true if field has {@code Stable} annotation, false otherwise
      */
     @Override
     public boolean isStable() {

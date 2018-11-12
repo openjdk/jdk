@@ -92,6 +92,10 @@ public class HostnameChecker {
      */
     public void match(String expectedName, X509Certificate cert,
                       boolean chainsToPublicCA) throws CertificateException {
+        if (expectedName == null) {
+            throw new CertificateException("Hostname or IP address is " +
+                    "undefined.");
+        }
         if (isIpAddress(expectedName)) {
            matchIP(expectedName, cert);
         } else {

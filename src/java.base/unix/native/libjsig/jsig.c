@@ -77,7 +77,7 @@ static __thread bool reentry = false; /* prevent reentry deadlock (per-thread) *
 /* Used to synchronize the installation of signal handlers. */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-static pthread_t tid = 0;
+static pthread_t tid;
 
 typedef void (*sa_handler_t)(int);
 typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
@@ -110,8 +110,11 @@ static void signal_lock() {
   /* When the jvm is installing its set of signal handlers, threads
    * other than the jvm thread should wait. */
   if (jvm_signal_installing) {
-    if (tid != pthread_self()) {
-      pthread_cond_wait(&cond, &mutex);
+    /* tid is not initialized until jvm_signal_installing is set to true. */
+    if (pthread_equal(tid, pthread_self()) == 0) {
+      do {
+        pthread_cond_wait(&cond, &mutex);
+      } while (jvm_signal_installing);
     }
   }
 }

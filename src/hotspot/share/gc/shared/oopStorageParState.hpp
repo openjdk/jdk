@@ -45,7 +45,7 @@
 // locked.  This prevents concurrent iteration and empty block deletion from
 // interfering with with each other.
 //
-// Both allocate() and delete_empty_blocks_concurrent() lock the
+// Both allocate() and delete_empty_blocks() lock the
 // _allocation_mutex while performing their respective list and array
 // manipulations, preventing them from interfering with each other.
 //
@@ -70,11 +70,6 @@
 // seen by the iteration.  Further, some may overlap examination by the
 // iteration.  To help with this, allocate() and release() have an invariant
 // that an entry's value must be NULL when it is not in use.
-//
-// An in-progress delete_empty_blocks_concurrent() operation can contend with
-// the start of a concurrent iteration over the _active_mutex.  Since both are
-// under GC control, that potential contention can be eliminated by never
-// scheduling both operations to run at the same time.
 //
 // ParState<concurrent, is_const>
 //   concurrent must be true if iteration may be concurrent with the

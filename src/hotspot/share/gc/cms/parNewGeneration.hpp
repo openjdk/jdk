@@ -346,11 +346,6 @@ class ParNewGeneration: public DefNewGeneration {
 
  protected:
 
-  bool _survivor_overflow;
-
-  bool survivor_overflow() { return _survivor_overflow; }
-  void set_survivor_overflow(bool v) { _survivor_overflow = v; }
-
   void restore_preserved_marks();
 
  public:

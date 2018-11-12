@@ -91,7 +91,7 @@ public interface EventProvider {
      *
      * @return a compilation event
      */
-    public abstract CompilationEvent newCompilationEvent();
+    CompilationEvent newCompilationEvent();
 
     /**
      * A compilation event.
@@ -117,7 +117,7 @@ public interface EventProvider {
      *
      * @return a compiler failure event
      */
-    public abstract CompilerFailureEvent newCompilerFailureEvent();
+    CompilerFailureEvent newCompilerFailureEvent();
 
     /**
      * A compiler failure event.

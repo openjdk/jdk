@@ -554,6 +554,12 @@ void ciInstanceKlass::compute_injected_fields() {
   _has_injected_fields = has_injected_fields;
 }
 
+bool ciInstanceKlass::has_object_fields() const {
+  GUARDED_VM_ENTRY(
+      return get_instanceKlass()->nonstatic_oop_map_size() > 0;
+    );
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::find_method
 //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test that JVM_DoPrivilege() searches default methods when looking
+ * @summary Test that AccessController.doPrivileged() searches default methods when looking
  *          for the run() method.
  * @bug 8183962
  * @run main DoPrivileged

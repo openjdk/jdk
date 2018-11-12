@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,10 @@ void CompiledPltStaticCall::set_to_interpreted(const methodHandle& callee, addre
 
 #ifdef NEVER_CALLED
 void CompiledPltStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
-  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
   assert(stub != NULL, "stub not found");
+  assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeLoadGot* method_loader = nativeLoadGot_at(stub);
   NativeGotJump* jump          = nativeGotJump_at(method_loader->next_instruction_address());

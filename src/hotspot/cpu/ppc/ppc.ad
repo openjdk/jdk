@@ -7629,7 +7629,7 @@ instruct cmovI_reg(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7642,7 +7642,7 @@ instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7675,7 +7675,7 @@ instruct cmovL_reg(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7688,7 +7688,7 @@ instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7722,7 +7722,7 @@ instruct cmovN_reg(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7735,7 +7735,7 @@ instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7768,7 +7768,7 @@ instruct cmovP_reg(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegP_N2P src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7781,7 +7781,7 @@ instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7794,7 +7794,7 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmovef);
     Label done;
@@ -7816,7 +7816,7 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmovef);
     Label done;
@@ -9277,7 +9277,7 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
@@ -9340,7 +9340,7 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
@@ -11114,7 +11114,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   format %{ "cmovI   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11128,7 +11128,7 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
 
   format %{ "cmovI   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11383,7 +11383,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   format %{ "cmovL   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11397,7 +11397,7 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
 
   format %{ "cmovL   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11890,7 +11890,7 @@ instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsRegSrc crx) %{
 
   format %{ "cmovI   $crx, $dst, -1, 0, +1" %}
   // Worst case is branch + move + branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORTInsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 20 : 16);
+  size((false /* TODO: PPC PORTInsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 20 : 16));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
@@ -12229,7 +12229,7 @@ instruct cmov_bns_less(flagsReg crx) %{
 
   format %{ "cmov    $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size(false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 16 : 12);
+  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 16 : 12));
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmovecr);
     Label done;

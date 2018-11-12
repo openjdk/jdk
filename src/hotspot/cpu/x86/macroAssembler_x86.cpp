@@ -3517,22 +3517,6 @@ void MacroAssembler::save_rax(Register tmp) {
   else if (tmp != rax) mov(tmp, rax);
 }
 
-// Write serialization page so VM thread can do a pseudo remote membar.
-// We use the current thread pointer to calculate a thread specific
-// offset to write to within the page. This minimizes bus traffic
-// due to cache line collision.
-void MacroAssembler::serialize_memory(Register thread, Register tmp) {
-  movl(tmp, thread);
-  shrl(tmp, os::get_serialize_page_shift_count());
-  andl(tmp, (os::vm_page_size() - sizeof(int)));
-
-  Address index(noreg, tmp, Address::times_1);
-  ExternalAddress page(os::get_memory_serialize_page());
-
-  // Size of store must match masking code above
-  movl(as_Address(ArrayAddress(page, index)), tmp);
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
 #ifdef _LP64

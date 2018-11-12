@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -80,7 +81,39 @@ void ServiceThread::initialize() {
   }
 }
 
+static bool needs_oopstorage_cleanup(OopStorage* const* storages,
+                                     bool* needs_cleanup,
+                                     size_t size) {
+  bool any_needs_cleanup = false;
+  for (size_t i = 0; i < size; ++i) {
+    assert(!needs_cleanup[i], "precondition");
+    if (storages[i]->needs_delete_empty_blocks()) {
+      needs_cleanup[i] = true;
+      any_needs_cleanup = true;
+    }
+  }
+  return any_needs_cleanup;
+}
+
+static void cleanup_oopstorages(OopStorage* const* storages,
+                                const bool* needs_cleanup,
+                                size_t size) {
+  for (size_t i = 0; i < size; ++i) {
+    if (needs_cleanup[i]) {
+      storages[i]->delete_empty_blocks();
+    }
+  }
+}
+
 void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
+  OopStorage* const oopstorages[] = {
+    JNIHandles::global_handles(),
+    JNIHandles::weak_global_handles(),
+    StringTable::weak_storage(),
+    SystemDictionary::vm_weak_oop_storage()
+  };
+  const size_t oopstorage_count = ARRAY_SIZE(oopstorages);
+
   while (true) {
     bool sensors_changed = false;
     bool has_jvmti_events = false;
@@ -90,6 +123,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool symboltable_work = false;
     bool resolved_method_table_work = false;
     bool protection_domain_table_work = false;
+    bool oopstorage_work = false;
+    bool oopstorages_cleanup[oopstorage_count] = {}; // Zero (false) initialize.
     JvmtiDeferredEvent jvmti_event;
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -102,7 +137,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
       ThreadBlockInVM tbivm(jt);
 
-      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
       // Process all available work on each (outer) iteration, rather than
       // only the first recognized bit of work, to avoid frequently true early
       // tests from potentially starving later work.  Hence the use of
@@ -114,10 +149,14 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
-              (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()))
+              (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
+              (oopstorage_work = needs_oopstorage_cleanup(oopstorages,
+                                                          oopstorages_cleanup,
+                                                          oopstorage_count)))
+
              == 0) {
         // Wait until notified that there is some work to do.
-        Service_lock->wait(Mutex::_no_safepoint_check_flag);
+        ml.wait(Mutex::_no_safepoint_check_flag);
       }
 
       if (has_jvmti_events) {
@@ -155,6 +194,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (protection_domain_table_work) {
       SystemDictionary::pd_cache_table()->unlink();
+    }
+
+    if (oopstorage_work) {
+      cleanup_oopstorages(oopstorages, oopstorages_cleanup, oopstorage_count);
     }
   }
 }

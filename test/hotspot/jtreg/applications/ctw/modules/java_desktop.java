@@ -26,7 +26,8 @@
  * @summary run CTW for some classes from java.desktop module
  *
  * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.jimage
+ * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.jimage
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  * @modules java.desktop

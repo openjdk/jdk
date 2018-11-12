@@ -82,8 +82,8 @@ abstract class HotSpotMethodDataAccessor {
     }
 
     TriState getExceptionSeen(HotSpotMethodData data, int position) {
-        final int EXCEPTIONS_MASK = 1 << config.bitDataExceptionSeenFlag;
-        return TriState.get((getFlags(data, position) & EXCEPTIONS_MASK) != 0);
+        final int exceptionsMask = 1 << config.bitDataExceptionSeenFlag;
+        return TriState.get((getFlags(data, position) & exceptionsMask) != 0);
     }
 
     /**

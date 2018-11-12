@@ -72,6 +72,7 @@ public class GraalTest {
     }
 
     public static final boolean Java8OrEarlier = GraalServices.Java8OrEarlier;
+    public static final boolean Java11OrEarlier = GraalServices.Java11OrEarlier;
 
     protected Method getMethod(String methodName) {
         return getMethod(getClass(), methodName);

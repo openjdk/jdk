@@ -66,7 +66,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public HotSpotResolvedObjectTypeImpl getArrayClass() {
+    public HotSpotResolvedObjectType getArrayClass() {
         if (kind == JavaKind.Void) {
             return null;
         }

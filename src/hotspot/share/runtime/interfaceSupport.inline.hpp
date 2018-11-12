@@ -79,17 +79,7 @@ class InterfaceSupport: AllStatic {
  private:
   static void serialize_thread_state_internal(JavaThread* thread, bool needs_exception_handler) {
     // Make sure new state is seen by VM thread
-    if (UseMembar) {
-      // Force a fence between the write above and read below
-      OrderAccess::fence();
-    } else {
-      // store to serialize page so VM thread can do pseudo remote membar
-      if (needs_exception_handler) {
-        os::write_memory_serialize_page_with_handler(thread);
-      } else {
-        os::write_memory_serialize_page(thread);
-      }
-    }
+    OrderAccess::fence();
   }
 };
 
@@ -126,9 +116,7 @@ class ThreadStateTransition : public StackObj {
   // transition_and_fence must be used on any thread state transition
   // where there might not be a Java call stub on the stack, in
   // particular on Windows where the Structured Exception Handler is
-  // set up in the call stub. os::write_memory_serialize_page() can
-  // fault and we can't recover from it on Windows without a SEH in
-  // place.
+  // set up in the call stub.
   static inline void transition_and_fence(JavaThread *thread, JavaThreadState from, JavaThreadState to) {
     assert(thread->thread_state() == from, "coming from wrong thread state");
     assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
@@ -162,7 +150,7 @@ class ThreadStateTransition : public StackObj {
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set
     // up to handle exceptions floating around at arbitrary points.
-    if (SafepointMechanism::poll(thread) || thread->is_suspend_after_native()) {
+    if (SafepointMechanism::should_block(thread) || thread->is_suspend_after_native()) {
       JavaThread::check_safepoint_and_suspend_for_native_trans(thread);
 
       // Clear unhandled oops anywhere where we could block, even if we don't.

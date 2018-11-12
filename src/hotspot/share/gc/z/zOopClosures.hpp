@@ -71,27 +71,21 @@ public:
   virtual void do_oop(narrowOop* p);
 };
 
-class ZVerifyHeapOopClosure : public BasicOopIterateClosure {
+class ZVerifyOopClosure : public ZRootsIteratorClosure, public BasicOopIterateClosure {
 public:
-  virtual ReferenceIterationMode reference_iteration_mode();
-
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
+  virtual ReferenceIterationMode reference_iteration_mode() {
+    return DO_FIELDS;
+  }
+
 #ifdef ASSERT
-  // Verification handled by the closure itself.
+  // Verification handled by the closure itself
   virtual bool should_verify_oops() {
     return false;
   }
 #endif
-};
-
-class ZVerifyRootOopClosure : public ZRootsIteratorClosure {
-public:
-  ZVerifyRootOopClosure();
-
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
 };
 
 class ZVerifyObjectClosure : public ObjectClosure {

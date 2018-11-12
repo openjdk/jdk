@@ -312,7 +312,7 @@ public class ISO2022_JP
                             break;
                         case JISX0201_1976_KANA:
                         case SHIFTOUT:
-                            if (b1 > 0x60) {
+                            if (b1 > 0x5f) {
                                 return CoderResult.malformedForLength(inputSize);
                             }
                             da[dp++] = (char)(b1 + 0xff40);
@@ -433,7 +433,7 @@ public class ISO2022_JP
                             break;
                         case JISX0201_1976_KANA:
                         case SHIFTOUT:
-                            if (b1 > 0x60) {
+                            if (b1 > 0x5f) {
                                 return CoderResult.malformedForLength(inputSize);
                             }
                             dst.put((char)(b1 + 0xff40));

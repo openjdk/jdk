@@ -661,12 +661,6 @@ GetJavaProperties(JNIEnv* env)
                 userDefaultUILang = userDefaultLCID;
             }
 
-            SetupI18nProps(userDefaultUILang,
-                           &sprops.language,
-                           &sprops.script,
-                           &sprops.country,
-                           &sprops.variant,
-                           &display_encoding);
             SetupI18nProps(userDefaultLCID,
                            &sprops.format_language,
                            &sprops.format_script,
@@ -710,17 +704,12 @@ GetJavaProperties(JNIEnv* env)
     }
 
     sprops.unicode_encoding = "UnicodeLittle";
-    /* User TIMEZONE */
-    {
-        /*
-         * We defer setting up timezone until it's actually necessary.
-         * Refer to TimeZone.getDefault(). However, the system
-         * property is necessary to be able to be set by the command
-         * line interface -D. Here temporarily set a null string to
-         * timezone.
-         */
-        sprops.timezone = "";
-    }
+
+    /* User TIMEZONE
+     * We defer setting up timezone until it's actually necessary.
+     * Refer to TimeZone.getDefault(). The system property
+     * is able to be set by the command line interface -Duser.timezone.
+     */
 
     /* Current directory */
     {

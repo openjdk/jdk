@@ -888,11 +888,6 @@ void ParNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  if (UseAdaptiveSizePolicy) {
-    set_survivor_overflow(false);
-    size_policy->minor_collection_begin();
-  }
-
   GCTraceTime(Trace, gc, phases) t1("ParNew", NULL, gch->gc_cause());
 
   age_table()->clear();
@@ -1017,11 +1012,6 @@ void ParNewGeneration::collect(bool   full,
   TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
   TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());
 
-  if (UseAdaptiveSizePolicy) {
-    size_policy->minor_collection_end(gch->gc_cause());
-    size_policy->avg_survived()->sample(from()->used());
-  }
-
   // We need to use a monotonically non-decreasing time in ms
   // or we will see time-warp warnings and os::javaTimeMillis()
   // does not guarantee monotonicity.
@@ -1108,9 +1098,6 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
   // Try allocating obj in to-space (unless too old)
   if (dummyOld.age() < tenuring_threshold()) {
     new_obj = (oop)par_scan_state->alloc_in_to_space(sz);
-    if (new_obj == NULL) {
-      set_survivor_overflow(true);
-    }
   }
 
   if (new_obj == NULL) {

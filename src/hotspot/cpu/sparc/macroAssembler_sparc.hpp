@@ -575,6 +575,7 @@ class MacroAssembler : public Assembler {
 
   void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
+  static bool uses_implicit_null_check(void* address);
 
   // support for delayed instructions
   MacroAssembler* delayed() { Assembler::delayed();  return this; }
@@ -950,9 +951,6 @@ public:
 
   void breakpoint_trap();
   void breakpoint_trap(Condition c, CC cc);
-
-  // Support for serializing memory accesses between threads
-  void serialize_memory(Register thread, Register tmp1, Register tmp2);
 
   void safepoint_poll(Label& slow_path, bool a, Register thread_reg, Register temp_reg);
 

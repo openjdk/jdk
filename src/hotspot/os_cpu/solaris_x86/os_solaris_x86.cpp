@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,8 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         // QQQ It doesn't seem that we need to do this on x86 because we should be able
         // to return properly from the handler without this extra stuff on the back side.
 
-      else if (sig == SIGSEGV && info->si_code > 0 && !MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
+      else if (sig == SIGSEGV && info->si_code > 0 &&
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         // Determination of interpreter/vtable stub/compiled code null exception
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
@@ -592,17 +593,6 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
       if (addr != (address)-1) {
         stub = addr;
       }
-    }
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    if ((sig == SIGSEGV) &&
-        os::is_memory_serialize_page(thread, (address)info->si_addr)) {
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return true;
     }
   }
 

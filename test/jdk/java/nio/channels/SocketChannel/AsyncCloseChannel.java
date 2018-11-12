@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
 /* @test
  * @bug 6285901 6501089
  * @summary Check no data is written to wrong socket channel during async closing.
- * @author Xueming Shen
+ * @run main/othervm AsyncCloseChannel
  */
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SocketChannel;
 
 public class AsyncCloseChannel {
     static volatile boolean failed = false;

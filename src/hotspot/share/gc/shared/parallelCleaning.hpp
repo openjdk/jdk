@@ -56,46 +56,26 @@ public:
 };
 
 class CodeCacheUnloadingTask {
-private:
-  static Monitor* _lock;
 
-  BoolObjectClosure* const _is_alive;
-  const bool               _unloading_occurred;
-  const uint               _num_workers;
+  CodeCache::UnloadingScope _unloading_scope;
+  const bool                _unloading_occurred;
+  const uint                _num_workers;
 
   // Variables used to claim nmethods.
   CompiledMethod* _first_nmethod;
   CompiledMethod* volatile _claimed_nmethod;
-
-  // The list of nmethods that need to be processed by the second pass.
-  CompiledMethod* volatile _postponed_list;
-  volatile uint            _num_entered_barrier;
 
 public:
   CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:
-  void add_to_postponed_list(CompiledMethod* nm);
-  void clean_nmethod(CompiledMethod* nm);
-  void clean_nmethod_postponed(CompiledMethod* nm);
-
   static const int MaxClaimNmethods = 16;
-
   void claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods);
-  CompiledMethod* claim_postponed_nmethod();
+
 public:
-  // Mark that we're done with the first pass of nmethod cleaning.
-  void barrier_mark(uint worker_id);
-
-  // See if we have to wait for the other workers to
-  // finish their first-pass nmethod cleaning work.
-  void barrier_wait(uint worker_id);
-
-  // Cleaning and unloading of nmethods. Some work has to be postponed
-  // to the second pass, when we know which nmethods survive.
-  void work_first_pass(uint worker_id);
-  void work_second_pass(uint worker_id);
+  // Cleaning and unloading of nmethods.
+  void work(uint worker_id);
 };
 
 

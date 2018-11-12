@@ -416,9 +416,9 @@ inline static bool checkFPFault(address pc, int code,
   return false;
 }
 
-inline static bool checkNullPointer(address pc, intptr_t fault,
+inline static bool checkNullPointer(address pc, void* fault,
                                     JavaThread* thread, address* stub) {
-  if (!MacroAssembler::needs_explicit_null_check(fault)) {
+  if (MacroAssembler::uses_implicit_null_check(fault)) {
     // Determination of interpreter/vtable stub/compiled code null
     // exception
     *stub =
@@ -437,10 +437,6 @@ inline static bool checkFastJNIAccess(address pc, address* stub) {
     return true;
   }
   return false;
-}
-
-inline static bool checkSerializePage(JavaThread* thread, address addr) {
-  return os::is_memory_serialize_page(thread, addr);
 }
 
 inline static bool checkZombie(sigcontext* uc, address* pc, address* stub) {
@@ -542,16 +538,6 @@ JVM_handle_linux_signal(int sig,
     pc = address(SIG_PC(uc));
     npc = address(SIG_NPC(uc));
 
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    if ((sig == SIGSEGV) && checkSerializePage(thread, (address)info->si_addr)) {
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return 1;
-    }
-
     if (checkPrefetch(uc, pc)) {
       return 1;
     }
@@ -600,7 +586,7 @@ JVM_handle_linux_signal(int sig,
         }
 
         if ((sig == SIGSEGV) &&
-            checkNullPointer(pc, (intptr_t)info->si_addr, thread, &stub)) {
+            checkNullPointer(pc, info->si_addr, thread, &stub)) {
           break;
         }
       } while (0);

@@ -78,7 +78,6 @@ static CompactHashtable<
 
 // --------------------------------------------------------------------------
 StringTable* StringTable::_the_table = NULL;
-volatile bool StringTable::_shared_string_mapped = false;
 volatile bool StringTable::_alt_hash = false;
 
 static juint murmur_seed = 0;
@@ -871,7 +870,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!_shared_string_mapped) {
+  } else if (!HeapShared::closed_archive_heap_region_mapped()) {
     _shared_table.reset();
   }
 }

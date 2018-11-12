@@ -39,8 +39,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.misc.JavaAWTAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaAWTAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.util.logging.internal.LoggingProviderImpl;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 

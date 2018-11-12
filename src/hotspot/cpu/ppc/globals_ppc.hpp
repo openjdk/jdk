@@ -69,8 +69,6 @@ define_pd_global(intx,  InlineSmallCode,       1500);
 define_pd_global(bool, RewriteBytecodes,      true);
 define_pd_global(bool, RewriteFrequentPairs,  true);
 
-define_pd_global(bool, UseMembar,             true);
-
 define_pd_global(bool, PreserveFramePointer,  false);
 
 // GC Ergo Flags

@@ -38,6 +38,9 @@
  *        compiler.c2.aarch64.TestVolatileStore
  *        compiler.c2.aarch64.TestUnsafeVolatileStore
  *        compiler.c2.aarch64.TestUnsafeVolatileCAS
+ *        compiler.c2.aarch64.TestUnsafeVolatileWeakCAS
+ *        compiler.c2.aarch64.TestUnsafeVolatileCAE
+ *        compiler.c2.aarch64.TestUnsafeVolatileGAS
  *
  * @run driver compiler.c2.aarch64.TestVolatilesCMS
  *      TestVolatileLoad CMS
@@ -53,6 +56,15 @@
  *
  * @run driver compiler.c2.aarch64.TestVolatilesCMS
  *      TestUnsafeVolatileCAS CMS
+ *
+ * @run driver compiler.c2.aarch64.TestVolatilesCMS
+ *      TestUnsafeVolatileWeakCAS CMS
+ *
+ * @run driver compiler.c2.aarch64.TestVolatilesCMS
+ *      TestUnsafeVolatileCAE CMS
+ *
+ * @run driver compiler.c2.aarch64.TestVolatilesCMS
+ *      TestUnsafeVolatileGAS CMS
  */
 
 package compiler.c2.aarch64;

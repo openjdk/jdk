@@ -28,8 +28,8 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
-import jdk.internal.misc.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
 
 class FileDispatcherImpl extends FileDispatcher {
 

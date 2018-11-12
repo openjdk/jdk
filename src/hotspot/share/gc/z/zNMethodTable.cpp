@@ -51,7 +51,6 @@ public:
   nmethod* method() const;
   size_t immediate_oops_count() const;
   oop** immediate_oops_begin() const;
-  oop** immediate_oops_begin_safe() const;
   oop** immediate_oops_end() const;
 };
 
@@ -94,24 +93,6 @@ oop** ZNMethodWithImmediateOops::immediate_oops_begin() const {
   // The immediate oop* array starts immediately after this object
   return (oop**)((uintptr_t)this + header_size());
 }
-
-oop** ZNMethodWithImmediateOops::immediate_oops_begin_safe() const {
-  // Non-entrant nmethods have a jump instruction patched into the beginning
-  // of the verified entry point, which could have overwritten an immediate
-  // oop. If so, make sure we skip over that oop.
-  if (_nm->is_not_entrant()) {
-    oop* const first_immediate_oop = *immediate_oops_begin();
-    oop* const safe_begin = (oop*)(_nm->verified_entry_point() + NativeJump::instruction_size);
-    if (first_immediate_oop < safe_begin) {
-      // First immediate oop overwritten, skip it
-      return immediate_oops_begin() + 1;
-    }
-  }
-
-  // First immediate oop not overwritten
-  return immediate_oops_begin();
-}
-
 
 oop** ZNMethodWithImmediateOops::immediate_oops_end() const {
   return immediate_oops_begin() + immediate_oops_count();
@@ -429,7 +410,7 @@ void ZNMethodTable::entry_oops_do(ZNMethodTableEntry entry, OopClosure* cl) {
   if (entry.immediate_oops()) {
     // Process immediate oops
     const ZNMethodWithImmediateOops* const nmi = entry.method_with_immediate_oops();
-    oop** const begin = nmi->immediate_oops_begin_safe();
+    oop** const begin = nmi->immediate_oops_begin();
     oop** const end = nmi->immediate_oops_end();
     for (oop** p = begin; p < end; p++) {
       cl->do_oop(*p);

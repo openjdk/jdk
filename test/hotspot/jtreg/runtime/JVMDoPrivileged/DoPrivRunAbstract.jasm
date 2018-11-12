@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test that JVM_DoPrivilege throws java.lang.InternalError for an
+ * @summary Test that AccessController.doPrivileged throws java.lang.AbstractMethodError for an
  *          abstract run() method.
  * @bug 8183962
  * @compile DoPrivRunAbstract.jasm
@@ -56,8 +56,8 @@
 //    public static void main(String[] args) throws Exception {
 //        try {
 //            doPrivileged(() -> System.out.println(System.getProperty("java.home")));
-//            throw new RuntimeException("Expected InternalError not throw");
-//        } catch (java.lang.InternalError e) { }
+//            throw new RuntimeException("Expected AbstractMethodError not throw");
+//        } catch (java.lang.AbstractMethodError e) { }
 //    }
 //}
 
@@ -82,13 +82,13 @@ super public class DoPrivRunAbstract version 51:0 {
         invokestatic    Method doPrivileged:"(LDoPrivRunAbstract$VoidPrivActRunAbstract;)V";
         new    class java/lang/RuntimeException;
         dup;
-        ldc    String "Expected InternalError not throw";
+        ldc    String "Expected AbstractMethodError not throw";
         invokespecial    Method java/lang/RuntimeException."<init>":"(Ljava/lang/String;)V";
         athrow;
         endtry t0;
-        catch t0 java/lang/InternalError;
+        catch t0 java/lang/AbstractMethodError;
         stack_frame_type stack1;
-        stack_map class java/lang/InternalError;
+        stack_map class java/lang/AbstractMethodError;
         astore_1;
         return;
     }

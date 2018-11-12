@@ -25,8 +25,8 @@
 
 package java.util.jar;
 
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaUtilZipFileAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaUtilZipFileAccess;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
@@ -172,7 +172,7 @@ class JarFile extends ZipFile {
         // Set up JavaUtilJarAccess in SharedSecrets
         SharedSecrets.setJavaUtilJarAccess(new JavaUtilJarAccessImpl());
         // Get JavaUtilZipFileAccess from SharedSecrets
-        JUZFA = jdk.internal.misc.SharedSecrets.getJavaUtilZipFileAccess();
+        JUZFA = SharedSecrets.getJavaUtilZipFileAccess();
         // multi-release jar file versions >= 9
         BASE_VERSION = Runtime.Version.parse(Integer.toString(8));
         BASE_VERSION_FEATURE = BASE_VERSION.feature();

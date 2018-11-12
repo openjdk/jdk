@@ -418,7 +418,7 @@ JVM_handle_linux_signal(int sig,
 
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }
@@ -476,19 +476,6 @@ JVM_handle_linux_signal(int sig,
         os::Linux::ucontext_set_pc(uc, pc + Assembler::instr_len(pc));
         return true;
       }
-    }
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    // Info->si_addr need not be the exact address, it is only
-    // guaranteed to be on the same page as the address that caused
-    // the SIGSEGV.
-    if ((sig == SIGSEGV) && !UseMembar &&
-        (os::get_memory_serialize_page() ==
-         (address)((uintptr_t)info->si_addr & ~(os::vm_page_size()-1)))) {
-      return true;
     }
   }
 

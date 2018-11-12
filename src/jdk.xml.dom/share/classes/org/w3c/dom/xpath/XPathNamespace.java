@@ -74,7 +74,7 @@ import org.w3c.dom.Node;
  * future versions of the XPath specification, the definition of a namespace
  * node may be changed incomatibly, in which case incompatible changes to
  * field values may be required to implement versions beyond XPath 1.0.
- * <p>See also the <a href='http://www.w3.org/2002/08/WD-DOM-Level-3-XPath-20020820'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
  */
 public interface XPathNamespace extends Node {
     // XPathNodeType

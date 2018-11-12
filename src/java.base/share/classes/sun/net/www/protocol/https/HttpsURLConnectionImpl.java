@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.security.Permission;
 import java.security.Principal;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import sun.net.www.http.HttpClient;
 
 /**
@@ -532,5 +533,10 @@ public class HttpsURLConnectionImpl
     @Override
     public void setAuthenticator(Authenticator auth) {
         delegate.setAuthenticator(auth);
+    }
+
+    @Override
+    public Optional<SSLSession> getSSLSession() {
+        return Optional.ofNullable(delegate.getSSLSession());
     }
 }

@@ -358,6 +358,7 @@ public:
   void zero_memory(Register start, Register end, Register tmp);
 
   static bool needs_explicit_null_check(intptr_t offset);
+  static bool uses_implicit_null_check(void* address);
 
   void arm_stack_overflow_check(int frame_size_in_bytes, Register tmp);
   void arm_stack_overflow_check(Register Rsize, Register tmp);
@@ -1095,4 +1096,3 @@ private:
 
 
 #endif // CPU_ARM_VM_MACROASSEMBLER_ARM_HPP
-

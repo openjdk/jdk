@@ -30,8 +30,6 @@
  * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run driver SharedStringsStress
- * @run main/othervm -XX:+UseStringDeduplication SharedStringsStress
- * @run main/othervm -XX:-CompactStrings SharedStringsStress
  */
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,6 +40,12 @@ import jdk.test.lib.process.ProcessTools;
 
 public class SharedStringsStress {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, SharedStringsStress::test);
+    }
+
+    public static void test(String[] args) throws Exception {
+        String vmOptionsPrefix[] = SharedStringsUtils.getChildVMOptionsPrefix();
+
         String appJar = JarBuilder.build("SharedStringsStress", "HelloString");
 
         String sharedArchiveConfigFile = System.getProperty("user.dir") + File.separator + "SharedStringsStress_gen.txt";
@@ -58,9 +62,11 @@ public class SharedStringsStress {
         }
 
         OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
-                                                    "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile);
+            TestCommon.concat(vmOptionsPrefix,
+                "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile));
         TestCommon.checkDump(dumpOutput);
-        OutputAnalyzer execOutput = TestCommon.exec(appJar, "HelloString");
+        OutputAnalyzer execOutput = TestCommon.exec(appJar,
+            TestCommon.concat(vmOptionsPrefix, "HelloString"));
         TestCommon.checkExec(execOutput);
     }
 }

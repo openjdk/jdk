@@ -36,10 +36,6 @@
 #include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
-Monitor*              ThreadsSMRSupport::_delete_lock =
-                          new Monitor(Monitor::special, "Thread_SMR_delete_lock",
-                                      false /* allow_vm_block */,
-                                      Monitor::_safepoint_check_never);
 // The '_cnt', '_max' and '_times" fields are enabled via
 // -XX:+EnableThreadSMRStatistics:
 
@@ -74,7 +70,16 @@ volatile uint         ThreadsSMRSupport::_deleted_thread_time_max = 0;
 // isn't available everywhere (or is it?).
 volatile uint         ThreadsSMRSupport::_deleted_thread_times = 0;
 
-ThreadsList* volatile ThreadsSMRSupport::_java_thread_list = new ThreadsList(0);
+// The bootstrap list is empty and cannot be freed.
+ThreadsList ThreadsSMRSupport::_bootstrap_list = ThreadsList(0);
+
+// This is the VM's current "threads list" and it contains all of
+// the JavaThreads the VM considers to be alive at this moment in
+// time. The other ThreadsList objects in the VM contain past
+// snapshots of the "threads list". _java_thread_list is initially
+// set to _bootstrap_list so that we can detect when we have a very
+// early use of a ThreadsListHandle.
+ThreadsList* volatile ThreadsSMRSupport::_java_thread_list = &_bootstrap_list;
 
 // # of ThreadsLists allocated over VM lifetime.
 // Impl note: We allocate a new ThreadsList for every thread create and
@@ -139,6 +144,10 @@ inline void ThreadsSMRSupport::inc_java_thread_list_alloc_cnt() {
   _java_thread_list_alloc_cnt++;
 }
 
+inline bool ThreadsSMRSupport::is_bootstrap_list(ThreadsList* list) {
+  return list == &_bootstrap_list;
+}
+
 inline void ThreadsSMRSupport::update_deleted_thread_time_max(uint new_value) {
   while (true) {
     uint cur_value = _deleted_thread_time_max;
@@ -162,7 +171,6 @@ inline void ThreadsSMRSupport::update_java_thread_list_max(uint new_value) {
 inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_list) {
   return (ThreadsList*)Atomic::xchg(new_list, &_java_thread_list);
 }
-
 
 // Hash table of pointers found by a scan. Used for collecting hazard
 // pointers (ThreadsList references). Also used for collecting JavaThreads
@@ -514,6 +522,11 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 #ifdef ASSERT
   assert(_list != NULL, "_list must not be NULL");
 
+  if (ThreadsSMRSupport::is_bootstrap_list(_list)) {
+    // We are early in VM bootstrapping so nothing to do here.
+    return;
+  }
+
   // The closure will attempt to verify that the calling thread can
   // be found by threads_do() on the specified ThreadsList. If it
   // is successful, then the specified ThreadsList was acquired as
@@ -765,6 +778,13 @@ bool ThreadsSMRSupport::delete_notify() {
 // in the chain may get deleted by this call if they are no longer in-use.
 void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   assert_locked_or_safepoint(Threads_lock);
+
+  if (is_bootstrap_list(threads)) {
+    // The bootstrap list cannot be freed and is empty so
+    // it does not need to be scanned. Nothing to do here.
+    log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::free_list: bootstrap ThreadsList=" INTPTR_FORMAT " is no longer in use.", os::current_thread_id(), p2i(threads));
+    return;
+  }
 
   threads->set_next_list(_to_delete_list);
   _to_delete_list = threads;

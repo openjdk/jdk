@@ -542,7 +542,9 @@ abstract public class TestScaffold extends TargetAdapter {
                                 redefine(mainStartClass);
                             }
                         } else {
-                            redefine(rt);
+                            if (!name.startsWith("jdk.")) {
+                                redefine(rt);
+                            }
                         }
                     }
                 }

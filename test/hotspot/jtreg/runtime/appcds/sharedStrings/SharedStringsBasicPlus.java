@@ -27,18 +27,18 @@
  * @summary Basic plus test for shared strings
  * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build HelloStringPlus sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver SharedStringsBasicPlus
- * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasicPlus
- * @run main/othervm -XX:-CompactStrings SharedStringsBasicPlus
  */
 
 public class SharedStringsBasicPlus {
     public static void main(String[] args) throws Exception {
+        SharedStringsUtils.run(args, SharedStringsBasicPlus::test);
+    }
+
+    public static void test(String[] args) throws Exception {
         SharedStringsUtils.buildJarAndWhiteBox("HelloStringPlus");
 
         SharedStringsUtils.dumpWithWhiteBox( TestCommon.list("HelloStringPlus"),

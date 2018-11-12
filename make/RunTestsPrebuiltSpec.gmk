@@ -186,3 +186,7 @@ endif
 ifeq ($(OPENJDK_BUILD_OS), windows)
   CYGPATH := cygpath
 endif
+
+################################################################################
+# Simple macros from spec.gmk.in
+SHARED_LIBRARY=$(LIBRARY_PREFIX)$1$(SHARED_LIBRARY_SUFFIX)

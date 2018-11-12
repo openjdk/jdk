@@ -3,9 +3,7 @@
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,6 +19,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# tzdb data for Europe and environs
+
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -540,7 +540,7 @@ Link	Europe/London	Europe/Isle_of_Man
 #
 # To work around this problem, the build procedure can translate the
 # following data into two forms, one with negative SAVE values and the
-# other form with a traditional approximation for Irish time stamps
+# other form with a traditional approximation for Irish timestamps
 # after 1971-10-31 02:00 UTC; although this approximation has tm_isdst
 # flags that are reversed, its UTC offsets are correct and this often
 # suffices.  This source file currently uses only nonnegative SAVE
@@ -2450,6 +2450,33 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # administratively part of Sakhalin oblast', they appear to have
 # remained on UTC+11 along with Magadan.
 
+# From Marat Nigametzianov (2018-07-16):
+# this is link to order from 1956 about timezone in USSR
+# http://astro.uni-altai.ru/~orion/blog/2011/11/novyie-granitsyi-chasovyih-poyasov-v-sssr/
+#
+# From Paul Eggert (2018-07-16):
+# Perhaps someone could translate the above-mentioned link and use it
+# to correct our data for the ex-Soviet Union.  It cites the following:
+# «Поясное время и новые границы часовых поясов» / сост. П.Н. Долгов,
+# отв. ред. Г.Д. Бурдун - М: Комитет стандартов, мер и измерительных
+# приборов при Совете Министров СССР, Междуведомственная комиссия
+# единой службы времени, 1956 г.
+# This book looks like it would be a helpful resource for the Soviet
+# Union through 1956.  Although a copy was in the Scientific Library
+# of Tomsk State University, I have not been able to track down a copy nearby.
+#
+# From Stepan Golosunov (2018-07-21):
+# http://astro.uni-altai.ru/~orion/blog/2015/05/center-reforma-ischisleniya-vremeni-br-na-territorii-sssr-v-1957-godu-center/
+# says that the 1956 decision to change time belts' borders was not
+# implemented as planned in 1956 and the change happened in 1957.
+# There is also the problem that actual time zones were different from
+# the official time belts (and from many time belts' maps) as there were
+# numerous exceptions to application of time belt rules.  For example,
+# https://ru.wikipedia.org/wiki/Московское_время#Перемещение_границы_применения_московского_времени_на_восток
+# says that by 1962 there were many regions in the 3rd time belt that
+# were on Moscow time, referring to a 1962 map.  By 1989 number of such
+# exceptions grew considerably.
+
 # From Tim Parenti (2014-07-06):
 # The comments detailing the coverage of each Russian zone are meant to assist
 # with maintenance only and represent our best guesses as to which regions
@@ -2459,9 +2486,6 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # and are used for convenience only; no guarantees are made regarding their
 # future stability.  ISO 3166-2:RU codes are also listed for first-level
 # divisions where available.
-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-
 
 # From Tim Parenti (2014-07-03):
 # Europe/Kaliningrad covers...
@@ -2730,6 +2754,15 @@ Zone Europe/Astrakhan	 3:12:12 -	LMT	1924 May
 # 34	RU-VGG	Volgograd Oblast
 # The 1988 transition is from USSR act No. 5 (1988-01-04).
 
+# From Alexander Fetisov (2018-09-20):
+# Volgograd region in southern Russia (Europe/Volgograd) change
+# timezone from UTC+3 to UTC+4 from 28oct2018.
+# http://sozd.parliament.gov.ru/bill/452878-7
+#
+# From Stepan Golosunov (2018-10-11):
+# The law has been published today on
+# http://publication.pravo.gov.ru/Document/View/0001201810110037
+
 Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 3:00	-	+03	1930 Jun 21
 			 4:00	-	+04	1961 Nov 11
@@ -2738,7 +2771,8 @@ Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 4:00	-	+04	1992 Mar 29  2:00s
 			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
 			 4:00	-	+04	2014 Oct 26  2:00s
-			 3:00	-	+03
+			 3:00	-	+03	2018 Oct 28  2:00s
+			 4:00	-	+04
 
 # From Paul Eggert (2016-11-11):
 # Europe/Saratov covers:
@@ -3427,7 +3461,8 @@ Rule	Spain	1978	only	-	Oct	 1	 2:00s	0	-
 #Rule NatSpain	1937	only	-	May	22	23:00	1:00	S
 #Rule NatSpain	1937	1938	-	Oct	Sat>=1	24:00s	0	-
 #Rule NatSpain	1938	only	-	Mar	26	23:00	1:00	S
-# The following rules are copied from Morocco from 1967 through 1978.
+# The following rules are copied from Morocco from 1967 through 1978,
+# except with "S" letters.
 Rule SpainAfrica 1967	only	-	Jun	 3	12:00	1:00	S
 Rule SpainAfrica 1967	only	-	Oct	 1	 0:00	0	-
 Rule SpainAfrica 1974	only	-	Jun	24	 0:00	1:00	S
@@ -3447,6 +3482,7 @@ Zone	Africa/Ceuta	-0:21:16 -	LMT	1900 Dec 31 23:38:44
 			 0:00	1:00	WEST	1918 Oct  7 23:00
 			 0:00	-	WET	1924
 			 0:00	Spain	WE%sT	1929
+			 0:00	-	WET	1967 # Help zishrink.awk.
 			 0:00 SpainAfrica WE%sT	1984 Mar 16
 			 1:00	-	CET	1986
 			 1:00	EU	CE%sT
@@ -3632,7 +3668,7 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # http://www.resmigazete.gov.tr/eskiler/2001/03/20010324.htm#2  - for 2001
 # http://www.resmigazete.gov.tr/eskiler/2002/03/20020316.htm#2  - for 2002-2006
 # From Paul Eggert (2016-09-25):
-# Prefer the above sources to Shanks & Pottenger for time stamps after 1985.
+# Prefer the above sources to Shanks & Pottenger for timestamps after 1985.
 
 # From Steffen Thorsen (2007-03-09):
 # Starting 2007 though, it seems that they are adopting EU's 1:00 UTC
@@ -3842,10 +3878,29 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # * Ukrainian Government's Resolution of 20.03.1992, No. 139.
 # http://www.uazakon.com/documents/date_8u/pg_grcasa.htm
 
+# From Paul Eggert (2018-10-03):
+# As is usual in tzdb, Ukrainian zones use the most common English spellings.
+# For example, tzdb uses Europe/Kiev, as "Kiev" is the most common spelling in
+# English for Ukraine's capital, even though it is certainly wrong as a
+# transliteration of the Ukrainian "Київ".  This is similar to tzdb's use of
+# Europe/Prague, which is certainly wrong as a transliteration of the Czech
+# "Praha".  ("Kiev" came from old Slavic via Russian to English, and "Prague"
+# came from old Slavic via French to English, so the two cases have something
+# in common.)  Admittedly English-language spelling of Ukrainian names is
+# controversial, and some day "Kyiv" may become substantially more popular in
+# English; in the meantime, stick with the traditional English "Kiev" as that
+# means less disruption for our users.
+#
+# Anyway, none of the common English-language spellings (Kiev, Kyiv, Kieff,
+# Kijeff, Kijev, Kiyef, Kiyeff) do justice to the common pronunciation in
+# Ukrainian, namely [ˈkɪjiu̯] (IPA).  This pronunciation has nothing like an
+# English "v" or "f", and instead trails off with what an English-speaker
+# would call a demure "oo" sound, and it would would be better anglicized as
+# "Kuiyu".  Here's a sound file, if you would like to do as the Kuiyuvians do:
+# https://commons.wikimedia.org/wiki/File:Uk-Київ.ogg
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-# Most of Ukraine since 1970 has been like Kiev.
-# "Kyiv" is the transliteration of the Ukrainian name, but
-# "Kiev" is more common in English.
+# This represents most of Ukraine.  See above for the spelling of "Kiev".
 Zone Europe/Kiev	2:02:04 -	LMT	1880
 			2:02:04	-	KMT	1924 May  2 # Kiev Mean Time
 			2:00	-	EET	1930 Jun 21

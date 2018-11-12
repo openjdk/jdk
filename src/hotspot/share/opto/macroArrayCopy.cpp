@@ -72,7 +72,6 @@ Node* PhaseMacroExpand::make_leaf_call(Node* ctrl, Node* mem,
                                        Node* parm2, Node* parm3,
                                        Node* parm4, Node* parm5,
                                        Node* parm6, Node* parm7) {
-  int size = call_type->domain()->cnt();
   Node* call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O    , top());
@@ -1107,7 +1106,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     Node* call = make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, src, dest, length XTOP);
     transform_later(call);
 
-    _igvn.replace_node(ac, call);
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    bs->clone_barrier_at_expansion(ac, call, _igvn);
+
     return;
   } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_cloneoop()) {
     Node* mem = ac->in(TypeFunc::Memory);

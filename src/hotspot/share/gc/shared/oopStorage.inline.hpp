@@ -173,7 +173,8 @@ public:
   bool is_full() const;
   bool is_empty() const;
   uintx allocated_bitmask() const;
-  bool is_deletable() const;
+
+  bool is_safe_to_delete() const;
 
   Block* deferred_updates_next() const;
   void set_deferred_updates_next(Block* new_next);
@@ -191,7 +192,7 @@ public:
   static Block* new_block(const OopStorage* owner);
   static void delete_block(const Block& block);
 
-  void release_entries(uintx releasing, Block* volatile* deferred_list);
+  void release_entries(uintx releasing, OopStorage* owner);
 
   template<typename F> bool iterate(F f);
   template<typename F> bool iterate(F f) const;

@@ -49,8 +49,8 @@ public interface ConstantPool {
     /**
      * Looks up a reference to a field. If {@code opcode} is non-negative, then resolution checks
      * specific to the bytecode it denotes are performed if the field is already resolved. Checks
-     * for some bytecodes require the method that contains the bytecode to be specified. Should
-     * any of these checks fail, an unresolved field reference is returned.
+     * for some bytecodes require the method that contains the bytecode to be specified. Should any
+     * of these checks fail, an unresolved field reference is returned.
      *
      * @param cpi the constant pool index
      * @param opcode the opcode of the instruction for which the lookup is being performed or

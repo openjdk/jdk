@@ -62,9 +62,8 @@ $ make exploded-test TEST=tier2</code></pre>
 <p>If you want, you can single out an individual test or a group of tests, for instance <code>gtest:LogDecorations</code> or <code>gtest:LogDecorations.level_test_vm</code>. This can be particularly useful if you want to run a shaky test repeatedly.</p>
 <p>For Gtest, there is a separate test suite for each JVM variant. The JVM variant is defined by adding <code>/&lt;variant&gt;</code> to the test descriptor, e.g. <code>gtest:Log/client</code>. If you specify no variant, gtest will run once for each JVM variant present (e.g. server, client). So if you only have the server JVM present, then <code>gtest:all</code> will be equivalent to <code>gtest:all/server</code>.</p>
 <h3 id="special-tests">Special tests</h3>
-<p>A handful of odd tests that are not covered by any other testing framework are accessible using the <code>special:</code> test descriptor. Currently, this includes <code>hotspot-internal</code>, <code>failure-handler</code> and <code>make</code>.</p>
+<p>A handful of odd tests that are not covered by any other testing framework are accessible using the <code>special:</code> test descriptor. Currently, this includes <code>failure-handler</code> and <code>make</code>.</p>
 <ul>
-<li><p>Hotspot legacy internal testing (run using <code>-XX:+ExecuteInternalVMTests</code>) is run using <code>special:hotspot-internal</code> or just <code>hotspot-internal</code> as test descriptor, and will only work on a debug JVM.</p></li>
 <li><p>Failure handler testing is run using <code>special:failure-handler</code> or just <code>failure-handler</code> as test descriptor.</p></li>
 <li><p>Tests for the build system, including both makefiles and related functionality, is run using <code>special:make</code> or just <code>make</code> as test descriptor. This is equivalent to <code>special:make:all</code>.</p>
 <p>A specific make test can be run by supplying it as argument, e.g. <code>special:make:idea</code>. As a special syntax, this can also be expressed as <code>make-idea</code>, which allows for command lines as <code>make test-make-idea</code>.</p></li>

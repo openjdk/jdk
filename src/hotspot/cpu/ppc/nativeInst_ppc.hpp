@@ -100,12 +100,6 @@ class NativeInstruction {
     return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
   }
 
-  bool is_memory_serialization(JavaThread *thread, void *ucontext) {
-    // Is the current instruction a write access of thread to the
-    // memory serialization page?
-    return MacroAssembler::is_memory_serialization(long_at(0), thread, ucontext);
-  }
-
   address get_stack_bang_address(void *ucontext) {
     // If long_at(0) is not a stack bang, return 0. Otherwise, return
     // banged address.

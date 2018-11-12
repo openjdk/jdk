@@ -31,6 +31,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import java.util.*;
 
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -53,17 +54,20 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     private final ProcessingEnvironment processingEnv;
     private final Elements eltUtils;
 
+    private final boolean allowModules;
+
     // Caller must pass in an immutable set
     private final Set<? extends Element> rootElements;
 
     JavacRoundEnvironment(boolean processingOver,
                           boolean errorRaised,
                           Set<? extends Element> rootElements,
-                          ProcessingEnvironment processingEnv) {
+                          JavacProcessingEnvironment processingEnv) {
         this.processingOver = processingOver;
         this.errorRaised = errorRaised;
         this.rootElements = rootElements;
         this.processingEnv = processingEnv;
+        this.allowModules = Feature.MODULES.allowedInSource(processingEnv.source);
         this.eltUtils = processingEnv.getElementUtils();
     }
 
@@ -287,9 +291,11 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         TypeElement annotationElement = eltUtils.getTypeElement(name);
         if (annotationElement != null)
             return annotationElement;
-        else {
+        else if (allowModules) {
             String moduleName = Objects.requireNonNullElse(annotation.getModule().getName(), "");
             return eltUtils.getTypeElement(eltUtils.getModuleElement(moduleName), name);
+        } else {
+            return null;
         }
     }
 

@@ -26,8 +26,8 @@
 package java.nio;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.JavaNioAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 import java.util.Spliterator;

@@ -39,8 +39,8 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-import jdk.internal.misc.JavaNioAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.util.ArrayList;
 import java.util.List;

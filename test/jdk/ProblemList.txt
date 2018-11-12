@@ -878,14 +878,6 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 ############################################################################
 
-###########################################################################
-#
-# Java EE Module Removal
-#
-com/sun/jdi/RedefineCrossEvent.java                             8194308    generic-all  Java EE Module Removal
-
-############################################################################
-
 # jdk_jfr
 
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all

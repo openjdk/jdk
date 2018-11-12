@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.nio.file;
 
 import java.nio.file.OpenOption;
-import sun.nio.fs.ExtendedOptions;
+import jdk.internal.misc.FileSystemOption;
 
 /**
  * Defines <em>extended</em> open options supported on some platforms
@@ -39,15 +39,15 @@ public enum ExtendedOpenOption implements OpenOption {
     /**
      * Prevent operations on the file that request read access.
      */
-    NOSHARE_READ(ExtendedOptions.NOSHARE_READ),
+    NOSHARE_READ(FileSystemOption.NOSHARE_READ),
     /**
      * Prevent operations on the file that request write access.
      */
-    NOSHARE_WRITE(ExtendedOptions.NOSHARE_WRITE),
+    NOSHARE_WRITE(FileSystemOption.NOSHARE_WRITE),
     /**
      * Prevent operations on the file that request delete access.
      */
-    NOSHARE_DELETE(ExtendedOptions.NOSHARE_DELETE),
+    NOSHARE_DELETE(FileSystemOption.NOSHARE_DELETE),
 
     /**
      * Requires that direct I/O be used for read or write access.
@@ -69,9 +69,9 @@ public enum ExtendedOpenOption implements OpenOption {
      *
      * @since 10
      */
-    DIRECT(ExtendedOptions.DIRECT);
+    DIRECT(FileSystemOption.DIRECT);
 
-    ExtendedOpenOption(ExtendedOptions.InternalOption<Void> option) {
+    ExtendedOpenOption(FileSystemOption<Void> option) {
         option.register(this);
     }
 }

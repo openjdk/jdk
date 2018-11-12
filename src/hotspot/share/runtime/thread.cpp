@@ -61,7 +61,6 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -1558,7 +1557,6 @@ void JavaThread::initialize() {
   _on_thread_list = false;
   set_thread_state(_thread_new);
   _terminated = _not_terminated;
-  _privileged_stack_top = NULL;
   _array_for_gc = NULL;
   _suspend_equivalent = false;
   _in_deopt_handler = 0;
@@ -1990,7 +1988,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
   // is in a consistent state, in case GC happens
-  assert(_privileged_stack_top == NULL, "must be NULL when we get here");
 
   if (active_handles() != NULL) {
     JNIHandleBlock* block = active_handles();
@@ -2839,11 +2836,6 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   if (has_last_Java_frame()) {
     // Record JavaThread to GC thread
     RememberProcessedThread rpt(this);
-
-    // Traverse the privileged stack
-    if (_privileged_stack_top != NULL) {
-      _privileged_stack_top->oops_do(f);
-    }
 
     // traverse the registered growable array
     if (_array_for_gc != NULL) {
@@ -4286,7 +4278,7 @@ bool Threads::destroy_vm() {
     // queue until after the vm thread is dead. After this point,
     // we'll never emerge out of the safepoint before the VM exits.
 
-    MutexLocker ml(Heap_lock);
+    MutexLockerEx ml(Heap_lock, Mutex::_no_safepoint_check_flag);
 
     VMThread::wait_for_vm_thread_exit();
     assert(SafepointSynchronize::is_at_safepoint(), "VM thread should exit at Safepoint");

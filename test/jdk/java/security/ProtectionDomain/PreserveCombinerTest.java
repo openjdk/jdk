@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.security.AccessController;
 import java.security.DomainCombiner;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.SharedSecrets;
 
 /*
  * @test
@@ -34,7 +34,7 @@ import jdk.internal.misc.SharedSecrets;
  * @summary Make sure that JavaSecurityAccess.doIntersectionPrivilege()
  *          is not dropping the information about the domain combiner of
  *          the stack ACC
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.access
  */
 
 public class PreserveCombinerTest {

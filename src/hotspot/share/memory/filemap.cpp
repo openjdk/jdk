@@ -26,7 +26,6 @@
 #include "jvm.h"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -615,7 +614,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else {
     si->_file_offset = _file_offset;
   }
-  if (MetaspaceShared::is_heap_region(region)) {
+  if (HeapShared::is_heap_region(region)) {
     assert((base - (char*)Universe::narrow_oop_base()) % HeapWordSize == 0, "Sanity");
     if (base != NULL) {
       si->_addr._offset = (intx)CompressedOops::encode_not_null((oop)base);
@@ -814,7 +813,7 @@ static const char* shared_region_name[] = { "MiscData", "ReadWrite", "ReadOnly",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
 char* FileMapInfo::map_region(int i, char** top_ret) {
-  assert(!MetaspaceShared::is_heap_region(i), "sanity");
+  assert(!HeapShared::is_heap_region(i), "sanity");
   CDSFileMapRegion* si = space_at(i);
   size_t used = si->_used;
   size_t alignment = os::vm_allocation_granularity();
@@ -857,14 +856,14 @@ address FileMapInfo::decode_start_address(CDSFileMapRegion* spc, bool with_curre
   }
 }
 
-static MemRegion *string_ranges = NULL;
+static MemRegion *closed_archive_heap_ranges = NULL;
 static MemRegion *open_archive_heap_ranges = NULL;
-static int num_string_ranges = 0;
+static int num_closed_archive_heap_ranges = 0;
 static int num_open_archive_heap_ranges = 0;
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool FileMapInfo::has_heap_regions() {
-  return (_header->_space[MetaspaceShared::first_string]._used > 0);
+  return (_header->_space[MetaspaceShared::first_closed_archive_heap_region]._used > 0);
 }
 
 // Returns the address range of the archived heap regions computed using the
@@ -875,7 +874,9 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
   address start = (address) max_uintx;
   address end   = NULL;
 
-  for (int i = MetaspaceShared::first_string; i <= MetaspaceShared::last_valid_region; i++) {
+  for (int i = MetaspaceShared::first_closed_archive_heap_region;
+           i <= MetaspaceShared::last_valid_region;
+           i++) {
     CDSFileMapRegion* si = space_at(i);
     size_t size = si->_used;
     if (size > 0) {
@@ -894,16 +895,16 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
 }
 
 //
-// Map the shared string objects and open archive heap objects to the runtime
-// java heap.
+// Map the closed and open archive heap objects to the runtime java heap.
 //
-// The shared strings are mapped close to the end of the java heap top in
-// closed archive regions. The mapped strings contain no out-going references
-// to any other java heap regions. GC does not write into the mapped shared strings.
+// The shared objects are mapped at (or close to ) the java heap top in
+// closed archive regions. The mapped objects contain no out-going
+// references to any other java heap regions. GC does not write into the
+// mapped closed archive heap region.
 //
-// The open archive heap objects are mapped below the shared strings in
-// the runtime java heap. The mapped open archive heap data only contain
-// references to the shared strings and open archive objects initially.
+// The open archive heap objects are mapped below the shared objects in
+// the runtime java heap. The mapped open archive heap data only contains
+// references to the shared objects and open archive objects initially.
 // During runtime execution, out-going references to any other java heap
 // regions may be added. GC may mark and update references in the mapped
 // open archive objects.
@@ -983,29 +984,31 @@ void FileMapInfo::map_heap_regions_impl() {
   log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
   HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
 
-  CDSFileMapRegion* si = space_at(MetaspaceShared::first_string);
-  address relocated_strings_bottom = start_address_as_decoded_from_archive(si);
-  if (!is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes)) {
-    // Align the bottom of the string regions at G1 region boundary. This will avoid
-    // the situation where the highest open region and the lowest string region sharing
-    // the same G1 region. Otherwise we will fail to map the open regions.
-    size_t align = size_t(relocated_strings_bottom) % HeapRegion::GrainBytes;
+  CDSFileMapRegion* si = space_at(MetaspaceShared::first_closed_archive_heap_region);
+  address relocated_closed_heap_region_bottom = start_address_as_decoded_from_archive(si);
+  if (!is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes)) {
+    // Align the bottom of the closed archive heap regions at G1 region boundary.
+    // This will avoid the situation where the highest open region and the lowest
+    // closed region sharing the same G1 region. Otherwise we will fail to map the
+    // open regions.
+    size_t align = size_t(relocated_closed_heap_region_bottom) % HeapRegion::GrainBytes;
     delta -= align;
     log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
-                  " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes", align, delta);
+                  " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
+                  align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
     _heap_pointers_need_patching = true;
-    relocated_strings_bottom = start_address_as_decoded_from_archive(si);
+    relocated_closed_heap_region_bottom = start_address_as_decoded_from_archive(si);
   }
-  assert(is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes), "must be");
+  assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
+         "must be");
 
-  // First, map string regions as closed archive heap regions.
-  // GC does not write into the regions.
-  if (map_heap_data(&string_ranges,
-                    MetaspaceShared::first_string,
-                    MetaspaceShared::max_strings,
-                    &num_string_ranges)) {
-    StringTable::set_shared_string_mapped();
+  // Map the closed_archive_heap regions, GC does not write into the regions.
+  if (map_heap_data(&closed_archive_heap_ranges,
+                    MetaspaceShared::first_closed_archive_heap_region,
+                    MetaspaceShared::max_closed_archive_heap_region,
+                    &num_closed_archive_heap_ranges)) {
+    HeapShared::set_closed_archive_heap_region_mapped();
 
     // Now, map open_archive heap regions, GC can write into the regions.
     if (map_heap_data(&open_archive_heap_ranges,
@@ -1023,8 +1026,9 @@ void FileMapInfo::map_heap_regions() {
     map_heap_regions_impl();
   }
 
-  if (!StringTable::shared_string_mapped()) {
-    assert(string_ranges == NULL && num_string_ranges == 0, "sanity");
+  if (!HeapShared::closed_archive_heap_region_mapped()) {
+    assert(closed_archive_heap_ranges == NULL &&
+           num_closed_archive_heap_ranges == 0, "sanity");
   }
 
   if (!HeapShared::open_archive_heap_region_mapped()) {
@@ -1115,9 +1119,9 @@ void FileMapInfo::patch_archived_heap_embedded_pointers() {
     return;
   }
 
-  patch_archived_heap_embedded_pointers(string_ranges,
-                                        num_string_ranges,
-                                        MetaspaceShared::first_string);
+  patch_archived_heap_embedded_pointers(closed_archive_heap_ranges,
+                                        num_closed_archive_heap_ranges,
+                                        MetaspaceShared::first_closed_archive_heap_region);
 
   patch_archived_heap_embedded_pointers(open_archive_heap_ranges,
                                         num_open_archive_heap_ranges,
@@ -1136,11 +1140,13 @@ void FileMapInfo::patch_archived_heap_embedded_pointers(MemRegion* ranges, int n
 // This internally allocates objects using SystemDictionary::Object_klass(), so it
 // must be called after the well-known classes are resolved.
 void FileMapInfo::fixup_mapped_heap_regions() {
-  // If any string regions were found, call the fill routine to make them parseable.
-  // Note that string_ranges may be non-NULL even if no ranges were found.
-  if (num_string_ranges != 0) {
-    assert(string_ranges != NULL, "Null string_ranges array with non-zero count");
-    G1CollectedHeap::heap()->fill_archive_regions(string_ranges, num_string_ranges);
+  // If any closed regions were found, call the fill routine to make them parseable.
+  // Note that closed_archive_heap_ranges may be non-NULL even if no ranges were found.
+  if (num_closed_archive_heap_ranges != 0) {
+    assert(closed_archive_heap_ranges != NULL,
+           "Null closed_archive_heap_ranges array with non-zero count");
+    G1CollectedHeap::heap()->fill_archive_regions(closed_archive_heap_ranges,
+                                                  num_closed_archive_heap_ranges);
   }
 
   // do the same for mapped open archive heap regions
@@ -1170,9 +1176,9 @@ bool FileMapInfo::verify_region_checksum(int i) {
   if (sz == 0) {
     return true; // no data
   }
-  if ((MetaspaceShared::is_string_region(i) &&
-       !StringTable::shared_string_mapped()) ||
-      (MetaspaceShared::is_open_archive_heap_region(i) &&
+  if ((HeapShared::is_closed_archive_heap_region(i) &&
+       !HeapShared::closed_archive_heap_region_mapped()) ||
+      (HeapShared::is_open_archive_heap_region(i) &&
        !HeapShared::open_archive_heap_region_mapped())) {
     return true; // archived heap data is not mapped
   }
@@ -1188,7 +1194,7 @@ bool FileMapInfo::verify_region_checksum(int i) {
 // Unmap a memory region in the address space.
 
 void FileMapInfo::unmap_region(int i) {
-  assert(!MetaspaceShared::is_heap_region(i), "sanity");
+  assert(!HeapShared::is_heap_region(i), "sanity");
   CDSFileMapRegion* si = space_at(i);
   size_t used = si->_used;
   size_t size = align_up(used, os::vm_allocation_granularity());
@@ -1259,7 +1265,7 @@ bool FileMapInfo::initialize() {
 
 char* FileMapInfo::region_addr(int idx) {
   CDSFileMapRegion* si = space_at(idx);
-  if (MetaspaceShared::is_heap_region(idx)) {
+  if (HeapShared::is_heap_region(idx)) {
     assert(DumpSharedSpaces, "The following doesn't work at runtime");
     return si->_used > 0 ?
           (char*)start_address_as_decoded_with_current_oop_encoding_mode(si) : NULL;
@@ -1326,7 +1332,7 @@ bool FileMapHeader::validate() {
   if (prop != NULL) {
     warning("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
-            "To use archived non-system classes, this property must be not be set", prop);
+            "To use archived non-system classes, this property must not be set", prop);
     _has_platform_or_app_classes = false;
   }
 
@@ -1383,7 +1389,7 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
   if (map_info) {
     map_info->fail_continue("%s", msg);
     for (int i = 0; i < MetaspaceShared::num_non_heap_spaces; i++) {
-      if (!MetaspaceShared::is_heap_region(i)) {
+      if (!HeapShared::is_heap_region(i)) {
         char *addr = map_info->region_addr(i);
         if (addr != NULL) {
           map_info->unmap_region(i);
@@ -1395,7 +1401,8 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
     // of the java heap. Unmapping of the heap regions are managed by GC.
     map_info->dealloc_archive_heap_regions(open_archive_heap_ranges,
                                            num_open_archive_heap_ranges);
-    map_info->dealloc_archive_heap_regions(string_ranges, num_string_ranges);
+    map_info->dealloc_archive_heap_regions(closed_archive_heap_ranges,
+                                           num_closed_archive_heap_ranges);
   } else if (DumpSharedSpaces) {
     fail_stop("%s", msg);
   }

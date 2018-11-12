@@ -431,7 +431,7 @@ JVM_handle_linux_signal(int sig,
       // SIGSEGV-based implicit null check in compiled code.
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
-               !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
+               MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }
@@ -476,20 +476,6 @@ JVM_handle_linux_signal(int sig,
         os::Linux::ucontext_set_pc(uc, pc + 4);
         return true;
       }
-    }
-
-    // Check to see if we caught the safepoint code in the
-    // process of write protecting the memory serialization page.
-    // It write enables the page immediately after protecting it
-    // so we can just return to retry the write.
-    if ((sig == SIGSEGV) &&
-        // Si_addr may not be valid due to a bug in the linux-ppc64 kernel (see comment above).
-        // Use is_memory_serialization instead of si_addr.
-        ((NativeInstruction*)pc)->is_memory_serialization(thread, ucVoid)) {
-      // Synchronization problem in the pseudo memory barrier code (bug id 6546278)
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return true;
     }
   }
 

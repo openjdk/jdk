@@ -33,7 +33,7 @@
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class TestVirtualSpaceNodeTest;
+class ChunkManagerTest;
 
 namespace metaspace {
 
@@ -42,7 +42,7 @@ typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionar
 
 // Manages the global free lists of chunks.
 class ChunkManager : public CHeapObj<mtInternal> {
-  friend class ::TestVirtualSpaceNodeTest;
+  friend class ::ChunkManagerTest;
 
   // Free list of chunks of different sizes.
   //   SpecializedChunk

@@ -131,7 +131,6 @@ private:
   static NullDecoder          _do_nothing_decoder;
 
 protected:
-  static Mutex*               _shared_decoder_lock;
   static Mutex* shared_decoder_lock();
 
   friend class DecoderLocker;

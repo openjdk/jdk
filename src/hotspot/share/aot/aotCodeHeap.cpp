@@ -926,7 +926,7 @@ void AOTCodeHeap::cleanup_inline_caches() {
       continue; // Skip uninitialized entries.
     }
     AOTCompiledMethod* aot = _code_to_aot[index]._aot;
-    aot->cleanup_inline_caches();
+    aot->cleanup_inline_caches(false);
   }
 }
 

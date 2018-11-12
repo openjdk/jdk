@@ -35,8 +35,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.applet.*;
 
-import jdk.internal.misc.JavaSecurityAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaSecurityAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;

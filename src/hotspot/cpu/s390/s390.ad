@@ -6480,7 +6480,7 @@ instruct divModI_reg_divmod(roddRegI dst1src1, revenRegI dst2, noOdd_iRegI src2,
   match(DivModI dst1src1 src2);
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
-  size(VM_Version::has_CompareBranch() ? 24 : 26);
+  size((VM_Version::has_CompareBranch() ? 24 : 26));
   format %{ "DIVMODI ($dst1src1, $dst2) $src2" %}
   ins_encode %{
     Register d1s1 = $dst1src1$$Register;
@@ -6513,7 +6513,7 @@ instruct divI_reg_reg(roddRegI dst, iRegI src1, noOdd_iRegI src2, revenRegI tmp,
   match(Set dst (DivI src1 src2));
   effect(KILL tmp, KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
-  size(VM_Version::has_CompareBranch() ? 20 : 22);
+  size((VM_Version::has_CompareBranch() ? 20 : 22));
   format %{ "DIV_checked $dst, $src1,$src2\t # treats special case 0x80../-1" %}
   ins_encode %{
     Register a = $src1$$Register;
@@ -6564,7 +6564,7 @@ instruct divModL_reg_divmod(roddRegL dst1src1, revenRegL dst2, iRegL src2, flags
   match(DivModL dst1src1 src2);
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
-  size(VM_Version::has_CompareBranch() ? 22 : 24);
+  size((VM_Version::has_CompareBranch() ? 22 : 24));
   format %{ "DIVMODL ($dst1src1, $dst2) $src2" %}
   ins_encode %{
     Register d1s1 = $dst1src1$$Register;
@@ -6594,7 +6594,7 @@ instruct divL_reg_reg(roddRegL dst, iRegL src, revenRegL tmp, flagsReg cr) %{
   match(Set dst (DivL dst src));
   effect(KILL tmp, KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
-  size(VM_Version::has_CompareBranch() ? 18 : 20);
+  size((VM_Version::has_CompareBranch() ? 18 : 20));
   format %{ "DIVG_checked  $dst, $src\t # long, treats special case 0x80../-1" %}
   ins_encode %{
     Register b = $src$$Register;

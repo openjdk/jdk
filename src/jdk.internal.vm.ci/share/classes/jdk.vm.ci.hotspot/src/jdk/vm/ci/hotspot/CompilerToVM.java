@@ -261,9 +261,9 @@ final class CompilerToVM {
 
     /**
      * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
-     * {@code resolveInvokeDynamicInPool} and {@code resolveInvokeHandleInPool}), return the opcode
-     * of the instruction for which the resolution was performed ({@code invokedynamic} or
-     * {@code invokevirtual}}, or {@code -1} otherwise.
+     * {@link #resolveInvokeDynamicInPool} and {@link #resolveInvokeHandleInPool}), return the
+     * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
+     * {@code invokevirtual}), or {@code -1} otherwise.
      */
     native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
 
@@ -543,12 +543,11 @@ final class CompilerToVM {
     native boolean shouldDebugNonSafepoints();
 
     /**
-     * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to the
-     * HotSpot's log stream.
+     * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to HotSpot's
+     * log stream.
      *
-     * @exception NullPointerException if {@code bytes == null}
-     * @exception IndexOutOfBoundsException if copying would cause access of data outside array
-     *                bounds
+     * @throws NullPointerException if {@code bytes == null}
+     * @throws IndexOutOfBoundsException if copying would cause access of data outside array bounds
      */
     native void writeDebugOutput(byte[] bytes, int offset, int length);
 
@@ -620,7 +619,7 @@ final class CompilerToVM {
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
 
     /**
-     * Gets the fingerprint for a given Klass*
+     * Gets the fingerprint for a given Klass*.
      *
      * @param metaspaceKlass
      * @return the value of the fingerprint (zero for arrays and synthetic classes).

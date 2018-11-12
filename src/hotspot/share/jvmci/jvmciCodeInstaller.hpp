@@ -28,6 +28,7 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "code/nativeInst.hpp"
 
+#if INCLUDE_AOT
 class RelocBuffer : public StackObj {
   enum { stack_size = 1024 };
 public:
@@ -106,6 +107,7 @@ private:
   AOTOopRecorder* _oop_recorder;
   ExceptionHandlerTable* _exception_table;
 };
+#endif // INCLUDE_AOT
 
 /*
  * This class handles the conversion from a InstalledCode to a CodeBlob or an nmethod.
@@ -202,7 +204,9 @@ public:
 
   CodeInstaller(bool immutable_pic_compilation) : _arena(mtCompiler), _immutable_pic_compilation(immutable_pic_compilation) {}
 
+#if INCLUDE_AOT
   JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS);
+#endif
   JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS);
 
   static address runtime_call_target_address(oop runtime_call);

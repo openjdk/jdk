@@ -1304,6 +1304,7 @@ class Compile : public Phase {
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
   void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
   void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
   void eliminate_redundant_card_marks(Node* n);
 
@@ -1328,9 +1329,6 @@ class Compile : public Phase {
   // The option no_dead_code enables stronger checks that the
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
-
-  // Verify GC barrier patterns
-  void verify_barriers() PRODUCT_RETURN;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;

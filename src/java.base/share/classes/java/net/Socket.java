@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1789,8 +1789,8 @@ class Socket implements java.io.Closeable {
         return getImpl().getOption(name);
     }
 
-    private static Set<SocketOption<?>> options;
-    private static boolean optionsSet = false;
+    // cache of unmodifiable impl options. Possibly set racy, in impl we trust
+    private volatile Set<SocketOption<?>> options;
 
     /**
      * Returns a set of the socket options supported by this socket.
@@ -1804,18 +1804,16 @@ class Socket implements java.io.Closeable {
      * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
-        synchronized (Socket.class) {
-            if (optionsSet) {
-                return options;
-            }
-            try {
-                SocketImpl impl = getImpl();
-                options = Collections.unmodifiableSet(impl.supportedOptions());
-            } catch (IOException e) {
-                options = Collections.emptySet();
-            }
-            optionsSet = true;
-            return options;
+        Set<SocketOption<?>> so = options;
+        if (so != null)
+            return so;
+
+        try {
+            SocketImpl impl = getImpl();
+            options = Collections.unmodifiableSet(impl.supportedOptions());
+        } catch (IOException e) {
+            options = Collections.emptySet();
         }
+        return options;
     }
 }

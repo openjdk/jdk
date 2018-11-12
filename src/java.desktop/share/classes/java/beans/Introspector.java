@@ -42,15 +42,14 @@ import java.lang.reflect.Type;
 
 import java.util.Map;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
 
-import jdk.internal.misc.JavaBeansAccess;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.access.JavaBeansAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 /**

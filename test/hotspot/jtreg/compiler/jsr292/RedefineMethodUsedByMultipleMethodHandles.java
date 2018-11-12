@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,16 +115,15 @@ public class RedefineMethodUsedByMultipleMethodHandles {
         mainAttrs.putValue("Can-Redefine-Classes", "true");
         mainAttrs.putValue("Can-Retransform-Classes", "true");
 
-        Path jar = Files.createTempFile("myagent", ".jar");
-        try {
-            JarOutputStream jarStream = new JarOutputStream(new FileOutputStream(jar.toFile()), manifest);
-            add(jarStream, FooAgent.class);
-            add(jarStream, FooTransformer.class);
-            jarStream.close();
-            runAgent(jar);
-        } finally {
-            Files.deleteIfExists(jar);
-        }
+        // The jar file will be added to the system classloader search path.  It is not safe
+        // to delete it while the JVM is running, so make sure to create it in the test
+        // directory so it will be cleaned up by the test harness.
+        Path jar = Files.createTempFile(Path.of(""), "myagent", ".jar");
+        JarOutputStream jarStream = new JarOutputStream(new FileOutputStream(jar.toFile()), manifest);
+        add(jarStream, FooAgent.class);
+        add(jarStream, FooTransformer.class);
+        jarStream.close();
+        runAgent(jar);
     }
 
     public static void runAgent(Path agent) throws Exception {

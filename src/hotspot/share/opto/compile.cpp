@@ -76,9 +76,6 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_G1GC
 #if INCLUDE_ZGC
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #endif
@@ -892,7 +889,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   }
 #endif
 
-  NOT_PRODUCT( verify_barriers(); )
+#ifdef ASSERT
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->verify_gc_barriers(this, BarrierSetC2::BeforeCodeGen);
+#endif
 
   // Dump compilation data to replay it.
   if (directive->DumpReplayOption) {
@@ -1465,6 +1465,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
         tj = TypeInstPtr::MARK;
         ta = TypeAryPtr::RANGE; // generic ignored junk
         ptr = TypePtr::BotPTR;
+      } else if (BarrierSet::barrier_set()->barrier_set_c2()->flatten_gc_alias_type(tj)) {
+        ta = tj->isa_aryptr();
       } else {                  // Random constant offset into array body
         offset = Type::OffsetBot;   // Flatten constant access into array body
         tj = ta = TypeAryPtr::make(ptr,ta->ary(),ta->klass(),false,offset);
@@ -1529,6 +1531,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (!is_known_inst) { // Do it only for non-instance types
         tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
       }
+    } else if (BarrierSet::barrier_set()->barrier_set_c2()->flatten_gc_alias_type(tj)) {
+      to = tj->is_instptr();
     } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
       // Static fields are in the space above the normal instance
       // fields in the java.lang.Class instance.
@@ -1627,7 +1631,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
           (offset == Type::OffsetBot && tj == TypePtr::BOTTOM) ||
           (offset == oopDesc::mark_offset_in_bytes() && tj->base() == Type::AryPtr) ||
           (offset == oopDesc::klass_offset_in_bytes() && tj->base() == Type::AryPtr) ||
-          (offset == arrayOopDesc::length_offset_in_bytes() && tj->base() == Type::AryPtr)  ,
+          (offset == arrayOopDesc::length_offset_in_bytes() && tj->base() == Type::AryPtr) ||
+          (BarrierSet::barrier_set()->barrier_set_c2()->verify_gc_alias_type(tj, offset)),
           "For oops, klasses, raw offset must be constant; for arrays the offset is never known" );
   assert( tj->ptr() != TypePtr::TopPTR &&
           tj->ptr() != TypePtr::AnyNull &&
@@ -2193,7 +2198,7 @@ void Compile::Optimize() {
 
 #ifdef ASSERT
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->verify_gc_barriers(true);
+  bs->verify_gc_barriers(this, BarrierSetC2::BeforeOptimize);
 #endif
 
   ResourceMark rm;
@@ -2386,7 +2391,7 @@ void Compile::Optimize() {
 
 #ifdef ASSERT
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->verify_gc_barriers(false);
+  bs->verify_gc_barriers(this, BarrierSetC2::BeforeExpand);
 #endif
 
   {
@@ -2787,6 +2792,18 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 #endif
   // Count FPU ops and common calls, implements item (3)
+  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop);
+  if (!gc_handled) {
+    final_graph_reshaping_main_switch(n, frc, nop);
+  }
+
+  // Collect CFG split points
+  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
+    frc._tests.push(n);
+  }
+}
+
+void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop) {
   switch( nop ) {
   // Count all float operations that may use FPU
   case Op_AddF:
@@ -2933,18 +2950,13 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   case Op_LoadL_unaligned:
   case Op_LoadPLocked:
   case Op_LoadP:
-#if INCLUDE_ZGC
-  case Op_LoadBarrierSlowReg:
-  case Op_LoadBarrierWeakSlowReg:
-#endif
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS: {
   handle_mem:
 #ifdef ASSERT
     if( VerifyOptoOopOffsets ) {
-      assert( n->is_Mem(), "" );
-      MemNode *mem  = (MemNode*)n;
+      MemNode* mem  = n->as_Mem();
       // Check to see if address types have grounded out somehow.
       const TypeInstPtr *tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
       assert( !tp || oop_offset_is_sane(tp), "" );
@@ -3462,15 +3474,10 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   }
   default:
-    assert( !n->is_Call(), "" );
-    assert( !n->is_Mem(), "" );
-    assert( nop != Op_ProfileBoolean, "should be eliminated during IGVN");
+    assert(!n->is_Call(), "");
+    assert(!n->is_Mem(), "");
+    assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
-  }
-
-  // Collect CFG split points
-  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
-    frc._tests.push(n);
   }
 }
 
@@ -3831,74 +3838,6 @@ void Compile::verify_graph_edges(bool no_dead_code) {
     }
   }
 }
-
-// Verify GC barriers consistency
-// Currently supported:
-// - G1 pre-barriers (see GraphKit::g1_write_barrier_pre())
-void Compile::verify_barriers() {
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    // Verify G1 pre-barriers
-    const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
-
-    ResourceArea *area = Thread::current()->resource_area();
-    Unique_Node_List visited(area);
-    Node_List worklist(area);
-    // We're going to walk control flow backwards starting from the Root
-    worklist.push(_root);
-    while (worklist.size() > 0) {
-      Node* x = worklist.pop();
-      if (x == NULL || x == top()) continue;
-      if (visited.member(x)) {
-        continue;
-      } else {
-        visited.push(x);
-      }
-
-      if (x->is_Region()) {
-        for (uint i = 1; i < x->req(); i++) {
-          worklist.push(x->in(i));
-        }
-      } else {
-        worklist.push(x->in(0));
-        // We are looking for the pattern:
-        //                            /->ThreadLocal
-        // If->Bool->CmpI->LoadB->AddP->ConL(marking_offset)
-        //              \->ConI(0)
-        // We want to verify that the If and the LoadB have the same control
-        // See GraphKit::g1_write_barrier_pre()
-        if (x->is_If()) {
-          IfNode *iff = x->as_If();
-          if (iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
-            CmpNode *cmp = iff->in(1)->in(1)->as_Cmp();
-            if (cmp->Opcode() == Op_CmpI && cmp->in(2)->is_Con() && cmp->in(2)->bottom_type()->is_int()->get_con() == 0
-                && cmp->in(1)->is_Load()) {
-              LoadNode* load = cmp->in(1)->as_Load();
-              if (load->Opcode() == Op_LoadB && load->in(2)->is_AddP() && load->in(2)->in(2)->Opcode() == Op_ThreadLocal
-                  && load->in(2)->in(3)->is_Con()
-                  && load->in(2)->in(3)->bottom_type()->is_intptr_t()->get_con() == marking_offset) {
-
-                Node* if_ctrl = iff->in(0);
-                Node* load_ctrl = load->in(0);
-
-                if (if_ctrl != load_ctrl) {
-                  // Skip possible CProj->NeverBranch in infinite loops
-                  if ((if_ctrl->is_Proj() && if_ctrl->Opcode() == Op_CProj)
-                      && (if_ctrl->in(0)->is_MultiBranch() && if_ctrl->in(0)->Opcode() == Op_NeverBranch)) {
-                    if_ctrl = if_ctrl->in(0)->in(0);
-                  }
-                }
-                assert(load_ctrl != NULL && if_ctrl == load_ctrl, "controls must match");
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-#endif
-}
-
 #endif
 
 // The Compile object keeps track of failure reasons separately from the ciEnv.

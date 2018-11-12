@@ -2414,23 +2414,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif // _WIN64
 
-  // Check to see if we caught the safepoint code in the
-  // process of write protecting the memory serialization page.
-  // It write enables the page immediately after protecting it
-  // so just return.
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    if (t != NULL && t->is_Java_thread()) {
-      JavaThread* thread = (JavaThread*) t;
-      PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-      address addr = (address) exceptionRecord->ExceptionInformation[1];
-      if (os::is_memory_serialize_page(thread, addr)) {
-        // Block current thread until the memory serialize page permission restored.
-        os::block_on_serialize_page_trap();
-        return EXCEPTION_CONTINUE_EXECUTION;
-      }
-    }
-  }
-
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
@@ -2509,7 +2492,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
           {
             // Null pointer exception.
-            if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr)) {
+            if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
               address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
               if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
             }
@@ -5330,22 +5313,6 @@ bool os::find(address addr, outputStream* st) {
   return result;
 }
 
-LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
-  DWORD exception_code = e->ExceptionRecord->ExceptionCode;
-
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    JavaThread* thread = JavaThread::current();
-    PEXCEPTION_RECORD exceptionRecord = e->ExceptionRecord;
-    address addr = (address) exceptionRecord->ExceptionInformation[1];
-
-    if (os::is_memory_serialize_page(thread, addr)) {
-      return EXCEPTION_CONTINUE_EXECUTION;
-    }
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
 static jint initSock() {
   WSADATA wsadata;
 
@@ -5557,12 +5524,8 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
 // that is reported is when the test tries to allocate at a particular location but gets a
 // different valid one. A NULL return value at this point is not considered an error but may
 // be legitimate.
-// If -XX:+VerboseInternalVMTests is enabled, print some explanatory messages.
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
-    if (VerboseInternalVMTests) {
-      tty->print("Skipping test because large pages are disabled");
-    }
     return;
   }
   // save current value of globals
@@ -5576,10 +5539,6 @@ void TestReserveMemorySpecial_test() {
   const size_t large_allocation_size = os::large_page_size() * 4;
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
   if (result == NULL) {
-    if (VerboseInternalVMTests) {
-      tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
-                          large_allocation_size);
-    }
   } else {
     os::release_memory_special(result, large_allocation_size);
 
@@ -5589,10 +5548,6 @@ void TestReserveMemorySpecial_test() {
     char* expected_location = result + os::large_page_size();
     char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
     if (actual_location == NULL) {
-      if (VerboseInternalVMTests) {
-        tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
-                            expected_location, large_allocation_size);
-      }
     } else {
       // release memory
       os::release_memory_special(actual_location, expected_allocation_size);
