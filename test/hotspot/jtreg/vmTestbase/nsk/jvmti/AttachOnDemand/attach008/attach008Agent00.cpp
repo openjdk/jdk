@@ -73,7 +73,7 @@ void JNICALL monitorContentedEnteredHandler(
         jobject object) {
     char threadName[MAX_STRING_LENGTH];
 
-    if(!nsk_jvmti_aod_getThreadName(jvmti, thread, threadName)) {
+    if (!nsk_jvmti_aod_getThreadName(jvmti, thread, threadName)) {
         nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, 0, jvmti, jni);
         return;
     }

@@ -65,7 +65,7 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     if (signature != NULL)
         jvmti_env->Deallocate((unsigned char*)signature);
 
-    switch(BreakpointEventsCount) {
+    switch (BreakpointEventsCount) {
     case 1:
         NSK_DISPLAY0("Testcase #1: FramePop in both agents\n");
         break;

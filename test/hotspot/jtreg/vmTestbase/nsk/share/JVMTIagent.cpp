@@ -627,7 +627,7 @@ static void deallocClsInfo(JNIEnv *jni_env) {
 
     NSK_TRACE(jni_env->DeleteGlobalRef(rasCls));
 
-    while(clsInfoCurr != NULL) {
+    while (clsInfoCurr != NULL) {
         class_info *_clsInfo = clsInfoCurr;
 
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) clsInfoCurr->clazzsig)))
@@ -659,7 +659,7 @@ static int findAndHotSwap(JNIEnv *jni_env, jclass clazz) {
         lock(jni_env);
         display(0, "#### JVMTIagent: findAndHotSwap: >>>>>>>> entered the raw monitor \"eventLock\" ####\n");
 
-        while(clsInfoCurr != NULL) {
+        while (clsInfoCurr != NULL) {
             if (hotswap == HOTSWAP_EVERY_METHOD_ENTRY_FOR_EVERY_CLASS ||
                     hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) {
                 display(1, "\n#### JVMTIagent: findAndHotSwap: going to hotswap tested class \"%s\" during execution of class \"%s\" ...\n",

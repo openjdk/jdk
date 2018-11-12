@@ -37,31 +37,31 @@ Java_nsk_share_ReferringObject_createJNIGlobalReferenceNative(JNIEnv *env,
         jint i;
         jint result = -1;
 
-        if(globalReferences == NULL)
+        if (globalReferences == NULL)
         {
                 globalReferences = (jobject*)malloc(sizeof(jobject) * maxJNIGlobalReferences);
 
-                if(globalReferences == NULL)
+                if (globalReferences == NULL)
                 {
                         NSK_COMPLAIN0("malloc return NULL\n");
                         return -1;
                 }
 
-                for(i = 0; i < maxJNIGlobalReferences; i++)
+                for (i = 0; i < maxJNIGlobalReferences; i++)
                 {
                         globalReferences[i] = NULL;
                 }
         }
 
-        for(i = 0; i < maxJNIGlobalReferences; i++)
+        for (i = 0; i < maxJNIGlobalReferences; i++)
         {
                 jobject reference = globalReferences[i];
 
-                if(reference == NULL)
+                if (reference == NULL)
                 {
                         reference = env->NewGlobalRef(object);
 
-                        if(reference == NULL)
+                        if (reference == NULL)
                         {
                                 NSK_COMPLAIN0("NewGlobalRef return NULL\n");
 
@@ -87,7 +87,7 @@ Java_nsk_share_ReferringObject_deleteJNIGlobalReferenceNative(JNIEnv *env,
 {
         jobject reference = globalReferences[index];
 
-        if(reference == NULL)
+        if (reference == NULL)
         {
                 NSK_COMPLAIN1("globalReferences[%d] = NULL, possible wrong index is passed\n", index);
 
@@ -109,7 +109,7 @@ Java_nsk_share_ReferringObject_createJNILocalReferenceNative(JNIEnv *env,
         jobject reference = env->NewLocalRef(object);
         jclass klass;
 
-        if(reference == NULL)
+        if (reference == NULL)
         {
                 NSK_COMPLAIN0("NewLocalRef return NULL\n");
 
@@ -136,32 +136,32 @@ Java_nsk_share_ReferringObject_createJNIWeakReferenceNative(JNIEnv *env,
         jint i;
         jint result = -1;
 
-        if(weakReferences == NULL)
+        if (weakReferences == NULL)
         {
                 weakReferences = (jweak*)malloc(sizeof(jweak) * maxJNIWeakReferences);
 
-                if(weakReferences == NULL)
+                if (weakReferences == NULL)
                 {
                         NSK_COMPLAIN0("malloc return NULL\n");
 
                         return -1;
                 }
 
-                for(i = 0; i < maxJNIWeakReferences; i++)
+                for (i = 0; i < maxJNIWeakReferences; i++)
                 {
                         weakReferences[i] = NULL;
                 }
         }
 
-        for(i = 0; i < maxJNIWeakReferences; i++)
+        for (i = 0; i < maxJNIWeakReferences; i++)
         {
                 jobject reference = weakReferences[i];
 
-                if(reference == NULL)
+                if (reference == NULL)
                 {
                         reference = env->NewWeakGlobalRef(object);
 
-                        if(reference == NULL)
+                        if (reference == NULL)
                         {
                                 NSK_COMPLAIN0("NewWeakGlobalRef return NULL\n");
 
@@ -187,7 +187,7 @@ Java_nsk_share_ReferringObject_deleteJNIWeakReferenceNative(JNIEnv *env,
 {
         jweak reference = weakReferences[index];
 
-        if(reference == NULL)
+        if (reference == NULL)
         {
                 NSK_COMPLAIN1("weakReferences[%d] = NULL, possible wrong index is passed\n", index);
 
@@ -196,7 +196,7 @@ Java_nsk_share_ReferringObject_deleteJNIWeakReferenceNative(JNIEnv *env,
                     "Requested weakReferences[] element is NULL, possible wrong index is passed");
         }
 
-        if(env->IsSameObject(reference, NULL) == JNI_TRUE)
+        if (env->IsSameObject(reference, NULL) == JNI_TRUE)
         {
                 NSK_COMPLAIN0("TEST BUG: Weak reference was collected\n");
 

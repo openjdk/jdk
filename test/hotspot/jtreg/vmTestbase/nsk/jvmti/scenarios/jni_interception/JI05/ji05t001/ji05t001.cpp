@@ -186,7 +186,7 @@ static int initAgent(int indx) {
     NSK_DISPLAY1("\nagent %s initializer: the JVMTI env obtained\n\tsetting event callbacks ...\n",
         (indx==0)?"A":"B");
     (void) memset(&callbacks, 0, sizeof(callbacks));
-    switch(indx) {
+    switch (indx) {
     case 0:
         callbacks.VMInit = &VMInitA;
         break;
@@ -240,7 +240,7 @@ static void startAgent(int indx) {
                 (indx==0)?"A":"B", TRIES);
             exit(STATUS_FAILED);
         }
-    } while(thrstarted[indx] != 1);
+    } while (thrstarted[indx] != 1);
 
     NSK_DISPLAY1("\nstartAgent: the agent %s thread started\n",
         (indx==0)?"A":"B");
@@ -288,7 +288,7 @@ static int agentA(void *context) {
                 TRIES);
             exit(STATUS_FAILED);
         }
-    } while(redir[1] != 1);
+    } while (redir[1] != 1);
 
     /* check the interception set in another JVMTI env */
     NSK_DISPLAY0("\n>>> TEST CASE #4) First JVMTI env: checking the redirection set in second JVMTI env ...\n");
@@ -335,7 +335,7 @@ static int agentB(void *context) {
                 TRIES);
             exit(STATUS_FAILED);
         }
-    } while(redir[0] != 1);
+    } while (redir[0] != 1);
 
     /* check the interception set in another JVMTI env */
     NSK_DISPLAY0("\n>>> TEST CASE #2) Second JVMTI env: checking the redirection set in first JVMTI env ...\n");

@@ -441,7 +441,7 @@ extern "C" {
         // while (!threadsGroupLocks.runnableCanExit.get()) {
         //        Thread.yield();
         //    }
-        while(flag==JNI_FALSE)
+        while (flag==JNI_FALSE)
         {
             GET_BOOL_FIELD(flag, threadsGroupLocks, ThreadsGroupLocks, "runnableCanExit");
             CALL_STATIC_VOID_NOPARAM(Thread, "yield");
@@ -476,7 +476,7 @@ extern "C" {
      */
     JNIEXPORT jobject JNICALL
     Java_nsk_monitoring_share_ThreadController_getThreadState(JNIEnv *env,
-            jobject obj, jobject thread){
+            jobject obj, jobject thread) {
 
         JavaVM *vm;
         jvmtiEnv *jvmti;
@@ -486,18 +486,18 @@ extern "C" {
         jstring stateName;
         jint state;
 
-        if(!NSK_VERIFY(
+        if (!NSK_VERIFY(
              env->GetJavaVM(&vm) == 0)) {
             return NULL;
         }
 
-        if(!NSK_VERIFY(
+        if (!NSK_VERIFY(
              vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1)
                     == JNI_OK)) {
             return NULL;
         }
 
-        if(!NSK_VERIFY(
+        if (!NSK_VERIFY(
              jvmti->GetThreadState((jthread)thread, &state)
              == JVMTI_ERROR_NONE)) {
             return NULL;

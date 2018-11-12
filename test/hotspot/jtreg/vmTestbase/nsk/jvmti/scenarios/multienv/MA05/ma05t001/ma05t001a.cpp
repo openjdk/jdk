@@ -69,7 +69,7 @@ MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     if (signature != NULL)
         jvmti_env->Deallocate((unsigned char*)signature);
 
-    switch(MethodEntryEventsCount) {
+    switch (MethodEntryEventsCount) {
     case 1:
         NSK_DISPLAY0("Testcase #1: FramePop in both agents\n");
         if (!NSK_JVMTI_VERIFY(jvmti_env->NotifyFramePop(thread, 0)))
@@ -115,7 +115,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     if (signature != NULL)
         jvmti_env->Deallocate((unsigned char*)signature);
 
-    switch(MethodEntryEventsCount) {
+    switch (MethodEntryEventsCount) {
     case 1:
         /* It's ok */
         break;

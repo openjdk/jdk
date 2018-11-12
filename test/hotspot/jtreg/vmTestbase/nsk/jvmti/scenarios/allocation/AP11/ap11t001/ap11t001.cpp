@@ -121,7 +121,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN1("VMObjectAlloc: event's thread was found in the list of live threads: %s\n\n", threadInfo.name);
         }
-    } while(0);
+    } while (0);
 
 
     /* Check that object_klass is loaded class
@@ -143,7 +143,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
 
         if (classes != NULL)
             jvmti->Deallocate((unsigned char*)classes);
-    } while(0);
+    } while (0);
 
 
     /* Check for object_klass
@@ -172,7 +172,7 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
             NSK_COMPLAIN2("VMObjectAlloc: inconsistent object size data\n\t"
                " size passed in to callback: %d\n\t size returned by GetObjectSize: %d\n\n", (long)size, (long)objSize);
         }
-    } while(0);
+    } while (0);
 
     if (signature != NULL)
         jvmti->Deallocate((unsigned char*)signature);

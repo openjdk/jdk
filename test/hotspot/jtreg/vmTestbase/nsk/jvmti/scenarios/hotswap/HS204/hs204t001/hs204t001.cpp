@@ -51,7 +51,7 @@ static jint newClassSize;
 char *getClassName(jvmtiEnv *jvmti, jclass  klass) {
     char * className;
     char * generic;
-    if(!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &className, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &className, &generic))) {
         nsk_jvmti_setFailStatus();
     }
     return className;
@@ -64,7 +64,7 @@ callbackClassLoad(jvmtiEnv *jvmti_env,
         jclass klass) {
     char * name;
     name = getClassName(jvmti_env,klass);
-    if((strcmp(name,CLASS_NAME) == 0) && (redefineNumber== 1)) {
+    if ((strcmp(name,CLASS_NAME) == 0) && (redefineNumber== 1)) {
        char fileName[512];
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
@@ -100,7 +100,7 @@ callbackClassPrepare(jvmtiEnv *jvmti_env,
         } else {
             NSK_COMPLAIN0("\nMyClass :: Failed to redefine ..\n");
         }
-        if((myTestClass = (jclass) jni_env->NewGlobalRef(klass)) == NULL) {
+        if ((myTestClass = (jclass) jni_env->NewGlobalRef(klass)) == NULL) {
             NSK_COMPLAIN0("Failed to create global ref...");
         }
     }

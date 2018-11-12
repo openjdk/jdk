@@ -287,7 +287,7 @@ void startThreads() {
                     i+1);
                 result = STATUS_FAILED;
             }
-        } while(thrStarted[i] != 1);
+        } while (thrStarted[i] != 1);
         if (verbose)
             printf("\nthe waiting thread #%d started\n",
                 i+1);
