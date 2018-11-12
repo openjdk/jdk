@@ -22,50 +22,78 @@
  */
 
 /*
-  test
-  @bug       6380743 8158380
-  @summary   Submenu should be shown by mnemonic key press.
-  @author    anton.tarasov@...: area=awt.focus
-  @run       applet SubMenuShowTest.html
+  @test
+  @key headful
+  @bug 6380743 8158380 8198624
+  @summary Submenu should be shown by mnemonic key press.
+  @author anton.tarasov@...: area=awt.focus
+  @library ../../../regtesthelpers
+  @library /test/lib
+  @build Util
+  @build jdk.test.lib.Platform
+  @run main SubMenuShowTest
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.applet.Applet;
+import java.awt.Robot;
+import java.awt.BorderLayout;
+import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.SwingUtilities;
+import javax.swing.JFrame;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
-
 import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
 
-public class SubMenuShowTest extends Applet {
-    Robot robot;
-    JFrame frame = new JFrame("Test Frame");
-    JMenuBar bar = new JMenuBar();
-    JMenu menu = new JMenu("Menu");
-    JMenu submenu = new JMenu("More");
-    JMenuItem item = new JMenuItem("item");
-    AtomicBoolean activated = new AtomicBoolean(false);
+public class SubMenuShowTest {
+    private static Robot robot;
+    private static JFrame frame;
+    private static JMenuBar bar;
+    private static JMenu menu;
+    private static JMenu submenu;
+    private static JMenuItem item;
+    private static AtomicBoolean activated = new AtomicBoolean(false);
 
-    public static void main(String[] args) {
-        SubMenuShowTest app = new SubMenuShowTest();
-        app.init();
-        app.start();
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(SubMenuShowTest::createAndShowGUI);
+
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.setAutoWaitForIdle(true);
+
+            doTest();
+        } catch (Exception ex) {
+            throw new RuntimeException("Test failed: Exception thrown:"+ex);
+        } finally {
+            dispose();
+        }
+
+        System.out.println("Test passed.");
     }
 
-    public void init() {
-        robot = Util.createRobot();
-        robot.setAutoDelay(200);
-        robot.setAutoWaitForIdle(true);
+    public static void dispose() throws Exception {
+        if(frame != null) {
+            SwingUtilities.invokeAndWait(() -> {
+                frame.dispose();
+            });
+        }
+    }
 
+    public static void createAndShowGUI() {
         // Create instructions for the user here, as well as set up
         // the environment -- set the layout manager, add buttons,
         // etc.
-        this.setLayout (new BorderLayout ());
-    }
+        frame = new JFrame("Test Frame");
+        bar = new JMenuBar();
+        menu = new JMenu("Menu");
+        submenu = new JMenu("More");
+        item = new JMenuItem("item");
 
-    public void start() {
+        frame.setLayout (new BorderLayout ());
         menu.setMnemonic('f');
         submenu.setMnemonic('m');
         menu.add(submenu);
@@ -85,7 +113,9 @@ public class SubMenuShowTest extends Applet {
             });
 
         frame.setVisible(true);
+    }
 
+    public static void doTest() {
         boolean isMacOSX = Platform.isOSX();
         if (isMacOSX) {
             robot.keyPress(KeyEvent.VK_CONTROL);
@@ -104,11 +134,9 @@ public class SubMenuShowTest extends Applet {
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
 
-        if (!Util.waitForCondition(activated, 2000)) {
-            throw new TestFailedException("a submenu wasn't activated by mnemonic key press");
+        if (!Util.waitForCondition(activated, 1500)) {
+            throw new TestFailedException("A submenu wasn't activated by mnemonic key press");
         }
-
-        System.out.println("Test passed.");
     }
 }
 
@@ -117,4 +145,3 @@ class TestFailedException extends RuntimeException {
         super("Test failed: " + msg);
     }
 }
-
