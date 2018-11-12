@@ -211,6 +211,12 @@ public interface DocTree {
         START_ELEMENT,
 
         /**
+         * Used for instances of {@link SystemPropertyTree}
+         * representing an @systemProperty tag.
+         */
+        SYSTEM_PROPERTY("systemProperty"),
+
+        /**
          * Used for instances of {@link SummaryTree}
          * representing the summary of a comment description.
          */

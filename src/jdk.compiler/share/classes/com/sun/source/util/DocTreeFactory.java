@@ -60,6 +60,7 @@ import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
+import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -323,6 +324,15 @@ public interface DocTreeFactory {
     default SummaryTree newSummaryTree(List<? extends DocTree> summary) {
         throw new UnsupportedOperationException("not implemented");
     }
+
+    /**
+     * Create a new {@code SystemPropertyTree} object, to represent a {@code {@systemProperty } } tag.
+     *
+     * @param propertyName the system property name
+     * @return a {@code SystemPropertyTree} object
+     * @since 12
+     */
+    SystemPropertyTree newSystemPropertyTree(Name propertyName);
 
     /**
      * Create a new {@code TextTree} object, to represent some plain text.

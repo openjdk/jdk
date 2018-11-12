@@ -469,6 +469,19 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     * @since 12
+     */
+    @Override
+    public R visitSystemProperty(SystemPropertyTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
      */
     @Override
     public R visitText(TextTree node, P p) {

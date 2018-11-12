@@ -172,6 +172,15 @@ public abstract class TagletWriter {
     protected abstract Content simpleTagOutput(Element element, DocTree simpleTag, String header);
 
     /**
+     * Return the system property tag output.
+     *
+     * @param element
+     * @param systemPropertyTag the system property tag
+     * @return the output of system property tag
+     */
+    protected abstract Content systemPropertyTagOutput(Element element, DocTree systemPropertyTag);
+
+    /**
      * Return the header for the throws tag.
      *
      * @return the header for the throws tag.

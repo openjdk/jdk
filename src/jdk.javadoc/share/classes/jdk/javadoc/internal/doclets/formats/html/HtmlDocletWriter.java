@@ -65,6 +65,7 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
+import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
@@ -1528,6 +1529,17 @@ public class HtmlDocletWriter {
                             configuration.tagletManager, holderTag, tag,
                             getTagletWriterInstance(isFirstSentence));
                     result.addContent(output);
+                    return false;
+                }
+
+                @Override
+                public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
+                    Content output = TagletWriter.getInlineTagOutput(element,
+                            configuration.tagletManager, holderTag, tag,
+                            getTagletWriterInstance(isFirstSentence, inSummary));
+                    if (output != null) {
+                        result.addContent(output);
+                    }
                     return false;
                 }
 
