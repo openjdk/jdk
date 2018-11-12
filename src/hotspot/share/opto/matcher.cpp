@@ -1209,7 +1209,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // Allocate a private array of RegMasks.  These RegMasks are not shared.
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );
   // Empty them all.
-  memset( msfpt->_in_rms, 0, sizeof(RegMask)*cnt );
+  for (uint i = 0; i < cnt; i++) {
+    msfpt->_in_rms[i] = RegMask();
+  }
 
   // Do all the pre-defined non-Empty register masks
   msfpt->_in_rms[TypeFunc::ReturnAdr] = _return_addr_mask;
