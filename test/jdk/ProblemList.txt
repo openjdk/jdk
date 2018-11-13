@@ -186,7 +186,6 @@ java/awt/event/KeyEvent/KeyMaskTest/KeyMaskTest.java 8129778 generic-all
 java/awt/event/MouseEvent/MouseButtonsAndKeyMasksTest/MouseButtonsAndKeyMasksTest.java 8129778 generic-all
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.html 8194947 generic-all
-java/awt/dnd/ImageTransferTest/ImageTransferTest.java 8176556 generic-all
 java/awt/Frame/SetMaximizedBounds/SetMaximizedBounds.java 8196006 windows-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/FullScreen/AltTabCrashTest/AltTabCrashTest.java 8047218 generic-all
