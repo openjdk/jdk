@@ -468,7 +468,7 @@ public class PNGImageReader extends ImageReader {
         String text;
         pos = stream.getStreamPosition();
         int textLength = (int)(chunkStart + chunkLength - pos);
-        if (textLength <= 0) {
+        if (textLength < 0) {
             throw new IIOException("iTXt chunk length is not proper");
         }
         byte[] b = new byte[textLength];
@@ -571,7 +571,7 @@ public class PNGImageReader extends ImageReader {
     private void parse_tEXt_chunk(int chunkLength) throws IOException {
         String keyword = readNullTerminatedString("ISO-8859-1", 80);
         int textLength = chunkLength - keyword.length() - 1;
-        if (textLength <= 0) {
+        if (textLength < 0) {
             throw new IIOException("tEXt chunk length is not proper");
         }
         metadata.tEXt_keyword.add(keyword);
@@ -669,7 +669,7 @@ public class PNGImageReader extends ImageReader {
     private void parse_zTXt_chunk(int chunkLength) throws IOException {
         String keyword = readNullTerminatedString("ISO-8859-1", 80);
         int textLength = chunkLength - keyword.length() - 2;
-        if (textLength <= 0) {
+        if (textLength < 0) {
             throw new IIOException("zTXt chunk length is not proper");
         }
         metadata.zTXt_keyword.add(keyword);
