@@ -2074,17 +2074,10 @@ bool Arguments::is_bad_option(const JavaVMOption* option, jboolean ignore,
     option_type = ++spacer; // Set both to the empty string.
   }
 
-  if (os::obsolete_option(option)) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Obsolete %s%soption: %s\n", option_type, spacer,
-      option->optionString);
-    return false;
-  } else {
-    jio_fprintf(defaultStream::error_stream(),
-                "Unrecognized %s%soption: %s\n", option_type, spacer,
-      option->optionString);
-    return true;
-  }
+  jio_fprintf(defaultStream::error_stream(),
+              "Unrecognized %s%soption: %s\n", option_type, spacer,
+              option->optionString);
+  return true;
 }
 
 static const char* user_assertion_options[] = {
