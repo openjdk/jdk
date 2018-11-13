@@ -164,20 +164,15 @@ compiler/stable/TestStableUShort.java                            8204347   gener
 
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
-org.graalvm.compiler.core.test.inlining.PolymorphicInliningTest                  8205081
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
-org.graalvm.compiler.core.test.ProfilingInfoTest                                 8205081
 org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
-org.graalvm.compiler.hotspot.test.HsErrLogTest                                   8205081
-org.graalvm.compiler.hotspot.test.OptionsInFileTest                              8205081
-org.graalvm.compiler.hotspot.test.ReservedStackAccessTest                        8205081
 org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
-org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
 
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 org.graalvm.compiler.core.test.CountedLoopTest                   8211179
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
 
 org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
+org.graalvm.compiler.hotspot.test.ReservedStackAccessTest        8213567   windows-all
 
 org.graalvm.compiler.debug.test.TimerKeyTest                     8213598

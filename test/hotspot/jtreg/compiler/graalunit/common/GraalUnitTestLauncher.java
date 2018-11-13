@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.JDKToolFinder;
 
 /*
  * This is helper class used to run Graal unit tests.
@@ -262,6 +263,14 @@ public class GraalUnitTestLauncher {
 
         ProcessBuilder javaPB = ProcessTools.createJavaProcessBuilder(true,
                 javaFlags.toArray(new String[javaFlags.size()]));
+
+        // Some tests rely on MX_SUBPROCESS_COMMAND_FILE env variable which contains
+        // name of the file with java executable and java args used to launch the current process.
+        Path cmdFile = Files.createTempFile(Path.of(""), "mx_subprocess_", ".cmd");
+        Files.writeString(cmdFile, JDKToolFinder.getJDKTool("java") + System.lineSeparator());
+        Files.write(cmdFile, javaFlags, StandardOpenOption.APPEND);
+        javaPB.environment().put("MX_SUBPROCESS_COMMAND_FILE", cmdFile.toAbsolutePath().toString());
+
         System.out.println("INFO: run command: " + String.join(" ", javaPB.command()));
 
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(javaPB.start());
