@@ -28,7 +28,7 @@
  * @summary Check that calling toFront method does not bring a dialog to the top
  *          of a child modeless dialog.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

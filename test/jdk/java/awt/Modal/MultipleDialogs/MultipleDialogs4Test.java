@@ -29,7 +29,7 @@
  *          work properly. Also check whether the blocking dialogs are
  *          opening on top of the windows they block.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

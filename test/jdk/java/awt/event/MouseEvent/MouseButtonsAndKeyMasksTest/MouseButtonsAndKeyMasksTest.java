@@ -46,7 +46,7 @@ import test.java.awt.event.helpers.lwcomponents.LWList;
  *          and KeyEvent.getModifiers() return correct modifiers when pressing
  *          keys Ctrl, Alt, Shift, Meta and mouse buttons sequentially
  *
- * @library /lib/testlibrary/ ../../helpers/lwcomponents/
+ * @library /lib/client/ ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton

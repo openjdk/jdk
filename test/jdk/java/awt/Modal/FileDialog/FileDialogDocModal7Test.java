@@ -29,7 +29,7 @@ import java.awt.Dialog;
  * @bug 8054359 7186009
  * @summary Check whether a FileDialog set to document modality behaves as expected.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -38,7 +38,7 @@ import java.awt.image.BufferedImage;
  *          or single clicked with button 1 on rest.
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library ../../../../lib/testlibrary ../
+ * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconMouseTest

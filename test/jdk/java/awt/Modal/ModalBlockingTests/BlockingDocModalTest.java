@@ -34,7 +34,7 @@ import static jdk.test.lib.Asserts.*;
  *          whether all the windows lying down the document root
  *          (Frame) get blocked.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

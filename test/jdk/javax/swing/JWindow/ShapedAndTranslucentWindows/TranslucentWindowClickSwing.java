@@ -39,7 +39,7 @@ import java.awt.event.MouseEvent;
  *      should appear translucent showing the background. They should trigger events
  *      correctly
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main TranslucentWindowClickSwing
  */

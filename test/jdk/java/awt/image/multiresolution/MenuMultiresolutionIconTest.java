@@ -29,7 +29,7 @@
  * @summary Check that correct resolution variants are chosen for menu icons
  *          when multiresolution image is used for their construction.
  *
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main/othervm -Dsun.java2d.uiScale=1 MenuMultiresolutionIconTest
  * @run main/othervm -Dsun.java2d.uiScale=2 MenuMultiresolutionIconTest

@@ -32,7 +32,7 @@ import java.awt.Dialog;
  *          an application modal dialog having a null dialog owner is shown;
  *          a frame is shown.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

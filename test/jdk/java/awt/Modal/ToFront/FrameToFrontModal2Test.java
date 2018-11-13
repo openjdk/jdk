@@ -30,7 +30,7 @@
  *          blocking modal dialog having a null Dialog parent
  *          does not bring the frame to the top of the modal dialog.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -34,7 +34,7 @@ import static jdk.test.lib.Asserts.*;
  * @summary Check whether a Dialog set with null modality type
  *          behaves like a modeless dialog
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -28,7 +28,7 @@
  * @summary Checks that you can select an item in JComboBox with keyboard
  *          when it is a JTable cell editor.
  * @author Mikhail Lapshin
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6559152
  */

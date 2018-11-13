@@ -29,7 +29,7 @@ import java.awt.event.*;
  * @key headful
  * @summary Test that it is possible to type "Alt code" on Windows.
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main AltPlusNumberKeyCombinationsTest
  */

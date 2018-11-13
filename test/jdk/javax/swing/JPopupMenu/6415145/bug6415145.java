@@ -25,7 +25,7 @@
  * @key headful
  * @bug 6415145
  * @summary REGRESSION: Selected item is not being updated while dragging above popup menu
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @author Mikhail Lapshin
  * @run main bug6415145

@@ -31,7 +31,7 @@ import java.awt.Dialog;
  *          (it shouldn't). Checks also whether setting a parent dialog to be
  *          modality excluded excludes its children from being blocked too.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

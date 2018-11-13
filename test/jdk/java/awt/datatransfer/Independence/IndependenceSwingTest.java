@@ -41,7 +41,7 @@ import java.util.Properties;
  * @summary To make sure that System & Primary clipboards should behave independently
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author dmitriy.ermashov@oracle.com
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main IndependenceSwingTest
  */

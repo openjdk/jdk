@@ -36,7 +36,7 @@
  * Expected Result: If TRANSLUCENT Translucency type is supported, the drop down
  *      should appear translucent.
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main TranslucentJComboBox
  */

@@ -47,7 +47,7 @@ import java.awt.image.BufferedImage;
  * @summary Swing components fail to hide after calling hide()
  * @author Jonathan Lu
  * @library ../../regtesthelpers/
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build Util
  * @build ExtendedRobot
  * @run main bug7154030

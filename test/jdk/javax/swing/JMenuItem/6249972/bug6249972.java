@@ -26,7 +26,7 @@
  * @key headful
  * @bug 6249972
  * @summary Tests that JMenuItem(String,int) handles lower-case mnemonics properly.
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @author Mikhail Lapshin
  * @run main bug6249972

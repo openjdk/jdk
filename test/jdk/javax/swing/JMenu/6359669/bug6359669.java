@@ -26,7 +26,7 @@
  * @bug 6359669
  * @summary REGRESSION: Submenu does not work if populated in PopupMenuListener.popupMenuWillBecomeVisible
  * @author Alexander Potochkin
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6359669
  */

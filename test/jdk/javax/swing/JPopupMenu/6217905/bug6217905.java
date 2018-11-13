@@ -28,7 +28,7 @@
  * @summary JPopupMenu keyboard navigation stops working
  * @author Alexander Potochkin
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6217905
  */

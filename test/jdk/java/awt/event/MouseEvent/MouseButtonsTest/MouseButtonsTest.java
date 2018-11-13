@@ -44,7 +44,7 @@ import static jdk.test.lib.Asserts.*;
  *          number when the mouse buttons are pressed and getModifiers()
  *          returns correct modifiers
  *
- * @library /lib/testlibrary/ ../../helpers/lwcomponents/
+ * @library /lib/client/ ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton

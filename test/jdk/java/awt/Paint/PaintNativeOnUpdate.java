@@ -33,7 +33,7 @@ import java.awt.Point;
  * @test
  * @key headful
  * @bug 7157680
- * @library ../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @author Sergey Bylokhov
  * @run main PaintNativeOnUpdate

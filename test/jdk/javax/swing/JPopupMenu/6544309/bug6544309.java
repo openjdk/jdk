@@ -27,7 +27,7 @@
    @summary Checks that 'Select Input Method' popup menu allows to select
             items with keyboard.
    @author Mikhail Lapshin
-   @library ../../../../lib/testlibrary
+   @library /lib/client
    @build ExtendedRobot
    @run main bug6544309
 */

@@ -29,7 +29,7 @@
  * @summary Check whether a non-modal dialog having a null Dialog constructor
  *          goes behind other windows when toBack is called for it.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

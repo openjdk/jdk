@@ -27,7 +27,7 @@
   @bug 8007220 8039081
   @summary Reference to the popup leaks after the TrayIcon is removed.
   @requires os.family != "windows"
-  @library ../../../../lib/testlibrary/
+  @library /lib/client/
   @build ExtendedRobot
   @run main/othervm -Xmx50m PopupMenuLeakTest
  */

@@ -35,7 +35,7 @@ import java.awt.Window;
  * @bug 8001472
  * @summary Background of the window should not depend from the paint()/update()
  * @author Sergey Bylokhov
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main BackgroundIsNotUpdated
  */

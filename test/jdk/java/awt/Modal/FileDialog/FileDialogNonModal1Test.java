@@ -31,7 +31,7 @@
  *          created with a null Frame constructor. Also check if other
  *          windows are blocked by the FileDialog too.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

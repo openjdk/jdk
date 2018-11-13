@@ -41,7 +41,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
  * @key headful
  * @bug 7024235
  * @summary Tests JFrame.pack() with the JTabbedPane
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @author Sergey Malenkov
  * @run main Test7024235

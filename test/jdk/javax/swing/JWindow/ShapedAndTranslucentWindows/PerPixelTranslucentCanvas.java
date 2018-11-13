@@ -30,7 +30,7 @@ import java.awt.image.BufferedImage;
  * @key headful
  * @summary Check if a per-pixel translucent window shows up with correct translucency
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main PerPixelTranslucentCanvas
  * @run main/othervm -Dsun.java2d.uiScale=1.5 PerPixelTranslucentCanvas

@@ -33,7 +33,7 @@ import java.util.Vector;
  * @key headful
  * @summary Verify that disposed frames are collected with GC
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main/othervm -Xmx20m FramesGC
  */

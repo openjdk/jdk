@@ -29,7 +29,7 @@
  * @summary Check whether a modal Dialog receives focus; check
  *          if its components receive focus and respond to key events
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -28,7 +28,7 @@
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
  * @author Mikhail Lapshin
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @build ExtendedRobot
  * @run main bug6725409

@@ -30,7 +30,7 @@ import java.awt.Dialog;
  * @summary Check if toBack method works correctly for a modeless dialog
  *          having a visible Dialog constructor.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

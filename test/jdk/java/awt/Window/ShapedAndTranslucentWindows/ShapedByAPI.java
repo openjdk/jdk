@@ -43,7 +43,7 @@ import java.awt.*;
  *
  * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @run main ShapedByAPI
  */
 public class ShapedByAPI extends Common {

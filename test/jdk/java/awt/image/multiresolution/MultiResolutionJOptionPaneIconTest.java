@@ -28,7 +28,7 @@
   @author a.stepanov
   @summary Check if correct resolution variant is used
            for JOptionPane dialog / internal frame icons.
-  @library ../../../../lib/testlibrary/
+  @library /lib/client/
   @build ExtendedRobot
   @run main/othervm/timeout=300 -Dsun.java2d.uiScale=1 MultiResolutionJOptionPaneIconTest
   @run main/othervm/timeout=300 -Dsun.java2d.uiScale=2 MultiResolutionJOptionPaneIconTest

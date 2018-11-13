@@ -27,7 +27,7 @@
  * @summary Checks that iconified internal frame follows
  *          the main frame borders properly.
  * @author Mikhail Lapshin
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main bug6647340
  */

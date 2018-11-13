@@ -30,7 +30,7 @@ import java.awt.Dialog;
  * @summary Check whether a document modal Dialog created with null Frame
  *          constructor follows normal Z order.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -47,7 +47,7 @@ import java.awt.geom.Rectangle2D;
  *      on clipped region should deliver the event to the background (it should be
  *      another Window behind the test window)
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main SetShapeAndClickSwing
  */

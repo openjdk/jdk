@@ -26,7 +26,7 @@
  * @key headful
  * @bug 4523758
  * @summary Directly check that torn-off combo works
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug4523758
  */

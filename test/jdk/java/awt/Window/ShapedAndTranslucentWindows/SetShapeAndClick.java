@@ -49,7 +49,7 @@ import java.awt.geom.Rectangle2D;
  *
  * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main SetShapeAndClick
  */

@@ -27,7 +27,7 @@
  * @bug 8003400
  * @summary Tests that JTree shows the last row
  * @author Sergey Malenkov
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main/othervm Test8003400
  * @run main/othervm Test8003400 reverse

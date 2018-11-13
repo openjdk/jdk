@@ -27,7 +27,7 @@
  * @bug 4417601
  * @summary JMenus with no items paint a tiny menu.
  * @author Alexander Potochkin
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug4417601
  */

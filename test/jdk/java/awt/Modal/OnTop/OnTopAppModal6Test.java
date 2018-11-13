@@ -30,7 +30,7 @@ import java.awt.Dialog;
  * @summary Check whether an application modal Dialog created with visible
  *          Dialog constructor stays on top of the windows it blocks.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

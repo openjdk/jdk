@@ -27,7 +27,7 @@
  * @bug 4634626
  * @summary Implement context popup menus for components
  * @author Alexander Zuev
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run applet bug4634626.html
  */

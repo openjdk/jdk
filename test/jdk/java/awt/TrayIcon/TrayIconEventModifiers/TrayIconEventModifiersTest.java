@@ -41,7 +41,7 @@ import java.awt.image.BufferedImage;
  *          TrayIcon is clicked pressing the modifier keys
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library ../../../../lib/testlibrary ../
+ * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconEventModifiersTest

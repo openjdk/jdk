@@ -27,7 +27,7 @@
  * @summary To make sure Undecorated Frame triggers correct windows events while closing
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT*
  * @author yan
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main FrameCloseTest
  */

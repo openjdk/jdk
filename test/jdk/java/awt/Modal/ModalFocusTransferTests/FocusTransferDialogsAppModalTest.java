@@ -32,7 +32,7 @@ import java.awt.Dialog;
  *          frame owner is shown; a dialog (D2) having D1 owner is shown; a dialog
  *          with a hidden frame owner is shown.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

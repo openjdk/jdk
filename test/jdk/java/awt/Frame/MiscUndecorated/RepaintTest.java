@@ -28,7 +28,7 @@
  *          all the components on it are repainted correctly
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author yan
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main RepaintTest
  */

@@ -37,7 +37,7 @@ import static jdk.test.lib.Asserts.*;
  * @summary Check whether correct modifiers set when multiple mouse buttons were pressed;
  *          check number of received events.
  *
- * @library /lib/testlibrary/ ../../helpers/lwcomponents/
+ * @library /lib/client/ ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton

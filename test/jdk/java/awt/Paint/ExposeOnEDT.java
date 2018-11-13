@@ -29,7 +29,7 @@ import java.awt.*;
  * @key headful
  * @bug 7090424
  * @author Sergey Bylokhov
- * @library ../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main ExposeOnEDT
  */

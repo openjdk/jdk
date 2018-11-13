@@ -26,7 +26,7 @@
  * @bug 6515446
  * @summary JMenuItems in JPopupMenus not receiving ActionEvents - incompat with 1.5
  * @author Alexander Potochkin
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6515446
  */

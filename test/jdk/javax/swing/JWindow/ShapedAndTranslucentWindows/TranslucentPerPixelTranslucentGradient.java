@@ -43,7 +43,7 @@ import java.awt.*;
  *      Both window background and all the controls should be translucent but
  *      background should have a gradient in translucency while controls - not.
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main TranslucentPerPixelTranslucentGradient
  * @run main/othervm -Dsun.java2d.uiScale=1.5 TranslucentPerPixelTranslucentGradient

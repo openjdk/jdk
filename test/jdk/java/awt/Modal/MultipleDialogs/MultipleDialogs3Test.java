@@ -28,7 +28,7 @@
  * @summary Check correctness of modal blocking behavior for a chain of Dialogs
  *          having different modality types with a Frame as a document root.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

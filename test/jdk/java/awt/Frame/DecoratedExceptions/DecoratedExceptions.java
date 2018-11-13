@@ -29,7 +29,7 @@ import java.awt.*;
  * @summary An attempt to set non-trivial background, shape, or translucency
  *          to a decorated toplevel should end with an exception.
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main DecoratedExceptions
  */

@@ -32,7 +32,7 @@ import java.awt.event.KeyAdapter;
  * @bug 8007156 8025126
  * @summary Extended key code is not set for a key event
  * @author Alexandr Scherbatiy
- * @library ../../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main ExtendedKeyCodeTest
  */

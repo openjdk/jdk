@@ -29,7 +29,7 @@
  * @summary Check whether KeyEvent.getModifiers() returns correct modifiers
  *          when Ctrl, Alt or Shift keys are pressed.
  *
- * @library /lib/testlibrary/ ../../helpers/lwcomponents/
+ * @library /lib/client/ ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton

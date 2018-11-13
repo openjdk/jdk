@@ -36,7 +36,7 @@ import java.lang.reflect.InvocationTargetException;
  * @summary Set extendedState Frame.MAXIMIZED_BOTH for undecorated Frame and JFrame.
  *          Check if resulted size is equal to GraphicsEnvironment.getMaximumWindowBounds().
  *
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main MaximizedUndecorated
  */

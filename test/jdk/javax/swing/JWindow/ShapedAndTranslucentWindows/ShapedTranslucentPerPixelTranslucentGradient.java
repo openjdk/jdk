@@ -46,7 +46,7 @@ import java.awt.*;
  *      translucent gradient in parts that are not clipped by shape, all the
  *      controls should be equally translucent.
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main ShapedTranslucentPerPixelTranslucentGradient
  * @run main/othervm -Dsun.java2d.uiScale=1.5 ShapedTranslucentPerPixelTranslucentGradient

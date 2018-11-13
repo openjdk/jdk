@@ -33,7 +33,7 @@ import java.awt.*;
  *          check the zoomed size is same as the screen size. Check the
  *          location of the jframe after restoration from zoom or icon.
  * @author Aruna Samji
- * @library ../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main TaskZoomJFrameChangeState
  */

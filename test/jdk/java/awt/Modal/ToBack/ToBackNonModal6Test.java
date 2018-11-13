@@ -29,7 +29,7 @@
  * @summary Check if toBack method works correctly for a non-modal dialog
  *          having a visible Dialog constructor.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

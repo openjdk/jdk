@@ -34,7 +34,7 @@ import java.security.PrivilegedExceptionAction;
 /*
  * @summary This is a helper class to find the location of a system tray icon,
  *          and skip some OS specific cases in tests.
- * @library ../../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot SystemTrayIconHelper
  */
 public class SystemTrayIconHelper {

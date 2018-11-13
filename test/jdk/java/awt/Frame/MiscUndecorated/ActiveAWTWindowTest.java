@@ -27,7 +27,7 @@
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author yan
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main ActiveAWTWindowTest
  */

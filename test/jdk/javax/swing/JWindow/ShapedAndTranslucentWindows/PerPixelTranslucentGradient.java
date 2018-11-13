@@ -41,7 +41,7 @@ import java.awt.*;
  *      the window should appear as specified with the translucency. Only window
  *      background should be translucent, all the controls should be opaque.
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main PerPixelTranslucentGradient
  * @run main/othervm -Dsun.java2d.uiScale=1.5 PerPixelTranslucentGradient

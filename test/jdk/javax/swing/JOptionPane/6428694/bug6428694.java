@@ -25,7 +25,7 @@
  * @key headful
  * @bug 6428694
  * @summary Checks that double click closes JOptionPane's input dialog.
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @author Mikhail Lapshin
  * @run main bug6428694

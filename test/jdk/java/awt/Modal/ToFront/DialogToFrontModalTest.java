@@ -29,7 +29,7 @@
  *          blocking modal dialog does not bring it to the top
  *          of the modal dialog.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -41,7 +41,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @test
  * @bug 8139050 8153871
  * @key headful
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main/othervm/timeout=360 -Xcheck:jni NativeErrorsInTableDnD
  */

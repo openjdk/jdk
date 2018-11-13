@@ -30,7 +30,7 @@
  *          constructor still stays on top of the blocked windows even
  *          after calling toBack for the dialog.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

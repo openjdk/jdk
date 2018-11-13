@@ -28,7 +28,7 @@
  * @summary This is a simple check if a chain of dialogs having different
  *          modality types block each other properly.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

@@ -36,7 +36,7 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @bug 8009919
  * @author Sergey Bylokhov
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main JButtonPaintNPE
  */

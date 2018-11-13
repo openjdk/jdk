@@ -46,7 +46,7 @@ import static javax.swing.SwingUtilities.invokeAndWait;
  * @bug 6968363
  * @summary Ensures that a custom document may not extend AbstractDocument
  * @author Sergey Malenkov
- * @library ../../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main Test6968363
  */

@@ -42,7 +42,7 @@ import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
    @requires (os.family == "windows")
  * @summary Tests that editable combobox selects all text.
  * @author Sergey Malenkov
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @build ExtendedRobot
  * @run main Test8015300

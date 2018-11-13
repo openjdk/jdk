@@ -38,7 +38,7 @@ import java.awt.*;
  * Expected Result: Only the components present in the window must be shown. Other
  *      areas of the window must be transparent so that the background shows
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main PerPixelTranslucentSwing
  * @run main/othervm -Dsun.java2d.uiScale=1.5 PerPixelTranslucentSwing

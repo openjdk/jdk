@@ -28,7 +28,7 @@
  * @summary Regression: Pressing Escape key don't close the menu items from jdk7.0 b07 onwards
  * @author Alexander Potochkin
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6538132
  */

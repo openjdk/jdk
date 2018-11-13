@@ -26,7 +26,7 @@
  * @bug 6580930 7184956
  * @summary Swing Popups should overlap taskbar
  * @author Alexander Potochkin
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main bug6580930
  */

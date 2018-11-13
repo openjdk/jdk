@@ -30,7 +30,7 @@
  *          and respond to key events. Check also the correctness
  *          of blocking behavior for the parent Dialog.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

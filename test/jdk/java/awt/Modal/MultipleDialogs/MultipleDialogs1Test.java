@@ -29,7 +29,7 @@
  *          parent has a proper modal blocking behavior. Also show a document modal
  *          dialog and check if it blocks the document properly.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

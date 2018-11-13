@@ -31,7 +31,7 @@ import java.awt.Dialog;
  *          the following happens: a window having a hidden frame owner is shown;
  *          a non-modal dialog having a frame (F) owner is shown; F is shown.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

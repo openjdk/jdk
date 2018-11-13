@@ -32,7 +32,7 @@
  *
  * @requires (os.family == "mac")
  *
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main Corrupted2XImageTest
  */

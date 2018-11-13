@@ -31,7 +31,7 @@ import java.awt.Dialog;
  *          a frame (F) is shown; a window having F as owner is shown; a document modal dialog having
  *          a null frame owner is shown.
  *
- * @library ../helpers /lib/testlibrary/
+ * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
  * @build Flag

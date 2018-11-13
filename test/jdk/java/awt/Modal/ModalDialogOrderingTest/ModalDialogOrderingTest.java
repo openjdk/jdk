@@ -35,7 +35,7 @@ import java.awt.event.InputEvent;
  * @bug 8008728
  * @summary [macosx] Swing. JDialog. Modal dialog goes to background
  * @author Alexandr Scherbatiy
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main ModalDialogOrderingTest
  */

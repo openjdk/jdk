@@ -32,7 +32,7 @@ import javax.swing.*;
  *          so that their centers coincide
  *          or, if the component is hidden, centered on the screen.
  * @bug 8036915
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main/timeout=1200 SetLocationRelativeToTest
  */

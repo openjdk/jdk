@@ -35,7 +35,7 @@ import java.util.Vector;
  *          added to it & each components are setted with different cursors types.
  *          Dispose the parent & collect GC. Garbage collection should happen
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build ExtendedRobot
  * @run main/othervm -Xmx20m DisposeParentGC
  */

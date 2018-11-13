@@ -33,7 +33,7 @@ import java.awt.GraphicsEnvironment;
  * @key headful
  * @bug 8019587
  * @author Sergey Bylokhov
- * @library ../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main IncorrectDisplayModeExitFullscreen
  */

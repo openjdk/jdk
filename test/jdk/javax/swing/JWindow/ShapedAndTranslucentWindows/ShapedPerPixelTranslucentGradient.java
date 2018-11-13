@@ -45,7 +45,7 @@ import java.awt.*;
  *      translucent gradient in parts that are not clipped by shape, all the
  *      controls should be opaque.
  * @author mrkam
- * @library ../../../../lib/testlibrary
+ * @library /lib/client
  * @build Common ExtendedRobot
  * @run main ShapedPerPixelTranslucentGradient
  * @run main/othervm -Dsun.java2d.uiScale=1.5 ShapedPerPixelTranslucentGradient

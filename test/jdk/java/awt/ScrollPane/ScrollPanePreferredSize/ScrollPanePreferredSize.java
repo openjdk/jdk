@@ -31,7 +31,7 @@ import java.awt.Toolkit;
  * @key headful
  * @bug 7124213
  * @author Sergey Bylokhov
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main ScrollPanePreferredSize
  */

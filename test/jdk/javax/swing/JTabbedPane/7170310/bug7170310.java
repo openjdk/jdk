@@ -41,7 +41,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
  * @bug 7170310
  * @author Alexey Ivanov
  * @summary Selected tab should be scrolled into view.
- * @library ../../../../lib/testlibrary/
+ * @library /lib/client/
  * @build ExtendedRobot
  * @run main bug7170310
  */
