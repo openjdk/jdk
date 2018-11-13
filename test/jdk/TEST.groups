@@ -460,7 +460,9 @@ jdk_jfr_sanity = \
     jdk/jfr/event/runtime/TestClassLoadEvent.java \
     jdk/jfr/event/runtime/TestJavaBlockedEvent.java \
     jdk/jfr/event/gc/collection/TestGCWithFasttime.java \
-    jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java
+    jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java \
+    jdk/jfr/event/metadata/TestDefaultConfigurations.java \
+    jdk/jfr/startupargs/TestDumpOnExit.java
 
 svc_tools_sanity =
 
