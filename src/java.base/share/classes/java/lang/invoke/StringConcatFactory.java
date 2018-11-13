@@ -1629,7 +1629,7 @@ public final class StringConcatFactory {
         @ForceInline
         private static byte[] newArray(long indexCoder) {
             byte coder = (byte)(indexCoder >> 32);
-            int index = ((int)indexCoder & 0x7FFFFFFF);
+            int index = (int)indexCoder;
             return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
         }
 
@@ -1692,30 +1692,35 @@ public final class StringConcatFactory {
             // no instantiation
         }
 
-        private static class StringifierMost extends ClassValue<MethodHandle> {
-            @Override
-            protected MethodHandle computeValue(Class<?> cl) {
-                if (cl == String.class) {
-                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
-                } else if (cl == float.class) {
-                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, float.class);
-                } else if (cl == double.class) {
-                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
-                } else if (!cl.isPrimitive()) {
-                    MethodHandle mhObject = lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
+        private static class ObjectStringifier {
 
-                    // We need the additional conversion here, because String.valueOf(Object) may return null.
-                    // String conversion rules in Java state we need to produce "null" String in this case.
-                    // It can be easily done with applying valueOf the second time.
-                    return MethodHandles.filterReturnValue(mhObject,
-                            mhObject.asType(MethodType.methodType(String.class, String.class)));
-                }
-
-                return null;
+            // We need some additional conversion for Objects in general, because String.valueOf(Object)
+            // may return null. String conversion rules in Java state we need to produce "null" String
+            // in this case, so we provide a customized version that deals with this problematic corner case.
+            private static String valueOf(Object value) {
+                String s;
+                return (value == null || (s = value.toString()) == null) ? "null" : s;
             }
+
+            // Could have used MethodHandles.lookup() instead of Lookup.IMPL_LOOKUP, if not for the fact
+            // java.lang.invoke Lookups are explicitly forbidden to be retrieved using that API.
+            private static final MethodHandle INSTANCE =
+                    lookupStatic(Lookup.IMPL_LOOKUP, ObjectStringifier.class, "valueOf", String.class, Object.class);
+
+        }
+
+        private static class FloatStringifiers {
+            private static final MethodHandle FLOAT_INSTANCE =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, float.class);
+
+            private static final MethodHandle DOUBLE_INSTANCE =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
         }
 
         private static class StringifierAny extends ClassValue<MethodHandle> {
+
+            private static final ClassValue<MethodHandle> INSTANCE = new StringifierAny();
+
             @Override
             protected MethodHandle computeValue(Class<?> cl) {
                 if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1727,7 +1732,7 @@ public final class StringConcatFactory {
                 } else if (cl == long.class) {
                     return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, long.class);
                 } else {
-                    MethodHandle mh = STRINGIFIERS_MOST.get(cl);
+                    MethodHandle mh = forMost(cl);
                     if (mh != null) {
                         return mh;
                     } else {
@@ -1737,9 +1742,6 @@ public final class StringConcatFactory {
             }
         }
 
-        private static final ClassValue<MethodHandle> STRINGIFIERS_MOST = new StringifierMost();
-        private static final ClassValue<MethodHandle> STRINGIFIERS_ANY = new StringifierAny();
-
         /**
          * Returns a stringifier for references and floats/doubles only.
          * Always returns null for other primitives.
@@ -1748,7 +1750,14 @@ public final class StringConcatFactory {
          * @return stringifier; null, if not available
          */
         static MethodHandle forMost(Class<?> t) {
-            return STRINGIFIERS_MOST.get(t);
+            if (!t.isPrimitive()) {
+                return ObjectStringifier.INSTANCE;
+            } else if (t == float.class) {
+                return FloatStringifiers.FLOAT_INSTANCE;
+            } else if (t == double.class) {
+                return FloatStringifiers.DOUBLE_INSTANCE;
+            }
+            return null;
         }
 
         /**
@@ -1758,7 +1767,7 @@ public final class StringConcatFactory {
          * @return stringifier
          */
         static MethodHandle forAny(Class<?> t) {
-            return STRINGIFIERS_ANY.get(t);
+            return StringifierAny.INSTANCE.get(t);
         }
     }
 
