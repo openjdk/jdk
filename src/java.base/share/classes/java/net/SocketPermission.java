@@ -283,7 +283,7 @@ public final class SocketPermission extends Permission
      *    nr = new SocketPermission("204.160.241.0:1024-65535", "connect");
      * </pre>
      *
-     * @param host the hostname or IPaddress of the computer, optionally
+     * @param host the hostname or IP address of the computer, optionally
      * including a colon followed by a port or port range.
      * @param action the action string.
      */
@@ -317,7 +317,7 @@ public final class SocketPermission extends Permission
                 if ((ind = host.indexOf(':')) != host.lastIndexOf(':')) {
                     /* More than one ":", meaning IPv6 address is not
                      * in RFC 2732 format;
-                     * We will rectify user errors for all unambiguious cases
+                     * We will rectify user errors for all unambiguous cases
                      */
                     StringTokenizer st = new StringTokenizer(host, ":");
                     int tokens = st.countTokens();
@@ -961,7 +961,7 @@ public final class SocketPermission extends Permission
                 return (that.cname.endsWith(this.cname));
             }
 
-            // comapare IP addresses
+            // compare IP addresses
             if (this.addresses == null) {
                 this.getIP();
             }

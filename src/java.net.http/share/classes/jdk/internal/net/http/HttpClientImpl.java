@@ -211,7 +211,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     //    from the map. This should also take care of push promises.
     // 2. For WebSocket the count is increased when creating a
     //    DetachedConnectionChannel for the socket, and decreased
-    //    when the the channel is closed.
+    //    when the channel is closed.
     //    In addition, the HttpClient facade is passed to the WebSocket builder,
     //    (instead of the client implementation delegate).
     // 3. For HTTP/1.1 the count is incremented before starting to parse the body

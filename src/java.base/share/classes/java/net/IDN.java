@@ -407,7 +407,7 @@ public final class IDN {
     // 26-letter Latin alphabet <A-Z a-z>, the digits <0-9>, and the hyphen
     // <->.
     // Non LDH refers to characters in the ASCII range, but which are not
-    // letters, digits or the hypen.
+    // letters, digits or the hyphen.
     //
     // non-LDH = 0..0x2C, 0x2E..0x2F, 0x3A..0x40, 0x5B..0x60, 0x7B..0x7F
     //

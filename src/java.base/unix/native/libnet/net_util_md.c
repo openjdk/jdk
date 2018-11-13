@@ -1087,7 +1087,7 @@ int getDefaultIPv6Interface(struct in6_addr *target_addr) {
              * dest_plen % 8    => number of additional bits to match
              *
              * eg: fe80::/10 => match 1 byte + 2 additional bits in the
-             *                  the next byte.
+             *                  next byte.
              */
             int byte_count = dest_plen >> 3;
             int extra_bits = dest_plen & 0x3;

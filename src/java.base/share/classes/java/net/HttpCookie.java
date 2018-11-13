@@ -666,7 +666,7 @@ public final class HttpCookie implements Cloneable {
         int domainLength = domain.length();
         int lengthDiff = host.length() - domainLength;
         if (lengthDiff == 0) {
-            // if the host name and the domain name are just string-compare euqal
+            // if the host name and the domain name are just string-compare equal
             return host.equalsIgnoreCase(domain);
         }
         else if (lengthDiff > 0) {
@@ -1131,7 +1131,7 @@ public final class HttpCookie implements Cloneable {
      * Split cookie header string according to rfc 2965:
      *   1) split where it is a comma;
      *   2) but not the comma surrounding by double-quotes, which is the comma
-     *      inside port list or embeded URIs.
+     *      inside port list or embedded URIs.
      *
      * @param  header
      *         the cookie header string to split

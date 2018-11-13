@@ -166,7 +166,7 @@ class ServerSocket implements java.io.Closeable {
      * The {@code backlog} argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than {@code 0}. If it is less than or equal to
      * {@code 0}, then an implementation specific default will be used.
      *
@@ -214,7 +214,7 @@ class ServerSocket implements java.io.Closeable {
      * The {@code backlog} argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than {@code 0}. If it is less than or equal to
      * {@code 0}, then an implementation specific default will be used.
      *
@@ -351,7 +351,7 @@ class ServerSocket implements java.io.Closeable {
      * The {@code backlog} argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than {@code 0}. If it is less than or equal to
      * {@code 0}, then an implementation specific default will be used.
      * @param   endpoint        The IP address and port number to bind to.
@@ -826,7 +826,7 @@ class ServerSocket implements java.io.Closeable {
      * <p>
      * The value of {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is used both to
      * set the size of the internal socket receive buffer, and to set the size
-     * of the TCP receive window that is advertized to the remote peer.
+     * of the TCP receive window that is advertised to the remote peer.
      * <p>
      * It is possible to change the value subsequently, by calling
      * {@link Socket#setReceiveBufferSize(int)}. However, if the application

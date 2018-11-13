@@ -304,7 +304,7 @@ class DatagramSocket implements java.io.Closeable {
     private void checkOldImpl() {
         if (impl == null)
             return;
-        // DatagramSocketImpl.peekdata() is a protected method, therefore we need to use
+        // DatagramSocketImpl.peekData() is a protected method, therefore we need to use
         // getDeclaredMethod, therefore we need permission to access the member
         try {
             AccessController.doPrivileged(
@@ -660,7 +660,7 @@ class DatagramSocket implements java.io.Closeable {
                 throw new SocketException("Socket is closed");
             checkAddress (p.getAddress(), "send");
             if (connectState == ST_NOT_CONNECTED) {
-                // check the address is ok wiht the security manager on every send.
+                // check the address is ok with the security manager on every send.
                 SecurityManager security = System.getSecurityManager();
 
                 // The reason you want to synchronize on datagram packet
@@ -1070,7 +1070,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @param on  whether to enable or disable the
      * @exception SocketException if an error occurs enabling or
-     *            disabling the {@code SO_RESUEADDR} socket option,
+     *            disabling the {@code SO_REUSEADDR} socket option,
      *            or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()

@@ -861,9 +861,9 @@ public final class URI
      *
      * <p> This method is provided for use in situations where it is known that
      * the given string is a legal URI, for example for URI constants declared
-     * within in a program, and so it would be considered a programming error
+     * within a program, and so it would be considered a programming error
      * for the string not to parse as such.  The constructors, which throw
-     * {@link URISyntaxException} directly, should be used situations where a
+     * {@link URISyntaxException} directly, should be used in situations where a
      * URI is being constructed from user input or from some other source that
      * may be prone to errors.  </p>
      *

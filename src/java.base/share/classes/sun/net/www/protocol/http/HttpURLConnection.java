@@ -246,7 +246,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         userAgent = agent;
 
         // A set of net properties to control the use of authentication schemes
-        // when proxing/tunneling.
+        // when proxying/tunneling.
         String p = getNetProperty("jdk.http.auth.tunneling.disabledSchemes");
         disabledTunnelingSchemes = schemesListToSet(p);
         p = getNetProperty("jdk.http.auth.proxying.disabledSchemes");
@@ -3590,7 +3590,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         /**
          * expectedLength == -1 if the stream is chunked
          * expectedLength > 0 if the stream is fixed content-length
-         *    In the 2nd case, we make sure the expected number of
+         *    In the 2nd case, we make sure the expected number
          *    of bytes are actually written
          */
         StreamingOutputStream (OutputStream os, long expectedLength) {
