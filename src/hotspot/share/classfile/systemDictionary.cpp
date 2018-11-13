@@ -1845,15 +1845,14 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
 
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
-bool SystemDictionary::do_unloading(GCTimer* gc_timer,
-                                    bool do_cleaning) {
+bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
 
   bool unloading_occurred;
   {
     GCTraceTime(Debug, gc, phases) t("ClassLoaderData", gc_timer);
 
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
-    unloading_occurred = ClassLoaderDataGraph::do_unloading(do_cleaning);
+    unloading_occurred = ClassLoaderDataGraph::do_unloading();
     if (unloading_occurred) {
       JFR_ONLY(Jfr::on_unloading_classes();)
       ClassLoaderDataGraph::clean_module_and_package_info();
@@ -1883,7 +1882,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     _pd_cache_table->trigger_cleanup();
   }
 
-  if (do_cleaning) {
+  {
     GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
     ResolvedMethodTable::trigger_cleanup();
   }

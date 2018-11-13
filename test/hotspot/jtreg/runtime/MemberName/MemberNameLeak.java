@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8174749
+ * @bug 8174749 8213307
  * @summary MemberNameTable should reuse entries
+ * @requires vm.gc == "null"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -71,13 +72,16 @@ public class MemberNameLeak {
       }
     }
 
-    public static void test(String gc) throws Throwable {
+    public static void test(String gc, boolean doConcurrent) throws Throwable {
         // Run this Leak class with logging
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                       "-Xlog:membername+table=trace",
                                       "-XX:+UnlockDiagnosticVMOptions",
                                       "-XX:+WhiteBoxAPI",
                                       "-Xbootclasspath/a:.",
+                                      doConcurrent ? "-XX:+ExplicitGCInvokesConcurrent" : "-XX:-ExplicitGCInvokesConcurrent",
+                                      "-XX:+ClassUnloading",
+                                      "-XX:+ClassUnloadingWithConcurrentMark",
                                       gc, Leak.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("ResolvedMethod entry added for MemberNameLeak$Leak.callMe()V");
@@ -87,11 +91,14 @@ public class MemberNameLeak {
     }
 
     public static void main(java.lang.String[] unused) throws Throwable {
-        test("-XX:+UseG1GC");
-        test("-XX:+UseParallelGC");
-        test("-XX:+UseSerialGC");
+        test("-XX:+UseG1GC", false);
+        test("-XX:+UseG1GC", true);
+
+        test("-XX:+UseParallelGC", false);
+        test("-XX:+UseSerialGC", false);
         if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
-            test("-XX:+UseConcMarkSweepGC");
+            test("-XX:+UseConcMarkSweepGC", false);
+            test("-XX:+UseConcMarkSweepGC", true);
         }
     }
 }
