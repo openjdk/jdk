@@ -89,6 +89,9 @@ DECL_TEST_FUNC(object, Object);
 
 DECL_TEST_INV_SLOT_FUNC(int, Int);
 DECL_TEST_INV_SLOT_FUNC(float, Float);
+DECL_TEST_INV_SLOT_FUNC(long, Long);
+DECL_TEST_INV_SLOT_FUNC(double, Double);
+DECL_TEST_INV_SLOT_FUNC(object, Object);
 
 DECL_TEST_TYPE_MISMATCH_FUNC(int, Int);
 DECL_TEST_TYPE_MISMATCH_FUNC(float, Float);
