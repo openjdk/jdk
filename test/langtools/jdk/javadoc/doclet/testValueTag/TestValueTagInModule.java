@@ -27,6 +27,8 @@
  * @summary {@value} should be permitted in module documentation
  * @library /tools/lib ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build JavadocTester
  * @run main TestValueTagInModule
  */
