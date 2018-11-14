@@ -26,21 +26,20 @@
 package java.applet;
 
 /**
- * The {@code AudioClip} interface is a simple abstraction for
- * playing a sound clip. Multiple {@code AudioClip} items can be
- * playing at the same time, and the resulting sound is mixed
- * together to produce a composite.
+ * The {@code AudioClip} interface is a simple abstraction for playing a sound
+ * clip. Multiple {@code AudioClip} items can be playing at the same time, and
+ * the resulting sound is mixed together to produce a composite.
  *
- * @author      Arthur van Hoff
- * @since       1.0
- *
+ * @author Arthur van Hoff
+ * @since 1.0
  * @deprecated The Applet API is deprecated, no replacement.
  */
 @Deprecated(since = "9")
 public interface AudioClip {
+
     /**
-     * Starts playing this audio clip. Each time this method is called,
-     * the clip is restarted from the beginning.
+     * Starts playing this audio clip. Each time this method is called, the clip
+     * is restarted from the beginning.
      */
     void play();
 
