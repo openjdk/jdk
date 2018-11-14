@@ -28,13 +28,13 @@ package sun.security.tools.keytool;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.AlgorithmParameters;
 import java.security.CodeSigner;
 import java.security.CryptoPrimitive;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.Key;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.Signature;
@@ -68,6 +68,7 @@ import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
 
+import sun.security.util.ECKeySizeParameterSpec;
 import sun.security.util.KeyUtil;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
@@ -116,6 +117,7 @@ public final class Main {
     private String keyAlgName = null;
     private boolean verbose = false;
     private int keysize = -1;
+    private String groupName = null;
     private boolean rfc = false;
     private long validity = (long)90;
     private String alias = null;
@@ -202,7 +204,7 @@ public final class Main {
             STORETYPE, PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         GENKEYPAIR("Generates.a.key.pair",
-            ALIAS, KEYALG, KEYSIZE, SIGALG, DESTALIAS, DNAME,
+            ALIAS, KEYALG, KEYSIZE, CURVENAME, SIGALG, DESTALIAS, DNAME,
             STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
             STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
@@ -314,6 +316,7 @@ public final class Main {
     // in the optionsSet.contains() block in parseArgs().
     enum Option {
         ALIAS("alias", "<alias>", "alias.name.of.the.entry.to.process"),
+        CURVENAME("groupname", "<name>", "groupname.option.help"),
         DESTALIAS("destalias", "<alias>", "destination.alias"),
         DESTKEYPASS("destkeypass", "<arg>", "destination.key.password"),
         DESTKEYSTORE("destkeystore", "<keystore>", "destination.keystore.name"),
@@ -586,6 +589,8 @@ public final class Main {
                 dname = args[++i];
             } else if (collator.compare(flags, "-keysize") == 0) {
                 keysize = Integer.parseInt(args[++i]);
+            } else if (collator.compare(flags, "-groupname") == 0) {
+                groupName = args[++i];
             } else if (collator.compare(flags, "-keyalg") == 0) {
                 keyAlgName = args[++i];
             } else if (collator.compare(flags, "-sigalg") == 0) {
@@ -1119,7 +1124,7 @@ public final class Main {
             if (keyAlgName == null) {
                 keyAlgName = "DSA";
             }
-            doGenKeyPair(alias, dname, keyAlgName, keysize, sigAlgName);
+            doGenKeyPair(alias, dname, keyAlgName, keysize, groupName, sigAlgName);
             kssave = true;
         } else if (command == GENSECKEY) {
             if (keyAlgName == null) {
@@ -1793,16 +1798,28 @@ public final class Main {
      * Creates a new key pair and self-signed certificate.
      */
     private void doGenKeyPair(String alias, String dname, String keyAlgName,
-                              int keysize, String sigAlgName)
+                              int keysize, String groupName, String sigAlgName)
         throws Exception
     {
-        if (keysize == -1) {
-            if ("EC".equalsIgnoreCase(keyAlgName)) {
-                keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
-            } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
-                keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
-            } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
-                keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+        if (groupName != null) {
+            if (keysize != -1) {
+                throw new Exception(rb.getString("groupname.keysize.coexist"));
+            }
+        } else {
+            if (keysize == -1) {
+                if ("EC".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
+                } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+                }
+            } else {
+                if ("EC".equalsIgnoreCase(keyAlgName)) {
+                    weakWarnings.add(String.format(
+                            rb.getString("deprecate.keysize.for.ec"),
+                            ecGroupNameForSize(keysize)));
+                }
             }
         }
 
@@ -1829,7 +1846,13 @@ public final class Main {
             x500Name = new X500Name(dname);
         }
 
-        keypair.generate(keysize);
+        if (groupName != null) {
+            keypair.generate(groupName);
+        } else {
+            // This covers keysize both specified and unspecified
+            keypair.generate(keysize);
+        }
+
         PrivateKey privKey = keypair.getPrivateKey();
 
         CertificateExtensions ext = createV3Extensions(
@@ -1859,6 +1882,13 @@ public final class Main {
         }
         checkWeak(rb.getString("the.generated.certificate"), chain[0]);
         keyStore.setKeyEntry(alias, privKey, keyPass, chain);
+    }
+
+    private String ecGroupNameForSize(int size) throws Exception {
+        AlgorithmParameters ap = AlgorithmParameters.getInstance("EC");
+        ap.init(new ECKeySizeParameterSpec(size));
+        // The following line assumes the toString value is "name (oid)"
+        return ap.toString().split(" ")[0];
     }
 
     /**

@@ -99,6 +99,8 @@ public class Resources extends java.util.ListResourceBundle {
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
                 "alias name of the entry to process"}, //-alias
+        {"groupname.option.help",
+                "Group name. For example, an Elliptic Curve name."}, //-groupname
         {"destination.alias",
                 "destination alias"}, //-destalias
         {"destination.key.password",
@@ -290,6 +292,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "Alias <{0}> does not exist"},
         {"Alias.alias.has.no.certificate",
                 "Alias <{0}> has no certificate"},
+        {"groupname.keysize.coexist",
+                "Cannot specify both -groupname and -keysize"},
+        {"deprecate.keysize.for.ec",
+                "Specifying -keysize for generating EC keys is deprecated, please use \"-groupname %s\" instead."},
         {"Key.pair.not.generated.alias.alias.already.exists",
                 "Key pair not generated, alias <{0}> already exists"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
