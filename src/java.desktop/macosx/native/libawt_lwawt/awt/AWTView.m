@@ -34,6 +34,7 @@
 #import "OSVersion.h"
 #import "ThreadUtilities.h"
 
+#import <Carbon/Carbon.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface AWTView()
@@ -281,11 +282,31 @@ static BOOL shouldUsePressAndHold() {
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
 
-    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod] && fInputMethodLOCKABLE) {
+    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod] && 
+        fInputMethodLOCKABLE)
+    {
         fProcessingKeystroke = NO;
         if (!fInPressAndHold) {
             fInPressAndHold = YES;
             fPAHNeedsToSelect = YES;
+        } else {
+            // Abandon input to reset IM and unblock input after canceling 
+            // input accented symbols
+
+            switch([event keyCode]) {
+                case kVK_Escape:
+                case kVK_Delete:
+                case kVK_Return:
+                case kVK_ForwardDelete:
+                case kVK_PageUp:
+                case kVK_PageDown:
+                case kVK_DownArrow:
+                case kVK_UpArrow:
+                case kVK_Home:
+                case kVK_End:
+                   [self abandonInput];
+                   break;
+            }
         }
         return;
     }
@@ -978,6 +999,11 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         }
     }
     fPAHNeedsToSelect = NO;
+
+    // Abandon input to reset IM and unblock input after entering accented
+    // symbols
+
+    [self abandonInput];
 }
 
 - (void) doCommandBySelector:(SEL)aSelector
