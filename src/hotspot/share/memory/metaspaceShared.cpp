@@ -1919,6 +1919,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     assert(ro_top == md_base, "must be");
     assert(md_top == od_base, "must be");
 
+    _core_spaces_size = mapinfo->core_spaces_size();
     MetaspaceObj::set_shared_metaspace_range((void*)mc_base, (void*)od_top);
     return true;
   } else {
@@ -1951,7 +1952,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
   _cds_i2i_entry_code_buffers = mapinfo->cds_i2i_entry_code_buffers();
   _cds_i2i_entry_code_buffers_size = mapinfo->cds_i2i_entry_code_buffers_size();
-  _core_spaces_size = mapinfo->core_spaces_size();
+  // _core_spaces_size is loaded from the shared archive immediatelly after mapping
+  assert(_core_spaces_size == mapinfo->core_spaces_size(), "sanity");
   char* buffer = mapinfo->misc_data_patching_start();
   clone_cpp_vtables((intptr_t*)buffer);
 

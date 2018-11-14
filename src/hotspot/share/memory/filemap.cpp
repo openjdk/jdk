@@ -287,6 +287,12 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
                                  " the shared archive file: %s", name);
     }
   }
+
+  if (PrintSharedArchiveAndExit && !ok) {
+    // If PrintSharedArchiveAndExit is enabled, don't report failure to the
+    // caller. Please see above comments for more details.
+    ok = true;
+  }
   return ok;
 }
 
@@ -479,16 +485,17 @@ bool FileMapInfo::validate_shared_path_table() {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
     } else if (i >= module_paths_start_index) {
       if (shared_path(i)->validate(false /* not a class path entry */)) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
-    } else if (!PrintSharedArchiveAndExit) {
-      _validating_shared_path_table = false;
-      _shared_path_table = NULL;
-      _shared_path_table_size = 0;
-      return false;
     }
   }
 
