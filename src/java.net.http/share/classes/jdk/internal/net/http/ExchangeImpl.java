@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -64,6 +65,9 @@ abstract class ExchangeImpl<T> {
         return exchange;
     }
 
+    HttpClient client() {
+        return exchange.client();
+    }
 
     /**
      * Returns the {@link HttpConnection} instance to which this exchange is

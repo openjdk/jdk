@@ -38,6 +38,9 @@
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
+ * @run testng/othervm -Djdk.httpclient.allowRestrictedHeaders=Host
+ *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
+ *       SpecialHeadersTest
  */
 
 import com.sun.net.httpserver.HttpServer;
@@ -70,6 +73,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
@@ -104,21 +108,33 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             {"ORIGIN: upper"},
     };
 
+    // Needs net.property enabled for this part of test
+    static final String[][] headerNamesAndValues1 = new String[][]{
+            {"Host: <DEFAULT>"},
+            {"Host: camel-cased"},
+            {"host: all-lower-case"},
+            {"hoSt: mixed"}
+    };
+
     @DataProvider(name = "variants")
     public Object[][] variants() {
+        String prop = System.getProperty("jdk.httpclient.allowRestrictedHeaders");
+        boolean hostTest = prop != null && prop.equalsIgnoreCase("host");
+        final String[][] testInput = hostTest ? headerNamesAndValues1 : headerNamesAndValues;
+
         List<Object[]> list = new ArrayList<>();
 
         for (boolean sameClient : new boolean[] { false, true }) {
-            Arrays.asList(headerNamesAndValues).stream()
+            Arrays.asList(testInput).stream()
                     .map(e -> new Object[] {httpURI, e[0], sameClient})
                     .forEach(list::add);
-            Arrays.asList(headerNamesAndValues).stream()
+            Arrays.asList(testInput).stream()
                     .map(e -> new Object[] {httpsURI, e[0], sameClient})
                     .forEach(list::add);
-            Arrays.asList(headerNamesAndValues).stream()
+            Arrays.asList(testInput).stream()
                     .map(e -> new Object[] {http2URI, e[0], sameClient})
                     .forEach(list::add);
-            Arrays.asList(headerNamesAndValues).stream()
+            Arrays.asList(testInput).stream()
                     .map(e -> new Object[] {https2URI, e[0], sameClient})
                     .forEach(list::add);
         }
@@ -131,7 +147,8 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         return "Java-http-client/" + System.getProperty("java.version");
     }
 
-    static final Map<String, String> DEFAULTS = Map.of("USER-AGENT", userAgent());
+    static final Map<String, Function<URI,String>> DEFAULTS = Map.of(
+        "USER-AGENT", u -> userAgent(), "HOST", u -> u.getRawAuthority());
 
     @Test(dataProvider = "variants")
     void test(String uriString, String headerNameAndValue, boolean sameClient) throws Exception {
@@ -142,9 +159,9 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         String v = headerNameAndValue.substring(index+1).trim();
         String key = name.toUpperCase(Locale.ROOT);
         boolean useDefault = "<DEFAULT>".equals(v);
-        String value =  useDefault ? DEFAULTS.get(key) : v;
 
         URI uri = URI.create(uriString+"?name="+key);
+        String value =  useDefault ? DEFAULTS.get(key).apply(uri) : v;
 
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
@@ -210,7 +227,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 return Optional.empty();
             }
             @Override public HttpHeaders headers() {
-                Map<String, List<String>> map = Map.of("via", List.of("http://foo.com"));
+                Map<String, List<String>> map = Map.of("upgrade", List.of("http://foo.com"));
                 return HttpHeaders.of(map, (x, y) -> true);
             }
         };
@@ -231,9 +248,9 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         String v = headerNameAndValue.substring(index+1).trim();
         String key = name.toUpperCase(Locale.ROOT);
         boolean useDefault = "<DEFAULT>".equals(v);
-        String value =  useDefault ? DEFAULTS.get(key) : v;
 
         URI uri = URI.create(uriString+"?name="+key);
+        String value =  useDefault ? DEFAULTS.get(key).apply(uri) : v;
 
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
