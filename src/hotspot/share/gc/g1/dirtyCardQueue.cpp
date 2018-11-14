@@ -28,6 +28,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"

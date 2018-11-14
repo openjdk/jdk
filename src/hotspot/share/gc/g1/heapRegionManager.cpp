@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 class MasterFreeRegionListChecker : public HeapRegionSetChecker {
 public:
