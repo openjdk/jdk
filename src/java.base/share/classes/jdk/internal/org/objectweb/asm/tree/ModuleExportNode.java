@@ -59,7 +59,6 @@
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.List;
-
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
 
 /**
@@ -68,31 +67,31 @@ import jdk.internal.org.objectweb.asm.ModuleVisitor;
  * @author Remi Forax
  */
 public class ModuleExportNode {
-    /**
-     * The package name.
-     */
+
+    /** The internal name of the exported package. */
     public String packaze;
 
     /**
-     * The access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}).
-     * Valid values are {@code ACC_SYNTHETIC} and {@code ACC_MANDATED}.
-     */
+      * The access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). Valid values are {@code
+      * ACC_SYNTHETIC} and {@code ACC_MANDATED}.
+      */
     public int access;
 
     /**
-     * A list of modules that can access to this exported package.
-     * May be <tt>null</tt>.
-     */
+      * The list of modules that can access this exported package, specified with fully qualified names
+      * (using dots). May be {@literal null}.
+      */
     public List<String> modules;
 
     /**
-     * Constructs a new {@link ModuleExportNode}.
-     *
-     * @param packaze
-     *            the parameter's name.
-     * @param modules
-     *            a list of modules that can access to this exported package.
-     */
+      * Constructs a new {@link ModuleExportNode}.
+      *
+      * @param packaze the internal name of the exported package.
+      * @param access the package access flags, one or more of {@code ACC_SYNTHETIC} and {@code
+      *     ACC_MANDATED}.
+      * @param modules a list of modules that can access this exported package, specified with fully
+      *     qualified names (using dots).
+      */
     public ModuleExportNode(final String packaze, final int access, final List<String> modules) {
         this.packaze = packaze;
         this.access = access;
@@ -100,12 +99,12 @@ public class ModuleExportNode {
     }
 
     /**
-     * Makes the given module visitor visit this export declaration.
-     *
-     * @param mv
-     *            a module visitor.
-     */
-    public void accept(final ModuleVisitor mv) {
-        mv.visitExport(packaze, access, (modules == null) ? null : modules.toArray(new String[0]));
+      * Makes the given module visitor visit this export declaration.
+      *
+      * @param moduleVisitor a module visitor.
+      */
+    public void accept(final ModuleVisitor moduleVisitor) {
+        moduleVisitor.visitExport(
+                packaze, access, modules == null ? null : modules.toArray(new String[0]));
     }
 }

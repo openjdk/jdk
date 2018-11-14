@@ -422,17 +422,22 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
   _itable_len(parser.itable_size()),
-  _reference_type(parser.reference_type()) {
-    set_vtable_length(parser.vtable_size());
-    set_kind(kind);
-    set_access_flags(parser.access_flags());
-    set_is_unsafe_anonymous(parser.is_unsafe_anonymous());
-    set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
+  _reference_type(parser.reference_type())
+{
+  set_vtable_length(parser.vtable_size());
+  set_kind(kind);
+  set_access_flags(parser.access_flags());
+  set_is_unsafe_anonymous(parser.is_unsafe_anonymous());
+  set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
 
-    assert(NULL == _methods, "underlying memory not zeroed?");
-    assert(is_instance_klass(), "is layout incorrect?");
-    assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
+  assert(NULL == _methods, "underlying memory not zeroed?");
+  assert(is_instance_klass(), "is layout incorrect?");
+  assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
+
+  if (DumpSharedSpaces) {
+    SystemDictionaryShared::init_dumptime_info(this);
+  }
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
@@ -579,6 +584,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
     MetadataFactory::free_metadata(loader_data, annotations());
   }
   set_annotations(NULL);
+
+  if (DumpSharedSpaces) {
+    SystemDictionaryShared::remove_dumptime_info(this);
+  }
 }
 
 bool InstanceKlass::should_be_initialized() const {

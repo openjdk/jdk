@@ -42,7 +42,7 @@
 
 
 /*
- * Class:     sun_net_dns_ResolverConfgurationImpl
+ * Class:     sun_net_dns_ResolverConfigurationImpl
  * Method:    localDomain0
  * Signature: ()Ljava/lang/String;
  */
@@ -66,7 +66,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_localDomain0(JNIEnv *env, jclass cls)
 }
 
 /*
- * Class:     sun_net_dns_ResolverConfgurationImpl
+ * Class:     sun_net_dns_ResolverConfigurationImpl
  * Method:    loadConfig0
  * Signature: ()Ljava/lang/String;
  */

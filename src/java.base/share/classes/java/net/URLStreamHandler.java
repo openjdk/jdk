@@ -250,15 +250,15 @@ public abstract class URLStreamHandler {
             } else if (path != null && path.length() > 0) {
                 isRelPath = true;
                 int ind = path.lastIndexOf('/');
-                String seperator = "";
+                String separator = "";
                 if (ind == -1 && authority != null)
-                    seperator = "/";
-                path = path.substring(0, ind + 1) + seperator +
+                    separator = "/";
+                path = path.substring(0, ind + 1) + separator +
                          spec.substring(start, limit);
 
             } else {
-                String seperator = (authority != null) ? "/" : "";
-                path = seperator + spec.substring(start, limit);
+                String separator = (authority != null) ? "/" : "";
+                path = separator + spec.substring(start, limit);
             }
         } else if (queryOnly && path != null) {
             int ind = path.lastIndexOf('/');
@@ -314,7 +314,7 @@ public abstract class URLStreamHandler {
 
     /**
      * Returns the default port for a URL parsed by this handler. This method
-     * is meant to be overidden by handlers with default port numbers.
+     * is meant to be overridden by handlers with default port numbers.
      * @return the default port for a {@code URL} parsed by this handler.
      * @since 1.3
      */
@@ -323,14 +323,14 @@ public abstract class URLStreamHandler {
     }
 
     /**
-     * Provides the default equals calculation. May be overidden by handlers
+     * Provides the default equals calculation. May be overridden by handlers
      * for other protocols that have different requirements for equals().
      * This method requires that none of its arguments is null. This is
      * guaranteed by the fact that it is only called by java.net.URL class.
      * @param u1 a URL object
      * @param u2 a URL object
      * @return {@code true} if the two urls are
-     * considered equal, ie. they refer to the same
+     * considered equal, i.e. they refer to the same
      * fragment in the same file.
      * @since 1.3
      */
@@ -342,7 +342,7 @@ public abstract class URLStreamHandler {
     }
 
     /**
-     * Provides the default hash calculation. May be overidden by handlers for
+     * Provides the default hash calculation. May be overridden by handlers for
      * other protocols that have different requirements for hashCode
      * calculation.
      * @param u a URL object

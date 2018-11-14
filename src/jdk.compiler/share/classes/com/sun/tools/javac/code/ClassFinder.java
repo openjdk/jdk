@@ -432,7 +432,10 @@ public class ClassFinder {
             try {
                 c.complete();
             } catch (CompletionFailure ex) {
-                if (absent) syms.removeClass(ps.modle, flatname);
+                if (absent) {
+                    syms.removeClass(ps.modle, flatname);
+                    ex.dcfh.classSymbolRemoved(c);
+                }
                 throw ex;
             }
         }

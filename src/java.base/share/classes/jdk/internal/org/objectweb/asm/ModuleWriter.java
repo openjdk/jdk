@@ -56,267 +56,229 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm;
 
 /**
+ * A {@link ModuleVisitor} that generates the corresponding Module, ModulePackages and
+ * ModuleMainClass attributes, as defined in the Java Virtual Machine Specification (JVMS).
+ *
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25">JVMS
+ *     4.7.25</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.26">JVMS
+ *     4.7.26</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.27">JVMS
+ *     4.7.27</a>
  * @author Remi Forax
+ * @author Eric Bruneton
  */
 final class ModuleWriter extends ModuleVisitor {
-    /**
-     * The class writer to which this Module attribute must be added.
-     */
-    private final ClassWriter cw;
 
-    /**
-     * size in byte of the Module attribute.
-     */
-    int size;
+    /** Where the constants used in this AnnotationWriter must be stored. */
+    private final SymbolTable symbolTable;
 
-    /**
-     * Number of attributes associated with the current module
-     * (Version, ConcealPackages, etc)
-     */
-    int attributeCount;
+    /** The module_name_index field of the JVMS Module attribute. */
+    private final int moduleNameIndex;
 
-    /**
-     * Size in bytes of the attributes associated with the current module
-     */
-    int attributesSize;
+    /** The module_flags field of the JVMS Module attribute. */
+    private final int moduleFlags;
 
-    /**
-     * module name index in the constant pool
-     */
-    private final int name;
+    /** The module_version_index field of the JVMS Module attribute. */
+    private final int moduleVersionIndex;
 
-    /**
-     * module access flags
-     */
-    private final int access;
+    /** The requires_count field of the JVMS Module attribute. */
+    private int requiresCount;
 
-    /**
-     * module version index in the constant pool or 0
-     */
-    private final int version;
+    /** The binary content of the 'requires' array of the JVMS Module attribute. */
+    private final ByteVector requires;
 
-    /**
-     * module main class index in the constant pool or 0
-     */
-    private int mainClass;
+    /** The exports_count field of the JVMS Module attribute. */
+    private int exportsCount;
 
-    /**
-     * number of packages
-     */
+    /** The binary content of the 'exports' array of the JVMS Module attribute. */
+    private final ByteVector exports;
+
+    /** The opens_count field of the JVMS Module attribute. */
+    private int opensCount;
+
+    /** The binary content of the 'opens' array of the JVMS Module attribute. */
+    private final ByteVector opens;
+
+    /** The uses_count field of the JVMS Module attribute. */
+    private int usesCount;
+
+    /** The binary content of the 'uses_index' array of the JVMS Module attribute. */
+    private final ByteVector usesIndex;
+
+    /** The provides_count field of the JVMS Module attribute. */
+    private int providesCount;
+
+    /** The binary content of the 'provides' array of the JVMS Module attribute. */
+    private final ByteVector provides;
+
+    /** The provides_count field of the JVMS ModulePackages attribute. */
     private int packageCount;
 
-    /**
-     * The packages in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in packageCount
-     */
-    private ByteVector packages;
+    /** The binary content of the 'package_index' array of the JVMS ModulePackages attribute. */
+    private final ByteVector packageIndex;
 
-    /**
-     * number of requires items
-     */
-    private int requireCount;
+    /** The main_class_index field of the JVMS ModuleMainClass attribute, or 0. */
+    private int mainClassIndex;
 
-    /**
-     * The requires items in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in requireCount
-     */
-    private ByteVector requires;
-
-    /**
-     * number of exports items
-     */
-    private int exportCount;
-
-    /**
-     * The exports items in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in exportCount
-     */
-    private ByteVector exports;
-
-    /**
-     * number of opens items
-     */
-    private int openCount;
-
-    /**
-     * The opens items in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in openCount
-     */
-    private ByteVector opens;
-
-    /**
-     * number of uses items
-     */
-    private int useCount;
-
-    /**
-     * The uses items in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in useCount
-     */
-    private ByteVector uses;
-
-    /**
-     * number of provides items
-     */
-    private int provideCount;
-
-    /**
-     * The uses provides in bytecode form. This byte vector only contains
-     * the items themselves, the number of items is store in provideCount
-     */
-    private ByteVector provides;
-
-    ModuleWriter(final ClassWriter cw, final int name,
-            final int access, final int version) {
-        super(Opcodes.ASM6);
-        this.cw = cw;
-        this.size = 16;  // name + access + version + 5 counts
-        this.name = name;
-        this.access = access;
-        this.version = version;
+    ModuleWriter(final SymbolTable symbolTable, final int name, final int access, final int version) {
+        super(Opcodes.ASM7);
+        this.symbolTable = symbolTable;
+        this.moduleNameIndex = name;
+        this.moduleFlags = access;
+        this.moduleVersionIndex = version;
+        this.requires = new ByteVector();
+        this.exports = new ByteVector();
+        this.opens = new ByteVector();
+        this.usesIndex = new ByteVector();
+        this.provides = new ByteVector();
+        this.packageIndex = new ByteVector();
     }
 
     @Override
-    public void visitMainClass(String mainClass) {
-        if (this.mainClass == 0) { // protect against several calls to visitMainClass
-            cw.newUTF8("ModuleMainClass");
-            attributeCount++;
-            attributesSize += 8;
-        }
-        this.mainClass = cw.newClass(mainClass);
+    public void visitMainClass(final String mainClass) {
+        this.mainClassIndex = symbolTable.addConstantClass(mainClass).index;
     }
 
     @Override
-    public void visitPackage(String packaze) {
-        if (packages == null) {
-            // protect against several calls to visitPackage
-            cw.newUTF8("ModulePackages");
-            packages = new ByteVector();
-            attributeCount++;
-            attributesSize += 8;
-        }
-        packages.putShort(cw.newPackage(packaze));
+    public void visitPackage(final String packaze) {
+        packageIndex.putShort(symbolTable.addConstantPackage(packaze).index);
         packageCount++;
-        attributesSize += 2;
     }
 
     @Override
-    public void visitRequire(String module, int access, String version) {
-        if (requires == null) {
-            requires = new ByteVector();
-        }
-        requires.putShort(cw.newModule(module))
+    public void visitRequire(final String module, final int access, final String version) {
+        requires
+                .putShort(symbolTable.addConstantModule(module).index)
                 .putShort(access)
-                .putShort(version == null? 0: cw.newUTF8(version));
-        requireCount++;
-        size += 6;
+                .putShort(version == null ? 0 : symbolTable.addConstantUtf8(version));
+        requiresCount++;
     }
 
     @Override
-    public void visitExport(String packaze, int access, String... modules) {
-        if (exports == null) {
-            exports = new ByteVector();
-        }
-        exports.putShort(cw.newPackage(packaze)).putShort(access);
+    public void visitExport(final String packaze, final int access, final String... modules) {
+        exports.putShort(symbolTable.addConstantPackage(packaze).index).putShort(access);
         if (modules == null) {
             exports.putShort(0);
-            size += 6;
         } else {
             exports.putShort(modules.length);
-            for(String module: modules) {
-                exports.putShort(cw.newModule(module));
+            for (String module : modules) {
+                exports.putShort(symbolTable.addConstantModule(module).index);
             }
-            size += 6 + 2 * modules.length;
         }
-        exportCount++;
+        exportsCount++;
     }
 
     @Override
-    public void visitOpen(String packaze, int access, String... modules) {
-        if (opens == null) {
-            opens = new ByteVector();
-        }
-        opens.putShort(cw.newPackage(packaze)).putShort(access);
+    public void visitOpen(final String packaze, final int access, final String... modules) {
+        opens.putShort(symbolTable.addConstantPackage(packaze).index).putShort(access);
         if (modules == null) {
             opens.putShort(0);
-            size += 6;
         } else {
             opens.putShort(modules.length);
-            for(String module: modules) {
-                opens.putShort(cw.newModule(module));
+            for (String module : modules) {
+                opens.putShort(symbolTable.addConstantModule(module).index);
             }
-            size += 6 + 2 * modules.length;
         }
-        openCount++;
+        opensCount++;
     }
 
     @Override
-    public void visitUse(String service) {
-        if (uses == null) {
-            uses = new ByteVector();
-        }
-        uses.putShort(cw.newClass(service));
-        useCount++;
-        size += 2;
+    public void visitUse(final String service) {
+        usesIndex.putShort(symbolTable.addConstantClass(service).index);
+        usesCount++;
     }
 
     @Override
-    public void visitProvide(String service, String... providers) {
-        if (provides == null) {
-            provides = new ByteVector();
-        }
-        provides.putShort(cw.newClass(service));
+    public void visitProvide(final String service, final String... providers) {
+        provides.putShort(symbolTable.addConstantClass(service).index);
         provides.putShort(providers.length);
-        for(String provider: providers) {
-            provides.putShort(cw.newClass(provider));
+        for (String provider : providers) {
+            provides.putShort(symbolTable.addConstantClass(provider).index);
         }
-        provideCount++;
-        size += 4 + 2 * providers.length;
+        providesCount++;
     }
 
     @Override
     public void visitEnd() {
-        // empty
+        // Nothing to do.
     }
 
-    void putAttributes(ByteVector out) {
-        if (mainClass != 0) {
-            out.putShort(cw.newUTF8("ModuleMainClass")).putInt(2).putShort(mainClass);
-        }
-        if (packages != null) {
-            out.putShort(cw.newUTF8("ModulePackages"))
-               .putInt(2 + 2 * packageCount)
-               .putShort(packageCount)
-               .putByteArray(packages.data, 0, packages.length);
-        }
+    /**
+      * Returns the number of Module, ModulePackages and ModuleMainClass attributes generated by this
+      * ModuleWriter.
+      *
+      * @return the number of Module, ModulePackages and ModuleMainClass attributes (between 1 and 3).
+      */
+    int getAttributeCount() {
+        return 1 + (packageCount > 0 ? 1 : 0) + (mainClassIndex > 0 ? 1 : 0);
     }
 
-    void put(ByteVector out) {
-        out.putInt(size);
-        out.putShort(name).putShort(access).putShort(version);
-        out.putShort(requireCount);
-        if (requires != null) {
-            out.putByteArray(requires.data, 0, requires.length);
+    /**
+      * Returns the size of the Module, ModulePackages and ModuleMainClass attributes generated by this
+      * ModuleWriter. Also add the names of these attributes in the constant pool.
+      *
+      * @return the size in bytes of the Module, ModulePackages and ModuleMainClass attributes.
+      */
+    int computeAttributesSize() {
+        symbolTable.addConstantUtf8(Constants.MODULE);
+        // 6 attribute header bytes, 6 bytes for name, flags and version, and 5 * 2 bytes for counts.
+        int size =
+                22 + requires.length + exports.length + opens.length + usesIndex.length + provides.length;
+        if (packageCount > 0) {
+            symbolTable.addConstantUtf8(Constants.MODULE_PACKAGES);
+            // 6 attribute header bytes, and 2 bytes for package_count.
+            size += 8 + packageIndex.length;
         }
-        out.putShort(exportCount);
-        if (exports != null) {
-            out.putByteArray(exports.data, 0, exports.length);
+        if (mainClassIndex > 0) {
+            symbolTable.addConstantUtf8(Constants.MODULE_MAIN_CLASS);
+            // 6 attribute header bytes, and 2 bytes for main_class_index.
+            size += 8;
         }
-        out.putShort(openCount);
-        if (opens != null) {
-            out.putByteArray(opens.data, 0, opens.length);
+        return size;
+    }
+
+    /**
+      * Puts the Module, ModulePackages and ModuleMainClass attributes generated by this ModuleWriter
+      * in the given ByteVector.
+      *
+      * @param output where the attributes must be put.
+      */
+    void putAttributes(final ByteVector output) {
+        // 6 bytes for name, flags and version, and 5 * 2 bytes for counts.
+        int moduleAttributeLength =
+                16 + requires.length + exports.length + opens.length + usesIndex.length + provides.length;
+        output
+                .putShort(symbolTable.addConstantUtf8(Constants.MODULE))
+                .putInt(moduleAttributeLength)
+                .putShort(moduleNameIndex)
+                .putShort(moduleFlags)
+                .putShort(moduleVersionIndex)
+                .putShort(requiresCount)
+                .putByteArray(requires.data, 0, requires.length)
+                .putShort(exportsCount)
+                .putByteArray(exports.data, 0, exports.length)
+                .putShort(opensCount)
+                .putByteArray(opens.data, 0, opens.length)
+                .putShort(usesCount)
+                .putByteArray(usesIndex.data, 0, usesIndex.length)
+                .putShort(providesCount)
+                .putByteArray(provides.data, 0, provides.length);
+        if (packageCount > 0) {
+            output
+                    .putShort(symbolTable.addConstantUtf8(Constants.MODULE_PACKAGES))
+                    .putInt(2 + packageIndex.length)
+                    .putShort(packageCount)
+                    .putByteArray(packageIndex.data, 0, packageIndex.length);
         }
-        out.putShort(useCount);
-        if (uses != null) {
-            out.putByteArray(uses.data, 0, uses.length);
-        }
-        out.putShort(provideCount);
-        if (provides != null) {
-            out.putByteArray(provides.data, 0, provides.length);
+        if (mainClassIndex > 0) {
+            output
+                    .putShort(symbolTable.addConstantUtf8(Constants.MODULE_MAIN_CLASS))
+                    .putInt(2)
+                    .putShort(mainClassIndex);
         }
     }
 }

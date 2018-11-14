@@ -127,7 +127,7 @@ class AuthenticationFilter implements HeaderFilter {
         }
 
         // our own private scheme for proxy URLs
-        // eg. proxy.http://host:port/
+        // e.g. proxy.http://host:port/
         String scheme = "proxy." + r.uri().getScheme();
         try {
             return new URI(scheme,

@@ -1433,7 +1433,7 @@ public final class Module implements AnnotatedElement {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
 
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) {
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM7, cw) {
             @Override
             public void visit(int version,
                               int access,

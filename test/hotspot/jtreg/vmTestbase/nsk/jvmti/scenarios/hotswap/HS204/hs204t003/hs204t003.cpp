@@ -55,7 +55,7 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
         NSK_DISPLAY0(" Agent :: Failed get class signature.\n");
         nsk_jvmti_agentFailed();
     } else {
-        if((strcmp(className, CLASS_NAME) == 0)) {
+        if ((strcmp(className, CLASS_NAME) == 0)) {
             jfieldID fieldId;
             if (!NSK_JNI_VERIFY(jni, (fieldId = jni->GetStaticFieldID(klass, FIELDNAME, TYPE)) != NULL)) {
                     NSK_DISPLAY0(" Agent :: Failed to get FieldId.\n");
@@ -114,7 +114,7 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
         NSK_DISPLAY0(" Agent :: Failed get class signature.\n");
         nsk_jvmti_agentFailed();
     } else {
-        if((strcmp(className, CLASS_NAME) == 0)) {
+        if ((strcmp(className, CLASS_NAME) == 0)) {
             jvmtiThreadInfo info;
             nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                     sizeof(fileName)/sizeof(char));

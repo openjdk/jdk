@@ -58,7 +58,7 @@ static jrawMonitorID agent_lock;
 static void initCounters() {
     int i;
 
-    for(i=0; i<METH_NUM; i++)
+    for (i=0; i<METH_NUM; i++)
         bpEvents[i] = 0;
 }
 

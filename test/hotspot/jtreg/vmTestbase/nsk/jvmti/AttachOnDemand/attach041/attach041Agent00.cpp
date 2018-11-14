@@ -52,7 +52,7 @@ int tryFindThread(jvmtiEnv *jvmti, jthreadGroup group, const char* threadNameToF
     int i;
     char threadGroupName[MAX_STRING_LENGTH];
 
-    if(!NSK_JVMTI_VERIFY(jvmti->GetThreadGroupInfo(group, &groupInfo))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadGroupInfo(group, &groupInfo))) {
         return 0;
     }
 
@@ -61,7 +61,7 @@ int tryFindThread(jvmtiEnv *jvmti, jthreadGroup group, const char* threadNameToF
 
     NSK_DISPLAY3("%s: trying to find thread '%s' in group '%s'\n", agentName, threadNameToFind, threadGroupName);
 
-    if(!NSK_JVMTI_VERIFY(jvmti->GetThreadGroupChildren(group, &threadsCount, &threads, &groupsCount, &groups))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadGroupChildren(group, &threadsCount, &threads, &groupsCount, &groups))) {
         return 0;
     }
 
@@ -118,7 +118,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
         jthreadGroup *topGroups;
         int i;
 
-        if(!NSK_JVMTI_VERIFY(jvmti->GetTopThreadGroups(&groupsCount, &topGroups))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetTopThreadGroups(&groupsCount, &topGroups))) {
             NSK_COMPLAIN1("%s: failed to get top thread groups\n", agentName);
             nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, 0, jvmti, jni);
             return;

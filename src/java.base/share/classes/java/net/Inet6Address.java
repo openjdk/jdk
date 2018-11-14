@@ -415,7 +415,7 @@ class Inet6Address extends InetAddress {
      * set to the value corresponding to the given interface for the address
      * type specified in {@code addr}. The call will fail with an
      * UnknownHostException if the given interface does not have a numeric
-     * scope_id assigned for the given address type (eg. link-local or site-local).
+     * scope_id assigned for the given address type (e.g. link-local or site-local).
      * See <a href="Inet6Address.html#scoped">here</a> for a description of IPv6
      * scoped addresses.
      *
@@ -507,7 +507,7 @@ class Inet6Address extends InetAddress {
 
     /* check the two Ipv6 addresses and return false if they are both
      * non global address types, but not the same.
-     * (ie. one is sitelocal and the other linklocal)
+     * (i.e. one is site-local and the other link-local)
      * return true otherwise.
      */
 
@@ -683,7 +683,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the InetAddress is a wildcard address.
      *
-     * @return a {@code boolean} indicating if the Inetaddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      *         a wildcard address.
      */
     @Override
@@ -821,7 +821,7 @@ class Inet6Address extends InetAddress {
 
     /**
      * Returns the scoped interface, if this instance was created with
-     * with a scoped interface.
+     * a scoped interface.
      *
      * @return the scoped interface, or null if not set.
      * @since 1.5

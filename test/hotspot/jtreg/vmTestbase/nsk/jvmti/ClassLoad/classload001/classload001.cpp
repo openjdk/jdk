@@ -79,10 +79,10 @@ static jrawMonitorID countLock;
 static void initCounters() {
     size_t i;
 
-    for(i=0; i<EXP_SIG_NUM; i++)
+    for (i=0; i<EXP_SIG_NUM; i++)
         clsEvents[i] = 0;
 
-    for(i=0; i<UNEXP_SIG_NUM; i++)
+    for (i=0; i<UNEXP_SIG_NUM; i++)
         primClsEvents[i] = 0;
 }
 

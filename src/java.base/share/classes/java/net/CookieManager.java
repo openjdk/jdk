@@ -62,7 +62,7 @@ import sun.util.logging.PlatformLogger;
  * <ul>
  *   <li>
  *     CookieHandler is at the core of cookie management. User can call
- *     CookieHandler.setDefault to set a concrete CookieHanlder implementation
+ *     CookieHandler.setDefault to set a concrete CookieHandler implementation
  *     to be used.
  *   </li>
  *   <li>
@@ -354,7 +354,7 @@ public class CookieManager extends CookieHandler
     private boolean shouldAcceptInternal(URI uri, HttpCookie cookie) {
         try {
             return policyCallback.shouldAccept(uri, cookie);
-        } catch (Exception ignored) { // pretect against malicious callback
+        } catch (Exception ignored) { // protect against malicious callback
             return false;
         }
     }

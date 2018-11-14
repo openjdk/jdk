@@ -143,9 +143,7 @@ test_local_integer(jthread thr, int depth, int slot) {
   printf("\n test_local_integer: BEGIN\n\n");
 
   test_int(thr, depth, slot, "int");
-  test_long_inv_slot(thr, depth, slot, "int");
   test_float(thr, depth, slot, "int");
-  test_double_inv_slot(thr, depth, slot, "int");
   test_object_type_mismatch(thr, depth, slot, "double");
 
   printf("\n test_local_integer: END\n\n");
@@ -159,7 +157,6 @@ test_local_invalid(jthread thr, int depth, int slot) {
   test_long_inv_slot(thr, depth, slot, "invalid");
   test_float_inv_slot(thr, depth, slot, "invalid");
   test_double_inv_slot(thr, depth, slot, "invalid");
-  test_object_inv_slot(thr, depth, slot, "invalid");
 
   printf("\n test_local_invalid: END\n\n");
 }
@@ -205,6 +202,18 @@ Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Java_GetLocalVars_testLocals(JNIEnv *env, jclass cls, jobject thread) {
+  /*
+   * We test the JVMTI GetLocal<Type> for locals of the method:
+   *
+   *  int staticMeth(byte byteArg, Object objArg, double dblArg, int intArg) {
+   *      testLocals(Thread.currentThread());
+   *      {
+   *          int intLoc = 9999;
+   *          intArg = intLoc;
+   *      }
+   *      return intArg;
+   *  }
+   */
   static const char* METHOD_NAME = "staticMeth";
   static const char* METHOD_SIGN = "(BLjava/lang/Object;DI)I";
   static const int Depth = 1;

@@ -1116,11 +1116,56 @@ template <typename SCAN_FUNC>
 inline void ConcurrentHashTable<VALUE, CONFIG, F>::
   do_scan(Thread* thread, SCAN_FUNC& scan_f)
 {
+  assert(!SafepointSynchronize::is_at_safepoint(),
+         "must be outside a safepoint");
   assert(_resize_lock_owner != thread, "Re-size lock held");
   lock_resize_lock(thread);
   do_scan_locked(thread, scan_f);
   unlock_resize_lock(thread);
   assert(_resize_lock_owner != thread, "Re-size lock held");
+}
+
+template <typename VALUE, typename CONFIG, MEMFLAGS F>
+template <typename SCAN_FUNC>
+inline void ConcurrentHashTable<VALUE, CONFIG, F>::
+  do_safepoint_scan(SCAN_FUNC& scan_f)
+{
+  // We only allow this method to be used during a safepoint.
+  assert(SafepointSynchronize::is_at_safepoint(),
+         "must only be called in a safepoint");
+  assert(Thread::current()->is_VM_thread(),
+         "should be in vm thread");
+
+  // Here we skip protection,
+  // thus no other thread may use this table at the same time.
+  InternalTable* table = get_table();
+  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+    Bucket* bucket = table->get_bucket(bucket_it);
+    // If bucket have a redirect the items will be in the new table.
+    // We must visit them there since the new table will contain any
+    // concurrent inserts done after this bucket was resized.
+    // If the bucket don't have redirect flag all items is in this table.
+    if (!bucket->have_redirect()) {
+      if(!visit_nodes(bucket, scan_f)) {
+        return;
+      }
+    } else {
+      assert(bucket->is_locked(), "Bucket must be locked.");
+    }
+  }
+  // If there is a paused resize we also need to visit the already resized items.
+  table = get_new_table();
+  if (table == NULL) {
+    return;
+  }
+  DEBUG_ONLY(if (table == POISON_PTR) { return; })
+  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+    Bucket* bucket = table->get_bucket(bucket_it);
+    assert(!bucket->is_locked(), "Bucket must be unlocked.");
+    if (!visit_nodes(bucket, scan_f)) {
+      return;
+    }
+  }
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
@@ -1142,6 +1187,8 @@ template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline void ConcurrentHashTable<VALUE, CONFIG, F>::
   bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f)
 {
+  assert(!SafepointSynchronize::is_at_safepoint(),
+         "must be outside a safepoint");
   lock_resize_lock(thread);
   do_bulk_delete_locked(thread, eval_f, del_f);
   unlock_resize_lock(thread);

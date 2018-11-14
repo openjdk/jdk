@@ -157,7 +157,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
-    if(nsk_jvmti_findOptionIntValue("can_retransform_classes", 1)) {
+    if (nsk_jvmti_findOptionIntValue("can_retransform_classes", 1)) {
         caps.can_retransform_classes = 1;
     } else {
         caps.can_retransform_classes = 0;

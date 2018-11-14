@@ -27,7 +27,6 @@
 package javax.naming.directory;
 
 import java.util.Hashtable;
-import javax.naming.spi.NamingManager;
 import javax.naming.*;
 
 /**
@@ -83,6 +82,36 @@ public class InitialDirContext extends InitialContext implements DirContext {
      * Constructs an initial DirContext using the supplied environment.
      * Environment properties are discussed in the
      * {@code javax.naming.InitialContext} class description.
+     *
+     * <p> If the {@code java.naming.provider.url} property of the supplied
+     * environment consists of a URL (or a list of URLs) using the ldap
+     * protocol the resulting {@link javax.naming.ldap.LdapContext} will use
+     * an LDAP server resolved by the configured {@link
+     * javax.naming.ldap.spi.LdapDnsProvider LdapDnsProviders}:
+     * <ol>
+     * <li>If this is the first {@code InitialDirContext} created with a
+     *     {@code java.naming.provider.url} using the ldap protocol then the
+     *     {@linkplain java.util.ServiceLoader ServiceLoader} mechanism is
+     *     used to locate {@linkplain javax.naming.ldap.spi.LdapDnsProvider
+     *     LdapDnsProvider} implementations using the system class loader.
+     *     The order that providers are located is implementation specific
+     *     and an implementation is free to cache the located providers.
+     * <li>The {@code lookupEndpoints} method of each provider, if instantiated,
+     *     is invoked once with a combination of each of the URLs in the the
+     *     {@code java.naming.provider.url} property and the environment until
+     *     a provider returns non-empty or all providers have been exhausted.
+     *     If none of the
+     *     {@linkplain javax.naming.ldap.spi.LdapDnsProvider LdapDnsProviders}
+     *     return a non-empty
+     *     {@linkplain javax.naming.ldap.spi.LdapDnsProviderResult result} then
+     *     the implementation will make a best-effort attempt to determine an
+     *     endpoint. A
+     *     {@linkplain java.util.ServiceConfigurationError ServiceConfigurationError},
+     *     {@code Error} or {@code RuntimeException} thrown when loading or
+     *     calling an {@linkplain javax.naming.ldap.spi.LdapDnsProvider
+     *     LdapDnsProvider}, if encountered, will be propagated to the calling
+     *     thread.
+     * </ol>
      *
      * <p> This constructor will not modify {@code environment}
      * or save a reference to it, but may save a clone.

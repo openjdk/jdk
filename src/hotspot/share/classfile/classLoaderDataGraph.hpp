@@ -88,7 +88,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void unlocked_loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
-  static bool do_unloading(bool do_cleaning);
+  static bool do_unloading();
 
   // Expose state to avoid logging overhead in safepoint cleanup tasks.
   static inline bool should_clean_metaspaces_and_reset();

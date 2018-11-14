@@ -59,7 +59,6 @@
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.PrintWriter;
-
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
@@ -70,105 +69,98 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
- * A {@link ClassVisitor} that prints the classes it visits with a
- * {@link Printer}. This class visitor can be used in the middle of a class
- * visitor chain to trace the class that is visited at a given point in this
- * chain. This may be useful for debugging purposes.
- * <p>
- * The trace printed when visiting the <tt>Hello</tt> class is the following:
- * <p>
- * <blockquote>
+ * A {@link ClassVisitor} that prints the classes it visits with a {@link Printer}. This class
+ * visitor can be used in the middle of a class visitor chain to trace the class that is visited at
+ * a given point in this chain. This may be useful for debugging purposes.
+ *
+ * <p>When used with a {@link Textifier}, the trace printed when visiting the {@code Hello} class is
+ * the following:
  *
  * <pre>
  * // class version 49.0 (49) // access flags 0x21 public class Hello {
  *
  * // compiled from: Hello.java
  *
- * // access flags 0x1 public &lt;init&gt; ()V ALOAD 0 INVOKESPECIAL
- * java/lang/Object &lt;init&gt; ()V RETURN MAXSTACK = 1 MAXLOCALS = 1
+ * // access flags 0x1
+ * public &lt;init&gt; ()V
+ * ALOAD 0
+ * INVOKESPECIAL java/lang/Object &lt;init&gt; ()V
+ * RETURN
+ * MAXSTACK = 1 MAXLOCALS = 1
  *
- * // access flags 0x9 public static main ([Ljava/lang/String;)V GETSTATIC
- * java/lang/System out Ljava/io/PrintStream; LDC &quot;hello&quot;
- * INVOKEVIRTUAL java/io/PrintStream println (Ljava/lang/String;)V RETURN
- * MAXSTACK = 2 MAXLOCALS = 1 }
+ * // access flags 0x9
+ * public static main ([Ljava/lang/String;)V
+ * GETSTATIC java/lang/System out Ljava/io/PrintStream;
+ * LDC &quot;hello&quot;
+ * INVOKEVIRTUAL java/io/PrintStream println (Ljava/lang/String;)V
+ * RETURN
+ * MAXSTACK = 2 MAXLOCALS = 1
+ * }
  * </pre>
  *
- * </blockquote> where <tt>Hello</tt> is defined by:
- * <p>
- * <blockquote>
+ * <p>where {@code Hello} is defined by:
  *
  * <pre>
  * public class Hello {
  *
- *     public static void main(String[] args) {
- *         System.out.println(&quot;hello&quot;);
- *     }
+ *   public static void main(String[] args) {
+ *     System.out.println(&quot;hello&quot;);
+ *   }
  * }
  * </pre>
- *
- * </blockquote>
  *
  * @author Eric Bruneton
  * @author Eugene Kuleshov
  */
 public final class TraceClassVisitor extends ClassVisitor {
 
-    /**
-     * The print writer to be used to print the class. May be null.
-     */
-    private final PrintWriter pw;
+    /** The print writer to be used to print the class. May be {@literal null}. */
+    private final PrintWriter printWriter;
 
-    /**
-     * The object that actually converts visit events into text.
-     */
+    /** The printer to convert the visited class into text. */
+    // DontCheck(MemberName): can't be renamed (for backward binary compatibility).
     public final Printer p;
 
     /**
-     * Constructs a new {@link TraceClassVisitor}.
-     *
-     * @param pw
-     *            the print writer to be used to print the class.
-     */
-    public TraceClassVisitor(final PrintWriter pw) {
-        this(null, pw);
+      * Constructs a new {@link TraceClassVisitor}.
+      *
+      * @param printWriter the print writer to be used to print the class. May be {@literal null}.
+      */
+    public TraceClassVisitor(final PrintWriter printWriter) {
+        this(null, printWriter);
     }
 
     /**
-     * Constructs a new {@link TraceClassVisitor}.
-     *
-     * @param cv
-     *            the {@link ClassVisitor} to which this visitor delegates
-     *            calls. May be <tt>null</tt>.
-     * @param pw
-     *            the print writer to be used to print the class.
-     */
-    public TraceClassVisitor(final ClassVisitor cv, final PrintWriter pw) {
-        this(cv, new Textifier(), pw);
+      * Constructs a new {@link TraceClassVisitor}.
+      *
+      * @param classVisitor the class visitor to which to delegate calls. May be {@literal null}.
+      * @param printWriter the print writer to be used to print the class. May be {@literal null}.
+      */
+    public TraceClassVisitor(final ClassVisitor classVisitor, final PrintWriter printWriter) {
+        this(classVisitor, new Textifier(), printWriter);
     }
 
     /**
-     * Constructs a new {@link TraceClassVisitor}.
-     *
-     * @param cv
-     *            the {@link ClassVisitor} to which this visitor delegates
-     *            calls. May be <tt>null</tt>.
-     * @param p
-     *            the object that actually converts visit events into text.
-     * @param pw
-     *            the print writer to be used to print the class. May be null if
-     *            you simply want to use the result via
-     *            {@link Printer#getText()}, instead of printing it.
-     */
-    public TraceClassVisitor(final ClassVisitor cv, final Printer p,
-            final PrintWriter pw) {
-        super(Opcodes.ASM6, cv);
-        this.pw = pw;
-        this.p = p;
+      * Constructs a new {@link TraceClassVisitor}.
+      *
+      * @param classVisitor the class visitor to which to delegate calls. May be {@literal null}.
+      * @param printer the printer to convert the visited class into text.
+      * @param printWriter the print writer to be used to print the class. May be {@literal null}.
+      */
+    public TraceClassVisitor(
+            final ClassVisitor classVisitor, final Printer printer, final PrintWriter printWriter) {
+        super(Opcodes.ASM7, classVisitor);
+        this.printWriter = printWriter;
+        this.p = printer;
     }
 
     @Override
-    public void visit(final int version, final int access, final String name,
-            final String signature, final String superName,
+    public void visit(
+            final int version,
+            final int access,
+            final String name,
+            final String signature,
+            final String superName,
             final String[] interfaces) {
         p.visit(version, access, name, signature, superName, interfaces);
         super.visit(version, access, name, signature, superName, interfaces);
@@ -181,77 +173,87 @@ public final class TraceClassVisitor extends ClassVisitor {
     }
 
     @Override
-    public ModuleVisitor visitModule(String name, int flags,
-            String version) {
-        Printer p = this.p.visitModule(name, flags, version);
-        ModuleVisitor mv = super.visitModule(name, flags, version);
-        return new TraceModuleVisitor(mv, p);
+    public ModuleVisitor visitModule(final String name, final int flags, final String version) {
+        Printer modulePrinter = p.visitModule(name, flags, version);
+        return new TraceModuleVisitor(super.visitModule(name, flags, version), modulePrinter);
     }
 
     @Override
-    public void visitOuterClass(final String owner, final String name,
-            final String desc) {
-        p.visitOuterClass(owner, name, desc);
-        super.visitOuterClass(owner, name, desc);
+    public void visitNestHost(final String nestHost) {
+        p.visitNestHost(nestHost);
+        super.visitNestHost(nestHost);
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(final String desc,
-            final boolean visible) {
-        Printer p = this.p.visitClassAnnotation(desc, visible);
-        AnnotationVisitor av = cv == null ? null : cv.visitAnnotation(desc,
-                visible);
-        return new TraceAnnotationVisitor(av, p);
+    public void visitOuterClass(final String owner, final String name, final String descriptor) {
+        p.visitOuterClass(owner, name, descriptor);
+        super.visitOuterClass(owner, name, descriptor);
     }
 
     @Override
-    public AnnotationVisitor visitTypeAnnotation(int typeRef,
-            TypePath typePath, String desc, boolean visible) {
-        Printer p = this.p.visitClassTypeAnnotation(typeRef, typePath, desc,
-                visible);
-        AnnotationVisitor av = cv == null ? null : cv.visitTypeAnnotation(
-                typeRef, typePath, desc, visible);
-        return new TraceAnnotationVisitor(av, p);
+    public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
+        Printer annotationPrinter = p.visitClassAnnotation(descriptor, visible);
+        return new TraceAnnotationVisitor(
+                super.visitAnnotation(descriptor, visible), annotationPrinter);
     }
 
     @Override
-    public void visitAttribute(final Attribute attr) {
-        p.visitClassAttribute(attr);
-        super.visitAttribute(attr);
+    public AnnotationVisitor visitTypeAnnotation(
+            final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
+        Printer annotationPrinter = p.visitClassTypeAnnotation(typeRef, typePath, descriptor, visible);
+        return new TraceAnnotationVisitor(
+                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible), annotationPrinter);
     }
 
     @Override
-    public void visitInnerClass(final String name, final String outerName,
-            final String innerName, final int access) {
+    public void visitAttribute(final Attribute attribute) {
+        p.visitClassAttribute(attribute);
+        super.visitAttribute(attribute);
+    }
+
+    @Override
+    public void visitNestMember(final String nestMember) {
+        p.visitNestMember(nestMember);
+        super.visitNestMember(nestMember);
+    }
+
+    @Override
+    public void visitInnerClass(
+            final String name, final String outerName, final String innerName, final int access) {
         p.visitInnerClass(name, outerName, innerName, access);
         super.visitInnerClass(name, outerName, innerName, access);
     }
 
     @Override
-    public FieldVisitor visitField(final int access, final String name,
-            final String desc, final String signature, final Object value) {
-        Printer p = this.p.visitField(access, name, desc, signature, value);
-        FieldVisitor fv = cv == null ? null : cv.visitField(access, name, desc,
-                signature, value);
-        return new TraceFieldVisitor(fv, p);
+    public FieldVisitor visitField(
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
+            final Object value) {
+        Printer fieldPrinter = p.visitField(access, name, descriptor, signature, value);
+        return new TraceFieldVisitor(
+                super.visitField(access, name, descriptor, signature, value), fieldPrinter);
     }
 
     @Override
-    public MethodVisitor visitMethod(final int access, final String name,
-            final String desc, final String signature, final String[] exceptions) {
-        Printer p = this.p.visitMethod(access, name, desc, signature,
-                exceptions);
-        MethodVisitor mv = cv == null ? null : cv.visitMethod(access, name,
-                desc, signature, exceptions);
-        return new TraceMethodVisitor(mv, p);
+    public MethodVisitor visitMethod(
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
+            final String[] exceptions) {
+        Printer methodPrinter = p.visitMethod(access, name, descriptor, signature, exceptions);
+        return new TraceMethodVisitor(
+                super.visitMethod(access, name, descriptor, signature, exceptions), methodPrinter);
     }
 
     @Override
     public void visitEnd() {
         p.visitClassEnd();
-        if (pw != null) {
-            p.print(pw);
-            pw.flush();
+        if (printWriter != null) {
+            p.print(printWriter);
+            printWriter.flush();
         }
         super.visitEnd();
     }

@@ -69,7 +69,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
  * RESPONSES
  *
  * Multiple responses can be received per request. Responses are queued up on
- * a LinkedList of CF<HttpResponse> and the the first one on the list is completed
+ * a LinkedList of CF<HttpResponse> and the first one on the list is completed
  * with the next response
  *
  * getResponseAsync() -- queries list of response CFs and returns first one

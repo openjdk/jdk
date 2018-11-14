@@ -46,9 +46,6 @@
 // object containing a large number of entries, and logs some stats
 // about the distribution and performance of the iteration.
 
-// Parallel iteration not available unless INCLUDE_ALL_GCS
-#if INCLUDE_ALL_GCS
-
 const uint _max_workers = 10;
 static uint _num_workers = 0;
 const size_t _storage_entries = 1000000;
@@ -229,5 +226,3 @@ TEST_VM_F(OopStorageParIterPerf, test) {
     LogConfiguration::configure_stdout(old_level, true, LOG_TAGS(TEST_TAGS));
   }
 }
-
-#endif // INCLUDE_ALL_GCS

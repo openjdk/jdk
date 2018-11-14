@@ -1237,7 +1237,7 @@ class Socket implements java.io.Closeable {
      * should call {@link #getReceiveBufferSize()}.
      *
      * <p>The value of {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is also used
-     * to set the TCP receive window that is advertized to the remote peer.
+     * to set the TCP receive window that is advertised to the remote peer.
      * Generally, the window size can be modified at any time when a socket is
      * connected. However, if a receive window larger than 64K is required then
      * this must be requested <B>before</B> the socket is connected to the
@@ -1578,10 +1578,10 @@ class Socket implements java.io.Closeable {
      * <p>
      * Note: Closing a socket doesn't clear its connection state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfuly connected prior
+     * (see {@link #isClosed()}) if it was successfully connected prior
      * to being closed.
      *
-     * @return true if the socket was successfuly connected to a server
+     * @return true if the socket was successfully connected to a server
      * @since 1.4
      */
     public boolean isConnected() {
@@ -1594,10 +1594,10 @@ class Socket implements java.io.Closeable {
      * <p>
      * Note: Closing a socket doesn't clear its binding state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfuly bound prior
+     * (see {@link #isClosed()}) if it was successfully bound prior
      * to being closed.
      *
-     * @return true if the socket was successfuly bound to an address
+     * @return true if the socket was successfully bound to an address
      * @since 1.4
      * @see #bind
      */

@@ -22,7 +22,7 @@
  * questions.
  */
 
-/**
+/*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -59,27 +59,23 @@
 package jdk.internal.org.objectweb.asm.util;
 
 import java.util.Map;
-
 import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * An {@link jdk.internal.org.objectweb.asm.Attribute Attribute} that can print the ASM code
- * to create an equivalent attribute.
+ * An {@link jdk.internal.org.objectweb.asm.Attribute} that can generate the ASM code to create an equivalent
+ * attribute.
  *
  * @author Eugene Kuleshov
  */
+// DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
 public interface ASMifiable {
 
     /**
-     * Prints the ASM code to create an attribute equal to this attribute.
-     *
-     * @param buf
-     *            a buffer used for printing Java code.
-     * @param varName
-     *            name of the variable in a printed code used to store attribute
-     *            instance.
-     * @param labelNames
-     *            map of label instances to their names.
-     */
-    void asmify(StringBuffer buf, String varName, Map<Label, String> labelNames);
+      * Generates the ASM code to create an attribute equal to this attribute.
+      *
+      * @param outputBuffer where the generated code must be appended.
+      * @param visitorVariableName the name of the visitor variable in the produced code.
+      * @param labelNames the names of the labels in the generated code.
+      */
+    void asmify(StringBuffer outputBuffer, String visitorVariableName, Map<Label, String> labelNames);
 }

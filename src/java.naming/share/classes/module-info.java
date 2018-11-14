@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 /**
  * Defines the Java Naming and Directory Interface (JNDI) API.
  *
+ * @provides javax.naming.ldap.spi.LdapDnsProvider
+ *
+ * @uses javax.naming.ldap.spi.LdapDnsProvider
+ *
  * @moduleGraph
  * @since 9
  */
@@ -37,6 +41,7 @@ module java.naming {
     exports javax.naming.event;
     exports javax.naming.ldap;
     exports javax.naming.spi;
+    exports javax.naming.ldap.spi;
 
     exports com.sun.jndi.toolkit.ctx to
         jdk.naming.dns;
@@ -46,6 +51,7 @@ module java.naming {
 
     uses javax.naming.ldap.StartTlsResponse;
     uses javax.naming.spi.InitialContextFactory;
+    uses javax.naming.ldap.spi.LdapDnsProvider;
 
     provides java.security.Provider with
         sun.security.provider.certpath.ldap.JdkLDAP;

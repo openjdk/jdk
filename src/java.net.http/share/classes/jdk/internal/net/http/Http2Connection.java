@@ -414,7 +414,7 @@ class Http2Connection  {
 
     // call these before assigning a request/stream to a connection
     // if false returned then a new Http2Connection is required
-    // if true, the the stream may be assigned to this connection
+    // if true, the stream may be assigned to this connection
     // for server push, if false returned, then the stream should be cancelled
     synchronized boolean reserveStream(boolean clientInitiated) throws IOException {
         if (finalStream) {

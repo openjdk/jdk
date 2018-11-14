@@ -37,6 +37,7 @@ import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.SystemPropertyTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -45,6 +46,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -72,6 +74,7 @@ public class TagletWriterImpl extends TagletWriter {
     private final HtmlConfiguration configuration;
     private final Utils utils;
     private final boolean inSummary;
+    private final Resources resources;
 
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence) {
         this(htmlWriter, isFirstSentence, false);
@@ -83,6 +86,7 @@ public class TagletWriterImpl extends TagletWriter {
         configuration = htmlWriter.configuration;
         this.utils = configuration.utils;
         this.inSummary = inSummary;
+        resources = configuration.getResources();
     }
 
     /**
@@ -112,61 +116,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         String desc = ch.getText(itt.getDescription());
 
-        String anchorName = htmlWriter.links.getName(tagText);
-        Content result = null;
-        if (isFirstSentence && inSummary) {
-            result = new StringContent(tagText);
-        } else {
-            result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
-            if (configuration.createindex && !tagText.isEmpty()) {
-                SearchIndexItem si = new SearchIndexItem();
-                si.setLabel(tagText);
-                si.setDescription(desc);
-                DocPaths docPaths = configuration.docPaths;
-                new SimpleElementVisitor9<Void, Void>() {
-                    @Override
-                    public Void visitModule(ModuleElement e, Void p) {
-                        si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(element));
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitPackage(PackageElement e, Void p) {
-                        si.setUrl(docPaths.forPackage(e).getPath()
-                                + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
-                        si.setHolder(utils.getSimpleName(element));
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitType(TypeElement e, Void p) {
-                        si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(e));
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitVariable(VariableElement e, Void p) {
-                        TypeElement te = utils.getEnclosingTypeElement(e);
-                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
-                        return null;
-                    }
-
-                    @Override
-                    protected Void defaultAction(Element e, Void p) {
-                        TypeElement te = utils.getEnclosingTypeElement(e);
-                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(e));
-                        return null;
-                    }
-                }.visit(element);
-                si.setCategory(configuration.getContent("doclet.SearchTags").toString());
-                configuration.tagSearchIndex.add(si);
-            }
-        }
-        return result;
+        return createAnchorAndSearchIndex(element, tagText,desc);
     }
 
     /**
@@ -367,6 +317,16 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
+    protected Content systemPropertyTagOutput(Element element, DocTree tag) {
+        SystemPropertyTree itt = (SystemPropertyTree)tag;
+        String tagText = itt.getPropertyName().toString();
+        return HtmlTree.CODE(createAnchorAndSearchIndex(element, tagText,
+                resources.getText("doclet.System_Property")));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Content getThrowsHeader() {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.throwsLabel,
                 new StringContent(configuration.getText("doclet.Throws"))));
@@ -448,5 +408,63 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public BaseConfiguration configuration() {
         return configuration;
+    }
+
+    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc){
+        String anchorName = htmlWriter.links.getName(tagText);
+        Content result = null;
+        if (isFirstSentence && inSummary) {
+            result = new StringContent(tagText);
+        } else {
+            result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
+            if (configuration.createindex && !tagText.isEmpty()) {
+                SearchIndexItem si = new SearchIndexItem();
+                si.setLabel(tagText);
+                si.setDescription(desc);
+                DocPaths docPaths = configuration.docPaths;
+                new SimpleElementVisitor9<Void, Void>() {
+                    @Override
+                    public Void visitModule(ModuleElement e, Void p) {
+                        si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(element));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitPackage(PackageElement e, Void p) {
+                        si.setUrl(docPaths.forPackage(e).getPath()
+                                + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
+                        si.setHolder(utils.getSimpleName(element));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitType(TypeElement e, Void p) {
+                        si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitVariable(VariableElement e, Void p) {
+                        TypeElement te = utils.getEnclosingTypeElement(e);
+                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
+                        return null;
+                    }
+
+                    @Override
+                    protected Void defaultAction(Element e, Void p) {
+                        TypeElement te = utils.getEnclosingTypeElement(e);
+                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+                }.visit(element);
+                si.setCategory(configuration.getContent("doclet.SearchTags").toString());
+                configuration.tagSearchIndex.add(si);
+            }
+        }
+        return result;
     }
 }

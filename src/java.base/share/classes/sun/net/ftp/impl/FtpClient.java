@@ -154,7 +154,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * the NetworkClients will not work correctly in EBCDIC based systems.
      * However, we cannot just use ASCII or ISO8859_1 universally, because in
      * Asian locales, non-ASCII characters may be embedded in otherwise
-     * ASCII based protocols (eg. HTTP). The specifications (RFC2616, 2398)
+     * ASCII based protocols (e.g. HTTP). The specifications (RFC2616, 2398)
      * are a little ambiguous in this matter. For instance, RFC2398 [part 2.1]
      * says that the HTTP request URI should be escaped using a defined
      * mechanism, but there is no way to specify in the escaped string what

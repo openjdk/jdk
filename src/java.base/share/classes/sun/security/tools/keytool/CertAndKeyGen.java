@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.Date;
 
 import sun.security.pkcs10.PKCS10;
@@ -48,8 +50,7 @@ import sun.security.x509.*;
  * parameters, such as DSS/DSA.  Some sites' Certificate Authorities
  * adopt fixed algorithm parameters, which speeds up some operations
  * including key generation and signing.  <em>At this time, this interface
- * does not provide a way to provide such algorithm parameters, e.g.
- * by providing the CA certificate which includes those parameters.</em>
+ * supports initializing with a named group.</em>
  *
  * <P>Also, note that at this time only signature-capable keys may be
  * acquired through this interface.  Diffie-Hellman keys, used for secure
@@ -77,6 +78,7 @@ public final class CertAndKeyGen {
     {
         keyGen = KeyPairGenerator.getInstance(keyType);
         this.sigAlg = sigAlg;
+        this.keyType = keyType;
     }
 
     /**
@@ -106,6 +108,7 @@ public final class CertAndKeyGen {
             }
         }
         this.sigAlg = sigAlg;
+        this.keyType = keyType;
     }
 
     /**
@@ -121,41 +124,58 @@ public final class CertAndKeyGen {
         prng = generator;
     }
 
-    // want "public void generate (X509Certificate)" ... inherit DSA/D-H param
-
-    /**
-     * Generates a random public/private key pair, with a given key
-     * size.  Different algorithms provide different degrees of security
-     * for the same key size, because of the "work factor" involved in
-     * brute force attacks.  As computers become faster, it becomes
-     * easier to perform such attacks.  Small keys are to be avoided.
-     *
-     * <P>Note that not all values of "keyBits" are valid for all
-     * algorithms, and not all public key algorithms are currently
-     * supported for use in X.509 certificates.  If the algorithm
-     * you specified does not produce X.509 compatible keys, an
-     * invalid key exception is thrown.
-     *
-     * @param keyBits the number of bits in the keys.
-     * @exception InvalidKeyException if the environment does not
-     *  provide X.509 public keys for this signature algorithm.
-     */
-    public void generate (int keyBits)
-    throws InvalidKeyException
-    {
-        KeyPair pair;
-
+    public void generate(String name) {
         try {
             if (prng == null) {
                 prng = new SecureRandom();
             }
-            keyGen.initialize(keyBits, prng);
-            pair = keyGen.generateKeyPair();
+            try {
+                keyGen.initialize(new NamedParameterSpec(name), prng);
+            } catch (InvalidAlgorithmParameterException e) {
+                if (keyType.equalsIgnoreCase("EC")) {
+                    // EC has another NamedParameterSpec
+                    keyGen.initialize(new ECGenParameterSpec(name), prng);
+                } else {
+                    throw e;
+                }
+            }
 
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+        generateInternal();
+    }
 
+    // want "public void generate (X509Certificate)" ... inherit DSA/D-H param
+
+    public void generate(int keyBits) {
+        if (keyBits != -1) {
+            try {
+                if (prng == null) {
+                    prng = new SecureRandom();
+                }
+                keyGen.initialize(keyBits, prng);
+
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+        generateInternal();
+    }
+
+    /**
+     * Generates a random public/private key pair.
+     *
+     * <P>Note that not all public key algorithms are currently
+     * supported for use in X.509 certificates.  If the algorithm
+     * you specified does not produce X.509 compatible keys, an
+     * invalid key exception is thrown.
+     *
+     * @exception IllegalArgumentException if the environment does not
+     *  provide X.509 public keys for this signature algorithm.
+     */
+    private void generateInternal() {
+        KeyPair pair = keyGen.generateKeyPair();
         publicKey = pair.getPublic();
         privateKey = pair.getPrivate();
 
@@ -333,6 +353,7 @@ public final class CertAndKeyGen {
     }
 
     private SecureRandom        prng;
+    private String              keyType;
     private String              sigAlg;
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;

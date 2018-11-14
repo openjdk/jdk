@@ -379,7 +379,7 @@ public abstract class Reference<T> {
      * Throws {@link CloneNotSupportedException}. A {@code Reference} cannot be
      * meaningfully cloned. Construct a new {@code Reference} instead.
      *
-     * @returns never returns normally
+     * @return never returns normally
      * @throws  CloneNotSupportedException always
      *
      * @since 11

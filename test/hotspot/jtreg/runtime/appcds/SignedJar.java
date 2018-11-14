@@ -46,7 +46,7 @@ public class SignedJar {
         String signedJar = TestCommon.getTestJar("signed_hello.jar");
         OutputAnalyzer output;
         output = TestCommon.dump(signedJar, TestCommon.list("Hello"));
-        TestCommon.checkDump(output, "Preload Warning: Skipping Hello from signed JAR");
+        TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
 
         // At runtime, the Hello class should be loaded from the jar file
         // instead of from the shared archive since a class from a signed
@@ -63,6 +63,6 @@ public class SignedJar {
         // Test class exists in both signed JAR and unsigned JAR
         String jars = signedJar + System.getProperty("path.separator") + unsignedJar;
         output = TestCommon.dump(jars, TestCommon.list("Hello"));
-        TestCommon.checkDump(output, "Preload Warning: Skipping Hello from signed JAR");
+        TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
     }
 }

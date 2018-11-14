@@ -529,6 +529,20 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSystemProperty(SystemPropertyTree node, Void p) {
+        try {
+            print("{");
+            printTagName(node);
+            print(" ");
+            print(node.getPropertyName());
+            print("}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitText(TextTree node, Void p) {
         try {
             print(node.getBody());

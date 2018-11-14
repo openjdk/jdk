@@ -51,7 +51,7 @@ class SocketOutputStream extends FileOutputStream {
      * Creates a new SocketOutputStream. Can only be called
      * by a Socket. This method needs to hang on to the owner Socket so
      * that the fd will not be closed.
-     * @param impl the socket output stream inplemented
+     * @param impl the socket output stream implemented
      */
     SocketOutputStream(AbstractPlainSocketImpl impl) throws IOException {
         super(impl.getFileDescriptor());

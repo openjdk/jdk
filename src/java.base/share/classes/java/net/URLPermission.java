@@ -51,7 +51,7 @@ import java.security.Permission;
  *     portrange = portnumber | -portnumber | portnumber-[portnumber] | *
  *     hostrange = ([*.] dnsname) | IPv4address | IPv6address
  * </pre>
- * <i>dnsname</i> is a standard DNS host or domain name, ie. one or more labels
+ * <i>dnsname</i> is a standard DNS host or domain name, i.e. one or more labels
  * separated by ".". <i>IPv4address</i> is a standard literal IPv4 address and
  * <i>IPv6address</i> is as defined in <a href="http://www.ietf.org/rfc/rfc2732.txt">
  * RFC 2732</a>. Literal IPv6 addresses must however, be enclosed in '[]' characters.
@@ -89,7 +89,7 @@ import java.security.Permission;
  * </tr>
  * <tr><th scope="row">http://www.oracle.com/a/b/-</th>
  *   <td>The '-' character refers to all resources recursively below the
- *       preceding path (eg. http://www.oracle.com/a/b/c/d/e.html matches this
+ *       preceding path (e.g. http://www.oracle.com/a/b/c/d/e.html matches this
  *       example).
  *   </td>
  * </tr>

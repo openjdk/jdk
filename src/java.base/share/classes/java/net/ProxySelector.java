@@ -136,7 +136,7 @@ public abstract class ProxySelector {
      * @param   uri
      *          The URI that a connection is required to
      *
-     * @return  a List of Proxies. Each element in the
+     * @return  a List of Proxies. Each element in
      *          the List is of type
      *          {@link java.net.Proxy Proxy};
      *          when no proxy is available, the list will

@@ -59,199 +59,225 @@
 package jdk.internal.org.objectweb.asm.signature;
 
 /**
- * A type signature parser to make a signature visitor visit an existing
- * signature.
+ * A parser for signature literals, as defined in the Java Virtual Machine Specification (JVMS), to
+ * visit them with a SignatureVisitor.
  *
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.9.1">JVMS
+ *     4.7.9.1</a>
  * @author Thomas Hallgren
  * @author Eric Bruneton
  */
 public class SignatureReader {
 
-    /**
-     * The signature to be read.
-     */
-    private final String signature;
+    /** The JVMS signature to be read. */
+    private final String signatureValue;
 
     /**
-     * Constructs a {@link SignatureReader} for the given signature.
-     *
-     * @param signature
-     *            A <i>ClassSignature</i>, <i>MethodTypeSignature</i>, or
-     *            <i>FieldTypeSignature</i>.
-     */
+      * Constructs a {@link SignatureReader} for the given signature.
+      *
+      * @param signature A <i>JavaTypeSignature</i>, <i>ClassSignature</i> or <i>MethodSignature</i>.
+      */
     public SignatureReader(final String signature) {
-        this.signature = signature;
+        this.signatureValue = signature;
     }
 
     /**
-     * Makes the given visitor visit the signature of this
-     * {@link SignatureReader}. This signature is the one specified in the
-     * constructor (see {@link #SignatureReader(String) SignatureReader}). This
-     * method is intended to be called on a {@link SignatureReader} that was
-     * created using a <i>ClassSignature</i> (such as the <code>signature</code>
-     * parameter of the {@link jdk.internal.org.objectweb.asm.ClassVisitor#visit
-     * ClassVisitor.visit} method) or a <i>MethodTypeSignature</i> (such as the
-     * <code>signature</code> parameter of the
-     * {@link jdk.internal.org.objectweb.asm.ClassVisitor#visitMethod
-     * ClassVisitor.visitMethod} method).
-     *
-     * @param v
-     *            the visitor that must visit this signature.
-     */
-    public void accept(final SignatureVisitor v) {
-        String signature = this.signature;
-        int len = signature.length();
-        int pos;
-        char c;
+      * Makes the given visitor visit the signature of this {@link SignatureReader}. This signature is
+      * the one specified in the constructor (see {@link #SignatureReader}). This method is intended to
+      * be called on a {@link SignatureReader} that was created using a <i>ClassSignature</i> (such as
+      * the <code>signature</code> parameter of the {@link jdk.internal.org.objectweb.asm.ClassVisitor#visit}
+      * method) or a <i>MethodSignature</i> (such as the <code>signature</code> parameter of the {@link
+      * jdk.internal.org.objectweb.asm.ClassVisitor#visitMethod} method).
+      *
+      * @param signatureVistor the visitor that must visit this signature.
+      */
+    public void accept(final SignatureVisitor signatureVistor) {
+        String signature = this.signatureValue;
+        int length = signature.length();
+        int offset; // Current offset in the parsed signature (parsed from left to right).
+        char currentChar; // The signature character at 'offset', or just before.
 
+        // If the signature starts with '<', it starts with TypeParameters, i.e. a formal type parameter
+        // identifier, followed by one or more pair ':',ReferenceTypeSignature (for its class bound and
+        // interface bounds).
         if (signature.charAt(0) == '<') {
-            pos = 2;
+            // Invariant: offset points to the second character of a formal type parameter name at the
+            // beginning of each iteration of the loop below.
+            offset = 2;
             do {
-                int end = signature.indexOf(':', pos);
-                v.visitFormalTypeParameter(signature.substring(pos - 1, end));
-                pos = end + 1;
+                // The formal type parameter name is everything between offset - 1 and the first ':'.
+                int classBoundStartOffset = signature.indexOf(':', offset);
+                signatureVistor.visitFormalTypeParameter(
+                        signature.substring(offset - 1, classBoundStartOffset));
 
-                c = signature.charAt(pos);
-                if (c == 'L' || c == '[' || c == 'T') {
-                    pos = parseType(signature, pos, v.visitClassBound());
+                // If the character after the ':' class bound marker is not the start of a
+                // ReferenceTypeSignature, it means the class bound is empty (which is a valid case).
+                offset = classBoundStartOffset + 1;
+                currentChar = signature.charAt(offset);
+                if (currentChar == 'L' || currentChar == '[' || currentChar == 'T') {
+                    offset = parseType(signature, offset, signatureVistor.visitClassBound());
                 }
 
-                while ((c = signature.charAt(pos++)) == ':') {
-                    pos = parseType(signature, pos, v.visitInterfaceBound());
+                // While the character after the class bound or after the last parsed interface bound
+                // is ':', we need to parse another interface bound.
+                while ((currentChar = signature.charAt(offset++)) == ':') {
+                    offset = parseType(signature, offset, signatureVistor.visitInterfaceBound());
                 }
-            } while (c != '>');
+
+                // At this point a TypeParameter has been fully parsed, and we need to parse the next one
+                // (note that currentChar is now the first character of the next TypeParameter, and that
+                // offset points to the second character), unless the character just after this
+                // TypeParameter signals the end of the TypeParameters.
+            } while (currentChar != '>');
         } else {
-            pos = 0;
+            offset = 0;
         }
 
-        if (signature.charAt(pos) == '(') {
-            pos++;
-            while (signature.charAt(pos) != ')') {
-                pos = parseType(signature, pos, v.visitParameterType());
+        // If the (optional) TypeParameters is followed by '(' this means we are parsing a
+        // MethodSignature, which has JavaTypeSignature type inside parentheses, followed by a Result
+        // type and optional ThrowsSignature types.
+        if (signature.charAt(offset) == '(') {
+            offset++;
+            while (signature.charAt(offset) != ')') {
+                offset = parseType(signature, offset, signatureVistor.visitParameterType());
             }
-            pos = parseType(signature, pos + 1, v.visitReturnType());
-            while (pos < len) {
-                pos = parseType(signature, pos + 1, v.visitExceptionType());
+            // Use offset + 1 to skip ')'.
+            offset = parseType(signature, offset + 1, signatureVistor.visitReturnType());
+            while (offset < length) {
+                // Use offset + 1 to skip the first character of a ThrowsSignature, i.e. '^'.
+                offset = parseType(signature, offset + 1, signatureVistor.visitExceptionType());
             }
         } else {
-            pos = parseType(signature, pos, v.visitSuperclass());
-            while (pos < len) {
-                pos = parseType(signature, pos, v.visitInterface());
+            // Otherwise we are parsing a ClassSignature (by hypothesis on the method input), which has
+            // one or more ClassTypeSignature for the super class and the implemented interfaces.
+            offset = parseType(signature, offset, signatureVistor.visitSuperclass());
+            while (offset < length) {
+                offset = parseType(signature, offset, signatureVistor.visitInterface());
             }
         }
     }
 
     /**
-     * Makes the given visitor visit the signature of this
-     * {@link SignatureReader}. This signature is the one specified in the
-     * constructor (see {@link #SignatureReader(String) SignatureReader}). This
-     * method is intended to be called on a {@link SignatureReader} that was
-     * created using a <i>FieldTypeSignature</i>, such as the
-     * <code>signature</code> parameter of the
-     * {@link jdk.internal.org.objectweb.asm.ClassVisitor#visitField ClassVisitor.visitField}
-     * or {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitLocalVariable
-     * MethodVisitor.visitLocalVariable} methods.
-     *
-     * @param v
-     *            the visitor that must visit this signature.
-     */
-    public void acceptType(final SignatureVisitor v) {
-        parseType(this.signature, 0, v);
+      * Makes the given visitor visit the signature of this {@link SignatureReader}. This signature is
+      * the one specified in the constructor (see {@link #SignatureReader}). This method is intended to
+      * be called on a {@link SignatureReader} that was created using a <i>JavaTypeSignature</i>, such
+      * as the <code>signature</code> parameter of the {@link
+      * jdk.internal.org.objectweb.asm.ClassVisitor#visitField} or {@link
+      * jdk.internal.org.objectweb.asm.MethodVisitor#visitLocalVariable} methods.
+      *
+      * @param signatureVisitor the visitor that must visit this signature.
+      */
+    public void acceptType(final SignatureVisitor signatureVisitor) {
+        parseType(signatureValue, 0, signatureVisitor);
     }
 
     /**
-     * Parses a field type signature and makes the given visitor visit it.
-     *
-     * @param signature
-     *            a string containing the signature that must be parsed.
-     * @param pos
-     *            index of the first character of the signature to parsed.
-     * @param v
-     *            the visitor that must visit this signature.
-     * @return the index of the first character after the parsed signature.
-     */
-    private static int parseType(final String signature, int pos,
-            final SignatureVisitor v) {
-        char c;
-        int start, end;
-        boolean visited, inner;
-        String name;
+      * Parses a JavaTypeSignature and makes the given visitor visit it.
+      *
+      * @param signature a string containing the signature that must be parsed.
+      * @param startOffset index of the first character of the signature to parsed.
+      * @param signatureVisitor the visitor that must visit this signature.
+      * @return the index of the first character after the parsed signature.
+      */
+    private static int parseType(
+            final String signature, final int startOffset, final SignatureVisitor signatureVisitor) {
+        int offset = startOffset; // Current offset in the parsed signature.
+        char currentChar = signature.charAt(offset++); // The signature character at 'offset'.
 
-        switch (c = signature.charAt(pos++)) {
-        case 'Z':
-        case 'C':
-        case 'B':
-        case 'S':
-        case 'I':
-        case 'F':
-        case 'J':
-        case 'D':
-        case 'V':
-            v.visitBaseType(c);
-            return pos;
+        // Switch based on the first character of the JavaTypeSignature, which indicates its kind.
+        switch (currentChar) {
+            case 'Z':
+            case 'C':
+            case 'B':
+            case 'S':
+            case 'I':
+            case 'F':
+            case 'J':
+            case 'D':
+            case 'V':
+                // Case of a BaseType or a VoidDescriptor.
+                signatureVisitor.visitBaseType(currentChar);
+                return offset;
 
-        case '[':
-            return parseType(signature, pos, v.visitArrayType());
+            case '[':
+                // Case of an ArrayTypeSignature, a '[' followed by a JavaTypeSignature.
+                return parseType(signature, offset, signatureVisitor.visitArrayType());
 
-        case 'T':
-            end = signature.indexOf(';', pos);
-            v.visitTypeVariable(signature.substring(pos, end));
-            return end + 1;
+            case 'T':
+                // Case of TypeVariableSignature, an identifier between 'T' and ';'.
+                int endOffset = signature.indexOf(';', offset);
+                signatureVisitor.visitTypeVariable(signature.substring(offset, endOffset));
+                return endOffset + 1;
 
-        default: // case 'L':
-            start = pos;
-            visited = false;
-            inner = false;
-            for (;;) {
-                switch (c = signature.charAt(pos++)) {
-                case '.':
-                case ';':
-                    if (!visited) {
-                        name = signature.substring(start, pos - 1);
+            case 'L':
+                // Case of a ClassTypeSignature, which ends with ';'.
+                // These signatures have a main class type followed by zero or more inner class types
+                // (separated by '.'). Each can have type arguments, inside '<' and '>'.
+                int start = offset; // The start offset of the currently parsed main or inner class name.
+                boolean visited = false; // Whether the currently parsed class name has been visited.
+                boolean inner = false; // Whether we are currently parsing an inner class type.
+                // Parses the signature, one character at a time.
+                while (true) {
+                    currentChar = signature.charAt(offset++);
+                    if (currentChar == '.' || currentChar == ';') {
+                        // If a '.' or ';' is encountered, this means we have fully parsed the main class name
+                        // or an inner class name. This name may already have been visited it is was followed by
+                        // type arguments between '<' and '>'. If not, we need to visit it here.
+                        if (!visited) {
+                            String name = signature.substring(start, offset - 1);
+                            if (inner) {
+                                signatureVisitor.visitInnerClassType(name);
+                            } else {
+                                signatureVisitor.visitClassType(name);
+                            }
+                        }
+                        // If we reached the end of the ClassTypeSignature return, otherwise start the parsing
+                        // of a new class name, which is necessarily an inner class name.
+                        if (currentChar == ';') {
+                            signatureVisitor.visitEnd();
+                            break;
+                        }
+                        start = offset;
+                        visited = false;
+                        inner = true;
+                    } else if (currentChar == '<') {
+                        // If a '<' is encountered, this means we have fully parsed the main class name or an
+                        // inner class name, and that we now need to parse TypeArguments. First, we need to
+                        // visit the parsed class name.
+                        String name = signature.substring(start, offset - 1);
                         if (inner) {
-                            v.visitInnerClassType(name);
+                            signatureVisitor.visitInnerClassType(name);
                         } else {
-                            v.visitClassType(name);
+                            signatureVisitor.visitClassType(name);
                         }
-                    }
-                    if (c == ';') {
-                        v.visitEnd();
-                        return pos;
-                    }
-                    start = pos;
-                    visited = false;
-                    inner = true;
-                    break;
-
-                case '<':
-                    name = signature.substring(start, pos - 1);
-                    if (inner) {
-                        v.visitInnerClassType(name);
-                    } else {
-                        v.visitClassType(name);
-                    }
-                    visited = true;
-                    top: for (;;) {
-                        switch (c = signature.charAt(pos)) {
-                        case '>':
-                            break top;
-                        case '*':
-                            ++pos;
-                            v.visitTypeArgument();
-                            break;
-                        case '+':
-                        case '-':
-                            pos = parseType(signature, pos + 1,
-                                    v.visitTypeArgument(c));
-                            break;
-                        default:
-                            pos = parseType(signature, pos,
-                                    v.visitTypeArgument('='));
-                            break;
+                        visited = true;
+                        // Now, parse the TypeArgument(s), one at a time.
+                        while ((currentChar = signature.charAt(offset)) != '>') {
+                            switch (currentChar) {
+                                case '*':
+                                    // Unbounded TypeArgument.
+                                    ++offset;
+                                    signatureVisitor.visitTypeArgument();
+                                    break;
+                                case '+':
+                                case '-':
+                                    // Extends or Super TypeArgument. Use offset + 1 to skip the '+' or '-'.
+                                    offset =
+                                            parseType(
+                                                    signature, offset + 1, signatureVisitor.visitTypeArgument(currentChar));
+                                    break;
+                                default:
+                                    // Instanceof TypeArgument. The '=' is implicit.
+                                    offset = parseType(signature, offset, signatureVisitor.visitTypeArgument('='));
+                                    break;
+                            }
                         }
                     }
                 }
-            }
+                return offset;
+
+            default:
+                throw new IllegalArgumentException();
         }
     }
 }

@@ -887,6 +887,29 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCSystemProperty extends DCInlineTag implements SystemPropertyTree {
+        public final Name propertyName;
+
+        DCSystemProperty(Name propertyName) {
+            this.propertyName = propertyName;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.SYSTEM_PROPERTY;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitSystemProperty(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Name getPropertyName() {
+            return propertyName;
+        }
+    }
+
     public static class DCText extends DCTree implements TextTree {
         public final String text;
 

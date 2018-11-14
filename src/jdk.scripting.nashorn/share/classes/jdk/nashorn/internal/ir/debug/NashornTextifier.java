@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class NashornTextifier extends Printer {
      * information
      */
     public NashornTextifier(final ScriptEnvironment env, final NashornClassReader cr) {
-        this(Opcodes.ASM5);
+        this(Opcodes.ASM7);
         this.env = env;
         this.cr = cr;
     }

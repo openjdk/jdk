@@ -177,7 +177,7 @@ public interface MulticastChannel
      * @throws  SecurityException
      *          If a security manager is set, and its
      *          {@link SecurityManager#checkMulticast(InetAddress) checkMulticast}
-     *          method denies access to the multiast group
+     *          method denies access to the multicast group
      */
     MembershipKey join(InetAddress group, NetworkInterface interf)
         throws IOException;
@@ -226,7 +226,7 @@ public interface MulticastChannel
      * @throws  SecurityException
      *          If a security manager is set, and its
      *          {@link SecurityManager#checkMulticast(InetAddress) checkMulticast}
-     *          method denies access to the multiast group
+     *          method denies access to the multicast group
      */
     MembershipKey join(InetAddress group, NetworkInterface interf, InetAddress source)
         throws IOException;

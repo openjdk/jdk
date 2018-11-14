@@ -63,252 +63,240 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-
+import java.util.Comparator;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * A {@link ClassVisitor} that adds a serial version unique identifier to a
- * class if missing. Here is typical usage of this class:
+ * A {@link ClassVisitor} that adds a serial version unique identifier to a class if missing. A
+ * typical usage of this class is:
  *
  * <pre>
- *   ClassWriter cw = new ClassWriter(...);
- *   ClassVisitor sv = new SerialVersionUIDAdder(cw);
- *   ClassVisitor ca = new MyClassAdapter(sv);
- *   new ClassReader(orginalClass).accept(ca, false);
+ *   ClassWriter classWriter = new ClassWriter(...);
+ *   ClassVisitor svuidAdder = new SerialVersionUIDAdder(classWriter);
+ *   ClassVisitor classVisitor = new MyClassAdapter(svuidAdder);
+ *   new ClassReader(orginalClass).accept(classVisitor, 0);
  * </pre>
  *
- * The SVUID algorithm can be found <a href=
- * "http://java.sun.com/j2se/1.4.2/docs/guide/serialization/spec/class.html"
- * >http://java.sun.com/j2se/1.4.2/docs/guide/serialization/spec/class.html</a>:
+ * <p>The SVUID algorithm can be found at <a href=
+ * "https://docs.oracle.com/javase/10/docs/specs/serialization/class.html#stream-unique-identifiers"
+ * >https://docs.oracle.com/javase/10/docs/specs/serialization/class.html#stream-unique-identifiers</a>:
  *
- * <pre>
- * The serialVersionUID is computed using the signature of a stream of bytes
- * that reflect the class definition. The National Institute of Standards and
- * Technology (NIST) Secure Hash Algorithm (SHA-1) is used to compute a
- * signature for the stream. The first two 32-bit quantities are used to form a
- * 64-bit hash. A java.lang.DataOutputStream is used to convert primitive data
- * types to a sequence of bytes. The values input to the stream are defined by
- * the Java Virtual Machine (VM) specification for classes.
+ * <p>The serialVersionUID is computed using the signature of a stream of bytes that reflect the
+ * class definition. The National Institute of Standards and Technology (NIST) Secure Hash Algorithm
+ * (SHA-1) is used to compute a signature for the stream. The first two 32-bit quantities are used
+ * to form a 64-bit hash. A java.lang.DataOutputStream is used to convert primitive data types to a
+ * sequence of bytes. The values input to the stream are defined by the Java Virtual Machine (VM)
+ * specification for classes.
  *
- * The sequence of items in the stream is as follows:
+ * <p>The sequence of items in the stream is as follows:
  *
- * 1. The class name written using UTF encoding.
- * 2. The class modifiers written as a 32-bit integer.
- * 3. The name of each interface sorted by name written using UTF encoding.
- * 4. For each field of the class sorted by field name (except private static
- * and private transient fields):
- * 1. The name of the field in UTF encoding.
- * 2. The modifiers of the field written as a 32-bit integer.
- * 3. The descriptor of the field in UTF encoding
- * 5. If a class initializer exists, write out the following:
- * 1. The name of the method, &lt;clinit&gt;, in UTF encoding.
- * 2. The modifier of the method, java.lang.reflect.Modifier.STATIC,
- * written as a 32-bit integer.
- * 3. The descriptor of the method, ()V, in UTF encoding.
- * 6. For each non-private constructor sorted by method name and signature:
- * 1. The name of the method, &lt;init&gt;, in UTF encoding.
- * 2. The modifiers of the method written as a 32-bit integer.
- * 3. The descriptor of the method in UTF encoding.
- * 7. For each non-private method sorted by method name and signature:
- * 1. The name of the method in UTF encoding.
- * 2. The modifiers of the method written as a 32-bit integer.
- * 3. The descriptor of the method in UTF encoding.
- * 8. The SHA-1 algorithm is executed on the stream of bytes produced by
- * DataOutputStream and produces five 32-bit values sha[0..4].
- *
- * 9. The hash value is assembled from the first and second 32-bit values of
- * the SHA-1 message digest. If the result of the message digest, the five
- * 32-bit words H0 H1 H2 H3 H4, is in an array of five int values named
- * sha, the hash value would be computed as follows:
- *
- * long hash = ((sha[0] &gt;&gt;&gt; 24) &amp; 0xFF) |
- * ((sha[0] &gt;&gt;&gt; 16) &amp; 0xFF) &lt;&lt; 8 |
- * ((sha[0] &gt;&gt;&gt; 8) &amp; 0xFF) &lt;&lt; 16 |
- * ((sha[0] &gt;&gt;&gt; 0) &amp; 0xFF) &lt;&lt; 24 |
- * ((sha[1] &gt;&gt;&gt; 24) &amp; 0xFF) &lt;&lt; 32 |
- * ((sha[1] &gt;&gt;&gt; 16) &amp; 0xFF) &lt;&lt; 40 |
- * ((sha[1] &gt;&gt;&gt; 8) &amp; 0xFF) &lt;&lt; 48 |
- * ((sha[1] &gt;&gt;&gt; 0) &amp; 0xFF) &lt;&lt; 56;
- * </pre>
+ * <ol>
+ *   <li>The class name written using UTF encoding.
+ *   <li>The class modifiers written as a 32-bit integer.
+ *   <li>The name of each interface sorted by name written using UTF encoding.
+ *   <li>For each field of the class sorted by field name (except private static and private
+ *       transient fields):
+ *       <ol>
+ *         <li>The name of the field in UTF encoding.
+ *         <li>The modifiers of the field written as a 32-bit integer.
+ *         <li>The descriptor of the field in UTF encoding
+ *       </ol>
+ *   <li>If a class initializer exists, write out the following:
+ *       <ol>
+ *         <li>The name of the method, &lt;clinit&gt;, in UTF encoding.
+ *         <li>The modifier of the method, STATIC, written as a 32-bit integer.
+ *         <li>The descriptor of the method, ()V, in UTF encoding.
+ *       </ol>
+ *   <li>For each non-private constructor sorted by method name and signature:
+ *       <ol>
+ *         <li>The name of the method, &lt;init&gt;, in UTF encoding.
+ *         <li>The modifiers of the method written as a 32-bit integer.
+ *         <li>The descriptor of the method in UTF encoding.
+ *       </ol>
+ *   <li>For each non-private method sorted by method name and signature:
+ *       <ol>
+ *         <li>The name of the method in UTF encoding.
+ *         <li>The modifiers of the method written as a 32-bit integer.
+ *         <li>The descriptor of the method in UTF encoding.
+ *       </ol>
+ *   <li>The SHA-1 algorithm is executed on the stream of bytes produced by DataOutputStream and
+ *       produces five 32-bit values sha[0..4].
+ *   <li>The hash value is assembled from the first and second 32-bit values of the SHA-1 message
+ *       digest. If the result of the message digest, the five 32-bit words H0 H1 H2 H3 H4, is in an
+ *       array of five int values named sha, the hash value would be computed as follows: long hash
+ *       = ((sha[0] &gt;&gt;&gt; 24) &amp; 0xFF) | ((sha[0] &gt;&gt;&gt; 16) &amp; 0xFF) &lt;&lt; 8
+ *       | ((sha[0] &gt;&gt;&gt; 8) &amp; 0xFF) &lt;&lt; 16 | ((sha[0] &gt;&gt;&gt; 0) &amp; 0xFF)
+ *       &lt;&lt; 24 | ((sha[1] &gt;&gt;&gt; 24) &amp; 0xFF) &lt;&lt; 32 | ((sha[1] &gt;&gt;&gt; 16)
+ *       &amp; 0xFF) &lt;&lt; 40 | ((sha[1] &gt;&gt;&gt; 8) &amp; 0xFF) &lt;&lt; 48 | ((sha[1]
+ *       &gt;&gt;&gt; 0) &amp; 0xFF) &lt;&lt; 56;
+ * </ol>
  *
  * @author Rajendra Inamdar, Vishal Vishnoi
  */
+// DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
 public class SerialVersionUIDAdder extends ClassVisitor {
 
-    /**
-     * Flag that indicates if we need to compute SVUID.
-     */
-    private boolean computeSVUID;
+    /** The JVM name of static initializer methods. */
+    private static final String CLINIT = "<clinit>";
 
-    /**
-     * Set to true if the class already has SVUID.
-     */
-    private boolean hasSVUID;
+    /** A flag that indicates if we need to compute SVUID. */
+    private boolean computeSvuid;
 
-    /**
-     * Classes access flags.
-     */
+    /** Whether the class already has a SVUID. */
+    private boolean hasSvuid;
+
+    /** The class access flags. */
     private int access;
 
-    /**
-     * Internal name of the class
-     */
+    /** The internal name of the class. */
     private String name;
 
-    /**
-     * Interfaces implemented by the class.
-     */
+    /** The interfaces implemented by the class. */
     private String[] interfaces;
 
-    /**
-     * Collection of fields. (except private static and private transient
-     * fields)
-     */
+    /** The fields of the class that are needed to compute the SVUID. */
     private Collection<Item> svuidFields;
 
-    /**
-     * Set to true if the class has static initializer.
-     */
+    /** Whether the class has a static initializer. */
     private boolean hasStaticInitializer;
 
-    /**
-     * Collection of non-private constructors.
-     */
+    /** The constructors of the class that are needed to compute the SVUID. */
     private Collection<Item> svuidConstructors;
 
-    /**
-     * Collection of non-private methods.
-     */
+    /** The methods of the class that are needed to compute the SVUID. */
     private Collection<Item> svuidMethods;
 
     /**
-     * Creates a new {@link SerialVersionUIDAdder}. <i>Subclasses must not use
-     * this constructor</i>. Instead, they must use the
-     * {@link #SerialVersionUIDAdder(int, ClassVisitor)} version.
-     *
-     * @param cv
-     *            a {@link ClassVisitor} to which this visitor will delegate
-     *            calls.
-     * @throws IllegalStateException
-     *             If a subclass calls this constructor.
-     */
-    public SerialVersionUIDAdder(final ClassVisitor cv) {
-        this(Opcodes.ASM6, cv);
+      * Constructs a new {@link SerialVersionUIDAdder}. <i>Subclasses must not use this
+      * constructor</i>. Instead, they must use the {@link #SerialVersionUIDAdder(int, ClassVisitor)}
+      * version.
+      *
+      * @param classVisitor a {@link ClassVisitor} to which this visitor will delegate calls.
+      * @throws IllegalStateException If a subclass calls this constructor.
+      */
+    public SerialVersionUIDAdder(final ClassVisitor classVisitor) {
+        this(Opcodes.ASM7, classVisitor);
         if (getClass() != SerialVersionUIDAdder.class) {
             throw new IllegalStateException();
         }
     }
 
     /**
-     * Creates a new {@link SerialVersionUIDAdder}.
-     *
-     * @param api
-     *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     * @param cv
-     *            a {@link ClassVisitor} to which this visitor will delegate
-     *            calls.
-     */
-    protected SerialVersionUIDAdder(final int api, final ClassVisitor cv) {
-        super(api, cv);
-        svuidFields = new ArrayList<Item>();
-        svuidConstructors = new ArrayList<Item>();
-        svuidMethods = new ArrayList<Item>();
+      * Constructs a new {@link SerialVersionUIDAdder}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param classVisitor a {@link ClassVisitor} to which this visitor will delegate calls.
+      */
+    protected SerialVersionUIDAdder(final int api, final ClassVisitor classVisitor) {
+        super(api, classVisitor);
     }
 
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
     // Overridden methods
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
-    /*
-     * Visit class header and get class name, access , and interfaces
-     * information (step 1,2, and 3) for SVUID computation.
-     */
     @Override
-    public void visit(final int version, final int access, final String name,
-            final String signature, final String superName,
+    public void visit(
+            final int version,
+            final int access,
+            final String name,
+            final String signature,
+            final String superName,
             final String[] interfaces) {
-        computeSVUID = (access & Opcodes.ACC_ENUM) == 0;
+        // Get the class name, access flags, and interfaces information (step 1, 2 and 3) for SVUID
+        // computation.
+        computeSvuid = (access & Opcodes.ACC_ENUM) == 0;
 
-        if (computeSVUID) {
+        if (computeSvuid) {
             this.name = name;
             this.access = access;
             this.interfaces = new String[interfaces.length];
-            System.arraycopy(interfaces, 0, this.interfaces, 0,
-                    interfaces.length);
+            this.svuidFields = new ArrayList<Item>();
+            this.svuidConstructors = new ArrayList<Item>();
+            this.svuidMethods = new ArrayList<Item>();
+            System.arraycopy(interfaces, 0, this.interfaces, 0, interfaces.length);
         }
 
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
-    /*
-     * Visit the methods and get constructor and method information (step 5 and
-     * 7). Also determine if there is a class initializer (step 6).
-     */
     @Override
-    public MethodVisitor visitMethod(final int access, final String name,
-            final String desc, final String signature, final String[] exceptions) {
-        if (computeSVUID) {
-            if ("<clinit>".equals(name)) {
+    public MethodVisitor visitMethod(
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
+            final String[] exceptions) {
+        // Get constructor and method information (step 5 and 7). Also determine if there is a class
+        // initializer (step 6).
+        if (computeSvuid) {
+            if (CLINIT.equals(name)) {
                 hasStaticInitializer = true;
             }
-            /*
-             * Remembers non private constructors and methods for SVUID
-             * computation For constructor and method modifiers, only the
-             * ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED, ACC_STATIC, ACC_FINAL,
-             * ACC_SYNCHRONIZED, ACC_NATIVE, ACC_ABSTRACT and ACC_STRICT flags
-             * are used.
-             */
-            int mods = access
-                    & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE
-                            | Opcodes.ACC_PROTECTED | Opcodes.ACC_STATIC
-                            | Opcodes.ACC_FINAL | Opcodes.ACC_SYNCHRONIZED
-                            | Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_STRICT);
+            // Collect the non private constructors and methods. Only the ACC_PUBLIC, ACC_PRIVATE,
+            // ACC_PROTECTED, ACC_STATIC, ACC_FINAL, ACC_SYNCHRONIZED, ACC_NATIVE, ACC_ABSTRACT and
+            // ACC_STRICT flags are used.
+            int mods =
+                    access
+                            & (Opcodes.ACC_PUBLIC
+                                    | Opcodes.ACC_PRIVATE
+                                    | Opcodes.ACC_PROTECTED
+                                    | Opcodes.ACC_STATIC
+                                    | Opcodes.ACC_FINAL
+                                    | Opcodes.ACC_SYNCHRONIZED
+                                    | Opcodes.ACC_NATIVE
+                                    | Opcodes.ACC_ABSTRACT
+                                    | Opcodes.ACC_STRICT);
 
-            // all non private methods
             if ((access & Opcodes.ACC_PRIVATE) == 0) {
                 if ("<init>".equals(name)) {
-                    svuidConstructors.add(new Item(name, mods, desc));
-                } else if (!"<clinit>".equals(name)) {
-                    svuidMethods.add(new Item(name, mods, desc));
+                    svuidConstructors.add(new Item(name, mods, descriptor));
+                } else if (!CLINIT.equals(name)) {
+                    svuidMethods.add(new Item(name, mods, descriptor));
                 }
             }
         }
 
-        return super.visitMethod(access, name, desc, signature, exceptions);
+        return super.visitMethod(access, name, descriptor, signature, exceptions);
     }
 
-    /*
-     * Gets class field information for step 4 of the algorithm. Also determines
-     * if the class already has a SVUID.
-     */
     @Override
-    public FieldVisitor visitField(final int access, final String name,
-            final String desc, final String signature, final Object value) {
-        if (computeSVUID) {
+    public FieldVisitor visitField(
+            final int access,
+            final String name,
+            final String desc,
+            final String signature,
+            final Object value) {
+        // Get the class field information for step 4 of the algorithm. Also determine if the class
+        // already has a SVUID.
+        if (computeSvuid) {
             if ("serialVersionUID".equals(name)) {
-                // since the class already has SVUID, we won't be computing it.
-                computeSVUID = false;
-                hasSVUID = true;
+                // Since the class already has SVUID, we won't be computing it.
+                computeSvuid = false;
+                hasSvuid = true;
             }
-            /*
-             * Remember field for SVUID computation For field modifiers, only
-             * the ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED, ACC_STATIC,
-             * ACC_FINAL, ACC_VOLATILE, and ACC_TRANSIENT flags are used when
-             * computing serialVersionUID values.
-             */
+            // Collect the non private fields. Only the ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED,
+            // ACC_STATIC, ACC_FINAL, ACC_VOLATILE, and ACC_TRANSIENT flags are used when computing
+            // serialVersionUID values.
             if ((access & Opcodes.ACC_PRIVATE) == 0
                     || (access & (Opcodes.ACC_STATIC | Opcodes.ACC_TRANSIENT)) == 0) {
-                int mods = access
-                        & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE
-                                | Opcodes.ACC_PROTECTED | Opcodes.ACC_STATIC
-                                | Opcodes.ACC_FINAL | Opcodes.ACC_VOLATILE | Opcodes.ACC_TRANSIENT);
+                int mods =
+                        access
+                                & (Opcodes.ACC_PUBLIC
+                                        | Opcodes.ACC_PRIVATE
+                                        | Opcodes.ACC_PROTECTED
+                                        | Opcodes.ACC_STATIC
+                                        | Opcodes.ACC_FINAL
+                                        | Opcodes.ACC_VOLATILE
+                                        | Opcodes.ACC_TRANSIENT);
                 svuidFields.add(new Item(name, mods, desc));
             }
         }
@@ -316,175 +304,150 @@ public class SerialVersionUIDAdder extends ClassVisitor {
         return super.visitField(access, name, desc, signature, value);
     }
 
-    /**
-     * Handle a bizarre special case. Nested classes (static classes declared
-     * inside another class) that are protected have their access bit set to
-     * public in their class files to deal with some odd reflection situation.
-     * Our SVUID computation must do as the JVM does and ignore access bits in
-     * the class file in favor of the access bits InnerClass attribute.
-     */
     @Override
-    public void visitInnerClass(final String aname, final String outerName,
-            final String innerName, final int attr_access) {
-        if ((name != null) && name.equals(aname)) {
-            this.access = attr_access;
+    public void visitInnerClass(
+            final String innerClassName,
+            final String outerName,
+            final String innerName,
+            final int innerClassAccess) {
+        // Handles a bizarre special case. Nested classes (static classes declared inside another class)
+        // that are protected have their access bit set to public in their class files to deal with some
+        // odd reflection situation. Our SVUID computation must do as the JVM does and ignore access
+        // bits in the class file in favor of the access bits of the InnerClass attribute.
+        if ((name != null) && name.equals(innerClassName)) {
+            this.access = innerClassAccess;
         }
-        super.visitInnerClass(aname, outerName, innerName, attr_access);
+        super.visitInnerClass(innerClassName, outerName, innerName, innerClassAccess);
     }
 
-    /*
-     * Add the SVUID if class doesn't have one
-     */
     @Override
     public void visitEnd() {
-        // compute SVUID and add it to the class
-        if (computeSVUID && !hasSVUID) {
+        // Add the SVUID field to the class if it doesn't have one.
+        if (computeSvuid && !hasSvuid) {
             try {
                 addSVUID(computeSVUID());
-            } catch (Throwable e) {
-                throw new RuntimeException("Error while computing SVUID for "
-                        + name, e);
+            } catch (IOException e) {
+                throw new IllegalStateException("Error while computing SVUID for " + name, e);
             }
         }
 
         super.visitEnd();
     }
 
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
     // Utility methods
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
     /**
-     * Returns true if the class already has a SVUID field. The result of this
-     * method is only valid when visitEnd is or has been called.
-     *
-     * @return true if the class already has a SVUID field.
-     */
+      * Returns true if the class already has a SVUID field. The result of this method is only valid
+      * when visitEnd has been called.
+      *
+      * @return true if the class already has a SVUID field.
+      */
+    // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
     public boolean hasSVUID() {
-        return hasSVUID;
+        return hasSvuid;
     }
 
-    protected void addSVUID(long svuid) {
-        FieldVisitor fv = super.visitField(Opcodes.ACC_FINAL
-                + Opcodes.ACC_STATIC, "serialVersionUID", "J", null, svuid);
-        if (fv != null) {
-            fv.visitEnd();
+    /**
+      * Adds a final static serialVersionUID field to the class, with the given value.
+      *
+      * @param svuid the serialVersionUID field value.
+      */
+    // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
+    protected void addSVUID(final long svuid) {
+        FieldVisitor fieldVisitor =
+                super.visitField(
+                        Opcodes.ACC_FINAL + Opcodes.ACC_STATIC, "serialVersionUID", "J", null, svuid);
+        if (fieldVisitor != null) {
+            fieldVisitor.visitEnd();
         }
     }
 
     /**
-     * Computes and returns the value of SVUID.
-     *
-     * @return Returns the serial version UID
-     * @throws IOException
-     *             if an I/O error occurs
-     */
+      * Computes and returns the value of SVUID.
+      *
+      * @return the serial version UID.
+      * @throws IOException if an I/O error occurs.
+      */
+    // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
     protected long computeSVUID() throws IOException {
-        ByteArrayOutputStream bos;
-        DataOutputStream dos = null;
+        ByteArrayOutputStream byteArrayOutputStream = null;
+        DataOutputStream dataOutputStream = null;
         long svuid = 0;
 
         try {
-            bos = new ByteArrayOutputStream();
-            dos = new DataOutputStream(bos);
+            byteArrayOutputStream = new ByteArrayOutputStream();
+            dataOutputStream = new DataOutputStream(byteArrayOutputStream);
 
-            /*
-             * 1. The class name written using UTF encoding.
-             */
-            dos.writeUTF(name.replace('/', '.'));
+            // 1. The class name written using UTF encoding.
+            dataOutputStream.writeUTF(name.replace('/', '.'));
 
-            /*
-             * 2. The class modifiers written as a 32-bit integer.
-             */
-            int access = this.access;
-            if ((access & Opcodes.ACC_INTERFACE) != 0) {
-                access = (svuidMethods.size() > 0) ? (access | Opcodes.ACC_ABSTRACT)
-                        : (access & ~Opcodes.ACC_ABSTRACT);
+            // 2. The class modifiers written as a 32-bit integer.
+            int mods = access;
+            if ((mods & Opcodes.ACC_INTERFACE) != 0) {
+                mods =
+                        svuidMethods.isEmpty() ? (mods & ~Opcodes.ACC_ABSTRACT) : (mods | Opcodes.ACC_ABSTRACT);
             }
-            dos.writeInt(access
-                    & (Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL
-                            | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT));
+            dataOutputStream.writeInt(
+                    mods
+                            & (Opcodes.ACC_PUBLIC
+                                    | Opcodes.ACC_FINAL
+                                    | Opcodes.ACC_INTERFACE
+                                    | Opcodes.ACC_ABSTRACT));
 
-            /*
-             * 3. The name of each interface sorted by name written using UTF
-             * encoding.
-             */
+            // 3. The name of each interface sorted by name written using UTF encoding.
             Arrays.sort(interfaces);
-            for (int i = 0; i < interfaces.length; i++) {
-                dos.writeUTF(interfaces[i].replace('/', '.'));
+            for (String interfaceName : interfaces) {
+                dataOutputStream.writeUTF(interfaceName.replace('/', '.'));
             }
 
-            /*
-             * 4. For each field of the class sorted by field name (except
-             * private static and private transient fields):
-             *
-             * 1. The name of the field in UTF encoding. 2. The modifiers of the
-             * field written as a 32-bit integer. 3. The descriptor of the field
-             * in UTF encoding
-             *
-             * Note that field signatures are not dot separated. Method and
-             * constructor signatures are dot separated. Go figure...
-             */
-            writeItems(svuidFields, dos, false);
+            // 4. For each field of the class sorted by field name (except private static and private
+            // transient fields):
+            //   1. The name of the field in UTF encoding.
+            //   2. The modifiers of the field written as a 32-bit integer.
+            //   3. The descriptor of the field in UTF encoding.
+            // Note that field signatures are not dot separated. Method and constructor signatures are dot
+            // separated. Go figure...
+            writeItems(svuidFields, dataOutputStream, false);
 
-            /*
-             * 5. If a class initializer exists, write out the following: 1. The
-             * name of the method, <clinit>, in UTF encoding. 2. The modifier of
-             * the method, java.lang.reflect.Modifier.STATIC, written as a
-             * 32-bit integer. 3. The descriptor of the method, ()V, in UTF
-             * encoding.
-             */
+            // 5. If a class initializer exists, write out the following:
+            //   1. The name of the method, <clinit>, in UTF encoding.
+            //   2. The modifier of the method, ACC_STATIC, written as a 32-bit integer.
+            //   3. The descriptor of the method, ()V, in UTF encoding.
             if (hasStaticInitializer) {
-                dos.writeUTF("<clinit>");
-                dos.writeInt(Opcodes.ACC_STATIC);
-                dos.writeUTF("()V");
-            } // if..
+                dataOutputStream.writeUTF(CLINIT);
+                dataOutputStream.writeInt(Opcodes.ACC_STATIC);
+                dataOutputStream.writeUTF("()V");
+            }
 
-            /*
-             * 6. For each non-private constructor sorted by method name and
-             * signature: 1. The name of the method, <init>, in UTF encoding. 2.
-             * The modifiers of the method written as a 32-bit integer. 3. The
-             * descriptor of the method in UTF encoding.
-             */
-            writeItems(svuidConstructors, dos, true);
+            // 6. For each non-private constructor sorted by method name and signature:
+            //   1. The name of the method, <init>, in UTF encoding.
+            //   2. The modifiers of the method written as a 32-bit integer.
+            //   3. The descriptor of the method in UTF encoding.
+            writeItems(svuidConstructors, dataOutputStream, true);
 
-            /*
-             * 7. For each non-private method sorted by method name and
-             * signature: 1. The name of the method in UTF encoding. 2. The
-             * modifiers of the method written as a 32-bit integer. 3. The
-             * descriptor of the method in UTF encoding.
-             */
-            writeItems(svuidMethods, dos, true);
+            // 7. For each non-private method sorted by method name and signature:
+            //   1. The name of the method in UTF encoding.
+            //   2. The modifiers of the method written as a 32-bit integer.
+            //   3. The descriptor of the method in UTF encoding.
+            writeItems(svuidMethods, dataOutputStream, true);
 
-            dos.flush();
+            dataOutputStream.flush();
 
-            /*
-             * 8. The SHA-1 algorithm is executed on the stream of bytes
-             * produced by DataOutputStream and produces five 32-bit values
-             * sha[0..4].
-             */
-            byte[] hashBytes = computeSHAdigest(bos.toByteArray());
+            // 8. The SHA-1 algorithm is executed on the stream of bytes produced by DataOutputStream and
+            // produces five 32-bit values sha[0..4].
+            byte[] hashBytes = computeSHAdigest(byteArrayOutputStream.toByteArray());
 
-            /*
-             * 9. The hash value is assembled from the first and second 32-bit
-             * values of the SHA-1 message digest. If the result of the message
-             * digest, the five 32-bit words H0 H1 H2 H3 H4, is in an array of
-             * five int values named sha, the hash value would be computed as
-             * follows:
-             *
-             * long hash = ((sha[0] >>> 24) & 0xFF) | ((sha[0] >>> 16) & 0xFF)
-             * << 8 | ((sha[0] >>> 8) & 0xFF) << 16 | ((sha[0] >>> 0) & 0xFF) <<
-             * 24 | ((sha[1] >>> 24) & 0xFF) << 32 | ((sha[1] >>> 16) & 0xFF) <<
-             * 40 | ((sha[1] >>> 8) & 0xFF) << 48 | ((sha[1] >>> 0) & 0xFF) <<
-             * 56;
-             */
+            // 9. The hash value is assembled from the first and second 32-bit values of the SHA-1 message
+            // digest. If the result of the message digest, the five 32-bit words H0 H1 H2 H3 H4, is in an
+            // array of five int values named sha, the hash value would be computed as follows:
             for (int i = Math.min(hashBytes.length, 8) - 1; i >= 0; i--) {
                 svuid = (svuid << 8) | (hashBytes[i] & 0xFF);
             }
         } finally {
-            // close the stream (if open)
-            if (dos != null) {
-                dos.close();
+            if (dataOutputStream != null) {
+                dataOutputStream.close();
             }
         }
 
@@ -492,82 +455,67 @@ public class SerialVersionUIDAdder extends ClassVisitor {
     }
 
     /**
-     * Returns the SHA-1 message digest of the given value.
-     *
-     * @param value
-     *            the value whose SHA message digest must be computed.
-     * @return the SHA-1 message digest of the given value.
-     */
+      * Returns the SHA-1 message digest of the given value.
+      *
+      * @param value the value whose SHA message digest must be computed.
+      * @return the SHA-1 message digest of the given value.
+      */
+    // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
     protected byte[] computeSHAdigest(final byte[] value) {
         try {
             return MessageDigest.getInstance("SHA").digest(value);
-        } catch (Exception e) {
-            throw new UnsupportedOperationException(e.toString());
+        } catch (NoSuchAlgorithmException e) {
+            throw new UnsupportedOperationException(e);
         }
     }
 
     /**
-     * Sorts the items in the collection and writes it to the data output stream
-     *
-     * @param itemCollection
-     *            collection of items
-     * @param dos
-     *            a <code>DataOutputStream</code> value
-     * @param dotted
-     *            a <code>boolean</code> value
-     * @exception IOException
-     *                if an error occurs
-     */
-    private static void writeItems(final Collection<Item> itemCollection,
-            final DataOutput dos, final boolean dotted) throws IOException {
-        int size = itemCollection.size();
-        Item[] items = itemCollection.toArray(new Item[size]);
-        Arrays.sort(items);
-        for (int i = 0; i < size; i++) {
-            dos.writeUTF(items[i].name);
-            dos.writeInt(items[i].access);
-            dos.writeUTF(dotted ? items[i].desc.replace('/', '.')
-                    : items[i].desc);
+      * Sorts the items in the collection and writes it to the given output stream.
+      *
+      * @param itemCollection a collection of items.
+      * @param dataOutputStream where the items must be written.
+      * @param dotted whether package names must use dots, instead of slashes.
+      * @exception IOException if an error occurs.
+      */
+    private static void writeItems(
+            final Collection<Item> itemCollection,
+            final DataOutput dataOutputStream,
+            final boolean dotted)
+            throws IOException {
+        Item[] items = itemCollection.toArray(new Item[0]);
+        Arrays.sort(
+                items,
+                new Comparator<Item>() {
+                    @Override
+                    public int compare(final Item item1, final Item item2) {
+                        int result = item1.name.compareTo(item2.name);
+                        if (result == 0) {
+                            result = item1.descriptor.compareTo(item2.descriptor);
+                        }
+                        return result;
+                    }
+                });
+        for (Item item : items) {
+            dataOutputStream.writeUTF(item.name);
+            dataOutputStream.writeInt(item.access);
+            dataOutputStream.writeUTF(dotted ? item.descriptor.replace('/', '.') : item.descriptor);
         }
     }
 
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
     // Inner classes
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
-    private static class Item implements Comparable<Item> {
+    private static final class Item {
 
         final String name;
-
         final int access;
+        final String descriptor;
 
-        final String desc;
-
-        Item(final String name, final int access, final String desc) {
+        Item(final String name, final int access, final String descriptor) {
             this.name = name;
             this.access = access;
-            this.desc = desc;
-        }
-
-        public int compareTo(final Item other) {
-            int retVal = name.compareTo(other.name);
-            if (retVal == 0) {
-                retVal = desc.compareTo(other.desc);
-            }
-            return retVal;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (o instanceof Item) {
-                return compareTo((Item) o) == 0;
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return (name + desc).hashCode();
+            this.descriptor = descriptor;
         }
     }
 }

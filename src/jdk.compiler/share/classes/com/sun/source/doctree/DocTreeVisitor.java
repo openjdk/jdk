@@ -311,6 +311,21 @@ public interface DocTreeVisitor<R,P> {
     }
 
     /**
+     * Visits a SystemPropertyTree node.
+     *
+     * @implSpec Visits a {@code SystemPropertyTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 12
+     */
+    default R visitSystemProperty(SystemPropertyTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
      * Visits a TextTree node.
      * @param node the node being visited
      * @param p a parameter value

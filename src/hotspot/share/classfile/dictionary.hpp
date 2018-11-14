@@ -36,8 +36,7 @@ class DictionaryEntry;
 class BoolObjectClosure;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// The data structure for the class loader data dictionaries (and the shared system
-// dictionary).
+// The data structure for the class loader data dictionaries.
 
 class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   friend class VMStructs;
@@ -54,8 +53,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
 
   void clean_cached_protection_domains(DictionaryEntry* probe);
 
-protected:
-  static size_t entry_size();
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
   Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries, bool resizable = false);
@@ -70,15 +67,12 @@ public:
 
   InstanceKlass* find_class(int index, unsigned int hash, Symbol* name);
 
-  InstanceKlass* find_shared_class(int index, unsigned int hash, Symbol* name);
-
   void classes_do(void f(InstanceKlass*));
   void classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
   void all_entries_do(KlassClosure* closure);
   void classes_do(MetaspaceClosure* it);
 
   void unlink();
-  void remove_classes_in_error_state();
 
   // Unload classes whose defining loaders are unloaded
   void do_unloading();
@@ -91,9 +85,6 @@ public:
   void add_protection_domain(int index, unsigned int hash,
                              InstanceKlass* klass,
                              Handle protection_domain, TRAPS);
-
-  // Sharing support
-  void reorder_dictionary_for_sharing() NOT_CDS_RETURN;
 
   void print_on(outputStream* st) const;
   void verify();

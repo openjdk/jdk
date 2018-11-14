@@ -115,7 +115,6 @@ public:
   static void record_result(const s2 classpath_index,
                             InstanceKlass* result, TRAPS);
   static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
-  static Klass* load_one_class(ClassListParser* parser, TRAPS);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }

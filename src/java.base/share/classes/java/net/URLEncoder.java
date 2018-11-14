@@ -109,7 +109,7 @@ public class URLEncoder {
          * list. It is also noteworthy that this is consistent with
          * O'Reilly's "HTML: The Definitive Guide" (page 164).
          *
-         * As a last note, Intenet Explorer does not encode the "@"
+         * As a last note, Internet Explorer does not encode the "@"
          * character which is clearly not unreserved according to the
          * RFC. We are being consistent with the RFC in this matter,
          * as is Netscape.

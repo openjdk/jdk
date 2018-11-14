@@ -54,7 +54,7 @@ callbackClassPrepare(jvmtiEnv *jvmti,
     redefineNumber=0;
     jvmti->GetClassSignature(klass, &className, &generic);
     /* printf("Agent::Class Name %s \n",className); */
-    if((strcmp(className, CLASS_NAME) == 0)) {
+    if ((strcmp(className, CLASS_NAME) == 0)) {
         jclass cls;
         cls = jni->FindClass(SEARCH_NAME);
         if (cls == NULL) {

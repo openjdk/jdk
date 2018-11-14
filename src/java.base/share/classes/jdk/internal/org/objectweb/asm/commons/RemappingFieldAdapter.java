@@ -56,7 +56,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -75,28 +74,31 @@ public class RemappingFieldAdapter extends FieldVisitor {
 
     private final Remapper remapper;
 
-    public RemappingFieldAdapter(final FieldVisitor fv, final Remapper remapper) {
-        this(Opcodes.ASM6, fv, remapper);
+    public RemappingFieldAdapter(final FieldVisitor fieldVisitor, final Remapper remapper) {
+        this(Opcodes.ASM6, fieldVisitor, remapper);
     }
 
-    protected RemappingFieldAdapter(final int api, final FieldVisitor fv,
-            final Remapper remapper) {
-        super(api, fv);
+    protected RemappingFieldAdapter(
+            final int api, final FieldVisitor fieldVisitor, final Remapper remapper) {
+        super(api, fieldVisitor);
         this.remapper = remapper;
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        AnnotationVisitor av = fv.visitAnnotation(remapper.mapDesc(desc),
-                visible);
-        return av == null ? null : new RemappingAnnotationAdapter(av, remapper);
+    public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
+        AnnotationVisitor annotationVisitor = fv.visitAnnotation(remapper.mapDesc(descriptor), visible);
+        return annotationVisitor == null
+                ? null
+                : new RemappingAnnotationAdapter(annotationVisitor, remapper);
     }
 
     @Override
-    public AnnotationVisitor visitTypeAnnotation(int typeRef,
-            TypePath typePath, String desc, boolean visible) {
-        AnnotationVisitor av = super.visitTypeAnnotation(typeRef, typePath,
-                remapper.mapDesc(desc), visible);
-        return av == null ? null : new RemappingAnnotationAdapter(av, remapper);
+    public AnnotationVisitor visitTypeAnnotation(
+            final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
+        AnnotationVisitor annotationVisitor =
+                super.visitTypeAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
+        return annotationVisitor == null
+                ? null
+                : new RemappingAnnotationAdapter(annotationVisitor, remapper);
     }
 }

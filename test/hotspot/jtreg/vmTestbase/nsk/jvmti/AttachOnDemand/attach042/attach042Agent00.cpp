@@ -48,7 +48,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
         jthread thread) {
     char startedThreadName[MAX_STRING_LENGTH];
 
-    if(!nsk_jvmti_aod_getThreadName(jvmti, thread, startedThreadName)) {
+    if (!nsk_jvmti_aod_getThreadName(jvmti, thread, startedThreadName)) {
         nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, 0, jvmti, jni);
         return;
     }
@@ -62,7 +62,7 @@ void JNICALL threadStartHandler(jvmtiEnv *jvmti,
         int i;
         int startedThreadWasFound = 0;
 
-        if(!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadsCount, &threads))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threadsCount, &threads))) {
             NSK_COMPLAIN1("%s: failed to get all threads\n", agentName);
             nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_THREAD_START, 0, jvmti, jni);
             return;

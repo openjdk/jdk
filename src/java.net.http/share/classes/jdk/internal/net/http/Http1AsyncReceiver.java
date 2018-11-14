@@ -282,7 +282,7 @@ class Http1AsyncReceiver {
         // The most recently subscribed delegate will get the error.
         // If the delegate is null, the error will be handled by the next
         // delegate that subscribes.
-        // If the queue is not empty, wait until it it is empty before
+        // If the queue is not empty, wait until it is empty before
         // handling the error.
         Http1AsyncDelegate delegate = pendingDelegateRef.get();
         if (delegate == null) delegate = this.delegate;

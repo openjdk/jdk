@@ -145,7 +145,7 @@ void doRedirect(JNIEnv *env, jclass cls) {
             env->FatalError("cannot get field ID");
         }
 
-        switch(i) {
+        switch (i) {
         case 0:
             if (verbose)
                 printf("\ndoRedirect: overwriting the function CallStaticDoubleMethodV ...\n");
@@ -199,7 +199,7 @@ void doCall(JNIEnv *env, jobject obj, jclass objCls, const char *msg) {
         if (verbose)
             printf("\ndoCall: calling %s JNI method for \"%s %s\"...\n",
                 msg, meth_info[i].m_name, meth_info[i].m_sign);
-        switch(i) {
+        switch (i) {
         case 0:
             dVal = env->CallStaticDoubleMethod(objCls, meth_info[i].mid, 73);
             break;

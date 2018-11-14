@@ -268,7 +268,7 @@ int nsk_jvmti_parseOptions(const char options[]) {
          * If this break is not there then It will expects
          * to have. so a space should be sufficient as well.
          */
-        for(val_len=0; !(*opt_end == '\0' || isOptSep(*opt_end)); opt_end++,val_len++) {
+        for (val_len=0; !(*opt_end == '\0' || isOptSep(*opt_end)); opt_end++,val_len++) {
             //if (*opt_end == NSK_JVMTI_OPTION_START) {
             //    break;
             //}
