@@ -59,7 +59,6 @@
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.Map;
-
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
@@ -71,23 +70,21 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 public class LdcInsnNode extends AbstractInsnNode {
 
     /**
-     * The constant to be loaded on the stack. This parameter must be a non null
-     * {@link Integer}, a {@link Float}, a {@link Long}, a {@link Double}, a
-     * {@link String} or a {@link jdk.internal.org.objectweb.asm.Type}.
-     */
+      * The constant to be loaded on the stack. This parameter must be a non null {@link Integer}, a
+      * {@link Float}, a {@link Long}, a {@link Double}, a {@link String} or a {@link
+      * jdk.internal.org.objectweb.asm.Type}.
+      */
     public Object cst;
 
     /**
-     * Constructs a new {@link LdcInsnNode}.
-     *
-     * @param cst
-     *            the constant to be loaded on the stack. This parameter must be
-     *            a non null {@link Integer}, a {@link Float}, a {@link Long}, a
-     *            {@link Double} or a {@link String}.
-     */
-    public LdcInsnNode(final Object cst) {
+      * Constructs a new {@link LdcInsnNode}.
+      *
+      * @param value the constant to be loaded on the stack. This parameter must be a non null {@link
+      *     Integer}, a {@link Float}, a {@link Long}, a {@link Double} or a {@link String}.
+      */
+    public LdcInsnNode(final Object value) {
         super(Opcodes.LDC);
-        this.cst = cst;
+        this.cst = value;
     }
 
     @Override
@@ -96,13 +93,13 @@ public class LdcInsnNode extends AbstractInsnNode {
     }
 
     @Override
-    public void accept(final MethodVisitor mv) {
-        mv.visitLdcInsn(cst);
-        acceptAnnotations(mv);
+    public void accept(final MethodVisitor methodVisitor) {
+        methodVisitor.visitLdcInsn(cst);
+        acceptAnnotations(methodVisitor);
     }
 
     @Override
-    public AbstractInsnNode clone(final Map<LabelNode, LabelNode> labels) {
+    public AbstractInsnNode clone(final Map<LabelNode, LabelNode> clonedLabels) {
         return new LdcInsnNode(cst).cloneAnnotations(this);
     }
 }

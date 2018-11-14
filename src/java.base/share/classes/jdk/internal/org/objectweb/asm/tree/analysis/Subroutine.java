@@ -60,7 +60,6 @@ package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.internal.org.objectweb.asm.tree.JumpInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LabelNode;
 
@@ -69,40 +68,60 @@ import jdk.internal.org.objectweb.asm.tree.LabelNode;
  *
  * @author Eric Bruneton
  */
-class Subroutine {
+final class Subroutine {
 
-    LabelNode start;
+    /** The start of this subroutine. */
+    final LabelNode start;
 
-    boolean[] access;
+    /**
+      * The local variables that are read or written by this subroutine. The i-th element is true if
+      * and only if the local variable at index i is read or written by this subroutine.
+      */
+    final boolean[] localsUsed;
 
-    List<JumpInsnNode> callers;
+    /** The JSR instructions that jump to this subroutine. */
+    final List<JumpInsnNode> callers;
 
-    private Subroutine() {
-    }
-
-    Subroutine(final LabelNode start, final int maxLocals,
-            final JumpInsnNode caller) {
+    /**
+      * Constructs a new {@link Subroutine}.
+      *
+      * @param start the start of this subroutine.
+      * @param maxLocals the local variables that are read or written by this subroutine.
+      * @param caller a JSR instruction that jump to this subroutine.
+      */
+    Subroutine(final LabelNode start, final int maxLocals, final JumpInsnNode caller) {
         this.start = start;
-        this.access = new boolean[maxLocals];
+        this.localsUsed = new boolean[maxLocals];
         this.callers = new ArrayList<JumpInsnNode>();
         callers.add(caller);
     }
 
-    public Subroutine copy() {
-        Subroutine result = new Subroutine();
-        result.start = start;
-        result.access = new boolean[access.length];
-        System.arraycopy(access, 0, result.access, 0, access.length);
-        result.callers = new ArrayList<JumpInsnNode>(callers);
-        return result;
+    /**
+      * Constructs a copy of the given {@link Subroutine}.
+      *
+      * @param subroutine the subroutine to copy.
+      */
+    Subroutine(final Subroutine subroutine) {
+        this.start = subroutine.start;
+        this.localsUsed = new boolean[subroutine.localsUsed.length];
+        this.callers = new ArrayList<JumpInsnNode>(subroutine.callers);
+        System.arraycopy(subroutine.localsUsed, 0, this.localsUsed, 0, subroutine.localsUsed.length);
     }
 
-    public boolean merge(final Subroutine subroutine) throws AnalyzerException {
-        boolean changes = false;
-        for (int i = 0; i < access.length; ++i) {
-            if (subroutine.access[i] && !access[i]) {
-                access[i] = true;
-                changes = true;
+    /**
+      * Merges the given subroutine into this subroutine. The local variables read or written by the
+      * given subroutine are marked as read or written by this one, and the callers of the given
+      * subroutine are added as callers of this one (if both have the same start).
+      *
+      * @param subroutine another subroutine. This subroutine is left unchanged by this method.
+      * @return whether this subroutine has been modified by this method.
+      */
+    public boolean merge(final Subroutine subroutine) {
+        boolean changed = false;
+        for (int i = 0; i < localsUsed.length; ++i) {
+            if (subroutine.localsUsed[i] && !localsUsed[i]) {
+                localsUsed[i] = true;
+                changed = true;
             }
         }
         if (subroutine.start == start) {
@@ -110,10 +129,10 @@ class Subroutine {
                 JumpInsnNode caller = subroutine.callers.get(i);
                 if (!callers.contains(caller)) {
                     callers.add(caller);
-                    changes = true;
+                    changed = true;
                 }
             }
         }
-        return changes;
+        return changed;
     }
 }

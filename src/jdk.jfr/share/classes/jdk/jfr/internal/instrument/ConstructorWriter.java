@@ -39,7 +39,7 @@ final class ConstructorWriter extends MethodVisitor {
     private String fullClassName;
 
     ConstructorWriter(Class<?> classToChange, boolean useInputParameter) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM7);
         this.useInputParameter = useInputParameter;
         shortClassName = classToChange.getSimpleName();
         fullClassName = classToChange.getName().replace('.', '/');

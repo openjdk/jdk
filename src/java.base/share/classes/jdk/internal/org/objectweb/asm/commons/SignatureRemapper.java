@@ -56,133 +56,149 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm.commons;
 
-import java.util.Stack;
-
+import java.util.ArrayList;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * A {@link SignatureVisitor} that remaps types with a {@link Remapper}.
  *
  * @author Eugene Kuleshov
  */
 public class SignatureRemapper extends SignatureVisitor {
 
-    private final SignatureVisitor v;
+    private final SignatureVisitor signatureVisitor;
 
     private final Remapper remapper;
 
-    private Stack<String> classNames = new Stack<String>();
+    private ArrayList<String> classNames = new ArrayList<String>();
 
-    public SignatureRemapper(final SignatureVisitor v, final Remapper remapper) {
-        this(Opcodes.ASM6, v, remapper);
+    /**
+      * Constructs a new {@link SignatureRemapper}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #SignatureRemapper(int,SignatureVisitor,Remapper)} version.
+      *
+      * @param signatureVisitor the signature visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited signature.
+      */
+    public SignatureRemapper(final SignatureVisitor signatureVisitor, final Remapper remapper) {
+        this(Opcodes.ASM7, signatureVisitor, remapper);
     }
 
-    protected SignatureRemapper(final int api, final SignatureVisitor v,
-            final Remapper remapper) {
+    /**
+      * Constructs a new {@link SignatureRemapper}.
+      *
+      * @param api the ASM API version supported by this remapper. Must be one of {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      * @param signatureVisitor the signature visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited signature.
+      */
+    protected SignatureRemapper(
+            final int api, final SignatureVisitor signatureVisitor, final Remapper remapper) {
         super(api);
-        this.v = v;
+        this.signatureVisitor = signatureVisitor;
         this.remapper = remapper;
     }
 
     @Override
-    public void visitClassType(String name) {
-        classNames.push(name);
-        v.visitClassType(remapper.mapType(name));
+    public void visitClassType(final String name) {
+        classNames.add(name);
+        signatureVisitor.visitClassType(remapper.mapType(name));
     }
 
     @Override
-    public void visitInnerClassType(String name) {
-        String outerClassName = classNames.pop();
+    public void visitInnerClassType(final String name) {
+        String outerClassName = classNames.remove(classNames.size() - 1);
         String className = outerClassName + '$' + name;
-        classNames.push(className);
+        classNames.add(className);
         String remappedOuter = remapper.mapType(outerClassName) + '$';
         String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
+        int index =
+                remappedName.startsWith(remappedOuter)
+                        ? remappedOuter.length()
+                        : remappedName.lastIndexOf('$') + 1;
+        signatureVisitor.visitInnerClassType(remappedName.substring(index));
     }
 
     @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
+    public void visitFormalTypeParameter(final String name) {
+        signatureVisitor.visitFormalTypeParameter(name);
     }
 
     @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
+    public void visitTypeVariable(final String name) {
+        signatureVisitor.visitTypeVariable(name);
     }
 
     @Override
     public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
+        signatureVisitor.visitArrayType();
         return this;
     }
 
     @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
+    public void visitBaseType(final char descriptor) {
+        signatureVisitor.visitBaseType(descriptor);
     }
 
     @Override
     public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
+        signatureVisitor.visitClassBound();
         return this;
     }
 
     @Override
     public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
+        signatureVisitor.visitExceptionType();
         return this;
     }
 
     @Override
     public SignatureVisitor visitInterface() {
-        v.visitInterface();
+        signatureVisitor.visitInterface();
         return this;
     }
 
     @Override
     public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
+        signatureVisitor.visitInterfaceBound();
         return this;
     }
 
     @Override
     public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
+        signatureVisitor.visitParameterType();
         return this;
     }
 
     @Override
     public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
+        signatureVisitor.visitReturnType();
         return this;
     }
 
     @Override
     public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
+        signatureVisitor.visitSuperclass();
         return this;
     }
 
     @Override
     public void visitTypeArgument() {
-        v.visitTypeArgument();
+        signatureVisitor.visitTypeArgument();
     }
 
     @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
+    public SignatureVisitor visitTypeArgument(final char wildcard) {
+        signatureVisitor.visitTypeArgument(wildcard);
         return this;
     }
 
     @Override
     public void visitEnd() {
-        v.visitEnd();
-        classNames.pop();
+        signatureVisitor.visitEnd();
+        classNames.remove(classNames.size() - 1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class CTVMUtilities {
 
         public ClassVisitorForLabels(ClassWriter cw, Map<Label, Integer> lines,
                                      Executable target) {
-            super(Opcodes.ASM5, cw);
+            super(Opcodes.ASM7, cw);
             this.lineNumbers = lines;
 
             StringBuilder builder = new StringBuilder("(");
@@ -137,7 +137,7 @@ public class CTVMUtilities {
             MethodVisitor mv = cv.visitMethod(access, name, desc, signature,
                     exceptions);
             if (targetDesc.equals(desc) && targetName.equals(name)) {
-                return new MethodVisitor(Opcodes.ASM5, mv) {
+                return new MethodVisitor(Opcodes.ASM7, mv) {
                     @Override
                     public void visitLineNumber(int i, Label label) {
                         super.visitLineNumber(i, label);

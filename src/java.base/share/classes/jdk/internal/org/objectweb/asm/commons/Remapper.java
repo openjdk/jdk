@@ -56,234 +56,305 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm.commons;
 
+import jdk.internal.org.objectweb.asm.ConstantDynamic;
 import jdk.internal.org.objectweb.asm.Handle;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.signature.SignatureReader;
 import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
 import jdk.internal.org.objectweb.asm.signature.SignatureWriter;
 
 /**
- * A class responsible for remapping types and names. Subclasses can override
- * the following methods:
- *
- * <ul>
- * <li>{@link #map(String)} - map type</li>
- * <li>{@link #mapFieldName(String, String, String)} - map field name</li>
- * <li>{@link #mapMethodName(String, String, String)} - map method name</li>
- * </ul>
+ * A class responsible for remapping types and names.
  *
  * @author Eugene Kuleshov
  */
 public abstract class Remapper {
 
-    public String mapDesc(String desc) {
-        Type t = Type.getType(desc);
-        switch (t.getSort()) {
-        case Type.ARRAY:
-            String s = mapDesc(t.getElementType().getDescriptor());
-            for (int i = 0; i < t.getDimensions(); ++i) {
-                s = '[' + s;
-            }
-            return s;
-        case Type.OBJECT:
-            String newType = map(t.getInternalName());
-            if (newType != null) {
-                return 'L' + newType + ';';
-            }
-        }
-        return desc;
+    /**
+      * Returns the given descriptor, remapped with {@link #map(String)}.
+      *
+      * @param descriptor a type descriptor.
+      * @return the given descriptor, with its [array element type] internal name remapped with {@link
+      *     #map(String)} (if the descriptor corresponds to an array or object type, otherwise the
+      *     descriptor is returned as is).
+      */
+    public String mapDesc(final String descriptor) {
+        return mapType(Type.getType(descriptor)).getDescriptor();
     }
 
-    private Type mapType(Type t) {
-        switch (t.getSort()) {
-        case Type.ARRAY:
-            String s = mapDesc(t.getElementType().getDescriptor());
-            for (int i = 0; i < t.getDimensions(); ++i) {
-                s = '[' + s;
-            }
-            return Type.getType(s);
-        case Type.OBJECT:
-            s = map(t.getInternalName());
-            return s != null ? Type.getObjectType(s) : t;
-        case Type.METHOD:
-            return Type.getMethodType(mapMethodDesc(t.getDescriptor()));
+    /**
+      * Returns the given {@link Type}, remapped with {@link #map(String)} or {@link
+      * #mapMethodDesc(String)}.
+      *
+      * @param type a type, which can be a method type.
+      * @return the given type, with its [array element type] internal name remapped with {@link
+      *     #map(String)} (if the type is an array or object type, otherwise the type is returned as
+      *     is) or, of the type is a method type, with its descriptor remapped with {@link
+      *     #mapMethodDesc(String)}.
+      */
+    private Type mapType(final Type type) {
+        switch (type.getSort()) {
+            case Type.ARRAY:
+                StringBuilder remappedDescriptor = new StringBuilder();
+                for (int i = 0; i < type.getDimensions(); ++i) {
+                    remappedDescriptor.append('[');
+                }
+                remappedDescriptor.append(mapType(type.getElementType()).getDescriptor());
+                return Type.getType(remappedDescriptor.toString());
+            case Type.OBJECT:
+                String remappedInternalName = map(type.getInternalName());
+                return remappedInternalName != null ? Type.getObjectType(remappedInternalName) : type;
+            case Type.METHOD:
+                return Type.getMethodType(mapMethodDesc(type.getDescriptor()));
+            default:
+                return type;
         }
-        return t;
     }
 
-    public String mapType(String type) {
-        if (type == null) {
+    /**
+      * Returns the given internal name, remapped with {@link #map(String)}.
+      *
+      * @param internalName the internal name (or array type descriptor) of some (array) class.
+      * @return the given internal name, remapped with {@link #map(String)}.
+      */
+    public String mapType(final String internalName) {
+        if (internalName == null) {
             return null;
         }
-        return mapType(Type.getObjectType(type)).getInternalName();
+        return mapType(Type.getObjectType(internalName)).getInternalName();
     }
 
-    public String[] mapTypes(String[] types) {
-        String[] newTypes = null;
-        boolean needMapping = false;
-        for (int i = 0; i < types.length; i++) {
-            String type = types[i];
-            String newType = map(type);
-            if (newType != null && newTypes == null) {
-                newTypes = new String[types.length];
-                if (i > 0) {
-                    System.arraycopy(types, 0, newTypes, 0, i);
+    /**
+      * Returns the given internal names, remapped with {@link #map(String)}.
+      *
+      * @param internalNames the internal names (or array type descriptors) of some (array) classes.
+      * @return the given internal name, remapped with {@link #map(String)}.
+      */
+    public String[] mapTypes(final String[] internalNames) {
+        String[] remappedInternalNames = null;
+        for (int i = 0; i < internalNames.length; ++i) {
+            String internalName = internalNames[i];
+            String remappedInternalName = mapType(internalName);
+            if (remappedInternalName != null) {
+                if (remappedInternalNames == null) {
+                    remappedInternalNames = new String[internalNames.length];
+                    System.arraycopy(internalNames, 0, remappedInternalNames, 0, internalNames.length);
                 }
-                needMapping = true;
-            }
-            if (needMapping) {
-                newTypes[i] = newType == null ? type : newType;
+                remappedInternalNames[i] = remappedInternalName;
             }
         }
-        return needMapping ? newTypes : types;
+        return remappedInternalNames != null ? remappedInternalNames : internalNames;
     }
 
-    public String mapMethodDesc(String desc) {
-        if ("()V".equals(desc)) {
-            return desc;
+    /**
+      * Returns the given method descriptor, with its argument and return type descriptors remapped
+      * with {@link #mapDesc(String)}.
+      *
+      * @param methodDescriptor a method descriptor.
+      * @return the given method descriptor, with its argument and return type descriptors remapped
+      *     with {@link #mapDesc(String)}.
+      */
+    public String mapMethodDesc(final String methodDescriptor) {
+        if ("()V".equals(methodDescriptor)) {
+            return methodDescriptor;
         }
 
-        Type[] args = Type.getArgumentTypes(desc);
-        StringBuilder sb = new StringBuilder("(");
-        for (int i = 0; i < args.length; i++) {
-            sb.append(mapDesc(args[i].getDescriptor()));
+        StringBuilder stringBuilder = new StringBuilder("(");
+        for (Type argumentType : Type.getArgumentTypes(methodDescriptor)) {
+            stringBuilder.append(mapType(argumentType).getDescriptor());
         }
-        Type returnType = Type.getReturnType(desc);
+        Type returnType = Type.getReturnType(methodDescriptor);
         if (returnType == Type.VOID_TYPE) {
-            sb.append(")V");
-            return sb.toString();
+            stringBuilder.append(")V");
+        } else {
+            stringBuilder.append(')').append(mapType(returnType).getDescriptor());
         }
-        sb.append(')').append(mapDesc(returnType.getDescriptor()));
-        return sb.toString();
+        return stringBuilder.toString();
     }
 
-    public Object mapValue(Object value) {
+    /**
+      * Returns the given value, remapped with this remapper. Possible values are {@link Boolean},
+      * {@link Byte}, {@link Short}, {@link Character}, {@link Integer}, {@link Long}, {@link Double},
+      * {@link Float}, {@link String}, {@link Type}, {@link Handle}, {@link ConstantDynamic} or arrays
+      * of primitive types .
+      *
+      * @param value an object. Only {@link Type}, {@link Handle} and {@link ConstantDynamic} values
+      *     are remapped.
+      * @return the given value, remapped with this remapper.
+      */
+    public Object mapValue(final Object value) {
         if (value instanceof Type) {
             return mapType((Type) value);
         }
         if (value instanceof Handle) {
-            Handle h = (Handle) value;
-            return new Handle(h.getTag(), mapType(h.getOwner()), mapMethodName(
-                    h.getOwner(), h.getName(), h.getDesc()),
-                    mapMethodDesc(h.getDesc()), h.isInterface());
+            Handle handle = (Handle) value;
+            return new Handle(
+                    handle.getTag(),
+                    mapType(handle.getOwner()),
+                    mapMethodName(handle.getOwner(), handle.getName(), handle.getDesc()),
+                    handle.getTag() <= Opcodes.H_PUTSTATIC
+                            ? mapDesc(handle.getDesc())
+                            : mapMethodDesc(handle.getDesc()),
+                    handle.isInterface());
+        }
+        if (value instanceof ConstantDynamic) {
+            ConstantDynamic constantDynamic = (ConstantDynamic) value;
+            int bootstrapMethodArgumentCount = constantDynamic.getBootstrapMethodArgumentCount();
+            Object[] remappedBootstrapMethodArguments = new Object[bootstrapMethodArgumentCount];
+            for (int i = 0; i < bootstrapMethodArgumentCount; ++i) {
+                remappedBootstrapMethodArguments[i] =
+                        mapValue(constantDynamic.getBootstrapMethodArgument(i));
+            }
+            String descriptor = constantDynamic.getDescriptor();
+            return new ConstantDynamic(
+                    mapInvokeDynamicMethodName(constantDynamic.getName(), descriptor),
+                    mapDesc(descriptor),
+                    (Handle) mapValue(constantDynamic.getBootstrapMethod()),
+                    remappedBootstrapMethodArguments);
         }
         return value;
     }
 
     /**
-     * @param signature
-     *            signature for mapper
-     * @param typeSignature
-     *            true if signature is a FieldTypeSignature, such as the
-     *            signature parameter of the ClassVisitor.visitField or
-     *            MethodVisitor.visitLocalVariable methods
-     * @return signature rewritten as a string
-     */
-    public String mapSignature(String signature, boolean typeSignature) {
+      * Returns the given signature, remapped with the {@link SignatureVisitor} returned by {@link
+      * #createSignatureRemapper(SignatureVisitor)}.
+      *
+      * @param signature a <i>JavaTypeSignature</i>, <i>ClassSignature</i> or <i>MethodSignature</i>.
+      * @param typeSignature whether the given signature is a <i>JavaTypeSignature</i>.
+      * @return signature the given signature, remapped with the {@link SignatureVisitor} returned by
+      *     {@link #createSignatureRemapper(SignatureVisitor)}.
+      */
+    public String mapSignature(final String signature, final boolean typeSignature) {
         if (signature == null) {
             return null;
         }
-        SignatureReader r = new SignatureReader(signature);
-        SignatureWriter w = new SignatureWriter();
-        SignatureVisitor a = createSignatureRemapper(w);
+        SignatureReader signatureReader = new SignatureReader(signature);
+        SignatureWriter signatureWriter = new SignatureWriter();
+        SignatureVisitor signatureRemapper = createSignatureRemapper(signatureWriter);
         if (typeSignature) {
-            r.acceptType(a);
+            signatureReader.acceptType(signatureRemapper);
         } else {
-            r.accept(a);
+            signatureReader.accept(signatureRemapper);
         }
-        return w.toString();
+        return signatureWriter.toString();
     }
 
     /**
-     * @deprecated use {@link #createSignatureRemapper} instead.
-     */
+      * Constructs a new remapper for signatures. The default implementation of this method returns a
+      * new {@link SignatureRemapper}.
+      *
+      * @param signatureVisitor the SignatureVisitor the remapper must delegate to.
+      * @return the newly created remapper.
+      * @deprecated use {@link #createSignatureRemapper} instead.
+      */
     @Deprecated
     protected SignatureVisitor createRemappingSignatureAdapter(
-            SignatureVisitor v) {
-        return new SignatureRemapper(v, this);
-    }
-
-    protected SignatureVisitor createSignatureRemapper(
-            SignatureVisitor v) {
-        return createRemappingSignatureAdapter(v);
+            final SignatureVisitor signatureVisitor) {
+        return createSignatureRemapper(signatureVisitor);
     }
 
     /**
-     * Map method name to the new name. Subclasses can override.
-     *
-     * @param owner
-     *            owner of the method.
-     * @param name
-     *            name of the method.
-     * @param desc
-     *            descriptor of the method.
-     * @return new name of the method
-     */
-    public String mapMethodName(String owner, String name, String desc) {
+      * Constructs a new remapper for signatures. The default implementation of this method returns a
+      * new {@link SignatureRemapper}.
+      *
+      * @param signatureVisitor the SignatureVisitor the remapper must delegate to.
+      * @return the newly created remapper.
+      */
+    protected SignatureVisitor createSignatureRemapper(final SignatureVisitor signatureVisitor) {
+        return new SignatureRemapper(signatureVisitor, this);
+    }
+
+    /**
+      * Maps an inner class name to its new name. The default implementation of this method provides a
+      * strategy that will work for inner classes produced by Java, but not necessarily other
+      * languages. Subclasses can override.
+      *
+      * @param name the fully-qualified internal name of the inner class.
+      * @param ownerName the internal name of the owner class of the inner class.
+      * @param innerName the internal name of the inner class.
+      * @return the new inner name of the inner class.
+      */
+    public String mapInnerClassName(
+            final String name, final String ownerName, final String innerName) {
+        final String remappedInnerName = this.mapType(name);
+        if (remappedInnerName.contains("$")) {
+            return remappedInnerName.substring(remappedInnerName.lastIndexOf('$') + 1);
+        } else {
+            return innerName;
+        }
+    }
+
+    /**
+      * Maps a method name to its new name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param owner the internal name of the owner class of the method.
+      * @param name the name of the method.
+      * @param descriptor the descriptor of the method.
+      * @return the new name of the method.
+      */
+    public String mapMethodName(final String owner, final String name, final String descriptor) {
         return name;
     }
 
     /**
-     * Map invokedynamic method name to the new name. Subclasses can override.
-     *
-     * @param name
-     *            name of the invokedynamic.
-     * @param desc
-     *            descriptor of the invokedynamic.
-     * @return new invokdynamic name.
-     */
-    public String mapInvokeDynamicMethodName(String name, String desc) {
+      * Maps an invokedynamic or a constant dynamic method name to its new name. The default
+      * implementation of this method returns the given name, unchanged. Subclasses can override.
+      *
+      * @param name the name of the method.
+      * @param descriptor the descriptor of the method.
+      * @return the new name of the method.
+      */
+    public String mapInvokeDynamicMethodName(final String name, final String descriptor) {
         return name;
     }
 
     /**
-     * Map field name to the new name. Subclasses can override.
-     *
-     * @param owner
-     *            owner of the field.
-     * @param name
-     *            name of the field
-     * @param desc
-     *            descriptor of the field
-     * @return new name of the field.
-     */
-    public String mapFieldName(String owner, String name, String desc) {
+      * Maps a field name to its new name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param owner the internal name of the owner class of the field.
+      * @param name the name of the field.
+      * @param descriptor the descriptor of the field.
+      * @return the new name of the field.
+      */
+    public String mapFieldName(final String owner, final String name, final String descriptor) {
         return name;
     }
 
     /**
-     * Map package name to the new name. Subclasses can override.
-     *
-     * @param name name of the package
-     * @return new name of the package
-     */
-    public String mapPackageName(String name) {
-        String fakeName = map(name + ".FakeClassName");
-        int index;
-        return fakeName == null || (index = fakeName.lastIndexOf('.')) == -1 ? name: fakeName.substring(0, index);
-    }
-
-    /**
-     * Map module name to the new name. Subclasses can override.
-     *
-     * @param name name of the module
-     * @return new name of the module
-     */
-    public String mapModuleName(String name) {
+      * Maps a package name to its new name. The default implementation of this method returns the
+      * given name, unchanged. Subclasses can override.
+      *
+      * @param name the fully qualified name of the package (using dots).
+      * @return the new name of the package.
+      */
+    public String mapPackageName(final String name) {
         return name;
     }
 
     /**
-     * Map type name to the new name. Subclasses can override.
-     *
-     * @param typeName
-     *            the type name
-     * @return new name, default implementation is the identity.
-     */
-    public String map(String typeName) {
-        return typeName;
+      * Maps a module name to its new name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param name the fully qualified name (using dots) of a module.
+      * @return the new name of the module.
+      */
+    public String mapModuleName(final String name) {
+        return name;
+    }
+
+    /**
+      * Maps the internal name of a class to its new name. The default implementation of this method
+      * returns the given name, unchanged. Subclasses can override.
+      *
+      * @param internalName the internal name of a class.
+      * @return the new internal name.
+      */
+    public String map(final String internalName) {
+        return internalName;
     }
 }

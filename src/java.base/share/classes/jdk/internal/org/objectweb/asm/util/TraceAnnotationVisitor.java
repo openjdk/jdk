@@ -62,57 +62,63 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * An {@link AnnotationVisitor} that prints the annotations it visits with a
- * {@link Printer}.
+ * An {@link AnnotationVisitor} that prints the annotations it visits with a {@link Printer}.
  *
  * @author Eric Bruneton
  */
 public final class TraceAnnotationVisitor extends AnnotationVisitor {
 
-    private final Printer p;
+    /** The printer to convert the visited annotation into text. */
+    private final Printer printer;
 
-    public TraceAnnotationVisitor(final Printer p) {
-        this(null, p);
+    /**
+      * Constructs a new {@link TraceAnnotationVisitor}.
+      *
+      * @param printer the printer to convert the visited annotation into text.
+      */
+    public TraceAnnotationVisitor(final Printer printer) {
+        this(null, printer);
     }
 
-    public TraceAnnotationVisitor(final AnnotationVisitor av, final Printer p) {
-        super(Opcodes.ASM6, av);
-        this.p = p;
+    /**
+      * Constructs a new {@link TraceAnnotationVisitor}.
+      *
+      * @param annotationVisitor the annotation visitor to which to delegate calls. May be {@literal
+      *     null}.
+      * @param printer the printer to convert the visited annotation into text.
+      */
+    public TraceAnnotationVisitor(final AnnotationVisitor annotationVisitor, final Printer printer) {
+        super(Opcodes.ASM7, annotationVisitor);
+        this.printer = printer;
     }
 
     @Override
     public void visit(final String name, final Object value) {
-        p.visit(name, value);
+        printer.visit(name, value);
         super.visit(name, value);
     }
 
     @Override
-    public void visitEnum(final String name, final String desc,
-            final String value) {
-        p.visitEnum(name, desc, value);
-        super.visitEnum(name, desc, value);
+    public void visitEnum(final String name, final String descriptor, final String value) {
+        printer.visitEnum(name, descriptor, value);
+        super.visitEnum(name, descriptor, value);
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(final String name,
-            final String desc) {
-        Printer p = this.p.visitAnnotation(name, desc);
-        AnnotationVisitor av = this.av == null ? null : this.av
-                .visitAnnotation(name, desc);
-        return new TraceAnnotationVisitor(av, p);
+    public AnnotationVisitor visitAnnotation(final String name, final String descriptor) {
+        Printer annotationPrinter = printer.visitAnnotation(name, descriptor);
+        return new TraceAnnotationVisitor(super.visitAnnotation(name, descriptor), annotationPrinter);
     }
 
     @Override
     public AnnotationVisitor visitArray(final String name) {
-        Printer p = this.p.visitArray(name);
-        AnnotationVisitor av = this.av == null ? null : this.av
-                .visitArray(name);
-        return new TraceAnnotationVisitor(av, p);
+        Printer arrayPrinter = printer.visitArray(name);
+        return new TraceAnnotationVisitor(super.visitArray(name), arrayPrinter);
     }
 
     @Override
     public void visitEnd() {
-        p.visitAnnotationEnd();
+        printer.visitAnnotationEnd();
         super.visitEnd();
     }
 }

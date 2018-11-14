@@ -1,4 +1,2 @@
-ASM_6_0-11-gac81f5f
-origin	https://gitlab.ow2.org/asm/asm.git (fetch)
-ac81f5f Merge branch 'add-class-dump-tool-for-unit-tests' into 'master'
-
+ASM_7_0
+origin	http://gitlab.ow2.org/asm/asm.git (fetch)

@@ -106,7 +106,7 @@ final class JIClassInstrumentation {
 
         ClassNode temporary = new ClassNode();
         ClassVisitor inliner = new JIInliner(
-                Opcodes.ASM5,
+                Opcodes.ASM7,
                 temporary,
                 targetName,
                 instrumentorName,

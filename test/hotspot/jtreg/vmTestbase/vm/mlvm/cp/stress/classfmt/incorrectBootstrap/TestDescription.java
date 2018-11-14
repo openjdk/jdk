@@ -50,6 +50,7 @@
  * @comment build test class and indify classes
  * @build vm.mlvm.share.ClassfileGeneratorTest
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
+ * @ignore 8194951
  *
  * @run main/othervm/timeout=300
  *      vm.mlvm.share.ClassfileGeneratorTest

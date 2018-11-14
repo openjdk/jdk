@@ -56,7 +56,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm;
 
 /**
@@ -68,184 +67,153 @@ package jdk.internal.org.objectweb.asm;
 public final class Handle {
 
     /**
-     * The kind of field or method designated by this Handle. Should be
-     * {@link Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC},
-     * {@link Opcodes#H_PUTFIELD}, {@link Opcodes#H_PUTSTATIC},
-     * {@link Opcodes#H_INVOKEVIRTUAL}, {@link Opcodes#H_INVOKESTATIC},
-     * {@link Opcodes#H_INVOKESPECIAL}, {@link Opcodes#H_NEWINVOKESPECIAL} or
-     * {@link Opcodes#H_INVOKEINTERFACE}.
-     */
-    final int tag;
+      * The kind of field or method designated by this Handle. Should be {@link Opcodes#H_GETFIELD},
+      * {@link Opcodes#H_GETSTATIC}, {@link Opcodes#H_PUTFIELD}, {@link Opcodes#H_PUTSTATIC}, {@link
+      * Opcodes#H_INVOKEVIRTUAL}, {@link Opcodes#H_INVOKESTATIC}, {@link Opcodes#H_INVOKESPECIAL},
+      * {@link Opcodes#H_NEWINVOKESPECIAL} or {@link Opcodes#H_INVOKEINTERFACE}.
+      */
+    private final int tag;
+
+    /** The internal name of the class that owns the field or method designated by this handle. */
+    private final String owner;
+
+    /** The name of the field or method designated by this handle. */
+    private final String name;
+
+    /** The descriptor of the field or method designated by this handle. */
+    private final String descriptor;
+
+    /** Whether the owner is an interface or not. */
+    private final boolean isInterface;
 
     /**
-     * The internal name of the class that owns the field or method designated
-     * by this handle.
-     */
-    final String owner;
-
-    /**
-     * The name of the field or method designated by this handle.
-     */
-    final String name;
-
-    /**
-     * The descriptor of the field or method designated by this handle.
-     */
-    final String desc;
-
-
-    /**
-     * Indicate if the owner is an interface or not.
-     */
-    final boolean itf;
-
-    /**
-     * Constructs a new field or method handle.
-     *
-     * @param tag
-     *            the kind of field or method designated by this Handle. Must be
-     *            {@link Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC},
-     *            {@link Opcodes#H_PUTFIELD}, {@link Opcodes#H_PUTSTATIC},
-     *            {@link Opcodes#H_INVOKEVIRTUAL},
-     *            {@link Opcodes#H_INVOKESTATIC},
-     *            {@link Opcodes#H_INVOKESPECIAL},
-     *            {@link Opcodes#H_NEWINVOKESPECIAL} or
-     *            {@link Opcodes#H_INVOKEINTERFACE}.
-     * @param owner
-     *            the internal name of the class that owns the field or method
-     *            designated by this handle.
-     * @param name
-     *            the name of the field or method designated by this handle.
-     * @param desc
-     *            the descriptor of the field or method designated by this
-     *            handle.
-     *
-     * @deprecated this constructor has been superseded
-     *             by {@link #Handle(int, String, String, String, boolean)}.
-     */
+      * Constructs a new field or method handle.
+      *
+      * @param tag the kind of field or method designated by this Handle. Must be {@link
+      *     Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC}, {@link Opcodes#H_PUTFIELD}, {@link
+      *     Opcodes#H_PUTSTATIC}, {@link Opcodes#H_INVOKEVIRTUAL}, {@link Opcodes#H_INVOKESTATIC},
+      *     {@link Opcodes#H_INVOKESPECIAL}, {@link Opcodes#H_NEWINVOKESPECIAL} or {@link
+      *     Opcodes#H_INVOKEINTERFACE}.
+      * @param owner the internal name of the class that owns the field or method designated by this
+      *     handle.
+      * @param name the name of the field or method designated by this handle.
+      * @param descriptor the descriptor of the field or method designated by this handle.
+      * @deprecated this constructor has been superseded by {@link #Handle(int, String, String, String,
+      *     boolean)}.
+      */
     @Deprecated
-    public Handle(int tag, String owner, String name, String desc) {
-        this(tag, owner, name, desc, tag == Opcodes.H_INVOKEINTERFACE);
+    public Handle(final int tag, final String owner, final String name, final String descriptor) {
+        this(tag, owner, name, descriptor, tag == Opcodes.H_INVOKEINTERFACE);
     }
 
     /**
-     * Constructs a new field or method handle.
-     *
-     * @param tag
-     *            the kind of field or method designated by this Handle. Must be
-     *            {@link Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC},
-     *            {@link Opcodes#H_PUTFIELD}, {@link Opcodes#H_PUTSTATIC},
-     *            {@link Opcodes#H_INVOKEVIRTUAL},
-     *            {@link Opcodes#H_INVOKESTATIC},
-     *            {@link Opcodes#H_INVOKESPECIAL},
-     *            {@link Opcodes#H_NEWINVOKESPECIAL} or
-     *            {@link Opcodes#H_INVOKEINTERFACE}.
-     * @param owner
-     *            the internal name of the class that owns the field or method
-     *            designated by this handle.
-     * @param name
-     *            the name of the field or method designated by this handle.
-     * @param desc
-     *            the descriptor of the field or method designated by this
-     *            handle.
-     * @param itf
-     *            true if the owner is an interface.
-     */
-    public Handle(int tag, String owner, String name, String desc, boolean itf) {
+      * Constructs a new field or method handle.
+      *
+      * @param tag the kind of field or method designated by this Handle. Must be {@link
+      *     Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC}, {@link Opcodes#H_PUTFIELD}, {@link
+      *     Opcodes#H_PUTSTATIC}, {@link Opcodes#H_INVOKEVIRTUAL}, {@link Opcodes#H_INVOKESTATIC},
+      *     {@link Opcodes#H_INVOKESPECIAL}, {@link Opcodes#H_NEWINVOKESPECIAL} or {@link
+      *     Opcodes#H_INVOKEINTERFACE}.
+      * @param owner the internal name of the class that owns the field or method designated by this
+      *     handle.
+      * @param name the name of the field or method designated by this handle.
+      * @param descriptor the descriptor of the field or method designated by this handle.
+      * @param isInterface whether the owner is an interface or not.
+      */
+    public Handle(
+            final int tag,
+            final String owner,
+            final String name,
+            final String descriptor,
+            final boolean isInterface) {
         this.tag = tag;
         this.owner = owner;
         this.name = name;
-        this.desc = desc;
-        this.itf = itf;
+        this.descriptor = descriptor;
+        this.isInterface = isInterface;
     }
 
     /**
-     * Returns the kind of field or method designated by this handle.
-     *
-     * @return {@link Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC},
-     *         {@link Opcodes#H_PUTFIELD}, {@link Opcodes#H_PUTSTATIC},
-     *         {@link Opcodes#H_INVOKEVIRTUAL}, {@link Opcodes#H_INVOKESTATIC},
-     *         {@link Opcodes#H_INVOKESPECIAL},
-     *         {@link Opcodes#H_NEWINVOKESPECIAL} or
-     *         {@link Opcodes#H_INVOKEINTERFACE}.
-     */
+      * Returns the kind of field or method designated by this handle.
+      *
+      * @return {@link Opcodes#H_GETFIELD}, {@link Opcodes#H_GETSTATIC}, {@link Opcodes#H_PUTFIELD},
+      *     {@link Opcodes#H_PUTSTATIC}, {@link Opcodes#H_INVOKEVIRTUAL}, {@link
+      *     Opcodes#H_INVOKESTATIC}, {@link Opcodes#H_INVOKESPECIAL}, {@link
+      *     Opcodes#H_NEWINVOKESPECIAL} or {@link Opcodes#H_INVOKEINTERFACE}.
+      */
     public int getTag() {
         return tag;
     }
 
     /**
-     * Returns the internal name of the class that owns the field or method
-     * designated by this handle.
-     *
-     * @return the internal name of the class that owns the field or method
-     *         designated by this handle.
-     */
+      * Returns the internal name of the class that owns the field or method designated by this handle.
+      *
+      * @return the internal name of the class that owns the field or method designated by this handle.
+      */
     public String getOwner() {
         return owner;
     }
 
     /**
-     * Returns the name of the field or method designated by this handle.
-     *
-     * @return the name of the field or method designated by this handle.
-     */
+      * Returns the name of the field or method designated by this handle.
+      *
+      * @return the name of the field or method designated by this handle.
+      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the descriptor of the field or method designated by this handle.
-     *
-     * @return the descriptor of the field or method designated by this handle.
-     */
+      * Returns the descriptor of the field or method designated by this handle.
+      *
+      * @return the descriptor of the field or method designated by this handle.
+      */
     public String getDesc() {
-        return desc;
+        return descriptor;
     }
 
     /**
-     * Returns true if the owner of the field or method designated
-     * by this handle is an interface.
-     *
-     * @return true if the owner of the field or method designated
-     *         by this handle is an interface.
-     */
+      * Returns true if the owner of the field or method designated by this handle is an interface.
+      *
+      * @return true if the owner of the field or method designated by this handle is an interface.
+      */
     public boolean isInterface() {
-        return itf;
+        return isInterface;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
+    public boolean equals(final Object object) {
+        if (object == this) {
             return true;
         }
-        if (!(obj instanceof Handle)) {
+        if (!(object instanceof Handle)) {
             return false;
         }
-        Handle h = (Handle) obj;
-        return tag == h.tag && itf == h.itf && owner.equals(h.owner)
-                && name.equals(h.name) && desc.equals(h.desc);
+        Handle handle = (Handle) object;
+        return tag == handle.tag
+                && isInterface == handle.isInterface
+                && owner.equals(handle.owner)
+                && name.equals(handle.name)
+                && descriptor.equals(handle.descriptor);
     }
 
     @Override
     public int hashCode() {
-        return tag + (itf? 64: 0) + owner.hashCode() * name.hashCode() * desc.hashCode();
+        return tag
+                + (isInterface ? 64 : 0)
+                + owner.hashCode() * name.hashCode() * descriptor.hashCode();
     }
 
     /**
-     * Returns the textual representation of this handle. The textual
-     * representation is:
-     *
-     * <pre>
-     * for a reference to a class:
-     * owner '.' name desc ' ' '(' tag ')'
-     * for a reference to an interface:
-     * owner '.' name desc ' ' '(' tag ' ' itf ')'
-     * </pre>
-     *
-     * . As this format is unambiguous, it can be parsed if necessary.
-     */
+      * Returns the textual representation of this handle. The textual representation is:
+      *
+      * <ul>
+      *   <li>for a reference to a class: owner "." name descriptor " (" tag ")",
+      *   <li>for a reference to an interface: owner "." name descriptor " (" tag " itf)".
+      * </ul>
+      */
     @Override
     public String toString() {
-        return owner + '.' + name + desc + " (" + tag + (itf? " itf": "") + ')';
+        return owner + '.' + name + descriptor + " (" + tag + (isInterface ? " itf" : "") + ')';
     }
 }

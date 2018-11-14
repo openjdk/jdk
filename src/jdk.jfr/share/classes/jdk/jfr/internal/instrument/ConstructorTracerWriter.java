@@ -50,7 +50,7 @@ final class ConstructorTracerWriter extends ClassVisitor {
     }
 
     private ConstructorTracerWriter(ClassVisitor cv, Class<?> classToChange) {
-        super(Opcodes.ASM5, cv);
+        super(Opcodes.ASM7, cv);
         useInputParameter = new ConstructorWriter(classToChange, true);
         noUseInputParameter = new ConstructorWriter(classToChange, false);
     }
