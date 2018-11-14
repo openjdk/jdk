@@ -322,7 +322,7 @@ final class SocketTube implements FlowTube {
         // onNext is usually called from within a user / executor thread.
         // Initial writing will be performed in that thread. If for some reason,
         // not all the data can be written, a writeEvent will be registered, and
-        // writing will resume in the the selector manager thread when the
+        // writing will resume in the selector manager thread when the
         // writeEvent is fired.
         //
         // If this method is invoked in the selector manager thread (because of

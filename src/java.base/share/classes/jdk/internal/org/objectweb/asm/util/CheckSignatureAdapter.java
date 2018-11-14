@@ -58,6 +58,7 @@
  */
 package jdk.internal.org.objectweb.asm.util;
 
+import java.util.EnumSet;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
 
@@ -69,199 +70,204 @@ import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
 public class CheckSignatureAdapter extends SignatureVisitor {
 
     /**
-     * Type to be used to check class signatures. See
-     * {@link #CheckSignatureAdapter(int, SignatureVisitor)
-     * CheckSignatureAdapter}.
-     */
+      * Type to be used to check class signatures. See {@link #CheckSignatureAdapter(int,
+      * SignatureVisitor)}.
+      */
     public static final int CLASS_SIGNATURE = 0;
 
     /**
-     * Type to be used to check method signatures. See
-     * {@link #CheckSignatureAdapter(int, SignatureVisitor)
-     * CheckSignatureAdapter}.
-     */
+      * Type to be used to check method signatures. See {@link #CheckSignatureAdapter(int,
+      * SignatureVisitor)}.
+      */
     public static final int METHOD_SIGNATURE = 1;
 
     /**
-     * Type to be used to check type signatures.See
-     * {@link #CheckSignatureAdapter(int, SignatureVisitor)
-     * CheckSignatureAdapter}.
-     */
+      * Type to be used to check type signatures.See {@link #CheckSignatureAdapter(int,
+      * SignatureVisitor)}.
+      */
     public static final int TYPE_SIGNATURE = 2;
 
-    private static final int EMPTY = 1;
+    /** The valid automaton states for a {@link #visitFormalTypeParameter} method call. */
+    private static final EnumSet<State> VISIT_FORMAL_TYPE_PARAMETER_STATES =
+            EnumSet.of(State.EMPTY, State.FORMAL, State.BOUND);
 
-    private static final int FORMAL = 2;
+    /** The valid automaton states for a {@link #visitClassBound} method call. */
+    private static final EnumSet<State> VISIT_CLASS_BOUND_STATES = EnumSet.of(State.FORMAL);
 
-    private static final int BOUND = 4;
+    /** The valid automaton states for a {@link #visitInterfaceBound} method call. */
+    private static final EnumSet<State> VISIT_INTERFACE_BOUND_STATES =
+            EnumSet.of(State.FORMAL, State.BOUND);
 
-    private static final int SUPER = 8;
+    /** The valid automaton states for a {@link #visitSuperclass} method call. */
+    private static final EnumSet<State> VISIT_SUPER_CLASS_STATES =
+            EnumSet.of(State.EMPTY, State.FORMAL, State.BOUND);
 
-    private static final int PARAM = 16;
+    /** The valid automaton states for a {@link #visitInterface} method call. */
+    private static final EnumSet<State> VISIT_INTERFACE_STATES = EnumSet.of(State.SUPER);
 
-    private static final int RETURN = 32;
+    /** The valid automaton states for a {@link #visitParameterType} method call. */
+    private static final EnumSet<State> VISIT_PARAMETER_TYPE_STATES =
+            EnumSet.of(State.EMPTY, State.FORMAL, State.BOUND, State.PARAM);
 
-    private static final int SIMPLE_TYPE = 64;
+    /** The valid automaton states for a {@link #visitReturnType} method call. */
+    private static final EnumSet<State> VISIT_RETURN_TYPE_STATES =
+            EnumSet.of(State.EMPTY, State.FORMAL, State.BOUND, State.PARAM);
 
-    private static final int CLASS_TYPE = 128;
+    /** The valid automaton states for a {@link #visitExceptionType} method call. */
+    private static final EnumSet<State> VISIT_EXCEPTION_TYPE_STATES = EnumSet.of(State.RETURN);
 
-    private static final int END = 256;
+    /** The possible states of the automaton used to check the order of method calls. */
+    private enum State {
+        EMPTY,
+        FORMAL,
+        BOUND,
+        SUPER,
+        PARAM,
+        RETURN,
+        SIMPLE_TYPE,
+        CLASS_TYPE,
+        END;
+    }
 
-    /**
-     * Type of the signature to be checked.
-     */
+    private static final String INVALID = "Invalid ";
+
+    /** The type of the visited signature. */
     private final int type;
 
-    /**
-     * State of the automaton used to check the order of method calls.
-     */
-    private int state;
+    /** The current state of the automaton used to check the order of method calls. */
+    private State state;
 
-    /**
-     * <tt>true</tt> if the checked type signature can be 'V'.
-     */
+    /** Whether the visited signature can be 'V'. */
     private boolean canBeVoid;
 
-    /**
-     * The visitor to which this adapter must delegate calls. May be
-     * <tt>null</tt>.
-     */
-    private final SignatureVisitor sv;
+    /** The visitor to which this adapter must delegate calls. May be {@literal null}. */
+    private final SignatureVisitor signatureVisitor;
 
     /**
-     * Creates a new {@link CheckSignatureAdapter} object. <i>Subclasses must
-     * not use this constructor</i>. Instead, they must use the
-     * {@link #CheckSignatureAdapter(int, int, SignatureVisitor)} version.
-     *
-     * @param type
-     *            the type of signature to be checked. See
-     *            {@link #CLASS_SIGNATURE}, {@link #METHOD_SIGNATURE} and
-     *            {@link #TYPE_SIGNATURE}.
-     * @param sv
-     *            the visitor to which this adapter must delegate calls. May be
-     *            <tt>null</tt>.
-     */
-    public CheckSignatureAdapter(final int type, final SignatureVisitor sv) {
-        this(Opcodes.ASM6, type, sv);
+      * Constructs a new {@link CheckSignatureAdapter}. <i>Subclasses must not use this
+      * constructor</i>. Instead, they must use the {@link #CheckSignatureAdapter(int, int,
+      * SignatureVisitor)} version.
+      *
+      * @param type the type of signature to be checked. See {@link #CLASS_SIGNATURE}, {@link
+      *     #METHOD_SIGNATURE} and {@link #TYPE_SIGNATURE}.
+      * @param signatureVisitor the visitor to which this adapter must delegate calls. May be {@literal
+      *     null}.
+      */
+    public CheckSignatureAdapter(final int type, final SignatureVisitor signatureVisitor) {
+        this(Opcodes.ASM7, type, signatureVisitor);
     }
 
     /**
-     * Creates a new {@link CheckSignatureAdapter} object.
-     *
-     * @param api
-     *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     * @param type
-     *            the type of signature to be checked. See
-     *            {@link #CLASS_SIGNATURE}, {@link #METHOD_SIGNATURE} and
-     *            {@link #TYPE_SIGNATURE}.
-     * @param sv
-     *            the visitor to which this adapter must delegate calls. May be
-     *            <tt>null</tt>.
-     */
-    protected CheckSignatureAdapter(final int api, final int type,
-            final SignatureVisitor sv) {
+      * Constructs a new {@link CheckSignatureAdapter}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param type the type of signature to be checked. See {@link #CLASS_SIGNATURE}, {@link
+      *     #METHOD_SIGNATURE} and {@link #TYPE_SIGNATURE}.
+      * @param signatureVisitor the visitor to which this adapter must delegate calls. May be {@literal
+      *     null}.
+      */
+    protected CheckSignatureAdapter(
+            final int api, final int type, final SignatureVisitor signatureVisitor) {
         super(api);
         this.type = type;
-        this.state = EMPTY;
-        this.sv = sv;
+        this.state = State.EMPTY;
+        this.signatureVisitor = signatureVisitor;
     }
 
     // class and method signatures
 
     @Override
     public void visitFormalTypeParameter(final String name) {
-        if (type == TYPE_SIGNATURE
-                || (state != EMPTY && state != FORMAL && state != BOUND)) {
+        if (type == TYPE_SIGNATURE || !VISIT_FORMAL_TYPE_PARAMETER_STATES.contains(state)) {
             throw new IllegalStateException();
         }
         checkIdentifier(name, "formal type parameter");
-        state = FORMAL;
-        if (sv != null) {
-            sv.visitFormalTypeParameter(name);
+        state = State.FORMAL;
+        if (signatureVisitor != null) {
+            signatureVisitor.visitFormalTypeParameter(name);
         }
     }
 
     @Override
     public SignatureVisitor visitClassBound() {
-        if (state != FORMAL) {
+        if (type == TYPE_SIGNATURE || !VISIT_CLASS_BOUND_STATES.contains(state)) {
             throw new IllegalStateException();
         }
-        state = BOUND;
-        SignatureVisitor v = sv == null ? null : sv.visitClassBound();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        state = State.BOUND;
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitClassBound());
     }
 
     @Override
     public SignatureVisitor visitInterfaceBound() {
-        if (state != FORMAL && state != BOUND) {
+        if (type == TYPE_SIGNATURE || !VISIT_INTERFACE_BOUND_STATES.contains(state)) {
             throw new IllegalArgumentException();
         }
-        SignatureVisitor v = sv == null ? null : sv.visitInterfaceBound();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitInterfaceBound());
     }
 
     // class signatures
 
     @Override
     public SignatureVisitor visitSuperclass() {
-        if (type != CLASS_SIGNATURE || (state & (EMPTY | FORMAL | BOUND)) == 0) {
+        if (type != CLASS_SIGNATURE || !VISIT_SUPER_CLASS_STATES.contains(state)) {
             throw new IllegalArgumentException();
         }
-        state = SUPER;
-        SignatureVisitor v = sv == null ? null : sv.visitSuperclass();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        state = State.SUPER;
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitSuperclass());
     }
 
     @Override
     public SignatureVisitor visitInterface() {
-        if (state != SUPER) {
+        if (type != CLASS_SIGNATURE || !VISIT_INTERFACE_STATES.contains(state)) {
             throw new IllegalStateException();
         }
-        SignatureVisitor v = sv == null ? null : sv.visitInterface();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitInterface());
     }
 
     // method signatures
 
     @Override
     public SignatureVisitor visitParameterType() {
-        if (type != METHOD_SIGNATURE
-                || (state & (EMPTY | FORMAL | BOUND | PARAM)) == 0) {
+        if (type != METHOD_SIGNATURE || !VISIT_PARAMETER_TYPE_STATES.contains(state)) {
             throw new IllegalArgumentException();
         }
-        state = PARAM;
-        SignatureVisitor v = sv == null ? null : sv.visitParameterType();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        state = State.PARAM;
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitParameterType());
     }
 
     @Override
     public SignatureVisitor visitReturnType() {
-        if (type != METHOD_SIGNATURE
-                || (state & (EMPTY | FORMAL | BOUND | PARAM)) == 0) {
+        if (type != METHOD_SIGNATURE || !VISIT_RETURN_TYPE_STATES.contains(state)) {
             throw new IllegalArgumentException();
         }
-        state = RETURN;
-        SignatureVisitor v = sv == null ? null : sv.visitReturnType();
-        CheckSignatureAdapter cv = new CheckSignatureAdapter(TYPE_SIGNATURE, v);
-        cv.canBeVoid = true;
-        return cv;
+        state = State.RETURN;
+        CheckSignatureAdapter checkSignatureAdapter =
+                new CheckSignatureAdapter(
+                        TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitReturnType());
+        checkSignatureAdapter.canBeVoid = true;
+        return checkSignatureAdapter;
     }
 
     @Override
     public SignatureVisitor visitExceptionType() {
-        if (state != RETURN) {
+        if (type != METHOD_SIGNATURE || !VISIT_EXCEPTION_TYPE_STATES.contains(state)) {
             throw new IllegalStateException();
         }
-        SignatureVisitor v = sv == null ? null : sv.visitExceptionType();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitExceptionType());
     }
 
     // type signatures
 
     @Override
     public void visitBaseType(final char descriptor) {
-        if (type != TYPE_SIGNATURE || state != EMPTY) {
+        if (type != TYPE_SIGNATURE || state != State.EMPTY) {
             throw new IllegalStateException();
         }
         if (descriptor == 'V') {
@@ -273,112 +279,111 @@ public class CheckSignatureAdapter extends SignatureVisitor {
                 throw new IllegalArgumentException();
             }
         }
-        state = SIMPLE_TYPE;
-        if (sv != null) {
-            sv.visitBaseType(descriptor);
+        state = State.SIMPLE_TYPE;
+        if (signatureVisitor != null) {
+            signatureVisitor.visitBaseType(descriptor);
         }
     }
 
     @Override
     public void visitTypeVariable(final String name) {
-        if (type != TYPE_SIGNATURE || state != EMPTY) {
+        if (type != TYPE_SIGNATURE || state != State.EMPTY) {
             throw new IllegalStateException();
         }
         checkIdentifier(name, "type variable");
-        state = SIMPLE_TYPE;
-        if (sv != null) {
-            sv.visitTypeVariable(name);
+        state = State.SIMPLE_TYPE;
+        if (signatureVisitor != null) {
+            signatureVisitor.visitTypeVariable(name);
         }
     }
 
     @Override
     public SignatureVisitor visitArrayType() {
-        if (type != TYPE_SIGNATURE || state != EMPTY) {
+        if (type != TYPE_SIGNATURE || state != State.EMPTY) {
             throw new IllegalStateException();
         }
-        state = SIMPLE_TYPE;
-        SignatureVisitor v = sv == null ? null : sv.visitArrayType();
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        state = State.SIMPLE_TYPE;
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE, signatureVisitor == null ? null : signatureVisitor.visitArrayType());
     }
 
     @Override
     public void visitClassType(final String name) {
-        if (type != TYPE_SIGNATURE || state != EMPTY) {
+        if (type != TYPE_SIGNATURE || state != State.EMPTY) {
             throw new IllegalStateException();
         }
         checkClassName(name, "class name");
-        state = CLASS_TYPE;
-        if (sv != null) {
-            sv.visitClassType(name);
+        state = State.CLASS_TYPE;
+        if (signatureVisitor != null) {
+            signatureVisitor.visitClassType(name);
         }
     }
 
     @Override
     public void visitInnerClassType(final String name) {
-        if (state != CLASS_TYPE) {
+        if (state != State.CLASS_TYPE) {
             throw new IllegalStateException();
         }
         checkIdentifier(name, "inner class name");
-        if (sv != null) {
-            sv.visitInnerClassType(name);
+        if (signatureVisitor != null) {
+            signatureVisitor.visitInnerClassType(name);
         }
     }
 
     @Override
     public void visitTypeArgument() {
-        if (state != CLASS_TYPE) {
+        if (state != State.CLASS_TYPE) {
             throw new IllegalStateException();
         }
-        if (sv != null) {
-            sv.visitTypeArgument();
+        if (signatureVisitor != null) {
+            signatureVisitor.visitTypeArgument();
         }
     }
 
     @Override
     public SignatureVisitor visitTypeArgument(final char wildcard) {
-        if (state != CLASS_TYPE) {
+        if (state != State.CLASS_TYPE) {
             throw new IllegalStateException();
         }
         if ("+-=".indexOf(wildcard) == -1) {
             throw new IllegalArgumentException();
         }
-        SignatureVisitor v = sv == null ? null : sv.visitTypeArgument(wildcard);
-        return new CheckSignatureAdapter(TYPE_SIGNATURE, v);
+        return new CheckSignatureAdapter(
+                TYPE_SIGNATURE,
+                signatureVisitor == null ? null : signatureVisitor.visitTypeArgument(wildcard));
     }
 
     @Override
     public void visitEnd() {
-        if (state != CLASS_TYPE) {
+        if (state != State.CLASS_TYPE) {
             throw new IllegalStateException();
         }
-        state = END;
-        if (sv != null) {
-            sv.visitEnd();
+        state = State.END;
+        if (signatureVisitor != null) {
+            signatureVisitor.visitEnd();
         }
     }
 
-    private void checkClassName(final String name, final String msg) {
+    private void checkClassName(final String name, final String message) {
         if (name == null || name.length() == 0) {
-            throw new IllegalArgumentException("Invalid " + msg
-                    + " (must not be null or empty)");
+            throw new IllegalArgumentException(INVALID + message + " (must not be null or empty)");
         }
         for (int i = 0; i < name.length(); ++i) {
             if (".;[<>:".indexOf(name.charAt(i)) != -1) {
-                throw new IllegalArgumentException("Invalid " + msg
-                        + " (must not contain . ; [ < > or :): " + name);
+                throw new IllegalArgumentException(
+                        INVALID + message + " (must not contain . ; [ < > or :): " + name);
             }
         }
     }
 
-    private void checkIdentifier(final String name, final String msg) {
+    private void checkIdentifier(final String name, final String message) {
         if (name == null || name.length() == 0) {
-            throw new IllegalArgumentException("Invalid " + msg
-                    + " (must not be null or empty)");
+            throw new IllegalArgumentException(INVALID + message + " (must not be null or empty)");
         }
         for (int i = 0; i < name.length(); ++i) {
             if (".;[/<>:".indexOf(name.charAt(i)) != -1) {
-                throw new IllegalArgumentException("Invalid " + msg
-                        + " (must not contain . ; [ / < > or :): " + name);
+                throw new IllegalArgumentException(
+                        INVALID + message + " (must not contain . ; [ / < > or :): " + name);
             }
         }
     }

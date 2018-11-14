@@ -70,7 +70,7 @@ final class JIMethodCallInliner extends LocalVariablesSorter {
      */
     public JIMethodCallInliner(int access, String desc, MethodVisitor mv,
             MethodNode inlineTarget, String oldClass, String newClass) {
-        super(Opcodes.ASM5, access, desc, mv);
+        super(Opcodes.ASM7, access, desc, mv);
         this.oldClass = oldClass;
         this.newClass = newClass;
         this.inlineTarget = inlineTarget;

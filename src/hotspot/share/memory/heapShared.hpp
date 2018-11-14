@@ -109,9 +109,9 @@ class ArchivedKlassSubGraphInfoRecord {
   ArchivedKlassSubGraphInfoRecord() :
     _k(NULL), _entry_field_records(NULL), _subgraph_object_klasses(NULL) {}
   void init(KlassSubGraphInfo* info);
-  Klass* klass() { return _k; }
-  Array<juint>*  entry_field_records() { return _entry_field_records; }
-  Array<Klass*>* subgraph_object_klasses() { return _subgraph_object_klasses; }
+  Klass* klass() const { return _k; }
+  Array<juint>*  entry_field_records() const { return _entry_field_records; }
+  Array<Klass*>* subgraph_object_klasses() const { return _subgraph_object_klasses; }
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -154,18 +154,16 @@ class HeapShared: AllStatic {
     int _count;
   };
 
-  inline static ArchivedKlassSubGraphInfoRecord* read_record_from_compact_hashtable(address base_address, u4 offset) {
-    return (ArchivedKlassSubGraphInfoRecord*)(base_address + offset);
-  }
-
-  inline static bool record_equals_compact_hashtable_entry(ArchivedKlassSubGraphInfoRecord* value, const Klass* key, int len_unused) {
+public: // solaris compiler wants this for RunTimeKlassSubGraphInfoTable
+  inline static bool record_equals_compact_hashtable_entry(
+       const ArchivedKlassSubGraphInfoRecord* value, const Klass* key, int len_unused) {
     return (value->klass() == key);
   }
 
-  typedef CompactHashtable<
+private:
+  typedef OffsetCompactHashtable<
     const Klass*,
-    ArchivedKlassSubGraphInfoRecord*,
-    read_record_from_compact_hashtable,
+    const ArchivedKlassSubGraphInfoRecord*,
     record_equals_compact_hashtable_entry
     > RunTimeKlassSubGraphInfoTable;
 

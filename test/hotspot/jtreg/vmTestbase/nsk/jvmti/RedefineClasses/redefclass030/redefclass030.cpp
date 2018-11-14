@@ -179,7 +179,7 @@ agentProc(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg) {
             nsk_jvmti_resumeSync();
             exit(95 + PASSED);
         }
-    } while(fire == 0);
+    } while (fire == 0);
 
     NSK_DISPLAY0("agentProc: hotspot method compiled\n\n");
 

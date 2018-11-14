@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,12 +434,12 @@ public final class SystemModulesPlugin implements Plugin {
 
         boolean hasModulePackages() throws IOException {
             Set<String> packages = new HashSet<>();
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6) {
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM7) {
                 @Override
                 public ModuleVisitor visitModule(String name,
                                                  int flags,
                                                  String version) {
-                    return new ModuleVisitor(Opcodes.ASM6) {
+                    return new ModuleVisitor(Opcodes.ASM7) {
                         public void visitPackage(String pn) {
                             packages.add(pn);
                         }

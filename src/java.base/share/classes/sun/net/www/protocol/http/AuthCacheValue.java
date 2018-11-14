@@ -30,7 +30,7 @@ import java.net.PasswordAuthentication;
 
 /**
  * AuthCacheValue: interface to minimize exposure to authentication cache
- * for external users (ie. plugin)
+ * for external users (i.e. plugin)
  *
  * @author Michael McMahon
  */

@@ -30,7 +30,7 @@ import java.net.URLStreamHandlerFactory;
 /**
  * URL stream handler service-provider class.
  *
- *<p> A URL stream handler provider is a concrete subclass of this class that
+ * <p> A URL stream handler provider is a concrete subclass of this class that
  * has a zero-argument constructor. URL stream handler providers may be
  * installed in an instance of the Java platform by adding them to the
  * application class path.

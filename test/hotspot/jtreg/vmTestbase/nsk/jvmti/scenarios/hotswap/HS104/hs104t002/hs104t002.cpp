@@ -48,7 +48,7 @@ JNIEXPORT jint JNI_OnLoad_hs104t002(JavaVM *jvm, char *options, void *reserved) 
     return JNI_VERSION_1_8;
 }
 #endif
-jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved){
+jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     if (!NSK_VERIFY (JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1))) {
         nsk_printf("#error Agent :: Could not load JVMTI interface.\n");
         return JNI_ERR;

@@ -163,6 +163,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
     msg.info("Average bucket size     : %9.3f", summary.avg());
     msg.info("Variance of bucket size : %9.3f", summary.variance());
     msg.info("Std. dev. of bucket size: %9.3f", summary.sd());
+    msg.info("Maximum bucket size     : %9d", (int)summary.maximum());
     msg.info("Empty buckets           : %9d", _num_empty_buckets);
     msg.info("Value_Only buckets      : %9d", _num_value_only_buckets);
     msg.info("Other buckets           : %9d", _num_other_buckets);

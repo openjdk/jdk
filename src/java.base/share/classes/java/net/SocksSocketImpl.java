@@ -51,7 +51,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     private Socket cmdsock = null;
     private InputStream cmdIn = null;
     private OutputStream cmdOut = null;
-    /* true if the Proxy has been set programatically */
+    /* true if the Proxy has been set programmatically */
     private boolean applicationSetProxy;  /* false */
 
 
@@ -145,7 +145,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     }
 
     /**
-     * Provides the authentication machanism required by the proxy.
+     * Provides the authentication mechanism required by the proxy.
      */
     private boolean authenticate(byte method, InputStream in,
                                  BufferedOutputStream out) throws IOException {
@@ -158,7 +158,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         // No Authentication required. We're done then!
         if (method == NO_AUTH)
             return true;
-        /**
+        /*
          * User/Password authentication. Try, in that order :
          * - The application provided Authenticator, if any
          * - the user.name & no password (backward compatibility behavior).
@@ -377,7 +377,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             URI uri;
             // Use getHostString() to avoid reverse lookups
             String host = epoint.getHostString();
-            // IPv6 litteral?
+            // IPv6 literal?
             if (epoint.getAddress() instanceof Inet6Address &&
                 (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
                 host = "[" + host + "]";
@@ -692,7 +692,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             URI uri;
             // Use getHostString() to avoid reverse lookups
             String host = saddr.getHostString();
-            // IPv6 litteral?
+            // IPv6 literal?
             if (saddr.getAddress() instanceof Inet6Address &&
                 (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
                 host = "[" + host + "]";

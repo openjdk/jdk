@@ -62,16 +62,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.InsnList;
 import jdk.internal.org.objectweb.asm.tree.InsnNode;
@@ -84,341 +81,259 @@ import jdk.internal.org.objectweb.asm.tree.TableSwitchInsnNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 
 /**
- * A {@link jdk.internal.org.objectweb.asm.MethodVisitor} that removes JSR instructions and
- * inlines the referenced subroutines.
- *
- * <b>Explanation of how it works</b> TODO
+ * A {@link jdk.internal.org.objectweb.asm.MethodVisitor} that removes JSR instructions and inlines the
+ * referenced subroutines.
  *
  * @author Niko Matsakis
  */
+// DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
 public class JSRInlinerAdapter extends MethodNode implements Opcodes {
 
-    private static final boolean LOGGING = false;
+    /**
+      * The instructions that belong to the main "subroutine". Bit i is set iff instruction at index i
+      * belongs to this main "subroutine".
+      */
+    private final BitSet mainSubroutineInsns = new BitSet();
 
     /**
-     * For each label that is jumped to by a JSR, we create a BitSet instance.
-     */
-    private final Map<LabelNode, BitSet> subroutineHeads = new HashMap<LabelNode, BitSet>();
+      * The instructions that belong to each subroutine. For each label which is the target of a JSR
+      * instruction, bit i of the corresponding BitSet in this map is set iff instruction at index i
+      * belongs to this subroutine.
+      */
+    private final Map<LabelNode, BitSet> subroutinesInsns = new HashMap<LabelNode, BitSet>();
 
     /**
-     * This subroutine instance denotes the line of execution that is not
-     * contained within any subroutine; i.e., the "subroutine" that is executing
-     * when a method first begins.
-     */
-    private final BitSet mainSubroutine = new BitSet();
+      * The instructions that belong to more that one subroutine. Bit i is set iff instruction at index
+      * i belongs to more than one subroutine.
+      */
+    final BitSet sharedSubroutineInsns = new BitSet();
 
     /**
-     * This BitSet contains the index of every instruction that belongs to more
-     * than one subroutine. This should not happen often.
-     */
-    final BitSet dualCitizens = new BitSet();
-
-    /**
-     * Creates a new JSRInliner. <i>Subclasses must not use this
-     * constructor</i>. Instead, they must use the
-     * {@link #JSRInlinerAdapter(int, MethodVisitor, int, String, String, String, String[])}
-     * version.
-     *
-     * @param mv
-     *            the <code>MethodVisitor</code> to send the resulting inlined
-     *            method code to (use <code>null</code> for none).
-     * @param access
-     *            the method's access flags (see {@link Opcodes}). This
-     *            parameter also indicates if the method is synthetic and/or
-     *            deprecated.
-     * @param name
-     *            the method's name.
-     * @param desc
-     *            the method's descriptor (see {@link Type}).
-     * @param signature
-     *            the method's signature. May be <tt>null</tt>.
-     * @param exceptions
-     *            the internal names of the method's exception classes (see
-     *            {@link Type#getInternalName() getInternalName}). May be
-     *            <tt>null</tt>.
-     * @throws IllegalStateException
-     *             If a subclass calls this constructor.
-     */
-    public JSRInlinerAdapter(final MethodVisitor mv, final int access,
-            final String name, final String desc, final String signature,
+      * Constructs a new {@link JSRInlinerAdapter}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #JSRInlinerAdapter(int, MethodVisitor, int, String, String,
+      * String, String[])} version.
+      *
+      * @param methodVisitor the method visitor to send the resulting inlined method code to, or <code>
+      *     null</code>.
+      * @param access the method's access flags.
+      * @param name the method's name.
+      * @param descriptor the method's descriptor.
+      * @param signature the method's signature. May be {@literal null}.
+      * @param exceptions the internal names of the method's exception classes. May be {@literal null}.
+      * @throws IllegalStateException if a subclass calls this constructor.
+      */
+    public JSRInlinerAdapter(
+            final MethodVisitor methodVisitor,
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
             final String[] exceptions) {
-        this(Opcodes.ASM6, mv, access, name, desc, signature, exceptions);
+        this(Opcodes.ASM7, methodVisitor, access, name, descriptor, signature, exceptions);
         if (getClass() != JSRInlinerAdapter.class) {
             throw new IllegalStateException();
         }
     }
 
     /**
-     * Creates a new JSRInliner.
-     *
-     * @param api
-     *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     * @param mv
-     *            the <code>MethodVisitor</code> to send the resulting inlined
-     *            method code to (use <code>null</code> for none).
-     * @param access
-     *            the method's access flags (see {@link Opcodes}). This
-     *            parameter also indicates if the method is synthetic and/or
-     *            deprecated.
-     * @param name
-     *            the method's name.
-     * @param desc
-     *            the method's descriptor (see {@link Type}).
-     * @param signature
-     *            the method's signature. May be <tt>null</tt>.
-     * @param exceptions
-     *            the internal names of the method's exception classes (see
-     *            {@link Type#getInternalName() getInternalName}). May be
-     *            <tt>null</tt>.
-     */
-    protected JSRInlinerAdapter(final int api, final MethodVisitor mv,
-            final int access, final String name, final String desc,
-            final String signature, final String[] exceptions) {
-        super(api, access, name, desc, signature, exceptions);
-        this.mv = mv;
+      * Constructs a new {@link JSRInlinerAdapter}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param methodVisitor the method visitor to send the resulting inlined method code to, or <code>
+      *     null</code>.
+      * @param access the method's access flags (see {@link Opcodes}). This parameter also indicates if
+      *     the method is synthetic and/or deprecated.
+      * @param name the method's name.
+      * @param descriptor the method's descriptor.
+      * @param signature the method's signature. May be {@literal null}.
+      * @param exceptions the internal names of the method's exception classes. May be {@literal null}.
+      */
+    protected JSRInlinerAdapter(
+            final int api,
+            final MethodVisitor methodVisitor,
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
+            final String[] exceptions) {
+        super(api, access, name, descriptor, signature, exceptions);
+        this.mv = methodVisitor;
     }
 
-    /**
-     * Detects a JSR instruction and sets a flag to indicate we will need to do
-     * inlining.
-     */
     @Override
-    public void visitJumpInsn(final int opcode, final Label lbl) {
-        super.visitJumpInsn(opcode, lbl);
-        LabelNode ln = ((JumpInsnNode) instructions.getLast()).label;
-        if (opcode == JSR && !subroutineHeads.containsKey(ln)) {
-            subroutineHeads.put(ln, new BitSet());
+    public void visitJumpInsn(final int opcode, final Label label) {
+        super.visitJumpInsn(opcode, label);
+        LabelNode labelNode = ((JumpInsnNode) instructions.getLast()).label;
+        if (opcode == JSR && !subroutinesInsns.containsKey(labelNode)) {
+            subroutinesInsns.put(labelNode, new BitSet());
         }
     }
 
-    /**
-     * If any JSRs were seen, triggers the inlining process. Otherwise, forwards
-     * the byte codes untouched.
-     */
     @Override
     public void visitEnd() {
-        if (!subroutineHeads.isEmpty()) {
-            markSubroutines();
-            if (LOGGING) {
-                log(mainSubroutine.toString());
-                Iterator<BitSet> it = subroutineHeads.values().iterator();
-                while (it.hasNext()) {
-                    BitSet sub = it.next();
-                    log(sub.toString());
-                }
-            }
+        if (!subroutinesInsns.isEmpty()) {
+            // If the code contains at least one JSR instruction, inline the subroutines.
+            findSubroutinesInsns();
             emitCode();
         }
-
-        // Forward the translate opcodes on if appropriate:
         if (mv != null) {
             accept(mv);
         }
     }
 
-    /**
-     * Walks the method and determines which internal subroutine(s), if any,
-     * each instruction is a method of.
-     */
-    private void markSubroutines() {
-        BitSet anyvisited = new BitSet();
-
-        // First walk the main subroutine and find all those instructions which
-        // can be reached without invoking any JSR at all
-        markSubroutineWalk(mainSubroutine, 0, anyvisited);
-
-        // Go through the head of each subroutine and find any nodes reachable
-        // to that subroutine without following any JSR links.
-        for (Iterator<Map.Entry<LabelNode, BitSet>> it = subroutineHeads
-                .entrySet().iterator(); it.hasNext();) {
-            Map.Entry<LabelNode, BitSet> entry = it.next();
-            LabelNode lab = entry.getKey();
-            BitSet sub = entry.getValue();
-            int index = instructions.indexOf(lab);
-            markSubroutineWalk(sub, index, anyvisited);
+    /** Determines, for each instruction, to which subroutine(s) it belongs. */
+    private void findSubroutinesInsns() {
+        // Find the instructions that belong to main subroutine.
+        BitSet visitedInsns = new BitSet();
+        findSubroutineInsns(0, mainSubroutineInsns, visitedInsns);
+        // For each subroutine, find the instructions that belong to this subroutine.
+        for (Map.Entry<LabelNode, BitSet> entry : subroutinesInsns.entrySet()) {
+            LabelNode jsrLabelNode = entry.getKey();
+            BitSet subroutineInsns = entry.getValue();
+            findSubroutineInsns(instructions.indexOf(jsrLabelNode), subroutineInsns, visitedInsns);
         }
     }
 
     /**
-     * Performs a depth first search walking the normal byte code path starting
-     * at <code>index</code>, and adding each instruction encountered into the
-     * subroutine <code>sub</code>. After this walk is complete, iterates over
-     * the exception handlers to ensure that we also include those byte codes
-     * which are reachable through an exception that may be thrown during the
-     * execution of the subroutine. Invoked from <code>markSubroutines()</code>.
-     *
-     * @param sub
-     *            the subroutine whose instructions must be computed.
-     * @param index
-     *            an instruction of this subroutine.
-     * @param anyvisited
-     *            indexes of the already visited instructions, i.e. marked as
-     *            part of this subroutine or any previously computed subroutine.
-     */
-    private void markSubroutineWalk(final BitSet sub, final int index,
-            final BitSet anyvisited) {
-        if (LOGGING) {
-            log("markSubroutineWalk: sub=" + sub + " index=" + index);
-        }
+      * Finds the instructions that belong to the subroutine starting at the given instruction index.
+      * For this the control flow graph is visited with a depth first search (this includes the normal
+      * control flow and the exception handlers).
+      *
+      * @param startInsnIndex the index of the first instruction of the subroutine.
+      * @param subroutineInsns where the indices of the instructions of the subroutine must be stored.
+      * @param visitedInsns the indices of the instructions that have been visited so far (including in
+      *     previous calls to this method). This bitset is updated by this method each time a new
+      *     instruction is visited. It is used to make sure each instruction is visited at most once.
+      */
+    private void findSubroutineInsns(
+            final int startInsnIndex, final BitSet subroutineInsns, final BitSet visitedInsns) {
+        // First find the instructions reachable via normal execution.
+        findReachableInsns(startInsnIndex, subroutineInsns, visitedInsns);
 
-        // First find those instructions reachable via normal execution
-        markSubroutineWalkDFS(sub, index, anyvisited);
-
-        // Now, make sure we also include any applicable exception handlers
-        boolean loop = true;
-        while (loop) {
-            loop = false;
-            for (Iterator<TryCatchBlockNode> it = tryCatchBlocks.iterator(); it
-                    .hasNext();) {
-                TryCatchBlockNode trycatch = it.next();
-
-                if (LOGGING) {
-                    // TODO use of default toString().
-                    log("Scanning try/catch " + trycatch);
-                }
-
+        // Then find the instructions reachable via the applicable exception handlers.
+        while (true) {
+            boolean applicableHandlerFound = false;
+            for (TryCatchBlockNode tryCatchBlockNode : tryCatchBlocks) {
                 // If the handler has already been processed, skip it.
-                int handlerindex = instructions.indexOf(trycatch.handler);
-                if (sub.get(handlerindex)) {
+                int handlerIndex = instructions.indexOf(tryCatchBlockNode.handler);
+                if (subroutineInsns.get(handlerIndex)) {
                     continue;
                 }
 
-                int startindex = instructions.indexOf(trycatch.start);
-                int endindex = instructions.indexOf(trycatch.end);
-                int nextbit = sub.nextSetBit(startindex);
-                if (nextbit != -1 && nextbit < endindex) {
-                    if (LOGGING) {
-                        log("Adding exception handler: " + startindex + '-'
-                                + endindex + " due to " + nextbit + " handler "
-                                + handlerindex);
-                    }
-                    markSubroutineWalkDFS(sub, handlerindex, anyvisited);
-                    loop = true;
+                // If an instruction in the exception handler range belongs to the subroutine, the handler
+                // can be reached from the routine, and its instructions must be added to the subroutine.
+                int startIndex = instructions.indexOf(tryCatchBlockNode.start);
+                int endIndex = instructions.indexOf(tryCatchBlockNode.end);
+                int firstSubroutineInsnAfterTryCatchStart = subroutineInsns.nextSetBit(startIndex);
+                if (firstSubroutineInsnAfterTryCatchStart >= startIndex
+                        && firstSubroutineInsnAfterTryCatchStart < endIndex) {
+                    findReachableInsns(handlerIndex, subroutineInsns, visitedInsns);
+                    applicableHandlerFound = true;
                 }
             }
-        }
-    }
-
-    /**
-     * Performs a simple DFS of the instructions, assigning each to the
-     * subroutine <code>sub</code>. Starts from <code>index</code>. Invoked only
-     * by <code>markSubroutineWalk()</code>.
-     *
-     * @param sub
-     *            the subroutine whose instructions must be computed.
-     * @param index
-     *            an instruction of this subroutine.
-     * @param anyvisited
-     *            indexes of the already visited instructions, i.e. marked as
-     *            part of this subroutine or any previously computed subroutine.
-     */
-    private void markSubroutineWalkDFS(final BitSet sub, int index,
-            final BitSet anyvisited) {
-        while (true) {
-            AbstractInsnNode node = instructions.get(index);
-
-            // don't visit a node twice
-            if (sub.get(index)) {
-                return;
-            }
-            sub.set(index);
-
-            // check for those nodes already visited by another subroutine
-            if (anyvisited.get(index)) {
-                dualCitizens.set(index);
-                if (LOGGING) {
-                    log("Instruction #" + index + " is dual citizen.");
-                }
-            }
-            anyvisited.set(index);
-
-            if (node.getType() == AbstractInsnNode.JUMP_INSN
-                    && node.getOpcode() != JSR) {
-                // we do not follow recursively called subroutines here; but any
-                // other sort of branch we do follow
-                JumpInsnNode jnode = (JumpInsnNode) node;
-                int destidx = instructions.indexOf(jnode.label);
-                markSubroutineWalkDFS(sub, destidx, anyvisited);
-            }
-            if (node.getType() == AbstractInsnNode.TABLESWITCH_INSN) {
-                TableSwitchInsnNode tsnode = (TableSwitchInsnNode) node;
-                int destidx = instructions.indexOf(tsnode.dflt);
-                markSubroutineWalkDFS(sub, destidx, anyvisited);
-                for (int i = tsnode.labels.size() - 1; i >= 0; --i) {
-                    LabelNode l = tsnode.labels.get(i);
-                    destidx = instructions.indexOf(l);
-                    markSubroutineWalkDFS(sub, destidx, anyvisited);
-                }
-            }
-            if (node.getType() == AbstractInsnNode.LOOKUPSWITCH_INSN) {
-                LookupSwitchInsnNode lsnode = (LookupSwitchInsnNode) node;
-                int destidx = instructions.indexOf(lsnode.dflt);
-                markSubroutineWalkDFS(sub, destidx, anyvisited);
-                for (int i = lsnode.labels.size() - 1; i >= 0; --i) {
-                    LabelNode l = lsnode.labels.get(i);
-                    destidx = instructions.indexOf(l);
-                    markSubroutineWalkDFS(sub, destidx, anyvisited);
-                }
-            }
-
-            // check to see if this opcode falls through to the next instruction
-            // or not; if not, return.
-            switch (instructions.get(index).getOpcode()) {
-            case GOTO:
-            case RET:
-            case TABLESWITCH:
-            case LOOKUPSWITCH:
-            case IRETURN:
-            case LRETURN:
-            case FRETURN:
-            case DRETURN:
-            case ARETURN:
-            case RETURN:
-            case ATHROW:
-                /*
-                 * note: this either returns from this subroutine, or a parent
-                 * subroutine which invoked it
-                 */
-                return;
-            }
-
-            // Use tail recursion here in the form of an outer while loop to
-            // avoid our stack growing needlessly:
-            index++;
-
-            // We implicitly assumed above that execution can always fall
-            // through to the next instruction after a JSR. But a subroutine may
-            // never return, in which case the code after the JSR is unreachable
-            // and can be anything. In particular, it can seem to fall off the
-            // end of the method, so we must handle this case here (we could
-            // instead detect whether execution can return or not from a JSR,
-            // but this is more complicated).
-            if (index >= instructions.size()) {
+            // If an applicable exception handler has been found, other handlers may become applicable, so
+            // we must examine them again.
+            if (!applicableHandlerFound) {
                 return;
             }
         }
     }
 
     /**
-     * Creates the new instructions, inlining each instantiation of each
-     * subroutine until the code is fully elaborated.
-     */
+      * Finds the instructions that are reachable from the given instruction, without following any JSR
+      * instruction nor any exception handler. For this the control flow graph is visited with a depth
+      * first search.
+      *
+      * @param insnIndex the index of an instruction of the subroutine.
+      * @param subroutineInsns where the indices of the instructions of the subroutine must be stored.
+      * @param visitedInsns the indices of the instructions that have been visited so far (including in
+      *     previous calls to this method). This bitset is updated by this method each time a new
+      *     instruction is visited. It is used to make sure each instruction is visited at most once.
+      */
+    private void findReachableInsns(
+            final int insnIndex, final BitSet subroutineInsns, final BitSet visitedInsns) {
+        int currentInsnIndex = insnIndex;
+        // We implicitly assume below that execution can always fall through to the next instruction
+        // after a JSR. But a subroutine may never return, in which case the code after the JSR is
+        // unreachable and can be anything. In particular, it can seem to fall off the end of the
+        // method, so we must handle this case here (we could instead detect whether execution can
+        // return or not from a JSR, but this is more complicated).
+        while (currentInsnIndex < instructions.size()) {
+            // Visit each instruction at most once.
+            if (subroutineInsns.get(currentInsnIndex)) {
+                return;
+            }
+            subroutineInsns.set(currentInsnIndex);
+
+            // Check if this instruction has already been visited by another subroutine.
+            if (visitedInsns.get(currentInsnIndex)) {
+                sharedSubroutineInsns.set(currentInsnIndex);
+            }
+            visitedInsns.set(currentInsnIndex);
+
+            AbstractInsnNode currentInsnNode = instructions.get(currentInsnIndex);
+            if (currentInsnNode.getType() == AbstractInsnNode.JUMP_INSN
+                    && currentInsnNode.getOpcode() != JSR) {
+                // Don't follow JSR instructions in the control flow graph.
+                JumpInsnNode jumpInsnNode = (JumpInsnNode) currentInsnNode;
+                findReachableInsns(instructions.indexOf(jumpInsnNode.label), subroutineInsns, visitedInsns);
+            } else if (currentInsnNode.getType() == AbstractInsnNode.TABLESWITCH_INSN) {
+                TableSwitchInsnNode tableSwitchInsnNode = (TableSwitchInsnNode) currentInsnNode;
+                findReachableInsns(
+                        instructions.indexOf(tableSwitchInsnNode.dflt), subroutineInsns, visitedInsns);
+                for (LabelNode labelNode : tableSwitchInsnNode.labels) {
+                    findReachableInsns(instructions.indexOf(labelNode), subroutineInsns, visitedInsns);
+                }
+            } else if (currentInsnNode.getType() == AbstractInsnNode.LOOKUPSWITCH_INSN) {
+                LookupSwitchInsnNode lookupSwitchInsnNode = (LookupSwitchInsnNode) currentInsnNode;
+                findReachableInsns(
+                        instructions.indexOf(lookupSwitchInsnNode.dflt), subroutineInsns, visitedInsns);
+                for (LabelNode labelNode : lookupSwitchInsnNode.labels) {
+                    findReachableInsns(instructions.indexOf(labelNode), subroutineInsns, visitedInsns);
+                }
+            }
+
+            // Check if this instruction falls through to the next instruction; if not, return.
+            switch (instructions.get(currentInsnIndex).getOpcode()) {
+                case GOTO:
+                case RET:
+                case TABLESWITCH:
+                case LOOKUPSWITCH:
+                case IRETURN:
+                case LRETURN:
+                case FRETURN:
+                case DRETURN:
+                case ARETURN:
+                case RETURN:
+                case ATHROW:
+                    // Note: this either returns from this subroutine, or from a parent subroutine.
+                    return;
+                default:
+                    // Go to the next instruction.
+                    currentInsnIndex++;
+                    break;
+            }
+        }
+    }
+
+    /**
+      * Creates the new instructions, inlining each instantiation of each subroutine until the code is
+      * fully elaborated.
+      */
     private void emitCode() {
         LinkedList<Instantiation> worklist = new LinkedList<Instantiation>();
-        // Create an instantiation of the "root" subroutine, which is just the
-        // main routine
-        worklist.add(new Instantiation(null, mainSubroutine));
+        // Create an instantiation of the main "subroutine", which is just the main routine.
+        worklist.add(new Instantiation(null, mainSubroutineInsns));
 
-        // Emit instantiations of each subroutine we encounter, including the
-        // main subroutine
+        // Emit instantiations of each subroutine we encounter, including the main subroutine.
         InsnList newInstructions = new InsnList();
         List<TryCatchBlockNode> newTryCatchBlocks = new ArrayList<TryCatchBlockNode>();
         List<LocalVariableNode> newLocalVariables = new ArrayList<LocalVariableNode>();
         while (!worklist.isEmpty()) {
-            Instantiation inst = worklist.removeFirst();
-            emitSubroutine(inst, worklist, newInstructions, newTryCatchBlocks,
-                    newLocalVariables);
+            Instantiation instantiation = worklist.removeFirst();
+            emitInstantiation(
+                    instantiation, worklist, newInstructions, newTryCatchBlocks, newLocalVariables);
         }
         instructions = newInstructions;
         tryCatchBlocks = newTryCatchBlocks;
@@ -426,356 +341,254 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
     }
 
     /**
-     * Emits one instantiation of one subroutine, specified by
-     * <code>instant</code>. May add new instantiations that are invoked by this
-     * one to the <code>worklist</code> parameter, and new try/catch blocks to
-     * <code>newTryCatchBlocks</code>.
-     *
-     * @param instant
-     *            the instantiation that must be performed.
-     * @param worklist
-     *            list of the instantiations that remain to be done.
-     * @param newInstructions
-     *            the instruction list to which the instantiated code must be
-     *            appended.
-     * @param newTryCatchBlocks
-     *            the exception handler list to which the instantiated handlers
-     *            must be appended.
-     */
-    private void emitSubroutine(final Instantiation instant,
-            final List<Instantiation> worklist, final InsnList newInstructions,
+      * Emits an instantiation of a subroutine, specified by <code>instantiation</code>. May add new
+      * instantiations that are invoked by this one to the <code>worklist</code>, and new try/catch
+      * blocks to <code>newTryCatchBlocks</code>.
+      *
+      * @param instantiation the instantiation that must be performed.
+      * @param worklist list of the instantiations that remain to be done.
+      * @param newInstructions the instruction list to which the instantiated code must be appended.
+      * @param newTryCatchBlocks the exception handler list to which the instantiated handlers must be
+      *     appended.
+      * @param newLocalVariables the local variables list to which the instantiated local variables
+      *     must be appended.
+      */
+    private void emitInstantiation(
+            final Instantiation instantiation,
+            final List<Instantiation> worklist,
+            final InsnList newInstructions,
             final List<TryCatchBlockNode> newTryCatchBlocks,
             final List<LocalVariableNode> newLocalVariables) {
-        LabelNode duplbl = null;
-
-        if (LOGGING) {
-            log("--------------------------------------------------------");
-            log("Emitting instantiation of subroutine " + instant.subroutine);
-        }
-
-        // Emit the relevant instructions for this instantiation, translating
-        // labels and jump targets as we go:
-        for (int i = 0, c = instructions.size(); i < c; i++) {
-            AbstractInsnNode insn = instructions.get(i);
-            Instantiation owner = instant.findOwner(i);
-
-            // Always remap labels:
-            if (insn.getType() == AbstractInsnNode.LABEL) {
-                // Translate labels into their renamed equivalents.
-                // Avoid adding the same label more than once. Note
-                // that because we own this instruction the gotoTable
-                // and the rangeTable will always agree.
-                LabelNode ilbl = (LabelNode) insn;
-                LabelNode remap = instant.rangeLabel(ilbl);
-                if (LOGGING) {
-                    // TODO use of default toString().
-                    log("Translating lbl #" + i + ':' + ilbl + " to " + remap);
+        LabelNode previousLabelNode = null;
+        for (int i = 0; i < instructions.size(); ++i) {
+            AbstractInsnNode insnNode = instructions.get(i);
+            if (insnNode.getType() == AbstractInsnNode.LABEL) {
+                // Always clone all labels, while avoiding to add the same label more than once.
+                LabelNode labelNode = (LabelNode) insnNode;
+                LabelNode clonedLabelNode = instantiation.getClonedLabel(labelNode);
+                if (clonedLabelNode != previousLabelNode) {
+                    newInstructions.add(clonedLabelNode);
+                    previousLabelNode = clonedLabelNode;
                 }
-                if (remap != duplbl) {
-                    newInstructions.add(remap);
-                    duplbl = remap;
-                }
-                continue;
-            }
+            } else if (instantiation.findOwner(i) == instantiation) {
+                // Don't emit instructions that were already emitted by an ancestor subroutine. Note that it
+                // is still possible for a given instruction to be emitted twice because it may belong to
+                // two subroutines that do not invoke each other.
 
-            // We don't want to emit instructions that were already
-            // emitted by a subroutine higher on the stack. Note that
-            // it is still possible for a given instruction to be
-            // emitted twice because it may belong to two subroutines
-            // that do not invoke each other.
-            if (owner != instant) {
-                continue;
-            }
-
-            if (LOGGING) {
-                log("Emitting inst #" + i);
-            }
-
-            if (insn.getOpcode() == RET) {
-                // Translate RET instruction(s) to a jump to the return label
-                // for the appropriate instantiation. The problem is that the
-                // subroutine may "fall through" to the ret of a parent
-                // subroutine; therefore, to find the appropriate ret label we
-                // find the lowest subroutine on the stack that claims to own
-                // this instruction. See the class javadoc comment for an
-                // explanation on why this technique is safe (note: it is only
-                // safe if the input is verifiable).
-                LabelNode retlabel = null;
-                for (Instantiation p = instant; p != null; p = p.previous) {
-                    if (p.subroutine.get(i)) {
-                        retlabel = p.returnLabel;
+                if (insnNode.getOpcode() == RET) {
+                    // Translate RET instruction(s) to a jump to the return label for the appropriate
+                    // instantiation. The problem is that the subroutine may "fall through" to the ret of a
+                    // parent subroutine; therefore, to find the appropriate ret label we find the oldest
+                    // instantiation that claims to own this instruction.
+                    LabelNode retLabel = null;
+                    for (Instantiation retLabelOwner = instantiation;
+                            retLabelOwner != null;
+                            retLabelOwner = retLabelOwner.parent) {
+                        if (retLabelOwner.subroutineInsns.get(i)) {
+                            retLabel = retLabelOwner.returnLabel;
+                        }
                     }
+                    if (retLabel == null) {
+                        // This is only possible if the mainSubroutine owns a RET instruction, which should
+                        // never happen for verifiable code.
+                        throw new IllegalArgumentException(
+                                "Instruction #" + i + " is a RET not owned by any subroutine");
+                    }
+                    newInstructions.add(new JumpInsnNode(GOTO, retLabel));
+                } else if (insnNode.getOpcode() == JSR) {
+                    LabelNode jsrLabelNode = ((JumpInsnNode) insnNode).label;
+                    BitSet subroutineInsns = subroutinesInsns.get(jsrLabelNode);
+                    Instantiation newInstantiation = new Instantiation(instantiation, subroutineInsns);
+                    LabelNode clonedJsrLabelNode = newInstantiation.getClonedLabelForJumpInsn(jsrLabelNode);
+                    // Replace the JSR instruction with a GOTO to the instantiated subroutine, and push NULL
+                    // for what was once the return address value. This hack allows us to avoid doing any sort
+                    // of data flow analysis to figure out which instructions manipulate the old return
+                    // address value pointer which is now known to be unneeded.
+                    newInstructions.add(new InsnNode(ACONST_NULL));
+                    newInstructions.add(new JumpInsnNode(GOTO, clonedJsrLabelNode));
+                    newInstructions.add(newInstantiation.returnLabel);
+                    // Insert this new instantiation into the queue to be emitted later.
+                    worklist.add(newInstantiation);
+                } else {
+                    newInstructions.add(insnNode.clone(instantiation));
                 }
-                if (retlabel == null) {
-                    // This is only possible if the mainSubroutine owns a RET
-                    // instruction, which should never happen for verifiable
-                    // code.
-                    throw new RuntimeException("Instruction #" + i
-                            + " is a RET not owned by any subroutine");
-                }
-                newInstructions.add(new JumpInsnNode(GOTO, retlabel));
-            } else if (insn.getOpcode() == JSR) {
-                LabelNode lbl = ((JumpInsnNode) insn).label;
-                BitSet sub = subroutineHeads.get(lbl);
-                Instantiation newinst = new Instantiation(instant, sub);
-                LabelNode startlbl = newinst.gotoLabel(lbl);
-
-                if (LOGGING) {
-                    log(" Creating instantiation of subr " + sub);
-                }
-
-                // Rather than JSRing, we will jump to the inline version and
-                // push NULL for what was once the return value. This hack
-                // allows us to avoid doing any sort of data flow analysis to
-                // figure out which instructions manipulate the old return value
-                // pointer which is now known to be unneeded.
-                newInstructions.add(new InsnNode(ACONST_NULL));
-                newInstructions.add(new JumpInsnNode(GOTO, startlbl));
-                newInstructions.add(newinst.returnLabel);
-
-                // Insert this new instantiation into the queue to be emitted
-                // later.
-                worklist.add(newinst);
-            } else {
-                newInstructions.add(insn.clone(instant));
             }
         }
 
-        // Emit try/catch blocks that are relevant to this method.
-        for (Iterator<TryCatchBlockNode> it = tryCatchBlocks.iterator(); it
-                .hasNext();) {
-            TryCatchBlockNode trycatch = it.next();
-
-            if (LOGGING) {
-                // TODO use of default toString().
-                log("try catch block original labels=" + trycatch.start + '-'
-                        + trycatch.end + "->" + trycatch.handler);
-            }
-
-            final LabelNode start = instant.rangeLabel(trycatch.start);
-            final LabelNode end = instant.rangeLabel(trycatch.end);
-
-            // Ignore empty try/catch regions
-            if (start == end) {
-                if (LOGGING) {
-                    log(" try catch block empty in this subroutine");
+        // Emit the try/catch blocks that are relevant for this instantiation.
+        for (TryCatchBlockNode tryCatchBlockNode : tryCatchBlocks) {
+            final LabelNode start = instantiation.getClonedLabel(tryCatchBlockNode.start);
+            final LabelNode end = instantiation.getClonedLabel(tryCatchBlockNode.end);
+            if (start != end) {
+                final LabelNode handler =
+                        instantiation.getClonedLabelForJumpInsn(tryCatchBlockNode.handler);
+                if (start == null || end == null || handler == null) {
+                    throw new AssertionError("Internal error!");
                 }
-                continue;
+                newTryCatchBlocks.add(new TryCatchBlockNode(start, end, handler, tryCatchBlockNode.type));
             }
-
-            final LabelNode handler = instant.gotoLabel(trycatch.handler);
-
-            if (LOGGING) {
-                // TODO use of default toString().
-                log(" try catch block new labels=" + start + '-' + end + "->"
-                        + handler);
-            }
-
-            if (start == null || end == null || handler == null) {
-                throw new RuntimeException("Internal error!");
-            }
-
-            newTryCatchBlocks.add(new TryCatchBlockNode(start, end, handler,
-                    trycatch.type));
         }
 
-        for (Iterator<LocalVariableNode> it = localVariables.iterator(); it
-                .hasNext();) {
-            LocalVariableNode lvnode = it.next();
-            if (LOGGING) {
-                log("local var " + lvnode.name);
+        // Emit the local variable nodes that are relevant for this instantiation.
+        for (LocalVariableNode localVariableNode : localVariables) {
+            final LabelNode start = instantiation.getClonedLabel(localVariableNode.start);
+            final LabelNode end = instantiation.getClonedLabel(localVariableNode.end);
+            if (start != end) {
+                newLocalVariables.add(
+                        new LocalVariableNode(
+                                localVariableNode.name,
+                                localVariableNode.desc,
+                                localVariableNode.signature,
+                                start,
+                                end,
+                                localVariableNode.index));
             }
-            final LabelNode start = instant.rangeLabel(lvnode.start);
-            final LabelNode end = instant.rangeLabel(lvnode.end);
-            if (start == end) {
-                if (LOGGING) {
-                    log("  local variable empty in this sub");
-                }
-                continue;
-            }
-            newLocalVariables.add(new LocalVariableNode(lvnode.name,
-                    lvnode.desc, lvnode.signature, start, end, lvnode.index));
         }
     }
 
-    private static void log(final String str) {
-        System.err.println(str);
-    }
-
-    /**
-     * A class that represents an instantiation of a subroutine. Each
-     * instantiation has an associate "stack" --- which is a listing of those
-     * instantiations that were active when this particular instance of this
-     * subroutine was invoked. Each instantiation also has a map from the
-     * original labels of the program to the labels appropriate for this
-     * instantiation, and finally a label to return to.
-     */
+    /** An instantiation of a subroutine. */
     private class Instantiation extends AbstractMap<LabelNode, LabelNode> {
 
         /**
-         * Previous instantiations; the stack must be statically predictable to
-         * be inlinable.
-         */
-        final Instantiation previous;
+          * The instantiation from which this one was created (or {@literal null} for the instantiation
+          * of the main "subroutine").
+          */
+        final Instantiation parent;
 
         /**
-         * The subroutine this is an instantiation of.
-         */
-        public final BitSet subroutine;
+          * The original instructions that belong to the subroutine which is instantiated. Bit i is set
+          * iff instruction at index i belongs to this subroutine.
+          */
+        final BitSet subroutineInsns;
 
         /**
-         * This table maps Labels from the original source to Labels pointing at
-         * code specific to this instantiation, for use in remapping try/catch
-         * blocks,as well as gotos.
-         *
-         * Note that in the presence of dual citizens instructions, that is,
-         * instructions which belong to more than one subroutine due to the
-         * merging of control flow without a RET instruction, we will map the
-         * target label of a GOTO to the label used by the instantiation lowest
-         * on the stack. This avoids code duplication during inlining in most
-         * cases.
-         *
-         * @see #findOwner(int)
-         */
-        public final Map<LabelNode, LabelNode> rangeTable = new HashMap<LabelNode, LabelNode>();
+          * A map from labels from the original code to labels pointing at code specific to this
+          * instantiation, for use in remapping try/catch blocks, as well as jumps.
+          *
+          * <p>Note that in the presence of instructions belonging to several subroutines, we map the
+          * target label of a GOTO to the label used by the oldest instantiation (parent instantiations
+          * are older than their children). This avoids code duplication during inlining in most cases.
+          */
+        final Map<LabelNode, LabelNode> clonedLabels;
 
-        /**
-         * All returns for this instantiation will be mapped to this label
-         */
-        public final LabelNode returnLabel;
+        /** The return label for this instantiation, to which all original returns will be mapped. */
+        final LabelNode returnLabel;
 
-        Instantiation(final Instantiation prev, final BitSet sub) {
-            previous = prev;
-            subroutine = sub;
-            for (Instantiation p = prev; p != null; p = p.previous) {
-                if (p.subroutine == sub) {
-                    throw new RuntimeException("Recursive invocation of " + sub);
+        Instantiation(final Instantiation parent, final BitSet subroutineInsns) {
+            for (Instantiation instantiation = parent;
+                    instantiation != null;
+                    instantiation = instantiation.parent) {
+                if (instantiation.subroutineInsns == subroutineInsns) {
+                    throw new IllegalArgumentException("Recursive invocation of " + subroutineInsns);
                 }
             }
 
-            // Determine the label to return to when this subroutine terminates
-            // via RET: note that the main subroutine never terminates via RET.
-            if (prev != null) {
-                returnLabel = new LabelNode();
-            } else {
-                returnLabel = null;
-            }
+            this.parent = parent;
+            this.subroutineInsns = subroutineInsns;
+            this.returnLabel = parent == null ? null : new LabelNode();
+            this.clonedLabels = new HashMap<LabelNode, LabelNode>();
 
-            // Each instantiation will remap the labels from the code above to
-            // refer to its particular copy of its own instructions. Note that
-            // we collapse labels which point at the same instruction into one:
-            // this is fairly common as we are often ignoring large chunks of
-            // instructions, so what were previously distinct labels become
-            // duplicates.
-            LabelNode duplbl = null;
-            for (int i = 0, c = instructions.size(); i < c; i++) {
-                AbstractInsnNode insn = instructions.get(i);
-
-                if (insn.getType() == AbstractInsnNode.LABEL) {
-                    LabelNode ilbl = (LabelNode) insn;
-
-                    if (duplbl == null) {
-                        // if we already have a label pointing at this spot,
-                        // don't recreate it.
-                        duplbl = new LabelNode();
+            // Create a clone of each label in the original code of the subroutine. Note that we collapse
+            // labels which point at the same instruction into one.
+            LabelNode clonedLabelNode = null;
+            for (int insnIndex = 0; insnIndex < instructions.size(); insnIndex++) {
+                AbstractInsnNode insnNode = instructions.get(insnIndex);
+                if (insnNode.getType() == AbstractInsnNode.LABEL) {
+                    LabelNode labelNode = (LabelNode) insnNode;
+                    // If we already have a label pointing at this spot, don't recreate it.
+                    if (clonedLabelNode == null) {
+                        clonedLabelNode = new LabelNode();
                     }
-
-                    // Add an entry in the rangeTable for every label
-                    // in the original code which points at the next
-                    // instruction of our own to be emitted.
-                    rangeTable.put(ilbl, duplbl);
-                } else if (findOwner(i) == this) {
-                    // We will emit this instruction, so clear the 'duplbl' flag
-                    // since the next Label will refer to a distinct
-                    // instruction.
-                    duplbl = null;
+                    clonedLabels.put(labelNode, clonedLabelNode);
+                } else if (findOwner(insnIndex) == this) {
+                    // We will emit this instruction, so clear the duplicateLabelNode flag since the next
+                    // Label will refer to a distinct instruction.
+                    clonedLabelNode = null;
                 }
             }
         }
 
         /**
-         * Returns the "owner" of a particular instruction relative to this
-         * instantiation: the owner referes to the Instantiation which will emit
-         * the version of this instruction that we will execute.
-         *
-         * Typically, the return value is either <code>this</code> or
-         * <code>null</code>. <code>this</code> indicates that this
-         * instantiation will generate the version of this instruction that we
-         * will execute, and <code>null</code> indicates that this instantiation
-         * never executes the given instruction.
-         *
-         * Sometimes, however, an instruction can belong to multiple
-         * subroutines; this is called a "dual citizen" instruction (though it
-         * may belong to more than 2 subroutines), and occurs when multiple
-         * subroutines branch to common points of control. In this case, the
-         * owner is the subroutine that appears lowest on the stack, and which
-         * also owns the instruction in question.
-         *
-         * @param i
-         *            the index of the instruction in the original code
-         * @return the "owner" of a particular instruction relative to this
-         *         instantiation.
-         */
-        public Instantiation findOwner(final int i) {
-            if (!subroutine.get(i)) {
+          * Returns the "owner" of a particular instruction relative to this instantiation: the owner
+          * refers to the Instantiation which will emit the version of this instruction that we will
+          * execute.
+          *
+          * <p>Typically, the return value is either <code>this</code> or <code>null</code>. <code>this
+          * </code> indicates that this instantiation will generate the version of this instruction that
+          * we will execute, and <code>null</code> indicates that this instantiation never executes the
+          * given instruction.
+          *
+          * <p>Sometimes, however, an instruction can belong to multiple subroutines; this is called a
+          * shared instruction, and occurs when multiple subroutines branch to common points of control.
+          * In this case, the owner is the oldest instantiation which owns the instruction in question
+          * (parent instantiations are older than their children).
+          *
+          * @param insnIndex the index of an instruction in the original code.
+          * @return the "owner" of a particular instruction relative to this instantiation.
+          */
+        Instantiation findOwner(final int insnIndex) {
+            if (!subroutineInsns.get(insnIndex)) {
                 return null;
             }
-            if (!dualCitizens.get(i)) {
+            if (!sharedSubroutineInsns.get(insnIndex)) {
                 return this;
             }
-            Instantiation own = this;
-            for (Instantiation p = previous; p != null; p = p.previous) {
-                if (p.subroutine.get(i)) {
-                    own = p;
+            Instantiation owner = this;
+            for (Instantiation instantiation = parent;
+                    instantiation != null;
+                    instantiation = instantiation.parent) {
+                if (instantiation.subroutineInsns.get(insnIndex)) {
+                    owner = instantiation;
                 }
             }
-            return own;
+            return owner;
         }
 
         /**
-         * Looks up the label <code>l</code> in the <code>gotoTable</code>, thus
-         * translating it from a Label in the original code, to a Label in the
-         * inlined code that is appropriate for use by an instruction that
-         * branched to the original label.
-         *
-         * @param l
-         *            The label we will be translating
-         * @return a label for use by a branch instruction in the inlined code
-         * @see #rangeLabel
-         */
-        public LabelNode gotoLabel(final LabelNode l) {
-            // owner should never be null, because owner is only null
-            // if an instruction cannot be reached from this subroutine
-            Instantiation owner = findOwner(instructions.indexOf(l));
-            return owner.rangeTable.get(l);
+          * Returns the clone of the given original label that is appropriate for use in a jump
+          * instruction.
+          *
+          * @param labelNode a label of the original code.
+          * @return a clone of the given label for use in a jump instruction in the inlined code.
+          */
+        LabelNode getClonedLabelForJumpInsn(final LabelNode labelNode) {
+            // findOwner should never return null, because owner is null only if an instruction cannot be
+            // reached from this subroutine.
+            return findOwner(instructions.indexOf(labelNode)).clonedLabels.get(labelNode);
         }
 
         /**
-         * Looks up the label <code>l</code> in the <code>rangeTable</code>,
-         * thus translating it from a Label in the original code, to a Label in
-         * the inlined code that is appropriate for use by an try/catch or
-         * variable use annotation.
-         *
-         * @param l
-         *            The label we will be translating
-         * @return a label for use by a try/catch or variable annotation in the
-         *         original code
-         * @see #rangeTable
-         */
-        public LabelNode rangeLabel(final LabelNode l) {
-            return rangeTable.get(l);
+          * Returns the clone of the given original label that is appropriate for use by a try/catch
+          * block or a variable annotation.
+          *
+          * @param labelNode a label of the original code.
+          * @return a clone of the given label for use by a try/catch block or a variable annotation in
+          *     the inlined code.
+          */
+        LabelNode getClonedLabel(final LabelNode labelNode) {
+            return clonedLabels.get(labelNode);
         }
 
         // AbstractMap implementation
 
         @Override
         public Set<Map.Entry<LabelNode, LabelNode>> entrySet() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public LabelNode get(final Object o) {
-            return gotoLabel((LabelNode) o);
+        public LabelNode get(final Object key) {
+            return getClonedLabelForJumpInsn((LabelNode) key);
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int hashCode() {
+            throw new UnsupportedOperationException();
         }
     }
 }

@@ -56,80 +56,97 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * A {@link ModuleVisitor} adapter for type remapping.
+ * A {@link ModuleVisitor} that remaps types with a {@link Remapper}.
  *
  * @author Remi Forax
  */
 public class ModuleRemapper extends ModuleVisitor {
-    private final Remapper remapper;
 
-    public ModuleRemapper(final ModuleVisitor mv, final Remapper remapper) {
-        this(Opcodes.ASM6, mv, remapper);
+    /** The remapper used to remap the types in the visited module. */
+    protected final Remapper remapper;
+
+    /**
+      * Constructs a new {@link ModuleRemapper}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #ModuleRemapper(int,ModuleVisitor,Remapper)} version.
+      *
+      * @param moduleVisitor the module visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited module.
+      */
+    public ModuleRemapper(final ModuleVisitor moduleVisitor, final Remapper remapper) {
+        this(Opcodes.ASM7, moduleVisitor, remapper);
     }
 
-    protected ModuleRemapper(final int api, final ModuleVisitor mv,
-            final Remapper remapper) {
-        super(api, mv);
+    /**
+      * Constructs a new {@link ModuleRemapper}.
+      *
+      * @param api the ASM API version supported by this remapper. Must be one of {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      * @param moduleVisitor the module visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited module.
+      */
+    protected ModuleRemapper(
+            final int api, final ModuleVisitor moduleVisitor, final Remapper remapper) {
+        super(api, moduleVisitor);
         this.remapper = remapper;
     }
 
     @Override
-    public void visitMainClass(String mainClass) {
+    public void visitMainClass(final String mainClass) {
         super.visitMainClass(remapper.mapType(mainClass));
     }
 
     @Override
-    public void visitPackage(String packaze) {
+    public void visitPackage(final String packaze) {
         super.visitPackage(remapper.mapPackageName(packaze));
     }
 
     @Override
-    public void visitRequire(String module, int access, String version) {
+    public void visitRequire(final String module, final int access, final String version) {
         super.visitRequire(remapper.mapModuleName(module), access, version);
     }
 
     @Override
-    public void visitExport(String packaze, int access, String... modules) {
-        String[] newModules = null;
+    public void visitExport(final String packaze, final int access, final String... modules) {
+        String[] remappedModules = null;
         if (modules != null) {
-            newModules = new String[modules.length];
-            for (int i = 0 ; i < modules.length; i++) {
-                newModules[i] = remapper.mapModuleName(modules[i]);
+            remappedModules = new String[modules.length];
+            for (int i = 0; i < modules.length; ++i) {
+                remappedModules[i] = remapper.mapModuleName(modules[i]);
             }
         }
-        super.visitExport(remapper.mapPackageName(packaze), access, newModules);
+        super.visitExport(remapper.mapPackageName(packaze), access, remappedModules);
     }
 
     @Override
-    public void visitOpen(String packaze, int access, String... modules) {
-        String[] newModules = null;
+    public void visitOpen(final String packaze, final int access, final String... modules) {
+        String[] remappedModules = null;
         if (modules != null) {
-            newModules = new String[modules.length];
-            for (int i = 0 ; i < modules.length; i++) {
-                newModules[i] = remapper.mapModuleName(modules[i]);
+            remappedModules = new String[modules.length];
+            for (int i = 0; i < modules.length; ++i) {
+                remappedModules[i] = remapper.mapModuleName(modules[i]);
             }
         }
-        super.visitOpen(remapper.mapPackageName(packaze), access, newModules);
+        super.visitOpen(remapper.mapPackageName(packaze), access, remappedModules);
     }
 
     @Override
-    public void visitUse(String service) {
+    public void visitUse(final String service) {
         super.visitUse(remapper.mapType(service));
     }
 
     @Override
-    public void visitProvide(String service, String... providers) {
-        String[] newProviders = new String[providers.length];
-        for (int i = 0 ; i < providers.length; i++) {
-            newProviders[i] = remapper.mapType(providers[i]);
+    public void visitProvide(final String service, final String... providers) {
+        String[] remappedProviders = new String[providers.length];
+        for (int i = 0; i < providers.length; ++i) {
+            remappedProviders[i] = remapper.mapType(providers[i]);
         }
-        super.visitProvide(remapper.mapType(service), newProviders);
+        super.visitProvide(remapper.mapType(service), remappedProviders);
     }
 }

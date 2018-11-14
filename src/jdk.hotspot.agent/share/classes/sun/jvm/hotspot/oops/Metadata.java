@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.jvm.hotspot.oops;
 
 import java.io.*;
 import java.util.*;
+import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
@@ -86,5 +87,13 @@ abstract public class Metadata extends VMObject {
   abstract public void printValueOn(PrintStream tty);
   public void dumpReplayData(PrintStream out) {
       out.println("# Unknown Metadata");
+  }
+
+  public boolean isShared() {
+    VM vm = VM.getVM();
+    if (vm.isSharingEnabled()) {
+      return MetaspaceObj.isShared(getAddress());
+    }
+    return false;
   }
 }

@@ -60,7 +60,7 @@ final class JIInliner extends ClassVisitor {
         this.instrumentationClassName = instrumentationClassName;
         this.instrumentationMethods = instrumentationMethods;
 
-        ClassNode cn = new ClassNode(Opcodes.ASM5);
+        ClassNode cn = new ClassNode(Opcodes.ASM7);
         targetClassReader.accept(cn, ClassReader.EXPAND_FRAMES);
         this.targetClassNode = cn;
     }

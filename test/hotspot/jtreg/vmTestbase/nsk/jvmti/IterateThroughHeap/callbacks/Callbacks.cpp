@@ -111,25 +111,25 @@ static object_info_t objects_info[TEST_OBJECTS_COUNT];
 
 // Check if the signature is signature of primitive type.
 jboolean is_primitive_type(const char *signature) {
-  if(!strcmp(signature,"C")
-     || !strcmp(signature, "B")
-     || !strcmp(signature, "S")
-     || !strcmp(signature, "I")
-     || !strcmp(signature, "J")
-     || !strcmp(signature, "F")
-     || !strcmp(signature, "D")
-     || !strcmp(signature, "Z"))
+  if (!strcmp(signature,"C")
+      || !strcmp(signature, "B")
+      || !strcmp(signature, "S")
+      || !strcmp(signature, "I")
+      || !strcmp(signature, "J")
+      || !strcmp(signature, "F")
+      || !strcmp(signature, "D")
+      || !strcmp(signature, "Z"))
     return JNI_TRUE;
   return JNI_FALSE;
 }
 
 // For given signature find expected tag type
 int get_tag_type(const char *signature) {
-  if(is_primitive_type(signature)) {
+  if (is_primitive_type(signature)) {
     return TAG_TYPE_PRIMITIVE;
-  } else if(signature[0]=='[' && is_primitive_type(signature+1)) {
+  } else if (signature[0]=='[' && is_primitive_type(signature+1)) {
     return TAG_TYPE_ARRAY;
-  } else if(!strcmp(signature, "Ljava/lang/String;")) {
+  } else if (!strcmp(signature, "Ljava/lang/String;")) {
     return TAG_TYPE_STRING;
   } else {
     return TAG_TYPE_OBJECT;
@@ -141,7 +141,7 @@ int get_tag_type(const char *signature) {
   * Returns 0 if value matched with expected.
   */
 jboolean verify_value(jvalue value, jvmtiPrimitiveType type) {
-  switch(type) {
+  switch (type) {
   case JVMTI_PRIMITIVE_TYPE_BOOLEAN:
     return value.z==BOOLEAN;
   case JVMTI_PRIMITIVE_TYPE_BYTE:
@@ -167,7 +167,7 @@ jboolean verify_value(jvalue value, jvmtiPrimitiveType type) {
 // Check that array values are correct depending on type of elements
 jboolean verify_array(const void *array, jvmtiPrimitiveType type, jint length) {
   void *expected_array;
-  switch(type) {
+  switch (type) {
   case JVMTI_PRIMITIVE_TYPE_BOOLEAN:
     expected_array = (void*)BOOLEAN_ARRAY;
     break;
@@ -210,11 +210,11 @@ jint JNICALL field_callback(jvmtiHeapReferenceKind kind,
   tag = *object_tag_ptr;
 
   // skip all non-tagged fields as well as fields of tagged objects
-  if(tag == 0 ||
-     DECODE_TYPE(tag) == TAG_TYPE_OBJECT ||
-     DECODE_TYPE(tag) == TAG_TYPE_STRING) {
+  if (tag == 0 ||
+      DECODE_TYPE(tag) == TAG_TYPE_OBJECT ||
+      DECODE_TYPE(tag) == TAG_TYPE_STRING) {
     return 0;
-  } else if(DECODE_TYPE(tag) != TAG_TYPE_PRIMITIVE) {
+  } else if (DECODE_TYPE(tag) != TAG_TYPE_PRIMITIVE) {
     NSK_COMPLAIN3("jvmtiPrimitiveFieldCallback was invoked for an object with "
                   "non-primitive field tag (0x%lX) corresponging to %s::%s.\n",
                   DECODE_TYPE(tag),
@@ -226,7 +226,7 @@ jint JNICALL field_callback(jvmtiHeapReferenceKind kind,
 
   objects_info[DECODE_OBJECT(tag)].fields[info->field.index].found++;
 
-  if(!verify_value(value, value_type)) {
+  if (!verify_value(value, value_type)) {
     NSK_COMPLAIN2("Field %s::%s has unexpected value.\n",
                   objects_info[DECODE_OBJECT(tag)].name,
                   objects_info[DECODE_OBJECT(tag)].fields[info->field.index].name);
@@ -245,9 +245,9 @@ jint JNICALL string_callback(jlong class_tag,
   int i;
 
   //skip all untegged strings
-  if(*tag_ptr==0) {
+  if (*tag_ptr==0) {
     return 0;
-  } else if(DECODE_TYPE(*tag_ptr) != TAG_TYPE_STRING) {
+  } else if (DECODE_TYPE(*tag_ptr) != TAG_TYPE_STRING) {
     NSK_COMPLAIN2("jvmtiStringPrimitiveValueCallback was invoked for an object "
                   "with non-string tag corresponding to %s::%s.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
@@ -258,7 +258,7 @@ jint JNICALL string_callback(jlong class_tag,
   objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].found++;
 
   //check that reported length is the same as expected
-  if(value_length != (jint) wcslen(STRING)) {
+  if (value_length != (jint) wcslen(STRING)) {
     NSK_COMPLAIN4("Length of reported string %s::%s is %d while %d is expected.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
                   objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].name,
@@ -269,11 +269,11 @@ jint JNICALL string_callback(jlong class_tag,
   }
 
   //compare reported value with expected one
-  for(i = 0; i<value_length && matched; i++) {
+  for (i = 0; i<value_length && matched; i++) {
     matched = value[i] == STRING[i];
   }
 
-  if(!matched) {
+  if (!matched) {
     NSK_COMPLAIN2("Value of field %s::%s has unexpected value.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
                   objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].name);
@@ -291,9 +291,9 @@ jint JNICALL array_callback(jlong class_tag,
                             const void* elements,
                             void* user_data) {
   //skip untegged arrays
-  if(*tag_ptr == 0) {
+  if (*tag_ptr == 0) {
     return 0;
-  } else if(DECODE_TYPE(*tag_ptr) != TAG_TYPE_ARRAY) {
+  } else if (DECODE_TYPE(*tag_ptr) != TAG_TYPE_ARRAY) {
     NSK_COMPLAIN2("jvmtiArrayPrimitiveValueCallbak was invoked for object "
                   "with non-array tag corresponding to %s::%s.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
@@ -305,14 +305,14 @@ jint JNICALL array_callback(jlong class_tag,
   objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].found++;
 
   //check if reported length is the same as expected
-  if(element_count != ARRAY_LENGTH) {
+  if (element_count != ARRAY_LENGTH) {
     NSK_COMPLAIN4("Length of array %s::%s is %d while %d is expected.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
                   objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].name,
                   element_count,
                   ARRAY_LENGTH);
     nsk_jvmti_setFailStatus();
-  } else if(!verify_array(elements, element_type, element_count)) {
+  } else if (!verify_array(elements, element_type, element_count)) {
     //compare array with expected one
     NSK_COMPLAIN2("Value of field %s::%s has unexpected value.\n",
                   objects_info[DECODE_OBJECT(*tag_ptr)].name,
@@ -328,11 +328,11 @@ jint JNICALL heap_callback(jlong class_tag,
                            jint length,
                            void* user_data) {
   //skip untagged objects
-  if(*tag_ptr == 0) {
+  if (*tag_ptr == 0) {
     return 0;
   }
 
-  if(DECODE_TYPE(*tag_ptr) != TAG_TYPE_PRIMITIVE) {
+  if (DECODE_TYPE(*tag_ptr) != TAG_TYPE_PRIMITIVE) {
     objects_info[DECODE_OBJECT(*tag_ptr)].fields[DECODE_FIELD(*tag_ptr)].found++;
   }
 
@@ -341,7 +341,7 @@ jint JNICALL heap_callback(jlong class_tag,
 
 JNIEXPORT void JNICALL
 object_free_callback(jvmtiEnv* jvmti, jlong tag) {
-  if(DECODE_TYPE(tag)==TAG_TYPE_PRIMITIVE) {
+  if (DECODE_TYPE(tag)==TAG_TYPE_PRIMITIVE) {
     int object = DECODE_OBJECT(tag);
     objects_info[object].collected = 1;
     NSK_DISPLAY1("Object %s collected.\n",
@@ -368,69 +368,69 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
   jobjectArray testObjects;
   int object;
 
-  if(!NSK_VERIFY(NULL != (debugee = jni->FindClass(className))))
+  if (!NSK_VERIFY(NULL != (debugee = jni->FindClass(className))))
     return JNI_ERR;
 
-  if(!NSK_VERIFY(NULL != (testObjectsField = jni->GetStaticFieldID(debugee, fieldName, fieldSig))))
+  if (!NSK_VERIFY(NULL != (testObjectsField = jni->GetStaticFieldID(debugee, fieldName, fieldSig))))
     return JNI_ERR;
 
-  if(!NSK_VERIFY(NULL != (testObjects = (jobjectArray)(jni->GetStaticObjectField(
+  if (!NSK_VERIFY(NULL != (testObjects = (jobjectArray)(jni->GetStaticObjectField(
           debugee, testObjectsField)))))
     return JNI_ERR;
 
   // For each of test objects tag every field
-  for(object = 0; object<TEST_OBJECTS_COUNT; object++) {
+  for (object = 0; object<TEST_OBJECTS_COUNT; object++) {
     jobject target;
     jclass targetClass;
     jfieldID *targetFields;
     jint field;
 
     memset(&objects_info[object],0,sizeof(object_info_t));
-    if(!NSK_VERIFY(NULL != (target = jni->GetObjectArrayElement(testObjects, object))))
+    if (!NSK_VERIFY(NULL != (target = jni->GetObjectArrayElement(testObjects, object))))
       return JNI_ERR;
 
-    if(!NSK_VERIFY(NULL != (targetClass = jni->GetObjectClass(target))))
+    if (!NSK_VERIFY(NULL != (targetClass = jni->GetObjectClass(target))))
       return JNI_ERR;
 
-    if(!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(targetClass, &(objects_info[object].name), NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(targetClass, &(objects_info[object].name), NULL)))
       return JNI_ERR;
 
-    if(!NSK_JVMTI_VERIFY(jvmti->GetClassFields(
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassFields(
             targetClass, &(objects_info[object].fields_count), &targetFields)))
       return JNI_ERR;
 
     objects_info[object].fields = (field_info_t*)calloc(objects_info[object].fields_count,sizeof(field_info_t));
 
     // Iterate over fields, collect info about it and tag non primitive fields.
-    for(field = 0; field < objects_info[object].fields_count; field++) {
-      if(!NSK_JVMTI_VERIFY(jvmti->GetFieldName(targetClass,
-                                               targetFields[field],
-                                               &objects_info[object].fields[field].name,
-                                               &objects_info[object].fields[field].signature,
-                                               NULL)))
+    for (field = 0; field < objects_info[object].fields_count; field++) {
+      if (!NSK_JVMTI_VERIFY(jvmti->GetFieldName(targetClass,
+                                                targetFields[field],
+                                                &objects_info[object].fields[field].name,
+                                                &objects_info[object].fields[field].signature,
+                                                NULL)))
         return JNI_ERR;
-      if(is_primitive_type(objects_info[object].fields[field].signature)) {
+      if (is_primitive_type(objects_info[object].fields[field].signature)) {
         objects_info[object].fields[field].primitive = 1;
       } else {
         jint modifiers;
         jobject value;
         int tag_type = get_tag_type(objects_info[object].fields[field].signature);
-        if(!NSK_JVMTI_VERIFY(jvmti->GetFieldModifiers(
+        if (!NSK_JVMTI_VERIFY(jvmti->GetFieldModifiers(
                 targetClass, targetFields[field], &modifiers))) {
           return JNI_ERR;
         }
-        if(modifiers & STATIC_FIELD) {
-          if(!NSK_VERIFY(NULL != (value = jni->GetStaticObjectField(targetClass,
-                                                                    targetFields[field])))) {
+        if (modifiers & STATIC_FIELD) {
+          if (!NSK_VERIFY(NULL != (value = jni->GetStaticObjectField(targetClass,
+                                                                     targetFields[field])))) {
             return JNI_ERR;
           }
         } else {
-          if(!NSK_VERIFY(NULL != (value = jni->GetObjectField(target, targetFields[field])))) {
+          if (!NSK_VERIFY(NULL != (value = jni->GetObjectField(target, targetFields[field])))) {
             return JNI_ERR;
           }
         }
         //tag field's value
-        if(!NSK_JVMTI_VERIFY(jvmti->SetTag(value, ENCODE_TAG(tag_type,object,field)))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetTag(value, ENCODE_TAG(tag_type,object,field)))) {
           return JNI_ERR;
         }
         //remove local reference so object will have a chance to become unreachable
@@ -439,9 +439,9 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
     }
 
     // tag class and it's instance to pass this tag into primitive field callback
-    if(!NSK_JVMTI_VERIFY(jvmti->SetTag(target, ENCODE_TAG(TAG_TYPE_PRIMITIVE,object,0))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, ENCODE_TAG(TAG_TYPE_PRIMITIVE,object,0))))
       return JNI_ERR;
-    if(!NSK_JVMTI_VERIFY(jvmti->SetTag(targetClass, ENCODE_TAG(TAG_TYPE_PRIMITIVE,object,0))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(targetClass, ENCODE_TAG(TAG_TYPE_PRIMITIVE,object,0))))
       return JNI_ERR;
 
     NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)targetFields));
@@ -459,8 +459,8 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
 void release_object_info(jvmtiEnv *jvmti, JNIEnv *jni) {
   int object;
   int field;
-  for(object = 0; object < TEST_OBJECTS_COUNT; object++) {
-    for(field = 0; field < objects_info[object].fields_count; field++) {
+  for (object = 0; object < TEST_OBJECTS_COUNT; object++) {
+    for (field = 0; field < objects_info[object].fields_count; field++) {
       jvmti->Deallocate((unsigned char*)objects_info[object].fields[field].name);
       jvmti->Deallocate((unsigned char*)objects_info[object].fields[field].signature);
     }
@@ -473,15 +473,15 @@ void release_object_info(jvmtiEnv *jvmti, JNIEnv *jni) {
 void verify_objects() {
   int object;
   int field;
-  for(object = 0; object < TEST_OBJECTS_COUNT; object++) {
-    for(field = 0; field < objects_info[object].fields_count; field++) {
+  for (object = 0; object < TEST_OBJECTS_COUNT; object++) {
+    for (field = 0; field < objects_info[object].fields_count; field++) {
       // If primitive field of object that was not collected or
       // non primitive field that was not collected was not found
       // expected amount of times, than test failed.
-      if((objects_info[object].fields[field].primitive && !objects_info[object].collected)
-         || !objects_info[object].fields[field].collected) {
+      if ((objects_info[object].fields[field].primitive && !objects_info[object].collected)
+          || !objects_info[object].fields[field].collected) {
         int expected = 0;
-        switch(get_tag_type(objects_info[object].fields[field].signature)) {
+        switch (get_tag_type(objects_info[object].fields[field].signature)) {
         case TAG_TYPE_STRING:
           expected = STRING_OCCURANCE_COUNT;
           break;
@@ -495,7 +495,7 @@ void verify_objects() {
           expected = NONPRIMITIVE_OCCURANCE_COUNT;
           break;
         }
-        if(expected != objects_info[object].fields[field].found) {
+        if (expected != objects_info[object].fields[field].found) {
           NSK_COMPLAIN4("Field %s::%s expected to be found %d times, "
                         "but it was found %d times.\n",
                         objects_info[object].name,
@@ -515,15 +515,15 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   jvmtiHeapCallbacks primitive_callbacks;
 
   NSK_DISPLAY0("Waiting debugee.\n");
-  if(!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL))) {
     return;
   }
-  if(!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
+  if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
     return;
   }
 
   NSK_DISPLAY0("Tagging fields.\n");
-  if(!NSK_VERIFY(JNI_OK==tag_objects(jvmti, jni))) {
+  if (!NSK_VERIFY(JNI_OK==tag_objects(jvmti, jni))) {
     return;
   }
 
@@ -534,7 +534,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   primitive_callbacks.heap_iteration_callback = &heap_callback;
 
   NSK_DISPLAY0("Iterating over reachable objects.\n");
-  if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -542,16 +542,16 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   NSK_DISPLAY0("Verifying that all filds were found.\n");
   verify_objects();
 
-  if(!NSK_VERIFY(nsk_jvmti_resumeSync())) {
+  if (!NSK_VERIFY(nsk_jvmti_resumeSync())) {
     return;
   }
 
-  if(!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
+  if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
     return;
   }
 
   NSK_DISPLAY0("Iterating over unreachable objects.\n");
-  if(!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -559,13 +559,13 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   NSK_DISPLAY0("Verifying that all filds were found.\n");
   verify_objects();
 
-  if(!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, NULL))) {
     return;
   }
 
   release_object_info(jvmti, jni);
 
-  if(!NSK_VERIFY(nsk_jvmti_resumeSync()))
+  if (!NSK_VERIFY(nsk_jvmti_resumeSync()))
     return;
 }
 
@@ -598,13 +598,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_tag_objects = 1;
   caps.can_generate_object_free_events = 1;
 
-  if(!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps))) {
     return JNI_ERR;
   }
 
   memset(&event_callbacks, 0, sizeof(jvmtiEventCallbacks));
   event_callbacks.ObjectFree = &object_free_callback;
-  if(!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&event_callbacks, sizeof(jvmtiEventCallbacks)))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&event_callbacks, sizeof(jvmtiEventCallbacks)))) {
     return JNI_ERR;
   }
 

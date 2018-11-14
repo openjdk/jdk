@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
 public class SystemDictionary {
-  private static AddressField sharedDictionaryField;
   private static sun.jvm.hotspot.types.OopField javaSystemLoaderField;
 
   private static AddressField objectKlassField;
@@ -54,7 +53,6 @@ public class SystemDictionary {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("SystemDictionary");
 
-    sharedDictionaryField = type.getAddressField("_shared_dictionary");
     javaSystemLoaderField = type.getOopField("_java_system_loader");
 
     objectKlassField = type.getAddressField(WK_KLASS("Object_klass"));
@@ -74,11 +72,6 @@ public class SystemDictionary {
   private static String WK_KLASS_ENUM_NAME(String kname) {
       //#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
       return (kname+"_knum");
-  }
-
-  public Dictionary sharedDictionary() {
-    Address tmp = sharedDictionaryField.getValue();
-    return (Dictionary) VMObjectFactory.newObject(Dictionary.class, tmp);
   }
 
   // few well known classes -- not all are added here.

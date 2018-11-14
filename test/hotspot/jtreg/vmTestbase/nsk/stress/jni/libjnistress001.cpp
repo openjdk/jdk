@@ -72,7 +72,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
         for (j=0;j<nstr;j++)
             element->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
     }
-    for(j=0;j<DIGESTLENGTH;j++) {
+    for (j=0;j<DIGESTLENGTH;j++) {
         digest[j]=0;
     }
     element->str[allocs] = env->GetStringUTFChars(jstr,0); CE
@@ -97,7 +97,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
         tmpstr=env->NewStringUTF(element->str[allocs-1]); CE
         for (j=0; j<nstr; j++) {
 
-            for(i=0;i<DIGESTLENGTH;i++) {
+            for (i=0;i<DIGESTLENGTH;i++) {
                 digest[i]=0;
             }
             for (k=0; k < strlen(element->str[j]); k++) {
@@ -168,7 +168,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
         for (j=0;j<nstr;j++)
             javachars->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
     }
-    for(j=0;j<DIGESTLENGTH;j++) {
+    for (j=0;j<DIGESTLENGTH;j++) {
         digest[j]=0;
     }
     javachars->str[index] = env->GetStringChars(jstr,0); CE
@@ -181,7 +181,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
     }
 
     //memcpy(digest, elem, javachars->size[index]);
-    for(j=0;j<elem_len; j++) {
+    for (j=0;j<elem_len; j++) {
         digest[j % DIGESTLENGTH]+=elem[j];
     }
     memcpy(javachars->checkstr[index++],digest,DIGESTLENGTH);
@@ -201,10 +201,10 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
                 elem[i] = (char) javachars->str[j][i];
             }
             //memcpy(digest, elem, javachars->size[j]);
-            for(i=0;i<DIGESTLENGTH;i++) {
+            for (i=0;i<DIGESTLENGTH;i++) {
                 digest[i]=0;
             }
-            for(i=0;i<javachars->size[j]; i++) {
+            for (i=0;i<javachars->size[j]; i++) {
                 digest[i % DIGESTLENGTH]+=elem[i];
             }
             free(elem);
@@ -217,7 +217,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
             else {
                 equal=0;
                 printf("The Unicode element No. %d has been corrupted\n",j);
-                for(i=0;i<DIGESTLENGTH;i++) {
+                for (i=0;i<DIGESTLENGTH;i++) {
                     printf("digest[%d]=%02x checkstr[%d]=%02x\n",i,digest[i],i,javachars->checkstr[j][i]);
                 }
             }

@@ -178,7 +178,7 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_RegisterCompletedThread(JNIEnv * env,
 static void print_timerinfo(jvmtiTimerInfo* timerInfo) {
   char buffer[32];
   const char* timerKind;
-  switch(timerInfo->kind) {
+  switch (timerInfo->kind) {
   case JVMTI_TIMER_USER_CPU:
     timerKind = "JVMTI_TIMER_USER_CPU";
     break;

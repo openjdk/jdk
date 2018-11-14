@@ -116,7 +116,7 @@ int nsk_jvmti_aod_getClassName(jvmtiEnv *jvmti, jclass klass, char classNameBuff
 
 int nsk_jvmti_aod_getThreadName(jvmtiEnv * jvmti, jthread thread, char threadNameBuffer[]) {
     jvmtiThreadInfo info;
-    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))){
+    if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))) {
         NSK_COMPLAIN0("Failed to get thread info\n");
         threadNameBuffer[0] = '\0';
         return NSK_FALSE;

@@ -350,7 +350,3 @@ ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(const char* path
   cached_path_entries->insert_before(0, ccpe);
   return new_entry;
 }
-
-Klass* ClassLoaderExt::load_one_class(ClassListParser* parser, TRAPS) {
-  return parser->load_current_class(THREAD);
-}

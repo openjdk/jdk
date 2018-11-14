@@ -64,7 +64,7 @@ final class JIMethodMergeAdapter extends ClassVisitor {
      * @param typeMappings - while merging, type references in the methods will be changed according to this map
      */
     public JIMethodMergeAdapter(ClassVisitor cv, ClassNode cn, List<Method> methodFilter, JITypeMapping[] typeMappings) {
-        super(Opcodes.ASM5, cv);
+        super(Opcodes.ASM7, cv);
         this.cn = cn;
         this.methodFilter = methodFilter;
 

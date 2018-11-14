@@ -82,6 +82,7 @@ import com.sun.tools.javac.tree.DCTree.DCSerialField;
 import com.sun.tools.javac.tree.DCTree.DCSince;
 import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCSummary;
+import com.sun.tools.javac.tree.DCTree.DCSystemProperty;
 import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DCTree.DCThrows;
 import com.sun.tools.javac.tree.DCTree.DCUnknownBlockTag;
@@ -443,6 +444,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCSummary newSummaryTree(List<? extends DocTree> text) {
         DCSummary tree = new DCSummary(cast(text));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSystemProperty newSystemPropertyTree(Name propertyName) {
+        DCSystemProperty tree = new DCSystemProperty(propertyName);
         tree.pos = pos;
         return tree;
     }

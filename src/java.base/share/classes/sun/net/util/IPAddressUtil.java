@@ -184,7 +184,7 @@ public class IPAddressUtil {
             }
             if (ch == '.' && ((j + INADDR4SZ) <= INADDR16SZ)) {
                 String ia4 = src.substring(curtok, srcb_length);
-                /* check this IPv4 address has 3 dots, ie. A.B.C.D */
+                /* check this IPv4 address has 3 dots, i.e. A.B.C.D */
                 int dot_count = 0, index=0;
                 while ((index = ia4.indexOf ('.', index)) != -1) {
                     dot_count ++;

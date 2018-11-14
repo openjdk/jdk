@@ -34,7 +34,7 @@ Java_nsk_share_locks_LockingThread_nativeJNIMonitorEnter(JNIEnv *env, jobject th
 
         success  = env->MonitorEnter(object);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
@@ -50,7 +50,7 @@ Java_nsk_share_locks_LockingThread_nativeJNIMonitorEnter(JNIEnv *env, jobject th
 
         success  = env->MonitorExit(object);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 

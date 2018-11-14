@@ -57,7 +57,7 @@ public final class EventClassBuilder {
 
     public EventClassBuilder(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
         this.fullClassName = "jdk.jfr.DynamicEvent" + idCounter.incrementAndGet();
-        this.type = Type.getType(fullClassName.replace(".", "/"));
+        this.type = Type.getType("L" + fullClassName.replace(".", "/") + ";");
         this.fields = fields;
         this.annotationElements = annotationElements;
     }

@@ -61,7 +61,7 @@ public class CDSandJFR {
         String appJar = ClassFileInstaller.getJarPath("CDSandJFR.jar");
         OutputAnalyzer output;
         output = TestCommon.testDump(appJar, TestCommon.list(classes));
-        TestCommon.checkDump(output, "Skipping JFR event class jdk/jfr/");
+        TestCommon.checkDump(output, "Skipping jdk/jfr/Event: JFR event class");
 
         output = TestCommon.exec(appJar,
                                  "-XX:StartFlightRecording=dumponexit=true",

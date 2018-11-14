@@ -65,99 +65,159 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
- * A set of at most two elements.
+ * An immutable set of at most two elements, optimized for speed compared to a generic set
+ * implementation.
  *
  * @author Eric Bruneton
  */
-class SmallSet<E> extends AbstractSet<E> implements Iterator<E> {
+final class SmallSet<T> extends AbstractSet<T> {
 
-    // if e1 is null, e2 must be null; otherwise e2 must be different from e1
+    /** The first element of this set, maybe {@literal null}. */
+    private final T element1;
 
-    E e1, e2;
+    /**
+      * The second element of this set, maybe {@literal null}. If {@link #element1} is {@literal null}
+      * then this field must be {@literal null}, otherwise it must be different from {@link #element1}.
+      */
+    private final T element2;
 
-    static final <T> Set<T> emptySet() {
-        return new SmallSet<T>(null, null);
+    // -----------------------------------------------------------------------------------------------
+    // Constructors
+    // -----------------------------------------------------------------------------------------------
+
+    /** Constructs an empty set. */
+    SmallSet() {
+        this.element1 = null;
+        this.element2 = null;
     }
 
-    SmallSet(final E e1, final E e2) {
-        this.e1 = e1;
-        this.e2 = e2;
+    /**
+      * Constructs a set with exactly one element.
+      *
+      * @param element the unique set element.
+      */
+    SmallSet(final T element) {
+        this.element1 = element;
+        this.element2 = null;
     }
 
-    // -------------------------------------------------------------------------
-    // Implementation of inherited abstract methods
-    // -------------------------------------------------------------------------
+    /**
+      * Constructs a new {@link SmallSet}.
+      *
+      * @param element1 see {@link #element1}.
+      * @param element2 see {@link #element2}.
+      */
+    private SmallSet(final T element1, final T element2) {
+        this.element1 = element1;
+        this.element2 = element2;
+    }
+
+    // -----------------------------------------------------------------------------------------------
+    // Implementation of the inherited abstract methods
+    // -----------------------------------------------------------------------------------------------
 
     @Override
-    public Iterator<E> iterator() {
-        return new SmallSet<E>(e1, e2);
+    public Iterator<T> iterator() {
+        return new IteratorImpl<T>(element1, element2);
     }
 
     @Override
     public int size() {
-        return e1 == null ? 0 : (e2 == null ? 1 : 2);
+        return element1 == null ? 0 : (element2 == null ? 1 : 2);
     }
 
-    // -------------------------------------------------------------------------
-    // Implementation of the Iterator interface
-    // -------------------------------------------------------------------------
-
-    public boolean hasNext() {
-        return e1 != null;
-    }
-
-    public E next() {
-        if (e1 == null) {
-            throw new NoSuchElementException();
-        }
-        E e = e1;
-        e1 = e2;
-        e2 = null;
-        return e;
-    }
-
-    public void remove() {
-    }
-
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
     // Utility methods
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
-    Set<E> union(final SmallSet<E> s) {
-        if ((s.e1 == e1 && s.e2 == e2) || (s.e1 == e2 && s.e2 == e1)) {
-            return this; // if the two sets are equal, return this
+    /**
+      * Returns the union of this set and of the given set.
+      *
+      * @param otherSet another small set.
+      * @return the union of this set and of otherSet.
+      */
+    Set<T> union(final SmallSet<T> otherSet) {
+        // If the two sets are equal, return this set.
+        if ((otherSet.element1 == element1 && otherSet.element2 == element2)
+                || (otherSet.element1 == element2 && otherSet.element2 == element1)) {
+            return this;
         }
-        if (s.e1 == null) {
-            return this; // if s is empty, return this
+        // If one set is empty, return the other.
+        if (otherSet.element1 == null) {
+            return this;
         }
-        if (e1 == null) {
-            return s; // if this is empty, return s
+        if (element1 == null) {
+            return otherSet;
         }
-        if (s.e2 == null) { // s contains exactly one element
-            if (e2 == null) {
-                return new SmallSet<E>(e1, s.e1); // necessarily e1 != s.e1
-            } else if (s.e1 == e1 || s.e1 == e2) { // s is included in this
+
+        // At this point we know that the two sets are non empty and are different.
+        // If otherSet contains exactly one element:
+        if (otherSet.element2 == null) {
+            // If this set also contains exactly one element, we have two distinct elements.
+            if (element2 == null) {
+                return new SmallSet<T>(element1, otherSet.element1);
+            }
+            // If otherSet is included in this set, return this set.
+            if (otherSet.element1 == element1 || otherSet.element1 == element2) {
                 return this;
             }
         }
-        if (e2 == null) { // this contains exactly one element
-            // if (s.e2 == null) { // cannot happen
-            // return new SmallSet(e1, s.e1); // necessarily e1 != s.e1
-            // } else
-            if (e1 == s.e1 || e1 == s.e2) { // this in included in s
-                return s;
+        // If this set contains exactly one element, then otherSet contains two elements (because of the
+        // above tests). Thus, if otherSet contains this set, return otherSet:
+        if (element2 == null && (element1 == otherSet.element1 || element1 == otherSet.element2)) {
+            return otherSet;
+        }
+
+        // At this point we know that there are at least 3 distinct elements, so we need a generic set
+        // to store the result.
+        HashSet<T> result = new HashSet<T>(4);
+        result.add(element1);
+        if (element2 != null) {
+            result.add(element2);
+        }
+        result.add(otherSet.element1);
+        if (otherSet.element2 != null) {
+            result.add(otherSet.element2);
+        }
+        return result;
+    }
+
+    static class IteratorImpl<T> implements Iterator<T> {
+
+        /** The next element to return in {@link #next}. Maybe {@literal null}. */
+        private T firstElement;
+
+        /**
+          * The element to return in {@link #next}, after {@link #firstElement} is returned. If {@link
+          * #firstElement} is {@literal null} then this field must be {@literal null}, otherwise it must
+          * be different from {@link #firstElement}.
+          */
+        private T secondElement;
+
+        IteratorImpl(final T firstElement, final T secondElement) {
+            this.firstElement = firstElement;
+            this.secondElement = secondElement;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return firstElement != null;
+        }
+
+        @Override
+        public T next() {
+            if (firstElement == null) {
+                throw new NoSuchElementException();
             }
+            T element = firstElement;
+            firstElement = secondElement;
+            secondElement = null;
+            return element;
         }
-        // here we know that there are at least 3 distinct elements
-        HashSet<E> r = new HashSet<E>(4);
-        r.add(e1);
-        if (e2 != null) {
-            r.add(e2);
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
-        r.add(s.e1);
-        if (s.e2 != null) {
-            r.add(s.e2);
-        }
-        return r;
     }
 }

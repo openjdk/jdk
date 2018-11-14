@@ -30,8 +30,6 @@ public class ClassWriterExt extends ClassWriter {
     private boolean cacheMTypes = true;
     private boolean cacheMHandles = true;
 
-    private final Item key = new Item();
-
     public ClassWriterExt(ClassReader cr, int flags) {
         super(cr, flags);
     }
@@ -39,7 +37,7 @@ public class ClassWriterExt extends ClassWriter {
     public ClassWriterExt(int flags) {
         super(flags);
     }
-
+/*
     @Override
     Item newInvokeDynamicItem(final String name, final String desc,
                     final Handle bsm, final Object... bsmArgs) {
@@ -108,14 +106,17 @@ public class ClassWriterExt extends ClassWriter {
             }
         }
     }
-
+*/
     public void setCacheInvokeDynamic(boolean value) {
+        if (!value) throw new Error("method isn't implemented yet");
         cacheInvokeDynamic = value;
     }
     public void setCacheMTypes(boolean value) {
+        if (!value) throw new Error("method isn't implemented yet");
         cacheMTypes = value;
     }
     public void setCacheMHandles(boolean value) {
+        if (!value) throw new Error("method isn't implemented yet");
         cacheMHandles = value;
     }
 

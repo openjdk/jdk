@@ -802,9 +802,6 @@ class os: AllStatic {
   // System loadavg support.  Returns -1 if load average cannot be obtained.
   static int loadavg(double loadavg[], int nelem);
 
-  // Hook for os specific jvm options that we don't want to abort on seeing
-  static bool obsolete_option(const JavaVMOption *option);
-
   // Amount beyond the callee frame size that we bang the stack.
   static int extra_bang_size_in_bytes();
 

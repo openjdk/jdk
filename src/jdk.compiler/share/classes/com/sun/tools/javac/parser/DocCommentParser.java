@@ -1032,6 +1032,14 @@ public class DocCommentParser {
         return names.fromChars(buf, start, bp - start);
     }
 
+    protected Name readSystemPropertyName() {
+        int pos = bp;
+        nextChar();
+        while (bp < buflen && Character.isUnicodeIdentifierPart(ch) || ch == '.')
+            nextChar();
+        return names.fromChars(buf, pos, bp - pos);
+    }
+
     protected boolean isDecimalDigit(char ch) {
         return ('0' <= ch && ch <= '9');
     }
@@ -1357,6 +1365,28 @@ public class DocCommentParser {
                 public DCTree parse(int pos) throws ParseException {
                     List<DCTree> summary = inlineContent();
                     return m.at(pos).newSummaryTree(summary);
+                }
+            },
+
+            // @systemProperty property-name
+            new TagParser(Kind.INLINE, DCTree.Kind.SYSTEM_PROPERTY) {
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    if (ch == '}') {
+                        throw new ParseException("dc.no.content");
+                    }
+                    Name propertyName = readSystemPropertyName();
+                    if (propertyName == null) {
+                        throw new ParseException("dc.no.content");
+                    }
+                    skipWhitespace();
+                    if (ch != '}') {
+                        nextChar();
+                        throw new ParseException("dc.unexpected.content");
+                    } else {
+                        nextChar();
+                        return m.at(pos).newSystemPropertyTree(propertyName);
+                    }
                 }
             },
 

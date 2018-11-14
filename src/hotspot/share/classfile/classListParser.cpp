@@ -287,7 +287,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   if (!is_id_specified()) {
     error("If source location is specified, id must be also specified");
   }
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, THREAD);
+  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
 
   if (strncmp(_class_name, "java/", 5) == 0) {
     log_info(cds)("Prohibited package for non-bootstrap classes: %s.class from %s",
@@ -303,8 +303,9 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
             _interfaces->length(), k->local_interfaces()->length());
     }
 
-    if (!SystemDictionaryShared::add_non_builtin_klass(class_name, ClassLoaderData::the_null_class_loader_data(),
-                                                       k, THREAD)) {
+    bool added = SystemDictionaryShared::add_unregistered_class(k, CHECK_NULL);
+    if (!added) {
+      // We allow only a single unregistered class for each unique name.
       error("Duplicated class %s", _class_name);
     }
 
@@ -353,7 +354,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
                               vmSymbols::loadClass_name(),
                               vmSymbols::string_class_signature(),
                               ext_class_name,
-                              THREAD);
+                              THREAD); // <-- failure is handled below
     } else {
       // array classes are not supported in class list.
       THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());

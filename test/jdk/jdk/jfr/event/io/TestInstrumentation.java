@@ -329,7 +329,7 @@ public class TestInstrumentation implements ClassFileTransformer {
         private String className;
 
         public CallbackClassVisitor(ClassVisitor cv) {
-            super(Opcodes.ASM5, cv);
+            super(Opcodes.ASM7, cv);
         }
 
         @Override
@@ -358,7 +358,7 @@ public class TestInstrumentation implements ClassFileTransformer {
         private String logMessage;
 
         public CallbackMethodVisitor(MethodVisitor mv, String logMessage) {
-            super(Opcodes.ASM5, mv);
+            super(Opcodes.ASM7, mv);
             this.logMessage = logMessage;
         }
 

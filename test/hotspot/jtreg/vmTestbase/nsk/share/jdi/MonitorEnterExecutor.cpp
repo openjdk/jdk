@@ -33,7 +33,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_nativeJNIMonitorEnter(JNIEnv *env, jobje
 
         success  = env->MonitorEnter(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
@@ -44,7 +44,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_nativeJNIMonitorEnter(JNIEnv *env, jobje
 
         success  = env->MonitorExit(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
@@ -61,7 +61,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_11Subclass_nativeJNIMonitorEnter(JNIEnv 
 
         success  = env->MonitorEnter(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
@@ -72,7 +72,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_11Subclass_nativeJNIMonitorEnter(JNIEnv 
 
         success  = env->MonitorExit(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
@@ -89,7 +89,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_12Subclass_nativeJNIMonitorEnter(JNIEnv 
 
         success  = env->MonitorEnter(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
@@ -100,7 +100,7 @@ Java_nsk_share_jdi_MonitorEnterExecutor_12Subclass_nativeJNIMonitorEnter(JNIEnv 
 
         success  = env->MonitorExit(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206929
+ * @bug 8206929 8212885
  * @summary ensure that client only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 ResumeChecksClient BASIC
@@ -80,7 +80,7 @@ public class ResumeChecksClient {
         while (!server.started) {
             Thread.yield();
         }
-        connect(sslContext, server.port, mode, false);
+        SSLSession firstSession = connect(sslContext, server.port, mode, false);
 
         server.signal();
         long secondStartTime = System.currentTimeMillis();
@@ -93,9 +93,7 @@ public class ResumeChecksClient {
         switch (mode) {
         case BASIC:
             // fail if session is not resumed
-            if (secondSession.getCreationTime() > secondStartTime) {
-                throw new RuntimeException("Session was not reused");
-            }
+            checkResumedSession(firstSession, secondSession);
             break;
         case VERSION_2_TO_3:
         case VERSION_3_TO_2:
@@ -124,14 +122,17 @@ public class ResumeChecksClient {
             return !a.toLowerCase().contains(alg.toLowerCase());
         }
 
+        @Override
         public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
+        @Override
         public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
             return test(algorithm);
         }
+        @Override
         public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
@@ -205,6 +206,81 @@ public class ResumeChecksClient {
         }
     }
 
+    private static void checkResumedSession(SSLSession initSession,
+            SSLSession resSession) throws Exception {
+        StringBuilder diffLog = new StringBuilder();
+
+        // Initial and resumed SSLSessions should have the same creation
+        // times so they get invalidated together.
+        long initCt = initSession.getCreationTime();
+        long resumeCt = resSession.getCreationTime();
+        if (initCt != resumeCt) {
+            diffLog.append("Session creation time is different. Initial: ").
+                    append(initCt).append(", Resumed: ").append(resumeCt).
+                    append("\n");
+        }
+
+        // Ensure that peer and local certificate lists are preserved
+        if (!Arrays.equals(initSession.getLocalCertificates(),
+                resSession.getLocalCertificates())) {
+            diffLog.append("Local certificate mismatch between initial " +
+                    "and resumed sessions\n");
+        }
+
+        if (!Arrays.equals(initSession.getPeerCertificates(),
+                resSession.getPeerCertificates())) {
+            diffLog.append("Peer certificate mismatch between initial " +
+                    "and resumed sessions\n");
+        }
+
+        // Buffer sizes should also be the same
+        if (initSession.getApplicationBufferSize() !=
+                resSession.getApplicationBufferSize()) {
+            diffLog.append(String.format(
+                    "App Buffer sizes differ: Init: %d, Res: %d\n",
+                    initSession.getApplicationBufferSize(),
+                    resSession.getApplicationBufferSize()));
+        }
+
+        if (initSession.getPacketBufferSize() !=
+                resSession.getPacketBufferSize()) {
+            diffLog.append(String.format(
+                    "Packet Buffer sizes differ: Init: %d, Res: %d\n",
+                    initSession.getPacketBufferSize(),
+                    resSession.getPacketBufferSize()));
+        }
+
+        // Cipher suite should match
+        if (!initSession.getCipherSuite().equals(
+                resSession.getCipherSuite())) {
+            diffLog.append(String.format(
+                    "CipherSuite does not match - Init: %s, Res: %s\n",
+                    initSession.getCipherSuite(), resSession.getCipherSuite()));
+        }
+
+        // Peer host/port should match
+        if (!initSession.getPeerHost().equals(resSession.getPeerHost()) ||
+                initSession.getPeerPort() != resSession.getPeerPort()) {
+            diffLog.append(String.format(
+                    "Host/Port mismatch - Init: %s/%d, Res: %s/%d\n",
+                    initSession.getPeerHost(), initSession.getPeerPort(),
+                    resSession.getPeerHost(), resSession.getPeerPort()));
+        }
+
+        // Check protocol
+        if (!initSession.getProtocol().equals(resSession.getProtocol())) {
+            diffLog.append(String.format(
+                    "Protocol mismatch - Init: %s, Res: %s\n",
+                    initSession.getProtocol(), resSession.getProtocol()));
+        }
+
+        // If the StringBuilder has any data in it then one of the checks
+        // above failed and we should throw an exception.
+        if (diffLog.length() > 0) {
+            throw new RuntimeException(diffLog.toString());
+        }
+    }
+
     private static Server startServer() {
         Server server = new Server();
         new Thread(server).start();
@@ -233,6 +309,7 @@ public class ResumeChecksClient {
             notify();
         }
 
+        @Override
         public void run() {
             try {
 

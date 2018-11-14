@@ -101,7 +101,7 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
         tot_result = STATUS_FAILED;
     }
 
-    switch(t_case) {
+    switch (t_case) {
 /* NULL pointer to the thread in debug mode */
     case 1:
         printf("\nInvoke PopFrame() with NULL pointer to a thread...\n");

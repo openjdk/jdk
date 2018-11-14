@@ -613,6 +613,17 @@ public class DocCommentTester {
                 return null;
             }
 
+            @Override
+            public Void visitSystemProperty(SystemPropertyTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("property name", node.getPropertyName().toString());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
             public Void visitText(TextTree node, Void p) {
                 header(node, compress(node.getBody()));
                 return null;

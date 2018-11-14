@@ -244,6 +244,7 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
+  friend class VMStructs;
   // When CDS is enabled, all shared metaspace objects are mapped
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if something is in the

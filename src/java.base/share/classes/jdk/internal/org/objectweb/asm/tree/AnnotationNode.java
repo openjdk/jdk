@@ -60,7 +60,6 @@ package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
@@ -71,63 +70,52 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  */
 public class AnnotationNode extends AnnotationVisitor {
 
-    /**
-     * The class descriptor of the annotation class.
-     */
+    /** The class descriptor of the annotation class. */
     public String desc;
 
     /**
-     * The name value pairs of this annotation. Each name value pair is stored
-     * as two consecutive elements in the list. The name is a {@link String},
-     * and the value may be a {@link Byte}, {@link Boolean}, {@link Character},
-     * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
-     * {@link Double}, {@link String} or {@link jdk.internal.org.objectweb.asm.Type}, or a
-     * two elements String array (for enumeration values), an
-     * {@link AnnotationNode}, or a {@link List} of values of one of the
-     * preceding types. The list may be <tt>null</tt> if there is no name value
-     * pair.
-     */
+      * The name value pairs of this annotation. Each name value pair is stored as two consecutive
+      * elements in the list. The name is a {@link String}, and the value may be a {@link Byte}, {@link
+      * Boolean}, {@link Character}, {@link Short}, {@link Integer}, {@link Long}, {@link Float},
+      * {@link Double}, {@link String} or {@link jdk.internal.org.objectweb.asm.Type}, or a two elements String
+      * array (for enumeration values), an {@link AnnotationNode}, or a {@link List} of values of one
+      * of the preceding types. The list may be {@literal null} if there is no name value pair.
+      */
     public List<Object> values;
 
     /**
-     * Constructs a new {@link AnnotationNode}. <i>Subclasses must not use this
-     * constructor</i>. Instead, they must use the
-     * {@link #AnnotationNode(int, String)} version.
-     *
-     * @param desc
-     *            the class descriptor of the annotation class.
-     * @throws IllegalStateException
-     *             If a subclass calls this constructor.
-     */
-    public AnnotationNode(final String desc) {
-        this(Opcodes.ASM6, desc);
+      * Constructs a new {@link AnnotationNode}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #AnnotationNode(int, String)} version.
+      *
+      * @param descriptor the class descriptor of the annotation class.
+      * @throws IllegalStateException If a subclass calls this constructor.
+      */
+    public AnnotationNode(final String descriptor) {
+        this(Opcodes.ASM7, descriptor);
         if (getClass() != AnnotationNode.class) {
             throw new IllegalStateException();
         }
     }
 
     /**
-     * Constructs a new {@link AnnotationNode}.
-     *
-     * @param api
-     *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     * @param desc
-     *            the class descriptor of the annotation class.
-     */
-    public AnnotationNode(final int api, final String desc) {
+      * Constructs a new {@link AnnotationNode}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param descriptor the class descriptor of the annotation class.
+      */
+    public AnnotationNode(final int api, final String descriptor) {
         super(api);
-        this.desc = desc;
+        this.desc = descriptor;
     }
 
     /**
-     * Constructs a new {@link AnnotationNode} to visit an array value.
-     *
-     * @param values
-     *            where the visited values must be stored.
-     */
+      * Constructs a new {@link AnnotationNode} to visit an array value.
+      *
+      * @param values where the visited values must be stored.
+      */
     AnnotationNode(final List<Object> values) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
         this.values = values;
     }
 
@@ -144,88 +132,46 @@ public class AnnotationNode extends AnnotationVisitor {
             values.add(name);
         }
         if (value instanceof byte[]) {
-            byte[] v = (byte[]) value;
-            ArrayList<Byte> l = new ArrayList<Byte>(v.length);
-            for (byte b : v) {
-                l.add(b);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((byte[]) value));
         } else if (value instanceof boolean[]) {
-            boolean[] v = (boolean[]) value;
-            ArrayList<Boolean> l = new ArrayList<Boolean>(v.length);
-            for (boolean b : v) {
-                l.add(b);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((boolean[]) value));
         } else if (value instanceof short[]) {
-            short[] v = (short[]) value;
-            ArrayList<Short> l = new ArrayList<Short>(v.length);
-            for (short s : v) {
-                l.add(s);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((short[]) value));
         } else if (value instanceof char[]) {
-            char[] v = (char[]) value;
-            ArrayList<Character> l = new ArrayList<Character>(v.length);
-            for (char c : v) {
-                l.add(c);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((char[]) value));
         } else if (value instanceof int[]) {
-            int[] v = (int[]) value;
-            ArrayList<Integer> l = new ArrayList<Integer>(v.length);
-            for (int i : v) {
-                l.add(i);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((int[]) value));
         } else if (value instanceof long[]) {
-            long[] v = (long[]) value;
-            ArrayList<Long> l = new ArrayList<Long>(v.length);
-            for (long lng : v) {
-                l.add(lng);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((long[]) value));
         } else if (value instanceof float[]) {
-            float[] v = (float[]) value;
-            ArrayList<Float> l = new ArrayList<Float>(v.length);
-            for (float f : v) {
-                l.add(f);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((float[]) value));
         } else if (value instanceof double[]) {
-            double[] v = (double[]) value;
-            ArrayList<Double> l = new ArrayList<Double>(v.length);
-            for (double d : v) {
-                l.add(d);
-            }
-            values.add(l);
+            values.add(Util.asArrayList((double[]) value));
         } else {
             values.add(value);
         }
     }
 
     @Override
-    public void visitEnum(final String name, final String desc,
-            final String value) {
+    public void visitEnum(final String name, final String descriptor, final String value) {
         if (values == null) {
             values = new ArrayList<Object>(this.desc != null ? 2 : 1);
         }
         if (this.desc != null) {
             values.add(name);
         }
-        values.add(new String[] { desc, value });
+        values.add(new String[] {descriptor, value});
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(final String name,
-            final String desc) {
+    public AnnotationVisitor visitAnnotation(final String name, final String descriptor) {
         if (values == null) {
             values = new ArrayList<Object>(this.desc != null ? 2 : 1);
         }
         if (this.desc != null) {
             values.add(name);
         }
-        AnnotationNode annotation = new AnnotationNode(desc);
+        AnnotationNode annotation = new AnnotationNode(descriptor);
         values.add(annotation);
         return annotation;
     }
@@ -245,6 +191,7 @@ public class AnnotationNode extends AnnotationVisitor {
 
     @Override
     public void visitEnd() {
+        // Nothing to do.
     }
 
     // ------------------------------------------------------------------------
@@ -252,68 +199,62 @@ public class AnnotationNode extends AnnotationVisitor {
     // ------------------------------------------------------------------------
 
     /**
-     * Checks that this annotation node is compatible with the given ASM API
-     * version. This methods checks that this node, and all its nodes
-     * recursively, do not contain elements that were introduced in more recent
-     * versions of the ASM API than the given version.
-     *
-     * @param api
-     *            an ASM API version. Must be one of {@link Opcodes#ASM4},
-     *            {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     */
+      * Checks that this annotation node is compatible with the given ASM API version. This method
+      * checks that this node, and all its children recursively, do not contain elements that were
+      * introduced in more recent versions of the ASM API than the given version.
+      *
+      * @param api an ASM API version. Must be one of {@link Opcodes#ASM4}, {@link Opcodes#ASM5},
+      *     {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      */
     public void check(final int api) {
         // nothing to do
     }
 
     /**
-     * Makes the given visitor visit this annotation.
-     *
-     * @param av
-     *            an annotation visitor. Maybe <tt>null</tt>.
-     */
-    public void accept(final AnnotationVisitor av) {
-        if (av != null) {
+      * Makes the given visitor visit this annotation.
+      *
+      * @param annotationVisitor an annotation visitor. Maybe {@literal null}.
+      */
+    public void accept(final AnnotationVisitor annotationVisitor) {
+        if (annotationVisitor != null) {
             if (values != null) {
-                for (int i = 0; i < values.size(); i += 2) {
+                for (int i = 0, n = values.size(); i < n; i += 2) {
                     String name = (String) values.get(i);
                     Object value = values.get(i + 1);
-                    accept(av, name, value);
+                    accept(annotationVisitor, name, value);
                 }
             }
-            av.visitEnd();
+            annotationVisitor.visitEnd();
         }
     }
 
     /**
-     * Makes the given visitor visit a given annotation value.
-     *
-     * @param av
-     *            an annotation visitor. Maybe <tt>null</tt>.
-     * @param name
-     *            the value name.
-     * @param value
-     *            the actual value.
-     */
-    static void accept(final AnnotationVisitor av, final String name,
-            final Object value) {
-        if (av != null) {
+      * Makes the given visitor visit a given annotation value.
+      *
+      * @param annotationVisitor an annotation visitor. Maybe {@literal null}.
+      * @param name the value name.
+      * @param value the actual value.
+      */
+    static void accept(
+            final AnnotationVisitor annotationVisitor, final String name, final Object value) {
+        if (annotationVisitor != null) {
             if (value instanceof String[]) {
-                String[] typeconst = (String[]) value;
-                av.visitEnum(name, typeconst[0], typeconst[1]);
+                String[] typeValue = (String[]) value;
+                annotationVisitor.visitEnum(name, typeValue[0], typeValue[1]);
             } else if (value instanceof AnnotationNode) {
-                AnnotationNode an = (AnnotationNode) value;
-                an.accept(av.visitAnnotation(name, an.desc));
+                AnnotationNode annotationValue = (AnnotationNode) value;
+                annotationValue.accept(annotationVisitor.visitAnnotation(name, annotationValue.desc));
             } else if (value instanceof List) {
-                AnnotationVisitor v = av.visitArray(name);
-                if (v != null) {
-                    List<?> array = (List<?>) value;
-                    for (int j = 0; j < array.size(); ++j) {
-                        accept(v, null, array.get(j));
+                AnnotationVisitor arrayAnnotationVisitor = annotationVisitor.visitArray(name);
+                if (arrayAnnotationVisitor != null) {
+                    List<?> arrayValue = (List<?>) value;
+                    for (int i = 0, n = arrayValue.size(); i < n; ++i) {
+                        accept(arrayAnnotationVisitor, null, arrayValue.get(i));
                     }
-                    v.visitEnd();
+                    arrayAnnotationVisitor.visitEnd();
                 }
             } else {
-                av.visit(name, value);
+                annotationVisitor.visit(name, value);
             }
         }
     }

@@ -107,12 +107,19 @@ class MetaspaceShared : AllStatic {
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
   // Delta of this object from the bottom of the archive.
-  static uintx object_delta(void* obj) {
+  static uintx object_delta_uintx(void* obj) {
     assert(DumpSharedSpaces, "supported only for dumping");
     assert(shared_rs()->contains(obj), "must be");
     address base_address = address(shared_rs()->base());
-    uintx delta = address(obj) - base_address;
-    return delta;
+    uintx deltax = address(obj) - base_address;
+    return deltax;
+  }
+
+  static u4 object_delta_u4(void* obj) {
+    // offset is guaranteed to be less than MAX_SHARED_DELTA in DumpRegion::expand_top_to()
+    uintx deltax = object_delta_uintx(obj);
+    guarantee(deltax <= MAX_SHARED_DELTA, "must be 32-bit offset");
+    return (u4)deltax;
   }
 
   static void set_archive_loading_failed() {

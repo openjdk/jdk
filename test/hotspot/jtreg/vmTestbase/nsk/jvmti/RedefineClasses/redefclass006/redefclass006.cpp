@@ -100,7 +100,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass006_makeRedefinition(JNIEnv *env,
         return PASSED;
     }
 
-    switch(t_case) {
+    switch (t_case) {
 /* NULL pointer to the jvmtiClassDefinition */
         case 0:
             break;

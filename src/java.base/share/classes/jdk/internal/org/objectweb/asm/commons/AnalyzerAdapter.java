@@ -62,7 +62,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import jdk.internal.org.objectweb.asm.ConstantDynamic;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -70,134 +70,109 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 
 /**
- * A {@link MethodVisitor} that keeps track of stack map frame changes between
- * {@link #visitFrame(int, int, Object[], int, Object[]) visitFrame} calls. This
- * adapter must be used with the
- * {@link jdk.internal.org.objectweb.asm.ClassReader#EXPAND_FRAMES} option. Each
- * visit<i>X</i> instruction delegates to the next visitor in the chain, if any,
- * and then simulates the effect of this instruction on the stack map frame,
- * represented by {@link #locals} and {@link #stack}. The next visitor in the
- * chain can get the state of the stack map frame <i>before</i> each instruction
- * by reading the value of these fields in its visit<i>X</i> methods (this
- * requires a reference to the AnalyzerAdapter that is before it in the chain).
- * If this adapter is used with a class that does not contain stack map table
- * attributes (i.e., pre Java 6 classes) then this adapter may not be able to
- * compute the stack map frame for each instruction. In this case no exception
- * is thrown but the {@link #locals} and {@link #stack} fields will be null for
- * these instructions.
+ * A {@link MethodVisitor} that keeps track of stack map frame changes between {@link
+ * #visitFrame(int, int, Object[], int, Object[])} calls. This adapter must be used with the {@link
+ * jdk.internal.org.objectweb.asm.ClassReader#EXPAND_FRAMES} option. Each visit<i>X</i> instruction delegates to
+ * the next visitor in the chain, if any, and then simulates the effect of this instruction on the
+ * stack map frame, represented by {@link #locals} and {@link #stack}. The next visitor in the chain
+ * can get the state of the stack map frame <i>before</i> each instruction by reading the value of
+ * these fields in its visit<i>X</i> methods (this requires a reference to the AnalyzerAdapter that
+ * is before it in the chain). If this adapter is used with a class that does not contain stack map
+ * table attributes (i.e., pre Java 6 classes) then this adapter may not be able to compute the
+ * stack map frame for each instruction. In this case no exception is thrown but the {@link #locals}
+ * and {@link #stack} fields will be null for these instructions.
  *
  * @author Eric Bruneton
  */
 public class AnalyzerAdapter extends MethodVisitor {
 
     /**
-     * <code>List</code> of the local variable slots for current execution
-     * frame. Primitive types are represented by {@link Opcodes#TOP},
-     * {@link Opcodes#INTEGER}, {@link Opcodes#FLOAT}, {@link Opcodes#LONG},
-     * {@link Opcodes#DOUBLE},{@link Opcodes#NULL} or
-     * {@link Opcodes#UNINITIALIZED_THIS} (long and double are represented by
-     * two elements, the second one being TOP). Reference types are represented
-     * by String objects (representing internal names), and uninitialized types
-     * by Label objects (this label designates the NEW instruction that created
-     * this uninitialized value). This field is <tt>null</tt> for unreachable
-     * instructions.
-     */
+      * The local variable slots for the current execution frame. Primitive types are represented by
+      * {@link Opcodes#TOP}, {@link Opcodes#INTEGER}, {@link Opcodes#FLOAT}, {@link Opcodes#LONG},
+      * {@link Opcodes#DOUBLE},{@link Opcodes#NULL} or {@link Opcodes#UNINITIALIZED_THIS} (long and
+      * double are represented by two elements, the second one being TOP). Reference types are
+      * represented by String objects (representing internal names), and uninitialized types by Label
+      * objects (this label designates the NEW instruction that created this uninitialized value). This
+      * field is {@literal null} for unreachable instructions.
+      */
     public List<Object> locals;
 
     /**
-     * <code>List</code> of the operand stack slots for current execution frame.
-     * Primitive types are represented by {@link Opcodes#TOP},
-     * {@link Opcodes#INTEGER}, {@link Opcodes#FLOAT}, {@link Opcodes#LONG},
-     * {@link Opcodes#DOUBLE},{@link Opcodes#NULL} or
-     * {@link Opcodes#UNINITIALIZED_THIS} (long and double are represented by
-     * two elements, the second one being TOP). Reference types are represented
-     * by String objects (representing internal names), and uninitialized types
-     * by Label objects (this label designates the NEW instruction that created
-     * this uninitialized value). This field is <tt>null</tt> for unreachable
-     * instructions.
-     */
+      * The operand stack slots for the current execution frame. Primitive types are represented by
+      * {@link Opcodes#TOP}, {@link Opcodes#INTEGER}, {@link Opcodes#FLOAT}, {@link Opcodes#LONG},
+      * {@link Opcodes#DOUBLE},{@link Opcodes#NULL} or {@link Opcodes#UNINITIALIZED_THIS} (long and
+      * double are represented by two elements, the second one being TOP). Reference types are
+      * represented by String objects (representing internal names), and uninitialized types by Label
+      * objects (this label designates the NEW instruction that created this uninitialized value). This
+      * field is {@literal null} for unreachable instructions.
+      */
     public List<Object> stack;
 
-    /**
-     * The labels that designate the next instruction to be visited. May be
-     * <tt>null</tt>.
-     */
+    /** The labels that designate the next instruction to be visited. May be {@literal null}. */
     private List<Label> labels;
 
     /**
-     * Information about uninitialized types in the current execution frame.
-     * This map associates internal names to Label objects. Each label
-     * designates a NEW instruction that created the currently uninitialized
-     * types, and the associated internal name represents the NEW operand, i.e.
-     * the final, initialized type value.
-     */
+      * The uninitialized types in the current execution frame. This map associates internal names to
+      * Label objects. Each label designates a NEW instruction that created the currently uninitialized
+      * types, and the associated internal name represents the NEW operand, i.e. the final, initialized
+      * type value.
+      */
     public Map<Object, Object> uninitializedTypes;
 
-    /**
-     * The maximum stack size of this method.
-     */
+    /** The maximum stack size of this method. */
     private int maxStack;
 
-    /**
-     * The maximum number of local variables of this method.
-     */
+    /** The maximum number of local variables of this method. */
     private int maxLocals;
 
-    /**
-     * The owner's class name.
-     */
+    /** The owner's class name. */
     private String owner;
 
     /**
-     * Creates a new {@link AnalyzerAdapter}. <i>Subclasses must not use this
-     * constructor</i>. Instead, they must use the
-     * {@link #AnalyzerAdapter(int, String, int, String, String, MethodVisitor)}
-     * version.
-     *
-     * @param owner
-     *            the owner's class name.
-     * @param access
-     *            the method's access flags (see {@link Opcodes}).
-     * @param name
-     *            the method's name.
-     * @param desc
-     *            the method's descriptor (see {@link Type Type}).
-     * @param mv
-     *            the method visitor to which this adapter delegates calls. May
-     *            be <tt>null</tt>.
-     * @throws IllegalStateException
-     *             If a subclass calls this constructor.
-     */
-    public AnalyzerAdapter(final String owner, final int access,
-            final String name, final String desc, final MethodVisitor mv) {
-        this(Opcodes.ASM6, owner, access, name, desc, mv);
+      * Constructs a new {@link AnalyzerAdapter}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #AnalyzerAdapter(int, String, int, String, String,
+      * MethodVisitor)} version.
+      *
+      * @param owner the owner's class name.
+      * @param access the method's access flags (see {@link Opcodes}).
+      * @param name the method's name.
+      * @param descriptor the method's descriptor (see {@link Type}).
+      * @param methodVisitor the method visitor to which this adapter delegates calls. May be {@literal
+      *     null}.
+      * @throws IllegalStateException If a subclass calls this constructor.
+      */
+    public AnalyzerAdapter(
+            final String owner,
+            final int access,
+            final String name,
+            final String descriptor,
+            final MethodVisitor methodVisitor) {
+        this(Opcodes.ASM7, owner, access, name, descriptor, methodVisitor);
         if (getClass() != AnalyzerAdapter.class) {
             throw new IllegalStateException();
         }
     }
 
     /**
-     * Creates a new {@link AnalyzerAdapter}.
-     *
-     * @param api
-     *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
-     * @param owner
-     *            the owner's class name.
-     * @param access
-     *            the method's access flags (see {@link Opcodes}).
-     * @param name
-     *            the method's name.
-     * @param desc
-     *            the method's descriptor (see {@link Type Type}).
-     * @param mv
-     *            the method visitor to which this adapter delegates calls. May
-     *            be <tt>null</tt>.
-     */
-    protected AnalyzerAdapter(final int api, final String owner,
-            final int access, final String name, final String desc,
-            final MethodVisitor mv) {
-        super(api, mv);
+      * Constructs a new {@link AnalyzerAdapter}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param owner the owner's class name.
+      * @param access the method's access flags (see {@link Opcodes}).
+      * @param name the method's name.
+      * @param descriptor the method's descriptor (see {@link Type}).
+      * @param methodVisitor the method visitor to which this adapter delegates calls. May be {@literal
+      *     null}.
+      */
+    protected AnalyzerAdapter(
+            final int api,
+            final String owner,
+            final int access,
+            final String name,
+            final String descriptor,
+            final MethodVisitor methodVisitor) {
+        super(api, methodVisitor);
         this.owner = owner;
         locals = new ArrayList<Object>();
         stack = new ArrayList<Object>();
@@ -210,50 +185,52 @@ public class AnalyzerAdapter extends MethodVisitor {
                 locals.add(owner);
             }
         }
-        Type[] types = Type.getArgumentTypes(desc);
-        for (int i = 0; i < types.length; ++i) {
-            Type type = types[i];
-            switch (type.getSort()) {
-            case Type.BOOLEAN:
-            case Type.CHAR:
-            case Type.BYTE:
-            case Type.SHORT:
-            case Type.INT:
-                locals.add(Opcodes.INTEGER);
-                break;
-            case Type.FLOAT:
-                locals.add(Opcodes.FLOAT);
-                break;
-            case Type.LONG:
-                locals.add(Opcodes.LONG);
-                locals.add(Opcodes.TOP);
-                break;
-            case Type.DOUBLE:
-                locals.add(Opcodes.DOUBLE);
-                locals.add(Opcodes.TOP);
-                break;
-            case Type.ARRAY:
-                locals.add(types[i].getDescriptor());
-                break;
-            // case Type.OBJECT:
-            default:
-                locals.add(types[i].getInternalName());
+        for (Type argumentType : Type.getArgumentTypes(descriptor)) {
+            switch (argumentType.getSort()) {
+                case Type.BOOLEAN:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                case Type.INT:
+                    locals.add(Opcodes.INTEGER);
+                    break;
+                case Type.FLOAT:
+                    locals.add(Opcodes.FLOAT);
+                    break;
+                case Type.LONG:
+                    locals.add(Opcodes.LONG);
+                    locals.add(Opcodes.TOP);
+                    break;
+                case Type.DOUBLE:
+                    locals.add(Opcodes.DOUBLE);
+                    locals.add(Opcodes.TOP);
+                    break;
+                case Type.ARRAY:
+                    locals.add(argumentType.getDescriptor());
+                    break;
+                case Type.OBJECT:
+                    locals.add(argumentType.getInternalName());
+                    break;
+                default:
+                    throw new AssertionError();
             }
         }
         maxLocals = locals.size();
     }
 
     @Override
-    public void visitFrame(final int type, final int nLocal,
-            final Object[] local, final int nStack, final Object[] stack) {
-        if (type != Opcodes.F_NEW) { // uncompressed frame
-            throw new IllegalStateException(
-                    "ClassReader.accept() should be called with EXPAND_FRAMES flag");
+    public void visitFrame(
+            final int type,
+            final int numLocal,
+            final Object[] local,
+            final int numStack,
+            final Object[] stack) {
+        if (type != Opcodes.F_NEW) { // Uncompressed frame.
+            throw new IllegalArgumentException(
+                    "AnalyzerAdapter only accepts expanded frames (see ClassReader.EXPAND_FRAMES)");
         }
 
-        if (mv != null) {
-            mv.visitFrame(type, nLocal, local, nStack, stack);
-        }
+        super.visitFrame(type, numLocal, local, numStack, stack);
 
         if (this.locals != null) {
             this.locals.clear();
@@ -262,17 +239,18 @@ public class AnalyzerAdapter extends MethodVisitor {
             this.locals = new ArrayList<Object>();
             this.stack = new ArrayList<Object>();
         }
-        visitFrameTypes(nLocal, local, this.locals);
-        visitFrameTypes(nStack, stack, this.stack);
+        visitFrameTypes(numLocal, local, this.locals);
+        visitFrameTypes(numStack, stack, this.stack);
+        maxLocals = Math.max(maxLocals, this.locals.size());
         maxStack = Math.max(maxStack, this.stack.size());
     }
 
-    private static void visitFrameTypes(final int n, final Object[] types,
-            final List<Object> result) {
-        for (int i = 0; i < n; ++i) {
-            Object type = types[i];
-            result.add(type);
-            if (type == Opcodes.LONG || type == Opcodes.DOUBLE) {
+    private static void visitFrameTypes(
+            final int numTypes, final Object[] frameTypes, final List<Object> result) {
+        for (int i = 0; i < numTypes; ++i) {
+            Object frameType = frameTypes[i];
+            result.add(frameType);
+            if (frameType == Opcodes.LONG || frameType == Opcodes.DOUBLE) {
                 result.add(Opcodes.TOP);
             }
         }
@@ -280,12 +258,9 @@ public class AnalyzerAdapter extends MethodVisitor {
 
     @Override
     public void visitInsn(final int opcode) {
-        if (mv != null) {
-            mv.visitInsn(opcode);
-        }
+        super.visitInsn(opcode);
         execute(opcode, 0, null);
-        if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN)
-                || opcode == Opcodes.ATHROW) {
+        if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
             this.locals = null;
             this.stack = null;
         }
@@ -293,17 +268,19 @@ public class AnalyzerAdapter extends MethodVisitor {
 
     @Override
     public void visitIntInsn(final int opcode, final int operand) {
-        if (mv != null) {
-            mv.visitIntInsn(opcode, operand);
-        }
+        super.visitIntInsn(opcode, operand);
         execute(opcode, operand, null);
     }
 
     @Override
     public void visitVarInsn(final int opcode, final int var) {
-        if (mv != null) {
-            mv.visitVarInsn(opcode, var);
-        }
+        super.visitVarInsn(opcode, var);
+        boolean isLongOrDouble =
+                opcode == Opcodes.LLOAD
+                        || opcode == Opcodes.DLOAD
+                        || opcode == Opcodes.LSTORE
+                        || opcode == Opcodes.DSTORE;
+        maxLocals = Math.max(maxLocals, var + (isLongOrDouble ? 2 : 1));
         execute(opcode, var, null);
     }
 
@@ -311,109 +288,116 @@ public class AnalyzerAdapter extends MethodVisitor {
     public void visitTypeInsn(final int opcode, final String type) {
         if (opcode == Opcodes.NEW) {
             if (labels == null) {
-                Label l = new Label();
+                Label label = new Label();
                 labels = new ArrayList<Label>(3);
-                labels.add(l);
+                labels.add(label);
                 if (mv != null) {
-                    mv.visitLabel(l);
+                    mv.visitLabel(label);
                 }
             }
-            for (int i = 0; i < labels.size(); ++i) {
-                uninitializedTypes.put(labels.get(i), type);
+            for (Label label : labels) {
+                uninitializedTypes.put(label, type);
             }
         }
-        if (mv != null) {
-            mv.visitTypeInsn(opcode, type);
-        }
+        super.visitTypeInsn(opcode, type);
         execute(opcode, 0, type);
     }
 
     @Override
-    public void visitFieldInsn(final int opcode, final String owner,
-            final String name, final String desc) {
-        if (mv != null) {
-            mv.visitFieldInsn(opcode, owner, name, desc);
-        }
-        execute(opcode, 0, desc);
+    public void visitFieldInsn(
+            final int opcode, final String owner, final String name, final String descriptor) {
+        super.visitFieldInsn(opcode, owner, name, descriptor);
+        execute(opcode, 0, descriptor);
     }
 
+    /**
+      * Deprecated.
+      *
+      * @deprecated use {@link #visitMethodInsn(int, String, String, String, boolean)} instead.
+      */
     @Deprecated
     @Override
-    public void visitMethodInsn(final int opcode, final String owner,
-            final String name, final String desc) {
+    public void visitMethodInsn(
+            final int opcode, final String owner, final String name, final String descriptor) {
         if (api >= Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, desc);
+            super.visitMethodInsn(opcode, owner, name, descriptor);
             return;
         }
-        doVisitMethodInsn(opcode, owner, name, desc,
-                opcode == Opcodes.INVOKEINTERFACE);
+        doVisitMethodInsn(opcode, owner, name, descriptor, opcode == Opcodes.INVOKEINTERFACE);
     }
 
     @Override
-    public void visitMethodInsn(final int opcode, final String owner,
-            final String name, final String desc, final boolean itf) {
+    public void visitMethodInsn(
+            final int opcode,
+            final String owner,
+            final String name,
+            final String descriptor,
+            final boolean isInterface) {
         if (api < Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
             return;
         }
-        doVisitMethodInsn(opcode, owner, name, desc, itf);
+        doVisitMethodInsn(opcode, owner, name, descriptor, isInterface);
     }
 
-    private void doVisitMethodInsn(int opcode, final String owner,
-            final String name, final String desc, final boolean itf) {
+    private void doVisitMethodInsn(
+            final int opcode,
+            final String owner,
+            final String name,
+            final String descriptor,
+            final boolean isInterface) {
         if (mv != null) {
-            mv.visitMethodInsn(opcode, owner, name, desc, itf);
+            mv.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
         }
         if (this.locals == null) {
             labels = null;
             return;
         }
-        pop(desc);
+        pop(descriptor);
         if (opcode != Opcodes.INVOKESTATIC) {
-            Object t = pop();
-            if (opcode == Opcodes.INVOKESPECIAL && name.charAt(0) == '<') {
-                Object u;
-                if (t == Opcodes.UNINITIALIZED_THIS) {
-                    u = this.owner;
+            Object value = pop();
+            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>")) {
+                Object initializedValue;
+                if (value == Opcodes.UNINITIALIZED_THIS) {
+                    initializedValue = this.owner;
                 } else {
-                    u = uninitializedTypes.get(t);
+                    initializedValue = uninitializedTypes.get(value);
                 }
                 for (int i = 0; i < locals.size(); ++i) {
-                    if (locals.get(i) == t) {
-                        locals.set(i, u);
+                    if (locals.get(i) == value) {
+                        locals.set(i, initializedValue);
                     }
                 }
                 for (int i = 0; i < stack.size(); ++i) {
-                    if (stack.get(i) == t) {
-                        stack.set(i, u);
+                    if (stack.get(i) == value) {
+                        stack.set(i, initializedValue);
                     }
                 }
             }
         }
-        pushDesc(desc);
+        pushDescriptor(descriptor);
         labels = null;
     }
 
     @Override
-    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
-            Object... bsmArgs) {
-        if (mv != null) {
-            mv.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
-        }
+    public void visitInvokeDynamicInsn(
+            final String name,
+            final String descriptor,
+            final Handle bootstrapMethodHandle,
+            final Object... bootstrapMethodArguments) {
+        super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
         if (this.locals == null) {
             labels = null;
             return;
         }
-        pop(desc);
-        pushDesc(desc);
+        pop(descriptor);
+        pushDescriptor(descriptor);
         labels = null;
     }
 
     @Override
     public void visitJumpInsn(final int opcode, final Label label) {
-        if (mv != null) {
-            mv.visitJumpInsn(opcode, label);
-        }
+        super.visitJumpInsn(opcode, label);
         execute(opcode, 0, null);
         if (opcode == Opcodes.GOTO) {
             this.locals = null;
@@ -423,9 +407,7 @@ public class AnalyzerAdapter extends MethodVisitor {
 
     @Override
     public void visitLabel(final Label label) {
-        if (mv != null) {
-            mv.visitLabel(label);
-        }
+        super.visitLabel(label);
         if (labels == null) {
             labels = new ArrayList<Label>(3);
         }
@@ -433,28 +415,26 @@ public class AnalyzerAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitLdcInsn(final Object cst) {
-        if (mv != null) {
-            mv.visitLdcInsn(cst);
-        }
+    public void visitLdcInsn(final Object value) {
+        super.visitLdcInsn(value);
         if (this.locals == null) {
             labels = null;
             return;
         }
-        if (cst instanceof Integer) {
+        if (value instanceof Integer) {
             push(Opcodes.INTEGER);
-        } else if (cst instanceof Long) {
+        } else if (value instanceof Long) {
             push(Opcodes.LONG);
             push(Opcodes.TOP);
-        } else if (cst instanceof Float) {
+        } else if (value instanceof Float) {
             push(Opcodes.FLOAT);
-        } else if (cst instanceof Double) {
+        } else if (value instanceof Double) {
             push(Opcodes.DOUBLE);
             push(Opcodes.TOP);
-        } else if (cst instanceof String) {
+        } else if (value instanceof String) {
             push("java/lang/String");
-        } else if (cst instanceof Type) {
-            int sort = ((Type) cst).getSort();
+        } else if (value instanceof Type) {
+            int sort = ((Type) value).getSort();
             if (sort == Type.OBJECT || sort == Type.ARRAY) {
                 push("java/lang/Class");
             } else if (sort == Type.METHOD) {
@@ -462,8 +442,10 @@ public class AnalyzerAdapter extends MethodVisitor {
             } else {
                 throw new IllegalArgumentException();
             }
-        } else if (cst instanceof Handle) {
+        } else if (value instanceof Handle) {
             push("java/lang/invoke/MethodHandle");
+        } else if (value instanceof ConstantDynamic) {
+            pushDescriptor(((ConstantDynamic) value).getDescriptor());
         } else {
             throw new IllegalArgumentException();
         }
@@ -472,40 +454,47 @@ public class AnalyzerAdapter extends MethodVisitor {
 
     @Override
     public void visitIincInsn(final int var, final int increment) {
-        if (mv != null) {
-            mv.visitIincInsn(var, increment);
-        }
+        super.visitIincInsn(var, increment);
+        maxLocals = Math.max(maxLocals, var + 1);
         execute(Opcodes.IINC, var, null);
     }
 
     @Override
-    public void visitTableSwitchInsn(final int min, final int max,
-            final Label dflt, final Label... labels) {
-        if (mv != null) {
-            mv.visitTableSwitchInsn(min, max, dflt, labels);
-        }
+    public void visitTableSwitchInsn(
+            final int min, final int max, final Label dflt, final Label... labels) {
+        super.visitTableSwitchInsn(min, max, dflt, labels);
         execute(Opcodes.TABLESWITCH, 0, null);
         this.locals = null;
         this.stack = null;
     }
 
     @Override
-    public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
-            final Label[] labels) {
-        if (mv != null) {
-            mv.visitLookupSwitchInsn(dflt, keys, labels);
-        }
+    public void visitLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
+        super.visitLookupSwitchInsn(dflt, keys, labels);
         execute(Opcodes.LOOKUPSWITCH, 0, null);
         this.locals = null;
         this.stack = null;
     }
 
     @Override
-    public void visitMultiANewArrayInsn(final String desc, final int dims) {
-        if (mv != null) {
-            mv.visitMultiANewArrayInsn(desc, dims);
-        }
-        execute(Opcodes.MULTIANEWARRAY, dims, desc);
+    public void visitMultiANewArrayInsn(final String descriptor, final int numDimensions) {
+        super.visitMultiANewArrayInsn(descriptor, numDimensions);
+        execute(Opcodes.MULTIANEWARRAY, numDimensions, descriptor);
+    }
+
+    @Override
+    public void visitLocalVariable(
+            final String name,
+            final String descriptor,
+            final String signature,
+            final Label start,
+            final Label end,
+            final int index) {
+        char firstDescriptorChar = descriptor.charAt(0);
+        maxLocals =
+                Math.max(
+                        maxLocals, index + (firstDescriptorChar == 'J' || firstDescriptorChar == 'D' ? 2 : 1));
+        super.visitLocalVariable(name, descriptor, signature, start, end, index);
     }
 
     @Override
@@ -517,7 +506,7 @@ public class AnalyzerAdapter extends MethodVisitor {
         }
     }
 
-    // ------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
     private Object get(final int local) {
         maxLocals = Math.max(maxLocals, local + 1);
@@ -537,43 +526,45 @@ public class AnalyzerAdapter extends MethodVisitor {
         maxStack = Math.max(maxStack, stack.size());
     }
 
-    private void pushDesc(final String desc) {
-        int index = desc.charAt(0) == '(' ? desc.indexOf(')') + 1 : 0;
-        switch (desc.charAt(index)) {
-        case 'V':
-            return;
-        case 'Z':
-        case 'C':
-        case 'B':
-        case 'S':
-        case 'I':
-            push(Opcodes.INTEGER);
-            return;
-        case 'F':
-            push(Opcodes.FLOAT);
-            return;
-        case 'J':
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            return;
-        case 'D':
-            push(Opcodes.DOUBLE);
-            push(Opcodes.TOP);
-            return;
-        case '[':
-            if (index == 0) {
-                push(desc);
-            } else {
-                push(desc.substring(index, desc.length()));
-            }
-            break;
-        // case 'L':
-        default:
-            if (index == 0) {
-                push(desc.substring(1, desc.length() - 1));
-            } else {
-                push(desc.substring(index + 1, desc.length() - 1));
-            }
+    private void pushDescriptor(final String descriptor) {
+        int index = descriptor.charAt(0) == '(' ? descriptor.indexOf(')') + 1 : 0;
+        switch (descriptor.charAt(index)) {
+            case 'V':
+                return;
+            case 'Z':
+            case 'C':
+            case 'B':
+            case 'S':
+            case 'I':
+                push(Opcodes.INTEGER);
+                return;
+            case 'F':
+                push(Opcodes.FLOAT);
+                return;
+            case 'J':
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                return;
+            case 'D':
+                push(Opcodes.DOUBLE);
+                push(Opcodes.TOP);
+                return;
+            case '[':
+                if (index == 0) {
+                    push(descriptor);
+                } else {
+                    push(descriptor.substring(index, descriptor.length()));
+                }
+                break;
+            case 'L':
+                if (index == 0) {
+                    push(descriptor.substring(1, descriptor.length() - 1));
+                } else {
+                    push(descriptor.substring(index + 1, descriptor.length() - 1));
+                }
+                break;
+            default:
+                throw new AssertionError();
         }
     }
 
@@ -581,397 +572,396 @@ public class AnalyzerAdapter extends MethodVisitor {
         return stack.remove(stack.size() - 1);
     }
 
-    private void pop(final int n) {
+    private void pop(final int numSlots) {
         int size = stack.size();
-        int end = size - n;
+        int end = size - numSlots;
         for (int i = size - 1; i >= end; --i) {
             stack.remove(i);
         }
     }
 
-    private void pop(final String desc) {
-        char c = desc.charAt(0);
-        if (c == '(') {
-            int n = 0;
-            Type[] types = Type.getArgumentTypes(desc);
-            for (int i = 0; i < types.length; ++i) {
-                n += types[i].getSize();
+    private void pop(final String descriptor) {
+        char firstDescriptorChar = descriptor.charAt(0);
+        if (firstDescriptorChar == '(') {
+            int numSlots = 0;
+            Type[] types = Type.getArgumentTypes(descriptor);
+            for (Type type : types) {
+                numSlots += type.getSize();
             }
-            pop(n);
-        } else if (c == 'J' || c == 'D') {
+            pop(numSlots);
+        } else if (firstDescriptorChar == 'J' || firstDescriptorChar == 'D') {
             pop(2);
         } else {
             pop(1);
         }
     }
 
-    private void execute(final int opcode, final int iarg, final String sarg) {
+    private void execute(final int opcode, final int intArg, final String stringArg) {
         if (this.locals == null) {
             labels = null;
             return;
         }
-        Object t1, t2, t3, t4;
+        Object value1;
+        Object value2;
+        Object value3;
+        Object t4;
         switch (opcode) {
-        case Opcodes.NOP:
-        case Opcodes.INEG:
-        case Opcodes.LNEG:
-        case Opcodes.FNEG:
-        case Opcodes.DNEG:
-        case Opcodes.I2B:
-        case Opcodes.I2C:
-        case Opcodes.I2S:
-        case Opcodes.GOTO:
-        case Opcodes.RETURN:
-            break;
-        case Opcodes.ACONST_NULL:
-            push(Opcodes.NULL);
-            break;
-        case Opcodes.ICONST_M1:
-        case Opcodes.ICONST_0:
-        case Opcodes.ICONST_1:
-        case Opcodes.ICONST_2:
-        case Opcodes.ICONST_3:
-        case Opcodes.ICONST_4:
-        case Opcodes.ICONST_5:
-        case Opcodes.BIPUSH:
-        case Opcodes.SIPUSH:
-            push(Opcodes.INTEGER);
-            break;
-        case Opcodes.LCONST_0:
-        case Opcodes.LCONST_1:
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.FCONST_0:
-        case Opcodes.FCONST_1:
-        case Opcodes.FCONST_2:
-            push(Opcodes.FLOAT);
-            break;
-        case Opcodes.DCONST_0:
-        case Opcodes.DCONST_1:
-            push(Opcodes.DOUBLE);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.ILOAD:
-        case Opcodes.FLOAD:
-        case Opcodes.ALOAD:
-            push(get(iarg));
-            break;
-        case Opcodes.LLOAD:
-        case Opcodes.DLOAD:
-            push(get(iarg));
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.IALOAD:
-        case Opcodes.BALOAD:
-        case Opcodes.CALOAD:
-        case Opcodes.SALOAD:
-            pop(2);
-            push(Opcodes.INTEGER);
-            break;
-        case Opcodes.LALOAD:
-        case Opcodes.D2L:
-            pop(2);
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.FALOAD:
-            pop(2);
-            push(Opcodes.FLOAT);
-            break;
-        case Opcodes.DALOAD:
-        case Opcodes.L2D:
-            pop(2);
-            push(Opcodes.DOUBLE);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.AALOAD:
-            pop(1);
-            t1 = pop();
-            if (t1 instanceof String) {
-                pushDesc(((String) t1).substring(1));
-            } else if (t1 == Opcodes.NULL) {
-                push(t1);
-            } else {
-                push("java/lang/Object");
-            }
-            break;
-        case Opcodes.ISTORE:
-        case Opcodes.FSTORE:
-        case Opcodes.ASTORE:
-            t1 = pop();
-            set(iarg, t1);
-            if (iarg > 0) {
-                t2 = get(iarg - 1);
-                if (t2 == Opcodes.LONG || t2 == Opcodes.DOUBLE) {
-                    set(iarg - 1, Opcodes.TOP);
+            case Opcodes.NOP:
+            case Opcodes.INEG:
+            case Opcodes.LNEG:
+            case Opcodes.FNEG:
+            case Opcodes.DNEG:
+            case Opcodes.I2B:
+            case Opcodes.I2C:
+            case Opcodes.I2S:
+            case Opcodes.GOTO:
+            case Opcodes.RETURN:
+                break;
+            case Opcodes.ACONST_NULL:
+                push(Opcodes.NULL);
+                break;
+            case Opcodes.ICONST_M1:
+            case Opcodes.ICONST_0:
+            case Opcodes.ICONST_1:
+            case Opcodes.ICONST_2:
+            case Opcodes.ICONST_3:
+            case Opcodes.ICONST_4:
+            case Opcodes.ICONST_5:
+            case Opcodes.BIPUSH:
+            case Opcodes.SIPUSH:
+                push(Opcodes.INTEGER);
+                break;
+            case Opcodes.LCONST_0:
+            case Opcodes.LCONST_1:
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.FCONST_0:
+            case Opcodes.FCONST_1:
+            case Opcodes.FCONST_2:
+                push(Opcodes.FLOAT);
+                break;
+            case Opcodes.DCONST_0:
+            case Opcodes.DCONST_1:
+                push(Opcodes.DOUBLE);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.ILOAD:
+            case Opcodes.FLOAD:
+            case Opcodes.ALOAD:
+                push(get(intArg));
+                break;
+            case Opcodes.LLOAD:
+            case Opcodes.DLOAD:
+                push(get(intArg));
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.LALOAD:
+            case Opcodes.D2L:
+                pop(2);
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.DALOAD:
+            case Opcodes.L2D:
+                pop(2);
+                push(Opcodes.DOUBLE);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.AALOAD:
+                pop(1);
+                value1 = pop();
+                if (value1 instanceof String) {
+                    pushDescriptor(((String) value1).substring(1));
+                } else if (value1 == Opcodes.NULL) {
+                    push(value1);
+                } else {
+                    push("java/lang/Object");
                 }
-            }
-            break;
-        case Opcodes.LSTORE:
-        case Opcodes.DSTORE:
-            pop(1);
-            t1 = pop();
-            set(iarg, t1);
-            set(iarg + 1, Opcodes.TOP);
-            if (iarg > 0) {
-                t2 = get(iarg - 1);
-                if (t2 == Opcodes.LONG || t2 == Opcodes.DOUBLE) {
-                    set(iarg - 1, Opcodes.TOP);
+                break;
+            case Opcodes.ISTORE:
+            case Opcodes.FSTORE:
+            case Opcodes.ASTORE:
+                value1 = pop();
+                set(intArg, value1);
+                if (intArg > 0) {
+                    value2 = get(intArg - 1);
+                    if (value2 == Opcodes.LONG || value2 == Opcodes.DOUBLE) {
+                        set(intArg - 1, Opcodes.TOP);
+                    }
                 }
-            }
-            break;
-        case Opcodes.IASTORE:
-        case Opcodes.BASTORE:
-        case Opcodes.CASTORE:
-        case Opcodes.SASTORE:
-        case Opcodes.FASTORE:
-        case Opcodes.AASTORE:
-            pop(3);
-            break;
-        case Opcodes.LASTORE:
-        case Opcodes.DASTORE:
-            pop(4);
-            break;
-        case Opcodes.POP:
-        case Opcodes.IFEQ:
-        case Opcodes.IFNE:
-        case Opcodes.IFLT:
-        case Opcodes.IFGE:
-        case Opcodes.IFGT:
-        case Opcodes.IFLE:
-        case Opcodes.IRETURN:
-        case Opcodes.FRETURN:
-        case Opcodes.ARETURN:
-        case Opcodes.TABLESWITCH:
-        case Opcodes.LOOKUPSWITCH:
-        case Opcodes.ATHROW:
-        case Opcodes.MONITORENTER:
-        case Opcodes.MONITOREXIT:
-        case Opcodes.IFNULL:
-        case Opcodes.IFNONNULL:
-            pop(1);
-            break;
-        case Opcodes.POP2:
-        case Opcodes.IF_ICMPEQ:
-        case Opcodes.IF_ICMPNE:
-        case Opcodes.IF_ICMPLT:
-        case Opcodes.IF_ICMPGE:
-        case Opcodes.IF_ICMPGT:
-        case Opcodes.IF_ICMPLE:
-        case Opcodes.IF_ACMPEQ:
-        case Opcodes.IF_ACMPNE:
-        case Opcodes.LRETURN:
-        case Opcodes.DRETURN:
-            pop(2);
-            break;
-        case Opcodes.DUP:
-            t1 = pop();
-            push(t1);
-            push(t1);
-            break;
-        case Opcodes.DUP_X1:
-            t1 = pop();
-            t2 = pop();
-            push(t1);
-            push(t2);
-            push(t1);
-            break;
-        case Opcodes.DUP_X2:
-            t1 = pop();
-            t2 = pop();
-            t3 = pop();
-            push(t1);
-            push(t3);
-            push(t2);
-            push(t1);
-            break;
-        case Opcodes.DUP2:
-            t1 = pop();
-            t2 = pop();
-            push(t2);
-            push(t1);
-            push(t2);
-            push(t1);
-            break;
-        case Opcodes.DUP2_X1:
-            t1 = pop();
-            t2 = pop();
-            t3 = pop();
-            push(t2);
-            push(t1);
-            push(t3);
-            push(t2);
-            push(t1);
-            break;
-        case Opcodes.DUP2_X2:
-            t1 = pop();
-            t2 = pop();
-            t3 = pop();
-            t4 = pop();
-            push(t2);
-            push(t1);
-            push(t4);
-            push(t3);
-            push(t2);
-            push(t1);
-            break;
-        case Opcodes.SWAP:
-            t1 = pop();
-            t2 = pop();
-            push(t1);
-            push(t2);
-            break;
-        case Opcodes.IADD:
-        case Opcodes.ISUB:
-        case Opcodes.IMUL:
-        case Opcodes.IDIV:
-        case Opcodes.IREM:
-        case Opcodes.IAND:
-        case Opcodes.IOR:
-        case Opcodes.IXOR:
-        case Opcodes.ISHL:
-        case Opcodes.ISHR:
-        case Opcodes.IUSHR:
-        case Opcodes.L2I:
-        case Opcodes.D2I:
-        case Opcodes.FCMPL:
-        case Opcodes.FCMPG:
-            pop(2);
-            push(Opcodes.INTEGER);
-            break;
-        case Opcodes.LADD:
-        case Opcodes.LSUB:
-        case Opcodes.LMUL:
-        case Opcodes.LDIV:
-        case Opcodes.LREM:
-        case Opcodes.LAND:
-        case Opcodes.LOR:
-        case Opcodes.LXOR:
-            pop(4);
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.FADD:
-        case Opcodes.FSUB:
-        case Opcodes.FMUL:
-        case Opcodes.FDIV:
-        case Opcodes.FREM:
-        case Opcodes.L2F:
-        case Opcodes.D2F:
-            pop(2);
-            push(Opcodes.FLOAT);
-            break;
-        case Opcodes.DADD:
-        case Opcodes.DSUB:
-        case Opcodes.DMUL:
-        case Opcodes.DDIV:
-        case Opcodes.DREM:
-            pop(4);
-            push(Opcodes.DOUBLE);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.LSHL:
-        case Opcodes.LSHR:
-        case Opcodes.LUSHR:
-            pop(3);
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.IINC:
-            set(iarg, Opcodes.INTEGER);
-            break;
-        case Opcodes.I2L:
-        case Opcodes.F2L:
-            pop(1);
-            push(Opcodes.LONG);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.I2F:
-            pop(1);
-            push(Opcodes.FLOAT);
-            break;
-        case Opcodes.I2D:
-        case Opcodes.F2D:
-            pop(1);
-            push(Opcodes.DOUBLE);
-            push(Opcodes.TOP);
-            break;
-        case Opcodes.F2I:
-        case Opcodes.ARRAYLENGTH:
-        case Opcodes.INSTANCEOF:
-            pop(1);
-            push(Opcodes.INTEGER);
-            break;
-        case Opcodes.LCMP:
-        case Opcodes.DCMPL:
-        case Opcodes.DCMPG:
-            pop(4);
-            push(Opcodes.INTEGER);
-            break;
-        case Opcodes.JSR:
-        case Opcodes.RET:
-            throw new RuntimeException("JSR/RET are not supported");
-        case Opcodes.GETSTATIC:
-            pushDesc(sarg);
-            break;
-        case Opcodes.PUTSTATIC:
-            pop(sarg);
-            break;
-        case Opcodes.GETFIELD:
-            pop(1);
-            pushDesc(sarg);
-            break;
-        case Opcodes.PUTFIELD:
-            pop(sarg);
-            pop();
-            break;
-        case Opcodes.NEW:
-            push(labels.get(0));
-            break;
-        case Opcodes.NEWARRAY:
-            pop();
-            switch (iarg) {
-            case Opcodes.T_BOOLEAN:
-                pushDesc("[Z");
                 break;
-            case Opcodes.T_CHAR:
-                pushDesc("[C");
+            case Opcodes.LSTORE:
+            case Opcodes.DSTORE:
+                pop(1);
+                value1 = pop();
+                set(intArg, value1);
+                set(intArg + 1, Opcodes.TOP);
+                if (intArg > 0) {
+                    value2 = get(intArg - 1);
+                    if (value2 == Opcodes.LONG || value2 == Opcodes.DOUBLE) {
+                        set(intArg - 1, Opcodes.TOP);
+                    }
+                }
                 break;
-            case Opcodes.T_BYTE:
-                pushDesc("[B");
+            case Opcodes.IASTORE:
+            case Opcodes.BASTORE:
+            case Opcodes.CASTORE:
+            case Opcodes.SASTORE:
+            case Opcodes.FASTORE:
+            case Opcodes.AASTORE:
+                pop(3);
                 break;
-            case Opcodes.T_SHORT:
-                pushDesc("[S");
+            case Opcodes.LASTORE:
+            case Opcodes.DASTORE:
+                pop(4);
                 break;
-            case Opcodes.T_INT:
-                pushDesc("[I");
+            case Opcodes.POP:
+            case Opcodes.IFEQ:
+            case Opcodes.IFNE:
+            case Opcodes.IFLT:
+            case Opcodes.IFGE:
+            case Opcodes.IFGT:
+            case Opcodes.IFLE:
+            case Opcodes.IRETURN:
+            case Opcodes.FRETURN:
+            case Opcodes.ARETURN:
+            case Opcodes.TABLESWITCH:
+            case Opcodes.LOOKUPSWITCH:
+            case Opcodes.ATHROW:
+            case Opcodes.MONITORENTER:
+            case Opcodes.MONITOREXIT:
+            case Opcodes.IFNULL:
+            case Opcodes.IFNONNULL:
+                pop(1);
                 break;
-            case Opcodes.T_FLOAT:
-                pushDesc("[F");
+            case Opcodes.POP2:
+            case Opcodes.IF_ICMPEQ:
+            case Opcodes.IF_ICMPNE:
+            case Opcodes.IF_ICMPLT:
+            case Opcodes.IF_ICMPGE:
+            case Opcodes.IF_ICMPGT:
+            case Opcodes.IF_ICMPLE:
+            case Opcodes.IF_ACMPEQ:
+            case Opcodes.IF_ACMPNE:
+            case Opcodes.LRETURN:
+            case Opcodes.DRETURN:
+                pop(2);
                 break;
-            case Opcodes.T_DOUBLE:
-                pushDesc("[D");
+            case Opcodes.DUP:
+                value1 = pop();
+                push(value1);
+                push(value1);
                 break;
-            // case Opcodes.T_LONG:
+            case Opcodes.DUP_X1:
+                value1 = pop();
+                value2 = pop();
+                push(value1);
+                push(value2);
+                push(value1);
+                break;
+            case Opcodes.DUP_X2:
+                value1 = pop();
+                value2 = pop();
+                value3 = pop();
+                push(value1);
+                push(value3);
+                push(value2);
+                push(value1);
+                break;
+            case Opcodes.DUP2:
+                value1 = pop();
+                value2 = pop();
+                push(value2);
+                push(value1);
+                push(value2);
+                push(value1);
+                break;
+            case Opcodes.DUP2_X1:
+                value1 = pop();
+                value2 = pop();
+                value3 = pop();
+                push(value2);
+                push(value1);
+                push(value3);
+                push(value2);
+                push(value1);
+                break;
+            case Opcodes.DUP2_X2:
+                value1 = pop();
+                value2 = pop();
+                value3 = pop();
+                t4 = pop();
+                push(value2);
+                push(value1);
+                push(t4);
+                push(value3);
+                push(value2);
+                push(value1);
+                break;
+            case Opcodes.SWAP:
+                value1 = pop();
+                value2 = pop();
+                push(value1);
+                push(value2);
+                break;
+            case Opcodes.IALOAD:
+            case Opcodes.BALOAD:
+            case Opcodes.CALOAD:
+            case Opcodes.SALOAD:
+            case Opcodes.IADD:
+            case Opcodes.ISUB:
+            case Opcodes.IMUL:
+            case Opcodes.IDIV:
+            case Opcodes.IREM:
+            case Opcodes.IAND:
+            case Opcodes.IOR:
+            case Opcodes.IXOR:
+            case Opcodes.ISHL:
+            case Opcodes.ISHR:
+            case Opcodes.IUSHR:
+            case Opcodes.L2I:
+            case Opcodes.D2I:
+            case Opcodes.FCMPL:
+            case Opcodes.FCMPG:
+                pop(2);
+                push(Opcodes.INTEGER);
+                break;
+            case Opcodes.LADD:
+            case Opcodes.LSUB:
+            case Opcodes.LMUL:
+            case Opcodes.LDIV:
+            case Opcodes.LREM:
+            case Opcodes.LAND:
+            case Opcodes.LOR:
+            case Opcodes.LXOR:
+                pop(4);
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.FALOAD:
+            case Opcodes.FADD:
+            case Opcodes.FSUB:
+            case Opcodes.FMUL:
+            case Opcodes.FDIV:
+            case Opcodes.FREM:
+            case Opcodes.L2F:
+            case Opcodes.D2F:
+                pop(2);
+                push(Opcodes.FLOAT);
+                break;
+            case Opcodes.DADD:
+            case Opcodes.DSUB:
+            case Opcodes.DMUL:
+            case Opcodes.DDIV:
+            case Opcodes.DREM:
+                pop(4);
+                push(Opcodes.DOUBLE);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.LSHL:
+            case Opcodes.LSHR:
+            case Opcodes.LUSHR:
+                pop(3);
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.IINC:
+                set(intArg, Opcodes.INTEGER);
+                break;
+            case Opcodes.I2L:
+            case Opcodes.F2L:
+                pop(1);
+                push(Opcodes.LONG);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.I2F:
+                pop(1);
+                push(Opcodes.FLOAT);
+                break;
+            case Opcodes.I2D:
+            case Opcodes.F2D:
+                pop(1);
+                push(Opcodes.DOUBLE);
+                push(Opcodes.TOP);
+                break;
+            case Opcodes.F2I:
+            case Opcodes.ARRAYLENGTH:
+            case Opcodes.INSTANCEOF:
+                pop(1);
+                push(Opcodes.INTEGER);
+                break;
+            case Opcodes.LCMP:
+            case Opcodes.DCMPL:
+            case Opcodes.DCMPG:
+                pop(4);
+                push(Opcodes.INTEGER);
+                break;
+            case Opcodes.JSR:
+            case Opcodes.RET:
+                throw new IllegalArgumentException("JSR/RET are not supported");
+            case Opcodes.GETSTATIC:
+                pushDescriptor(stringArg);
+                break;
+            case Opcodes.PUTSTATIC:
+                pop(stringArg);
+                break;
+            case Opcodes.GETFIELD:
+                pop(1);
+                pushDescriptor(stringArg);
+                break;
+            case Opcodes.PUTFIELD:
+                pop(stringArg);
+                pop();
+                break;
+            case Opcodes.NEW:
+                push(labels.get(0));
+                break;
+            case Opcodes.NEWARRAY:
+                pop();
+                switch (intArg) {
+                    case Opcodes.T_BOOLEAN:
+                        pushDescriptor("[Z");
+                        break;
+                    case Opcodes.T_CHAR:
+                        pushDescriptor("[C");
+                        break;
+                    case Opcodes.T_BYTE:
+                        pushDescriptor("[B");
+                        break;
+                    case Opcodes.T_SHORT:
+                        pushDescriptor("[S");
+                        break;
+                    case Opcodes.T_INT:
+                        pushDescriptor("[I");
+                        break;
+                    case Opcodes.T_FLOAT:
+                        pushDescriptor("[F");
+                        break;
+                    case Opcodes.T_DOUBLE:
+                        pushDescriptor("[D");
+                        break;
+                    case Opcodes.T_LONG:
+                        pushDescriptor("[J");
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid array type " + intArg);
+                }
+                break;
+            case Opcodes.ANEWARRAY:
+                pop();
+                pushDescriptor("[" + Type.getObjectType(stringArg));
+                break;
+            case Opcodes.CHECKCAST:
+                pop();
+                pushDescriptor(Type.getObjectType(stringArg).getDescriptor());
+                break;
+            case Opcodes.MULTIANEWARRAY:
+                pop(intArg);
+                pushDescriptor(stringArg);
+                break;
             default:
-                pushDesc("[J");
-                break;
-            }
-            break;
-        case Opcodes.ANEWARRAY:
-            pop();
-            pushDesc("[" + Type.getObjectType(sarg));
-            break;
-        case Opcodes.CHECKCAST:
-            pop();
-            pushDesc(Type.getObjectType(sarg).getDescriptor());
-            break;
-        // case Opcodes.MULTIANEWARRAY:
-        default:
-            pop(iarg);
-            pushDesc(sarg);
-            break;
+                throw new IllegalArgumentException("Invalid opcode " + opcode);
         }
         labels = null;
     }

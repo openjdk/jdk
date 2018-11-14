@@ -98,7 +98,7 @@ void JNICALL callbackSingleStep(jvmtiEnv *jvmti,
     nsk_printf(" %d..",redefineNumber);
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
 
-    if(nsk_jvmti_redefineClass(jvmti, threadClass,fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, threadClass,fileName) == NSK_TRUE) {
         nsk_printf("Agent:: Redefined..\n");
     } else {
         nsk_printf(" Failed to redefine..\n");

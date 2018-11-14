@@ -170,7 +170,7 @@ public final class NetworkInterface {
      * a SecurityException will be returned in the List.
      *
      * @return a {@code List} object with all or a subset of the
-     *         InterfaceAddresss of this network interface
+     *         InterfaceAddress of this network interface
      * @since 1.6
      */
     public java.util.List<InterfaceAddress> getInterfaceAddresses() {

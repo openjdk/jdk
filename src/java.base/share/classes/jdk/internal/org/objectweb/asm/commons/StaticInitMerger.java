@@ -63,64 +63,93 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * A {@link ClassVisitor} that merges clinit methods into a single one.
+ * A {@link ClassVisitor} that merges &lt;clinit&gt; methods into a single one. All the existing
+ * &lt;clinit&gt; methods are renamed, and a new one is created, which calls all the renamed
+ * methods.
  *
  * @author Eric Bruneton
  */
 public class StaticInitMerger extends ClassVisitor {
 
-    private String name;
+    /** The internal name of the visited class. */
+    private String owner;
 
-    private MethodVisitor clinit;
+    /** The prefix to use to rename the existing &lt;clinit&gt; methods. */
+    private final String renamedClinitMethodPrefix;
 
-    private final String prefix;
+    /** The number of &lt;clinit&gt; methods visited so far. */
+    private int numClinitMethods;
 
-    private int counter;
+    /** The MethodVisitor for the merged &lt;clinit&gt; method. */
+    private MethodVisitor mergedClinitVisitor;
 
-    public StaticInitMerger(final String prefix, final ClassVisitor cv) {
-        this(Opcodes.ASM6, prefix, cv);
+    /**
+      * Constructs a new {@link StaticInitMerger}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #StaticInitMerger(int, String, ClassVisitor)} version.
+      *
+      * @param prefix the prefix to use to rename the existing &lt;clinit&gt; methods.
+      * @param classVisitor the class visitor to which this visitor must delegate method calls. May be
+      *     null.
+      */
+    public StaticInitMerger(final String prefix, final ClassVisitor classVisitor) {
+        this(Opcodes.ASM7, prefix, classVisitor);
     }
 
-    protected StaticInitMerger(final int api, final String prefix,
-            final ClassVisitor cv) {
-        super(api, cv);
-        this.prefix = prefix;
+    /**
+      * Constructs a new {@link StaticInitMerger}.
+      *
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
+      * @param prefix the prefix to use to rename the existing &lt;clinit&gt; methods.
+      * @param classVisitor the class visitor to which this visitor must delegate method calls. May be
+      *     null.
+      */
+    protected StaticInitMerger(final int api, final String prefix, final ClassVisitor classVisitor) {
+        super(api, classVisitor);
+        this.renamedClinitMethodPrefix = prefix;
     }
 
     @Override
-    public void visit(final int version, final int access, final String name,
-            final String signature, final String superName,
+    public void visit(
+            final int version,
+            final int access,
+            final String name,
+            final String signature,
+            final String superName,
             final String[] interfaces) {
-        cv.visit(version, access, name, signature, superName, interfaces);
-        this.name = name;
+        super.visit(version, access, name, signature, superName, interfaces);
+        this.owner = name;
     }
 
     @Override
-    public MethodVisitor visitMethod(final int access, final String name,
-            final String desc, final String signature, final String[] exceptions) {
-        MethodVisitor mv;
+    public MethodVisitor visitMethod(
+            final int access,
+            final String name,
+            final String descriptor,
+            final String signature,
+            final String[] exceptions) {
+        MethodVisitor methodVisitor;
         if ("<clinit>".equals(name)) {
-            int a = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
-            String n = prefix + counter++;
-            mv = cv.visitMethod(a, n, desc, signature, exceptions);
+            int newAccess = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
+            String newName = renamedClinitMethodPrefix + numClinitMethods++;
+            methodVisitor = super.visitMethod(newAccess, newName, descriptor, signature, exceptions);
 
-            if (clinit == null) {
-                clinit = cv.visitMethod(a, name, desc, null, null);
+            if (mergedClinitVisitor == null) {
+                mergedClinitVisitor = super.visitMethod(newAccess, name, descriptor, null, null);
             }
-            clinit.visitMethodInsn(Opcodes.INVOKESTATIC, this.name, n, desc,
-                    false);
+            mergedClinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, owner, newName, descriptor, false);
         } else {
-            mv = cv.visitMethod(access, name, desc, signature, exceptions);
+            methodVisitor = super.visitMethod(access, name, descriptor, signature, exceptions);
         }
-        return mv;
+        return methodVisitor;
     }
 
     @Override
     public void visitEnd() {
-        if (clinit != null) {
-            clinit.visitInsn(Opcodes.RETURN);
-            clinit.visitMaxs(0, 0);
+        if (mergedClinitVisitor != null) {
+            mergedClinitVisitor.visitInsn(Opcodes.RETURN);
+            mergedClinitVisitor.visitMaxs(0, 0);
         }
-        cv.visitEnd();
+        super.visitEnd();
     }
 }

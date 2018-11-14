@@ -30,12 +30,22 @@ import jdk.test.lib.JDKToolFinder;
  * @test
  * @key metaspace jcmd
  * @summary Test the VM.metaspace command
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.bits != "32"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers PrintMetaspaceDcmd with-compressed-class-space
  * @run main/othervm -XX:MaxMetaspaceSize=201M -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd without-compressed-class-space
+ */
+/*
+ * @test
+ * @key metaspace jcmd
+ * @summary Test the VM.metaspace command
+ * @requires vm.gc != "Z" & vm.bits == "32"
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:MaxMetaspaceSize=201M -Xmx100M PrintMetaspaceDcmd without-compressed-class-space
  */
 
 public class PrintMetaspaceDcmd {

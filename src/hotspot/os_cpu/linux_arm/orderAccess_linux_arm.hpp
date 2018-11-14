@@ -63,7 +63,7 @@ inline static void dmb_sy() {
      __asm__ volatile (
      ".word 0xF57FF050 | 0xf" : : : "memory");
 #endif
-   } else {
+   } else if (VM_Version::arm_arch() == 6) {
      intptr_t zero = 0;
      __asm__ volatile (
        "mcr p15, 0, %0, c7, c10, 5"
@@ -80,7 +80,7 @@ inline static void dmb_st() {
      __asm__ volatile (
      ".word 0xF57FF050 | 0xe" : : : "memory");
 #endif
-   } else {
+   } else if (VM_Version::arm_arch() == 6) {
      intptr_t zero = 0;
      __asm__ volatile (
        "mcr p15, 0, %0, c7, c10, 5"

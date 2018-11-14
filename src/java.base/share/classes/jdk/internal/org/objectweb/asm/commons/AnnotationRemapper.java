@@ -56,53 +56,78 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * An {@link AnnotationVisitor} adapter for type remapping.
+ * An {@link AnnotationVisitor} that remaps types with a {@link Remapper}.
  *
  * @author Eugene Kuleshov
  */
 public class AnnotationRemapper extends AnnotationVisitor {
 
+    /** The remapper used to remap the types in the visited annotation. */
     protected final Remapper remapper;
 
-    public AnnotationRemapper(final AnnotationVisitor av,
-            final Remapper remapper) {
-        this(Opcodes.ASM6, av, remapper);
+    /**
+      * Constructs a new {@link AnnotationRemapper}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #AnnotationRemapper(int,AnnotationVisitor,Remapper)} version.
+      *
+      * @param annotationVisitor the annotation visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited annotation.
+      */
+    public AnnotationRemapper(final AnnotationVisitor annotationVisitor, final Remapper remapper) {
+        this(Opcodes.ASM7, annotationVisitor, remapper);
     }
 
-    protected AnnotationRemapper(final int api, final AnnotationVisitor av,
-            final Remapper remapper) {
-        super(api, av);
+    /**
+      * Constructs a new {@link AnnotationRemapper}.
+      *
+      * @param api the ASM API version supported by this remapper. Must be one of {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      * @param annotationVisitor the annotation visitor this remapper must deleted to.
+      * @param remapper the remapper to use to remap the types in the visited annotation.
+      */
+    protected AnnotationRemapper(
+            final int api, final AnnotationVisitor annotationVisitor, final Remapper remapper) {
+        super(api, annotationVisitor);
         this.remapper = remapper;
     }
 
     @Override
-    public void visit(String name, Object value) {
-        av.visit(name, remapper.mapValue(value));
+    public void visit(final String name, final Object value) {
+        super.visit(name, remapper.mapValue(value));
     }
 
     @Override
-    public void visitEnum(String name, String desc, String value) {
-        av.visitEnum(name, remapper.mapDesc(desc), value);
+    public void visitEnum(final String name, final String descriptor, final String value) {
+        super.visitEnum(name, remapper.mapDesc(descriptor), value);
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(String name, String desc) {
-        AnnotationVisitor v = av.visitAnnotation(name, remapper.mapDesc(desc));
-        return v == null ? null : (v == av ? this : new AnnotationRemapper(v,
-                remapper));
+    public AnnotationVisitor visitAnnotation(final String name, final String descriptor) {
+        AnnotationVisitor annotationVisitor = super.visitAnnotation(name, remapper.mapDesc(descriptor));
+        if (annotationVisitor == null) {
+            return null;
+        } else {
+            return annotationVisitor == av
+                    ? this
+                    : new AnnotationRemapper(api, annotationVisitor, remapper);
+        }
     }
 
     @Override
-    public AnnotationVisitor visitArray(String name) {
-        AnnotationVisitor v = av.visitArray(name);
-        return v == null ? null : (v == av ? this : new AnnotationRemapper(v,
-                remapper));
+    public AnnotationVisitor visitArray(final String name) {
+        AnnotationVisitor annotationVisitor = super.visitArray(name);
+        if (annotationVisitor == null) {
+            return null;
+        } else {
+            return annotationVisitor == av
+                    ? this
+                    : new AnnotationRemapper(api, annotationVisitor, remapper);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,12 +146,6 @@ public:
   BasicHashtable(int table_size, int entry_size);
   BasicHashtable(int table_size, int entry_size,
                  HashtableBucket<F>* buckets, int number_of_entries);
-
-  // Sharing support.
-  size_t count_bytes_for_buckets();
-  size_t count_bytes_for_table();
-  void copy_buckets(char* top, char* end);
-  void copy_table(char* top, char* end);
 
   // Bucket handling
   int hash_to_index(unsigned int full_hash) const {

@@ -347,13 +347,7 @@ public:
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  static bool do_unloading(GCTimer* gc_timer,
-                           bool do_cleaning = true);
-
-  // Used by DumpSharedSpaces only to remove classes that failed verification
-  static void remove_classes_in_error_state();
-
-  static int calculate_systemdictionary_size(int loadedclasses);
+  static bool do_unloading(GCTimer* gc_timer);
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
@@ -365,19 +359,9 @@ public:
   static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
 
 public:
-  // Sharing support.
-  static void reorder_dictionary_for_sharing() NOT_CDS_RETURN;
-  static void combine_shared_dictionaries();
-  static size_t count_bytes_for_buckets();
-  static size_t count_bytes_for_table();
-  static void copy_buckets(char* top, char* end);
-  static void copy_table(char* top, char* end);
-  static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
-                                    int number_of_entries);
   // Printing
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st);
-  static void print_shared(outputStream* st);
   static void dump(outputStream* st, bool verbose);
 
   // Monotonically increasing counter which grows as classes are
@@ -580,7 +564,6 @@ public:
     _loader_constraint_size = 107,                     // number of entries in constraint table
     _resolution_error_size  = 107,                     // number of entries in resolution error table
     _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _shared_dictionary_size = 1009,                    // number of entries in shared dictionary
     _placeholder_table_size = 1009                     // number of entries in hash table for placeholders
   };
 
@@ -589,9 +572,6 @@ public:
 
   // Hashtable holding placeholders for classes being loaded.
   static PlaceholderTable*       _placeholders;
-
-  // Hashtable holding classes from the shared archive.
-  static Dictionary*             _shared_dictionary;
 
   // Monotonically increasing counter which grows with
   // loading classes as well as hot-swapping and breakpoint setting
@@ -623,7 +603,6 @@ protected:
 
   friend class VM_PopulateDumpSharedSpace;
   friend class TraversePlaceholdersClosure;
-  static Dictionary*         shared_dictionary() { return _shared_dictionary; }
   static PlaceholderTable*   placeholders() { return _placeholders; }
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
@@ -663,7 +642,6 @@ protected:
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
-  static void clear_invoke_method_table();
 
   // Returns TRUE if the method is a non-public member of class java.lang.Object.
   static bool is_nonpublic_Object_method(Method* m) {
@@ -675,8 +653,6 @@ public:
   static OopStorage* vm_weak_oop_storage();
 
 protected:
-  static InstanceKlass* find_shared_class(Symbol* class_name);
-
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
 

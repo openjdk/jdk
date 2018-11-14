@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class Instrumentor {
     }
 
     public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<InstrHelper> injector) {
-        instrumentingVisitor = new ClassVisitor(Opcodes.ASM5, instrumentingVisitor) {
+        instrumentingVisitor = new ClassVisitor(Opcodes.ASM7, instrumentingVisitor) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
@@ -110,7 +110,7 @@ public class Instrumentor {
                 if (name.equals(methodName)) {
                     matches.getAndIncrement();
 
-                    mv = new MethodVisitor(Opcodes.ASM5, mv) {
+                    mv = new MethodVisitor(Opcodes.ASM7, mv) {
                         @Override
                         public void visitCode() {
                             injector.accept(new InstrHelper(mv, name));
@@ -124,7 +124,7 @@ public class Instrumentor {
     }
 
     public synchronized Instrumentor addNativeMethodTrackingInjection(String prefix, Consumer<InstrHelper> injector) {
-        instrumentingVisitor = new ClassVisitor(Opcodes.ASM5, instrumentingVisitor) {
+        instrumentingVisitor = new ClassVisitor(Opcodes.ASM7, instrumentingVisitor) {
             private final Set<Consumer<ClassVisitor>> wmGenerators = new HashSet<>();
             private String className;
 

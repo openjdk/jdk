@@ -183,7 +183,7 @@ public abstract class URLConnection extends java.net.URLConnection {
      * @param   type    The content type to use.  One of the
      *                  content_* static variables in this
      *                  class should be used.
-     *                  eg. setType(URL.content_html);
+     *                  e.g. setType(URL.content_html);
      */
     public void setContentType(String type) {
         contentType = type;

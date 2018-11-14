@@ -32,7 +32,7 @@ Java_nsk_jdi_ThreadReference_forceEarlyReturn_forceEarlyReturn005_forceEarlyRetu
 {
         jint success  = env->MonitorEnter(object);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 

@@ -62,7 +62,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
@@ -77,503 +76,559 @@ import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 import jdk.internal.org.objectweb.asm.tree.VarInsnNode;
 
 /**
- * A semantic bytecode analyzer. <i>This class does not fully check that JSR and
- * RET instructions are valid.</i>
+ * A semantic bytecode analyzer. <i>This class does not fully check that JSR and RET instructions
+ * are valid.</i>
  *
- * @param <V>
- *            type of the Value used for the analysis.
- *
+ * @param <V> type of the Value used for the analysis.
  * @author Eric Bruneton
  */
 public class Analyzer<V extends Value> implements Opcodes {
 
+    /** The interpreter to use to symbolically interpret the bytecode instructions. */
     private final Interpreter<V> interpreter;
 
-    private int n;
+    /** The instructions of the currently analyzed method. */
+    private InsnList insnList;
 
-    private InsnList insns;
+    /** The size of {@link #insnList}. */
+    private int insnListSize;
 
+    /** The exception handlers of the currently analyzed method (one list per instruction index). */
     private List<TryCatchBlockNode>[] handlers;
 
+    /** The execution stack frames of the currently analyzed method (one per instruction index). */
     private Frame<V>[] frames;
 
+    /** The subroutines of the currently analyzed method (one per instruction index). */
     private Subroutine[] subroutines;
 
-    private boolean[] queued;
+    /** The instructions that remain to process (one boolean per instruction index). */
+    private boolean[] inInstructionsToProcess;
 
-    private int[] queue;
+    /** The indices of the instructions that remain to process in the currently analyzed method. */
+    private int[] instructionsToProcess;
 
-    private int top;
+    /** The number of instructions that remain to process in the currently analyzed method. */
+    private int numInstructionsToProcess;
 
     /**
-     * Constructs a new {@link Analyzer}.
-     *
-     * @param interpreter
-     *            the interpreter to be used to symbolically interpret the
-     *            bytecode instructions.
-     */
+      * Constructs a new {@link Analyzer}.
+      *
+      * @param interpreter the interpreter to use to symbolically interpret the bytecode instructions.
+      */
     public Analyzer(final Interpreter<V> interpreter) {
         this.interpreter = interpreter;
     }
 
     /**
-     * Analyzes the given method.
-     *
-     * @param owner
-     *            the internal name of the class to which the method belongs.
-     * @param m
-     *            the method to be analyzed.
-     * @return the symbolic state of the execution stack frame at each bytecode
-     *         instruction of the method. The size of the returned array is
-     *         equal to the number of instructions (and labels) of the method. A
-     *         given frame is <tt>null</tt> if and only if the corresponding
-     *         instruction cannot be reached (dead code).
-     * @throws AnalyzerException
-     *             if a problem occurs during the analysis.
-     */
+      * Analyzes the given method.
+      *
+      * @param owner the internal name of the class to which 'method' belongs.
+      * @param method the method to be analyzed.
+      * @return the symbolic state of the execution stack frame at each bytecode instruction of the
+      *     method. The size of the returned array is equal to the number of instructions (and labels)
+      *     of the method. A given frame is {@literal null} if and only if the corresponding
+      *     instruction cannot be reached (dead code).
+      * @throws AnalyzerException if a problem occurs during the analysis.
+      */
     @SuppressWarnings("unchecked")
-    public Frame<V>[] analyze(final String owner, final MethodNode m)
-            throws AnalyzerException {
-        if ((m.access & (ACC_ABSTRACT | ACC_NATIVE)) != 0) {
+    public Frame<V>[] analyze(final String owner, final MethodNode method) throws AnalyzerException {
+        if ((method.access & (ACC_ABSTRACT | ACC_NATIVE)) != 0) {
             frames = (Frame<V>[]) new Frame<?>[0];
             return frames;
         }
-        n = m.instructions.size();
-        insns = m.instructions;
-        handlers = (List<TryCatchBlockNode>[]) new List<?>[n];
-        frames = (Frame<V>[]) new Frame<?>[n];
-        subroutines = new Subroutine[n];
-        queued = new boolean[n];
-        queue = new int[n];
-        top = 0;
+        insnList = method.instructions;
+        insnListSize = insnList.size();
+        handlers = (List<TryCatchBlockNode>[]) new List<?>[insnListSize];
+        frames = (Frame<V>[]) new Frame<?>[insnListSize];
+        subroutines = new Subroutine[insnListSize];
+        inInstructionsToProcess = new boolean[insnListSize];
+        instructionsToProcess = new int[insnListSize];
+        numInstructionsToProcess = 0;
 
-        // computes exception handlers for each instruction
-        for (int i = 0; i < m.tryCatchBlocks.size(); ++i) {
-            TryCatchBlockNode tcb = m.tryCatchBlocks.get(i);
-            int begin = insns.indexOf(tcb.start);
-            int end = insns.indexOf(tcb.end);
-            for (int j = begin; j < end; ++j) {
+        // For each exception handler, and each instruction within its range, record in 'handlers' the
+        // fact that execution can flow from this instruction to the exception handler.
+        for (int i = 0; i < method.tryCatchBlocks.size(); ++i) {
+            TryCatchBlockNode tryCatchBlock = method.tryCatchBlocks.get(i);
+            int startIndex = insnList.indexOf(tryCatchBlock.start);
+            int endIndex = insnList.indexOf(tryCatchBlock.end);
+            for (int j = startIndex; j < endIndex; ++j) {
                 List<TryCatchBlockNode> insnHandlers = handlers[j];
                 if (insnHandlers == null) {
                     insnHandlers = new ArrayList<TryCatchBlockNode>();
                     handlers[j] = insnHandlers;
                 }
-                insnHandlers.add(tcb);
+                insnHandlers.add(tryCatchBlock);
             }
         }
 
-        // computes the subroutine for each instruction:
-        Subroutine main = new Subroutine(null, m.maxLocals, null);
-        List<AbstractInsnNode> subroutineCalls = new ArrayList<AbstractInsnNode>();
-        Map<LabelNode, Subroutine> subroutineHeads = new HashMap<LabelNode, Subroutine>();
-        findSubroutine(0, main, subroutineCalls);
-        while (!subroutineCalls.isEmpty()) {
-            JumpInsnNode jsr = (JumpInsnNode) subroutineCalls.remove(0);
-            Subroutine sub = subroutineHeads.get(jsr.label);
-            if (sub == null) {
-                sub = new Subroutine(jsr.label, m.maxLocals, jsr);
-                subroutineHeads.put(jsr.label, sub);
-                findSubroutine(insns.indexOf(jsr.label), sub, subroutineCalls);
+        // For each instruction, compute the subroutine to which it belongs.
+        // Follow the main 'subroutine', and collect the jsr instructions to nested subroutines.
+        Subroutine main = new Subroutine(null, method.maxLocals, null);
+        List<AbstractInsnNode> jsrInsns = new ArrayList<AbstractInsnNode>();
+        findSubroutine(0, main, jsrInsns);
+        // Follow the nested subroutines, and collect their own nested subroutines, until all
+        // subroutines are found.
+        Map<LabelNode, Subroutine> jsrSubroutines = new HashMap<LabelNode, Subroutine>();
+        while (!jsrInsns.isEmpty()) {
+            JumpInsnNode jsrInsn = (JumpInsnNode) jsrInsns.remove(0);
+            Subroutine subroutine = jsrSubroutines.get(jsrInsn.label);
+            if (subroutine == null) {
+                subroutine = new Subroutine(jsrInsn.label, method.maxLocals, jsrInsn);
+                jsrSubroutines.put(jsrInsn.label, subroutine);
+                findSubroutine(insnList.indexOf(jsrInsn.label), subroutine, jsrInsns);
             } else {
-                sub.callers.add(jsr);
+                subroutine.callers.add(jsrInsn);
             }
         }
-        for (int i = 0; i < n; ++i) {
+        // Clear the main 'subroutine', which is not a real subroutine (and was used only as an
+        // intermediate step above to find the real ones).
+        for (int i = 0; i < insnListSize; ++i) {
             if (subroutines[i] != null && subroutines[i].start == null) {
                 subroutines[i] = null;
             }
         }
 
-        // initializes the data structures for the control flow analysis
-        Frame<V> current = newFrame(m.maxLocals, m.maxStack);
-        Frame<V> handler = newFrame(m.maxLocals, m.maxStack);
-        current.setReturn(interpreter.newValue(Type.getReturnType(m.desc)));
-        Type[] args = Type.getArgumentTypes(m.desc);
-        int local = 0;
-        if ((m.access & ACC_STATIC) == 0) {
-            Type ctype = Type.getObjectType(owner);
-            current.setLocal(local++, interpreter.newValue(ctype));
-        }
-        for (int i = 0; i < args.length; ++i) {
-            current.setLocal(local++, interpreter.newValue(args[i]));
-            if (args[i].getSize() == 2) {
-                current.setLocal(local++, interpreter.newValue(null));
-            }
-        }
-        while (local < m.maxLocals) {
-            current.setLocal(local++, interpreter.newValue(null));
-        }
-        merge(0, current, null);
+        // Initializes the data structures for the control flow analysis.
+        Frame<V> currentFrame = computeInitialFrame(owner, method);
+        merge(0, currentFrame, null);
+        init(owner, method);
 
-        init(owner, m);
+        // Control flow analysis.
+        while (numInstructionsToProcess > 0) {
+            // Get and remove one instruction from the list of instructions to process.
+            int insnIndex = instructionsToProcess[--numInstructionsToProcess];
+            Frame<V> oldFrame = frames[insnIndex];
+            Subroutine subroutine = subroutines[insnIndex];
+            inInstructionsToProcess[insnIndex] = false;
 
-        // control flow analysis
-        while (top > 0) {
-            int insn = queue[--top];
-            Frame<V> f = frames[insn];
-            Subroutine subroutine = subroutines[insn];
-            queued[insn] = false;
-
+            // Simulate the execution of this instruction.
             AbstractInsnNode insnNode = null;
             try {
-                insnNode = m.instructions.get(insn);
+                insnNode = method.instructions.get(insnIndex);
                 int insnOpcode = insnNode.getOpcode();
                 int insnType = insnNode.getType();
 
                 if (insnType == AbstractInsnNode.LABEL
                         || insnType == AbstractInsnNode.LINE
                         || insnType == AbstractInsnNode.FRAME) {
-                    merge(insn + 1, f, subroutine);
-                    newControlFlowEdge(insn, insn + 1);
+                    merge(insnIndex + 1, oldFrame, subroutine);
+                    newControlFlowEdge(insnIndex, insnIndex + 1);
                 } else {
-                    current.init(f).execute(insnNode, interpreter);
-                    subroutine = subroutine == null ? null : subroutine.copy();
+                    currentFrame.init(oldFrame).execute(insnNode, interpreter);
+                    subroutine = subroutine == null ? null : new Subroutine(subroutine);
 
                     if (insnNode instanceof JumpInsnNode) {
-                        JumpInsnNode j = (JumpInsnNode) insnNode;
+                        JumpInsnNode jumpInsn = (JumpInsnNode) insnNode;
                         if (insnOpcode != GOTO && insnOpcode != JSR) {
-                            merge(insn + 1, current, subroutine);
-                            newControlFlowEdge(insn, insn + 1);
+                            currentFrame.initJumpTarget(insnOpcode, /* target = */ null);
+                            merge(insnIndex + 1, currentFrame, subroutine);
+                            newControlFlowEdge(insnIndex, insnIndex + 1);
                         }
-                        int jump = insns.indexOf(j.label);
+                        int jumpInsnIndex = insnList.indexOf(jumpInsn.label);
+                        currentFrame.initJumpTarget(insnOpcode, jumpInsn.label);
                         if (insnOpcode == JSR) {
-                            merge(jump, current, new Subroutine(j.label,
-                                    m.maxLocals, j));
+                            merge(
+                                    jumpInsnIndex,
+                                    currentFrame,
+                                    new Subroutine(jumpInsn.label, method.maxLocals, jumpInsn));
                         } else {
-                            merge(jump, current, subroutine);
+                            merge(jumpInsnIndex, currentFrame, subroutine);
                         }
-                        newControlFlowEdge(insn, jump);
+                        newControlFlowEdge(insnIndex, jumpInsnIndex);
                     } else if (insnNode instanceof LookupSwitchInsnNode) {
-                        LookupSwitchInsnNode lsi = (LookupSwitchInsnNode) insnNode;
-                        int jump = insns.indexOf(lsi.dflt);
-                        merge(jump, current, subroutine);
-                        newControlFlowEdge(insn, jump);
-                        for (int j = 0; j < lsi.labels.size(); ++j) {
-                            LabelNode label = lsi.labels.get(j);
-                            jump = insns.indexOf(label);
-                            merge(jump, current, subroutine);
-                            newControlFlowEdge(insn, jump);
+                        LookupSwitchInsnNode lookupSwitchInsn = (LookupSwitchInsnNode) insnNode;
+                        int targetInsnIndex = insnList.indexOf(lookupSwitchInsn.dflt);
+                        currentFrame.initJumpTarget(insnOpcode, lookupSwitchInsn.dflt);
+                        merge(targetInsnIndex, currentFrame, subroutine);
+                        newControlFlowEdge(insnIndex, targetInsnIndex);
+                        for (int i = 0; i < lookupSwitchInsn.labels.size(); ++i) {
+                            LabelNode label = lookupSwitchInsn.labels.get(i);
+                            targetInsnIndex = insnList.indexOf(label);
+                            currentFrame.initJumpTarget(insnOpcode, label);
+                            merge(targetInsnIndex, currentFrame, subroutine);
+                            newControlFlowEdge(insnIndex, targetInsnIndex);
                         }
                     } else if (insnNode instanceof TableSwitchInsnNode) {
-                        TableSwitchInsnNode tsi = (TableSwitchInsnNode) insnNode;
-                        int jump = insns.indexOf(tsi.dflt);
-                        merge(jump, current, subroutine);
-                        newControlFlowEdge(insn, jump);
-                        for (int j = 0; j < tsi.labels.size(); ++j) {
-                            LabelNode label = tsi.labels.get(j);
-                            jump = insns.indexOf(label);
-                            merge(jump, current, subroutine);
-                            newControlFlowEdge(insn, jump);
+                        TableSwitchInsnNode tableSwitchInsn = (TableSwitchInsnNode) insnNode;
+                        int targetInsnIndex = insnList.indexOf(tableSwitchInsn.dflt);
+                        currentFrame.initJumpTarget(insnOpcode, tableSwitchInsn.dflt);
+                        merge(targetInsnIndex, currentFrame, subroutine);
+                        newControlFlowEdge(insnIndex, targetInsnIndex);
+                        for (int i = 0; i < tableSwitchInsn.labels.size(); ++i) {
+                            LabelNode label = tableSwitchInsn.labels.get(i);
+                            currentFrame.initJumpTarget(insnOpcode, label);
+                            targetInsnIndex = insnList.indexOf(label);
+                            merge(targetInsnIndex, currentFrame, subroutine);
+                            newControlFlowEdge(insnIndex, targetInsnIndex);
                         }
                     } else if (insnOpcode == RET) {
                         if (subroutine == null) {
-                            throw new AnalyzerException(insnNode,
-                                    "RET instruction outside of a sub routine");
+                            throw new AnalyzerException(insnNode, "RET instruction outside of a sub routine");
                         }
                         for (int i = 0; i < subroutine.callers.size(); ++i) {
                             JumpInsnNode caller = subroutine.callers.get(i);
-                            int call = insns.indexOf(caller);
-                            if (frames[call] != null) {
-                                merge(call + 1, frames[call], current,
-                                        subroutines[call], subroutine.access);
-                                newControlFlowEdge(insn, call + 1);
+                            int jsrInsnIndex = insnList.indexOf(caller);
+                            if (frames[jsrInsnIndex] != null) {
+                                merge(
+                                        jsrInsnIndex + 1,
+                                        frames[jsrInsnIndex],
+                                        currentFrame,
+                                        subroutines[jsrInsnIndex],
+                                        subroutine.localsUsed);
+                                newControlFlowEdge(insnIndex, jsrInsnIndex + 1);
                             }
                         }
-                    } else if (insnOpcode != ATHROW
-                            && (insnOpcode < IRETURN || insnOpcode > RETURN)) {
+                    } else if (insnOpcode != ATHROW && (insnOpcode < IRETURN || insnOpcode > RETURN)) {
                         if (subroutine != null) {
                             if (insnNode instanceof VarInsnNode) {
                                 int var = ((VarInsnNode) insnNode).var;
-                                subroutine.access[var] = true;
-                                if (insnOpcode == LLOAD || insnOpcode == DLOAD
+                                subroutine.localsUsed[var] = true;
+                                if (insnOpcode == LLOAD
+                                        || insnOpcode == DLOAD
                                         || insnOpcode == LSTORE
                                         || insnOpcode == DSTORE) {
-                                    subroutine.access[var + 1] = true;
+                                    subroutine.localsUsed[var + 1] = true;
                                 }
                             } else if (insnNode instanceof IincInsnNode) {
                                 int var = ((IincInsnNode) insnNode).var;
-                                subroutine.access[var] = true;
+                                subroutine.localsUsed[var] = true;
                             }
                         }
-                        merge(insn + 1, current, subroutine);
-                        newControlFlowEdge(insn, insn + 1);
+                        merge(insnIndex + 1, currentFrame, subroutine);
+                        newControlFlowEdge(insnIndex, insnIndex + 1);
                     }
                 }
 
-                List<TryCatchBlockNode> insnHandlers = handlers[insn];
+                List<TryCatchBlockNode> insnHandlers = handlers[insnIndex];
                 if (insnHandlers != null) {
-                    for (int i = 0; i < insnHandlers.size(); ++i) {
-                        TryCatchBlockNode tcb = insnHandlers.get(i);
-                        Type type;
-                        if (tcb.type == null) {
-                            type = Type.getObjectType("java/lang/Throwable");
+                    for (TryCatchBlockNode tryCatchBlock : insnHandlers) {
+                        Type catchType;
+                        if (tryCatchBlock.type == null) {
+                            catchType = Type.getObjectType("java/lang/Throwable");
                         } else {
-                            type = Type.getObjectType(tcb.type);
+                            catchType = Type.getObjectType(tryCatchBlock.type);
                         }
-                        int jump = insns.indexOf(tcb.handler);
-                        if (newControlFlowExceptionEdge(insn, tcb)) {
-                            handler.init(f);
+                        if (newControlFlowExceptionEdge(insnIndex, tryCatchBlock)) {
+                            Frame<V> handler = newFrame(oldFrame);
                             handler.clearStack();
-                            handler.push(interpreter.newValue(type));
-                            merge(jump, handler, subroutine);
+                            handler.push(interpreter.newExceptionValue(tryCatchBlock, handler, catchType));
+                            merge(insnList.indexOf(tryCatchBlock.handler), handler, subroutine);
                         }
                     }
                 }
             } catch (AnalyzerException e) {
-                throw new AnalyzerException(e.node, "Error at instruction "
-                        + insn + ": " + e.getMessage(), e);
-            } catch (Exception e) {
-                throw new AnalyzerException(insnNode, "Error at instruction "
-                        + insn + ": " + e.getMessage(), e);
+                throw new AnalyzerException(
+                        e.node, "Error at instruction " + insnIndex + ": " + e.getMessage(), e);
+            } catch (RuntimeException e) {
+                // DontCheck(IllegalCatch): can't be fixed, for backward compatibility.
+                throw new AnalyzerException(
+                        insnNode, "Error at instruction " + insnIndex + ": " + e.getMessage(), e);
             }
         }
 
         return frames;
     }
 
-    private void findSubroutine(int insn, final Subroutine sub,
-            final List<AbstractInsnNode> calls) throws AnalyzerException {
-        while (true) {
-            if (insn < 0 || insn >= n) {
-                throw new AnalyzerException(null,
-                        "Execution can fall off end of the code");
+    /**
+      * Follows the control flow graph of the currently analyzed method, starting at the given
+      * instruction index, and stores a copy of the given subroutine in {@link #subroutines} for each
+      * encountered instruction. Jumps to nested subroutines are <i>not</i> followed: instead, the
+      * corresponding instructions are put in the given list.
+      *
+      * @param insnIndex an instruction index.
+      * @param subroutine a subroutine.
+      * @param jsrInsns where the jsr instructions for nested subroutines must be put.
+      * @throws AnalyzerException if the control flow graph can fall off the end of the code.
+      */
+    private void findSubroutine(
+            final int insnIndex, final Subroutine subroutine, final List<AbstractInsnNode> jsrInsns)
+            throws AnalyzerException {
+        ArrayList<Integer> instructionIndicesToProcess = new ArrayList<Integer>();
+        instructionIndicesToProcess.add(insnIndex);
+        while (!instructionIndicesToProcess.isEmpty()) {
+            int currentInsnIndex =
+                    instructionIndicesToProcess.remove(instructionIndicesToProcess.size() - 1);
+            if (currentInsnIndex < 0 || currentInsnIndex >= insnListSize) {
+                throw new AnalyzerException(null, "Execution can fall off the end of the code");
             }
-            if (subroutines[insn] != null) {
-                return;
+            if (subroutines[currentInsnIndex] != null) {
+                continue;
             }
-            subroutines[insn] = sub.copy();
-            AbstractInsnNode node = insns.get(insn);
+            subroutines[currentInsnIndex] = new Subroutine(subroutine);
+            AbstractInsnNode currentInsn = insnList.get(currentInsnIndex);
 
-            // calls findSubroutine recursively on normal successors
-            if (node instanceof JumpInsnNode) {
-                if (node.getOpcode() == JSR) {
-                    // do not follow a JSR, it leads to another subroutine!
-                    calls.add(node);
+            // Push the normal successors of currentInsn onto instructionIndicesToProcess.
+            if (currentInsn instanceof JumpInsnNode) {
+                if (currentInsn.getOpcode() == JSR) {
+                    // Do not follow a jsr, it leads to another subroutine!
+                    jsrInsns.add(currentInsn);
                 } else {
-                    JumpInsnNode jnode = (JumpInsnNode) node;
-                    findSubroutine(insns.indexOf(jnode.label), sub, calls);
+                    JumpInsnNode jumpInsn = (JumpInsnNode) currentInsn;
+                    instructionIndicesToProcess.add(insnList.indexOf(jumpInsn.label));
                 }
-            } else if (node instanceof TableSwitchInsnNode) {
-                TableSwitchInsnNode tsnode = (TableSwitchInsnNode) node;
-                findSubroutine(insns.indexOf(tsnode.dflt), sub, calls);
-                for (int i = tsnode.labels.size() - 1; i >= 0; --i) {
-                    LabelNode l = tsnode.labels.get(i);
-                    findSubroutine(insns.indexOf(l), sub, calls);
+            } else if (currentInsn instanceof TableSwitchInsnNode) {
+                TableSwitchInsnNode tableSwitchInsn = (TableSwitchInsnNode) currentInsn;
+                findSubroutine(insnList.indexOf(tableSwitchInsn.dflt), subroutine, jsrInsns);
+                for (int i = tableSwitchInsn.labels.size() - 1; i >= 0; --i) {
+                    LabelNode labelNode = tableSwitchInsn.labels.get(i);
+                    instructionIndicesToProcess.add(insnList.indexOf(labelNode));
                 }
-            } else if (node instanceof LookupSwitchInsnNode) {
-                LookupSwitchInsnNode lsnode = (LookupSwitchInsnNode) node;
-                findSubroutine(insns.indexOf(lsnode.dflt), sub, calls);
-                for (int i = lsnode.labels.size() - 1; i >= 0; --i) {
-                    LabelNode l = lsnode.labels.get(i);
-                    findSubroutine(insns.indexOf(l), sub, calls);
+            } else if (currentInsn instanceof LookupSwitchInsnNode) {
+                LookupSwitchInsnNode lookupSwitchInsn = (LookupSwitchInsnNode) currentInsn;
+                findSubroutine(insnList.indexOf(lookupSwitchInsn.dflt), subroutine, jsrInsns);
+                for (int i = lookupSwitchInsn.labels.size() - 1; i >= 0; --i) {
+                    LabelNode labelNode = lookupSwitchInsn.labels.get(i);
+                    instructionIndicesToProcess.add(insnList.indexOf(labelNode));
                 }
             }
 
-            // calls findSubroutine recursively on exception handler successors
-            List<TryCatchBlockNode> insnHandlers = handlers[insn];
+            // Push the exception handler successors of currentInsn onto instructionIndicesToProcess.
+            List<TryCatchBlockNode> insnHandlers = handlers[currentInsnIndex];
             if (insnHandlers != null) {
-                for (int i = 0; i < insnHandlers.size(); ++i) {
-                    TryCatchBlockNode tcb = insnHandlers.get(i);
-                    findSubroutine(insns.indexOf(tcb.handler), sub, calls);
+                for (TryCatchBlockNode tryCatchBlock : insnHandlers) {
+                    instructionIndicesToProcess.add(insnList.indexOf(tryCatchBlock.handler));
                 }
             }
 
-            // if insn does not falls through to the next instruction, return.
-            switch (node.getOpcode()) {
-            case GOTO:
-            case RET:
-            case TABLESWITCH:
-            case LOOKUPSWITCH:
-            case IRETURN:
-            case LRETURN:
-            case FRETURN:
-            case DRETURN:
-            case ARETURN:
-            case RETURN:
-            case ATHROW:
-                return;
+            // Push the next instruction, if the control flow can go from currentInsn to the next.
+            switch (currentInsn.getOpcode()) {
+                case GOTO:
+                case RET:
+                case TABLESWITCH:
+                case LOOKUPSWITCH:
+                case IRETURN:
+                case LRETURN:
+                case FRETURN:
+                case DRETURN:
+                case ARETURN:
+                case RETURN:
+                case ATHROW:
+                    break;
+                default:
+                    instructionIndicesToProcess.add(currentInsnIndex + 1);
+                    break;
             }
-            insn++;
         }
     }
 
     /**
-     * Returns the symbolic stack frame for each instruction of the last
-     * recently analyzed method.
-     *
-     * @return the symbolic state of the execution stack frame at each bytecode
-     *         instruction of the method. The size of the returned array is
-     *         equal to the number of instructions (and labels) of the method. A
-     *         given frame is <tt>null</tt> if the corresponding instruction
-     *         cannot be reached, or if an error occured during the analysis of
-     *         the method.
-     */
+      * Computes the initial execution stack frame of the given method.
+      *
+      * @param owner the internal name of the class to which 'method' belongs.
+      * @param method the method to be analyzed.
+      * @return the initial execution stack frame of the 'method'.
+      */
+    private Frame<V> computeInitialFrame(final String owner, final MethodNode method) {
+        Frame<V> frame = newFrame(method.maxLocals, method.maxStack);
+        int currentLocal = 0;
+        boolean isInstanceMethod = (method.access & ACC_STATIC) == 0;
+        if (isInstanceMethod) {
+            Type ownerType = Type.getObjectType(owner);
+            frame.setLocal(
+                    currentLocal, interpreter.newParameterValue(isInstanceMethod, currentLocal, ownerType));
+            currentLocal++;
+        }
+        Type[] argumentTypes = Type.getArgumentTypes(method.desc);
+        for (Type argumentType : argumentTypes) {
+            frame.setLocal(
+                    currentLocal,
+                    interpreter.newParameterValue(isInstanceMethod, currentLocal, argumentType));
+            currentLocal++;
+            if (argumentType.getSize() == 2) {
+                frame.setLocal(currentLocal, interpreter.newEmptyValue(currentLocal));
+                currentLocal++;
+            }
+        }
+        while (currentLocal < method.maxLocals) {
+            frame.setLocal(currentLocal, interpreter.newEmptyValue(currentLocal));
+            currentLocal++;
+        }
+        frame.setReturn(interpreter.newReturnTypeValue(Type.getReturnType(method.desc)));
+        return frame;
+    }
+
+    /**
+      * Returns the symbolic execution stack frame for each instruction of the last analyzed method.
+      *
+      * @return the symbolic state of the execution stack frame at each bytecode instruction of the
+      *     method. The size of the returned array is equal to the number of instructions (and labels)
+      *     of the method. A given frame is {@literal null} if the corresponding instruction cannot be
+      *     reached, or if an error occurred during the analysis of the method.
+      */
     public Frame<V>[] getFrames() {
         return frames;
     }
 
     /**
-     * Returns the exception handlers for the given instruction.
-     *
-     * @param insn
-     *            the index of an instruction of the last recently analyzed
-     *            method.
-     * @return a list of {@link TryCatchBlockNode} objects.
-     */
-    public List<TryCatchBlockNode> getHandlers(final int insn) {
-        return handlers[insn];
+      * Returns the exception handlers for the given instruction.
+      *
+      * @param insnIndex the index of an instruction of the last analyzed method.
+      * @return a list of {@link TryCatchBlockNode} objects.
+      */
+    public List<TryCatchBlockNode> getHandlers(final int insnIndex) {
+        return handlers[insnIndex];
     }
 
     /**
-     * Initializes this analyzer. This method is called just before the
-     * execution of control flow analysis loop in #analyze. The default
-     * implementation of this method does nothing.
-     *
-     * @param owner
-     *            the internal name of the class to which the method belongs.
-     * @param m
-     *            the method to be analyzed.
-     * @throws AnalyzerException
-     *             if a problem occurs.
-     */
-    protected void init(String owner, MethodNode m) throws AnalyzerException {
+      * Initializes this analyzer. This method is called just before the execution of control flow
+      * analysis loop in #analyze. The default implementation of this method does nothing.
+      *
+      * @param owner the internal name of the class to which the method belongs.
+      * @param method the method to be analyzed.
+      * @throws AnalyzerException if a problem occurs.
+      */
+    protected void init(final String owner, final MethodNode method) throws AnalyzerException {
+        // Nothing to do.
     }
 
     /**
-     * Constructs a new frame with the given size.
-     *
-     * @param nLocals
-     *            the maximum number of local variables of the frame.
-     * @param nStack
-     *            the maximum stack size of the frame.
-     * @return the created frame.
-     */
-    protected Frame<V> newFrame(final int nLocals, final int nStack) {
-        return new Frame<V>(nLocals, nStack);
+      * Constructs a new frame with the given size.
+      *
+      * @param numLocals the maximum number of local variables of the frame.
+      * @param numStack the maximum stack size of the frame.
+      * @return the created frame.
+      */
+    protected Frame<V> newFrame(final int numLocals, final int numStack) {
+        return new Frame<V>(numLocals, numStack);
     }
 
     /**
-     * Constructs a new frame that is identical to the given frame.
-     *
-     * @param src
-     *            a frame.
-     * @return the created frame.
-     */
-    protected Frame<V> newFrame(final Frame<? extends V> src) {
-        return new Frame<V>(src);
+      * Constructs a copy of the given frame.
+      *
+      * @param frame a frame.
+      * @return the created frame.
+      */
+    protected Frame<V> newFrame(final Frame<? extends V> frame) {
+        return new Frame<V>(frame);
     }
 
     /**
-     * Creates a control flow graph edge. The default implementation of this
-     * method does nothing. It can be overriden in order to construct the
-     * control flow graph of a method (this method is called by the
-     * {@link #analyze analyze} method during its visit of the method's code).
-     *
-     * @param insn
-     *            an instruction index.
-     * @param successor
-     *            index of a successor instruction.
-     */
-    protected void newControlFlowEdge(final int insn, final int successor) {
+      * Creates a control flow graph edge. The default implementation of this method does nothing. It
+      * can be overridden in order to construct the control flow graph of a method (this method is
+      * called by the {@link #analyze} method during its visit of the method's code).
+      *
+      * @param insnIndex an instruction index.
+      * @param successorIndex index of a successor instruction.
+      */
+    protected void newControlFlowEdge(final int insnIndex, final int successorIndex) {
+        // Nothing to do.
     }
 
     /**
-     * Creates a control flow graph edge corresponding to an exception handler.
-     * The default implementation of this method does nothing. It can be
-     * overridden in order to construct the control flow graph of a method (this
-     * method is called by the {@link #analyze analyze} method during its visit
-     * of the method's code).
-     *
-     * @param insn
-     *            an instruction index.
-     * @param successor
-     *            index of a successor instruction.
-     * @return true if this edge must be considered in the data flow analysis
-     *         performed by this analyzer, or false otherwise. The default
-     *         implementation of this method always returns true.
-     */
-    protected boolean newControlFlowExceptionEdge(final int insn,
-            final int successor) {
+      * Creates a control flow graph edge corresponding to an exception handler. The default
+      * implementation of this method does nothing. It can be overridden in order to construct the
+      * control flow graph of a method (this method is called by the {@link #analyze} method during its
+      * visit of the method's code).
+      *
+      * @param insnIndex an instruction index.
+      * @param successorIndex index of a successor instruction.
+      * @return true if this edge must be considered in the data flow analysis performed by this
+      *     analyzer, or false otherwise. The default implementation of this method always returns
+      *     true.
+      */
+    protected boolean newControlFlowExceptionEdge(final int insnIndex, final int successorIndex) {
         return true;
     }
 
     /**
-     * Creates a control flow graph edge corresponding to an exception handler.
-     * The default implementation of this method delegates to
-     * {@link #newControlFlowExceptionEdge(int, int)
-     * newControlFlowExceptionEdge(int, int)}. It can be overridden in order to
-     * construct the control flow graph of a method (this method is called by
-     * the {@link #analyze analyze} method during its visit of the method's
-     * code).
-     *
-     * @param insn
-     *            an instruction index.
-     * @param tcb
-     *            TryCatchBlockNode corresponding to this edge.
-     * @return true if this edge must be considered in the data flow analysis
-     *         performed by this analyzer, or false otherwise. The default
-     *         implementation of this method delegates to
-     *         {@link #newControlFlowExceptionEdge(int, int)
-     *         newControlFlowExceptionEdge(int, int)}.
-     */
-    protected boolean newControlFlowExceptionEdge(final int insn,
-            final TryCatchBlockNode tcb) {
-        return newControlFlowExceptionEdge(insn, insns.indexOf(tcb.handler));
+      * Creates a control flow graph edge corresponding to an exception handler. The default
+      * implementation of this method delegates to {@link #newControlFlowExceptionEdge(int, int)}. It
+      * can be overridden in order to construct the control flow graph of a method (this method is
+      * called by the {@link #analyze} method during its visit of the method's code).
+      *
+      * @param insnIndex an instruction index.
+      * @param tryCatchBlock TryCatchBlockNode corresponding to this edge.
+      * @return true if this edge must be considered in the data flow analysis performed by this
+      *     analyzer, or false otherwise. The default implementation of this method delegates to {@link
+      *     #newControlFlowExceptionEdge(int, int)}.
+      */
+    protected boolean newControlFlowExceptionEdge(
+            final int insnIndex, final TryCatchBlockNode tryCatchBlock) {
+        return newControlFlowExceptionEdge(insnIndex, insnList.indexOf(tryCatchBlock.handler));
     }
 
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------
 
-    private void merge(final int insn, final Frame<V> frame,
-            final Subroutine subroutine) throws AnalyzerException {
-        Frame<V> oldFrame = frames[insn];
-        Subroutine oldSubroutine = subroutines[insn];
-        boolean changes;
-
+    /**
+      * Merges the given frame and subroutine into the frame and subroutines at the given instruction
+      * index. If the frame or the subroutine at the given instruction index changes as a result of
+      * this merge, the instruction index is added to the list of instructions to process (if it is not
+      * already the case).
+      *
+      * @param insnIndex an instruction index.
+      * @param frame a frame. This frame is left unchanged by this method.
+      * @param subroutine a subroutine. This subroutine is left unchanged by this method.
+      * @throws AnalyzerException if the frames have incompatible sizes.
+      */
+    private void merge(final int insnIndex, final Frame<V> frame, final Subroutine subroutine)
+            throws AnalyzerException {
+        boolean changed;
+        Frame<V> oldFrame = frames[insnIndex];
         if (oldFrame == null) {
-            frames[insn] = newFrame(frame);
-            changes = true;
+            frames[insnIndex] = newFrame(frame);
+            changed = true;
         } else {
-            changes = oldFrame.merge(frame, interpreter);
+            changed = oldFrame.merge(frame, interpreter);
         }
-
+        Subroutine oldSubroutine = subroutines[insnIndex];
         if (oldSubroutine == null) {
             if (subroutine != null) {
-                subroutines[insn] = subroutine.copy();
-                changes = true;
+                subroutines[insnIndex] = new Subroutine(subroutine);
+                changed = true;
             }
         } else {
             if (subroutine != null) {
-                changes |= oldSubroutine.merge(subroutine);
+                changed |= oldSubroutine.merge(subroutine);
             }
         }
-        if (changes && !queued[insn]) {
-            queued[insn] = true;
-            queue[top++] = insn;
+        if (changed && !inInstructionsToProcess[insnIndex]) {
+            inInstructionsToProcess[insnIndex] = true;
+            instructionsToProcess[numInstructionsToProcess++] = insnIndex;
         }
     }
 
-    private void merge(final int insn, final Frame<V> beforeJSR,
-            final Frame<V> afterRET, final Subroutine subroutineBeforeJSR,
-            final boolean[] access) throws AnalyzerException {
-        Frame<V> oldFrame = frames[insn];
-        Subroutine oldSubroutine = subroutines[insn];
-        boolean changes;
+    /**
+      * Merges the given frame and subroutine into the frame and subroutines at the given instruction
+      * index (case of a RET instruction). If the frame or the subroutine at the given instruction
+      * index changes as a result of this merge, the instruction index is added to the list of
+      * instructions to process (if it is not already the case).
+      *
+      * @param insnIndex the index of an instruction immediately following a jsr instruction.
+      * @param frameBeforeJsr the execution stack frame before the jsr instruction. This frame is
+      *     merged into 'frameAfterRet'.
+      * @param frameAfterRet the execution stack frame after a ret instruction of the subroutine. This
+      *     frame is merged into the frame at 'insnIndex' (after it has itself been merge with
+      *     'frameBeforeJsr').
+      * @param subroutineBeforeJsr if the jsr is itself part of a subroutine (case of nested
+      *     subroutine), the subroutine it belongs to.
+      * @param localsUsed the local variables read or written in the subroutine.
+      * @throws AnalyzerException if the frames have incompatible sizes.
+      */
+    private void merge(
+            final int insnIndex,
+            final Frame<V> frameBeforeJsr,
+            final Frame<V> frameAfterRet,
+            final Subroutine subroutineBeforeJsr,
+            final boolean[] localsUsed)
+            throws AnalyzerException {
+        frameAfterRet.merge(frameBeforeJsr, localsUsed);
 
-        afterRET.merge(beforeJSR, access);
-
+        boolean changed;
+        Frame<V> oldFrame = frames[insnIndex];
         if (oldFrame == null) {
-            frames[insn] = newFrame(afterRET);
-            changes = true;
+            frames[insnIndex] = newFrame(frameAfterRet);
+            changed = true;
         } else {
-            changes = oldFrame.merge(afterRET, interpreter);
+            changed = oldFrame.merge(frameAfterRet, interpreter);
         }
-
-        if (oldSubroutine != null && subroutineBeforeJSR != null) {
-            changes |= oldSubroutine.merge(subroutineBeforeJSR);
+        Subroutine oldSubroutine = subroutines[insnIndex];
+        if (oldSubroutine != null && subroutineBeforeJsr != null) {
+            changed |= oldSubroutine.merge(subroutineBeforeJsr);
         }
-        if (changes && !queued[insn]) {
-            queued[insn] = true;
-            queue[top++] = insn;
+        if (changed && !inInstructionsToProcess[insnIndex]) {
+            inInstructionsToProcess[insnIndex] = true;
+            instructionsToProcess[numInstructionsToProcess++] = insnIndex;
         }
     }
 }

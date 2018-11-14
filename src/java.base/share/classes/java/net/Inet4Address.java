@@ -164,7 +164,7 @@ class Inet4Address extends InetAddress {
 
     /**
      * Utility routine to check if the InetAddress is a wildcard address.
-     * @return a {@code boolean} indicating if the Inetaddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      *         a wildcard address.
      */
     public boolean isAnyLocalAddress() {

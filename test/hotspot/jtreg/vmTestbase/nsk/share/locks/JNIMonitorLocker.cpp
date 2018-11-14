@@ -59,7 +59,7 @@ This method executes JNI analog for following Java code:
 
         success = env->MonitorEnter(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
@@ -103,7 +103,7 @@ This method executes JNI analog for following Java code:
 
         success = env->MonitorExit(thisObject);
 
-        if(success != 0)
+        if (success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 

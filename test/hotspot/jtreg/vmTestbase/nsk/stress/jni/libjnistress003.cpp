@@ -67,7 +67,7 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
     arrayArray[FLOAT]=env->NewFloatArray(SIZE); CE
     arrayArray[DOUBLE]=env->NewDoubleArray(SIZE); CE
 
-    for(i=0;i<8;i++)
+    for (i=0;i<8;i++)
     {env->SetObjectArrayElement(objectsArray,i,arrayArray[i]); CE }
 
     boolBuf=(jboolean *)malloc(SIZE*sizeof(jboolean));
@@ -163,7 +163,7 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
     env->MonitorExit(jobj); CE
     arrayOrig=(jarray *)malloc(8*sizeof(jarray));
     arrayClone=(jarray *)malloc(8*sizeof(jarray));
-    for(i=0;i<8;i++) {
+    for (i=0;i<8;i++) {
     arrayOrig[i]=(jarray) env->GetObjectArrayElement(orig,i); CE
     arrayClone[i]=(jarray) env->GetObjectArrayElement(clone,i); CE
     }

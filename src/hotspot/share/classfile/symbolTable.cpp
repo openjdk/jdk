@@ -57,9 +57,6 @@
 #define ON_STACK_BUFFER_LENGTH 128
 
 // --------------------------------------------------------------------------
-inline Symbol* read_symbol_from_compact_hashtable(address base_address, u4 offset) {
-  return (Symbol*)(base_address + offset);
-}
 
 inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key, int len) {
   if (value->equals(key, len)) {
@@ -70,9 +67,8 @@ inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key
   }
 }
 
-static CompactHashtable<
+static OffsetCompactHashtable<
   const char*, Symbol*,
-  read_symbol_from_compact_hashtable,
   symbol_equals_compact_hashtable_entry
 > _shared_table;
 
@@ -281,7 +277,7 @@ public:
 void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
   assert(DumpSharedSpaces, "called only during dump time");
   MetaspacePointersDo mpd(it);
-  SymbolTable::the_table()->_local_table->do_scan(Thread::current(), mpd);
+  SymbolTable::the_table()->_local_table->do_safepoint_scan(mpd);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
@@ -637,23 +633,14 @@ struct CopyToArchive : StackObj {
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
-
-    uintx deltax = MetaspaceShared::object_delta(sym);
-    // When the symbols are stored into the archive, we already check that
-    // they won't be more than MAX_SHARED_DELTA from the base address, or
-    // else the dumping would have been aborted.
-    assert(deltax <= MAX_SHARED_DELTA, "must not be");
-    u4 delta = u4(deltax);
-
-    // add to the compact table
-    _writer->add(fixed_hash, delta);
+    _writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
     return true;
   }
 };
 
 void SymbolTable::copy_shared_symbol_table(CompactHashtableWriter* writer) {
   CopyToArchive copy(writer);
-  SymbolTable::the_table()->_local_table->do_scan(Thread::current(), copy);
+  SymbolTable::the_table()->_local_table->do_safepoint_scan(copy);
 }
 
 void SymbolTable::write_to_archive() {

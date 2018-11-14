@@ -1009,7 +1009,7 @@ public final class URL implements java.io.Serializable {
      * can not be converted to a URI.
      *
      * @exception URISyntaxException if this URL is not formatted strictly according to
-     *            to RFC2396 and cannot be converted to a URI.
+     *            RFC2396 and cannot be converted to a URI.
      *
      * @return    a URI instance equivalent to this URL.
      * @since 1.5
@@ -1054,7 +1054,7 @@ public final class URL implements java.io.Serializable {
     /**
      * Same as {@link #openConnection()}, except that the connection will be
      * made through the specified proxy; Protocol handlers that do not
-     * support proxing will ignore the proxy parameter and make a
+     * support proxying will ignore the proxy parameter and make a
      * normal connection.
      *
      * Invoking this method preempts the system's default

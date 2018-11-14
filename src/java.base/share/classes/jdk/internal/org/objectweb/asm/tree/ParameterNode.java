@@ -61,45 +61,39 @@ package jdk.internal.org.objectweb.asm.tree;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 
 /**
- * A node that represents a parameter access and name.
+ * A node that represents a parameter of a method.
  *
  * @author Remi Forax
  */
 public class ParameterNode {
-    /**
-     * The parameter's name.
-     */
+
+    /** The parameter's name. */
     public String name;
 
     /**
-     * The parameter's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}).
-     * Valid values are <tt>ACC_FINAL</tt>, <tt>ACC_SYNTHETIC</tt> and
-     * <tt>ACC_MANDATED</tt>.
-     */
+      * The parameter's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). Valid values are {@code
+      * ACC_FINAL}, {@code ACC_SYNTHETIC} and {@code ACC_MANDATED}.
+      */
     public int access;
 
     /**
-     * Constructs a new {@link ParameterNode}.
-     *
-     * @param access
-     *            The parameter's access flags. Valid values are
-     *            <tt>ACC_FINAL</tt>, <tt>ACC_SYNTHETIC</tt> or/and
-     *            <tt>ACC_MANDATED</tt> (see {@link jdk.internal.org.objectweb.asm.Opcodes}).
-     * @param name
-     *            the parameter's name.
-     */
+      * Constructs a new {@link ParameterNode}.
+      *
+      * @param access The parameter's access flags. Valid values are {@code ACC_FINAL}, {@code
+      *     ACC_SYNTHETIC} or/and {@code ACC_MANDATED} (see {@link jdk.internal.org.objectweb.asm.Opcodes}).
+      * @param name the parameter's name.
+      */
     public ParameterNode(final String name, final int access) {
         this.name = name;
         this.access = access;
     }
 
     /**
-     * Makes the given visitor visit this parameter declaration.
-     *
-     * @param mv
-     *            a method visitor.
-     */
-    public void accept(final MethodVisitor mv) {
-        mv.visitParameter(name, access);
+      * Makes the given visitor visit this parameter declaration.
+      *
+      * @param methodVisitor a method visitor.
+      */
+    public void accept(final MethodVisitor methodVisitor) {
+        methodVisitor.visitParameter(name, access);
     }
 }

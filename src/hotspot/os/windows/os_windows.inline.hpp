@@ -45,10 +45,6 @@ inline void* os::dll_lookup(void *lib, const char *name) {
   return (void*)::GetProcAddress((HMODULE)lib, name);
 }
 
-inline bool os::obsolete_option(const JavaVMOption *option) {
-  return false;
-}
-
 inline bool os::uses_stack_guard_pages() {
   return true;
 }

@@ -119,7 +119,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /**
      * requests is used to ensure that interaction with the
      * Authenticator for a particular realm is single threaded.
-     * ie. if multiple threads need to get credentials from the user
+     * i.e. if multiple threads need to get credentials from the user
      * at the same time, then all but the first will block until
      * the first completes its authentication.
      */

@@ -377,7 +377,7 @@ class InetAddress implements java.io.Serializable {
 
     /**
      * Utility routine to check if the InetAddress is a wildcard address.
-     * @return a {@code boolean} indicating if the Inetaddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      *         a wildcard address.
      * @since 1.4
      */
@@ -1022,7 +1022,7 @@ class InetAddress implements java.io.Serializable {
          * <p>Lookup a host mapping by name. Retrieve the IP addresses
          * associated with a host.
          *
-         * <p>Search the configured hosts file for the addresses assocaited with
+         * <p>Search the configured hosts file for the addresses associated
          * with the specified host name.
          *
          * @param host the specified hostname
@@ -1038,7 +1038,7 @@ class InetAddress implements java.io.Serializable {
             byte addr[] = new byte[4];
             ArrayList<InetAddress> inetAddresses = null;
 
-            // lookup the file and create a list InetAddress for the specfied host
+            // lookup the file and create a list InetAddress for the specified host
             try (Scanner hostsFileScanner = new Scanner(new File(hostsFile), "UTF-8")) {
                 while (hostsFileScanner.hasNextLine()) {
                     hostEntry = hostsFileScanner.nextLine();
@@ -1341,7 +1341,7 @@ class InetAddress implements java.io.Serializable {
                     throw new UnknownHostException(host + ": invalid IPv6 address");
                 }
             } else if (ipv6Expected) {
-                // Means an IPv4 litteral between brackets!
+                // Means an IPv4 literal between brackets!
                 throw new UnknownHostException("["+host+"]");
             }
             InetAddress[] ret = new InetAddress[1];
@@ -1358,7 +1358,7 @@ class InetAddress implements java.io.Serializable {
                 return ret;
             }
         } else if (ipv6Expected) {
-            // We were expecting an IPv6 Litteral, but got something else
+            // We were expecting an IPv6 Literal, but got something else
             throw new UnknownHostException("["+host+"]");
         }
         return getAllByName0(host, reqAddr, true, true);

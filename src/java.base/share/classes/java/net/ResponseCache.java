@@ -91,7 +91,7 @@ public abstract class ResponseCache {
     /**
      * Sets (or unsets) the system-wide cache.
      *
-     * Note: non-standard procotol handlers may ignore this setting.
+     * Note: non-standard protocol handlers may ignore this setting.
      *
      * @param responseCache The response cache, or
      *          {@code null} to unset the cache.

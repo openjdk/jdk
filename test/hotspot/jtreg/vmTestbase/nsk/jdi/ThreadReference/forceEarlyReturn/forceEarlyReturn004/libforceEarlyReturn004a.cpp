@@ -38,7 +38,7 @@ Java_nsk_jdi_ThreadReference_forceEarlyReturn_forceEarlyReturn004_forceEarlyRetu
     env->SetBooleanField(object, field, 1);
 
     // execute infinite loop to be sure that thread in native method
-    while(always_true)
+    while (always_true)
     {
         // Need some dummy code so the optimizer does not remove this loop.
         dummy_counter = dummy_counter < 1000 ? 0 : dummy_counter + 1;

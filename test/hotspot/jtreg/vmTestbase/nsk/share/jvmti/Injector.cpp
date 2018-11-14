@@ -377,7 +377,7 @@ extern "C" {
     static u2 calculateOffsetDelta(u2 frameNumber, u2 frameOffsetDelta) {
         u2 oldOffset;
         u2 newOffset;
-        if(frameNumber == 0) {
+        if (frameNumber == 0) {
             stackFrameOffset = frameOffsetDelta;
             return (u2) map[stackFrameOffset];
         } else {
@@ -392,10 +392,10 @@ extern "C" {
         u2 i;
         u2 offset;
         u1 tag;
-        for(i=0; i<count; i++) {
+        for (i=0; i<count; i++) {
             tag = get_u1();
             put_u1(tag);
-            if(tag == ITEM_Object) {
+            if (tag == ITEM_Object) {
                 copy_u2();
             } else if (tag == ITEM_Uninitialized) {
                 copy_u2();
@@ -421,10 +421,10 @@ extern "C" {
 
 
 
-        for(i=0; i<number_of_entries; i++) {
+        for (i=0; i<number_of_entries; i++) {
             frame_type = get_u1();
 
-            if(frame_type <= SAME_END) {
+            if (frame_type <= SAME_END) {
                 // same_frame {
                 //        u1 frame_type = SAME; /* 0-63 */
                 // }
@@ -432,7 +432,7 @@ extern "C" {
                 put_u1(SAME_FRAME_EXTENDED);
                 put_u2(calculateOffsetDelta(i, (u2) frame_type));
 
-            } else if((frame_type >= SAME_LOCALS_1_STACK_ITEM_BEGIN) && (frame_type<=SAME_LOCALS_1_STACK_ITEM_END)) {
+            } else if ((frame_type >= SAME_LOCALS_1_STACK_ITEM_BEGIN) && (frame_type<=SAME_LOCALS_1_STACK_ITEM_END)) {
                 // same_locals_1_stack_item_frame {
                 //         u1 frame_type = SAME_LOCALS_1_STACK_ITEM;/* 64-127 */
                 //         verification_type_info stack[1];
@@ -443,7 +443,7 @@ extern "C" {
                 copyVerificationTypeInfo(1);
 
                 // Tags in the range [128-246] are reserved for future use.
-            } else if(frame_type == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
+            } else if (frame_type == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
                 // same_locals_1_stack_item_frame_extended {
                 //     u1 frame_type = SAME_LOCALS_1_STACK_ITEM_EXTENDED; /* 247 */
                 //     u2 offset_delta;
@@ -455,7 +455,7 @@ extern "C" {
                 put_u2(calculateOffsetDelta(i, frameOffsetDelta));
                 copyVerificationTypeInfo(1);
 
-            } else if((frame_type >= CHOP_BEGIN) && (frame_type <= CHOP_END)) {
+            } else if ((frame_type >= CHOP_BEGIN) && (frame_type <= CHOP_END)) {
                 // chop_frame {
                 //         u1 frame_type = CHOP; /* 248-250 */
                 //         u2 offset_delta;
@@ -464,7 +464,7 @@ extern "C" {
                 frameOffsetDelta = get_u2();
                 put_u2(calculateOffsetDelta(i, frameOffsetDelta));
 
-            } else if(frame_type == SAME_FRAME_EXTENDED) {
+            } else if (frame_type == SAME_FRAME_EXTENDED) {
                 // same_frame_extended {
                 //     u1 frame_type = SAME_FRAME_EXTENDED; /* 251 */
                 //     u2 offset_delta;
@@ -474,7 +474,7 @@ extern "C" {
                 frameOffsetDelta = get_u2();
                 put_u2(calculateOffsetDelta(i, frameOffsetDelta));
 
-            } else if((frame_type >= APPEND_BEGIN) && (frame_type <= APPEND_END)) {
+            } else if ((frame_type >= APPEND_BEGIN) && (frame_type <= APPEND_END)) {
                 // append_frame {
                 //     u1 frame_type = APPEND; /* 252-254 */
                 //     u2 offset_delta;
@@ -486,7 +486,7 @@ extern "C" {
                 put_u2(calculateOffsetDelta(i, frameOffsetDelta));
                 copyVerificationTypeInfo((u1)(frame_type - 251));
 
-            } else if(frame_type == FULL_FRAME) {
+            } else if (frame_type == FULL_FRAME) {
                 // sfull_frame {
                 //    u1 frame_type = FULL_FRAME; /* 255 */
                 //    u2 offset_delta;

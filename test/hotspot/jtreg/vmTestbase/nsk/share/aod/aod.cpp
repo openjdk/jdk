@@ -148,7 +148,7 @@ const char* nsk_aod_getOptionValue(Options* options, const char* option) {
         return NULL;
     }
 
-    for(i = 0; i < options->size; i++) {
+    for (i = 0; i < options->size; i++) {
         if (strcmp(option, options->names[i]) == 0) {
             return options->values[i];
         }
@@ -167,7 +167,7 @@ int nsk_aod_optionSpecified(Options* options, const char* option) {
         return NSK_FALSE;
     }
 
-    for(i = 0; i < options->size; i++) {
+    for (i = 0; i < options->size; i++) {
         if (strcmp(option, options->names[i]) == 0) {
             return NSK_TRUE;
         }
