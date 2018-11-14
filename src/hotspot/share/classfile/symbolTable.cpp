@@ -277,7 +277,7 @@ public:
 void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
   assert(DumpSharedSpaces, "called only during dump time");
   MetaspacePointersDo mpd(it);
-  SymbolTable::the_table()->_local_table->do_scan(Thread::current(), mpd);
+  SymbolTable::the_table()->_local_table->do_safepoint_scan(mpd);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
@@ -640,7 +640,7 @@ struct CopyToArchive : StackObj {
 
 void SymbolTable::copy_shared_symbol_table(CompactHashtableWriter* writer) {
   CopyToArchive copy(writer);
-  SymbolTable::the_table()->_local_table->do_scan(Thread::current(), copy);
+  SymbolTable::the_table()->_local_table->do_safepoint_scan(copy);
 }
 
 void SymbolTable::write_to_archive() {
