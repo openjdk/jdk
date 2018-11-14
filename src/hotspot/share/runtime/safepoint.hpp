@@ -178,10 +178,6 @@ public:
 
   static address safepoint_counter_addr()                  { return (address)&_safepoint_counter; }
 
-  // This method is only used for -Xconcurrentio support.
-  static void set_defer_thr_suspend_loop_count() {
-    _defer_thr_suspend_loop_count = 1;
-  }
 };
 
 // Some helper assert macros for safepoint checks.
