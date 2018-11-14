@@ -498,7 +498,7 @@ class Assembler : public AbstractAssembler  {
   void dmb(DMB_Opt opt, Register reg) {
     if (VM_Version::arm_arch() >= 7) {
       emit_int32(0xF57FF050 | opt);
-    } else {
+    } else if (VM_Version::arm_arch() == 6) {
       bool preserve_tmp = (reg == noreg);
       if(preserve_tmp) {
         reg = Rtemp;
