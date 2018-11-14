@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "ExceptionCheckingJniEnv.hpp"
 
@@ -48,12 +49,21 @@ class JNIVerifier {
   }
 
   void ProcessReturnError() {
-    int len = snprintf(NULL, 0, "%s : %s", _base_msg, _return_error) + 1;
+    // This is error prone, but:
+    //   - Seems like we cannot use std::string (due to windows/solaris not
+    //   building when used, seemingly due to exception libraries not linking).
+    //   - Seems like we cannot use sprintf due to VS2013 (JDK-8213622).
+    //
+    //   We are aiming to do:
+    //     snprintf(full_message, len, "%s : %s", _base_msg, _return_error);
+    //   but will use strlen + memcpy instead.
+    size_t base_len = strlen(_base_msg);
+    const char* between_msg = " : ";
+    size_t between_len = strlen(between_msg);
+    size_t return_len = strlen(_return_error);
 
-    if (len <= 0) {
-      _env->HandleError(_return_error);
-      return;
-    }
+    // +1 for the '\0'
+    size_t len = base_len + between_len + return_len + 1;
 
     char* full_message = (char*) malloc(len);
     if (full_message == NULL) {
@@ -61,7 +71,18 @@ class JNIVerifier {
       return;
     }
 
-    snprintf(full_message, len, "%s : %s", _base_msg, _return_error);
+    // Now we construct the string using memcpy to not use sprintf/std::string
+    // instead of:
+    //     snprintf(full_message, len, "%s : %s", _base_msg, _return_error);
+    memcpy(full_message, _base_msg, base_len);
+    memcpy(full_message + base_len, between_msg, between_len);
+    memcpy(full_message + base_len + between_len, _return_error, return_len);
+    full_message[len - 1] = '\0';
+
+    // -1 due to the '\0' not counted by strlen but is counted for the allocation.
+    if (strlen(full_message) != len - 1) {
+      _env->GetJNIEnv()->FatalError("Length of message is not what was expected");
+    }
 
     _env->HandleError(full_message);
     free(full_message);
