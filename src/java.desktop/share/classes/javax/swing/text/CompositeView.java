@@ -718,8 +718,6 @@ public abstract class CompositeView extends View {
      * @exception BadLocationException for a bad location within a document model
      * @exception IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
-     *
-     * @return the next position west of the passed in position
      */
     protected int getNextNorthSouthVisualPositionFrom(int pos, Position.Bias b,
                                                       Shape a, int direction,

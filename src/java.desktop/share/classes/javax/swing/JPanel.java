@@ -154,7 +154,7 @@ public class JPanel extends JComponent implements Accessible
      * Returns a string that specifies the name of the L&amp;F class
      * that renders this component.
      *
-     * @return "PanelUI"
+     * @return the string "PanelUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

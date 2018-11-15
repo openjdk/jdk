@@ -226,7 +226,7 @@ public class JTextArea extends JTextComponent {
     /**
      * Returns the class ID for the UI.
      *
-     * @return the ID ("TextAreaUI")
+     * @return the string "TextAreaUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

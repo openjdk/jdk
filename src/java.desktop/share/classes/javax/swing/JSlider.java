@@ -335,7 +335,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     /**
      * Returns the name of the L&amp;F class that renders this component.
      *
-     * @return "SliderUI"
+     * @return the string "SliderUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

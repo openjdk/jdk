@@ -253,7 +253,6 @@ public class LabelView extends GlyphView implements TabableView {
 
     /**
      * Determines if the glyphs should be rendered as superscript.
-     * @return the value of the cached subscript property
      *
      * <p>When you request this property, <code>LabelView</code>
      * re-syncs its state with the properties of the

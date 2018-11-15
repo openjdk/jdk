@@ -536,9 +536,6 @@ public abstract class InputEvent extends ComponentEvent {
      * Zero parameter means that no modifiers were passed and will
      * cause the returning an empty string.
      *
-     * @return a String describing the extended modifier keys and
-     * mouse buttons
-     *
      * @param modifiers a modifier mask describing the extended
      *                modifier keys and mouse buttons for the event
      * @return a text description of the combination of extended

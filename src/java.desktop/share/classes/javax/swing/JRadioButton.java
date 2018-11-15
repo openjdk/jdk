@@ -196,7 +196,7 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * Returns the name of the L&amp;F class
      * that renders this component.
      *
-     * @return String "RadioButtonUI"
+     * @return the string "RadioButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

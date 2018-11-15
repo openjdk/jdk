@@ -506,9 +506,8 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     /**
      * Returns the suffix used to construct the name of the look and feel
      * (L&amp;F) class used to render this component.
-     * @return the string "TableHeaderUI"
      *
-     * @return "TableHeaderUI"
+     * @return the string "TableHeaderUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

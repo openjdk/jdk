@@ -178,7 +178,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * Returns the name of the L&amp;F class
      * that renders this component.
      *
-     * @return "CheckBoxMenuItemUI"
+     * @return the string "CheckBoxMenuItemUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

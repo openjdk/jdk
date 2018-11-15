@@ -235,7 +235,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     /**
      * Returns the name of the LookAndFeel class for this component.
      *
-     * @return "ScrollBarUI"
+     * @return the string "ScrollBarUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */

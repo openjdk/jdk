@@ -275,8 +275,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * Returns a string that specifies the name of the l&amp;f class
      * that renders this component.
      *
-     * @return String "LabelUI"
-     *
+     * @return the string "LabelUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
