@@ -203,9 +203,10 @@ AWT_NS_WINDOW_IMPLEMENTATION
     NSUInteger type = 0;
     if (IS(styleBits, DECORATED)) {
         type |= NSTitledWindowMask;
-        if (IS(styleBits, CLOSEABLE))   type |= NSClosableWindowMask;
-        if (IS(styleBits, MINIMIZABLE)) type |= NSMiniaturizableWindowMask;
-        if (IS(styleBits, RESIZABLE))   type |= NSResizableWindowMask;
+        if (IS(styleBits, CLOSEABLE))            type |= NSClosableWindowMask;
+        if (IS(styleBits, MINIMIZABLE))          type |= NSMiniaturizableWindowMask;
+        if (IS(styleBits, RESIZABLE))            type |= NSResizableWindowMask;
+        if (IS(styleBits, FULL_WINDOW_CONTENT))  type |= NSFullSizeContentViewWindowMask;
     } else {
         type |= NSBorderlessWindowMask;
     }
@@ -262,6 +263,10 @@ AWT_NS_WINDOW_IMPLEMENTATION
         } else {
             [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];
         }
+    }
+
+    if (IS(mask, TRANSPARENT_TITLE_BAR) && [self.nsWindow respondsToSelector:@selector(setTitlebarAppearsTransparent:)]) {
+        [self.nsWindow setTitlebarAppearsTransparent:IS(bits, TRANSPARENT_TITLE_BAR)];
     }
 }
 
@@ -1068,13 +1073,33 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowSt
 JNF_COCOA_ENTER(env);
 
     NSWindow *nsWindow = OBJC(windowPtr);
+
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
 
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
         // scans the bit field, and only updates the values requested by the mask
-        // (this implicity handles the _CALLBACK_PROP_BITMASK case, since those are passive reads)
+        // (this implicitly handles the _CALLBACK_PROP_BITMASK case, since those are passive reads)
         jint newBits = window.styleBits & ~mask | bits & mask;
+
+        BOOL resized = NO;
+
+        // Check for a change to the full window content view option.
+        // The content view must be resized first, otherwise the window will be resized to fit the existing
+        // content view.
+        if (IS(mask, FULL_WINDOW_CONTENT)) {
+            if (IS(newBits, FULL_WINDOW_CONTENT) != IS(window.styleBits, FULL_WINDOW_CONTENT)) {
+                NSRect frame = [nsWindow frame];
+                NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:newBits];
+                NSRect screenContentRect = [NSWindow contentRectForFrameRect:frame styleMask:styleMask];
+                NSRect contentFrame = NSMakeRect(screenContentRect.origin.x - frame.origin.x,
+                    screenContentRect.origin.y - frame.origin.y,
+                    screenContentRect.size.width,
+                    screenContentRect.size.height);
+                nsWindow.contentView.frame = contentFrame;
+                resized = YES;
+            }
+        }
 
         // resets the NSWindow's style mask if the mask intersects any of those bits
         if (mask & MASK(_STYLE_PROP_BITMASK)) {
@@ -1087,6 +1112,10 @@ JNF_COCOA_ENTER(env);
         }
 
         window.styleBits = newBits;
+
+        if (resized) {
+            [window _deliverMoveResizeEvent];
+        }
     }];
 
 JNF_COCOA_EXIT(env);
