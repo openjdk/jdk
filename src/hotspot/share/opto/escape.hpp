@@ -371,8 +371,6 @@ private:
     _nodes.at_put(n->_idx, ptn);
   }
 
-  // Utility function for nodes that load an object
-  void add_objload_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist);
   // Create PointsToNode node and add it to Connection Graph.
   void add_node_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist);
 
@@ -511,24 +509,8 @@ private:
     return is_new;
   }
 
-  // Add LocalVar node and edge if possible
-  void add_local_var_and_edge(Node* n, PointsToNode::EscapeState es, Node* to,
-                              Unique_Node_List *delayed_worklist) {
-    PointsToNode* ptn = ptnode_adr(to->_idx);
-    if (delayed_worklist != NULL) { // First iteration of CG construction
-      add_local_var(n, es);
-      if (ptn == NULL) {
-        delayed_worklist->push(n);
-        return; // Process it later.
-      }
-    } else {
-      assert(ptn != NULL, "node should be registered");
-    }
-    add_edge(ptnode_adr(n->_idx), ptn);
- }
   // Helper functions
   bool   is_oop_field(Node* n, int offset, bool* unsafe);
-  Node* get_addp_base(Node *addp);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseTransform *phase);
@@ -574,10 +556,7 @@ private:
   }
 
   // Notify optimizer that a node has been modified
-  void record_for_optimizer(Node *n) {
-    _igvn->_worklist.push(n);
-    _igvn->add_users_to_worklist(n);
-  }
+  void record_for_optimizer(Node *n);
 
   // Compute the escape information
   bool compute_escape();
@@ -592,6 +571,31 @@ public:
   static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   bool not_global_escape(Node *n);
+
+  // To be used by, e.g., BarrierSetC2 impls
+  Node* get_addp_base(Node* addp);
+
+  // Utility function for nodes that load an object
+  void add_objload_to_connection_graph(Node* n, Unique_Node_List* delayed_worklist);
+
+  // Add LocalVar node and edge if possible
+  void add_local_var_and_edge(Node* n, PointsToNode::EscapeState es, Node* to,
+                              Unique_Node_List *delayed_worklist) {
+    PointsToNode* ptn = ptnode_adr(to->_idx);
+    if (delayed_worklist != NULL) { // First iteration of CG construction
+      add_local_var(n, es);
+      if (ptn == NULL) {
+        delayed_worklist->push(n);
+        return; // Process it later.
+      }
+    } else {
+      assert(ptn != NULL, "node should be registered");
+    }
+    add_edge(ptnode_adr(n->_idx), ptn);
+  }
+
+  void add_to_congraph_unsafe_access(Node* n, uint opcode, Unique_Node_List* delayed_worklist);
+  bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
 #ifndef PRODUCT
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);

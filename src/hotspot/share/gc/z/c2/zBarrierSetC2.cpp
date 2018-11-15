@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "opto/compile.hpp"
 #include "opto/castnode.hpp"
+#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/loopnode.hpp"
@@ -1571,3 +1572,44 @@ void ZBarrierSetC2::verify_gc_barriers(bool post_parse) const {
 }
 
 #endif
+
+bool ZBarrierSetC2::escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const {
+  switch (opcode) {
+    case Op_LoadBarrierSlowReg:
+    case Op_LoadBarrierWeakSlowReg:
+      conn_graph->add_objload_to_connection_graph(n, delayed_worklist);
+      return true;
+    case Op_Proj:
+      if (n->as_Proj()->_con == LoadBarrierNode::Oop && n->in(0)->is_LoadBarrier()) {
+        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop),
+                                           delayed_worklist);
+        return true;
+      }
+    default:
+      break;
+  }
+  return false;
+}
+
+bool ZBarrierSetC2::escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const {
+  switch (opcode) {
+    case Op_LoadBarrierSlowReg:
+    case Op_LoadBarrierWeakSlowReg: {
+      const Type *t = gvn->type(n);
+      if (t->make_ptr() != NULL) {
+        Node *adr = n->in(MemNode::Address);
+        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
+        return true;
+      }
+    }
+    case Op_Proj: {
+      if (n->as_Proj()->_con == LoadBarrierNode::Oop && n->in(0)->is_LoadBarrier()) {
+        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop), NULL);
+        return true;
+      }
+    }
+    default:
+      break;
+  }
+  return false;
+}

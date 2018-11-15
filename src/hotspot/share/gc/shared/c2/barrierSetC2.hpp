@@ -55,12 +55,15 @@ const DecoratorSet C2_TIGHLY_COUPLED_ALLOC   = DECORATOR_LAST << 9;
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 
 class Compile;
+class ConnectionGraph;
 class GraphKit;
 class IdealKit;
 class Node;
+class PhaseGVN;
+class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class PhaseMacroExpand;
+class Unique_Node_List;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {
@@ -291,6 +294,10 @@ public:
 
   virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const { return false; }
 
+  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
+  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
+  virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
+  virtual bool escape_is_barrier_node(Node* n) const { return false; }
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP
