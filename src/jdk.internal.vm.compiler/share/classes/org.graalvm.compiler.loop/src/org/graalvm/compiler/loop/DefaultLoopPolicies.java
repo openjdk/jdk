@@ -75,7 +75,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
     @Override
     public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess) {
         LoopBeginNode loopBegin = loop.loopBegin();
-        double entryProbability = cfg.blockFor(loopBegin.forwardEnd()).probability();
+        double entryProbability = cfg.blockFor(loopBegin.forwardEnd()).getRelativeFrequency();
         OptionValues options = cfg.graph.getOptions();
         if (entryProbability > MinimumPeelProbability.getValue(options) && loop.size() + loopBegin.graph().getNodeCount() < MaximumDesiredSize.getValue(options)) {
             // check whether we're allowed to peel this loop

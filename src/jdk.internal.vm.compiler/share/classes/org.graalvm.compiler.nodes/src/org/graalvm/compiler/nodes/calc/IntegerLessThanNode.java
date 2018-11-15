@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import org.graalvm.compiler.options.OptionValues;
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
@@ -175,35 +174,58 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
                     return new IntegerBelowNode(forX, forY);
                 }
             }
-            if (forY.isConstant() && forX instanceof SubNode) {
-                SubNode sub = (SubNode) forX;
-                ValueNode xx = null;
-                ValueNode yy = null;
-                boolean negate = false;
-                if (forY.asConstant().isDefaultForKind()) {
-                    // (x - y) < 0 when x - y is known not to underflow <=> x < y
-                    xx = sub.getX();
-                    yy = sub.getY();
-                } else if (forY.isJavaConstant() && forY.asJavaConstant().asLong() == 1) {
-                    // (x - y) < 1 when x - y is known not to underflow <=> !(y < x)
-                    xx = sub.getY();
-                    yy = sub.getX();
-                    negate = true;
-                }
-                if (xx != null) {
-                    assert yy != null;
-                    IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp(view);
-                    IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp(view);
-                    long minValue = CodeUtil.minValue(xStamp.getBits());
-                    long maxValue = CodeUtil.maxValue(xStamp.getBits());
 
-                    if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
-                        LogicNode logic = new IntegerLessThanNode(xx, yy);
-                        if (negate) {
-                            logic = LogicNegationNode.create(logic);
-                        }
-                        return logic;
+            // Attempt to optimize the case where we can fold a constant from the left side (either
+            // from an add or sub) into the constant on the right side.
+            if (forY.isConstant()) {
+                if (forX instanceof SubNode) {
+                    SubNode sub = (SubNode) forX;
+                    ValueNode xx = null;
+                    ValueNode yy = null;
+                    boolean negate = false;
+                    if (forY.asConstant().isDefaultForKind()) {
+                        // (x - y) < 0 when x - y is known not to underflow <=> x < y
+                        xx = sub.getX();
+                        yy = sub.getY();
+                    } else if (forY.isJavaConstant() && forY.asJavaConstant().asLong() == 1) {
+                        // (x - y) < 1 when x - y is known not to underflow <=> !(y < x)
+                        xx = sub.getY();
+                        yy = sub.getX();
+                        negate = true;
                     }
+                    if (xx != null) {
+                        assert yy != null;
+                        IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp(view);
+                        IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp(view);
+                        long minValue = CodeUtil.minValue(xStamp.getBits());
+                        long maxValue = CodeUtil.maxValue(xStamp.getBits());
+
+                        if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
+                            LogicNode logic = new IntegerLessThanNode(xx, yy);
+                            if (negate) {
+                                logic = LogicNegationNode.create(logic);
+                            }
+                            return logic;
+                        }
+                    }
+                } else if (forX instanceof AddNode) {
+
+                    // (x + xConstant) < forY => x < (forY - xConstant)
+                    AddNode addNode = (AddNode) forX;
+                    if (addNode.getY().isJavaConstant()) {
+                        IntegerStamp xStamp = (IntegerStamp) addNode.getX().stamp(view);
+                        if (!IntegerStamp.addCanOverflow(xStamp, (IntegerStamp) addNode.getY().stamp(view))) {
+                            long minValue = CodeUtil.minValue(xStamp.getBits());
+                            long maxValue = CodeUtil.maxValue(xStamp.getBits());
+                            long yConstant = forY.asJavaConstant().asLong();
+                            long xConstant = addNode.getY().asJavaConstant().asLong();
+                            if (!subtractMayUnderflow(yConstant, xConstant, minValue) && !subtractMayOverflow(yConstant, xConstant, maxValue)) {
+                                long newConstant = yConstant - xConstant;
+                                return IntegerLessThanNode.create(addNode.getX(), ConstantNode.forIntegerStamp(xStamp, newConstant), view);
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -211,49 +233,9 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
                 assert forY.stamp(view) instanceof IntegerStamp;
                 int bits = ((IntegerStamp) forX.stamp(view)).getBits();
                 assert ((IntegerStamp) forY.stamp(view)).getBits() == bits;
-                long min = OP.minValue(bits);
-                long xResidue = 0;
-                ValueNode left = null;
-                JavaConstant leftCst = null;
-                if (forX instanceof AddNode) {
-                    AddNode xAdd = (AddNode) forX;
-                    if (xAdd.getY().isJavaConstant()) {
-                        long xCst = xAdd.getY().asJavaConstant().asLong();
-                        xResidue = xCst - min;
-                        left = xAdd.getX();
-                    }
-                } else if (forX.isJavaConstant()) {
-                    leftCst = forX.asJavaConstant();
-                }
-                if (left != null || leftCst != null) {
-                    long yResidue = 0;
-                    ValueNode right = null;
-                    JavaConstant rightCst = null;
-                    if (forY instanceof AddNode) {
-                        AddNode yAdd = (AddNode) forY;
-                        if (yAdd.getY().isJavaConstant()) {
-                            long yCst = yAdd.getY().asJavaConstant().asLong();
-                            yResidue = yCst - min;
-                            right = yAdd.getX();
-                        }
-                    } else if (forY.isJavaConstant()) {
-                        rightCst = forY.asJavaConstant();
-                    }
-                    if (right != null || rightCst != null) {
-                        if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
-                            if (left == null) {
-                                left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
-                            } else if (xResidue != 0) {
-                                left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue), view);
-                            }
-                            if (right == null) {
-                                right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
-                            } else if (yResidue != 0) {
-                                right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue), view);
-                            }
-                            return new IntegerBelowNode(left, right);
-                        }
-                    }
+                LogicNode logic = canonicalizeRangeFlip(forX, forY, bits, true, view);
+                if (logic != null) {
+                    return logic;
                 }
             }
             return null;

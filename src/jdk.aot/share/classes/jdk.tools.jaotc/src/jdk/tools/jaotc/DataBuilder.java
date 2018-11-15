@@ -30,16 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jdk.tools.jaotc.binformat.BinaryContainer;
-import jdk.tools.jaotc.binformat.ByteContainer;
-import jdk.tools.jaotc.binformat.HeaderContainer;
-
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 
+import jdk.tools.jaotc.binformat.BinaryContainer;
+import jdk.tools.jaotc.binformat.ByteContainer;
+import jdk.tools.jaotc.binformat.HeaderContainer;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.hotspot.VMField;
@@ -190,7 +189,7 @@ final class DataBuilder {
         for (Stub stub : foreignCallsProvider.getStubs()) {
             try (DebugContext.Scope scope = debug.scope("CompileStubs")) {
                 CompilationResult result = stub.getCompilationResult(debug, backend);
-                CompiledMethodInfo cm = new CompiledMethodInfo(result, new AOTStub(stub, backend));
+                CompiledMethodInfo cm = new CompiledMethodInfo(result, new AOTStub(stub, backend, debug.getOptions()));
                 stubs.add(cm);
             } catch (Throwable e) {
                 throw debug.handle(e);

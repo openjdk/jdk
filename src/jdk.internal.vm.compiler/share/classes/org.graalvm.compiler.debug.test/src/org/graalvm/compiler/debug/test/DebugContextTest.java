@@ -197,6 +197,7 @@ public class DebugContextTest {
 
     @Test
     public void testEnabledSandbox() {
+        TimerKeyTest.assumeManagementLibraryIsLoadable();
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables scopes
         map.put(DebugOptions.DumpOnError, true);
@@ -226,6 +227,7 @@ public class DebugContextTest {
 
     @Test
     public void testDisabledSandbox() {
+        TimerKeyTest.assumeManagementLibraryIsLoadable();
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables scopes
         map.put(DebugOptions.DumpOnError, true);
@@ -283,6 +285,7 @@ public class DebugContextTest {
 
     @Test
     public void testDisableIntercept() {
+        TimerKeyTest.assumeManagementLibraryIsLoadable();
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables scopes
         map.put(DebugOptions.DumpOnError, true);

@@ -60,6 +60,7 @@ import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph.RecursiveVisitor;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
@@ -114,6 +115,11 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             } else if (node instanceof FloatingAccessNode) {
                 FloatingAccessNode floatingAccessNode = (FloatingAccessNode) node;
                 floatingAccessNode.setLastLocationAccess(null);
+                GuardingNode guard = floatingAccessNode.getGuard();
+                if (guard != null) {
+                    floatingAccessNode.setGuard(null);
+                    GraphUtil.tryKillUnused(guard.asNode());
+                }
                 FixedAccessNode fixedAccess = floatingAccessNode.asFixedNode();
                 replaceCurrent(fixedAccess);
             } else if (node instanceof PiNode) {

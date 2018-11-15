@@ -60,7 +60,7 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     /**
      * Factory for creating moves.
      */
-    public interface MoveFactory {
+    interface MoveFactory {
 
         /**
          * Checks whether the supplied constant can be used without loading it into a register for
@@ -261,16 +261,31 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
         throw GraalError.unimplemented("String.compareTo substitution is not implemented on this architecture");
     }
 
-    Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length);
+    Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers);
 
     @SuppressWarnings("unused")
-    default Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
+    default Variable emitArrayIndexOf(JavaKind kind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value... searchValues) {
         throw GraalError.unimplemented("String.indexOf substitution is not implemented on this architecture");
     }
 
+    /*
+     * The routines emitStringLatin1Inflate/3 and emitStringUTF16Compress/3 models a simplified
+     * version of
+     *
+     * emitStringLatin1Inflate(Value src, Value src_ndx, Value dst, Value dst_ndx, Value len) and
+     * emitStringUTF16Compress(Value src, Value src_ndx, Value dst, Value dst_ndx, Value len)
+     *
+     * respectively, where we have hoisted the offset address computations in a method replacement
+     * snippet.
+     */
     @SuppressWarnings("unused")
-    default Variable emitArrayIndexOf(JavaKind kind, Value sourcePointer, Value sourceCount, Value charValue) {
-        throw GraalError.unimplemented("String.indexOf substitution is not implemented on this architecture");
+    default void emitStringLatin1Inflate(Value src, Value dst, Value len) {
+        throw GraalError.unimplemented("StringLatin1.inflate substitution is not implemented on this architecture");
+    }
+
+    @SuppressWarnings("unused")
+    default Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
+        throw GraalError.unimplemented("StringUTF16.compress substitution is not implemented on this architecture");
     }
 
     void emitBlackhole(Value operand);
@@ -292,4 +307,10 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     default void emitConvertZeroToNull(AllocatableValue result, Value input) {
         emitMove(result, input);
     }
+
+    /**
+     * Emits an instruction that prevents speculative execution from proceeding: no instruction
+     * after this fence will execute until all previous instructions have retired.
+     */
+    void emitSpeculationFence();
 }

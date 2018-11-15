@@ -199,7 +199,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
                     // execution
                     // on specific platforms.
                     return LogicNegationNode.create(
-                                    IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, nonConstant, ConstantNode.forIntegerKind(nonConstant.getStackKind(), 0),
+                                    IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, nonConstant, ConstantNode.forIntegerStamp(nonConstantStamp, 0),
                                                     view));
                 } else if (primitiveConstant.asLong() == 0) {
                     if (nonConstant instanceof AndNode) {

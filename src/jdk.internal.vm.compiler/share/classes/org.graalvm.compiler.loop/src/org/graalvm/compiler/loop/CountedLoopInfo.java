@@ -61,6 +61,7 @@ public class CountedLoopInfo {
     private IfNode ifNode;
 
     CountedLoopInfo(LoopEx loop, InductionVariable iv, IfNode ifNode, ValueNode end, boolean oneOff, AbstractBeginNode body) {
+        assert iv.direction() != null;
         this.loop = loop;
         this.iv = iv;
         this.end = end;
@@ -157,6 +158,7 @@ public class CountedLoopInfo {
             range = endValue - iv.constantInit();
             absStride = iv.constantStride();
         } else {
+            assert iv.direction() == Direction.Down;
             if (initValue < endValue) {
                 return 0;
             }

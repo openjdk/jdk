@@ -24,13 +24,14 @@
 
 package org.graalvm.compiler.replacements;
 
-import java.net.URI;
 import static org.graalvm.compiler.debug.GraalError.unimplemented;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.cfg.CFGVerifier;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
@@ -398,6 +400,18 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         @Override
         public JavaType getInvokeReturnType() {
             throw unimplemented();
+        }
+
+        @Override
+        public String toString() {
+            Formatter fmt = new Formatter();
+            PEMethodScope scope = this.methodScope;
+            fmt.format("%s", new ResolvedJavaMethodBytecode(scope.method).asStackTraceElement(invoke.bci()));
+            NodeSourcePosition callers = scope.getCallerBytecodePosition();
+            if (callers != null) {
+                fmt.format("%n%s", callers);
+            }
+            return fmt.toString();
         }
     }
 

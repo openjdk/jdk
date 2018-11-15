@@ -39,6 +39,7 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.junit.Assume;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,7 +48,18 @@ public class TimerKeyTest {
 
     @Before
     public void checkCapabilities() {
+        assumeManagementLibraryIsLoadable();
         Assume.assumeTrue("skipping management interface test", GraalServices.isCurrentThreadCpuTimeSupported());
+    }
+
+    /** @see <a href="https://bugs.openjdk.java.net/browse/JDK-8076557">JDK-8076557</a> */
+    static void assumeManagementLibraryIsLoadable() {
+        try {
+            /* Trigger loading of the management library using the bootstrap class loader. */
+            GraalServices.getCurrentThreadAllocatedBytes();
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError | UnsupportedOperationException e) {
+            throw new AssumptionViolatedException("Management interface is unavailable: " + e);
+        }
     }
 
     /**

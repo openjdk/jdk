@@ -39,6 +39,14 @@ public interface AMD64ArithmeticLIRGeneratorTool extends ArithmeticLIRGeneratorT
 
     Value emitCountTrailingZeros(Value value);
 
+    Value emitLogicalAndNot(Value value1, Value value2);
+
+    Value emitLowestSetIsolatedBit(Value value);
+
+    Value emitGetMaskUpToLowestSetBit(Value value);
+
+    Value emitResetLowestSetBit(Value value);
+
     enum RoundingMode {
         NEAREST(0),
         DOWN(1),

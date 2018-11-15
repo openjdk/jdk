@@ -59,6 +59,7 @@ import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -269,8 +270,12 @@ public abstract class AMD64BaseAssembler extends Assembler {
         return ((AMD64) target.arch).getFeatures().contains(feature);
     }
 
+    protected static boolean inRC(RegisterCategory rc, Register r) {
+        return r.getRegisterCategory().equals(rc);
+    }
+
     protected static int encode(Register r) {
-        assert r.encoding >= 0 && (r.getRegisterCategory().equals(XMM) ? r.encoding < 32 : r.encoding < 16) : "encoding out of range: " + r.encoding;
+        assert r.encoding >= 0 && (inRC(XMM, r) ? r.encoding < 32 : r.encoding < 16) : "encoding out of range: " + r.encoding;
         return r.encoding & 0x7;
     }
 
@@ -296,6 +301,10 @@ public abstract class AMD64BaseAssembler extends Assembler {
         private static final int REXWRB = 0x4D;
         private static final int REXWRX = 0x4E;
         private static final int REXWRXB = 0x4F;
+
+        private static final int VEX2 = 0xC5;
+        private static final int VEX3 = 0xC4;
+        private static final int EVEX = 0x62;
     }
 
     protected final void rexw() {
@@ -797,12 +806,17 @@ public abstract class AMD64BaseAssembler extends Assembler {
 
         @Override
         public void simdPrefix(Register reg, Register nds, AMD64Address rm, int sizePrefix, int opcodeEscapePrefix, boolean isRexW) {
-            emitVEX(L128, sizePrefixToPP(sizePrefix), opcodeEscapePrefixToMMMMM(opcodeEscapePrefix), isRexW ? W1 : W0, getRXB(reg, rm), nds.isValid() ? nds.encoding : 0);
+            assert reg.encoding < 16 : "encoding out of range: " + reg.encoding;
+            assert nds.encoding < 16 : "encoding out of range: " + nds.encoding;
+            emitVEX(L128, sizePrefixToPP(sizePrefix), opcodeEscapePrefixToMMMMM(opcodeEscapePrefix), isRexW ? W1 : W0, getRXB(reg, rm), nds.isValid() ? nds.encoding : 0, true);
         }
 
         @Override
         public void simdPrefix(Register dst, Register nds, Register src, int sizePrefix, int opcodeEscapePrefix, boolean isRexW) {
-            emitVEX(L128, sizePrefixToPP(sizePrefix), opcodeEscapePrefixToMMMMM(opcodeEscapePrefix), isRexW ? W1 : W0, getRXB(dst, src), nds.isValid() ? nds.encoding : 0);
+            assert dst.encoding < 16 : "encoding out of range: " + dst.encoding;
+            assert src.encoding < 16 : "encoding out of range: " + src.encoding;
+            assert nds.encoding < 16 : "encoding out of range: " + nds.encoding;
+            emitVEX(L128, sizePrefixToPP(sizePrefix), opcodeEscapePrefixToMMMMM(opcodeEscapePrefix), isRexW ? W1 : W0, getRXB(dst, src), nds.isValid() ? nds.encoding : 0, true);
         }
     }
 
@@ -821,6 +835,46 @@ public abstract class AMD64BaseAssembler extends Assembler {
     protected final void simdPrefix(Register dst, Register nds, Register src, OperandSize size, int opcodeEscapePrefix, boolean isRexW) {
         simdEncoder.simdPrefix(dst, nds, src, size.sizePrefix, opcodeEscapePrefix, isRexW);
     }
+
+ // @formatter:off
+ //
+ // Instruction Format and VEX illustrated below (optional []):
+ //
+ // #of bytes:    2,3      1       1       1       1,2,4       1
+ // [Prefixes]    VEX   OpCode   ModR/M  [SIB]   [Disp8*N] [Immediate]
+ //                                             [Disp16,32]
+ //
+ // VEX: 0xC4 | P1 | P2
+ //
+ //     7   6   5   4   3   2   1   0
+ // P1  R   X   B   m   m   m   m   m      P[ 7:0]
+ // P2  W   v   v   v   v   L   p   p      P[15:8]
+ //
+ // VEX: 0xC5 | B1
+ //
+ //     7   6   5   4   3   2   1   0
+ // P1  R   v   v   v   v   L   p   p      P[7:0]
+ //
+ // Figure. Bit Field Layout of the VEX Prefix
+ //
+ // Table. VEX Prefix Bit Field Functional Grouping
+ //
+ // Notation        Bit field Group        Position        Comment
+ // ----------  -------------------------  --------  -------------------
+ // VEX.RXB     Next-8 register specifier  P[7:5]    Combine with ModR/M.reg, ModR/M.rm (base, index/vidx).
+ // VEX.R       REX.R inverse              P[7]      Combine with EVEX.R and ModR/M.reg.
+ // VEX.X       REX.X inverse              P[6]      Combine with EVEX.B and ModR/M.rm, when SIB/VSIB absent.
+ // VEX.B       REX.B inverse              P[5]
+ // VEX.mmmmmm  0F, 0F_38, 0F_3A encoding  P[4:0]    b01/0x0F, b10/0F_38, b11/0F_3A (all other reserved)
+ //
+ // VEX.W       Opcode specific            P[15]
+ // VEX.vvvv    A register specifier       P[14:11]  In inverse form, b1111 if not used.
+ //                                        P[6:3]
+ // VEX.L       Vector length/RC           P[10]     b0/scalar or 128b vec, b1/256b vec.
+ //                                        P[2]
+ // VEX.pp      Compressed legacy prefix   P[9:8]    b00/None, b01/0x66, b10/0xF3, b11/0xF2
+ //                                        P[1:0]
+ // @formatter:on
 
     /**
      * Low-level function to encode and emit the VEX prefix.
@@ -846,8 +900,8 @@ public abstract class AMD64BaseAssembler extends Assembler {
      * This function automatically chooses the 2 or 3 byte encoding, based on the XBW flags and the
      * m-mmmm field.
      */
-    protected final void emitVEX(int l, int pp, int mmmmm, int w, int rxb, int vvvv) {
-        assert ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX) : "emitting VEX prefix on a CPU without AVX support";
+    protected final void emitVEX(int l, int pp, int mmmmm, int w, int rxb, int vvvv, boolean checkAVX) {
+        assert !checkAVX || ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX) : "emitting VEX prefix on a CPU without AVX support";
 
         assert l == L128 || l == L256 : "invalid value for VEX.L";
         assert pp == P_ || pp == P_66 || pp == P_F3 || pp == P_F2 : "invalid value for VEX.pp";
@@ -867,7 +921,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
             byte2 |= l << 2;
             byte2 |= pp;
 
-            emitByte(0xC5);
+            emitByte(Prefix.VEX2);
             emitByte(byte2);
         } else {
             // 3 byte encoding
@@ -881,7 +935,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
             byte3 |= l << 2;
             byte3 |= pp;
 
-            emitByte(0xC4);
+            emitByte(Prefix.VEX3);
             emitByte(byte2);
             emitByte(byte3);
         }
@@ -900,12 +954,12 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
-    public final void vexPrefix(Register dst, Register nds, Register src, AVXSize size, int pp, int mmmmm, int w) {
-        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0);
+    public final void vexPrefix(Register dst, Register nds, Register src, AVXSize size, int pp, int mmmmm, int w, boolean checkAVX) {
+        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0, checkAVX);
     }
 
-    public final void vexPrefix(Register dst, Register nds, AMD64Address src, AVXSize size, int pp, int mmmmm, int w) {
-        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0);
+    public final void vexPrefix(Register dst, Register nds, AMD64Address src, AVXSize size, int pp, int mmmmm, int w, boolean checkAVX) {
+        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0, checkAVX);
     }
 
     protected static final class EVEXPrefixConfig {
@@ -986,6 +1040,51 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
+ // @formatter:off
+ //
+ // Instruction Format and EVEX illustrated below (optional []):
+ //
+ // #of bytes:      4       1       1       1       1,2,4       1
+ // [Prefixes]    EVEX   OpCode   ModR/M  [SIB]   [Disp8*N] [Immediate]
+ //                                              [Disp16,32]
+ //
+ // The EVEX prefix is a 4-byte prefix, with the first two bytes derived from unused encoding
+ // form of the 32-bit-mode-only BOUND instruction. The layout of the EVEX prefix is shown in
+ // the figure below. The first byte must be 0x62, followed by three pay-load bytes, denoted
+ // as P1, P2, and P3 individually or collectively as P[23:0] (see below).
+ //
+ // EVEX: 0x62 | P1 | P2 | P3
+ //
+ //     7   6   5   4   3   2   1   0
+ // P1  R   X   B   R'  0   0   m   m      P[ 7: 0]
+ // P2  W   v   v   v   v   1   p   p      P[15: 8]
+ // P3  z   L'  L   b   V'  a   a   a      P[23:16]
+ //
+ // Figure. Bit Field Layout of the EVEX Prefix
+ //
+ // Table. EVEX Prefix Bit Field Functional Grouping
+ //
+ // Notation        Bit field Group        Position        Comment
+ // ---------  --------------------------  --------  -----------------------
+ // EVEX.RXB   Next-8 register specifier   P[7:5]    Combine with ModR/M.reg, ModR/M.rm (base, index/vidx).
+ // EVEX.X     High-16 register specifier  P[6]      Combine with EVEX.B and ModR/M.rm, when SIB/VSIB absent.
+ // EVEX.R'    High-16 register specifier  P[4]      Combine with EVEX.R and ModR/M.reg.
+ // --         Reserved                    P[3:2]    Must be 0.
+ // EVEX.mm    Compressed legacy escape    P[1:0]    Identical to low two bits of VEX.mmmmm.
+ //
+ // EVEX.W     Osize promotion/Opcode ext  P[15]
+ // EVEX.vvvv  NDS register specifier      P[14:11]  Same as VEX.vvvv.
+ // --         Fixed Value                 P[10]     Must be 1.
+ // EVEX.pp    Compressed legacy prefix    P[9:8]    Identical to VEX.pp.
+ //
+ // EVEX.z     Zeroing/Merging             P[23]
+ // EVEX.L'L   Vector length/RC            P[22:21]
+ // EVEX.b     Broadcast/RC/SAE Context    P[20]
+ // EVEX.V'    High-16 NDS/VIDX register   P[19]     Combine with EVEX.vvvv or VSIB when present.
+ // EVEX.aaa   Embedded opmask register    P[18:16]
+ //
+ // @formatter:on
+
     /**
      * Low-level function to encode and emit the EVEX prefix.
      * <p>
@@ -1021,13 +1120,13 @@ public abstract class AMD64BaseAssembler extends Assembler {
 
         assert (rxb & 0x07) == rxb : "invalid value for EVEX.RXB";
         assert (reg & 0x1F) == reg : "invalid value for EVEX.R'";
-        assert (vvvvv & 0x1F) == vvvvv : "invalid value for EVEX.vvvvv";
+        assert (vvvvv & 0x1F) == vvvvv : "invalid value for EVEX.V'vvvv";
 
         assert z == Z0 || z == Z1 : "invalid value for EVEX.z";
         assert b == B0 || b == B1 : "invalid value for EVEX.b";
         assert (aaa & 0x07) == aaa : "invalid value for EVEX.aaa";
 
-        emitByte(0x62);
+        emitByte(Prefix.EVEX);
         int p1 = 0;
         p1 |= ((rxb ^ 0x07) & 0x07) << 5;
         p1 |= reg < 16 ? 0x10 : 0;
@@ -1037,7 +1136,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
         int p2 = 0;
         p2 |= w << 7;
         p2 |= ((vvvvv ^ 0x0F) & 0x0F) << 3;
-        p2 |= 0x4;
+        p2 |= 0x04;
         p2 |= pp;
         emitByte(p2);
 
@@ -1050,6 +1149,11 @@ public abstract class AMD64BaseAssembler extends Assembler {
         emitByte(p3);
     }
 
+    /**
+     * Get RXB bits for register-register instructions in EVEX-encoding, where ModRM.rm contains a
+     * register index. The R bit extends the ModRM.reg field and the X and B bits extends the
+     * ModRM.rm field.
+     */
     private static int getRXBForEVEX(Register reg, Register rm) {
         int rxb = (reg == null ? 0 : reg.encoding & 0x08) >> 1;
         rxb |= (rm == null ? 0 : rm.encoding & 0x018) >> 3;
@@ -1060,7 +1164,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
      * Helper method for emitting EVEX prefix in the form of RRRR.
      */
     protected final void evexPrefix(Register dst, Register mask, Register nds, Register src, AVXSize size, int pp, int mm, int w, int z, int b) {
-        assert !mask.isValid() || mask.getRegisterCategory().equals(MASK);
+        assert !mask.isValid() || inRC(MASK, mask);
         emitEVEX(getLFlag(size), pp, mm, w, getRXBForEVEX(dst, src), dst.encoding, nds.isValid() ? nds.encoding() : 0, z, b, mask.isValid() ? mask.encoding : 0);
     }
 
@@ -1071,7 +1175,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
      * {@link #emitEVEXOperandHelper(Register, AMD64Address, int, int)}.
      */
     protected final void evexPrefix(Register dst, Register mask, Register nds, AMD64Address src, AVXSize size, int pp, int mm, int w, int z, int b) {
-        assert !mask.isValid() || mask.getRegisterCategory().equals(MASK);
+        assert !mask.isValid() || inRC(MASK, mask);
         emitEVEX(getLFlag(size), pp, mm, w, getRXB(dst, src), dst.encoding, nds.isValid() ? nds.encoding() : 0, z, b, mask.isValid() ? mask.encoding : 0);
     }
 

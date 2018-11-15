@@ -65,7 +65,7 @@ public final class UniDirectionalTraceBuilder {
     }
 
     private static int compare(AbstractBlockBase<?> a, AbstractBlockBase<?> b) {
-        return Double.compare(b.probability(), a.probability());
+        return Double.compare(b.getRelativeFrequency(), a.getRelativeFrequency());
     }
 
     private boolean processed(AbstractBlockBase<?> b) {
@@ -110,7 +110,7 @@ public final class UniDirectionalTraceBuilder {
         int blockNumber = 0;
         try (Indent i = debug.logAndIndent("StartTrace: %s", traceStart)) {
             for (AbstractBlockBase<?> block = traceStart; block != null; block = selectNext(block)) {
-                debug.log("add %s (prob: %f)", block, block.probability());
+                debug.log("add %s (freq: %f)", block, block.getRelativeFrequency());
                 processed.set(block.getId());
                 trace.add(block);
                 unblock(block);
@@ -149,7 +149,7 @@ public final class UniDirectionalTraceBuilder {
     private AbstractBlockBase<?> selectNext(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
         for (AbstractBlockBase<?> successor : block.getSuccessors()) {
-            if (!processed(successor) && (next == null || successor.probability() > next.probability())) {
+            if (!processed(successor) && (next == null || successor.getRelativeFrequency() > next.getRelativeFrequency())) {
                 next = successor;
             }
         }

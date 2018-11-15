@@ -50,7 +50,7 @@ public final class Block extends AbstractBlockBase<Block> {
 
     protected FixedNode endNode;
 
-    protected double probability;
+    protected double relativeFrequency;
     private Loop<Block> loop;
 
     protected Block postdominator;
@@ -236,14 +236,18 @@ public final class Block extends AbstractBlockBase<Block> {
         return sb.toString();
     }
 
+    /**
+     * The execution frequency of this block relative to the start block as estimated by the
+     * profiling information.
+     */
     @Override
-    public double probability() {
-        return probability;
+    public double getRelativeFrequency() {
+        return relativeFrequency;
     }
 
-    public void setProbability(double probability) {
-        assert probability >= 0 && Double.isFinite(probability);
-        this.probability = probability;
+    public void setRelativeFrequency(double relativeFrequency) {
+        assert relativeFrequency >= 0 && Double.isFinite(relativeFrequency);
+        this.relativeFrequency = relativeFrequency;
     }
 
     @Override

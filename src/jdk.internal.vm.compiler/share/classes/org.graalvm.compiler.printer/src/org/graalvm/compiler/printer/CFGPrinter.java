@@ -295,7 +295,7 @@ class CFGPrinter extends CompilationPrinter {
             out.print("loop_depth ").println(block.getLoop().getDepth());
         }
 
-        out.print("probability ").println(Double.doubleToRawLongBits(block.probability()));
+        out.print("probability ").println(Double.doubleToRawLongBits(block.getRelativeFrequency()));
     }
 
     private void printNodes(Block block) {

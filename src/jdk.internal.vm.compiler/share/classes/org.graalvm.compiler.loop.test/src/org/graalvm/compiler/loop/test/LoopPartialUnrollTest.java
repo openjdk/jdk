@@ -83,7 +83,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
     @Ignore("equality limits aren't working properly")
     @Test
     public void testSumWithEqualityLimit() {
-        for (int i = 0; i < 128; i++) {
+        for (int i = -1; i < 128; i++) {
             int[] data = new int[i];
             test("sumWithEqualityLimit", data);
         }
@@ -91,7 +91,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
 
     @Test
     public void testLoopCarried() {
-        for (int i = 0; i < 64; i++) {
+        for (int i = -1; i < 64; i++) {
             test("testLoopCarriedSnippet", i);
         }
     }
@@ -103,7 +103,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
 
     static volatile int volatileInt = 3;
 
-    public int testLoopCarriedSnippet(int iterations) {
+    public static int testLoopCarriedSnippet(int iterations) {
         int a = 0;
         int b = 0;
         int c = 0;
@@ -119,7 +119,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
         return c;
     }
 
-    public int testLoopCarriedReference(int iterations) {
+    public static int testLoopCarriedReference(int iterations) {
         int a = 0;
         int b = 0;
         int c = 0;
@@ -132,6 +132,37 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
             a = t1 + t2;
             t1 = volatileInt;
             t2 = a + b;
+            c = b;
+            b = a;
+            a = t1 + t2;
+        }
+
+        return c;
+    }
+
+    @Test
+    public void testLoopCarried2() {
+        for (int i = -1; i < 64; i++) {
+            for (int j = -1; j < 64; j++) {
+                test("testLoopCarried2Snippet", i, j);
+            }
+        }
+        test("testLoopCarried2Snippet", Integer.MAX_VALUE - 32, Integer.MAX_VALUE);
+        test("testLoopCarried2Snippet", Integer.MAX_VALUE - 4, Integer.MAX_VALUE);
+        test("testLoopCarried2Snippet", Integer.MAX_VALUE, 0);
+        test("testLoopCarried2Snippet", Integer.MIN_VALUE, Integer.MIN_VALUE + 32);
+        test("testLoopCarried2Snippet", Integer.MIN_VALUE, Integer.MIN_VALUE + 4);
+        test("testLoopCarried2Snippet", 0, Integer.MIN_VALUE);
+    }
+
+    public static int testLoopCarried2Snippet(int start, int end) {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+
+        for (int i = start; branchProbability(0.99, i < end); i++) {
+            int t1 = volatileInt;
+            int t2 = a + b;
             c = b;
             b = a;
             a = t1 + t2;
@@ -164,7 +195,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
 
     @Test
     public void testComplex() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = -1; i < 10; i++) {
             test("testComplexSnippet", i);
         }
         test("testComplexSnippet", 10);
@@ -240,7 +271,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     LoopFragmentInside newSegment = loop.inside().duplicate();
-                    newSegment.insertWithinAfter(loop, false);
+                    newSegment.insertWithinAfter(loop, null);
                 }
                 canonicalizer.apply(graph, getDefaultMidTierContext());
             }

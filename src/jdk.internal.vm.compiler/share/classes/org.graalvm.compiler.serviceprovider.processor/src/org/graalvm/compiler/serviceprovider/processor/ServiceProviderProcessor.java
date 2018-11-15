@@ -119,7 +119,7 @@ public class ServiceProviderProcessor extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
             for (Entry<TypeElement, String> e : serviceProviders.entrySet()) {
                 createProviderFile(e.getKey().getQualifiedName().toString(), e.getValue(), e.getKey());

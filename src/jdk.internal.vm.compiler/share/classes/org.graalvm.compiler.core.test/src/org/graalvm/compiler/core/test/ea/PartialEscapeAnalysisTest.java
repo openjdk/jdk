@@ -293,14 +293,14 @@ public class PartialEscapeAnalysisTest extends EATestBase {
             Assert.assertTrue("partial escape analysis should have removed all NewArrayNode allocations", graph.getNodes().filter(NewArrayNode.class).isEmpty());
 
             ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, false, false);
-            double probabilitySum = 0;
+            double frequencySum = 0;
             int materializeCount = 0;
             for (CommitAllocationNode materialize : graph.getNodes().filter(CommitAllocationNode.class)) {
-                probabilitySum += cfg.blockFor(materialize).probability() * materialize.getVirtualObjects().size();
+                frequencySum += cfg.blockFor(materialize).getRelativeFrequency() * materialize.getVirtualObjects().size();
                 materializeCount += materialize.getVirtualObjects().size();
             }
             Assert.assertEquals("unexpected number of MaterializeObjectNodes", expectedCount, materializeCount);
-            Assert.assertEquals("unexpected probability of MaterializeObjectNodes", expectedProbability, probabilitySum, 0.01);
+            Assert.assertEquals("unexpected frequency of MaterializeObjectNodes", expectedProbability, frequencySum, 0.01);
             for (Node node : graph.getNodes()) {
                 for (Class<? extends Node> clazz : invalidNodeClasses) {
                     Assert.assertFalse("instance of invalid class: " + clazz.getSimpleName(), clazz.isInstance(node) && node.usages().isNotEmpty());

@@ -858,7 +858,7 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                                     // rewrite to a zero constant of the larger kind
                                     debug.log("Rewriting entry %s to constant of larger size", valueIndex);
                                     states[i].setEntry(object, valueIndex, ConstantNode.defaultForKind(twoSlotKinds[valueIndex], graph()));
-                                    states[i].setEntry(object, valueIndex + 1, ConstantNode.forConstant(JavaConstant.forIllegal(), tool.getMetaAccessProvider(), graph()));
+                                    states[i].setEntry(object, valueIndex + 1, ConstantNode.forConstant(JavaConstant.forIllegal(), tool.getMetaAccess(), graph()));
                                 } else {
                                     compatible = false;
                                     break outer;
@@ -890,7 +890,7 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                         // skip an entry after a long/double value that occupies two int slots
                         valueIndex++;
                         phis[valueIndex] = null;
-                        values[valueIndex] = ConstantNode.forConstant(JavaConstant.forIllegal(), tool.getMetaAccessProvider(), graph());
+                        values[valueIndex] = ConstantNode.forConstant(JavaConstant.forIllegal(), tool.getMetaAccess(), graph());
                     }
                     valueIndex++;
                 }

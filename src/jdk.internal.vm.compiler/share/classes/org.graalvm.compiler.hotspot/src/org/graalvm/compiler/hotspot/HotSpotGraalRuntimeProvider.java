@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot;
 
+import java.io.PrintStream;
 import java.util.Map;
 
 import org.graalvm.compiler.api.runtime.GraalRuntime;
@@ -69,8 +70,9 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * @param compilationOptions the options used to configure the compilation debug context
      * @param compilationId a system wide unique compilation id
      * @param compilable the input to the compilation
+     * @param logStream the log stream to use in this context
      */
-    DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories);
+    DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories, PrintStream logStream);
 
     /**
      * Gets the option values associated with this runtime.

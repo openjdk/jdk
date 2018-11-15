@@ -33,5 +33,8 @@ import org.graalvm.compiler.core.common.CancellationBailoutException;
  * {@link CancellationBailoutException}.
  */
 public interface Cancellable {
+    /**
+     * Determines if this task has been cancelled.
+     */
     boolean isCancelled();
 }

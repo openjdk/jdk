@@ -29,6 +29,7 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.stubs.Stub;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 
@@ -36,10 +37,12 @@ final class AOTStub implements JavaMethodInfo {
 
     private final Stub stub;
     private final Backend backend;
+    private OptionValues options;
 
-    AOTStub(Stub stub, Backend backend) {
+    AOTStub(Stub stub, Backend backend, OptionValues options) {
         this.stub = stub;
         this.backend = backend;
+        this.options = options;
     }
 
     @Override
@@ -54,7 +57,7 @@ final class AOTStub implements JavaMethodInfo {
 
     @Override
     public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return HotSpotCompiledCodeBuilder.createCompiledCode(backend.getCodeCache(), null, null, result);
+        return HotSpotCompiledCodeBuilder.createCompiledCode(backend.getCodeCache(), null, null, result, options);
     }
 
 }

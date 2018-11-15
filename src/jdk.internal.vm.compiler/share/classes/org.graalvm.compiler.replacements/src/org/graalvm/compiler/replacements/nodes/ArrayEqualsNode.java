@@ -86,18 +86,6 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
         this.length = length;
     }
 
-    public ValueNode getArray1() {
-        return array1;
-    }
-
-    public ValueNode getArray2() {
-        return array2;
-    }
-
-    public ValueNode getLength() {
-        return length;
-    }
-
     private static boolean isNaNFloat(JavaConstant constant) {
         JavaKind kind = constant.getJavaKind();
         return (kind == JavaKind.Float && Float.isNaN(constant.asFloat())) || (kind == JavaKind.Double && Double.isNaN(constant.asDouble()));
@@ -157,14 +145,14 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
                             // Float NaN constants are different constant nodes but treated as
                             // equal in Arrays.equals([F[F) or Arrays.equals([D[D).
                             if (entry1.getStackKind() == JavaKind.Float && entry2.getStackKind() == JavaKind.Float) {
-                                float value1 = ((JavaConstant) ((ConstantNode) entry1).asConstant()).asFloat();
-                                float value2 = ((JavaConstant) ((ConstantNode) entry2).asConstant()).asFloat();
+                                float value1 = ((JavaConstant) entry1.asConstant()).asFloat();
+                                float value2 = ((JavaConstant) entry2.asConstant()).asFloat();
                                 if (Float.floatToIntBits(value1) != Float.floatToIntBits(value2)) {
                                     allEqual = false;
                                 }
                             } else if (entry1.getStackKind() == JavaKind.Double && entry2.getStackKind() == JavaKind.Double) {
-                                double value1 = ((JavaConstant) ((ConstantNode) entry1).asConstant()).asDouble();
-                                double value2 = ((JavaConstant) ((ConstantNode) entry2).asConstant()).asDouble();
+                                double value1 = ((JavaConstant) entry1.asConstant()).asDouble();
+                                double value2 = ((JavaConstant) entry2.asConstant()).asDouble();
                                 if (Double.doubleToLongBits(value1) != Double.doubleToLongBits(value2)) {
                                     allEqual = false;
                                 }
@@ -226,7 +214,11 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length));
+        int constantLength = -1;
+        if (length.isConstant()) {
+            constantLength = length.asJavaConstant().asInt();
+        }
+        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, false);
         gen.setResult(this, result);
     }
 

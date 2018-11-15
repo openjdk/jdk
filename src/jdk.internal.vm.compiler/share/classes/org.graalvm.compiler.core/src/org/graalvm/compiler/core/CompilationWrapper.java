@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 
-import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.PathUtilities;
@@ -163,8 +162,9 @@ public abstract class CompilationWrapper<T> {
      * Creates the {@link DebugContext} to use when retrying a compilation.
      *
      * @param options the options for configuring the debug context
+     * @param logStream the log stream to use in the debug context
      */
-    protected abstract DebugContext createRetryDebugContext(OptionValues options);
+    protected abstract DebugContext createRetryDebugContext(OptionValues options, PrintStream logStream);
 
     @SuppressWarnings("try")
     public final T run(DebugContext initialDebug) {
@@ -227,22 +227,27 @@ public abstract class CompilationWrapper<T> {
                     return handleException(cause);
                 }
 
-                String dir = this.outputDirectory.getPath();
-                if (dir == null) {
-                    return handleException(cause);
-                }
-                String dumpName = PathUtilities.sanitizeFileName(toString());
-                File dumpPath = new File(dir, dumpName);
-                dumpPath.mkdirs();
-                if (!dumpPath.exists()) {
-                    TTY.println("Warning: could not create diagnostics directory " + dumpPath);
-                    return handleException(cause);
+                File dumpPath = null;
+                try {
+                    String dir = this.outputDirectory.getPath();
+                    if (dir != null) {
+                        String dumpName = PathUtilities.sanitizeFileName(toString());
+                        dumpPath = new File(dir, dumpName);
+                        dumpPath.mkdirs();
+                        if (!dumpPath.exists()) {
+                            TTY.println("Warning: could not create diagnostics directory " + dumpPath);
+                            dumpPath = null;
+                        }
+                    }
+                } catch (Throwable t) {
+                    TTY.println("Warning: could not create Graal diagnostic directory");
+                    t.printStackTrace(TTY.out);
                 }
 
                 String message;
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (PrintStream ps = new PrintStream(baos)) {
-                    ps.printf("%s: Compilation of %s failed: ", Thread.currentThread(), this);
+                    ps.printf("%s: Compilation of %s failed:%n", Thread.currentThread(), this);
                     cause.printStackTrace(ps);
                     ps.printf("To disable compilation %s notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
                                     causeType,
@@ -253,11 +258,19 @@ public abstract class CompilationWrapper<T> {
                                     causeType,
                                     actionKey.getName(), ExceptionAction.Print,
                                     actionKey.getName(), ExceptionAction.Print);
-                    ps.println("Retrying compilation of " + this);
+                    if (dumpPath != null) {
+                        ps.println("Retrying compilation of " + this);
+                    } else {
+                        ps.println("Not retrying compilation of " + this + " as the dump path could not be created.");
+                    }
                     message = baos.toString();
                 }
 
                 TTY.print(message);
+                if (dumpPath == null) {
+                    return handleException(cause);
+                }
+
                 File retryLogFile = new File(dumpPath, "retry.log");
                 try (PrintStream ps = new PrintStream(new FileOutputStream(retryLogFile))) {
                     ps.print(message);
@@ -270,15 +283,27 @@ public abstract class CompilationWrapper<T> {
                                 MethodFilter, null,
                                 DumpPath, dumpPath.getPath());
 
-                try (DebugContext retryDebug = createRetryDebugContext(retryOptions); DebugCloseable s = retryDebug.disableIntercept()) {
+                ByteArrayOutputStream logBaos = new ByteArrayOutputStream();
+                PrintStream ps = new PrintStream(logBaos);
+                try (DebugContext retryDebug = createRetryDebugContext(retryOptions, ps)) {
                     T res = performCompilation(retryDebug);
+                    ps.println("There was no exception during retry.");
                     maybeExitVM(action);
                     return res;
-                } catch (Throwable ignore) {
+                } catch (Throwable e) {
+                    ps.println("Exception during retry:");
+                    e.printStackTrace(ps);
                     // Failures during retry are silent
                     T res = handleException(cause);
                     maybeExitVM(action);
                     return res;
+                } finally {
+                    ps.close();
+                    try (FileOutputStream fos = new FileOutputStream(retryLogFile, true)) {
+                        fos.write(logBaos.toByteArray());
+                    } catch (Throwable e) {
+                        TTY.printf("Error writing to %s: %s%n", retryLogFile, e);
+                    }
                 }
             }
         }

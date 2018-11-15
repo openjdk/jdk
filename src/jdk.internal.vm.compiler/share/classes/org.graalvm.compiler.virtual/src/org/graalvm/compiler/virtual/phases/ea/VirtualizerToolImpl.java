@@ -28,7 +28,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.MaximumEscapeAnalysi
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
@@ -97,23 +96,8 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     }
 
     @Override
-    public MetaAccessProvider getMetaAccessProvider() {
-        return metaAccess;
-    }
-
-    @Override
-    public ConstantReflectionProvider getConstantReflectionProvider() {
-        return constantReflection;
-    }
-
-    @Override
     public ConstantFieldProvider getConstantFieldProvider() {
         return constantFieldProvider;
-    }
-
-    @Override
-    public ArrayOffsetProvider getArrayOffsetProvider() {
-        return loweringProvider;
     }
 
     public void reset(PartialEscapeBlockState<?> newState, ValueNode newCurrent, FixedNode newPosition, GraphEffectList newEffects) {
@@ -168,7 +152,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
                  * Special case: Allow storing a single long or double value into two consecutive
                  * int slots.
                  */
-                int nextIndex = virtual.entryIndexForOffset(getArrayOffsetProvider(), offset + 4, JavaKind.Int);
+                int nextIndex = virtual.entryIndexForOffset(getMetaAccess(), offset + 4, JavaKind.Int);
                 if (nextIndex != -1) {
                     canVirtualize = true;
                     assert nextIndex == index + 1 : "expected to be sequential";
@@ -210,7 +194,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
 
     private ValueNode getIllegalConstant() {
         if (illegalConstant == null) {
-            illegalConstant = ConstantNode.forConstant(JavaConstant.forIllegal(), getMetaAccessProvider());
+            illegalConstant = ConstantNode.forConstant(JavaConstant.forIllegal(), getMetaAccess());
             addNode(illegalConstant);
         }
         return illegalConstant;

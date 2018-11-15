@@ -83,12 +83,12 @@ public class NodeCostUtil {
         try (DebugContext.Scope s = debug.scope("NodeCostSummary")) {
             for (Block block : cfg.getBlocks()) {
                 for (Node n : blockToNodes.apply(block)) {
-                    double probWeighted = n.estimatedNodeCycles().value * block.probability();
+                    double probWeighted = n.estimatedNodeCycles().value * block.getRelativeFrequency();
                     assert Double.isFinite(probWeighted);
                     weightedCycles += probWeighted;
                     if (debug.isLogEnabled()) {
-                        debug.log("Node %s contributes cycles:%f size:%d to graph %s [block prob:%f]", n, n.estimatedNodeCycles().value * block.probability(),
-                                        n.estimatedNodeSize().value, graph, block.probability());
+                        debug.log("Node %s contributes cycles:%f size:%d to graph %s [block freq:%f]", n, n.estimatedNodeCycles().value * block.getRelativeFrequency(),
+                                        n.estimatedNodeSize().value, graph, block.getRelativeFrequency());
                     }
                 }
             }

@@ -905,23 +905,68 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 double shortCutProbability = probability(trueSuccessor());
                 LogicNode newCondition = LogicNode.or(condition(), negateCondition, conditional.condition(), negateConditionalCondition, shortCutProbability);
                 return graph().unique(new ConditionalNode(newCondition, constant, otherValue));
-            } else if (!negateCondition && constant.isJavaConstant() && conditional.trueValue().isJavaConstant() && conditional.falseValue().isJavaConstant()) {
-                IntegerLessThanNode lessThan = null;
-                IntegerEqualsNode equals = null;
-                if (condition() instanceof IntegerLessThanNode && conditional.condition() instanceof IntegerEqualsNode && constant.asJavaConstant().asLong() == -1 &&
-                                conditional.trueValue().asJavaConstant().asLong() == 0 && conditional.falseValue().asJavaConstant().asLong() == 1) {
-                    lessThan = (IntegerLessThanNode) condition();
-                    equals = (IntegerEqualsNode) conditional.condition();
-                } else if (condition() instanceof IntegerEqualsNode && conditional.condition() instanceof IntegerLessThanNode && constant.asJavaConstant().asLong() == 0 &&
-                                conditional.trueValue().asJavaConstant().asLong() == -1 && conditional.falseValue().asJavaConstant().asLong() == 1) {
-                    lessThan = (IntegerLessThanNode) conditional.condition();
-                    equals = (IntegerEqualsNode) condition();
+            } else if (constant.isJavaConstant() && conditional.trueValue().isJavaConstant() && conditional.falseValue().isJavaConstant() && condition() instanceof CompareNode &&
+                            conditional.condition() instanceof CompareNode) {
+                Condition cond1 = ((CompareNode) condition()).condition().asCondition();
+                if (negateCondition) {
+                    cond1 = cond1.negate();
                 }
-                if (lessThan != null) {
-                    assert equals != null;
-                    NodeView view = NodeView.from(tool);
-                    if ((lessThan.getX() == equals.getX() && lessThan.getY() == equals.getY()) || (lessThan.getX() == equals.getY() && lessThan.getY() == equals.getX())) {
-                        return graph().unique(new NormalizeCompareNode(lessThan.getX(), lessThan.getY(), conditional.trueValue().stamp(view).getStackKind(), false));
+                // cond1 is EQ, NE, LT, or GE
+                Condition cond2 = ((CompareNode) conditional.condition()).condition().asCondition();
+                ValueNode x = ((CompareNode) condition()).getX();
+                ValueNode y = ((CompareNode) condition()).getY();
+                ValueNode x2 = ((CompareNode) conditional.condition()).getX();
+                ValueNode y2 = ((CompareNode) conditional.condition()).getY();
+                // `x cond1 y ? c1 : (x2 cond2 y2 ? c2 : c3)`
+                boolean sameVars = x == x2 && y == y2;
+                if (!sameVars && x == y2 && y == x2) {
+                    sameVars = true;
+                    cond2 = cond2.mirror();
+                }
+                // cond2 is EQ, LT, or GT
+                if (sameVars) {
+                    JavaKind stackKind = conditional.trueValue().stamp(NodeView.from(tool)).getStackKind();
+                    assert !stackKind.isNumericFloat();
+                    long c1 = constant.asJavaConstant().asLong();
+                    long c2 = conditional.trueValue().asJavaConstant().asLong();
+                    long c3 = conditional.falseValue().asJavaConstant().asLong();
+                    // `x cond1 y ? c1 : (x cond2 y ? c2 : c3)`
+                    if (cond1 == Condition.GE && cond2 == Condition.LT) {
+                        // x >= y ? v1 : (x < y ? v2 : v3) => x >= y ? v1 : v2
+                        return graph().unique(new ConditionalNode(condition(), conditional.trueValue(), constant));
+                    } else if (cond1 == Condition.GE && cond2 == Condition.GT) {
+                        // x >= y ? v1 : (x > y ? v2 : v3) => x >= y ? v1 : v3
+                        return graph().unique(new ConditionalNode(condition(), conditional.falseValue(), constant));
+                    } else if (cond1 == Condition.EQ && cond2 == Condition.EQ) {
+                        // x == y ? v1 : (x == y ? v2 : v3) => x == y ? v1 : v3
+                        return graph().unique(new ConditionalNode(condition(), conditional.falseValue(), constant));
+                    } else if (cond1 == Condition.NE && cond2 == Condition.LT) {
+                        // x != y ? v1 : (x < y ? v2 : v3) => x != y ? v1 : v3
+                        return graph().unique(new ConditionalNode(condition(), conditional.falseValue(), constant));
+                    } else if (cond1 == Condition.LT && cond2 == Condition.EQ && c1 == -1 && c2 == 0 && c3 == 1) {
+                        // x < y ? -1 : (x == y ? 0 : 1) => x cmp y
+                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
+                    } else if (cond1 == Condition.LT && cond2 == Condition.EQ && c1 == 1 && c2 == 0 && c3 == -1) {
+                        // x < y ? 1 : (x == y ? 0 : -1) => y cmp x
+                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
+                    } else if (cond1 == Condition.EQ && cond2 == Condition.LT && c1 == 0 && c2 == -1 && c3 == 1) {
+                        // x == y ? 0 : (x < y ? -1 : 1) => x cmp y
+                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
+                    } else if (cond1 == Condition.EQ && cond2 == Condition.LT && c1 == 0 && c2 == 1 && c3 == -1) {
+                        // x == y ? 0 : (x < y ? 1 : -1) => y cmp x
+                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
+                    } else if (cond1 == Condition.EQ && cond2 == Condition.GT && c1 == 0 && c2 == -1 && c3 == 1) {
+                        // x == y ? 0 : (x > y ? -1 : 1) => y cmp x
+                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
+                    } else if (cond1 == Condition.EQ && cond2 == Condition.GT && c1 == 0 && c2 == 1 && c3 == -1) {
+                        // x == y ? 0 : (x > y ? 1 : -1) => x cmp y
+                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
+                    } else if (cond1 == Condition.LT && cond2 == Condition.GT && c1 == 1 && c2 == -1 && c3 == 0) {
+                        // x < y ? 1 : (x > y ? -1 : 0) => y cmp x
+                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
+                    } else if (cond1 == Condition.LT && cond2 == Condition.GT && c1 == -1 && c2 == 1 && c3 == 0) {
+                        // x < y ? -1 : (x > y ? 1 : 0) => x cmp y
+                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
                     }
                 }
             }

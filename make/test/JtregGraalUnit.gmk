@@ -59,6 +59,7 @@ ifeq ($(INCLUDE_GRAAL), true)
         -Xlint:none \
         -processorpath $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
         --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
 
     ### Copy 3rd party libs
     $(eval $(call SetupCopyFiles, COPY_GRAALUNIT_LIBS, \
@@ -81,6 +82,7 @@ ifeq ($(INCLUDE_GRAAL), true)
             $(SRC_DIR)/org.graalvm.compiler.asm.test/src \
             $(SRC_DIR)/org.graalvm.compiler.core.amd64.test/src \
             $(SRC_DIR)/org.graalvm.compiler.core.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.core.jdk9.test/src \
             $(SRC_DIR)/org.graalvm.compiler.debug.test/src \
             $(SRC_DIR)/org.graalvm.compiler.graph.test/src \
             $(SRC_DIR)/org.graalvm.compiler.hotspot.amd64.test/src \
@@ -92,6 +94,9 @@ ifeq ($(INCLUDE_GRAAL), true)
             $(SRC_DIR)/org.graalvm.compiler.nodes.test/src \
             $(SRC_DIR)/org.graalvm.compiler.options.test/src \
             $(SRC_DIR)/org.graalvm.compiler.phases.common.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.replacements.jdk12.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.replacements.jdk9.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.replacements.jdk9_11.test/src \
             $(SRC_DIR)/org.graalvm.compiler.replacements.test/src \
             $(SRC_DIR)/org.graalvm.compiler.test/src \
             $(SRC_DIR)/org.graalvm.util.test/src \

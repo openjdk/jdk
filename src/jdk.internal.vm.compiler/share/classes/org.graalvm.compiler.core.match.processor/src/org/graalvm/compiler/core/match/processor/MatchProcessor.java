@@ -692,7 +692,7 @@ public class MatchProcessor extends AbstractProcessor {
     private RoundEnvironment currentRound;
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
             return true;
         }

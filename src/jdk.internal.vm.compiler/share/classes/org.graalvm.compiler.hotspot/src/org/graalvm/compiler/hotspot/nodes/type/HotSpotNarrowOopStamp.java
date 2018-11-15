@@ -65,12 +65,8 @@ public final class HotSpotNarrowOopStamp extends NarrowOopStamp {
     }
 
     @Override
-    public JavaConstant asConstant() {
-        if (alwaysNull()) {
-            return HotSpotCompressedNullConstant.COMPRESSED_NULL;
-        } else {
-            return null;
-        }
+    public JavaConstant nullConstant() {
+        return HotSpotCompressedNullConstant.COMPRESSED_NULL;
     }
 
     @Override

@@ -32,11 +32,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -61,6 +63,20 @@ public abstract class AbstractProcessor extends javax.annotation.processing.Abst
     public ProcessingEnvironment env() {
         return processingEnv;
     }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        // In JDK 8, each annotation processing round has its own Elements object
+        // so this cache must be cleared at the start of each round. As of JDK9,
+        // a single Elements is preserved across all annotation processing rounds.
+        // However, since both behaviors are compliant with the annotation processing
+        // specification, we unconditionally clear the cache to be safe.
+        types.clear();
+
+        return doProcess(annotations, roundEnv);
+    }
+
+    protected abstract boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv);
 
     private final Map<String, TypeElement> types = new HashMap<>();
 

@@ -47,7 +47,7 @@ import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.debug.OpaqueNode;
+import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
@@ -595,7 +595,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
         StructuredGraph graph = parseEager(name, StructuredGraph.AllowAssumptions.YES);
         try (DebugContext.Scope s0 = graph.getDebug().scope(name, graph)) {
             for (OpaqueNode node : graph.getNodes().filter(OpaqueNode.class)) {
-                node.replaceAndDelete(node.getValue());
+                node.remove();
             }
             HighTierContext context = getDefaultHighTierContext();
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();

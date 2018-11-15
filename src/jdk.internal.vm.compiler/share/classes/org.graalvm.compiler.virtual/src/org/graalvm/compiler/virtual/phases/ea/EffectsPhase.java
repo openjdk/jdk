@@ -38,7 +38,7 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
+import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -96,7 +96,7 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
 
                     if (closure.needsApplyEffects()) {
                         // apply the effects collected during this iteration
-                        HashSetNodeEventListener listener = new HashSetNodeEventListener();
+                        EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener();
                         try (NodeEventScope nes = graph.trackNodeEvents(listener)) {
                             closure.applyEffects();
                         }

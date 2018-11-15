@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpHandler;
@@ -46,6 +46,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 import org.junit.internal.ComparisonCriteria;
 import org.junit.internal.ExactComparisonCriteria;
 import org.junit.rules.DisableOnDebug;
@@ -237,6 +238,16 @@ public class GraalTest {
         }
         // anything else just use the non-ulps version
         assertDeepEquals(message, expected, actual, equalFloatsOrDoublesDelta());
+    }
+
+    /** @see <a href="https://bugs.openjdk.java.net/browse/JDK-8076557">JDK-8076557</a> */
+    protected static void assumeManagementLibraryIsLoadable() {
+        try {
+            /* Trigger loading of the management library using the bootstrap class loader. */
+            GraalServices.getCurrentThreadAllocatedBytes();
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError | UnsupportedOperationException e) {
+            throw new AssumptionViolatedException("Management interface is unavailable: " + e);
+        }
     }
 
     /**

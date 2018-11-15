@@ -40,7 +40,7 @@ public final class Class_newInstance06 extends JTTTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "unused"})
     public static boolean test(int i) throws IllegalAccessException, InstantiationException {
         if (i == 0) {
             return Class_newInstance.class.newInstance() != null;

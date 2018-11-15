@@ -142,10 +142,13 @@ public abstract class AbstractPointerStamp extends Stamp {
     @Override
     public Constant asConstant() {
         if (alwaysNull) {
-            return JavaConstant.NULL_POINTER;
-        } else {
-            return null;
+            return nullConstant();
         }
+        return super.asConstant();
+    }
+
+    public JavaConstant nullConstant() {
+        return JavaConstant.NULL_POINTER;
     }
 
     @Override

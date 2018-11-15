@@ -230,7 +230,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                  * 1)))) to avoid the test.
                  */
                 IntegerLessThanNode lt = (IntegerLessThanNode) condition;
-                if (lt.getY().isConstant() && lt.getY().asConstant().isDefaultForKind()) {
+                if (lt.getY().isDefaultConstant()) {
                     if (falseValue == lt.getX()) {
                         if (trueValue instanceof AddNode) {
                             AddNode add = (AddNode) trueValue;

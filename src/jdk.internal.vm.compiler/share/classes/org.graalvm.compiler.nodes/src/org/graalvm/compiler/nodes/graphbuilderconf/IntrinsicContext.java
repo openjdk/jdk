@@ -37,6 +37,7 @@ import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
@@ -216,7 +217,7 @@ public class IntrinsicContext {
             }
             return frameState;
         } else {
-            if (forStateSplit instanceof AbstractMergeNode) {
+            if (forStateSplit instanceof AbstractMergeNode || forStateSplit instanceof LoopExitNode) {
                 // Merge nodes always need a frame state
                 if (sideEffects.isAfterSideEffect()) {
                     // A merge after one or more side effects

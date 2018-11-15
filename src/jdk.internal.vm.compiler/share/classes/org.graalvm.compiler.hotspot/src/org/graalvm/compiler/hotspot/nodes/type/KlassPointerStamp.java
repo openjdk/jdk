@@ -122,11 +122,11 @@ public final class KlassPointerStamp extends MetaspacePointerStamp {
     }
 
     @Override
-    public Constant asConstant() {
-        if (alwaysNull() && isCompressed()) {
+    public JavaConstant nullConstant() {
+        if (isCompressed()) {
             return HotSpotCompressedNullConstant.COMPRESSED_NULL;
         } else {
-            return super.asConstant();
+            return super.nullConstant();
         }
     }
 

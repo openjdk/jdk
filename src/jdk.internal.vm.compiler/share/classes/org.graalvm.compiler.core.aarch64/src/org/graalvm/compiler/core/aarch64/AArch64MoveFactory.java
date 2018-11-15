@@ -34,6 +34,7 @@ import org.graalvm.compiler.core.common.type.DataPointerConstant;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
+import org.graalvm.compiler.lir.aarch64.AArch64LIRInstruction;
 import org.graalvm.compiler.lir.aarch64.AArch64Move;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.LoadAddressOp;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
@@ -69,7 +70,7 @@ public class AArch64MoveFactory implements MoveFactory {
     }
 
     @Override
-    public LIRInstruction createLoad(AllocatableValue dst, Constant src) {
+    public AArch64LIRInstruction createLoad(AllocatableValue dst, Constant src) {
         if (src instanceof JavaConstant) {
             JavaConstant javaConstant = (JavaConstant) src;
             if (canInlineConstant(javaConstant)) {

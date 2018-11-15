@@ -102,6 +102,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
 
     @Test
     public void test() throws Throwable {
+        assumeManagementLibraryIsLoadable();
         try {
             Class.forName("java.lang.instrument.Instrumentation");
         } catch (ClassNotFoundException ex) {
@@ -198,7 +199,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "unused"})
     public static boolean loadAgent(Path agent) throws Exception {
         String vmName = ManagementFactory.getRuntimeMXBean().getName();
         int p = vmName.indexOf('@');

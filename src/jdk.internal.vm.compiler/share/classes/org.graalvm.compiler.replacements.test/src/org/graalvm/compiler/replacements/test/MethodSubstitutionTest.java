@@ -65,9 +65,14 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     protected StructuredGraph testGraph(final String snippet, String name) {
+        return testGraph(getResolvedJavaMethod(snippet), name);
+    }
+
+    @SuppressWarnings("try")
+    protected StructuredGraph testGraph(final ResolvedJavaMethod method, String name) {
         DebugContext debug = getDebugContext();
-        try (DebugContext.Scope s = debug.scope("MethodSubstitutionTest", getResolvedJavaMethod(snippet))) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
+        try (DebugContext.Scope s = debug.scope("MethodSubstitutionTest", method)) {
+            StructuredGraph graph = parseEager(method, AllowAssumptions.YES, debug);
             HighTierContext context = getDefaultHighTierContext();
             debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
             createInliningPhase(graph).apply(graph, context);
@@ -111,7 +116,8 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
         return graph;
     }
 
-    protected void testSubstitution(String testMethodName, Class<?> intrinsicClass, Class<?> holder, String methodName, Class<?>[] parameterTypes, boolean optional, Object[] args1, Object[] args2) {
+    protected void testSubstitution(String testMethodName, Class<?> intrinsicClass, Class<?> holder, String methodName, Class<?>[] parameterTypes, boolean optional, boolean forceCompilation,
+                    Object[] args1, Object[] args2) {
         ResolvedJavaMethod realMethod = getResolvedJavaMethod(holder, methodName, parameterTypes);
         ResolvedJavaMethod testMethod = getResolvedJavaMethod(testMethodName);
         StructuredGraph graph = testGraph(testMethodName);
@@ -123,7 +129,7 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
         }
 
         // Force compilation
-        InstalledCode code = getCode(testMethod);
+        InstalledCode code = getCode(testMethod, null, forceCompilation);
         assert optional || code != null;
 
         for (int i = 0; i < args1.length; i++) {

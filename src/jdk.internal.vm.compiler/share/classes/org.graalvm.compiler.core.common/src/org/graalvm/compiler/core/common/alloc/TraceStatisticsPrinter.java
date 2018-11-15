@@ -59,13 +59,13 @@ public final class TraceStatisticsPrinter {
                     double max = Double.NEGATIVE_INFINITY;
                     double min = Double.POSITIVE_INFINITY;
                     for (AbstractBlockBase<?> block : t) {
-                        double probability = block.probability();
-                        total += probability;
-                        if (probability < min) {
-                            min = probability;
+                        double frequency = block.getRelativeFrequency();
+                        total += frequency;
+                        if (frequency < min) {
+                            min = frequency;
                         }
-                        if (probability > max) {
-                            max = probability;
+                        if (frequency > max) {
+                            max = frequency;
                         }
                     }
                     printLine(debug, i, total, min, max, t.length);

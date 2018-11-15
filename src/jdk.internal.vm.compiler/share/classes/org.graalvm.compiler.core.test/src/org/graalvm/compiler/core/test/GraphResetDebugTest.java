@@ -43,6 +43,7 @@ public class GraphResetDebugTest extends GraalCompilerTest {
     @SuppressWarnings("try")
     @Test
     public void test1() {
+        assumeManagementLibraryIsLoadable();
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables scopes
         map.put(DebugOptions.DumpOnError, true);

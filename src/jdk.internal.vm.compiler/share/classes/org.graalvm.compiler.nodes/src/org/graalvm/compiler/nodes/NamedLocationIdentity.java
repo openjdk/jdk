@@ -135,4 +135,8 @@ public class NamedLocationIdentity extends LocationIdentity implements FormatWit
         }
         return result;
     }
+
+    public static boolean isArrayLocation(LocationIdentity l) {
+        return ARRAY_LOCATIONS.containsValue(l);
+    }
 }

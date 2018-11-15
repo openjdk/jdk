@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.phases.util;
 
-import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
@@ -89,11 +88,6 @@ public class Providers implements CodeGenProviders {
     }
 
     public LoweringProvider getLowerer() {
-        return lowerer;
-    }
-
-    @Override
-    public ArrayOffsetProvider getArrayOffsetProvider() {
         return lowerer;
     }
 

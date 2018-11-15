@@ -30,8 +30,8 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
-import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.asm.aarch64.AArch64Assembler.ConditionFlag;
+import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -78,8 +78,8 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         this.kind2 = kind2;
 
         // Both offsets should be the same but better be safe than sorry.
-        this.array1BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind1);
-        this.array2BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind2);
+        this.array1BaseOffset = tool.getProviders().getMetaAccess().getArrayBaseOffset(kind1);
+        this.array2BaseOffset = tool.getProviders().getMetaAccess().getArrayBaseOffset(kind2);
 
         this.resultValue = result;
 

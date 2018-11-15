@@ -30,6 +30,7 @@ import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsin
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineIntrinsicsDuringParsing;
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createIntrinsicInlineInfo;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import java.util.Collections;
@@ -48,6 +49,7 @@ import org.graalvm.compiler.api.replacements.SnippetTemplateCache;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -57,8 +59,8 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.java.GraphBuilderPhase.Instance;
 import org.graalvm.compiler.nodes.CallTargetNode;
@@ -309,6 +311,37 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
             result = null;
         }
         return result;
+    }
+
+    @SuppressWarnings("try")
+    @Override
+    public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, CompilationIdentifier compilationId, DebugContext debug) {
+        Bytecode subst = getSubstitutionBytecode(method);
+        if (subst != null) {
+            ResolvedJavaMethod substMethod = subst.getMethod();
+            assert !substMethod.equals(method);
+            BytecodeProvider bytecodeProvider = subst.getOrigin();
+            // @formatter:off
+            StructuredGraph graph = new StructuredGraph.Builder(options, debug, StructuredGraph.AllowAssumptions.YES).
+                    method(substMethod).
+                    compilationId(compilationId).
+                    recordInlinedMethods(bytecodeProvider.shouldRecordMethodDependencies()).
+                    setIsSubstitution(true).
+                    build();
+            // @formatter:on
+            try (DebugContext.Scope scope = debug.scope("GetIntrinsicGraph", graph)) {
+                Plugins plugins = new Plugins(getGraphBuilderPlugins());
+                GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
+                IntrinsicContext initialReplacementContext = new IntrinsicContext(method, substMethod, bytecodeProvider, ROOT_COMPILATION);
+                new GraphBuilderPhase.Instance(providers.getMetaAccess(), providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
+                                OptimisticOptimizations.NONE, initialReplacementContext).apply(graph);
+                assert !graph.isFrozen();
+                return graph;
+            } catch (Throwable e) {
+                debug.handle(e);
+            }
+        }
+        return null;
     }
 
     /**

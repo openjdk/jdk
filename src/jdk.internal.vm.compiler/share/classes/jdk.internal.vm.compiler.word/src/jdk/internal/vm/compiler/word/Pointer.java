@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 package jdk.internal.vm.compiler.word;
@@ -959,7 +975,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
     void writeObject(WordBase offset, Object val);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -967,17 +984,19 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     int compareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -985,17 +1004,19 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1003,17 +1024,19 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     <T extends WordBase> T compareAndSwapWord(WordBase offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1021,17 +1044,19 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1039,8 +1064,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1050,7 +1075,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1058,8 +1084,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1069,7 +1095,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1077,8 +1104,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1088,7 +1115,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      * <p>
      * The offset is always treated as a {@link SignedWord} value. However, the static type is
@@ -1096,8 +1124,8 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1206,68 +1234,77 @@ public interface Pointer extends UnsignedWord, PointerBase {
     void writeObject(int offset, Object val);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     int compareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
-     * @return The value after the atomic exchange
+     * @return The value that was read for comparison, which is {@code expectedValue} if the
+     *         exchange was performed.
      *
      * @since 1.0
      */
     Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1277,12 +1314,13 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1292,12 +1330,13 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
@@ -1307,12 +1346,13 @@ public interface Pointer extends UnsignedWord, PointerBase {
     boolean logicCompareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
 
     /**
-     * Atomically exchanges memory at address {@code (this + offset)}. Both the base address and
+     * In a single atomic step, compares the memory at address {@code (this + offset)} to the
+     * expected value, and if equal, exchanges it for the new value. Both the base address and
      * offset are in bytes.
      *
      * @param offset the signed offset for the memory access
-     * @param expectedValue the expected value of the atomic exchange
-     * @param newValue the new value of the atomic exchange
+     * @param expectedValue the expected current value at the memory address
+     * @param newValue the new value for the atomic exchange
      * @param locationIdentity the identity of the memory location
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.

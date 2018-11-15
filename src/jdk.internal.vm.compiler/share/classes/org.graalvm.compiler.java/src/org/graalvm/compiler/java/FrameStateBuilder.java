@@ -370,7 +370,15 @@ public final class FrameStateBuilder implements SideEffectsState {
         if (bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
             throw shouldNotReachHere();
         }
-        return new NodeSourcePosition(outerSourcePosition, code.getMethod(), bci);
+        if (parser.intrinsicContext != null && (parent == null || parent.intrinsicContext != parser.intrinsicContext)) {
+            // When parsing an intrinsic put in a substitution marker showing the original method as
+            // the caller. This keeps the relationship between the method and the method
+            // substitution clear in resulting NodeSourcePosition.
+            NodeSourcePosition original = new NodeSourcePosition(outerSourcePosition, parser.intrinsicContext.getOriginalMethod(), -1);
+            return NodeSourcePosition.substitution(original, code.getMethod(), bci);
+        } else {
+            return new NodeSourcePosition(outerSourcePosition, code.getMethod(), bci);
+        }
     }
 
     public FrameStateBuilder copy() {

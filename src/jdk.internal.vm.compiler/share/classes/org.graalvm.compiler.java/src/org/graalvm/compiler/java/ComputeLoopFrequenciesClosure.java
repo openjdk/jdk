@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.java;
 
-import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyProbabilities;
+import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyRelativeFrequencies;
 
 import java.util.List;
 
@@ -75,17 +75,17 @@ public final class ComputeLoopFrequenciesClosure extends ReentrantNodeIterator.N
     protected EconomicMap<LoopExitNode, Double> processLoop(LoopBeginNode loop, Double initialState) {
         EconomicMap<LoopExitNode, Double> exitStates = ReentrantNodeIterator.processLoop(this, loop, 1D).exitStates;
 
-        double exitProbability = 0.0;
+        double exitRelativeFrequency = 0.0;
         for (double d : exitStates.getValues()) {
-            exitProbability += d;
+            exitRelativeFrequency += d;
         }
-        exitProbability = Math.min(1.0, exitProbability);
-        exitProbability = Math.max(ControlFlowGraph.MIN_PROBABILITY, exitProbability);
-        double loopFrequency = 1.0 / exitProbability;
+        exitRelativeFrequency = Math.min(1.0, exitRelativeFrequency);
+        exitRelativeFrequency = Math.max(ControlFlowGraph.MIN_RELATIVE_FREQUENCY, exitRelativeFrequency);
+        double loopFrequency = 1.0 / exitRelativeFrequency;
         loop.setLoopFrequency(loopFrequency);
 
         double adjustmentFactor = initialState * loopFrequency;
-        exitStates.replaceAll((exitNode, probability) -> multiplyProbabilities(probability, adjustmentFactor));
+        exitStates.replaceAll((exitNode, frequency) -> multiplyRelativeFrequencies(frequency, adjustmentFactor));
 
         return exitStates;
     }

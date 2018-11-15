@@ -63,7 +63,7 @@ public final class BiDirectionalTraceBuilder {
     }
 
     private static int compare(AbstractBlockBase<?> a, AbstractBlockBase<?> b) {
-        return Double.compare(b.probability(), a.probability());
+        return Double.compare(b.getRelativeFrequency(), a.getRelativeFrequency());
     }
 
     private boolean processed(AbstractBlockBase<?> b) {
@@ -132,7 +132,7 @@ public final class BiDirectionalTraceBuilder {
     }
 
     private void addBlockToTrace(DebugContext debug, AbstractBlockBase<?> block) {
-        debug.log("add %s (prob: %f)", block, block.probability());
+        debug.log("add %s (freq: %f)", block, block.getRelativeFrequency());
         processed.set(block.getId());
     }
 
@@ -142,7 +142,7 @@ public final class BiDirectionalTraceBuilder {
     private AbstractBlockBase<?> selectPredecessor(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
         for (AbstractBlockBase<?> pred : block.getPredecessors()) {
-            if (!processed(pred) && !isBackEdge(pred, block) && (next == null || pred.probability() > next.probability())) {
+            if (!processed(pred) && !isBackEdge(pred, block) && (next == null || pred.getRelativeFrequency() > next.getRelativeFrequency())) {
                 next = pred;
             }
         }
@@ -160,7 +160,7 @@ public final class BiDirectionalTraceBuilder {
     private AbstractBlockBase<?> selectSuccessor(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
         for (AbstractBlockBase<?> succ : block.getSuccessors()) {
-            if (!processed(succ) && (next == null || succ.probability() > next.probability())) {
+            if (!processed(succ) && (next == null || succ.getRelativeFrequency() > next.getRelativeFrequency())) {
                 next = succ;
             }
         }

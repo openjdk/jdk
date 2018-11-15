@@ -215,14 +215,14 @@ public class NumUtil {
     }
 
     public static long maxUnsigned(long a, long b) {
-        if (Long.compareUnsigned(a, b) > 0) {
+        if (Long.compareUnsigned(a, b) < 0) {
             return b;
         }
         return a;
     }
 
     public static long minUnsigned(long a, long b) {
-        if (Long.compareUnsigned(a, b) > 0) {
+        if (Long.compareUnsigned(a, b) < 0) {
             return a;
         }
         return b;

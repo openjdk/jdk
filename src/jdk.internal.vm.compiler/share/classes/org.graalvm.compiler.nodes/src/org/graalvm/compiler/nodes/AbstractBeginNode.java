@@ -45,6 +45,8 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
 
     public static final NodeClass<AbstractBeginNode> TYPE = NodeClass.create(AbstractBeginNode.class);
 
+    private boolean withSpeculationFence;
+
     protected AbstractBeginNode(NodeClass<? extends AbstractBeginNode> c) {
         this(c, StampFactory.forVoid());
     }
@@ -91,7 +93,9 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        // nop
+        if (withSpeculationFence) {
+            gen.getLIRGeneratorTool().emitSpeculationFence();
+        }
     }
 
     public NodeIterable<GuardNode> guards() {
@@ -110,6 +114,14 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
                 return new BlockNodeIterator(AbstractBeginNode.this);
             }
         };
+    }
+
+    /**
+     * Set this begin node to be a speculation fence. This will prevent speculative execution of
+     * this block.
+     */
+    public void setWithSpeculationFence() {
+        this.withSpeculationFence = true;
     }
 
     private static class BlockNodeIterator implements Iterator<FixedNode> {

@@ -133,7 +133,7 @@ public class ConstantTree extends PrintableDominatorOptimizationProblem<Constant
     NodeCost getOrInitCost(AbstractBlockBase<?> block) {
         NodeCost cost = getCost(block);
         if (cost == null) {
-            cost = new NodeCost(block.probability(), blockMap.get(block), 1);
+            cost = new NodeCost(block.getRelativeFrequency(), blockMap.get(block), 1);
             setCost(block, cost);
         }
         return cost;

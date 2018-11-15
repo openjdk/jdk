@@ -27,7 +27,10 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.Collections;
 
@@ -143,6 +146,9 @@ public final class LoopEndNode extends AbstractEndNode {
 
     @Override
     public NodeCycles estimatedNodeCycles() {
+        if (loopBegin() == null) {
+            return CYCLES_UNKNOWN;
+        }
         if (canSafepoint()) {
             // jmp+read
             return CYCLES_2;
@@ -152,8 +158,11 @@ public final class LoopEndNode extends AbstractEndNode {
 
     @Override
     public NodeSize estimatedNodeSize() {
+        if (loopBegin() == null) {
+            return SIZE_UNKNOWN;
+        }
         if (canSafepoint()) {
-            return NodeSize.SIZE_2;
+            return SIZE_2;
         }
         return super.estimatedNodeSize();
     }

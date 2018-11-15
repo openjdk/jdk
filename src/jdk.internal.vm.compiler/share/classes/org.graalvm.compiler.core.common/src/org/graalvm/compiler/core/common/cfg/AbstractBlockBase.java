@@ -163,7 +163,7 @@ public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
 
     public abstract T getPostdominator();
 
-    public abstract double probability();
+    public abstract double getRelativeFrequency();
 
     public abstract T getDominator(int distance);
 
