@@ -213,13 +213,12 @@ public class TLSTest {
             // specify the enabled server cipher suites
             sslServerSocket.setEnabledCipherSuites(new String[]{this.cipher});
             sslServerSocket.setEnabledProtocols(new String[]{tlsProtocol});
+            sslServerSocket.setSoTimeout(25000);
             /*
              * Signal Client, the server is ready to accept client request.
              */
             latch.countDown();
             try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept()) {
-                sslSocket.setNeedClientAuth(false);
-                sslSocket.setSoTimeout(5000);
                 try (InputStream sslIS = sslSocket.getInputStream();
                         OutputStream sslOS = sslSocket.getOutputStream();) {
                     sslIS.read();
