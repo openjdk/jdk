@@ -25,28 +25,31 @@
 
 package sun.security.ec;
 
+import java.io.*;
 import java.security.interfaces.XECPrivateKey;
 import java.util.Optional;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.NamedParameterSpec;
+import java.security.*;
+import java.security.spec.*;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
+import sun.security.util.*;
 
 public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
     private static final long serialVersionUID = 1L;
 
-    private AlgorithmParameterSpec paramSpec;
+    private final AlgorithmParameterSpec paramSpec;
+    private byte[] k;
 
     XDHPrivateKeyImpl(XECParameters params, byte[] k)
         throws InvalidKeyException {
 
         this.paramSpec = new NamedParameterSpec(params.getName());
+        this.k = k.clone();
+
         this.algid = new AlgorithmId(params.getOid());
-        this.key = k.clone();
+        encodeKey();
 
         checkLength(params);
     }
@@ -57,20 +60,40 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         XECParameters params = XECParameters.get(
             InvalidKeyException::new, algid);
         paramSpec = new NamedParameterSpec(params.getName());
+        decodeKey();
 
         checkLength(params);
     }
 
+    private void decodeKey() throws InvalidKeyException {
+        try {
+            DerInputStream derStream = new DerInputStream(key);
+            k = derStream.getOctetString();
+        } catch (IOException ex) {
+            throw new InvalidKeyException(ex);
+        }
+    }
+
+    private void encodeKey() {
+        DerOutputStream derKey = new DerOutputStream();
+        try {
+            derKey.putOctetString(k);
+            this.key = derKey.toByteArray();
+        } catch (IOException ex) {
+            throw new ProviderException(ex);
+        }
+    }
+
     void checkLength(XECParameters params) throws InvalidKeyException {
 
-        if (params.getBytes() != this.key.length) {
+        if (params.getBytes() != this.k.length) {
             throw new InvalidKeyException(
                 "key length must be " + params.getBytes());
         }
     }
 
     public byte[] getK() {
-        return key.clone();
+        return k.clone();
     }
 
     @Override
