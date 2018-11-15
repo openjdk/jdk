@@ -911,7 +911,11 @@ WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  return WhiteBox::compile_method(ik->class_initializer(), comp_level, InvocationEntryBci, THREAD);
+  Method* clinit = ik->class_initializer();
+  if (clinit == NULL) {
+    return false;
+  }
+  return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
 WB_END
 
 WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method, jint comp_level))
