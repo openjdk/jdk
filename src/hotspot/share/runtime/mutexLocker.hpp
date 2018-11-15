@@ -58,7 +58,6 @@ extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandler
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
-extern Mutex*   StringTable_lock;                // a lock on the interned string table
 extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
 extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special, use MutexLockerEx
@@ -136,6 +135,9 @@ extern Monitor* RedefineClasses_lock;            // locks classes from parallel 
 extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to take pressure off the Threads_lock
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
+#if INCLUDE_NMT
+extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
+#endif
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging

@@ -94,6 +94,15 @@ class os: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MallocTracker;
+
+#ifdef ASSERT
+ private:
+  static bool _mutex_init_done;
+ public:
+  static void set_mutex_init_done() { _mutex_init_done = true; }
+  static bool mutex_init_done() { return _mutex_init_done; }
+#endif
+
  public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
 

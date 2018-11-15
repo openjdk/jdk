@@ -4199,6 +4199,7 @@ jint os::init_2(void) {
   // initialize synchronization primitives to use either thread or
   // lwp synchronization (controlled by UseLWPSynchronization)
   Solaris::synchronization_init();
+  DEBUG_ONLY(os::set_mutex_init_done();)
 
   if (MaxFDLimit) {
     // set the number of file descriptors to max. print out error

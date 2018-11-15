@@ -1159,10 +1159,14 @@ void Monitor::ClearMonitor(Monitor * m, const char *name) {
   m->_WaitLock[0]       = 0;
 }
 
-Monitor::Monitor() { ClearMonitor(this); }
+Monitor::Monitor() {
+  assert(os::mutex_init_done(), "Too early!");
+  ClearMonitor(this);
+}
 
 Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
                  SafepointCheckRequired safepoint_check_required) {
+  assert(os::mutex_init_done(), "Too early!");
   ClearMonitor(this, name);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;

@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 
-#include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
@@ -50,7 +49,6 @@ volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
-Mutex*      MemTracker::_query_lock = NULL;
 bool MemTracker::_is_nmt_env_valid = true;
 
 static const size_t buffer_size = 64;
@@ -97,11 +95,6 @@ void MemTracker::init() {
     if (!VirtualMemoryTracker::late_initialize(level)) {
       shutdown();
       return;
-    }
-    _query_lock = new (std::nothrow) Mutex(Monitor::max_nonleaf, "NMT_queryLock");
-    // Already OOM. It is unlikely, but still have to handle it.
-    if (_query_lock == NULL) {
-      shutdown();
     }
   }
 }

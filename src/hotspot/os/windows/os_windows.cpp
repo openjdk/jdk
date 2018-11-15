@@ -4036,6 +4036,11 @@ static jint initSock();
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+
+  // This could be set any time but all platforms
+  // have to set it the same so we have to mirror Solaris.
+  DEBUG_ONLY(os::set_mutex_init_done();)
+
   // Setup Windows Exceptions
 
   // for debugging float code generation bugs

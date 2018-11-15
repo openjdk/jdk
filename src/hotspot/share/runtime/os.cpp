@@ -85,6 +85,8 @@ julong os::free_bytes = 0;          // # of bytes freed
 
 static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
+DEBUG_ONLY(bool os::_mutex_init_done = false;)
+
 void os_init_globals() {
   // Called from init_globals().
   // See Threads::create_vm() in thread.cpp, and init.cpp.

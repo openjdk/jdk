@@ -4957,6 +4957,10 @@ void os::pd_init_container_support() {
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
+  // This could be set after os::Posix::init() but all platforms
+  // have to set it the same so we have to mirror Solaris.
+  DEBUG_ONLY(os::set_mutex_init_done();)
+
   os::Posix::init_2();
 
   Linux::fast_thread_clock_init();

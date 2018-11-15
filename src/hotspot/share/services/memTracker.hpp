@@ -79,6 +79,7 @@ class MemTracker : AllStatic {
 
 #else
 
+#include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
@@ -91,7 +92,6 @@ extern volatile bool NMT_stack_walkable;
                     NativeCallStack(1, true) : NativeCallStack::empty_stack())
 
 class MemBaseline;
-class Mutex;
 
 // Tracker is used for guarding 'release' semantics of virtual memory operation, to avoid
 // the other thread obtains and records the same region that is just 'released' by current
@@ -270,7 +270,10 @@ class MemTracker : AllStatic {
   // Query lock is used to synchronize the access to tracking data.
   // So far, it is only used by JCmd query, but it may be used by
   // other tools.
-  static inline Mutex* query_lock() { return _query_lock; }
+  static inline Mutex* query_lock() {
+    assert(NMTQuery_lock != NULL, "not initialized!");
+    return NMTQuery_lock;
+  }
 
   // Make a final report or report for hs_err file.
   static void error_report(outputStream* output) {
