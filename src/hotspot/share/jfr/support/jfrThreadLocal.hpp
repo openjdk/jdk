@@ -27,11 +27,11 @@
 
 #include "jfr/recorder/checkpoint/jfrCheckpointBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "utilities/sizes.hpp"
 
 class JavaThread;
 class JfrBuffer;
 class JfrStackFrame;
+class Thread;
 
 class JfrThreadLocal {
  private:
@@ -56,7 +56,7 @@ class JfrThreadLocal {
   JfrBuffer* install_java_buffer() const;
   JfrStackFrame* install_stackframes() const;
 
-  void set_dead();
+  static void release(JfrThreadLocal* tl, Thread* t);
 
  public:
   JfrThreadLocal();
@@ -213,20 +213,12 @@ class JfrThreadLocal {
   void set_thread_checkpoint(const JfrCheckpointBlobHandle& handle);
   const JfrCheckpointBlobHandle& thread_checkpoint() const;
 
-  static JfrBuffer* acquire(Thread* t, size_t size = 0);
-  static void release(JfrBuffer* buffer, Thread* t);
-  static void destroy_stackframes(Thread* t);
-  static void on_exit(JavaThread* t);
-  static void on_destruct(Thread* t);
+  static void on_start(Thread* t);
+  static void on_exit(Thread* t);
 
   // Code generation
-  static ByteSize trace_id_offset() {
-    return in_ByteSize(offset_of(JfrThreadLocal, _trace_id));
-  }
-
-  static ByteSize java_event_writer_offset() {
-    return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
-  }
+  static ByteSize trace_id_offset();
+  static ByteSize java_event_writer_offset();
 };
 
 #endif // SHARE_VM_JFR_SUPPORT_JFRTHREADLOCAL_HPP
