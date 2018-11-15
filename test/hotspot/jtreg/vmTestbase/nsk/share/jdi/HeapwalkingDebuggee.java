@@ -197,6 +197,21 @@ public class HeapwalkingDebuggee extends AbstractJDIDebuggee {
         if (className.equals("byte[]"))
             return false;
 
+        if (className.equals("boolean[]"))
+            return false;
+
+        if (className.equals("float[]"))
+            return false;
+
+        if (className.equals("long[]"))
+            return false;
+
+        if (className.equals("int[]"))
+            return false;
+
+        if (className.equals("double[]"))
+            return false;
+
         if (className.equals("java.lang.Thread")) {
             if (otherThreadPresent)
                 return false;

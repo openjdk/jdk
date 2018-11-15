@@ -109,8 +109,22 @@ public class instances002 extends HeapwalkingDebugger {
             log.complain("Unexpected reference type: " + referenceType.getClass().getName() + ", expected is ArrayType");
             return;
         }
+        // There are potentially other non-test Java threads allocating objects and triggering GC's.
+        debuggee.suspend();
 
-        baseInstances = referenceType.instances(0).size();
+        List<ObjectReference> baseReferences = new LinkedList<>();
+        // We need to call disableCollection() on each object returned by referenceType.instances()
+        // to deal with the case when GC was triggered before the suspend. Otherwise, these objects can
+        // be potentially collected.
+        for (ObjectReference objRef : referenceType.instances(0)) {
+            try {
+                objRef.disableCollection();
+                baseReferences.add(objRef);
+            } catch (ObjectCollectedException e) {
+                // skip this reference
+            }
+        }
+        baseInstances = baseReferences.size();
 
         int createInstanceCount = 100;
         int arraySize = 1;
@@ -129,8 +143,15 @@ public class instances002 extends HeapwalkingDebugger {
 
         checkDebugeeAnswer_instances(className, createInstanceCount + baseInstances);
 
-        for (ArrayReference arrayReference : objectReferences)
+        for (ArrayReference arrayReference : objectReferences) {
             arrayReference.enableCollection();
+        }
+
+        for (ObjectReference baseRef : baseReferences) {
+            baseRef.enableCollection();
+        }
+
+        debuggee.resume();
     }
 
     // test method ClassType.newInstance

@@ -107,16 +107,6 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEar
 
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java       8195600   generic-all
 
-vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance001/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance002/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance003/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/ReferenceType/instances/instances002/instances002.java                                 8203174   generic-all
-vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java                                 8203174   generic-all
-vmTestbase/nsk/jdi/stress/MonitorEvents/MonitorEvents002/TestDescription.java                             8203174   generic-all
-vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java                                      8203174   generic-all
-vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java                                      8203174   generic-all
-vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java                                            8203174   generic-all
-
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses026/TestDescription.java   8195627   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses028/TestDescription.java   8195627   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses030/TestDescription.java   8195627   generic-all
