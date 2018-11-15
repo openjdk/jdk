@@ -251,7 +251,6 @@ java/awt/print/PrinterJob/Margins.java 8196301 windows-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html 8192930 windows-all
-java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.html 6849922 macosx-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
