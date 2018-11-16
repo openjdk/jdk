@@ -37,7 +37,8 @@ public:
   G1SATBMarkQueueSet();
 
   void initialize(G1CollectedHeap* g1h,
-                  Monitor* cbl_mon, Mutex* fl_lock,
+                  Monitor* cbl_mon,
+                  BufferNode::Allocator* allocator,
                   int process_completed_threshold,
                   uint buffer_enqueue_threshold_percentage,
                   Mutex* lock);

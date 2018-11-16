@@ -26,6 +26,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
@@ -90,25 +91,92 @@ void BufferNode::deallocate(BufferNode* node) {
   FREE_C_HEAP_ARRAY(char, node);
 }
 
+BufferNode::Allocator::Allocator(size_t buffer_size, Mutex* lock) :
+  _buffer_size(buffer_size),
+  _lock(lock),
+  _free_list(NULL),
+  _free_count(0)
+{
+  assert(lock != NULL, "precondition");
+}
+
+BufferNode::Allocator::~Allocator() {
+  while (_free_list != NULL) {
+    BufferNode* node = _free_list;
+    _free_list = node->next();
+    BufferNode::deallocate(node);
+  }
+}
+
+size_t BufferNode::Allocator::free_count() const {
+  return Atomic::load(&_free_count);
+}
+
+BufferNode* BufferNode::Allocator::allocate() {
+  BufferNode* node = NULL;
+  {
+    MutexLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
+    node = _free_list;
+    if (node != NULL) {
+      _free_list = node->next();
+      --_free_count;
+      node->set_next(NULL);
+      node->set_index(0);
+      return node;
+    }
+  }
+  return  BufferNode::allocate(_buffer_size);
+}
+
+void BufferNode::Allocator::release(BufferNode* node) {
+  MutexLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
+  node->set_next(_free_list);
+  _free_list = node;
+  ++_free_count;
+}
+
+void BufferNode::Allocator::reduce_free_list() {
+  BufferNode* head = NULL;
+  {
+    MutexLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
+    // For now, delete half.
+    size_t remove = _free_count / 2;
+    if (remove > 0) {
+      head = _free_list;
+      BufferNode* tail = head;
+      BufferNode* prev = NULL;
+      for (size_t i = 0; i < remove; ++i) {
+        assert(tail != NULL, "free list size is wrong");
+        prev = tail;
+        tail = tail->next();
+      }
+      assert(prev != NULL, "invariant");
+      assert(prev->next() == tail, "invariant");
+      prev->set_next(NULL);
+      _free_list = tail;
+      _free_count -= remove;
+    }
+  }
+  while (head != NULL) {
+    BufferNode* next = head->next();
+    BufferNode::deallocate(head);
+    head = next;
+  }
+}
+
 PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
-  _buffer_size(0),
+  _allocator(NULL),
   _cbl_mon(NULL),
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
   _n_completed_buffers(0),
   _process_completed_threshold(0),
   _process_completed(false),
-  _fl_lock(NULL),
-  _buf_free_list(NULL),
-  _buf_free_list_sz(0),
-  _fl_owner(NULL),
   _all_active(false),
   _notify_when_complete(notify_when_complete),
   _max_completed_queue(0),
   _completed_queue_padding(0)
-{
-  _fl_owner = this;
-}
+{}
 
 PtrQueueSet::~PtrQueueSet() {
   // There are presently only a couple (derived) instances ever
@@ -117,59 +185,24 @@ PtrQueueSet::~PtrQueueSet() {
 }
 
 void PtrQueueSet::initialize(Monitor* cbl_mon,
-                             Mutex* fl_lock,
+                             BufferNode::Allocator* allocator,
                              int process_completed_threshold,
-                             int max_completed_queue,
-                             PtrQueueSet *fl_owner) {
+                             int max_completed_queue) {
   _max_completed_queue = max_completed_queue;
   _process_completed_threshold = process_completed_threshold;
   _completed_queue_padding = 0;
-  assert(cbl_mon != NULL && fl_lock != NULL, "Init order issue?");
+  assert(cbl_mon != NULL && allocator != NULL, "Init order issue?");
   _cbl_mon = cbl_mon;
-  _fl_lock = fl_lock;
-  _fl_owner = (fl_owner != NULL) ? fl_owner : this;
+  _allocator = allocator;
 }
 
 void** PtrQueueSet::allocate_buffer() {
-  BufferNode* node = NULL;
-  {
-    MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
-    node = _fl_owner->_buf_free_list;
-    if (node != NULL) {
-      _fl_owner->_buf_free_list = node->next();
-      _fl_owner->_buf_free_list_sz--;
-    }
-  }
-  if (node == NULL) {
-    node = BufferNode::allocate(buffer_size());
-  } else {
-    // Reinitialize buffer obtained from free list.
-    node->set_index(0);
-    node->set_next(NULL);
-  }
+  BufferNode* node = _allocator->allocate();
   return BufferNode::make_buffer_from_node(node);
 }
 
 void PtrQueueSet::deallocate_buffer(BufferNode* node) {
-  MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
-  node->set_next(_fl_owner->_buf_free_list);
-  _fl_owner->_buf_free_list = node;
-  _fl_owner->_buf_free_list_sz++;
-}
-
-void PtrQueueSet::reduce_free_list() {
-  assert(_fl_owner == this, "Free list reduction is allowed only for the owner");
-  // For now we'll adopt the strategy of deleting half.
-  MutexLockerEx x(_fl_lock, Mutex::_no_safepoint_check_flag);
-  size_t n = _buf_free_list_sz / 2;
-  for (size_t i = 0; i < n; ++i) {
-    assert(_buf_free_list != NULL,
-           "_buf_free_list_sz is wrong: " SIZE_FORMAT, _buf_free_list_sz);
-    BufferNode* node = _buf_free_list;
-    _buf_free_list = node->next();
-    _buf_free_list_sz--;
-    BufferNode::deallocate(node);
-  }
+  _allocator->release(node);
 }
 
 void PtrQueue::handle_zero_index() {
@@ -268,11 +301,6 @@ void PtrQueueSet::assert_completed_buffer_list_len_correct() {
 void PtrQueueSet::assert_completed_buffer_list_len_correct_locked() {
   guarantee(completed_buffers_list_length() ==  _n_completed_buffers,
             "Completed buffer length is wrong.");
-}
-
-void PtrQueueSet::set_buffer_size(size_t sz) {
-  assert(_buffer_size == 0 && sz > 0, "Should be called only once.");
-  _buffer_size = sz;
 }
 
 // Merge lists of buffers. Notify the processing threads.

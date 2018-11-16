@@ -111,11 +111,12 @@ SATBMarkQueueSet::SATBMarkQueueSet() :
   _buffer_enqueue_threshold(0)
 {}
 
-void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
+void SATBMarkQueueSet::initialize(Monitor* cbl_mon,
+                                  BufferNode::Allocator* allocator,
                                   int process_completed_threshold,
                                   uint buffer_enqueue_threshold_percentage,
                                   Mutex* lock) {
-  PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
+  PtrQueueSet::initialize(cbl_mon, allocator, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
   assert(buffer_size() != 0, "buffer size not initialized");
   // Minimum threshold of 1 ensures enqueuing of completely full buffers.

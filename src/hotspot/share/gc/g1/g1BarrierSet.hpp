@@ -39,6 +39,8 @@ class G1CardTable;
 class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
+  BufferNode::Allocator _satb_mark_queue_buffer_allocator;
+  BufferNode::Allocator _dirty_card_queue_buffer_allocator;
   G1SATBMarkQueueSet _satb_mark_queue_set;
   DirtyCardQueueSet _dirty_card_queue_set;
 
@@ -78,6 +80,9 @@ class G1BarrierSet: public CardTableBarrierSet {
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(JavaThread* thread);
   virtual void on_thread_detach(JavaThread* thread);
+
+  BufferNode::Allocator& satb_mark_queue_buffer_allocator();
+  BufferNode::Allocator& dirty_card_queue_buffer_allocator();
 
   static G1SATBMarkQueueSet& satb_mark_queue_set() {
     return g1_barrier_set()->_satb_mark_queue_set;

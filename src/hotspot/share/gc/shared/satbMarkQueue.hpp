@@ -108,7 +108,8 @@ protected:
     queue->apply_filter(filter);
   }
 
-  void initialize(Monitor* cbl_mon, Mutex* fl_lock,
+  void initialize(Monitor* cbl_mon,
+                  BufferNode::Allocator* allocator,
                   int process_completed_threshold,
                   uint buffer_enqueue_threshold_percentage,
                   Mutex* lock);

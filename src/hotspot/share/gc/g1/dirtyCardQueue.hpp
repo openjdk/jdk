@@ -118,11 +118,10 @@ public:
   DirtyCardQueueSet(bool notify_when_complete = true);
 
   void initialize(Monitor* cbl_mon,
-                  Mutex* fl_lock,
+                  BufferNode::Allocator* allocator,
                   int process_completed_threshold,
                   int max_completed_queue,
                   Mutex* lock,
-                  DirtyCardQueueSet* fl_owner,
                   bool init_free_ids = false);
 
   // The number of parallel ids that can be claimed to allow collector or

@@ -406,9 +406,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   assert(CGC_lock != NULL, "CGC_lock must be initialized");
 
-  SATBMarkQueueSet& satb_qs = G1BarrierSet::satb_mark_queue_set();
-  satb_qs.set_buffer_size(G1SATBBufferSize);
-
   _root_regions.init(_g1h->survivor(), this);
 
   if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {

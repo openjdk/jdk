@@ -28,6 +28,8 @@
 #include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
 
+class Mutex;
+
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
 // the addresses of modified old-generation objects.  This type supports
@@ -223,17 +225,18 @@ class BufferNode {
     return offset_of(BufferNode, _buffer);
   }
 
-public:
-  BufferNode* next() const     { return _next;  }
-  void set_next(BufferNode* n) { _next = n;     }
-  size_t index() const         { return _index; }
-  void set_index(size_t i)     { _index = i; }
-
+AIX_ONLY(public:)               // xlC 12 on AIX doesn't implement C++ DR45.
   // Allocate a new BufferNode with the "buffer" having size elements.
   static BufferNode* allocate(size_t size);
 
   // Free a BufferNode.
   static void deallocate(BufferNode* node);
+
+public:
+  BufferNode* next() const     { return _next;  }
+  void set_next(BufferNode* n) { _next = n;     }
+  size_t index() const         { return _index; }
+  void set_index(size_t i)     { _index = i; }
 
   // Return the BufferNode containing the buffer, after setting its index.
   static BufferNode* make_node_from_buffer(void** buffer, size_t index) {
@@ -250,6 +253,24 @@ public:
     return reinterpret_cast<void**>(
       reinterpret_cast<char*>(node) + buffer_offset());
   }
+
+  // Free-list based allocator.
+  class Allocator {
+    size_t _buffer_size;
+    Mutex* _lock;
+    BufferNode* _free_list;
+    volatile size_t _free_count;
+
+  public:
+    Allocator(size_t buffer_size, Mutex* lock);
+    ~Allocator();
+
+    size_t buffer_size() const { return _buffer_size; }
+    size_t free_count() const;
+    BufferNode* allocate();
+    void release(BufferNode* node);
+    void reduce_free_list();
+  };
 };
 
 // A PtrQueueSet represents resources common to a set of pointer queues.
@@ -257,8 +278,7 @@ public:
 // set, and return completed buffers to the set.
 // All these variables are are protected by the TLOQ_CBL_mon. XXX ???
 class PtrQueueSet {
-  // The size of all buffers in the set.
-  size_t _buffer_size;
+  BufferNode::Allocator* _allocator;
 
 protected:
   Monitor* _cbl_mon;  // Protects the fields below.
@@ -267,15 +287,6 @@ protected:
   size_t _n_completed_buffers;
   int _process_completed_threshold;
   volatile bool _process_completed;
-
-  // This (and the interpretation of the first element as a "next"
-  // pointer) are protected by the TLOQ_FL_lock.
-  Mutex* _fl_lock;
-  BufferNode* _buf_free_list;
-  size_t _buf_free_list_sz;
-  // Queue set can share a freelist. The _fl_owner variable
-  // specifies the owner. It is set to "this" by default.
-  PtrQueueSet* _fl_owner;
 
   bool _all_active;
 
@@ -307,10 +318,9 @@ protected:
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
   void initialize(Monitor* cbl_mon,
-                  Mutex* fl_lock,
+                  BufferNode::Allocator* allocator,
                   int process_completed_threshold,
-                  int max_completed_queue,
-                  PtrQueueSet *fl_owner = NULL);
+                  int max_completed_queue);
 
 public:
 
@@ -336,23 +346,13 @@ public:
 
   bool is_active() { return _all_active; }
 
-  // Set the buffer size.  Should be called before any "enqueue" operation
-  // can be called.  And should only be called once.
-  void set_buffer_size(size_t sz);
-
-  // Get the buffer size.  Must have been set.
   size_t buffer_size() const {
-    assert(_buffer_size > 0, "buffer size not set");
-    return _buffer_size;
+    return _allocator->buffer_size();
   }
 
   // Get/Set the number of completed buffers that triggers log processing.
   void set_process_completed_threshold(int sz) { _process_completed_threshold = sz; }
   int process_completed_threshold() const { return _process_completed_threshold; }
-
-  // Must only be called at a safe point.  Indicates that the buffer free
-  // list size may be reduced, if that is deemed desirable.
-  void reduce_free_list();
 
   size_t completed_buffers_num() { return _n_completed_buffers; }
 

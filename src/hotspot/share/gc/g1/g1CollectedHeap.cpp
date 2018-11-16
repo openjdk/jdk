@@ -1653,6 +1653,28 @@ jint G1CollectedHeap::initialize() {
   BarrierSet::set_barrier_set(bs);
   _card_table = ct;
 
+  G1BarrierSet::satb_mark_queue_set().initialize(this,
+                                                 SATB_Q_CBL_mon,
+                                                 &bs->satb_mark_queue_buffer_allocator(),
+                                                 G1SATBProcessCompletedThreshold,
+                                                 G1SATBBufferEnqueueingThresholdPercent,
+                                                 Shared_SATB_Q_lock);
+
+  // process_completed_threshold and max_completed_queue are updated
+  // later, based on the concurrent refinement object.
+  G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                                  &bs->dirty_card_queue_buffer_allocator(),
+                                                  -1, // temp. never trigger
+                                                  -1, // temp. no limit
+                                                  Shared_DirtyCardQ_lock,
+                                                  true); // init_free_ids
+
+  dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                    &bs->dirty_card_queue_buffer_allocator(),
+                                    -1, // never trigger processing
+                                    -1, // no limit on length
+                                    Shared_DirtyCardQ_lock);
+
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
 
@@ -1749,13 +1771,6 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init(this, &_collection_set);
 
-  G1BarrierSet::satb_mark_queue_set().initialize(this,
-                                                 SATB_Q_CBL_mon,
-                                                 SATB_Q_FL_lock,
-                                                 G1SATBProcessCompletedThreshold,
-                                                 G1SATBBufferEnqueueingThresholdPercent,
-                                                 Shared_SATB_Q_lock);
-
   jint ecode = initialize_concurrent_refinement();
   if (ecode != JNI_OK) {
     return ecode;
@@ -1766,20 +1781,11 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                  DirtyCardQ_FL_lock,
-                                                  (int)concurrent_refine()->yellow_zone(),
-                                                  (int)concurrent_refine()->red_zone(),
-                                                  Shared_DirtyCardQ_lock,
-                                                  NULL,  // fl_owner
-                                                  true); // init_free_ids
-
-  dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                    DirtyCardQ_FL_lock,
-                                    -1, // never trigger processing
-                                    -1, // no limit on length
-                                    Shared_DirtyCardQ_lock,
-                                    &G1BarrierSet::dirty_card_queue_set());
+  {
+    DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+    dcqs.set_process_completed_threshold((int)concurrent_refine()->yellow_zone());
+    dcqs.set_max_completed_queue((int)concurrent_refine()->red_zone());
+  }
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
