@@ -260,6 +260,8 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
+  } else {
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
