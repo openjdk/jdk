@@ -582,7 +582,7 @@ void ClassLoaderDataGraph::clean_module_and_package_info() {
 }
 
 void ClassLoaderDataGraph::purge() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   ClassLoaderData* list = _unloading;
   _unloading = NULL;
   ClassLoaderData* next = list;

@@ -1807,18 +1807,26 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
 bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
 
   bool unloading_occurred;
+  bool is_concurrent = !SafepointSynchronize::is_at_safepoint();
   {
     GCTraceTime(Debug, gc, phases) t("ClassLoaderData", gc_timer);
-
+    assert_locked_or_safepoint(ClassLoaderDataGraph_lock);  // caller locks.
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading();
     if (unloading_occurred) {
+      MutexLockerEx ml2(is_concurrent ? Module_lock : NULL);
       JFR_ONLY(Jfr::on_unloading_classes();)
+      MutexLockerEx ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
     }
   }
 
-  // TODO: just return if !unloading_occurred.
+  // Cleanup ResolvedMethodTable even if no unloading occurred.
+  {
+    GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
+    ResolvedMethodTable::trigger_cleanup();
+  }
+
   if (unloading_occurred) {
     {
       GCTraceTime(Debug, gc, phases) t("SymbolTable", gc_timer);
@@ -1827,23 +1835,21 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     }
 
     {
+      MutexLockerEx ml(is_concurrent ? SystemDictionary_lock : NULL);
       GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
       constraints()->purge_loader_constraints();
       resolution_errors()->purge_resolution_errors();
     }
-  }
 
-  {
-    GCTraceTime(Debug, gc, phases) t("ProtectionDomainCacheTable", gc_timer);
-    // Oops referenced by the protection domain cache table may get unreachable independently
-    // of the class loader (eg. cached protection domain oops). So we need to
-    // explicitly unlink them here.
-    _pd_cache_table->trigger_cleanup();
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-    ResolvedMethodTable::trigger_cleanup();
+    {
+      GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
+      // Oops referenced by the protection domain cache table may get unreachable independently
+      // of the class loader (eg. cached protection domain oops). So we need to
+      // explicitly unlink them here.
+      // All protection domain oops are linked to the caller class, so if nothing
+      // unloads, this is not needed.
+      _pd_cache_table->trigger_cleanup();
+    }
   }
 
   return unloading_occurred;
