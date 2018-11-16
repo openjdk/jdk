@@ -515,7 +515,7 @@ public:
     assert(SafepointSynchronize::is_at_safepoint(), "must be a safepoint");
     ResourceMark rm;
     LoaderInfoScanClosure cl (_show_classes, _verbose);
-    ClassLoaderDataGraph::cld_do(&cl);
+    ClassLoaderDataGraph::loaded_cld_do(&cl);
     // In non-verbose and non-show-classes mode, attempt to fold the tree.
     if (_fold) {
       if (!_verbose && !_show_classes) {

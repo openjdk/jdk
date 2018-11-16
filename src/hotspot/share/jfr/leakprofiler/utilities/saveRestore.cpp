@@ -103,6 +103,7 @@ void CLDClaimStateClosure::do_cld(ClassLoaderData* cld) {
 }
 
 SaveRestoreCLDClaimBits::SaveRestoreCLDClaimBits() : _claim_state_closure() {
+  // interferes with GC, so walk all oops that GC would.
   ClassLoaderDataGraph::cld_do(&_claim_state_closure);
 }
 
