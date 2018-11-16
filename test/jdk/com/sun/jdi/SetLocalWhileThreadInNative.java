@@ -32,7 +32,7 @@
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run main jdk.test.lib.FileInstaller compilerDirectives.json compilerDirectives.json
  * @run compile -g SetLocalWhileThreadInNative.java
- * @run driver SetLocalWhileThreadInNative -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UnlockDiagnosticVMOptions -XX:CompilerDirectivesFile=compilerDirectives.json -XX:+PrintCompilation -XX:+PrintInlining
+ * @run driver SetLocalWhileThreadInNative -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UnlockDiagnosticVMOptions -XX:CompilerDirectivesFile=compilerDirectives.json
  */
 
 import java.io.FileDescriptor;
