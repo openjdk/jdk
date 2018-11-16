@@ -25,7 +25,8 @@
  * @test CompressedClassSpaceSizeInJmapHeap
  * @bug 8004924
  * @summary Checks that jmap -heap contains the flag CompressedClassSpaceSize
- * @requires vm.hasSAandCanAttach & vm.opt.final.UseCompressedOops
+ * @requires vm.hasSAandCanAttach
+ * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

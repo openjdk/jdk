@@ -25,8 +25,7 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
- * @requires vm.opt.final.UseCompressedOops
- * @requires vm.bits == 64
+ * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
