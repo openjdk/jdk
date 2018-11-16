@@ -210,7 +210,7 @@ void ADLParser::instr_parse(void) {
             return;
           }
           assert(match_rules_cnt < 100," too many match rule clones");
-          char* buf = (char*) malloc(strlen(instr->_ident) + 4);
+          char* buf = (char*) AllocateHeap(strlen(instr->_ident) + 4);
           sprintf(buf, "%s_%d", instr->_ident, match_rules_cnt++);
           rule->_result = buf;
           // Check for commutative operations with tree operands.
@@ -2858,7 +2858,7 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__ins_encode_";
-  char* ec_name = (char*) malloc(strlen(inst._ident) + strlen(prefix) + 1);
+  char* ec_name = (char*) AllocateHeap(strlen(inst._ident) + strlen(prefix) + 1);
   sprintf(ec_name, "%s%s", prefix, inst._ident);
 
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
@@ -3328,7 +3328,7 @@ void ADLParser::constant_parse(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__constant_";
-  char* ec_name = (char*) malloc(strlen(inst._ident) + strlen(prefix) + 1);
+  char* ec_name = (char*) AllocateHeap(strlen(inst._ident) + strlen(prefix) + 1);
   sprintf(ec_name, "%s%s", prefix, inst._ident);
 
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
@@ -4460,7 +4460,7 @@ char* ADLParser::find_cpp_block(const char* description) {
     if (_AD._adlocation_debug) {
       char* location = get_line_string(line);
       char* end_loc  = end_line_marker();
-      char* result = (char *)malloc(strlen(location) + strlen(cppBlock) + strlen(end_loc) + 1);
+      char* result = (char *)AllocateHeap(strlen(location) + strlen(cppBlock) + strlen(end_loc) + 1);
       strcpy(result, location);
       strcat(result, cppBlock);
       strcat(result, end_loc);
@@ -4549,7 +4549,7 @@ char *ADLParser::get_paren_expr(const char *description, bool include_location) 
     // Prepend location descriptor, for debugging.
     char* location = get_line_string(line);
     char* end_loc  = end_line_marker();
-    char* result = (char *)malloc(strlen(location) + strlen(token2) + strlen(end_loc) + 1);
+    char* result = (char *)AllocateHeap(strlen(location) + strlen(token2) + strlen(end_loc) + 1);
     strcpy(result, location);
     strcat(result, token2);
     strcat(result, end_loc);
@@ -4647,7 +4647,7 @@ char *ADLParser::get_ident_or_literal_constant(const char* description) {
     // Grab a constant expression.
     param = get_paren_expr(description);
     if (param[0] != '(') {
-      char* buf = (char*) malloc(strlen(param) + 3);
+      char* buf = (char*) AllocateHeap(strlen(param) + 3);
       sprintf(buf, "(%s)", param);
       param = buf;
     }
@@ -5255,7 +5255,7 @@ void ADLParser::next_line() {
 char* ADLParser::get_line_string(int linenum) {
   const char* file = _AD._ADL_file._name;
   int         line = linenum ? linenum : this->linenum();
-  char* location = (char *)malloc(strlen(file) + 100);
+  char* location = (char *)AllocateHeap(strlen(file) + 100);
   sprintf(location, "\n#line %d \"%s\"\n", line, file);
   return location;
 }

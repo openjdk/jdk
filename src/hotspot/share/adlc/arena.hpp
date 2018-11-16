@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_ADLC_ARENA_HPP
 #define SHARE_VM_ADLC_ARENA_HPP
 
+void* AllocateHeap(size_t size);
+
 // All classes in adlc may be derived
 // from one of the following allocation classes:
 //
@@ -41,7 +43,6 @@ class CHeapObj {
   void  operator delete(void* p);
   void* new_array(size_t size);
 };
-
 
 // Base class for classes that constitute name spaces.
 
