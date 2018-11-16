@@ -214,9 +214,12 @@ ifeq ($(TEST_JOBS), 0)
       CORES_DIVIDER := 4
     endif
   endif
+  MEMORY_DIVIDER := 2048
   TEST_JOBS := $(shell $(AWK) \
     'BEGIN { \
       c = $(NUM_CORES) / $(CORES_DIVIDER); \
+      m = $(MEMORY_SIZE) / $(MEMORY_DIVIDER); \
+      if (c > m) c = m; \
       c = c * $(TEST_JOBS_FACTOR); \
       c = c * $(TEST_JOBS_FACTOR_JDL); \
       c = c * $(TEST_JOBS_FACTOR_MACHINE); \
