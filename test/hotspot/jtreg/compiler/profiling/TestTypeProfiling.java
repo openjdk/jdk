@@ -25,6 +25,7 @@
   * @test
   * @bug 8189439
   * @summary Parameters type profiling is not performed from aarch64 interpreter
+  * @requires os.arch != "arm"
   * @requires vm.flavor == "server" & vm.compMode == "Xmixed" & !vm.emulatedClient & !vm.graal.enabled
   * @library /test/lib /
   * @build sun.hotspot.WhiteBox
