@@ -243,7 +243,7 @@ var getJibProfilesCommon = function (input, data) {
 
     // These are the base setttings for all the main build profiles.
     common.main_profile_base = {
-        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf"],
+        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh"],
         default_make_targets: ["product-bundles", "test-bundles"],
         configure_args: concat(["--enable-jtreg-failure-handler"],
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
@@ -890,6 +890,12 @@ var getJibProfilesDependencies = function (input, common) {
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "install_path") + "/jtreg/bin"
+        },
+
+        jmh: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "1.21+1.0"
         },
 
         gnumake: {

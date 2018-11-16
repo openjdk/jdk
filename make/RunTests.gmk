@@ -237,13 +237,11 @@ ifneq ($(TEST_OPTS), )
   $(info Running tests using TEST_OPTS control variable '$(TEST_OPTS)')
 endif
 
+### Jtreg
+
 $(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
 $(eval $(call SetTestOpt,JAVA_OPTIONS,JTREG))
-$(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
-$(eval $(call SetTestOpt,JAVA_OPTIONS,GTEST))
-
 $(eval $(call SetTestOpt,AOT_MODULES,JTREG))
-$(eval $(call SetTestOpt,AOT_MODULES,GTEST))
 
 $(eval $(call SetTestOpt,JOBS,JTREG))
 $(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
@@ -259,6 +257,12 @@ ifneq ($(JTREG), )
   $(info Running tests using JTREG control variable '$(JTREG)')
 endif
 
+### Gtest
+
+$(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
+$(eval $(call SetTestOpt,JAVA_OPTIONS,GTEST))
+$(eval $(call SetTestOpt,AOT_MODULES,GTEST))
+
 $(eval $(call ParseKeywordVariable, GTEST, \
     SINGLE_KEYWORDS := REPEAT AOT_MODULES, \
     STRING_KEYWORDS := OPTIONS VM_OPTIONS JAVA_OPTIONS, \
@@ -267,6 +271,21 @@ $(eval $(call ParseKeywordVariable, GTEST, \
 ifneq ($(GTEST), )
   # Inform the user
   $(info Running tests using GTEST control variable '$(GTEST)')
+endif
+
+### Microbenchmarks
+
+$(eval $(call SetTestOpt,VM_OPTIONS,MICRO))
+$(eval $(call SetTestOpt,JAVA_OPTIONS,MICRO))
+
+$(eval $(call ParseKeywordVariable, MICRO, \
+    SINGLE_KEYWORDS := ITER FORK TIME WARMUP_ITER WARMUP_TIME, \
+    STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS RESULTS_FORMAT TEST_JDK BENCHMARKS_JAR, \
+))
+
+ifneq ($(MICRO), )
+  # Inform the user
+  $(info Running tests using MICRO control variable '$(MICRO)')
 endif
 
 
@@ -320,6 +339,24 @@ define ParseGtestTestSelection
             $(addprefix $1/, $(GTEST_VARIANTS)) \
           ) \
         ) \
+      ) \
+    ) \
+  )
+endef
+
+# Helper function to determine if a test specification is a microbenchmark test
+#
+# It is a microbenchmark test if it is either "micro", or "micro:" followed by an optional
+# test filter string.
+define ParseMicroTestSelection
+  $(if $(filter micro%, $1), \
+    $(if $(filter micro, $1), \
+      micro:all \
+    , \
+      $(if $(filter micro:, $1), \
+        micro:all \
+      , \
+        $1 \
       ) \
     ) \
   )
@@ -438,6 +475,9 @@ $(foreach test, $(TEST), \
     $(eval PARSED_TESTS += $(call ParseGtestTestSelection, $(test))) \
   ) \
   $(if $(strip $(PARSED_TESTS)), , \
+    $(eval PARSED_TESTS += $(call ParseMicroTestSelection, $(test))) \
+  ) \
+  $(if $(strip $(PARSED_TESTS)), , \
     $(eval PARSED_TESTS += $(call ParseJtregTestSelection, $(test))) \
   ) \
   $(if $(strip $(PARSED_TESTS)), , \
@@ -546,6 +586,113 @@ define SetupRunGtestTestBody
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
 	  $$(eval $1_ERROR := $$(shell \
 	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	, \
+	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_FAILED := 0) \
+	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_TOTAL := 1) \
+	)
+
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1
+endef
+
+################################################################################
+
+### Rules for Microbenchmarks
+
+# Helper function for SetupRunMicroTest. Set a MICRO_* variable from, in order:
+# 1) Specified by user on command line
+# 2) Generic default
+#
+# Note: No spaces are allowed around the arguments.
+# Arg $1 The test ID (i.e. $1 in SetupRunMicroTest)
+# Arg $2 Base variable, e.g. MICRO_TEST_JDK
+# Arg $3 The default value (optional)
+define SetMicroValue
+  ifneq ($$($2), )
+    $1_$2 := $$($2)
+  else
+    ifneq ($3, )
+      $1_$2 := $3
+    endif
+  endif
+endef
+
+SetupRunMicroTest = $(NamedParamsMacroTemplate)
+define SetupRunMicroTestBody
+  $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
+  $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
+
+  $1_TEST_NAME := $$(strip $$(patsubst micro:%, %, $$($1_TEST)))
+
+  $$(eval $$(call SetMicroValue,$1,MICRO_BENCHMARKS_JAR,$$(TEST_IMAGE_DIR)/micro/benchmarks.jar))
+  $$(eval $$(call SetMicroValue,$1,MICRO_TEST_JDK,$$(JDK_IMAGE_DIR)))
+  $$(eval $$(call SetMicroValue,$1,MICRO_JAVA_OPTIONS))
+
+  # Current tests needs to open java.io
+  $1_MICRO_JAVA_OPTIONS += --add-opens=java.base/java.io=ALL-UNNAMED
+
+  # Save output as JSON or CSV file
+  ifneq ($$(MICRO_RESULTS_FORMAT), )
+    $1_MICRO_BASIC_OPTIONS += -rf $$(MICRO_RESULTS_FORMAT) -rff $$($1_TEST_RESULTS_DIR)/jmh-result.$(MICRO_RESULTS_FORMAT)
+  endif
+
+  ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
+    $1_MICRO_VM_OPTIONS := -jvmArgs $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
+  endif
+
+  ifneq ($$(MICRO_ITER), )
+    $1_MICRO_ITER := -i $$(MICRO_ITER)
+  endif
+  ifneq ($$(MICRO_FORK), )
+    $1_MICRO_FORK := -f $$(MICRO_FORK)
+  endif
+  ifneq ($$(MICRO_TIME), )
+    $1_MICRO_TIME := -r $$(MICRO_TIME)
+  endif
+  ifneq ($$(MICRO_WARMUP_ITER), )
+    $1_MICRO_WARMUP_ITER := -wi $$(MICRO_WARMUP_ITER)
+  endif
+  ifneq ($$(MICRO_WARMUP_TIME), )
+    $1_MICRO_WARMUP_TIME := -w $$(MICRO_WARMUP_TIME)
+  endif
+
+  run-test-$1:
+	$$(call LogWarn)
+	$$(call LogWarn, Running test '$$($1_TEST)')
+	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, \
+	    $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) -jar $$($1_MICRO_BENCHMARKS_JAR) \
+	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \
+	        $$($1_MICRO_WARMUP_ITER) $$($1_MICRO_WARMUP_TIME) \
+	        $$($1_MICRO_VM_OPTIONS) $$($1_MICRO_BASIC_OPTIONS) $$(MICRO_OPTIONS)  \
+	        $$($1_TEST_NAME) \
+	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/micro.txt) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
+
+  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/micro.txt
+
+  parse-test-$1: run-test-$1
+	$$(call LogWarn, Finished running test '$$($1_TEST)')
+	$$(call LogWarn, Test report is stored in $$(strip \
+	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+	$$(if $$(wildcard $$($1_EXITCODE)), \
+	  $$(eval $1_EXIT_CODE := $$(shell $$(CAT) $$($1_EXITCODE))) \
+	  $$(if $$(filter 0, $$($1_EXIT_CODE)), \
+	    $$(eval $1_PASSED := 1) \
+	    $$(eval $1_ERROR := 0) \
+	  , \
+	    $$(eval $1_PASSED := 0) \
+	    $$(eval $1_ERROR := 1) \
+	  ) \
+	  $$(eval $1_FAILED := 0) \
+	  $$(eval $1_TOTAL := $$(shell \
+	      $$(EXPR) $$($1_PASSED) + $$($1_ERROR))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_FAILED := 0) \
@@ -849,6 +996,9 @@ endef
 UseGtestTestHandler = \
   $(if $(filter gtest:%, $1), true)
 
+UseMicroTestHandler = \
+  $(if $(filter micro:%, $1), true)
+
 UseJtregTestHandler = \
   $(if $(filter jtreg:%, $1), true)
 
@@ -867,6 +1017,11 @@ $(foreach test, $(TESTS_TO_RUN), \
   ) \
   $(if $(call UseGtestTestHandler, $(test)), \
     $(eval $(call SetupRunGtestTest, $(TEST_ID), \
+        TEST := $(test), \
+    )) \
+  ) \
+  $(if $(call UseMicroTestHandler, $(test)), \
+    $(eval $(call SetupRunMicroTest, $(TEST_ID), \
         TEST := $(test), \
     )) \
   ) \

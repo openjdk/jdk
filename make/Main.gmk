@@ -493,7 +493,7 @@ ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_EXPLODED_TESTS))
 ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
 ################################################################################
-# Build tests
+# Build tests and microbenchmarks
 #
 
 prepare-test-image:
@@ -543,11 +543,15 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
 	     -f BuildFailureHandler.gmk images)
 endif
 
+build-microbenchmark:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f test/BuildMicrobenchmark.gmk)
+
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
     test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
-    test-image-hotspot-jtreg-graal build-test-hotspot-jtreg-graal
+    test-image-hotspot-jtreg-graal build-test-hotspot-jtreg-graal \
+    build-microbenchmark
 
 ################################################################################
 # Run tests
@@ -789,6 +793,8 @@ else
 
   jrtfs-jar: interim-langtools
 
+  build-microbenchmark: interim-langtools jdk.unsupported java.management
+
   ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
     ifeq ($(CREATE_BUILDJDK), true)
       # If creating a buildjdk, the interim image needs to be based on that.
@@ -1022,6 +1028,10 @@ endif
 test-image: prepare-test-image \
     test-image-jdk-jtreg-native test-image-failure-handler \
     test-image-demos-jdk $(JVM_TEST_IMAGE_TARGETS)
+
+ifneq ($(JMH_CORE_JAR), )
+  test-image: build-microbenchmark
+endif
 
 ################################################################################
 

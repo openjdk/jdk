@@ -180,6 +180,9 @@ TOOLCHAIN_MISC_CHECKS
 # Setup the JTReg Regression Test Harness.
 TOOLCHAIN_SETUP_JTREG
 
+# Setup the Java Microbenchmark Harness (JMH)
+LIB_TESTS_SETUP_JMH
+
 # Setup Jib dependency tool
 TOOLCHAIN_SETUP_JIB
 

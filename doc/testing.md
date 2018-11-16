@@ -26,6 +26,7 @@ Some example command-lines:
     $ make test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
     $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
+    $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
 
 ### Configuration
@@ -36,6 +37,12 @@ the `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc. (An alternative is to set the `JT_HOME`
 environment variable to point to the JTReg home before running `configure`.)
+
+To be able to run microbenchmarks, `configure` needs to know where to find
+the JMH dependency. Use `--with-jmh=<path to JMH jars>` to point to a directory
+containing the core JMH and transitive dependencies. The recommended dependencies 
+can be retrieved by running `sh make/devkit/createJMHBundle.sh`, after which 
+`--with-jmh=build/jmh/jars` should work.
 
 ## Test selection
 
@@ -103,6 +110,16 @@ is defined by adding `/<variant>` to the test descriptor, e.g.
 `gtest:Log/client`. If you specify no variant, gtest will run once for each JVM
 variant present (e.g. server, client). So if you only have the server JVM
 present, then `gtest:all` will be equivalent to `gtest:all/server`.
+
+### Microbenchmarks
+
+Which microbenchmarks to run is selected using a regular expression
+following the `micro:` test descriptor, e.g., `micro:java.lang.reflect`. This
+delegates the test selection to JMH, meaning package name, class name and even
+benchmark method names can be used to select tests.
+
+Using special characters like `|` in the regular expression is possible, but
+needs to be escaped multiple times: `micro:ArrayCopy\\\\\|reflect`.
 
 ### Special tests
 
@@ -252,6 +269,35 @@ problem.
 Additional options to the Gtest test framework.
 
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
+
+### Microbenchmark keywords
+
+#### FORK
+Override the number of benchmark forks to spawn. Same as specifying `-f <num>`.
+
+#### ITER
+Number of measurement iterations per fork. Same as specifying `-i <num>`.
+
+#### TIME
+Amount of time to spend in each measurement iteration, in seconds. Same as
+specifying `-r <num>`
+
+#### WARMUP_ITER
+Number of warmup iterations to run before the measurement phase in each fork.
+Same as specifying `-wi <num>`.
+
+#### WARMUP_TIME
+Amount of time to spend in each warmup iteration. Same as specifying `-w <num>`.
+
+#### RESULTS_FORMAT
+Specify to have the test run save a log of the values. Accepts the same values
+as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
+
+#### VM_OPTIONS
+Additional VM arguments to provide to forked off VMs. Same as `-jvmArgs <args>`
+
+#### OPTIONS
+Additional arguments to send to JMH.
 
 ---
 # Override some definitions in the global css file that are not optimal for

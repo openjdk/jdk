@@ -103,6 +103,7 @@ help:
 	$(info $(_)                        # make test TEST="jdk_lang gtest:all")
 	$(info $(_) JTREG="OPT1=x;OPT2=y"  # Control the JTREG test harness)
 	$(info $(_) GTEST="OPT1=x;OPT2=y"  # Control the GTEST test harness)
+	$(info $(_) MICRO="OPT1=x;OPT2=y"  # Control the MICRO test harness)
 	$(info $(_) TEST_OPTS="OPT1=x;..." # Generic control of all test harnesses)
 	$(info $(_) TEST_VM_OPTS="ARG ..." # Same as setting TEST_OPTS to VM_OPTIONS="ARG ...")
 	$(info )

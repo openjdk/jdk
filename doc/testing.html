@@ -24,12 +24,14 @@
 <li><a href="#test-selection">Test selection</a><ul>
 <li><a href="#jtreg">JTReg</a></li>
 <li><a href="#gtest">Gtest</a></li>
+<li><a href="#microbenchmarks">Microbenchmarks</a></li>
 <li><a href="#special-tests">Special tests</a></li>
 </ul></li>
 <li><a href="#test-results-and-summary">Test results and summary</a></li>
 <li><a href="#test-suite-control">Test suite control</a><ul>
 <li><a href="#jtreg-keywords">JTReg keywords</a></li>
 <li><a href="#gtest-keywords">Gtest keywords</a></li>
+<li><a href="#microbenchmark-keywords">Microbenchmark keywords</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -44,9 +46,11 @@ $ make test TEST=jdk_lang
 $ make test-only TEST=&quot;gtest:LogTagSet gtest:LogTagSetDescriptions&quot; GTEST=&quot;REPEAT=-1&quot;
 $ make test TEST=&quot;hotspot:hotspot_gc&quot; JTREG=&quot;JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;
 $ make test TEST=&quot;jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java&quot;
+$ make test TEST=&quot;micro:java.lang.reflect&quot; MICRO=&quot;FORK=1;WARMUP_ITER=2&quot;
 $ make exploded-test TEST=tier2</code></pre>
 <h3 id="configuration">Configuration</h3>
 <p>To be able to run JTReg tests, <code>configure</code> needs to know where to find the JTReg test framework. If it is not picked up automatically by configure, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc. (An alternative is to set the <code>JT_HOME</code> environment variable to point to the JTReg home before running <code>configure</code>.)</p>
+<p>To be able to run microbenchmarks, <code>configure</code> needs to know where to find the JMH dependency. Use <code>--with-jmh=&lt;path to JMH jars&gt;</code> to point to a directory containing the core JMH and transitive dependencies. The recommended dependencies can be retrieved by running <code>sh make/devkit/createJMHBundle.sh</code>, after which <code>--with-jmh=build/jmh/jars</code> should work.</p>
 <h2 id="test-selection">Test selection</h2>
 <p>All functionality is available using the <code>test</code> make target. In this use case, the test or tests to be executed is controlled using the <code>TEST</code> variable. To speed up subsequent test runs with no source code changes, <code>test-only</code> can be used instead, which do not depend on the source and test image build.</p>
 <p>For some common top-level tests, direct make targets have been generated. This includes all JTReg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make test-tier1</code> is equivalent to <code>make test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>test TEST=&quot;x&quot;</code> solution needs to be used.</p>
@@ -61,6 +65,9 @@ $ make exploded-test TEST=tier2</code></pre>
 <p>Since the Hotspot Gtest suite is so quick, the default is to run all tests. This is specified by just <code>gtest</code>, or as a fully qualified test descriptor <code>gtest:all</code>.</p>
 <p>If you want, you can single out an individual test or a group of tests, for instance <code>gtest:LogDecorations</code> or <code>gtest:LogDecorations.level_test_vm</code>. This can be particularly useful if you want to run a shaky test repeatedly.</p>
 <p>For Gtest, there is a separate test suite for each JVM variant. The JVM variant is defined by adding <code>/&lt;variant&gt;</code> to the test descriptor, e.g. <code>gtest:Log/client</code>. If you specify no variant, gtest will run once for each JVM variant present (e.g. server, client). So if you only have the server JVM present, then <code>gtest:all</code> will be equivalent to <code>gtest:all/server</code>.</p>
+<h3 id="microbenchmarks">Microbenchmarks</h3>
+<p>Which microbenchmarks to run is selected using a regular expression following the <code>micro:</code> test descriptor, e.g., <code>micro:java.lang.reflect</code>. This delegates the test selection to JMH, meaning package name, class name and even benchmark method names can be used to select tests.</p>
+<p>Using special characters like <code>|</code> in the regular expression is possible, but needs to be escaped multiple times: <code>micro:ArrayCopy\\\\\|reflect</code>.</p>
 <h3 id="special-tests">Special tests</h3>
 <p>A handful of odd tests that are not covered by any other testing framework are accessible using the <code>special:</code> test descriptor. Currently, this includes <code>failure-handler</code> and <code>make</code>.</p>
 <ul>
@@ -127,5 +134,22 @@ TEST FAILURE</code></pre>
 <h4 id="options-1">OPTIONS</h4>
 <p>Additional options to the Gtest test framework.</p>
 <p>Use <code>GTEST=&quot;OPTIONS=--help&quot;</code> to see all available Gtest options.</p>
+<h3 id="microbenchmark-keywords">Microbenchmark keywords</h3>
+<h4 id="fork">FORK</h4>
+<p>Override the number of benchmark forks to spawn. Same as specifying <code>-f &lt;num&gt;</code>.</p>
+<h4 id="iter">ITER</h4>
+<p>Number of measurement iterations per fork. Same as specifying <code>-i &lt;num&gt;</code>.</p>
+<h4 id="time">TIME</h4>
+<p>Amount of time to spend in each measurement iteration, in seconds. Same as specifying <code>-r &lt;num&gt;</code></p>
+<h4 id="warmup_iter">WARMUP_ITER</h4>
+<p>Number of warmup iterations to run before the measurement phase in each fork. Same as specifying <code>-wi &lt;num&gt;</code>.</p>
+<h4 id="warmup_time">WARMUP_TIME</h4>
+<p>Amount of time to spend in each warmup iteration. Same as specifying <code>-w &lt;num&gt;</code>.</p>
+<h4 id="results_format">RESULTS_FORMAT</h4>
+<p>Specify to have the test run save a log of the values. Accepts the same values as <code>-rff</code>, i.e., <code>text</code>, <code>csv</code>, <code>scsv</code>, <code>json</code>, or <code>latex</code>.</p>
+<h4 id="vm_options-1">VM_OPTIONS</h4>
+<p>Additional VM arguments to provide to forked off VMs. Same as <code>-jvmArgs &lt;args&gt;</code></p>
+<h4 id="options-2">OPTIONS</h4>
+<p>Additional arguments to send to JMH.</p>
 </body>
 </html>
