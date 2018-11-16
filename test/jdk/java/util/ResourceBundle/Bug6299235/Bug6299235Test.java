@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 6299235 8210408
+ * @summary test Bug 6299235 to make sure the third-party provided sun resources
+ *          could be picked up.
+ * @modules java.desktop
+ * @library patches
+ * @build java.desktop/sun.awt.resources.awt_ru_RU
+ * @run main Bug6299235Test
+ */
+
 import java.awt.Toolkit;
 import java.util.Locale;
 
@@ -35,7 +46,7 @@ import java.util.Locale;
  */
 
 public class Bug6299235Test {
-    static final Locale ru_RU = new Locale("ru", "RU");
+    private static final Locale ru_RU = new Locale("ru", "RU");
 
     public static void main(String args[]) {
         Locale locale = Locale.getDefault();
