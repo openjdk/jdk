@@ -4703,6 +4703,7 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
       CompileTask* task = ct->task();
       if (task != NULL) {
         thread->print_name_on_error(st, buf, buflen);
+        st->print("  ");
         task->print(st, NULL, true, true);
       }
     }
