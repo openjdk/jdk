@@ -481,6 +481,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"migrate.keystore.warning", "Migrated \"%1$s\" to %4$s. The %2$s keystore is backed up as \"%3$s\"."},
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},
         {"importing.keystore.status", "Importing keystore %1$s to %2$s..."},
+        {"keyalg.option.1.missing.warning", "No -keyalg option. The default key algorithm (%s) is a legacy algorithm and is no longer recommended. In a subsequent release of the JDK, the default will be removed and the -keyalg option must be specified."},
     };
 
 
