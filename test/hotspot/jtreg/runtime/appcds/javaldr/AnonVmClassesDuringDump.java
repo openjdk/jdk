@@ -47,6 +47,8 @@ public class AnonVmClassesDuringDump {
         "AnonVmClassesDuringDumpTransformer",
     };
 
+    public static String cdsDiagnosticOption = "-XX:+AllowArchivingWithJavaAgent";
+
     public static void main(String[] args) throws Throwable {
         String agentJar =
             ClassFileInstaller.writeJar("AnonVmClassesDuringDumpTransformer.jar",
@@ -58,6 +60,7 @@ public class AnonVmClassesDuringDump {
 
         TestCommon.testDump(appJar, TestCommon.list("Hello"),
                             "-javaagent:" + agentJar,
+                            "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
                             // Set the following property to see logs for dynamically generated classes
                             // in STDOUT
                             "-Djava.lang.invoke.MethodHandle.DUMP_CLASS_FILES=true");
@@ -70,11 +73,13 @@ public class AnonVmClassesDuringDump {
         String suffix = ".*source: shared objects file.*";
         String pattern = prefix + class_pattern + suffix;
         // during run time, anonymous classes shouldn't be loaded from the archive
-        TestCommon.run("-cp", appJar, "Hello")
+        TestCommon.run("-cp", appJar,
+            "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption, "Hello")
             .assertNormalExit(output -> output.shouldNotMatch(pattern));
 
         // inspect the archive and make sure no anonymous class is in there
         TestCommon.run("-cp", appJar,
+            "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
             "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", "Hello")
             .assertNormalExit(output -> output.shouldNotMatch(class_pattern));
     }

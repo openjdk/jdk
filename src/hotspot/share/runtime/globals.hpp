@@ -2431,6 +2431,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
+  diagnostic(bool, AllowArchivingWithJavaAgent, false,                      \
+          "Allow Java agent to be run with CDS dumping")                    \
+                                                                            \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \

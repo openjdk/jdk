@@ -4088,6 +4088,17 @@ void Threads::create_vm_init_agents() {
   JvmtiExport::enter_onload_phase();
 
   for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
+    // CDS dumping does not support native JVMTI agent.
+    // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
+    if (DumpSharedSpaces) {
+      if(!agent->is_instrument_lib()) {
+        vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
+      } else if (!AllowArchivingWithJavaAgent) {
+        vm_exit_during_cds_dumping(
+          "Must enable AllowArchivingWithJavaAgent in order to run Java agent during CDS dumping");
+      }
+    }
+
     OnLoadEntry_t  on_load_entry = lookup_agent_on_load(agent);
 
     if (on_load_entry != NULL) {
@@ -4100,6 +4111,7 @@ void Threads::create_vm_init_agents() {
       vm_exit_during_initialization("Could not find Agent_OnLoad function in the agent library", agent->name());
     }
   }
+
   JvmtiExport::enter_primordial_phase();
 }
 

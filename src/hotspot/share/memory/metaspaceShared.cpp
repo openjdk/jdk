@@ -1494,6 +1494,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
   }
+
+  if (AllowArchivingWithJavaAgent) {
+    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment");
+  }
+
   // There may be other pending VM operations that operate on the InstanceKlasses,
   // which will fail because InstanceKlasses::remove_unshareable_info()
   // has been called. Forget these operations and exit the VM directly.

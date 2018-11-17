@@ -151,6 +151,7 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   bool   _verify_remote;                // BytecodeVerificationRemote setting
   bool   _has_platform_or_app_classes;  // Archive contains app classes
   size_t _shared_base_address;          // SharedBaseAddress used at dump time
+  bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
 
   void set_has_platform_or_app_classes(bool v) {
     _has_platform_or_app_classes = v;
