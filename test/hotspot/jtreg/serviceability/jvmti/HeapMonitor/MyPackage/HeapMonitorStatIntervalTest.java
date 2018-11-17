@@ -58,6 +58,9 @@ public class HeapMonitorStatIntervalTest {
     double errorPercentage = error / expectedCount * 100;
 
     boolean success = (errorPercentage < 10.0);
+    System.out.println("Interval: " + interval + ", throw if failure: " + throwIfFailure
+        + " - Expected count: " + expectedCount + ", allocationIterations: " + allocationIterations
+        + ", actualCount: " + actualCount + " -> " + success);
 
     if (!success && throwIfFailure) {
       throw new RuntimeException("Interval average over 10% for interval " + interval + " -> "
@@ -82,7 +85,7 @@ public class HeapMonitorStatIntervalTest {
   public static void main(String[] args) {
     int[] tab = {1024, 8192};
 
-    HeapMonitor.calculateAverageOneElementSize();
+    HeapMonitor.calculateOneElementSize();
 
     for (int intervalIdx = 0; intervalIdx < tab.length; intervalIdx++) {
       testInterval(tab[intervalIdx]);
