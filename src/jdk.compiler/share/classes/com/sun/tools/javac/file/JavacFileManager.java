@@ -313,7 +313,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 fs = new DirectoryContainer(realPath);
             } else {
                 try {
-                    fs = new ArchiveContainer(realPath);
+                    fs = new ArchiveContainer(path);
                 } catch (ProviderNotFoundException | SecurityException ex) {
                     throw new IOException(ex);
                 }
