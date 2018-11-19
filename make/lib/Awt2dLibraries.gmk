@@ -280,7 +280,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx), )
         common/font \
         #
 
-    LIBAWT_XAWT_EXCLUDES := medialib debug
+    LIBAWT_XAWT_EXCLUDES := medialib
 
     LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
         $(LIBAWT_DEFAULT_HEADER_DIRS) \
