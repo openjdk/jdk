@@ -93,7 +93,7 @@
 <li><a href="#getting-help">Getting Help</a></li>
 </ul></li>
 <li><a href="#hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</a><ul>
-<li><a href="#setting-up-a-forest-for-pushing-changes-defpath">Setting Up a Forest for Pushing Changes (defpath)</a></li>
+<li><a href="#setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</a></li>
 <li><a href="#bash-completion">Bash Completion</a></li>
 <li><a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
 <li><a href="#handling-reconfigurations">Handling Reconfigurations</a></li>
@@ -131,7 +131,7 @@
 <p>The JDK is a complex software project. Building it requires a certain amount of technical expertise, a fair number of dependencies on external software, and reasonably powerful hardware.</p>
 <p>If you just want to use the JDK and not build it yourself, this document is not for you. See for instance <a href="http://openjdk.java.net/install">OpenJDK installation</a> for some methods of installing a prebuilt JDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
-<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="http://hg.openjdk.java.net/">OpenJDK Mercurial server</a> you can see a list of all available forests. If you want to build an older version, e.g. JDK 8, it is recommended that you get the <code>jdk8u</code> forest, which contains incremental updates, instead of the <code>jdk8</code> forest, which was frozen at JDK 8 GA.</p>
+<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="http://hg.openjdk.java.net/">OpenJDK Mercurial server</a> you can see a list of all available repositories. If you want to build an older version, e.g. JDK 8, it is recommended that you get the <code>jdk8u</code> forest, which contains incremental updates, instead of the <code>jdk8</code> forest, which was frozen at JDK 8 GA.</p>
 <p>If you are new to Mercurial, a good place to start is the <a href="http://www.mercurial-scm.org/guide">Mercurial Beginner's Guide</a>. The rest of this document assumes a working knowledge of Mercurial.</p>
 <h3 id="special-considerations">Special Considerations</h3>
 <p>For a smooth building experience, it is recommended that you follow these rules on where and how to check out the source code.</p>
@@ -780,11 +780,11 @@ Hint: If caused by a warning, try configure --disable-warnings-as-errors.</code>
 <p>Verify that the summary at the end looks correct. Are you indeed using the Boot JDK and native toolchain that you expect?</p>
 <p>By default, the JDK has a strict approach where warnings from the compiler is considered errors which fail the build. For very new or very old compiler versions, this can trigger new classes of warnings, which thus fails the build. Run <code>configure</code> with <code>--disable-warnings-as-errors</code> to turn of this behavior. (The warnings will still show, but not make the build fail.)</p>
 <h4 id="problems-with-incremental-rebuilds">Problems with Incremental Rebuilds</h4>
-<p>Incremental rebuilds mean that when you modify part of the product, only the affected parts get rebuilt. While this works great in most cases, and significantly speed up the development process, from time to time complex interdependencies will result in an incorrect build result. This is the most common cause for unexpected build problems, together with inconsistencies between the different Mercurial repositories in the forest.</p>
+<p>Incremental rebuilds mean that when you modify part of the product, only the affected parts get rebuilt. While this works great in most cases, and significantly speed up the development process, from time to time complex interdependencies will result in an incorrect build result. This is the most common cause for unexpected build problems.</p>
 <p>Here are a suggested list of things to try if you are having unexpected build problems. Each step requires more time than the one before, so try them in order. Most issues will be solved at step 1 or 2.</p>
 <ol type="1">
-<li><p>Make sure your forest is up-to-date</p>
-<p>Run <code>bash get_source.sh</code> to make sure you have the latest version of all repositories.</p></li>
+<li><p>Make sure your repository is up-to-date</p>
+<p>Run <code>hg pull -u</code> to make sure you have the latest changes.</p></li>
 <li><p>Clean build results</p>
 <p>The simplest way to fix incremental rebuild issues is to run <code>make clean</code>. This will remove all build results, but not the configuration or any build system support artifacts. In most cases, this will solve build errors resulting from incremental build mismatches.</p></li>
 <li><p>Completely clean the build directory.</p>
@@ -793,8 +793,8 @@ Hint: If caused by a warning, try configure --disable-warnings-as-errors.</code>
 make dist-clean
 bash configure $(cat current-configuration)
 make</code></pre></li>
-<li><p>Re-clone the Mercurial forest</p>
-<p>Sometimes the Mercurial repositories themselves gets in a state that causes the product to be un-buildable. In such a case, the simplest solution is often the &quot;sledgehammer approach&quot;: delete the entire forest, and re-clone it. If you have local changes, save them first to a different location using <code>hg export</code>.</p></li>
+<li><p>Re-clone the Mercurial repository</p>
+<p>Sometimes the Mercurial repository gets in a state that causes the product to be un-buildable. In such a case, the simplest solution is often the &quot;sledgehammer approach&quot;: delete the entire repository, and re-clone it. If you have local changes, save them first to a different location using <code>hg export</code>.</p></li>
 </ol>
 <h3 id="specific-build-issues">Specific Build Issues</h3>
 <h4 id="clock-skew">Clock Skew</h4>
@@ -816,7 +816,7 @@ spawn failed</code></pre>
 <p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
-<h3 id="setting-up-a-forest-for-pushing-changes-defpath">Setting Up a Forest for Pushing Changes (defpath)</h3>
+<h3 id="setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</h3>
 <p>To help you prepare a proper push path for a Mercurial repository, there exists a useful tool known as <a href="http://openjdk.java.net/projects/code-tools/defpath">defpath</a>. It will help you setup a proper push path for pushing changes to the JDK.</p>
 <p>Install the extension by cloning <code>http://hg.openjdk.java.net/code-tools/defpath</code> and updating your <code>.hgrc</code> file. Here's one way to do this:</p>
 <pre><code>cd ~
@@ -829,7 +829,6 @@ defpath=~/hg-ext/defpath/defpath.py
 EOT</code></pre>
 <p>You can now setup a proper push path using:</p>
 <pre><code>hg defpath -d -u &lt;your OpenJDK username&gt;</code></pre>
-<p>If you also have the <code>trees</code> extension installed in Mercurial, you will automatically get a <code>tdefpath</code> command, which is even more useful. By running <code>hg tdefpath -du &lt;username&gt;</code> in the top repository of your forest, all repos will get setup automatically. This is the recommended usage.</p>
 <h3 id="bash-completion">Bash Completion</h3>
 <p>The <code>configure</code> and <code>make</code> commands tries to play nice with bash command-line completion (using <code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make sure you enable completion in your <code>~/.bashrc</code> (see instructions for bash in your operating system).</p>
 <p>Make completion will work out of the box, and will complete valid make targets. For instance, typing <code>make jdk-i&lt;tab&gt;</code> will complete to <code>make jdk-image</code>.</p>
@@ -847,10 +846,10 @@ chmod +x /tmp/configure
 sudo mv /tmp/configure /usr/local/bin</code></pre>
 <p>Now <code>configure --en&lt;tab&gt;-dt&lt;tab&gt;</code> will result in <code>configure --enable-dtrace</code>.</p>
 <h3 id="using-multiple-configurations">Using Multiple Configurations</h3>
-<p>You can have multiple configurations for a single source forest. When you create a new configuration, run <code>configure --with-conf-name=&lt;name&gt;</code> to create a configuration with the name <code>&lt;name&gt;</code>. Alternatively, you can create a directory under <code>build</code> and run <code>configure</code> from there, e.g. <code>mkdir build/&lt;name&gt; &amp;&amp; cd build/&lt;name&gt; &amp;&amp; bash ../../configure</code>.</p>
+<p>You can have multiple configurations for a single source repository. When you create a new configuration, run <code>configure --with-conf-name=&lt;name&gt;</code> to create a configuration with the name <code>&lt;name&gt;</code>. Alternatively, you can create a directory under <code>build</code> and run <code>configure</code> from there, e.g. <code>mkdir build/&lt;name&gt; &amp;&amp; cd build/&lt;name&gt; &amp;&amp; bash ../../configure</code>.</p>
 <p>Then you can build that configuration using <code>make CONF_NAME=&lt;name&gt;</code> or <code>make CONF=&lt;pattern&gt;</code>, where <code>&lt;pattern&gt;</code> is a substring matching one or several configurations, e.g. <code>CONF=debug</code>. The special empty pattern (<code>CONF=</code>) will match <em>all</em> available configuration, so <code>make CONF= hotspot</code> will build the <code>hotspot</code> target for all configurations. Alternatively, you can execute <code>make</code> in the configuration directory, e.g. <code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
 <h3 id="handling-reconfigurations">Handling Reconfigurations</h3>
-<p>If you update the forest and part of the configure script has changed, the build system will force you to re-run <code>configure</code>.</p>
+<p>If you update the repository and part of the configure script has changed, the build system will force you to re-run <code>configure</code>.</p>
 <p>Most of the time, you will be fine by running <code>configure</code> again with the same arguments as the last time, which can easily be performed by <code>make reconfigure</code>. To simplify this, you can use the <code>CONF_CHECK</code> make control variable, either as <code>make CONF_CHECK=auto</code>, or by setting an environment variable. For instance, if you add <code>export CONF_CHECK=auto</code> to your <code>.bashrc</code> file, <code>make</code> will always run <code>reconfigure</code> automatically whenever the configure script has changed.</p>
 <p>You can also use <code>CONF_CHECK=ignore</code> to skip the check for a needed configure update. This might speed up the build, but comes at the risk of an incorrect build result. This is only recommended if you know what you're doing.</p>
 <p>From time to time, you will also need to modify the command line to <code>configure</code> due to changes. Use <code>make print-configure</code> to show the command line used for your current configuration.</p>

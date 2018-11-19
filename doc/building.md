@@ -48,7 +48,7 @@ JDK.
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
 repository. At the [OpenJDK Mercurial server](http://hg.openjdk.java.net/) you
-can see a list of all available forests. If you want to build an older version,
+can see a list of all available repositories. If you want to build an older version,
 e.g. JDK 8, it is recommended that you get the `jdk8u` forest, which contains
 incremental updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
 
@@ -1301,17 +1301,15 @@ Incremental rebuilds mean that when you modify part of the product, only the
 affected parts get rebuilt. While this works great in most cases, and
 significantly speed up the development process, from time to time complex
 interdependencies will result in an incorrect build result. This is the most
-common cause for unexpected build problems, together with inconsistencies
-between the different Mercurial repositories in the forest.
+common cause for unexpected build problems.
 
 Here are a suggested list of things to try if you are having unexpected build
 problems. Each step requires more time than the one before, so try them in
 order. Most issues will be solved at step 1 or 2.
 
- 1. Make sure your forest is up-to-date
+ 1. Make sure your repository is up-to-date
 
-    Run `bash get_source.sh` to make sure you have the latest version of all
-    repositories.
+    Run `hg pull -u` to make sure you have the latest changes.
 
  2. Clean build results
 
@@ -1336,13 +1334,13 @@ order. Most issues will be solved at step 1 or 2.
     make
     ```
 
- 4. Re-clone the Mercurial forest
+ 4. Re-clone the Mercurial repository
 
-    Sometimes the Mercurial repositories themselves gets in a state that causes
-    the product to be un-buildable. In such a case, the simplest solution is
-    often the "sledgehammer approach": delete the entire forest, and re-clone
-    it. If you have local changes, save them first to a different location
-    using `hg export`.
+    Sometimes the Mercurial repository gets in a state that causes the product
+    to be un-buildable. In such a case, the simplest solution is often the
+    "sledgehammer approach": delete the entire repository, and re-clone it.
+    If you have local changes, save them first to a different location using
+    `hg export`.
 
 ### Specific Build Issues
 
@@ -1393,7 +1391,7 @@ contact the Adoption Group. See the section on [Contributing to OpenJDK](
 
 ## Hints and Suggestions for Advanced Users
 
-### Setting Up a Forest for Pushing Changes (defpath)
+### Setting Up a Repository for Pushing Changes (defpath)
 
 To help you prepare a proper push path for a Mercurial repository, there exists
 a useful tool known as [defpath](
@@ -1419,11 +1417,6 @@ You can now setup a proper push path using:
 ```
 hg defpath -d -u <your OpenJDK username>
 ```
-
-If you also have the `trees` extension installed in Mercurial, you will
-automatically get a `tdefpath` command, which is even more useful. By running
-`hg tdefpath -du <username>` in the top repository of your forest, all repos
-will get setup automatically. This is the recommended usage.
 
 ### Bash Completion
 
@@ -1459,7 +1452,7 @@ Now `configure --en<tab>-dt<tab>` will result in `configure --enable-dtrace`.
 
 ### Using Multiple Configurations
 
-You can have multiple configurations for a single source forest. When you
+You can have multiple configurations for a single source repository. When you
 create a new configuration, run `configure --with-conf-name=<name>` to create a
 configuration with the name `<name>`. Alternatively, you can create a directory
 under `build` and run `configure` from there, e.g. `mkdir build/<name> && cd
@@ -1474,7 +1467,7 @@ in the configuration directory, e.g. `cd build/<name> && make`.
 
 ### Handling Reconfigurations
 
-If you update the forest and part of the configure script has changed, the
+If you update the repository and part of the configure script has changed, the
 build system will force you to re-run `configure`.
 
 Most of the time, you will be fine by running `configure` again with the same
