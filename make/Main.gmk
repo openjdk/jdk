@@ -793,7 +793,7 @@ else
 
   jrtfs-jar: interim-langtools
 
-  build-microbenchmark: interim-langtools jdk.unsupported java.management
+  build-microbenchmark: interim-langtools exploded-image
 
   ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
     ifeq ($(CREATE_BUILDJDK), true)
