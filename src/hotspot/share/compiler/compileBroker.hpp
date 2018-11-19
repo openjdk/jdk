@@ -252,7 +252,8 @@ class CompileBroker: AllStatic {
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
-  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env);
+  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
+                           int compilable, const char* failure_reason);
   static void set_last_compile(CompilerThread *thread, const methodHandle& method, bool is_osr, int comp_level);
   static void push_jni_handle_block();
   static void pop_jni_handle_block();
