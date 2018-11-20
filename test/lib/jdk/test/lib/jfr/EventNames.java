@@ -169,6 +169,10 @@ public class EventNames {
     public final static String JavaErrorThrow = PREFIX + "JavaErrorThrow";
     public final static String ModuleRequire = PREFIX + "ModuleRequire";
     public final static String ModuleExport = PREFIX + "ModuleExport";
+    public final static String TLSHandshake = PREFIX + "TLSHandshake";
+    public final static String X509Certificate = PREFIX + "X509Certificate";
+    public final static String X509Validation = PREFIX + "X509Validation";
+    public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
 
     // Flight Recorder
     public final static String DumpReason = PREFIX + "DumpReason";

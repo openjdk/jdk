@@ -64,8 +64,8 @@ public final class TestModuleEvents {
         recording.stop();
 
         List<RecordedEvent> events = Events.fromRecording(recording);
-        assertDependency(events, "jdk.jfr", "java.base"); // jdk.jfr requires java.base (by edfault)
-        assertDependency(events, "java.base", "jdk.jfr"); // java.base require jdk.jfr for JDK events, i.e. FileRead
+        assertDependency(events, "jdk.jfr", "java.base"); // jdk.jfr requires java.base (by default)
+        assertDependency(events, "java.base", "jdk.jfr"); // java.base requires jdk.jfr for JDK events, i.e. FileRead
 
         recording.close();
     }
@@ -97,8 +97,9 @@ public final class TestModuleEvents {
         events.stream().forEach((ev) -> {
             String exportedPackage = getValue(ev.getValue("exportedPackage"), "name", UNNAMED);
             String toModule = getValue(ev.getValue("targetModule"), "name", UNNAMED);
-
-            edges.put(exportedPackage, toModule);
+            if (!toModule.equals("jdk.proxy1")) { // ignore jdk.proxy1 module
+                edges.put(exportedPackage, toModule);
+            }
         });
 
         // We expect

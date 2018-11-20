@@ -39,8 +39,12 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
+import jdk.jfr.events.TLSHandshakeEvent;
+import jdk.jfr.events.X509CertificateEvent;
+import jdk.jfr.events.X509ValidationEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -52,6 +56,10 @@ import jdk.jfr.internal.Utils;
 public final class JDKEvents {
 
     private static final Class<?>[] mirrorEventClasses = {
+        SecurityPropertyModificationEvent.class,
+        TLSHandshakeEvent.class,
+        X509CertificateEvent.class,
+        X509ValidationEvent.class
     };
 
     private static final Class<?>[] eventClasses = {
@@ -64,7 +72,11 @@ public final class JDKEvents {
         ExceptionStatisticsEvent.class,
         ErrorThrownEvent.class,
         ActiveSettingEvent.class,
-        ActiveRecordingEvent.class
+        ActiveRecordingEvent.class,
+        jdk.internal.event.SecurityPropertyModificationEvent.class,
+        jdk.internal.event.TLSHandshakeEvent.class,
+        jdk.internal.event.X509CertificateEvent.class,
+        jdk.internal.event.X509ValidationEvent.class
     };
 
     // This is a list of the classes with instrumentation code that should be applied.

@@ -593,6 +593,26 @@
       <setting name="threshold" control="socket-io-threshold">20 ms</setting>
     </event>
 
+    <event name="jdk.SecurityPropertyModification">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.TLSHandshake">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.X509Validation">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.X509Certificate">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.JavaExceptionThrow">
       <setting name="enabled" control="enable-exceptions">false</setting>
       <setting name="stackTrace">true</setting>
