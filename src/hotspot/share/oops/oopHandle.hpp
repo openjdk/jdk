@@ -44,6 +44,7 @@ public:
   OopHandle(oop* w) : _obj(w) {}
 
   inline oop resolve() const;
+  inline oop peek() const;
 
   // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }
