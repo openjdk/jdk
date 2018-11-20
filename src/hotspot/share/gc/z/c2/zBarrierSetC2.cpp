@@ -1459,6 +1459,17 @@ bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode
   return handled;
 }
 
+bool ZBarrierSetC2::matcher_find_shared_visit(Matcher* matcher, Matcher::MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) const {
+  if (opcode == Op_CallLeaf &&
+      (n->as_Call()->entry_point() == ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr() ||
+       n->as_Call()->entry_point() == ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr())) {
+    mem_op = true;
+    mem_addr_idx = TypeFunc::Parms + 1;
+    return true;
+  }
+  return false;
+}
+
 // == Verification ==
 
 #ifdef ASSERT
