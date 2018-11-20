@@ -109,7 +109,7 @@ import java.awt.Component;
  * If you are implementing a <code>SpringLayout</code> you
  * can find further information and examples in
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>,
+ href="https://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong>

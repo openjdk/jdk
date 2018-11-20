@@ -55,7 +55,7 @@ import sun.swing.UIAction;
  * <p>
  * For adding specific actions,
  * overide <code>installKeyboardActions</code> to add actions in response to
- * KeyStroke bindings. See the article <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/keybinding.html">How to Use Key Bindings</a>
+ * KeyStroke bindings. See the article <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/keybinding.html">How to Use Key Bindings</a>
  *
  * @author Arnaud Weber
  * @author Tom Santos

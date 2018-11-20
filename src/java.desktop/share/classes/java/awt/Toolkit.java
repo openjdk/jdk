@@ -102,9 +102,9 @@ import sun.awt.SunToolkit;
  *
  * <li>Moving the focus from one component to another.
  * <br>For more information, see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html#transferTiming">Timing
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html#transferTiming">Timing
  * Focus Transfers</a>, a section in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/">The Swing
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/">The Swing
  * Tutorial</a>.
  *
  * <li>Making a top-level container visible.

@@ -51,7 +51,7 @@ import java.beans.Transient;
  * vertical and horizontal scroll bars, and optional row and
  * column heading viewports.
  * You can find task-oriented documentation of <code>JScrollPane</code> in
- *  <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html">How to Use Scroll Panes</a>,
+ *  <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html">How to Use Scroll Panes</a>,
  * a section in <em>The Java Tutorial</em>.  Note that
  * <code>JScrollPane</code> does not support heavyweight components.
  *

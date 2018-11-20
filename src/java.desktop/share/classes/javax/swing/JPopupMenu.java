@@ -54,7 +54,7 @@ import sun.awt.SunToolkit;
  * <p>
  * For information and examples of using popup menus, see
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>
  * in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

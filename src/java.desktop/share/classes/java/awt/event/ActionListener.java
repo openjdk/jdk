@@ -37,7 +37,7 @@ import java.util.EventListener;
  * invoked.
  *
  * @see ActionEvent
- * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/actionlistener.html">How to Write an Action Listener</a>
+ * @see <a href="https://docs.oracle.com/javase/tutorial/uiswing/events/actionlistener.html">How to Write an Action Listener</a>
  *
  * @author Carl Quinn
  * @since 1.1

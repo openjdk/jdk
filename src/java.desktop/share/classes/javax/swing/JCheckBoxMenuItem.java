@@ -53,7 +53,7 @@ import javax.accessibility.*;
  * configuring a menu item.  Refer to <a href="Action.html#buttonActions">
  * Swing Components Supporting <code>Action</code></a> for more
  * details, and you can find more information in <a
- * href="http://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
+ * href="https://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
  * to Use Actions</a>, a section in <em>The Java Tutorial</em>.
  * <p>
  * Some times it is required to select several check box menu items from a menu.
@@ -70,7 +70,7 @@ import javax.accessibility.*;
  * <p>
  * For further information and examples of using check box menu items,
  * see <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>,
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

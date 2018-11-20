@@ -36,7 +36,7 @@ import java.util.*;
 /**
  * A <code>SpringLayout</code> lays out the children of its associated container
  * according to a set of constraints.
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
  * in <em>The Java Tutorial</em> for examples of using
  * <code>SpringLayout</code>.
  *

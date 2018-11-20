@@ -27,7 +27,7 @@
  * Provides a set of &quot;lightweight&quot; (all-Java language) components
  * that, to the maximum degree possible, work the same on all platforms. For a
  * programmer's guide to using these components, see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/index.html"
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/index.html"
  * target="_top">Creating a GUI with JFC/Swing</a>, a trail in
  * <em>The Java Tutorial</em>. For other resources, see
  * <a href="#related">Related Documentation</a>.
@@ -121,10 +121,10 @@
  * when working with Swing.
  * <p>
  * More information on this topic can be found in the
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/">Swing tutorial</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/">Swing tutorial</a>,
  * in particular the section on
  * <a
- * href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+ * href="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
  * Concurrency in Swing</a>.
  *
  * <h2><a id="related">Related Documentation</a></h2>
@@ -133,7 +133,7 @@
  * <ul>
  *     <li><a href="http://www.oracle.com/technetwork/java/javase/tech/articles-jsp-139072.html"
  *     target="_top">The Swing Connection</a></li>
- *     <li><a href="http://docs.oracle.com/javase/tutorial/"
+ *     <li><a href="https://docs.oracle.com/javase/tutorial/"
  *     target="_top">The Java Tutorial</a></li>
  *     <li><a href="http://www.oracle.com/technetwork/java/javase/training/index.html"
  *     target="_top">Online Training</a>

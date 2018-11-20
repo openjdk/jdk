@@ -49,7 +49,7 @@ package java.awt.event;
  *
  * @see MouseEvent
  * @see MouseMotionListener
- * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/mousemotionlistener.html">Tutorial: Writing a Mouse Motion Listener</a>
+ * @see <a href="https://docs.oracle.com/javase/tutorial/uiswing/events/mousemotionlistener.html">Tutorial: Writing a Mouse Motion Listener</a>
  *
  * @since 1.1
  */

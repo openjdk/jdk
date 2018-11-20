@@ -75,7 +75,7 @@ import sun.awt.AWTAccessor;
  * of the transfer, and <code>setForeground</code> for the target of a transfer.
  * <p>
  * Please see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * a section in <em>The Java Tutorial</em>, for more information.
  *

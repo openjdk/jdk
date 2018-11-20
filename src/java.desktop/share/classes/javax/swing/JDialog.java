@@ -37,7 +37,7 @@ import javax.accessibility.*;
  * For information about creating dialogs, see
  * <em>The Java Tutorial</em> section
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html">How
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html">How
  * to Make Dialogs</a>.
  *
  * <p>
@@ -788,7 +788,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * are currently typed to {@code JComponent}.
      * <p>
      * Please see
-     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
+     * <a href="https://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
      * How to Use Drag and Drop and Data Transfer</a>, a section in
      * <em>The Java Tutorial</em>, for more information.
      *

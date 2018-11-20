@@ -39,7 +39,7 @@ import java.io.IOException;
  * compatibility with the <code>java.awt.TextArea</code> class where it can
  * reasonably do so.
  * You can find information and examples of using all the text components in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>

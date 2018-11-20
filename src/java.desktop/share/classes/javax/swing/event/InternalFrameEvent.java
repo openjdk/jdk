@@ -34,7 +34,7 @@ import javax.swing.JInternalFrame;
  * although different IDs are used.
  * Help on handling internal frame events
  * is in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/internalframelistener.html" target="_top">How to Write an Internal Frame Listener</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/events/internalframelistener.html" target="_top">How to Write an Internal Frame Listener</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong>

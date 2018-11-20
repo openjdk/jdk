@@ -258,8 +258,8 @@ import static sun.swing.SwingUtilities2.Section.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  * <p>
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/list.html">How to Use Lists</a>
- * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/list.html">How to Use Lists</a>
+ * in <a href="https://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further documentation.
  *
  * @see ListModel

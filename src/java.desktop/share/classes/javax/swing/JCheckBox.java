@@ -38,7 +38,7 @@ import java.io.IOException;
  * An implementation of a check box -- an item that can be selected or
  * deselected, and which displays its state to the user.
  * By convention, any number of check boxes in a group can be selected.
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>
  * in <em>The Java Tutorial</em>
  * for examples and information on using check boxes.
  * <p>
@@ -48,7 +48,7 @@ import java.io.IOException;
  * configuring a button.  Refer to <a href="Action.html#buttonActions">
  * Swing Components Supporting <code>Action</code></a> for more
  * details, and you can find more information in <a
- * href="http://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
+ * href="https://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
  * to Use Actions</a>, a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

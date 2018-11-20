@@ -71,7 +71,7 @@ import javax.swing.text.*;
  *
  * For further documentation and examples see
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html">How to Monitor Progress</a>,
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html">How to Monitor Progress</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * @see ProgressMonitorInputStream

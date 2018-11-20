@@ -86,7 +86,7 @@ import sun.swing.SwingAccessor;
  * support).
  * You can find information on how to use the functionality
  * this class provides in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/generaltext.html">General Rules for Using Text Components</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/generaltext.html">General Rules for Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <dl>
@@ -2228,7 +2228,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * HREF="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
      * Concurrency in Swing</A> for more information.
      *
      * <p>
@@ -2487,7 +2487,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * HREF="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
      * Concurrency in Swing</A> for more information.
      *
      * <p>

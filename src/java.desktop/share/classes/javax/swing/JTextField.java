@@ -43,7 +43,7 @@ import java.io.Serializable;
  * of a single line of text.
  * For information on and examples of using text fields,
  * see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>

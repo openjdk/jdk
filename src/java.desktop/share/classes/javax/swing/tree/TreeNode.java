@@ -37,7 +37,7 @@ import java.util.Enumeration;
  *
  * For further information and examples of using tree nodes,
  * see <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Tree Nodes</a>
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Tree Nodes</a>
  * in <em>The Java Tutorial.</em>
  *
  * @author Rob Davis

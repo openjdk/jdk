@@ -68,7 +68,7 @@ import sun.swing.PrintingStatus;
 /**
  * The <code>JTable</code> is used to display and edit regular two-dimensional tables
  * of cells.
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/table.html">How to Use Tables</a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/table.html">How to Use Tables</a>
  * in <em>The Java Tutorial</em>
  * for task-oriented documentation and examples of using <code>JTable</code>.
  *
@@ -2477,7 +2477,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * The default value of this property is defined by the look
      * and feel implementation.
      * <p>
-     * This is a <a href="http://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html">JavaBeans</a> bound property.
+     * This is a <a href="https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html">JavaBeans</a> bound property.
      *
      * @param selectionForeground  the <code>Color</code> to use in the foreground
      *                             for selected list items
@@ -2514,7 +2514,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * The default value of this property is defined by the look
      * and feel implementation.
      * <p>
-     * This is a <a href="http://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html">JavaBeans</a> bound property.
+     * This is a <a href="https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html">JavaBeans</a> bound property.
      *
      * @param selectionBackground  the <code>Color</code> to use for the background
      *                             of selected cells

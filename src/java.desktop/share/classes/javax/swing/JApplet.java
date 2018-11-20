@@ -47,7 +47,7 @@ import javax.accessibility.AccessibleContext;
  * in <em>The Java Tutorial</em>,
  * in the section
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
  * <p>
  * The <code>JApplet</code> class is slightly incompatible with
  * <code>java.applet.Applet</code>.  <code>JApplet</code> contains a
@@ -197,7 +197,7 @@ public class JApplet extends Applet implements Accessible,
      * are currently typed to {@code JComponent}.
      * <p>
      * Please see
-     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
+     * <a href="https://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
      * How to Use Drag and Drop and Data Transfer</a>, a section in
      * <em>The Java Tutorial</em>, for more information.
      *

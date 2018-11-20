@@ -30,7 +30,7 @@ import javax.swing.event.TreeExpansionEvent;
 /**
  * Exception used to stop an expand/collapse from happening.
  * See <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/events/treewillexpandlistener.html">How to Write a Tree-Will-Expand Listener</a>
+ href="https://docs.oracle.com/javase/tutorial/uiswing/events/treewillexpandlistener.html">How to Write a Tree-Will-Expand Listener</a>
  * in <em>The Java Tutorial</em>
  * for further information and examples.
  *

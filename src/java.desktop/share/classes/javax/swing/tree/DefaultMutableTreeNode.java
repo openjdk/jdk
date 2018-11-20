@@ -36,7 +36,7 @@ import java.util.*;
  * structure.
  * For examples of using default mutable tree nodes, see
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>

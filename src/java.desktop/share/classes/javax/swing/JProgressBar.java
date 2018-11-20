@@ -98,7 +98,7 @@ import javax.swing.plaf.ProgressBarUI;
  * <p>
  *
  * For complete examples and further documentation see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -891,7 +891,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * <p>
      *
      * See
-     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>
+     * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>
      * for examples of using indeterminate progress bars.
      *
      * @param newValue  <code>true</code> if the progress bar

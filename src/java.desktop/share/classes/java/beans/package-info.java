@@ -102,7 +102,7 @@
  * <h2>Related Documentation</h2>
  * For overview, architecture, and tutorial documentation, please see:
  * <ul>
- *     <li><a href="http://docs.oracle.com/javase/tutorial/javabeans/">
+ *     <li><a href="https://docs.oracle.com/javase/tutorial/javabeans/">
  *         JavaBeans</a>, a trail in <em>The Java Tutorial</em>.</li>
  *     <li><a href="http://www.oracle.com/technetwork/java/persistence2-141443.html">
  *         Long-Term Persistence</a>, an article in

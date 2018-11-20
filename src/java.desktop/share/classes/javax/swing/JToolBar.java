@@ -47,7 +47,7 @@ import java.io.IOException;
  * <code>JToolBar</code> provides a component that is useful for
  * displaying commonly used <code>Action</code>s or controls.
  * For examples and information on using tool bars see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/toolbar.html">How to Use Tool Bars</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/toolbar.html">How to Use Tool Bars</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>

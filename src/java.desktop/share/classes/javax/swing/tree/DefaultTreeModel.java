@@ -33,7 +33,7 @@ import javax.swing.event.*;
 /**
  * A simple tree data model that uses TreeNodes.
  * For further information and examples that use DefaultTreeModel,
- * see <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ * see <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong>

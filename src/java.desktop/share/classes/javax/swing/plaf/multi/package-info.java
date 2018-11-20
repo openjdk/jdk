@@ -40,10 +40,10 @@
  * <strong>Note:</strong>
  * Most of the Swing API is <em>not</em> thread safe. For details, see
  * <a
- * href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html"
+ * href="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html"
  * target="_top">Concurrency in Swing</a>,
  * a section in
- * <em><a href="http://docs.oracle.com/javase/tutorial/"
+ * <em><a href="https://docs.oracle.com/javase/tutorial/"
  * target="_top">The Java Tutorial</a></em>.
  *
  * @since 1.2

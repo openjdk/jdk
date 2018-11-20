@@ -39,7 +39,7 @@ import java.io.IOException;
  * <code>JPanel</code> is a generic lightweight container.
  * For examples and task-oriented documentation for JPanel, see
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/panel.html">How to Use Panels</a>,
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/panel.html">How to Use Panels</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

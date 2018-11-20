@@ -44,7 +44,7 @@ package java.awt.event;
  *
  * @see FocusEvent
  * @see FocusListener
- * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/focuslistener.html">Tutorial: Writing a Focus Listener</a>
+ * @see <a href="https://docs.oracle.com/javase/tutorial/uiswing/events/focuslistener.html">Tutorial: Writing a Focus Listener</a>
  *
  * @author Carl Quinn
  * @since 1.1

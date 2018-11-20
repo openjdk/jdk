@@ -42,7 +42,7 @@ import sun.reflect.misc.ReflectUtil;
 /**
  * A text component to edit various kinds of content.
  * You can find how-to information and examples of using editor panes in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>

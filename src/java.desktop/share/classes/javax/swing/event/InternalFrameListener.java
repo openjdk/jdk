@@ -32,7 +32,7 @@ import java.util.EventListener;
  * This class is functionally equivalent to the WindowListener class
  * in the AWT.
  * <p>
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/internalframelistener.html">How to Write an Internal Frame Listener</a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/events/internalframelistener.html">How to Write an Internal Frame Listener</a>
  * in <em>The Java Tutorial</em> for further documentation.
  *
  * @see java.awt.event.WindowListener

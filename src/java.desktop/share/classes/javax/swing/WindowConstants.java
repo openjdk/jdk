@@ -36,7 +36,7 @@ package javax.swing;
  * use these constants.
  * For examples of setting the default window-closing operation, see
  * <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/frame.html#windowevents">Responding to Window-Closing Events</a>,
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/frame.html#windowevents">Responding to Window-Closing Events</a>,
  * a section in <em>The Java Tutorial</em>.
  * @see JFrame#setDefaultCloseOperation(int)
  * @see JDialog#setDefaultCloseOperation(int)

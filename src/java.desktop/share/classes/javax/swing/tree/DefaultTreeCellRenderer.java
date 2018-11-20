@@ -50,7 +50,7 @@ import sun.swing.SwingUtilities2;
  * <code>DefaultTreeCellRenderer</code> is not opaque and
  * unless you subclass paint you should not change this.
  * See <a
- href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ href="https://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial</em>
  * for examples of customizing node display using this class.
  * <p>

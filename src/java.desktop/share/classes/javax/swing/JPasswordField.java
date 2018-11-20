@@ -38,7 +38,7 @@ import java.util.Arrays;
  * the editing of a single line of text where the view indicates
  * something was typed, but does not show the original characters.
  * You can find further information and examples in
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>,
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <code>JPasswordField</code> is intended

@@ -51,7 +51,7 @@ import sun.awt.AWTAccessor;
  *
  * <p>
  * For further information and examples of using image icons, see
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/icon.html">How to Use Icons</a>
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/icon.html">How to Use Icons</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>

@@ -59,7 +59,7 @@ import sun.swing.AccumulativeRunnable;
  * When writing a multi-threaded application using Swing, there are
  * two constraints to keep in mind:
  * (refer to
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+ * <a href="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
  *   Concurrency in Swing
  * </a> for more details):
  * <ul>

@@ -46,7 +46,7 @@ import java.util.Objects;
  * display can override <code>JComponent</code>'s <code>createToolTip</code>
  * method and use a subclass of this class.
  * <p>
- * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tooltip.html">How to Use Tool Tips</a>
+ * See <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/tooltip.html">How to Use Tool Tips</a>
  * in <em>The Java Tutorial</em>
  * for further documentation.
  * <p>
