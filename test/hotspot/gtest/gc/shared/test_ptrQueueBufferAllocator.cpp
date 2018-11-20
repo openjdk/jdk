@@ -39,7 +39,7 @@ TEST_VM(PtrQueueBufferAllocatorTest, test) {
   for (size_t i = 0; i < node_count; ++i) {
     ASSERT_EQ(0u, allocator.free_count());
     nodes[i] = allocator.allocate();
-    ASSERT_EQ(NULL, nodes[i]->next());
+    ASSERT_EQ((BufferNode*)NULL, nodes[i]->next());
   }
 
   // Release the nodes, adding them to the allocator's free list.
@@ -47,7 +47,7 @@ TEST_VM(PtrQueueBufferAllocatorTest, test) {
     ASSERT_EQ(i, allocator.free_count());
     allocator.release(nodes[i]);
     if (i == 0) {
-      ASSERT_EQ(NULL, nodes[i]->next());
+      ASSERT_EQ((BufferNode*)NULL, nodes[i]->next());
     } else {
       ASSERT_EQ(nodes[i - 1], nodes[i]->next());
     }
