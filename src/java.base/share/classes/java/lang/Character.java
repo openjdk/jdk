@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 /**
  * The {@code Character} class wraps a value of the primitive
@@ -7914,11 +7915,22 @@ class Character implements java.io.Serializable, Comparable<Character> {
     private static class CharacterCache {
         private CharacterCache(){}
 
-        static final Character cache[] = new Character[127 + 1];
+        static final Character[] cache;
+        static Character[] archivedCache;
 
         static {
-            for (int i = 0; i < cache.length; i++)
-                cache[i] = new Character((char)i);
+            int size = 127 + 1;
+
+            // Load and use the archived cache if it exists
+            VM.initializeFromArchive(CharacterCache.class);
+            if (archivedCache == null || archivedCache.length != size) {
+                Character[] c = new Character[size];
+                for (int i = 0; i < size; i++) {
+                    c[i] = new Character((char) i);
+                }
+                archivedCache = c;
+            }
+            cache = archivedCache;
         }
     }
 

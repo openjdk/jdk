@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 /**
  *
@@ -77,13 +78,25 @@ public final class Byte extends Number implements Comparable<Byte> {
     }
 
     private static class ByteCache {
-        private ByteCache(){}
+        private ByteCache() {}
 
-        static final Byte cache[] = new Byte[-(-128) + 127 + 1];
+        static final Byte[] cache;
+        static Byte[] archivedCache;
 
         static {
-            for(int i = 0; i < cache.length; i++)
-                cache[i] = new Byte((byte)(i - 128));
+            final int size = -(-128) + 127 + 1;
+
+            // Load and use the archived cache if it exists
+            VM.initializeFromArchive(ByteCache.class);
+            if (archivedCache == null || archivedCache.length != size) {
+                Byte[] c = new Byte[size];
+                byte value = (byte)-128;
+                for(int i = 0; i < size; i++) {
+                    c[i] = new Byte(value++);
+                }
+                archivedCache = c;
+            }
+            cache = archivedCache;
         }
     }
 

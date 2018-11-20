@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 /**
  * The {@code Short} class wraps a value of primitive type {@code
@@ -203,13 +204,25 @@ public final class Short extends Number implements Comparable<Short> {
     }
 
     private static class ShortCache {
-        private ShortCache(){}
+        private ShortCache() {}
 
-        static final Short cache[] = new Short[-(-128) + 127 + 1];
+        static final Short[] cache;
+        static Short[] archivedCache;
 
         static {
-            for(int i = 0; i < cache.length; i++)
-                cache[i] = new Short((short)(i - 128));
+            int size = -(-128) + 127 + 1;
+
+            // Load and use the archived cache if it exists
+            VM.initializeFromArchive(ShortCache.class);
+            if (archivedCache == null || archivedCache.length != size) {
+                Short[] c = new Short[size];
+                short value = -128;
+                for(int i = 0; i < size; i++) {
+                    c[i] = new Short(value++);
+                }
+                archivedCache = c;
+            }
+            cache = archivedCache;
         }
     }
 

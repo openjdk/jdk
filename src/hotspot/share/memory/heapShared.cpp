@@ -64,6 +64,10 @@ int       HeapShared::_narrow_oop_shift;
 // assigned at runtime.
 static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
   {"java/lang/Integer$IntegerCache",           "archivedCache"},
+  {"java/lang/Long$LongCache",                 "archivedCache"},
+  {"java/lang/Byte$ByteCache",                 "archivedCache"},
+  {"java/lang/Short$ShortCache",               "archivedCache"},
+  {"java/lang/Character$CharacterCache",       "archivedCache"},
 };
 // Entry fields for subgraphs archived in the open archive heap region.
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
