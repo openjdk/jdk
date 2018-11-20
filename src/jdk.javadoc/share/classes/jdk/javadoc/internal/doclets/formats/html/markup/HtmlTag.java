@@ -39,6 +39,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public enum HtmlTag {
     A(BlockType.INLINE, EndTag.END),
+    BUTTON(BlockType.INLINE, EndTag.END),
     BLOCKQUOTE,
     BODY(BlockType.OTHER, EndTag.END),
     BR(BlockType.INLINE, EndTag.NOEND),

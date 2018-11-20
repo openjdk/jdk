@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8004893 8022738 8029143 8175200 8186332
+ * @bug      8004893 8022738 8029143 8175200 8186332 8184205
  * @summary  Make sure that the lambda feature changes work fine in
  *           javadoc.
  * @author   bpatel
@@ -56,16 +56,17 @@ public class TestLambdaFeature extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 "<td class=\"colFirst\"><code>default void</code></td>",
                 "<pre class=\"methodSignature\">default&nbsp;void&nbsp;defaultMethod()</pre>",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
-                + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t2\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(2);\">Instance Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" "
-                + "class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t5\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(16);\">Default Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Instance Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\""
+                + " onclick=\"show(4);\">Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t5\" class=\"tableTab\" onclick=\"show(16);\">Default Methods</button></div>",
                 "<dl>\n"
                 + "<dt>Functional Interface:</dt>\n"
                 + "<dd>This is a functional interface and can therefore be used as "

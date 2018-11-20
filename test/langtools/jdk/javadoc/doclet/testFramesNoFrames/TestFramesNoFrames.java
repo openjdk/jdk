@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162353 8164747 8173707 8196202 8204303
+ * @bug 8162353 8164747 8173707 8196202 8204303 8184205
  * @summary javadoc should provide a way to disable use of frames
  * @library /tools/lib ../lib
  * @modules
@@ -347,7 +347,7 @@ public class TestFramesNoFrames extends JavadocTester {
             // the index.html file contains a summary table
             // if an overview was generated and not in frames mode
             checkOutput("index.html", !frames && overview,
-                    "<table class=\"overviewSummary\"");
+                    "<div class=\"overviewSummary\">\n<table");
 
             // the index.html file contains a redirect if
             // no frames and no overview

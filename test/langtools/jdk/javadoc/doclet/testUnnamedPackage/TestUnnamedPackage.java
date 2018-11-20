@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904075 4774450 5015144 8043698 8196201 8203791
+ * @bug      4904075 4774450 5015144 8043698 8196201 8203791 8184205
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
@@ -65,7 +65,7 @@ public class TestUnnamedPackage extends JavadocTester {
                 "<a href=\"package-summary.html\">");
 
         checkOutput("allclasses-index.html", true,
-                "<table class=\"typeSummary\">\n"
+                "<div class=\"typeSummary\">\n<table>\n"
                 + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
@@ -82,7 +82,7 @@ public class TestUnnamedPackage extends JavadocTester {
                 + "</table>");
 
         checkOutput("allpackages-index.html", true,
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"

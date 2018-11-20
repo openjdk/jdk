@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
- *           8169819 8074407 8191030 8182765
+ *           8169819 8074407 8191030 8182765 8184205
  * @summary  test generated docs for deprecated items
  * @author   jamieh
  * @library  ../lib
@@ -210,13 +210,15 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<li><a href=\"#annotation.type.member\">Annotation Type Elements</a></li>\n"
                 + "</ul>",
                 "<a id=\"forRemoval\">",
-                "<table class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>For Removal</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Element</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>",
-                "<table class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Enums</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Enum</th>\n"
@@ -230,8 +232,10 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>",
-                "<table class=\"deprecatedSummary\">\n"
+                + "</table>\n"
+                + "</div>",
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Exceptions</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Exceptions</th>\n"
@@ -245,8 +249,10 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>",
-                "<table class=\"deprecatedSummary\">\n"
+                + "</table>\n"
+                + "</div>",
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Field</th>\n"
@@ -288,7 +294,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>");
+                + "</table>\n"
+                + "</div>");
     }
 
     @Test
@@ -301,13 +308,15 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("deprecated-list.html", true,
                 "<a name=\"forRemoval\">",
-                "<table class=\"deprecatedSummary\" summary=\"For Removal table, listing for removal, and an explanation\">\n"
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"For Removal table, listing for removal, and an explanation\">\n"
                 + "<caption><span>For Removal</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Element</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>",
-                "<table class=\"deprecatedSummary\" summary=\"Enums table, listing enums, and an explanation\">\n"
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"Enums table, listing enums, and an explanation\">\n"
                 + "<caption><span>Enums</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Enum</th>\n"
@@ -321,8 +330,10 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>",
-                "<table class=\"deprecatedSummary\" summary=\"Exceptions table, listing exceptions, and an explanation\">\n"
+                + "</table>\n"
+                + "</div>",
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"Exceptions table, listing exceptions, and an explanation\">\n"
                 + "<caption><span>Exceptions</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Exceptions</th>\n"
@@ -336,8 +347,10 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>",
-                "<table class=\"deprecatedSummary\" summary=\"Fields table, listing fields, and an explanation\">\n"
+                + "</table>\n"
+                + "</div>",
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"Fields table, listing fields, and an explanation\">\n"
                 + "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Field</th>\n"
@@ -379,6 +392,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>");
+                + "</table>\n"
+                + "</div>");
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178067 8192007 8182765
+ * @bug 8178067 8192007 8182765 8184205
  * @summary tests the module's services, such as provides and uses
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -195,7 +195,7 @@ public class TestModuleServices extends JavadocTester {
                 "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"usesSummary\">\n" +
+                "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -222,7 +222,8 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"usesSummary\" summary=\"Uses table, listing types, and an explanation\">\n" +
+                "<div class=\"usesSummary\">\n" +
+                "<table summary=\"Uses table, listing types, and an explanation\">\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -262,7 +263,7 @@ public class TestModuleServices extends JavadocTester {
                 "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"usesSummary\">\n" +
+                "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -284,7 +285,8 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"usesSummary\" summary=\"Uses table, listing types, and an explanation\">\n" +
+                "<div class=\"usesSummary\">\n" +
+                "<table summary=\"Uses table, listing types, and an explanation\">\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -350,7 +352,7 @@ public class TestModuleServices extends JavadocTester {
                 "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\">\n" +
+                "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -377,7 +379,8 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
+                "<div class=\"providesSummary\">\n" +
+                "<table summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -420,7 +423,7 @@ public class TestModuleServices extends JavadocTester {
                 "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\">\n" +
+                "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -444,7 +447,8 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
+                "<div class=\"providesSummary\">\n" +
+                "<table summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -486,7 +490,7 @@ public class TestModuleServices extends JavadocTester {
                 "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\">\n" +
+                "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -500,7 +504,7 @@ public class TestModuleServices extends JavadocTester {
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>",
-                "<table class=\"usesSummary\">\n" +
+                "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -524,7 +528,8 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
+                "<div class=\"providesSummary\">\n" +
+                "<table summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
@@ -538,7 +543,8 @@ public class TestModuleServices extends JavadocTester {
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>",
-                "<table class=\"usesSummary\" summary=\"Uses table, listing types, and an explanation\">\n" +
+                "<div class=\"usesSummary\">\n" +
+                "<table summary=\"Uses table, listing types, and an explanation\">\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +

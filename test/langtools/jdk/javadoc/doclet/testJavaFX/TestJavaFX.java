@@ -25,7 +25,7 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791
+ *      8203791 8184205
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -136,7 +136,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\">\n"
+                + "<div class=\"memberSummary\">\n<table>\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<tr class=\"altColor\">\n"
                 + "<td class=\"colFirst\"><code><a href=\"C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
@@ -146,12 +146,16 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/C.html", false,
                 "A()",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">Instance Methods</a>"
-                + "</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>",
+                + "<div class=\"memberSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Instance Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " onclick=\"show(8);\">Concrete Methods</button></div>",
                 "<tr id=\"i0\" class=\"altColor\">\n"
                 + "<td class=\"colFirst\"><code><a href=\"C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
                 "<tr id=\"i1\" class=\"rowColor\">\n"
@@ -190,7 +194,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<a href=\"#setTestMethodProperty--\">"
                 + "setTestMethodProperty</a></span>()</code></th>",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
+                + "<div class=\"memberSummary\">\n<table summary=\"Property Summary table, listing properties, and an explanation\">\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -240,17 +244,21 @@ public class TestJavaFX extends JavadocTester {
                 + "</li>\n"
                 + "</ul>",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\">\n"
+                + "<div class=\"memberSummary\">\n<table>\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
 
         checkOutput("pkg2/Test.html", false,
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">Instance Methods</a>"
-                + "</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>");
+                + "<div class=\"memberSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Instance Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " onclick=\"show(8);\">Concrete Methods</button></div>");
     }
 
     @Test
@@ -296,7 +304,7 @@ public class TestJavaFX extends JavadocTester {
                 + "</li>\n"
                 + "</ul>",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
+                + "<div class=\"memberSummary\">\n<table summary=\"Property Summary table, listing properties, and an explanation\">\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 

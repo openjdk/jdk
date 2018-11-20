@@ -415,47 +415,69 @@ public class Table {
      * @return the HTML
      */
     public Content toContent() {
+        HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
+        mainDiv.setStyle(tableStyle);
         HtmlTree table = new HtmlTree(HtmlTag.TABLE);
-        table.setStyle(tableStyle);
         if (summary != null) {
             table.addAttr(HtmlAttr.SUMMARY, summary);
         }
-        if (tabMap != null) {
-            if (tabs.size() == 1) {
+        if (tabMap == null || tabs.size() == 1) {
+            if (tabMap == null) {
+                table.addContent(caption);
+            } else if (tabs.size() == 1) {
                 String tabName = tabs.iterator().next();
                 table.addContent(getCaption(new StringContent(tabName)));
-            } else {
-                ContentBuilder cb = new ContentBuilder();
-                int tabIndex = 0;
-                HtmlTree defaultTabSpan = new HtmlTree(HtmlTag.SPAN,
-                            HtmlTree.SPAN(new StringContent(defaultTab)),
-                            HtmlTree.SPAN(tabEnd, Contents.SPACE))
-                        .addAttr(HtmlAttr.ID, tabId.apply(tabIndex))
-                        .setStyle(activeTabStyle);
-                cb.addContent(defaultTabSpan);
-                for (String tabName : tabMap.keySet()) {
-                    tabIndex++;
-                    if (tabs.contains(tabName)) {
-                        String script = "javascript:" + tabScript.apply(1 << (tabIndex - 1));
-                        HtmlTree link = HtmlTree.A(script, new StringContent(tabName));
-                        HtmlTree tabSpan = new HtmlTree(HtmlTag.SPAN,
-                                    HtmlTree.SPAN(link), HtmlTree.SPAN(tabEnd, Contents.SPACE))
-                                .addAttr(HtmlAttr.ID, tabId.apply(tabIndex))
-                                .setStyle(tabStyle);
-                        cb.addContent(tabSpan);
-                    }
-                }
-                table.addContent(HtmlTree.CAPTION(cb));
             }
+            table.addContent(getTableBody());
+            mainDiv.addContent(table);
         } else {
-            table.addContent(caption);
+            HtmlTree tablist = new HtmlTree(HtmlTag.DIV)
+                    .addAttr(HtmlAttr.ROLE, "tablist")
+                    .addAttr(HtmlAttr.ARIA_ORIENTATION, "horizontal");
+
+            int tabIndex = 0;
+            tablist.addContent(createTab(tabId.apply(tabIndex), activeTabStyle, true, defaultTab));
+            table.addAttr(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(tabIndex));
+            for (String tabName : tabMap.keySet()) {
+                tabIndex++;
+                if (tabs.contains(tabName)) {
+                    String script = tabScript.apply(1 << (tabIndex - 1));
+                    HtmlTree tab = createTab(tabId.apply(tabIndex), tabStyle, false, tabName);
+                    tab.addAttr(HtmlAttr.ONCLICK, script);
+                    tablist.addContent(tab);
+                }
+            }
+            HtmlTree tabpanel = new HtmlTree(HtmlTag.DIV)
+                    .addAttr(HtmlAttr.ID, tableStyle + "_tabpanel")
+                    .addAttr(HtmlAttr.ROLE, "tabpanel");
+            table.addContent(getTableBody());
+            tabpanel.addContent(table);
+            mainDiv.addContent(tablist);
+            mainDiv.addContent(tabpanel);
         }
-        table.addContent(header.toContent());
+        return mainDiv;
+    }
+
+    private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
+        HtmlTree tab = new HtmlTree(HtmlTag.BUTTON)
+                .addAttr(HtmlAttr.ROLE, "tab")
+                .addAttr(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
+                .addAttr(HtmlAttr.ARIA_CONTROLS, tableStyle + "_tabpanel")
+                .addAttr(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
+                .addAttr(HtmlAttr.ONKEYDOWN, "switchTab(event)")
+                .addAttr(HtmlAttr.ID, tabId)
+                .setStyle(style);
+        tab.addContent(tabName);
+        return tab;
+    }
+
+    private Content getTableBody() {
+        ContentBuilder tableContent = new ContentBuilder();
+        tableContent.addContent(header.toContent());
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         bodyRows.forEach(row -> tbody.addContent(row));
-        table.addContent(tbody);
-
-        return table;
+        tableContent.addContent(tbody);
+        return tableContent;
     }
 
     /**
