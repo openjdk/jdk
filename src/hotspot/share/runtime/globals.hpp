@@ -498,8 +498,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Time out and warn or fail after SafepointTimeoutDelay "          \
           "milliseconds if failed to reach safepoint")                      \
                                                                             \
-  develop(bool, DieOnSafepointTimeout, false,                               \
-          "Die upon failure to reach safepoint (see SafepointTimeout)")     \
+  diagnostic(bool, AbortVMOnSafepointTimeout, false,                        \
+          "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
   /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
   /* typically, at most a few retries are needed                    */      \
