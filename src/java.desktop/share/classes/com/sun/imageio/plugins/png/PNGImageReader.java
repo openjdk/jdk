@@ -749,7 +749,8 @@ public class PNGImageReader extends ImageReader {
             loop: while (true) {
                 int chunkLength = stream.readInt();
                 int chunkType = stream.readInt();
-                int chunkCRC;
+                // Initialize chunkCRC, value assigned has no significance
+                int chunkCRC = -1;
 
                 // verify the chunk length
                 if (chunkLength < 0) {
@@ -757,10 +758,20 @@ public class PNGImageReader extends ImageReader {
                 };
 
                 try {
-                    stream.mark();
-                    stream.seek(stream.getStreamPosition() + chunkLength);
-                    chunkCRC = stream.readInt();
-                    stream.reset();
+                    /*
+                     * As per PNG specification all chunks should have
+                     * 4 byte CRC. But there are some images where
+                     * CRC is not present/corrupt for IEND chunk.
+                     * And these type of images are supported by other
+                     * decoders. So as soon as we hit chunk type
+                     * for IEND chunk stop reading metadata.
+                     */
+                    if (chunkType != IEND_TYPE) {
+                        stream.mark();
+                        stream.seek(stream.getStreamPosition() + chunkLength);
+                        chunkCRC = stream.readInt();
+                        stream.reset();
+                    }
                 } catch (IOException e) {
                     throw new IIOException("Invalid chunk length " + chunkLength);
                 }
