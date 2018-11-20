@@ -3180,13 +3180,13 @@ public class JavacParser implements Parser {
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent)elemType).name;
             if (isRestrictedLocalVarTypeName(typeName, pos, !compound && localDecl)) {
-                if (compound) {
-                    //error - 'var' in compound local var decl
-                   reportSyntaxError(pos, Errors.VarNotAllowedCompound);
-                } else if (type.hasTag(TYPEARRAY)) {
+                if (type.hasTag(TYPEARRAY) && !compound) {
                     //error - 'var' and arrays
                     reportSyntaxError(pos, Errors.VarNotAllowedArray);
                 } else {
+                    if(compound)
+                        //error - 'var' in compound local var decl
+                        reportSyntaxError(pos, Errors.VarNotAllowedCompound);
                     startPos = TreeInfo.getStartPos(mods);
                     if (startPos == Position.NOPOS)
                         startPos = TreeInfo.getStartPos(type);

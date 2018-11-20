@@ -1041,6 +1041,28 @@ public class JavacParserTest extends TestCase {
         assertEquals("the error message is not correct, actual: " + actualErrors, expectedErrors, actualErrors);
     }
 
+    @Test //JDK-821742
+    void testCompDeclVarType() throws IOException {
+        String code = "package test; public class Test {"
+                + "private void test() {"
+                + "var v1 = 10,v2 = 12;"
+                + "} private Test() {}}";
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ct.enter();
+        ct.analyze();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree method = (MethodTree) clazz.getMembers().get(0);
+        VariableTree stmt1 = (VariableTree) method.getBody().getStatements().get(0);
+        VariableTree stmt2 = (VariableTree) method.getBody().getStatements().get(1);
+        Tree v1Type = stmt1.getType();
+        Tree v2Type = stmt2.getType();
+        assertEquals("Implicit type for v1 is not correct: ", Kind.PRIMITIVE_TYPE, v1Type.getKind());
+        assertEquals("Implicit type for v2 is not correct: ", Kind.PRIMITIVE_TYPE, v2Type.getKind());
+    }
+
     @Test
     void testCaseBodyStatements() throws IOException {
         String code = "class C {" +
