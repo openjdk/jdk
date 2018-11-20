@@ -80,7 +80,6 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
         Klass* ek = NULL;
         {
           MutexUnlocker mu(MultiArray_lock);
-          MutexUnlocker mc(Compile_lock);   // for vtables
           super_klass = element_super->array_klass(CHECK_0);
           for( int i = element_supers->length()-1; i >= 0; i-- ) {
             Klass* elem_super = element_supers->at(i);
@@ -332,7 +331,6 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     ResourceMark rm;
     JavaThread *jt = (JavaThread *)THREAD;
     {
-      MutexLocker mc(Compile_lock, THREAD);   // for vtables
       // Ensure atomic creation of higher dimensions
       MutexLocker mu(MultiArray_lock, THREAD);
 

@@ -1282,7 +1282,6 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     JavaThread *jt = (JavaThread *)THREAD;
     {
       // Atomic creation of array_klasses
-      MutexLocker mc(Compile_lock, THREAD);   // for vtables
       MutexLocker ma(MultiArray_lock, THREAD);
 
       // Check if update has already taken place
