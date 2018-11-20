@@ -33,21 +33,22 @@
 
 class VM_StopSafepoint : public VM_Operation {
 public:
+  Semaphore* _running;
   Semaphore* _test_complete;
-  VM_StopSafepoint(Semaphore* wait_for) : _test_complete(wait_for) {}
+  VM_StopSafepoint(Semaphore* running, Semaphore* wait_for) :
+    _running(running), _test_complete(wait_for) {}
   VMOp_Type type() const          { return VMOp_None; }
   Mode evaluation_mode() const    { return _no_safepoint; }
   bool is_cheap_allocated() const { return false; }
-  void doit()                     { _test_complete->wait(); }
+  void doit()                     { _running->signal(); _test_complete->wait(); }
 };
 
 // This class and thread keep the non-safepoint op running while we do our testing.
 class VMThreadBlocker : public JavaThread {
 public:
-  Semaphore* _unblock;
-  Semaphore* _done;
-  VMThreadBlocker(Semaphore* ub, Semaphore* done) : _unblock(ub), _done(done) {
-  }
+  Semaphore _ready;
+  Semaphore _unblock;
+  VMThreadBlocker() {}
   virtual ~VMThreadBlocker() {}
   void run() {
     this->set_thread_state(_thread_in_vm);
@@ -55,9 +56,8 @@ public:
       MutexLocker ml(Threads_lock);
       Threads::add(this);
     }
-    VM_StopSafepoint ss(_unblock);
+    VM_StopSafepoint ss(&_ready, &_unblock);
     VMThread::execute(&ss);
-    _done->signal();
     Threads::remove(this);
     this->smr_delete();
   }
@@ -67,6 +67,12 @@ public:
     } else {
       ASSERT_TRUE(false);
     }
+  }
+  void ready() {
+    _ready.wait();
+  }
+  void release() {
+    _unblock.signal();
   }
 };
 
@@ -130,26 +136,32 @@ public:
 
 template <typename TESTFUNC>
 static void nomt_test_doer(TESTFUNC &f) {
-  Semaphore post, block_done, vmt_done;
-  VMThreadBlocker* blocker = new VMThreadBlocker(&block_done, &vmt_done);
+  Semaphore post;
+
+  VMThreadBlocker* blocker = new VMThreadBlocker();
   blocker->doit();
+  blocker->ready();
+
   SingleTestThread<TESTFUNC>* stt = new SingleTestThread<TESTFUNC>(&post, f);
   stt->doit();
   post.wait();
-  block_done.signal();
-  vmt_done.wait();
+
+  blocker->release();
 }
 
 template <typename RUNNER>
 static void mt_test_doer() {
-  Semaphore post, block_done, vmt_done;
-  VMThreadBlocker* blocker = new VMThreadBlocker(&block_done, &vmt_done);
+  Semaphore post;
+
+  VMThreadBlocker* blocker = new VMThreadBlocker();
   blocker->doit();
+  blocker->ready();
+
   RUNNER* runner = new RUNNER(&post);
   runner->doit();
   post.wait();
-  block_done.signal();
-  vmt_done.wait();
+
+  blocker->release();
 }
 
 #endif // include guard
