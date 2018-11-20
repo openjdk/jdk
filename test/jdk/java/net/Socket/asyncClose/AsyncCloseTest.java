@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,20 @@ public abstract class AsyncCloseTest {
     }
 
     protected synchronized AsyncCloseTest passed() {
-        if (reason == null)
+        if (failureReason() == null) {
             passed = true;
+        }
         return this;
     }
 
     protected synchronized AsyncCloseTest failed(String r) {
         passed = false;
-        reason = r;
+        reason.append(String.format("%n - %s", r));
         return this;
     }
 
     public synchronized String failureReason() {
-        return reason;
+        return reason.length() > 0 ? reason.toString() : null;
     }
 
     protected synchronized void closed() {
@@ -60,6 +61,6 @@ public abstract class AsyncCloseTest {
     }
 
     private boolean passed;
-    private String reason;
+    private final StringBuilder reason = new StringBuilder();
     private boolean closed;
 }
