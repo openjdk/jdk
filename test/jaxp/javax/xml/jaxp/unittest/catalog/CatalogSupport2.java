@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     public void setUpClass() throws Exception {
         setUp();
         setSystemProperty(SP_USE_CATALOG, "false");
+        setSystemProperty(SP_ACCESS_EXTERNAL_DTD, "file");
         timeoutRead = getSystemProperty(TTIMEOUTREAD);
         timeoutConnect = getSystemProperty(TIMEOUTCONNECT);
         setSystemProperty(TTIMEOUTREAD, "1000");
@@ -90,6 +91,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     @AfterClass
     public void tearDownClass() throws Exception {
         clearSystemProperty(SP_USE_CATALOG);
+        clearSystemProperty(SP_ACCESS_EXTERNAL_DTD);
         setSystemProperty(TIMEOUTCONNECT, "-1");
         setSystemProperty(TTIMEOUTREAD, "-1");
     }
@@ -97,7 +99,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on SAXParser.
     */
-    @Test(dataProvider = "data_SAXC", expectedExceptions = IOException.class)
+    @Test(dataProvider = "data_SAXC", expectedExceptions = SAXParseException.class)
     public void testSAXC(boolean setUseCatalog, boolean useCatalog, String catalog, String
             xml, MyHandler handler, String expected) throws Exception {
         testSAX(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -106,7 +108,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on XMLReader.
     */
-    @Test(dataProvider = "data_SAXC", expectedExceptions = IOException.class)
+    @Test(dataProvider = "data_SAXC", expectedExceptions = SAXParseException.class)
     public void testXMLReaderC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         testXMLReader(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -124,7 +126,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on DOM parser.
     */
-    @Test(dataProvider = "data_DOMC", expectedExceptions = IOException.class)
+    @Test(dataProvider = "data_DOMC", expectedExceptions = SAXParseException.class)
     public void testDOMC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         testDOM(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -133,7 +135,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on XMLStreamReader.
     */
-    @Test(dataProvider = "data_StAXC")
+    @Test(dataProvider = "data_StAXC", expectedExceptions = XMLStreamException.class)
     public void testStAXC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, XMLResolver resolver, String expected) throws Exception {
         testStAXNegative(setUseCatalog, useCatalog, catalog, xml, resolver, expected);

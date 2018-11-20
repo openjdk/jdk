@@ -3,11 +3,11 @@
   xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
 
     <!-- using uri entries -->
-    <uri name="http://openjdk.java.net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
-    <rewriteURI uriStartString="http://openjdk.java.net/" 
+    <uri name="http://openjdk_java_net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
+    <rewriteURI uriStartString="http://openjdk_java_net/" 
                    rewritePrefix="files" />
     
-    <rewriteURI uriStartString="http://openjdk.java.net/xml/catalog/dtd/" 
+    <rewriteURI uriStartString="http://openjdk_java_net/xml/catalog/dtd/" 
                    rewritePrefix="files" />
 
     <uriSuffix uriSuffix="systemsuffix.dtd" uri="systemsuffix.dtd"/>

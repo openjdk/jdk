@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
     <!-- DTDs and external entities -->
-    <uri name="http://openjdk.java.net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
+    <uri name="http://openjdk_java_net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
     
     <!-- XMLSchema refers to XMLSchema.dtd -->
     <public publicId="-//W3C//DTD XMLSCHEMA 200102//EN" uri="XMLSchema.dtd"/>
@@ -34,8 +34,8 @@
     <uri name="pathto/XSLInclude_header.xsl" uri="XSLInclude_header.xsl"/>
     <uri name="pathto/XSLInclude_footer.xsl" uri="XSLInclude_footer.xsl"/>
     <!-- and DTDs -->
-    <uri name="http://openjdk.java.net/xml/catalog/dtd/XSLDTD.dtd" uri="XSLDTD.dtd"/>
-    <uri name="http://openjdk.java.net/xml/catalog/dtd/include.dtd" uri="include.dtd"/>
+    <uri name="http://openjdk_java_net/xml/catalog/dtd/XSLDTD.dtd" uri="XSLDTD.dtd"/>
+    <uri name="http://openjdk_java_net/xml/catalog/dtd/include.dtd" uri="include.dtd"/>
     
     <!-- XSLT document function -->
     <uri name="pathto/DocFunc2.xml" uri="DocFuncCatalog.xml"/>

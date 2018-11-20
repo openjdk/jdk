@@ -9,12 +9,12 @@
                   uri="file:///share/mirrors/w3c/xhtml1/xhtml1-strict.dtd"/>
 
     <public publicId="-//OPENJDK//XML CATALOG DTD//1.0" uri="public.dtd"/>
-    <system systemId="http://openjdk.java.net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
+    <system systemId="http://openjdk_java_net/xml/catalog/dtd/system.dtd" uri="system.dtd"/>
     
-    <rewriteSystem systemIdStartString="http://openjdk.java.net/" 
+    <rewriteSystem systemIdStartString="http://openjdk_java_net/" 
                    rewritePrefix="files" />
     
-    <rewriteSystem systemIdStartString="http://openjdk.java.net/xml/catalog/dtd/" 
+    <rewriteSystem systemIdStartString="http://openjdk_java_net/xml/catalog/dtd/" 
                    rewritePrefix="files" />
     
     <systemSuffix systemIdSuffix="systemsuffix.dtd" uri="systemsuffix.dtd"/>
