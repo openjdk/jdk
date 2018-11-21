@@ -1392,6 +1392,7 @@ public class JavacParser implements Parser {
                 case RBRACE: case EOF:
                     JCSwitchExpression e = to(F.at(switchPos).SwitchExpression(selector,
                                                                                cases.toList()));
+                    e.endpos = token.pos;
                     accept(RBRACE);
                     return e;
                 default:
