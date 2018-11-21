@@ -42,6 +42,8 @@ typedef Array<u1> AnnotationArray;
 // a type_annotation instance.
 
 class Annotations: public MetaspaceObj {
+ friend class JVMCIVMStructs;
+
   // If you add a new field that points to any metaspace object, you
   // must add this field to Annotations::metaspace_pointers_do().
 

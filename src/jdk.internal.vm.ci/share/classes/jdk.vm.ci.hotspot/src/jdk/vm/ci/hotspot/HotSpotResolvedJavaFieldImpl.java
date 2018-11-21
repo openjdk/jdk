@@ -22,11 +22,15 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmFieldModifiers;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
@@ -156,41 +160,65 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         return (config().jvmAccFieldStable & modifiers) != 0;
     }
 
+    private boolean hasAnnotations() {
+        if (!isInternal()) {
+            HotSpotVMConfig config = config();
+            final long metaspaceAnnotations = UNSAFE.getAddress(holder.getMetaspaceKlass() + config.instanceKlassAnnotationsOffset);
+            if (metaspaceAnnotations != 0) {
+                long fieldsAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsFieldAnnotationsOffset);
+                if (fieldsAnnotations != 0) {
+                    long fieldAnnotations = UNSAFE.getAddress(fieldsAnnotations + config.fieldsAnnotationsBaseOffset + (ADDRESS_SIZE * index));
+                    return fieldAnnotations != 0;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public Annotation[] getAnnotations() {
-        Field javaField = toJava();
-        if (javaField != null) {
-            return javaField.getAnnotations();
+        if (!hasAnnotations()) {
+            return new Annotation[0];
         }
-        return new Annotation[0];
+        return toJava().getAnnotations();
     }
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        Field javaField = toJava();
-        if (javaField != null) {
-            return javaField.getDeclaredAnnotations();
+        if (!hasAnnotations()) {
+            return new Annotation[0];
         }
-        return new Annotation[0];
+        return toJava().getDeclaredAnnotations();
     }
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        Field javaField = toJava();
-        if (javaField != null) {
-            return javaField.getAnnotation(annotationClass);
+        if (!hasAnnotations()) {
+            return null;
         }
-        return null;
+        return toJava().getAnnotation(annotationClass);
     }
 
+    /**
+     * Gets a {@link Field} object corresponding to this object. This method always returns the same
+     * {@link Field} object for a given {@link HotSpotResolvedJavaFieldImpl}. This ensures
+     * {@link #getDeclaredAnnotations()}, {@link #getAnnotations()} and
+     * {@link #getAnnotation(Class)} are stable with respect to the identity of the
+     * {@link Annotation} objects they return.
+     */
     private Field toJava() {
-        if (isInternal()) {
-            return null;
-        }
-        try {
-            return holder.mirror().getDeclaredField(getName());
-        } catch (NoSuchFieldException e) {
-            return null;
+        synchronized (holder) {
+            HashMap<HotSpotResolvedJavaFieldImpl, Field> cache = holder.reflectionFieldCache;
+            if (cache == null) {
+                cache = new HashMap<>();
+                holder.reflectionFieldCache = cache;
+            }
+            Field reflect = cache.get(this);
+            if (reflect == null) {
+                reflect = compilerToVM().asReflectionField(holder, index);
+                cache.put(this, reflect);
+            }
+            return reflect;
         }
     }
 }

@@ -76,6 +76,7 @@
   static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord* volatile*)                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
+  static_field(CompilerToVM::Data,             _fields_annotations_base_offset,        int)                                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
@@ -86,7 +87,6 @@
   static_field(CompilerToVM::Data,             sizeof_ExceptionTableElement,           int)                                          \
   static_field(CompilerToVM::Data,             sizeof_LocalVariableTableElement,       int)                                          \
   static_field(CompilerToVM::Data,             sizeof_ConstantPool,                    int)                                          \
-  static_field(CompilerToVM::Data,             sizeof_SymbolPointer,                   int)                                          \
   static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
@@ -103,6 +103,8 @@
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
+                                                                                                                                     \
+  nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \
   unchecked_nonstatic_field(Array<u1>,         _data,                                  sizeof(u1))                                   \
@@ -164,6 +166,7 @@
   nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
   nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
+  nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
@@ -462,6 +465,8 @@
   declare_constant(ConstMethod::_has_linenumber_table)                    \
   declare_constant(ConstMethod::_has_localvariable_table)                 \
   declare_constant(ConstMethod::_has_exception_table)                     \
+  declare_constant(ConstMethod::_has_method_annotations)                  \
+  declare_constant(ConstMethod::_has_parameter_annotations)               \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \

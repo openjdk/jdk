@@ -27,6 +27,7 @@ import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
@@ -657,4 +658,17 @@ final class CompilerToVM {
      * Gets the host class for {@code type}.
      */
     native HotSpotResolvedObjectTypeImpl getHostClass(HotSpotResolvedObjectTypeImpl type);
+
+    /**
+     * Gets a {@link Executable} corresponding to {@code method}.
+     */
+    native Executable asReflectionExecutable(HotSpotResolvedJavaMethodImpl method);
+
+    /**
+     * Gets a {@link Field} denoted by {@code holder} and {@code index}.
+     *
+     * @param holder the class in which the requested field is declared
+     * @param fieldIndex the {@code fieldDescriptor::index()} denoting the field
+     */
+    native Field asReflectionField(HotSpotResolvedObjectTypeImpl holder, int fieldIndex);
 }

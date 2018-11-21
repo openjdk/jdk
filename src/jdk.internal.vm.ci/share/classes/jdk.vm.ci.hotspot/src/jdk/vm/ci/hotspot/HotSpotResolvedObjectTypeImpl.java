@@ -33,6 +33,7 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
@@ -73,6 +74,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private HotSpotConstantPool constantPool;
     final HotSpotJVMCIMetaAccessContext context;
     private HotSpotResolvedObjectType arrayOfType;
+
+    /**
+     * Managed exclusively by {@link HotSpotResolvedJavaFieldImpl#toJava}.
+     */
+    HashMap<HotSpotResolvedJavaFieldImpl, Field> reflectionFieldCache;
 
     /**
      * Gets the JVMCI mirror for a {@link Class} object.

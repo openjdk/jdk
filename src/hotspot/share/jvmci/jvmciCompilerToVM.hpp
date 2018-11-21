@@ -91,6 +91,7 @@ class CompilerToVM {
     static HeapWord** _heap_end_addr;
     static HeapWord* volatile* _heap_top_addr;
     static int _max_oop_map_stack_offset;
+    static int _fields_annotations_base_offset;
 
     static jbyte* cardtable_start_address;
     static int cardtable_shift;
@@ -101,7 +102,6 @@ class CompilerToVM {
     static int sizeof_ExceptionTableElement;
     static int sizeof_LocalVariableTableElement;
     static int sizeof_ConstantPool;
-    static int sizeof_SymbolPointer;
     static int sizeof_narrowKlass;
     static int sizeof_arrayOopDesc;
     static int sizeof_BasicLock;

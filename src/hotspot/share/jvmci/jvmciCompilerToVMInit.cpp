@@ -61,6 +61,7 @@ bool       CompilerToVM::Data::_supports_inline_contig_alloc;
 HeapWord** CompilerToVM::Data::_heap_end_addr;
 HeapWord* volatile* CompilerToVM::Data::_heap_top_addr;
 int CompilerToVM::Data::_max_oop_map_stack_offset;
+int CompilerToVM::Data::_fields_annotations_base_offset;
 
 jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
@@ -71,7 +72,6 @@ int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
 int CompilerToVM::Data::sizeof_ExceptionTableElement = sizeof(ExceptionTableElement);
 int CompilerToVM::Data::sizeof_LocalVariableTableElement = sizeof(LocalVariableTableElement);
 int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
-int CompilerToVM::Data::sizeof_SymbolPointer = sizeof(Symbol*);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
 int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
@@ -121,6 +121,8 @@ void CompilerToVM::Data::initialize(TRAPS) {
 
   symbol_init = (address) vmSymbols::object_initializer_name();
   symbol_clinit = (address) vmSymbols::class_initializer_name();
+
+  _fields_annotations_base_offset = Array<AnnotationArray*>::base_offset_in_bytes();
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
