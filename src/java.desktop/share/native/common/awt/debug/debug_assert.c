@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ enum {
 
 static DASSERT_CALLBACK PfnAssertCallback = NULL;
 
-void DAssert_Impl(const char *msg, const char * filename, int linenumber) {
+/* JNIEXPORT because this function is also called from libawt_xawt */
+JNIEXPORT void JNICALL
+DAssert_Impl(const char *msg, const char * filename, int linenumber) {
     if (PfnAssertCallback != NULL) {
         (*PfnAssertCallback)(msg, filename, linenumber);
     } else {

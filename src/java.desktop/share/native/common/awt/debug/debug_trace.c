@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,16 +237,20 @@ void DTrace_PrintImpl(const char * fmt, ...) {
 
 /*
  * Called via DTRACE_PRINT macro. Outputs printf style formatted text.
+ * JNIEXPORT because these functions are also called from libawt_xawt.
  */
-void DTrace_VPrint( const char * file, int line, int argc, const char * fmt, va_list arglist ) {
+JNIEXPORT void JNICALL
+DTrace_VPrint( const char * file, int line, int argc, const char * fmt, va_list arglist ) {
     DASSERT(fmt != NULL);
     DTrace_VPrintImpl(fmt, arglist);
 }
 
 /*
  * Called via DTRACE_PRINTLN macro. Outputs printf style formatted text with an automatic newline.
+ * JNIEXPORT because these functions are also called from libawt_xawt.
  */
-void DTrace_VPrintln( const char * file, int line, int argc, const char * fmt, va_list arglist ) {
+JNIEXPORT void JNICALL
+DTrace_VPrintln( const char * file, int line, int argc, const char * fmt, va_list arglist ) {
     DTrace_VPrintImpl(fmt, arglist);
     DTrace_PrintImpl("\n");
 }
@@ -254,10 +258,12 @@ void DTrace_VPrintln( const char * file, int line, int argc, const char * fmt, v
 /*
  * Called via DTRACE_ macros. If tracing is enabled at the given location, it enters
  * the trace mutex and invokes the callback function to output the trace.
+ * JNIEXPORT because these functions are also called from libawt_xawt.
  */
-void DTrace_PrintFunction( DTRACE_PRINT_CALLBACK pfn, dtrace_id * pFileTraceId, dtrace_id * pLineTraceId,
-                           const char * file, int line,
-                           int argc, const char * fmt, ... ) {
+JNIEXPORT void JNICALL
+DTrace_PrintFunction( DTRACE_PRINT_CALLBACK pfn, dtrace_id * pFileTraceId, dtrace_id * pLineTraceId,
+                      const char * file, int line,
+                      int argc, const char * fmt, ... ) {
     va_list     arglist;
 
     DASSERT(file != NULL);
