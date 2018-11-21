@@ -40,7 +40,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }

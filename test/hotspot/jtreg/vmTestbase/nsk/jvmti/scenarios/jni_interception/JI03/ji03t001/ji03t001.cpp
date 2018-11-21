@@ -63,16 +63,16 @@ void doRedirect(JNIEnv *env) {
     if (verbose)
         printf("\ndoRedirect: obtaining the JNI function ...\n");
 
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get original JNI function table");
         result = STATUS_FAILED;
     }
 
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get redirected JNI function table");
@@ -83,8 +83,8 @@ void doRedirect(JNIEnv *env) {
 
     redir_jni_functions->GetVersion = MyGetVersion;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to set new JNI function table");
@@ -100,8 +100,8 @@ void doRestore(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRestore: restoring the original JNI function ...\n");
-    if ((err = jvmti->SetJNIFunctionTable(orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to restore original JNI function table");

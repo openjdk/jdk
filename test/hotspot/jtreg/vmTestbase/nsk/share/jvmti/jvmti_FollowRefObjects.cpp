@@ -237,7 +237,8 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
         return JNI_FALSE;
     }
 
-    if ((pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL) {
+    pRefRec = findRefToVerify(tagFrom, tagTo, refKind);
+    if (pRefRec != NULL) {
         pRefRec->_expectedCount += count;
         return JNI_TRUE;
     }
@@ -249,7 +250,8 @@ jboolean markRefToVerify(jlong tagFrom, jlong tagTo, int refKind)
 {
     RefToVerify * pRefRec;
 
-    if ((pRefRec = findRefToVerify(tagFrom, tagTo, refKind)) != NULL) {
+    pRefRec = findRefToVerify(tagFrom, tagTo, refKind);
+    if (pRefRec != NULL) {
         pRefRec->_actualCount++;
         return JNI_TRUE;
     }

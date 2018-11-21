@@ -45,8 +45,8 @@ void redirect(JNIEnv *env, jvmtiError exError) {
         printf("\ntrying to overwrite the JNI function table expecting the error %s to be returned ...\n",
             TranslateError(exError));
 
-    if ((err = jvmti->SetJNIFunctionTable(NULL)) !=
-            exError) {
+    err = jvmti->SetJNIFunctionTable(NULL);
+    if (err != exError) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: SetJNIFunctionTable() returns %s instead of %s as expected\n",
             __FILE__, __LINE__, TranslateError(err), TranslateError(exError));
@@ -78,7 +78,8 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab002_check(JNIEnv *env, jobject obj)
        only since JDK 1.2 */
     if (verbose)
         printf("\nb) Checking the function with the detached thread ...\n\ndetaching the main thread ...\n");
-    if ((res = vm->DetachCurrentThread()) != JNI_OK) {
+    res = vm->DetachCurrentThread();
+    if (res != JNI_OK) {
         printf(
             "(%s,%d): Warning: DetachCurrentThread() returns: %d\n"
             "\tcheck with the detached main thread skipped\n",
@@ -88,7 +89,8 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab002_check(JNIEnv *env, jobject obj)
 
         if (verbose)
             printf("\nattaching the main thread back ...\n");
-        if ((res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0)) != JNI_OK) {
+        res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0);
+        if (res != JNI_OK) {
             printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
                 __FILE__, __LINE__, res);
             return STATUS_FAILED;

@@ -77,7 +77,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -166,15 +167,14 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_setBreakpoints(JNIEnv *env,
                 breakpoints[i].m_name, breakpoints[i].m_sign, breakpoints[i].loc);
         }
 
-        if ((err = (jvmti->SetBreakpoint(breakpoints[i].mid,
-                breakpoints[i].loc))) != JVMTI_ERROR_NONE) {
+        err = jvmti->SetBreakpoint(breakpoints[i].mid, breakpoints[i].loc);
+        if (err != JVMTI_ERROR_NONE) {
             printf("%s: Failed to call SetBreakpoint(): error=%d: %s\n",
                     __FILE__, err, TranslateError(err));
             return STATUS_FAILED;
         }
 
-        err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_BREAKPOINT, NULL);
+        err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                    TranslateError(err), err);
@@ -210,7 +210,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_makeRedefinition(JNIEnv *env,
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
+    err = jvmti->RedefineClasses(1, &classDef);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call RedefineClasses(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");
@@ -261,8 +262,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
             }
         }
 
-        if ((err = (jvmti->ClearBreakpoint(breakpoints[i].mid,
-                breakpoints[i].loc))) != JVMTI_ERROR_NOT_FOUND) {
+        err = jvmti->ClearBreakpoint(breakpoints[i].mid, breakpoints[i].loc);
+        if (err != JVMTI_ERROR_NOT_FOUND) {
             printf(
                 "TEST FAILED: Breakpoint #%d in the %s method:\n"
                 "\tname=\"%s\"; signature=\"%s\"; location=%d was not cleared:\n"
@@ -282,8 +283,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
                     breakpoints[i].loc, err, TranslateError(err));
             }
 
-            if ((err = (jvmti->SetBreakpoint(breakpoints[i].mid,
-                    breakpoints[i].loc))) == JVMTI_ERROR_DUPLICATE) {
+            err = jvmti->SetBreakpoint(breakpoints[i].mid, breakpoints[i].loc);
+            if (err == JVMTI_ERROR_DUPLICATE) {
                 printf(
                     "TEST FAILED: the function SetBreakpoint() returned the error %d: %s\n"
                     "\ti.e. the breakpoint #%d has not been really cleared.\n\n",

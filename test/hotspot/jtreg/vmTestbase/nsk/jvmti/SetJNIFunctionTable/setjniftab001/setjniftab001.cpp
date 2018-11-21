@@ -70,8 +70,8 @@ static volatile int monent_calls = 0;
 static void lock() {
     jvmtiError err;
 
-    if ((err = jvmti->RawMonitorEnter(countLock)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->RawMonitorEnter(countLock);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILURE: RawMonitorEnter returns unexpected error: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         exit(STATUS_FAILED);
@@ -81,8 +81,8 @@ static void lock() {
 static void unlock() {
     jvmtiError err;
 
-    if ((err = jvmti->RawMonitorExit(countLock))
-            != JVMTI_ERROR_NONE) {
+    err = jvmti->RawMonitorExit(countLock);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILURE: RawMonitorExit returns unexpected error: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         exit(STATUS_FAILED);
@@ -116,15 +116,15 @@ void doRedirect(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRedirect: obtaining the JNI function table ...\n");
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get original JNI function table");
     }
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -137,8 +137,8 @@ void doRedirect(JNIEnv *env) {
         printf("\ndoRedirect: overwriting the function MonitorEnter ...\n");
     redir_jni_functions->MonitorEnter = MyMonitorEnter;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -154,8 +154,8 @@ void doRestore(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRestore: restoring the original JNI function table ...\n");
-    if ((err = jvmti->SetJNIFunctionTable(orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -168,7 +168,8 @@ void doRestore(JNIEnv *env) {
 void doExec(JNIEnv *env, int thrNum) {
     jint res;
 
-    if ((res = env->MonitorEnter(clsObj)) != 0) {
+    res = env->MonitorEnter(clsObj);
+    if (res != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILURE: MonitorEnter() returns %d for thread #%d\n",
             __FILE__, __LINE__, res, thrNum);
@@ -183,7 +184,8 @@ void doExec(JNIEnv *env, int thrNum) {
     if (verbose)
         printf("\ndoExec: thread #%d entered the monitor\n",
             thrNum);
-    if ((res = env->MonitorExit(clsObj)) != 0) {
+    res = env->MonitorExit(clsObj);
+    if (res != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILURE: MonitorExit() returns %d for thread #%d\n",
             __FILE__, __LINE__, res, thrNum);
@@ -221,7 +223,8 @@ static int waitingThread(void *context) {
     if (verbose)
         printf("\nwaitingThread: thread #%d started\n\tattaching the thread to the VM ...\n",
             indx);
-    if ((res = vm->AttachCurrentThread((void **) &env, (void *) 0)) != 0) {
+    res = vm->AttachCurrentThread((void **) &env, (void *) 0);
+    if (res != 0) {
         printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
             __FILE__, __LINE__, res);
         return STATUS_FAILED;
@@ -231,7 +234,8 @@ static int waitingThread(void *context) {
 
     doExec(env, indx);
 
-    if ((res = vm->DetachCurrentThread()) != 0) {
+    res = vm->DetachCurrentThread();
+    if (res != 0) {
         printf("(%s,%d): TEST FAILURE: waitingThread: DetachCurrentThread() returns: %d\n",
             __FILE__, __LINE__, res);
         return STATUS_FAILED;
@@ -252,7 +256,8 @@ static jobject getObjectFromField(JNIEnv *env, jobject obj) {
     if (verbose)
        printf("\ngetObjectFromField: obtaining field ID for name=\"%s\" signature=\"%s\"...\n",
            javaField, classSig);
-    if ((fid = env->GetFieldID(_objCls, javaField, classSig)) == 0) {
+    fid = env->GetFieldID(_objCls, javaField, classSig);
+    if (fid == 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILURE: failed to get ID for the field \"%s\"\n",
             __FILE__, __LINE__, javaField);
@@ -326,7 +331,8 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
         return STATUS_FAILED;
     }
 
-    if ((clsObj = env->NewGlobalRef(getObjectFromField(env, obj))) == NULL) {
+    clsObj = env->NewGlobalRef(getObjectFromField(env, obj));
+    if (clsObj == NULL) {
         printf("(%s,%d): TEST FAILURE: cannot create a new global reference of class \"%s\"\n",
             __FILE__, __LINE__, classSig);
         env->FatalError("failed to create a new global reference");
@@ -351,7 +357,8 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
     if (verbose)
         printf("\nb) Checking the assertion inside main thread detached and attached again ...\n\ndetaching the main thread ...\n");
 
-    if ((res = vm->DetachCurrentThread()) != 0) {
+    res = vm->DetachCurrentThread();
+    if (res != 0) {
         printf(
             "(%s,%d): Warning: DetachCurrentThread() returns: %d\n"
             "\tcheck with the detached main thread skipped\n",
@@ -359,7 +366,8 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
     } else {
         if (verbose)
             printf("\nattaching the main thread again ...\n");
-        if ((res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0)) != 0) {
+        res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0);
+        if (res != 0) {
             printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
                 __FILE__, __LINE__, res);
             return STATUS_FAILED;
@@ -419,8 +427,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     vm = jvm;
 
-    if ((err = jvmti->CreateRawMonitor("_counter_lock",
-            &countLock)) != JVMTI_ERROR_NONE) {
+    err = jvmti->CreateRawMonitor("_counter_lock", &countLock);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(%s,%d): TEST FAILURE: CreateRawMonitor() returns unexpected error: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         return JNI_ERR;

@@ -106,7 +106,8 @@ jint JNICALL MyMonitorEnter(JNIEnv *env, jobject obj) {
 static jint enterMonitor(JNIEnv *env, const char *thr) {
     jint result;
 
-    if ((result = env->MonitorEnter(clsObj)) != 0) {
+    result = env->MonitorEnter(clsObj);
+    if (result != 0) {
         NSK_COMPLAIN2("TEST FAILURE: %s: MonitorEnter() returns: %d\n",
             thr, result);
         return STATUS_FAILED;
@@ -125,7 +126,8 @@ static jint enterMonitor(JNIEnv *env, const char *thr) {
 static jint exitMonitor(JNIEnv *env, const char *thr) {
     jint result;
 
-    if ((result = env->MonitorExit(clsObj)) != 0) {
+    result = env->MonitorExit(clsObj);
+    if (result != 0) {
         NSK_COMPLAIN2("TEST FAILURE: %s: MonitorExit() returns: %d\n",
             thr, result);
         return STATUS_FAILED;
@@ -138,15 +140,15 @@ static void doRedirect(JNIEnv *env) {
     jvmtiError err;
 
     NSK_DISPLAY0("doRedirect: obtaining the JNI function table ...\n");
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: failed to get original JNI function table: %s\n",
             TranslateError(err));
         env->FatalError("failed to get original JNI function table");
     }
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: failed to get redirected JNI function table: %s\n",
             TranslateError(err));
@@ -158,8 +160,8 @@ static void doRedirect(JNIEnv *env) {
 
     redir_jni_functions->MonitorEnter = MyMonitorEnter;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILED: failed to set new JNI function table: %s\n",
             TranslateError(err));
@@ -198,7 +200,8 @@ static int waitingThread(void *context) {
         "waitingThread: thread #%d started\n"
         "\tattaching the thread to the VM ...\n",
         indx);
-    if ((res = vm->AttachCurrentThread((void **) &env, (void *) 0)) != 0) {
+    res = vm->AttachCurrentThread((void **) &env, (void *) 0);
+    if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
             res);
         return STATUS_FAILED;
@@ -229,7 +232,8 @@ static int ownerThread(void *context) {
     int tries = 0;
 
     NSK_DISPLAY0("ownerThread: thread started\n\tattaching the thread to the VM ...\n");
-    if ((res = vm->AttachCurrentThread((void **) &env, (void *) 0)) != 0) {
+    res = vm->AttachCurrentThread((void **) &env, (void *) 0);
+    if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: ownerThread: AttachCurrentThread() returns: %d\n",
             res);
         return STATUS_FAILED;
@@ -270,7 +274,8 @@ static int redirectorThread(void *context) {
     int tries = 0;
 
     NSK_DISPLAY0("redirectorThread: thread started\n\tattaching the thread to the VM ...\n");
-    if ((res = vm->AttachCurrentThread((void **) &env, (void *) 0)) != 0) {
+    res = vm->AttachCurrentThread((void **) &env, (void *) 0);
+    if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: redirectorThread: AttachCurrentThread() returns: %d\n",
             res);
         return STATUS_FAILED;
@@ -294,7 +299,8 @@ static jobject getObjectFromField(JNIEnv *env, jobject obj) {
 
     NSK_DISPLAY2("getObjectFromField: obtaining field ID for name=\"%s\" signature=\"%s\"...\n",
         javaField, classSig);
-    if ((fid = env->GetFieldID(_objCls, javaField, classSig)) == 0) {
+    fid = env->GetFieldID(_objCls, javaField, classSig);
+    if (fid == 0) {
         result = STATUS_FAILED;
         NSK_COMPLAIN1("TEST FAILURE: failed to get ID for the field \"%s\"\n",
             javaField);
@@ -322,7 +328,8 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     }
 
 /* prepare the testing */
-    if ((clsObj = env->NewGlobalRef(getObjectFromField(env, obj))) == NULL) {
+    clsObj = env->NewGlobalRef(getObjectFromField(env, obj));
+    if (clsObj == NULL) {
         NSK_COMPLAIN1("TEST FAILURE: cannot create a new global reference of class \"%s\"\n",
             classSig);
         env->FatalError("failed to create a new global reference");

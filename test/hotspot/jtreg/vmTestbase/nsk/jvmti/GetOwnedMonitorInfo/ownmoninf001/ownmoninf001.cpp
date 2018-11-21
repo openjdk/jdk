@@ -122,7 +122,8 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon1(JNIEnv *env,
         jclass cls, jint point, jthread thr, jobject lock) {
     jobject *monitors;
-    if ((monitors = getInfo(env, point, thr, 1)) == NULL) {
+    monitors = getInfo(env, point, thr, 1);
+    if (monitors == NULL) {
         return;
     }
     if (!env->IsSameObject(lock, monitors[0])) {
@@ -135,7 +136,8 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon2(JNIEnv *env,
         jclass cls, jint point, jthread thr, jobject lock1, jobject lock2) {
     jobject *monitors;
-    if ((monitors = getInfo(env, point, thr, 2)) == NULL) {
+    monitors = getInfo(env, point, thr, 2);
+    if (monitors == NULL) {
         return;
     }
     if (!env->IsSameObject(lock1, monitors[0]) && !env->IsSameObject(lock2, monitors[0])) {

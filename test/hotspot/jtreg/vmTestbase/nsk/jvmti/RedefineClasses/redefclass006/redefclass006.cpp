@@ -51,7 +51,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -125,7 +126,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass006_makeRedefinition(JNIEnv *env,
     }
 
 /* explode the bomb */
-    if ((err = (jvmti->RedefineClasses(1, classDefPtr))) != JVMTI_ERROR_NULL_POINTER) {
+    err = jvmti->RedefineClasses(1, classDefPtr);
+    if (err != JVMTI_ERROR_NULL_POINTER) {
         printf("TEST FAILED: the function RedefineClasses() returned error %d: %s\n",
             err, TranslateError(err));
         printf("\tBut it should return the error JVMTI_ERROR_NULL_POINTER.\n");

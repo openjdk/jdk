@@ -144,10 +144,19 @@ Java_nsk_jvmti_GetThreadState_thrstat005_checkThreadState(JNIEnv * pEnv, jclass 
 
         printf("checkThreadState: wait %d ms\n", waitTime);
         fflush(stdout);
-        if ((res = g_ppJvmtiEnv->RawMonitorEnter(g_waitMon)) != JVMTI_ERROR_NONE
-                || (res = g_ppJvmtiEnv->RawMonitorWait(g_waitMon, waitTime)) != JVMTI_ERROR_NONE
-                || (res = g_ppJvmtiEnv->RawMonitorExit(g_waitMon)) != JVMTI_ERROR_NONE) {
-            reportError("GetThreadState: unexpected error", res);
+        res = g_ppJvmtiEnv->RawMonitorEnter(g_waitMon);
+        if (res != JVMTI_ERROR_NONE) {
+            reportError("GetThreadState: unexpected error from RawMontiorEnter", res);
+            return JNI_FALSE;
+        }
+        res = g_ppJvmtiEnv->RawMonitorWait(g_waitMon, waitTime);
+        if (res != JVMTI_ERROR_NONE) {
+            reportError("GetThreadState: unexpected error from RawMontiorWait", res);
+            return JNI_FALSE;
+        }
+        res = g_ppJvmtiEnv->RawMonitorExit(g_waitMon);
+        if (res != JVMTI_ERROR_NONE) {
+            reportError("GetThreadState: unexpected error from RawMonitorExit", res);
             return JNI_FALSE;
         }
 

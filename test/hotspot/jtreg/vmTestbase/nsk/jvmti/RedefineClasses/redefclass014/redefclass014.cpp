@@ -102,7 +102,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass014_check(JNIEnv *env, jclass cls, jbyt
     }
 
     /* to check if RedefineClasses is supported */
-    if ((err = (jvmti->GetCapabilities(&caps))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(GetCapabilities) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         return STATUS_FAILED;

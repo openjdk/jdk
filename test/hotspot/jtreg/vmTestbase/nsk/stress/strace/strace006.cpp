@@ -43,7 +43,8 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     }
 
     FIND_CLASS(stackOverflowErrorClass, "java/lang/StackOverflowError");
-    if ((stackOverflowErrorClass = (jclass) env->NewGlobalRef(stackOverflowErrorClass)) == NULL) {
+    stackOverflowErrorClass = (jclass) env->NewGlobalRef(stackOverflowErrorClass);
+    if (stackOverflowErrorClass == NULL) {
         printf("Can't create global ref for stack overflow class\n");
         return 0;
     }

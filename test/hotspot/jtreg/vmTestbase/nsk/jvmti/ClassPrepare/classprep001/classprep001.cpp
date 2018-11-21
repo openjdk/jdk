@@ -271,7 +271,8 @@ Java_nsk_jvmti_ClassPrepare_classprep001_getReady(JNIEnv *env, jclass cls) {
         return;
     }
 
-    if ((err = (jvmti->GetCurrentThread(&prep_thread))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCurrentThread(&prep_thread);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
         result = STATUS_FAILED;
         return;
@@ -298,7 +299,8 @@ Java_nsk_jvmti_ClassPrepare_classprep001_check(JNIEnv *env, jclass cls) {
         return STATUS_FAILED;
     }
 
-    if ((err = (jvmti->GetCurrentThread(&prep_thread))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCurrentThread(&prep_thread);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
         return STATUS_FAILED;
     }

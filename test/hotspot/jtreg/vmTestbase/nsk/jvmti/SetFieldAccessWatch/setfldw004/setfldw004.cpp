@@ -76,7 +76,8 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if ((err = (jvmti->GetCapabilities(&caps))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
         printf("(GetCapabilities) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         return JNI_ERR;

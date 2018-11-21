@@ -53,7 +53,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -110,7 +111,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_makeRedefinition(JNIEnv *env, jclas
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
+    err = jvmti->RedefineClasses(1, &classDef);
+    if (err != JVMTI_ERROR_NONE) {
         if (err == JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED) {
             printf("Warning: unrestrictedly redefinition of classes is not implemented,\n"
                    "\tso the test has no results.\n");
@@ -137,14 +139,16 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_checkNewFields(JNIEnv *env,
     jint intFld;
     jlong longFld;
 
-    if ((fid = env->GetStaticFieldID(redefCls, "intComplNewFld", "I")) == NULL) {
+    fid = env->GetStaticFieldID(redefCls, "intComplNewFld", "I");
+    if (fid == NULL) {
         printf("%s: Failed to get the field ID for the static field \"intComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
     }
     intFld = env->GetStaticIntField(redefCls, fid);
 
-    if ((fid = env->GetStaticFieldID(redefCls, "longComplNewFld", "J")) == NULL) {
+    fid = env->GetStaticFieldID(redefCls, "longComplNewFld", "J");
+    if (fid == NULL) {
         printf("%s: Failed to get the field ID for the static field \"longComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;

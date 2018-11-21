@@ -78,13 +78,15 @@ void doRedirect(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRedirect: obtaining the JNI function table ...\n");
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get original JNI function table");
     }
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -98,8 +100,8 @@ void doRedirect(JNIEnv *env) {
     redir_jni_functions->AllocObject = MyAllocObject;
     redir_jni_functions->NewObjectV = MyNewObjectV;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -115,7 +117,8 @@ void doRestore(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRestore: restoring the original JNI function table ...\n");
-    if ((err = jvmti->SetJNIFunctionTable(orig_jni_functions)) != JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -130,8 +133,8 @@ void doExec(JNIEnv *env, jclass allCls, jmethodID ctorId, const char *msg, ...) 
     jobject newObj;
     va_list args;
     va_start(args, msg);
-    if ((allObj = env->AllocObject(allCls))
-            == NULL) {
+    allObj = env->AllocObject(allCls);
+    if (allObj == NULL) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to call %s AllocObject()\n",
             __FILE__, __LINE__, msg);
@@ -211,14 +214,15 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t004_check(JNIEnv *env, jobj
         return STATUS_FAILED;
     }
 
-    if ((objCls = env->FindClass(classSig)) == NULL) {
+    objCls = env->FindClass(classSig);
+    if (objCls == NULL) {
         printf("(%s,%d): TEST FAILED: failed to call FindClass() for \"%s\"\n",
             __FILE__, __LINE__, classSig);
         return STATUS_FAILED;
     }
 
-    if ((ctorId = env->GetMethodID(objCls, "<init>", "()V"))
-            == NULL) {
+    ctorId = env->GetMethodID(objCls, "<init>", "()V");
+    if (ctorId == NULL) {
         printf("(%s,%d): TEST FAILED: failed to call GetMethodID() for a constructor\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;

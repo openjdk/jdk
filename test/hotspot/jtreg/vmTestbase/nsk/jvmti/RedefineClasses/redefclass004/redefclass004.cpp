@@ -58,7 +58,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -115,7 +116,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_makeRedefinition(JNIEnv *env,
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
+    err = jvmti->RedefineClasses(1, &classDef);
+    if (err != JVMTI_ERROR_NONE) {
         if (err == JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED) {
             printf(
                 "Warning: unrestrictedly redefinition of classes is not implemented,\n"
@@ -147,7 +149,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
     const char *strFld = NULL;
 
 /* get value of new instance field "intComplNewFld" */
-    if ((fid = env->GetFieldID(redefCls, "intComplNewFld", "I")) == NULL) {
+    fid = env->GetFieldID(redefCls, "intComplNewFld", "I");
+    if (fid == NULL) {
         printf("%s: Failed to get the field ID for the field \"intComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
@@ -155,7 +158,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
     intFld = env->GetIntField(redefObj, fid);
 
 /* get value of new instance field "longComplNewFld" */
-    if ((fid = env->GetFieldID(redefCls, "longComplNewFld", "J")) == NULL) {
+    fid = env->GetFieldID(redefCls, "longComplNewFld", "J");
+    if (fid == NULL) {
         printf("%s: Failed to get the field ID for the field \"longComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
@@ -163,7 +167,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
     longFld = env->GetLongField(redefObj, fid);
 
 /* get value of new instance field "stringComplNewFld" */
-    if ((fid = env->GetFieldID(redefCls, "stringComplNewFld", "Ljava/lang/String;")) == NULL) {
+    fid = env->GetFieldID(redefCls, "stringComplNewFld", "Ljava/lang/String;");
+    if (fid == NULL) {
         printf("%s: Failed to get the field ID for the field \"stringComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;

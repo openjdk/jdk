@@ -70,15 +70,15 @@ static void doRedirect(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRedirect: obtaining the JNI function table ...\n");
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get original JNI function table");
     }
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -91,8 +91,8 @@ static void doRedirect(JNIEnv *env) {
         printf("\ndoRedirect: overwriting the function GetVersion() ...\n");
     redir_jni_functions->GetVersion = MyGetVersion;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -108,8 +108,8 @@ static void doRestore(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRestore: restoring the original JNI function table ...\n");
-    if ((err = jvmti->SetJNIFunctionTable(orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -126,8 +126,8 @@ static void checkRedir(JNIEnv *env, int exCalls) {
 
     redir_calls = 0;
 
-    if ((err = jvmti->GetJNIFunctionTable(&tested_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&tested_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get modified JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));

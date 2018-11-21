@@ -38,7 +38,8 @@ extern "C" {
 JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved) {
     JNIEnv* jni;
 
-    if ((jni = (JNIEnv*) nsk_aod_createJNIEnv(vm)) == NULL)
+    jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
+    if (jni == NULL)
         return JNI_ERR;
 
     // can't use NSK_DISPLAY since needed for nsk_ functions initialization isn't done here

@@ -51,7 +51,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -95,7 +96,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass002_suspThread(JNIEnv *env, jclass cls,
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke SuspendThread()\n");
-    if ((err = (jvmti->SuspendThread(susThr))) != JVMTI_ERROR_NONE) {
+    err = jvmti->SuspendThread(susThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call SuspendThread():\n\tthe function returned error %d: %s\n",
             __FILE__, err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");
@@ -113,7 +115,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass002_resThread(JNIEnv *env, jclass cls, 
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke ResumeThread()\n");
-    if ((err = (jvmti->ResumeThread(susThr))) != JVMTI_ERROR_NONE) {
+    err = jvmti->ResumeThread(susThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call ResumThread():\n\tthe function returned error %d: %s\n",
             __FILE__, err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");
@@ -147,7 +150,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass002_makeRedefinition(JNIEnv *env, jclas
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
+    err = jvmti->RedefineClasses(1, &classDef);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call RedefineClasses():\n\tthe function returned error %d: %s\n",
             __FILE__, err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");
