@@ -154,7 +154,6 @@ public:
   // get into an infinite loop).
   virtual bool should_enqueue_buffer() { return true; }
   void handle_zero_index();
-  void locking_enqueue_completed_buffer(BufferNode* node);
 
   void enqueue_known_active(void* ptr);
 
