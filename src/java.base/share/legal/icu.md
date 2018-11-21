@@ -1,4 +1,4 @@
-## International Components for Unicode (ICU4J) v60.2
+## International Components for Unicode (ICU4J) v62.1
 
 ### ICU4J License
 

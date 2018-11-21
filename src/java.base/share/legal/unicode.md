@@ -1,4 +1,4 @@
-## The Unicode Standard, Unicode Character Database, Version 10.0.0
+## The Unicode Standard, Unicode Character Database, Version 11.0.0
 
 ### Unicode Character Database
 
