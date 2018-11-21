@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,6 @@ template<typename K> struct ResourceHashtableFns {
     typedef unsigned (*hash_fn)(K const&);
     typedef bool (*equals_fn)(K const&, K const&);
 };
-
-template<typename K> unsigned primitive_hash(const K& k) {
-  unsigned hash = (unsigned)((uintptr_t)k);
-  return hash ^ (hash >> 3); // just in case we're dealing with aligned ptrs
-}
-
-template<typename K> bool primitive_equals(const K& k0, const K& k1) {
-  return k0 == k1;
-}
 
 template<
     typename K, typename V,

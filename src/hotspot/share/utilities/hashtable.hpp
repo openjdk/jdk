@@ -25,11 +25,11 @@
 #ifndef SHARE_VM_UTILITIES_HASHTABLE_HPP
 #define SHARE_VM_UTILITIES_HASHTABLE_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -146,6 +146,7 @@ public:
   BasicHashtable(int table_size, int entry_size);
   BasicHashtable(int table_size, int entry_size,
                  HashtableBucket<F>* buckets, int number_of_entries);
+  ~BasicHashtable();
 
   // Bucket handling
   int hash_to_index(unsigned int full_hash) const {
@@ -163,6 +164,7 @@ private:
   char*             _end_block;
   int               _entry_size;
   volatile int      _number_of_entries;
+  GrowableArray<char*>* _entry_blocks;
 
 protected:
 
@@ -233,6 +235,9 @@ public:
 
   bool resize(int new_size);
 
+  // Grow the number of buckets if the average entries per bucket is over the load_factor
+  bool maybe_grow(int max_size, int load_factor = 8);
+
   template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
 
@@ -278,5 +283,56 @@ public:
     return (HashtableEntry<T, F>**)BasicHashtable<F>::bucket_addr(i);
   }
 };
+
+// A subclass of BasicHashtable that allows you to do a simple K -> V mapping
+// without using tons of boilerplate code.
+template<
+    typename K, typename V, MEMFLAGS F,
+    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
+    >
+class KVHashtable : public BasicHashtable<F> {
+  class KVHashtableEntry : public BasicHashtableEntry<F> {
+  public:
+    K _key;
+    V _value;
+    KVHashtableEntry* next() {
+      return (KVHashtableEntry*)BasicHashtableEntry<F>::next();
+    }
+  };
+
+protected:
+  KVHashtableEntry* bucket(int i) const {
+    return (KVHashtableEntry*)BasicHashtable<F>::bucket(i);
+  }
+
+  KVHashtableEntry* new_entry(unsigned int hashValue, K key, V value) {
+    KVHashtableEntry* entry = (KVHashtableEntry*)BasicHashtable<F>::new_entry(hashValue);
+    entry->_key   = key;
+    entry->_value = value;
+    return entry;
+  }
+
+public:
+  KVHashtable(int table_size) : BasicHashtable<F>(table_size, sizeof(KVHashtableEntry)) {}
+
+  void add(K key, V value) {
+    unsigned int hash = HASH(key);
+    KVHashtableEntry* entry = new_entry(hash, key, value);
+    BasicHashtable<F>::add_entry(BasicHashtable<F>::hash_to_index(hash), entry);
+  }
+
+  V* lookup(K key) {
+    unsigned int hash = HASH(key);
+    int index = BasicHashtable<F>::hash_to_index(hash);
+    for (KVHashtableEntry* e = bucket(index); e != NULL; e = e->next()) {
+      if (e->hash() == hash && e->_key == key) {
+        return &(e->_value);
+      }
+    }
+    return NULL;
+  }
+};
+
 
 #endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

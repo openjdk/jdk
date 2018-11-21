@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 // The metadata hierarchy is separate from the oop hierarchy
   class MetaspaceObj;        // no C++ vtable
@@ -258,25 +258,19 @@ public:
 
 // This is a special MetaspaceClosure that visits each unique MetaspaceObj once.
 class UniqueMetaspaceClosure : public MetaspaceClosure {
+  static const int INITIAL_TABLE_SIZE = 15889;
+  static const int MAX_TABLE_SIZE     = 1000000;
+
   // Do not override. Returns true if we are discovering ref->obj() for the first time.
   virtual bool do_ref(Ref* ref, bool read_only);
 
 public:
   // Gets called the first time we discover an object.
   virtual void do_unique_ref(Ref* ref, bool read_only) = 0;
+  UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE) {}
+
 private:
-  static unsigned my_hash(const address& a) {
-    return primitive_hash<address>(a);
-  }
-  static bool my_equals(const address& a0, const address& a1) {
-    return primitive_equals<address>(a0, a1);
-  }
-  ResourceHashtable<
-      address, bool,
-      UniqueMetaspaceClosure::my_hash,   // solaris compiler doesn't like: primitive_hash<address>
-      UniqueMetaspaceClosure::my_equals, // solaris compiler doesn't like: primitive_equals<address>
-      15889,                             // prime number
-      ResourceObj::C_HEAP> _has_been_visited;
+  KVHashtable<address, bool, mtInternal> _has_been_visited;
 };
 
 #endif // SHARE_VM_MEMORY_METASPACE_ITERATOR_HPP

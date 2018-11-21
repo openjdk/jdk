@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,30 +27,12 @@
 
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/hashtable.inline.hpp"
 
-class CDSClassInfo;
-
-// Look up from ID -> InstanceKlass*
-class ID2KlassTable : public Hashtable<InstanceKlass*, mtClass> {
+class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
-  ID2KlassTable() : Hashtable<InstanceKlass*, mtClass>(1987, sizeof(HashtableEntry<InstanceKlass*, mtClass>)) { }
-  void add(int id, InstanceKlass* klass) {
-    unsigned int hash = (unsigned int)id;
-    HashtableEntry<InstanceKlass*, mtClass>* entry = new_entry(hash, klass);
-    add_entry(hash_to_index(hash), entry);
-  }
-
-  InstanceKlass* lookup(int id) {
-    unsigned int hash = (unsigned int)id;
-    int index = hash_to_index(id);
-    for (HashtableEntry<InstanceKlass*, mtClass>* e = bucket(index); e != NULL; e = e->next()) {
-      if (e->hash() == hash) {
-        return e->literal();
-      }
-    }
-    return NULL;
-  }
+  ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
 };
 
 class ClassListParser : public StackObj {

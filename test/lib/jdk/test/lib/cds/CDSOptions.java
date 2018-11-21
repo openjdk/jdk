@@ -33,6 +33,9 @@ public class CDSOptions {
     public ArrayList<String> suffix = new ArrayList<String>();
     public boolean useSystemArchive = false;
 
+    // classes to be archived
+    public String[] classList;
+
     // Indicate whether to append "-version" when using CDS Archive.
     // Most of tests will use '-version'
     public boolean useVersion = true;
@@ -74,4 +77,16 @@ public class CDSOptions {
         this.useSystemArchive = use;
         return this;
     }
+
+    public CDSOptions setClassList(String[] list) {
+        this.classList = list;
+        return this;
+    }
+    public CDSOptions setClassList(ArrayList<String> list) {
+        String array[] = new String[list.size()];
+        list.toArray(array);
+        this.classList = array;
+        return this;
+    }
+
 }

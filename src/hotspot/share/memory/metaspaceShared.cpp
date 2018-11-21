@@ -64,6 +64,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
@@ -1067,26 +1068,19 @@ public:
 // metaspace data into their final location in the shared regions.
 
 class ArchiveCompactor : AllStatic {
+  static const int INITIAL_TABLE_SIZE = 8087;
+  static const int MAX_TABLE_SIZE     = 1000000;
+
   static DumpAllocStats* _alloc_stats;
   static SortedSymbolClosure* _ssc;
 
-  static unsigned my_hash(const address& a) {
-    return primitive_hash<address>(a);
-  }
-  static bool my_equals(const address& a0, const address& a1) {
-    return primitive_equals<address>(a0, a1);
-  }
-  typedef ResourceHashtable<
-      address, address,
-      ArchiveCompactor::my_hash,   // solaris compiler doesn't like: primitive_hash<address>
-      ArchiveCompactor::my_equals, // solaris compiler doesn't like: primitive_equals<address>
-      16384, ResourceObj::C_HEAP> RelocationTable;
+  typedef KVHashtable<address, address, mtInternal> RelocationTable;
   static RelocationTable* _new_loc_table;
 
 public:
   static void initialize() {
     _alloc_stats = new(ResourceObj::C_HEAP, mtInternal)DumpAllocStats;
-    _new_loc_table = new(ResourceObj::C_HEAP, mtInternal)RelocationTable;
+    _new_loc_table = new RelocationTable(INITIAL_TABLE_SIZE);
   }
   static DumpAllocStats* alloc_stats() {
     return _alloc_stats;
@@ -1136,15 +1130,17 @@ public:
       newtop = _rw_region.top();
     }
     memcpy(p, obj, bytes);
-    bool isnew = _new_loc_table->put(obj, (address)p);
+    assert(_new_loc_table->lookup(obj) == NULL, "each object can be relocated at most once");
+    _new_loc_table->add(obj, (address)p);
     log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(obj), p2i(p), bytes);
-    assert(isnew, "must be");
-
+    if (_new_loc_table->maybe_grow(MAX_TABLE_SIZE)) {
+      log_info(cds, hashtables)("Expanded _new_loc_table to %d", _new_loc_table->table_size());
+    }
     _alloc_stats->record(ref->msotype(), int(newtop - oldtop), read_only);
   }
 
   static address get_new_loc(MetaspaceClosure::Ref* ref) {
-    address* pp = _new_loc_table->get(ref->obj());
+    address* pp = _new_loc_table->lookup(ref->obj());
     assert(pp != NULL, "must be");
     return *pp;
   }
@@ -1288,7 +1284,7 @@ public:
 
   static Klass* get_relocated_klass(Klass* orig_klass) {
     assert(DumpSharedSpaces, "dump time only");
-    address* pp = _new_loc_table->get((address)orig_klass);
+    address* pp = _new_loc_table->lookup((address)orig_klass);
     assert(pp != NULL, "must be");
     Klass* klass = (Klass*)(*pp);
     assert(klass->is_klass(), "must be");

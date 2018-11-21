@@ -191,7 +191,6 @@ PackageEntryTable::~PackageEntryTable() {
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on PackageEntryTable's free list");
-  free_buckets();
 }
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {

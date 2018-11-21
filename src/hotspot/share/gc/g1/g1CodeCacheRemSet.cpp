@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,9 @@ G1CodeRootSetTable::~G1CodeRootSetTable() {
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  free_buckets();
+  // Each of the entries in new_entry_free_list() have been allocated in
+  // G1CodeRootSetTable::new_entry(). We never call the block allocator
+  // in BasicHashtable::new_entry().
   for (BasicHashtableEntry<mtGC>* e = new_entry_free_list(); e != NULL; e = new_entry_free_list()) {
     FREE_C_HEAP_ARRAY(char, e);
   }

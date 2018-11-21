@@ -248,6 +248,11 @@ public class CDSTestUtils {
             opts.archiveName = getDefaultArchiveName();
         cmd.add("-XX:SharedArchiveFile=./" + opts.archiveName);
 
+        if (opts.classList != null) {
+            File classListFile = makeClassList(opts.classList);
+            cmd.add("-XX:ExtraSharedClassListFile=" + classListFile.getPath());
+        }
+
         for (String s : opts.suffix) cmd.add(s);
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
