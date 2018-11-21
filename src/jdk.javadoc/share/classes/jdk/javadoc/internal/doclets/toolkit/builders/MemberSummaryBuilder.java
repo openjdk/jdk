@@ -358,13 +358,13 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             //add "[GS]ets the value of the property PROPERTY_NAME."
             if (isSetter) {
                 String text = MessageFormat.format(
-                        configuration.getText("doclet.PropertySetterWithName"),
+                        resources.getText("doclet.PropertySetterWithName"),
                         utils.propertyName((ExecutableElement)member));
                 fullBody.addAll(cmtutils.makeFirstSentenceTree(text));
             }
             if (isGetter) {
                 String text = MessageFormat.format(
-                        configuration.getText("doclet.PropertyGetterWithName"),
+                        resources.getText("doclet.PropertyGetterWithName"),
                         utils.propertyName((ExecutableElement) member));
                 fullBody.addAll(cmtutils.makeFirstSentenceTree(text));
             }

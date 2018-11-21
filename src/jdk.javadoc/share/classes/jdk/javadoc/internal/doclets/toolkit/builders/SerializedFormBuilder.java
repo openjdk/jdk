@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildSerializedForm(Content serializedTree) throws DocletException {
-        serializedTree = writer.getHeader(configuration.getText(
+        serializedTree = writer.getHeader(resources.getText(
                 "doclet.Serialized_Form"));
 
         buildSerializedFormSummaries(serializedTree);
@@ -297,14 +297,14 @@ public class SerializedFormBuilder extends AbstractBuilder {
         }
         if (!utils.serializationMethods(currentTypeElement).isEmpty()) {
             classContentTree.addContent(methodWriter.getSerializableMethods(
-                    configuration.getText("doclet.Serialized_Form_methods"),
+                    resources.getText("doclet.Serialized_Form_methods"),
                     serializableMethodTree));
             if (utils.isSerializable(currentTypeElement) && !utils.isExternalizable(currentTypeElement)) {
                 if (utils.serializationMethods(currentTypeElement).isEmpty()) {
                     Content noCustomizationMsg = methodWriter.getNoCustomizationMsg(
-                            configuration.getText("doclet.Serializable_no_customization"));
+                            resources.getText("doclet.Serializable_no_customization"));
                     classContentTree.addContent(methodWriter.getSerializableMethods(
-                    configuration.getText("doclet.Serialized_Form_methods"),
+                    resources.getText("doclet.Serialized_Form_methods"),
                     noCustomizationMsg));
                 }
             }
@@ -404,7 +404,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 }
                 serializableFieldsTree.addContent(fieldsOverviewContentTree);
                 classContentTree.addContent(fieldWriter.getSerializableFields(
-                        configuration.getText("doclet.Serialized_Form_class"),
+                        resources.getText("doclet.Serialized_Form_class"),
                         serializableFieldsTree));
             }
         }
@@ -437,7 +437,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 }
             }
             classContentTree.addContent(fieldWriter.getSerializableFields(
-                    configuration.getText("doclet.Serialized_Form_fields"),
+                    resources.getText("doclet.Serialized_Form_fields"),
                     serializableFieldsTree));
         }
     }

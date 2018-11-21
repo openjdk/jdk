@@ -185,7 +185,7 @@ public class TreeWriter extends AbstractTreeWriter {
      * @return a content tree for the tree header
      */
     protected HtmlTree getTreeHeader() {
-        String title = configuration.getText("doclet.Window_Class_Hierarchy");
+        String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()

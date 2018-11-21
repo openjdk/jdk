@@ -91,7 +91,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @throws DocFileIOException if there is a problem generating the index
      */
     protected void generateIndexFile() throws DocFileIOException {
-        String title = configuration.getText("doclet.Window_Single_Index");
+        String title = resources.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()

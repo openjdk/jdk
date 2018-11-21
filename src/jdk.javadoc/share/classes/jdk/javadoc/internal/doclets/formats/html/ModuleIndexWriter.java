@@ -118,8 +118,8 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
                 = configuration.group.groupModules(configuration.modules);
 
         if (!groupModuleMap.keySet().isEmpty()) {
-            String tableSummary = configuration.getText("doclet.Member_Table_Summary",
-                    configuration.getText("doclet.Module_Summary"), configuration.getText("doclet.modules"));
+            String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                    resources.getText("doclet.Module_Summary"), resources.getText("doclet.modules"));
             TableHeader header = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
             Table table =  new Table(configuration.htmlVersion, HtmlStyle.overviewSummary)
                     .setSummary(tableSummary)

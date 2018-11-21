@@ -223,7 +223,7 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder result = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.returnLabel,
-                new StringContent(configuration.getText("doclet.Returns")))));
+                new StringContent(resources.getText("doclet.Returns")))));
         result.addContent(HtmlTree.DD(htmlWriter.commentTagsToContent(
                 returnTag, element, ch.getDescription(configuration, returnTag), false, inSummary)));
         return result;
@@ -249,7 +249,7 @@ public class TagletWriterImpl extends TagletWriter {
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
             body.addContent(htmlWriter.links.createLink(link,
-                    new StringContent(configuration.getText("doclet.Constants_Summary"))));
+                    new StringContent(resources.getText("doclet.Constants_Summary"))));
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
@@ -259,7 +259,7 @@ public class TagletWriterImpl extends TagletWriter {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
                 body.addContent(htmlWriter.links.createLink(link,
-                        new StringContent(configuration.getText("doclet.Serialized_Form"))));
+                        new StringContent(resources.getText("doclet.Serialized_Form"))));
             }
         }
         if (body.isEmpty())
@@ -267,7 +267,7 @@ public class TagletWriterImpl extends TagletWriter {
 
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.seeLabel,
-                new StringContent(configuration.getText("doclet.See_Also")))));
+                new StringContent(resources.getText("doclet.See_Also")))));
         result.addContent(HtmlTree.DD(body));
         return result;
 
@@ -329,7 +329,7 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public Content getThrowsHeader() {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.throwsLabel,
-                new StringContent(configuration.getText("doclet.Throws"))));
+                new StringContent(resources.getText("doclet.Throws"))));
         return result;
     }
 
@@ -461,7 +461,8 @@ public class TagletWriterImpl extends TagletWriter {
                         return null;
                     }
                 }.visit(element);
-                si.setCategory(configuration.getContent("doclet.SearchTags").toString());
+                Contents contents = configuration.getContents();
+                si.setCategory(contents.getContent("doclet.SearchTags").toString());
                 configuration.tagSearchIndex.add(si);
             }
         }

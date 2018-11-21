@@ -52,6 +52,6 @@ public class PropertyGetterTaglet extends BasePropertyTaglet {
 
     @Override
     String getText(TagletWriter tagletWriter) {
-        return tagletWriter.configuration().getText("doclet.PropertyGetter");
+        return tagletWriter.configuration().getResources().getText("doclet.PropertyGetter");
     }
 }

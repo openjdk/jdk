@@ -267,7 +267,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Convert the individual ParamTag into Content.
      *
-     * @param isNonTypeParams true if this is just a regular param tag.  False
+     * @param e               the owner element
+     * @param isParams true   if this is just a regular param tag.  False
      *                        if this is a type param tag.
      * @param writer          the taglet writer for output writing.
      * @param paramTag        the tag whose inline tags will be printed.
@@ -281,7 +282,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             TagletWriter writer, DocTree paramTag, String name,
             boolean isFirstParam) {
         Content result = writer.getOutputInstance();
-        String header = writer.configuration().getText(
+        String header = writer.configuration().getResources().getText(
             isParams ? "doclet.Parameters" : "doclet.TypeParameters");
         if (isFirstParam) {
             result.addContent(writer.getParamHeader(header));

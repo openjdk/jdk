@@ -271,7 +271,7 @@ public abstract class BaseConfiguration {
     /**
      * The tracker of external package links.
      */
-    public final Extern extern = new Extern(this);
+    public Extern extern;
 
     public Reporter reporter;
 
@@ -648,8 +648,8 @@ public abstract class BaseConfiguration {
                                 summarizeOverriddenMethods = false;
                                 break;
                             default:
-                                reporter.print(ERROR, getText("doclet.Option_invalid",
-                                        o, "--override-methods"));
+                                reporter.print(ERROR,
+                                        getResources().getText("doclet.Option_invalid",o, "--override-methods"));
                                 return false;
                         }
                         return true;
@@ -769,7 +769,7 @@ public abstract class BaseConfiguration {
      * initializes certain components before anything else is started.
      */
     protected boolean finishOptionSettings0() throws DocletException {
-
+        extern = new Extern(this);
         initDestDirectory();
         for (String link : linkList) {
             extern.link(link, reporter);
@@ -807,17 +807,18 @@ public abstract class BaseConfiguration {
 
     private void initDestDirectory() throws DocletException {
         if (!destDirName.isEmpty()) {
+            Resources resources = getResources();
             DocFile destDir = DocFile.createFileForDirectory(this, destDirName);
             if (!destDir.exists()) {
                 //Create the output directory (in case it doesn't exist yet)
-                reporter.print(NOTE, getText("doclet.dest_dir_create", destDirName));
+                reporter.print(NOTE, resources.getText("doclet.dest_dir_create", destDirName));
                 destDir.mkdirs();
             } else if (!destDir.isDirectory()) {
-                throw new SimpleDocletException(getText(
+                throw new SimpleDocletException(resources.getText(
                         "doclet.destination_directory_not_directory_0",
                         destDir.getPath()));
             } else if (!destDir.canWrite()) {
-                throw new SimpleDocletException(getText(
+                throw new SimpleDocletException(resources.getText(
                         "doclet.destination_directory_not_writable_0",
                         destDir.getPath()));
             }
@@ -974,7 +975,7 @@ public abstract class BaseConfiguration {
         try {
             osw = new OutputStreamWriter(ost, docencoding);
         } catch (UnsupportedEncodingException exc) {
-            reporter.print(ERROR, getText("doclet.Encoding_not_supported", docencoding));
+            reporter.print(ERROR, getResources().getText("doclet.Encoding_not_supported", docencoding));
             return false;
         } finally {
             try {
@@ -1033,72 +1034,6 @@ public abstract class BaseConfiguration {
                 ? utils.getSimpleName(te)
                 : utils.getFullyQualifiedName(te);
     }
-
-    /**
-     * Convenience method to obtain a resource from the doclet's
-     * {@link Resources resources}.
-     * Equivalent to <code>getResources.getText(key);</code>.
-     *
-     * @param key the key for the desired string
-     * @return the string for the given key
-     * @throws MissingResourceException if the key is not found in either
-     *                                  bundle.
-     */
-    public abstract String getText(String key);
-
-    /**
-     * Convenience method to obtain a resource from the doclet's
-     * {@link Resources resources}.
-     * Equivalent to <code>getResources.getText(key, args);</code>.
-     *
-     * @param key  the key for the desired string
-     * @param args values to be substituted into the resulting string
-     * @return the string for the given key
-     * @throws MissingResourceException if the key is not found in either
-     *                                  bundle.
-     */
-    public abstract String getText(String key, String... args);
-
-    /**
-     * Convenience method to obtain a resource from the doclet's
-     * {@link Resources resources} as a {@code Content} object.
-     *
-     * @param key the key for the desired string
-     * @return a content tree for the text
-     */
-    public abstract Content getContent(String key);
-
-    /**
-     * Convenience method to obtain a resource from the doclet's
-     * {@link Resources resources} as a {@code Content} object.
-     *
-     * @param key the key for the desired string
-     * @param o   string or content argument added to configuration text
-     * @return a content tree for the text
-     */
-    public abstract Content getContent(String key, Object o);
-
-    /**
-     * Convenience method to obtain a resource from the doclet's
-     * {@link Resources resources} as a {@code Content} object.
-     *
-     * @param key the key for the desired string
-     * @param o1  resource argument
-     * @param o2  resource argument
-     * @return a content tree for the text
-     */
-    public abstract Content getContent(String key, Object o1, Object o2);
-
-    /**
-     * Get the configuration string as a content.
-     *
-     * @param key the key for the desired string
-     * @param o0  string or content argument added to configuration text
-     * @param o1  string or content argument added to configuration text
-     * @param o2  string or content argument added to configuration text
-     * @return a content tree for the text
-     */
-    public abstract Content getContent(String key, Object o0, Object o1, Object o2);
 
     /**
      * Return true if the TypeElement element is getting documented, depending upon

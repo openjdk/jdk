@@ -83,7 +83,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * Print all the packages in the file.
      */
     protected void buildAllPackagesFile() throws DocFileIOException {
-        String label = configuration.getText("doclet.All_Packages");
+        String label = resources.getText("doclet.All_Packages");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()

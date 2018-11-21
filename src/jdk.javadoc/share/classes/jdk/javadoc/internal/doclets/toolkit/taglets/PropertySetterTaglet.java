@@ -37,7 +37,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 public class PropertySetterTaglet extends BasePropertyTaglet {
 
     /**
-     * Construct a new PropertyGetterTaglet.
+     * Construct a new PropertySetterTaglet.
      */
     public PropertySetterTaglet () {
         super("propertySetter");
@@ -45,6 +45,6 @@ public class PropertySetterTaglet extends BasePropertyTaglet {
 
     @Override
     String getText(TagletWriter tagletWriter) {
-        return tagletWriter.configuration().getText("doclet.PropertySetter");
+        return tagletWriter.configuration().getResources().getText("doclet.PropertySetter");
     }
 }

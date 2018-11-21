@@ -538,7 +538,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 String amrText = resources.getText("doclet.Indirect_Requires_Summary");
                 String amrTableSummary = resources.getText("doclet.Member_Table_Summary",
                         amrText,
-                        configuration.getText("doclet.modules"));
+                        resources.getText("doclet.modules"));
                 Content amrCaption = getTableCaption(new StringContent(amrText));
                 Table amrTable = getTable3(amrCaption, amrTableSummary, HtmlStyle.requiresSummary,
                             requiresTableHeader);

@@ -86,6 +86,7 @@ import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.tool.DocEnvImpl;
 
@@ -110,6 +111,7 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
 public class Utils {
     public final BaseConfiguration configuration;
     public final Messages messages;
+    public final Resources resources;
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
@@ -118,6 +120,7 @@ public class Utils {
     public Utils(BaseConfiguration c) {
         configuration = c;
         messages = configuration.getMessages();
+        resources = configuration.getResources();
         elementUtils = c.docEnv.getElementUtils();
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
@@ -1245,7 +1248,7 @@ public class Utils {
             typeName = "doclet.Class";
         }
         typeName = lowerCaseOnly ? toLowerCase(typeName) : typeName;
-        return typeNameMap.computeIfAbsent(typeName, configuration :: getText);
+        return typeNameMap.computeIfAbsent(typeName, resources::getText);
     }
 
     private final Map<String, String> typeNameMap = new HashMap<>();
@@ -1368,11 +1371,11 @@ public class Utils {
                 continue;
             if (ee.getSimpleName().contentEquals("values") && ee.getParameters().isEmpty()) {
                 removeCommentHelper(ee); // purge previous entry
-                configuration.cmtUtils.setEnumValuesTree(configuration, e);
+                configuration.cmtUtils.setEnumValuesTree(e);
             }
             if (ee.getSimpleName().contentEquals("valueOf") && ee.getParameters().size() == 1) {
                 removeCommentHelper(ee); // purge previous entry
-                configuration.cmtUtils.setEnumValueOfTree(configuration, e);
+                configuration.cmtUtils.setEnumValueOfTree(e);
             }
         }
     }
@@ -3087,7 +3090,7 @@ public class Utils {
                             throw new JavaScriptScanner.Fault();
                         });
                     } catch (JavaScriptScanner.Fault jsf) {
-                        String text = configuration.getText("doclet.JavaScript_in_comment");
+                        String text = resources.getText("doclet.JavaScript_in_comment");
                         throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
                     }
                 }
@@ -3123,7 +3126,7 @@ public class Utils {
                     throw new JavaScriptScanner.Fault();
                 });
             } catch (JavaScriptScanner.Fault jsf) {
-                String text = configuration.getText("doclet.JavaScript_in_option", name);
+                String text = resources.getText("doclet.JavaScript_in_option", name);
                 throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
             }
         }

@@ -326,7 +326,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         } else if (utils.isPrivate(member)) {
             code.addContent("private ");
         } else if (!utils.isPublic(member)) { // Package private
-            code.addContent(configuration.getText("doclet.Package_private"));
+            code.addContent(resources.getText("doclet.Package_private"));
             code.addContent(" ");
         }
         boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());

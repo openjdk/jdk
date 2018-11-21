@@ -147,8 +147,8 @@ public class Navigation {
         this.pathToRoot = path.parent().invert();
         this.links = new Links(path, configuration.htmlVersion);
         this.topBottomNavContents = new HashMap<>();
-        this.rowListTitle = configuration.getText("doclet.Navigation");
-        this.searchLabel = configuration.getContent("doclet.search");
+        this.rowListTitle = configuration.getResources().getText("doclet.Navigation");
+        this.searchLabel = contents.getContent("doclet.search");
         populateNavContents(Position.TOP);
         populateNavContents(Position.BOTTOM);
     }
@@ -160,7 +160,7 @@ public class Navigation {
      */
     private void populateNavContents(Position position) {
         Deque<Content> queue = new ArrayDeque<>();
-        Content skipNavLinks = configuration.getContent("doclet.Skip_navigation_links");
+        Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         switch (position) {
             case TOP:
                 queue.addLast(links.createAnchor(SectionName.NAVBAR_TOP));

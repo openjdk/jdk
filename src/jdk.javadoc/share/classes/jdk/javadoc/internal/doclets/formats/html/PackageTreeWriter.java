@@ -139,7 +139,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected HtmlTree getPackageTreeHeader() {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
-        String title = packageName + " " + configuration.getText("doclet.Window_Class_Hierarchy");
+        String title = packageName + " " + resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
@@ -167,7 +167,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         div.addContent(span);
         HtmlTree ul = new HtmlTree (HtmlTag.UL);
         ul.setStyle(HtmlStyle.horizontal);
-        ul.addContent(getNavLinkMainTree(configuration.getText("doclet.All_Packages")));
+        ul.addContent(getNavLinkMainTree(resources.getText("doclet.All_Packages")));
         div.addContent(ul);
     }
 }
