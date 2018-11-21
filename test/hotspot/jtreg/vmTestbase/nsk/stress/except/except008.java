@@ -333,7 +333,7 @@ public class except008 {
      * @see #run(String[], PrintStream)
      */
     public static void main(String args[]) {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+        Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             // Last try. If there is some exception outside the code, test should end correctly
             @Override
             public void uncaughtException(Thread t, Throwable e) {
