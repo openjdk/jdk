@@ -24,7 +24,6 @@
 /* @test
  * @bug 6285901 6501089
  * @summary Check no data is written to wrong socket channel during async closing.
- * @run main/othervm AsyncCloseChannel
  */
 
 import java.io.IOException;
@@ -112,7 +111,7 @@ public class AsyncCloseChannel {
                         public void run() {
                             boolean empty = true;
                             try {
-                                for(;;) {
+                                while (keepGoing) {
                                     int c = s.getInputStream().read();
                                     if(c == -1) {
                                         if(!empty)
