@@ -305,13 +305,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return this.identificationProtocol;
     }
 
-    /*
-     * Get the PSK identity. Take care not to use it in multiple connections.
-     */
-    synchronized Optional<byte[]> getPskIdentity() {
-        return Optional.ofNullable(pskIdentity);
-    }
-
     /* PSK identities created from new_session_ticket messages should only
      * be used once. This method will return the identity and then clear it
      * so it cannot be used again.
