@@ -41,9 +41,12 @@
 # To build the full set of crosstools for additional platforms, use a command
 # line looking like this:
 #
-# make cross_compile_target="aarch64-linux-gnu" BASE_OS=Fedora27
+# make TARGETS="aarch64-linux-gnu" BASE_OS=Fedora
 # or
-# make cross_compile_target="arm-linux-gnueabihf" BASE_OS=Fedora27
+# make TARGETS="arm-linux-gnueabihf ppc64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=17
+#
+# to build several devkits for a specific OS version at once.
+# You can find the final results under ../../build/devkit/result/<host>-to-<target>
 #
 # This is the makefile which iterates over all host and target platforms.
 #
@@ -52,18 +55,18 @@ os := $(shell uname -o)
 cpu := $(shell uname -p)
 
 # Figure out what platform this is building on.
-me := $(cpu)-$(if $(findstring Linux,$(os)),unknown-linux-gnu)
+me := $(cpu)-$(if $(findstring Linux,$(os)),linux-gnu)
 
 $(info Building on platform $(me))
 
 #
 # By default just build for the current platform, which is assumed to be Linux
 #
-ifeq ($(cross_compile_target), )
+ifeq ($(TARGETS), )
   platforms := $(me)
   host_platforms := $(platforms)
 else
-  platforms := $(cross_compile_target)
+  platforms := $(TARGETS)
   host_platforms := $(me)
 endif
 target_platforms := $(platforms)
@@ -79,37 +82,37 @@ endif
 OUTPUT_ROOT = $(abspath ../../build/devkit)
 RESULT = $(OUTPUT_ROOT)/result
 
-submakevars = HOST=$@ BUILD=$(me) \
-    RESULT=$(RESULT) PREFIX=$(RESULT)/$@ \
-    OUTPUT_ROOT=$(OUTPUT_ROOT)
+submakevars = HOST=$@ BUILD=$(me) RESULT=$(RESULT) OUTPUT_ROOT=$(OUTPUT_ROOT)
+
 $(host_platforms) :
 	@echo 'Building compilers for $@'
 	@echo 'Targets: $(target_platforms)'
 	for p in $(filter $@, $(target_platforms)) $(filter-out $@, $(target_platforms)); do \
-	  $(MAKE) -f Tools.gmk download-rpms $(submakevars) TARGET=$$p && \
+	  $(MAKE) -f Tools.gmk download-rpms $(submakevars) \
+              TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
 	  $(MAKE) -f Tools.gmk all $(submakevars) \
-	      TARGET=$$p || exit 1 ; \
+              TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
+	  $(MAKE) -f Tools.gmk ccache $(submakevars) \
+              TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p BUILDDIR=$(OUTPUT_ROOT)/$@/$$p || exit 1 ; \
 	done
-	@echo 'Building ccache program for $@'
-	$(MAKE) -f Tools.gmk ccache $(submakevars) TARGET=$@
 	@echo 'All done"'
 
 today := $(shell date +%Y%m%d)
 
 define Mktar
-  $(1)_tar = $$(RESULT)/sdk-$(1)-$$(today).tar.gz
-  $$($(1)_tar) : PLATFORM = $(1)
-  TARFILES += $$($(1)_tar)
-  $$($(1)_tar) : $(1) $$(shell find $$(RESULT)/$(1))
+  $(1)-to-$(2)_tar = $$(RESULT)/sdk-$(1)-to-$(2)-$$(today).tar.gz
+  $$($(1)-to-$(2)_tar) : PLATFORM = $(1)-to-$(2)
+  TARFILES += $$($(1)-to-$(2)_tar)
+  $$($(1)-to-$(2)_tar) : $$(shell find $$(RESULT)/$(1)-to-$(2) -type f)
 endef
 
-$(foreach p,$(host_platforms),$(eval $(call Mktar,$(p))))
+$(foreach p,$(host_platforms),$(foreach t,$(target_platforms),$(eval $(call Mktar,$(p),$(t)))))
 
 tars : all $(TARFILES)
 onlytars : $(TARFILES)
 %.tar.gz :
 	@echo 'Creating compiler package $@'
-	cd $(RESULT)/$(PLATFORM) && tar -czf $@ *
+	cd $(RESULT) && tar -czf $@ $(PLATFORM)/*
 	touch $@
 
 clean :

@@ -52,16 +52,25 @@ endif
 $(info ARCH=$(ARCH))
 
 ifeq ($(BASE_OS), OEL6)
-  OEL_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+  BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
   LINUX_VERSION := OEL6.4
-else ifeq ($(BASE_OS), Fedora27)
-  ifeq ($(ARCH), aarch64)
-    FEDORA_TYPE=fedora-secondary
-  else
-    FEDORA_TYPE=fedora/linux
+else ifeq ($(BASE_OS), Fedora)
+  DEFAULT_OS_VERSION := 27
+  ifeq ($(BASE_OS_VERSION), )
+    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
   endif
-  OEL_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/27/Everything/$(ARCH)/os/Packages/
-  LINUX_VERSION := Fedora 27
+  ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+    FEDORA_TYPE := fedora-secondary
+  else
+    FEDORA_TYPE := fedora/linux
+  endif
+  ARCHIVED := $(shell [ $(BASE_OS_VERSION) -lt $(DEFAULT_OS_VERSION) ] && echo true)
+  ifeq ($(ARCHIVED),true)
+    BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+  else
+    BASE_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+  endif
+  LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
 else
   $(error Unknown base OS $(BASE_OS))
 endif
@@ -137,13 +146,11 @@ else
 endif
 
 # Define directories
-RESULT := $(OUTPUT_ROOT)/result
 BUILDDIR := $(OUTPUT_ROOT)/$(HOST)/$(TARGET)
-PREFIX := $(RESULT)/$(HOST)
 TARGETDIR := $(PREFIX)/$(TARGET)
 SYSROOT := $(TARGETDIR)/sysroot
 DOWNLOAD := $(OUTPUT_ROOT)/download
-DOWNLOAD_RPMS := $(DOWNLOAD)/rpms
+DOWNLOAD_RPMS := $(DOWNLOAD)/rpms/$(TARGET)-$(LINUX_VERSION)
 SRCDIR := $(OUTPUT_ROOT)/src
 
 # Marker file for unpacking rpms
@@ -159,7 +166,7 @@ download-rpms:
         # Only run this if rpm dir is empty.
         ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
 	  cd $(DOWNLOAD_RPMS) && \
-	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(OEL_URL)
+	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
         endif
 
 ##########################################################################################
@@ -190,8 +197,8 @@ $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
 ##########################################################################################
 # Unpack RPMS
 
+RPM_ARCHS := $(ARCH) noarch
 ifeq ($(ARCH),x86_64)
-  RPM_ARCHS := x86_64 noarch
   ifeq ($(BUILD),$(HOST))
     ifeq ($(TARGET),$(HOST))
       # When building the native compiler for x86_64, enable mixed mode.
@@ -199,11 +206,9 @@ ifeq ($(ARCH),x86_64)
     endif
   endif
 else ifeq ($(ARCH),i686)
-  RPM_ARCHS := i386 i686 noarch
+  RPM_ARCHS += i386
 else ifeq ($(ARCH), armhfp)
-  RPM_ARCHS := $(ARCH) armv7hl noarch
-else
-  RPM_ARCHS := $(ARCH) noarch
+  RPM_ARCHS += armv7hl
 endif
 
 RPM_FILE_LIST := $(sort $(foreach a, $(RPM_ARCHS), \
@@ -277,7 +282,7 @@ CONFIG = --target=$(TARGET) \
     --host=$(HOST) --build=$(BUILD) \
     --prefix=$(PREFIX)
 
-PATHEXT = $(RESULT)/$(BUILD)/bin:
+PATHEXT = $(PREFIX)/bin:
 
 PATHPRE = PATH=$(PATHEXT)$(PATH)
 NUM_CORES := $(shell cat /proc/cpuinfo | grep -c processor)
@@ -427,6 +432,11 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
 endif
 
+ifneq ($(filter ppc64 ppc64le s390x, $(ARCH)), )
+  # We only support 64-bit on these platforms anyway
+  CONFIG += --disable-multilib
+endif
+
 # Want:
 # c,c++
 # shared libs
@@ -552,7 +562,7 @@ $(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
 
 ##########################################################################################
 
-$(PREFIX)/devkit.info: FRC
+$(PREFIX)/devkit.info:
 	@echo 'Creating devkit.info in the root of the kit'
 	rm -f $@
 	touch $@
@@ -610,8 +620,5 @@ all : binutils gcc bfdlib $(PREFIX)/devkit.info $(missing-links) $(SYSROOT_LINKS
 
 # this is only built for host. so separate.
 ccache : $(ccache)
-
-# Force target
-FRC:
 
 .PHONY : gcc all binutils bfdlib link_libs rpms libs sysroot

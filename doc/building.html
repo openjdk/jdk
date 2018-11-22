@@ -69,6 +69,7 @@
 </ul></li>
 <li><a href="#running-tests">Running Tests</a></li>
 <li><a href="#cross-compiling">Cross-compiling</a><ul>
+<li><a href="#cross-compiling-the-easy-way-with-openjdk-devkits">Cross compiling the easy way with OpenJDK devkits</a></li>
 <li><a href="#boot-jdk-and-build-jdk">Boot JDK and Build JDK</a></li>
 <li><a href="#specifying-the-target-platform">Specifying the Target Platform</a></li>
 <li><a href="#toolchain-considerations">Toolchain Considerations</a></li>
@@ -570,6 +571,47 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>This requires a more complex setup and build procedure. This section assumes you are familiar with cross-compiling in general, and will only deal with the particularities of cross-compiling the JDK. If you are new to cross-compiling, please see the <a href="https://en.wikipedia.org/wiki/Cross_compiler#External_links">external links at Wikipedia</a> for a good start on reading materials.</p>
 <p>Cross-compiling the JDK requires you to be able to build both for the build platform and for the target platform. The reason for the former is that we need to build and execute tools during the build process, both native tools and Java tools.</p>
 <p>If all you want to do is to compile a 32-bit version, for the same OS, on a 64-bit machine, consider using <code>--with-target-bits=32</code> instead of doing a full-blown cross-compilation. (While this surely is possible, it's a lot more work and will take much longer to build.)</p>
+<h3 id="cross-compiling-the-easy-way-with-openjdk-devkits">Cross compiling the easy way with OpenJDK devkits</h3>
+<p>The OpenJDK build system provides out-of-the box support for creating and using so called devkits. A <code>devkit</code> is basically a collection of a cross-compiling toolchain and a sysroot environment which can easily be used together with the <code>--with-devkit</code> configure option to cross compile the OpenJDK. On Linux/x86_64, the following command:</p>
+<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64-linux-gnu &amp;&amp; make</code></pre>
+<p>will configure and build OpenJDK for Linux/ppc64 assuming that <code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to Linux/ppc64 devkit.</p>
+<p>Devkits can be created from the <code>make/devkit</code> directory by executing:</p>
+<pre><code>make [ TARGETS=&quot;&lt;TARGET_TRIPLET&gt;+&quot; ] [ BASE_OS=&lt;OS&gt; ] [ BASE_OS_VERSION=&lt;VER&gt; ]</code></pre>
+<p>where <code>TARGETS</code> contains one or more <code>TARGET_TRIPLET</code>s of the form described in <a href="https://sourceware.org/autobook/autobook/autobook_17.html">section 3.4 of the GNU Autobook</a>. If no targets are given, a native toolchain for the current platform will be created. Currently, at least the following targets are known to work:</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Supported devkit targets</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">x86_64-linux-gnu</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">aarch64-linux-gnu</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">arm-linux-gnueabihf</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ppc64-linux-gnu</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ppc64le-linux-gnu</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">s390x-linux-gnu</td>
+</tr>
+</tbody>
+</table>
+<p><code>BASE_OS</code> must be one of &quot;OEL6&quot; for Oracle Enterprise Linux 6 or &quot;Fedora&quot; (if not specified &quot;OEL6&quot; will be the default). If the base OS is &quot;Fedora&quot; the corresponding Fedora release can be specified with the help of the <code>BASE_OS_VERSION</code> option (with &quot;27&quot; as default version). If the build is successful, the new devkits can be found in the <code>build/devkit/result</code> subdirectory:</p>
+<pre><code>cd make/devkit
+make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora BASE_OS_VERSION=21
+ls -1 ../../build/devkit/result/
+x86_64-linux-gnu-to-aarch64-linux-gnu
+x86_64-linux-gnu-to-ppc64le-linux-gnu</code></pre>
+<p>Notice that devkits are not only useful for targeting different build platforms. Because they contain the full build dependencies for a system (i.e. compiler and root file system), they can easily be used to build well-known, reliable and reproducible build environments. You can for example create and use a devkit with GCC 7.3 and a Fedora 12 sysroot environment (with glibc 2.11) on Ubuntu 14.04 (which doesn't have GCC 7.3 by default) to produce OpenJDK binaries which will run on all Linux systems with runtime libraries newer than the ones from Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).</p>
 <h3 id="boot-jdk-and-build-jdk">Boot JDK and Build JDK</h3>
 <p>When cross-compiling, make sure you use a boot JDK that runs on the <em>build</em> system, and not on the <em>target</em> system.</p>
 <p>To be able to build, we need a &quot;Build JDK&quot;, which is a JDK built from the current sources (that is, the same as the end result of the entire build process), but able to run on the <em>build</em> system, and not the <em>target</em> system. (In contrast, the Boot JDK should be from an older release, e.g. JDK 8 when building JDK 9.)</p>
@@ -662,8 +704,8 @@ ls build/linux-aarch64-normal-server-release/</code></pre></li>
 <th style="text-align: left;">Target</th>
 <th style="text-align: left;"><code>CC</code></th>
 <th style="text-align: left;"><code>CXX</code></th>
-<th><code>--arch=...</code></th>
-<th><code>--openjdk-target=...</code></th>
+<th style="text-align: left;"><code>--arch=...</code></th>
+<th style="text-align: left;"><code>--openjdk-target=...</code></th>
 </tr>
 </thead>
 <tbody>
@@ -671,36 +713,36 @@ ls build/linux-aarch64-normal-server-release/</code></pre></li>
 <td style="text-align: left;">x86</td>
 <td style="text-align: left;">default</td>
 <td style="text-align: left;">default</td>
-<td>i386</td>
-<td>i386-linux-gnu</td>
+<td style="text-align: left;">i386</td>
+<td style="text-align: left;">i386-linux-gnu</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">armhf</td>
 <td style="text-align: left;">gcc-arm-linux-gnueabihf</td>
 <td style="text-align: left;">g++-arm-linux-gnueabihf</td>
-<td>armhf</td>
-<td>arm-linux-gnueabihf</td>
+<td style="text-align: left;">armhf</td>
+<td style="text-align: left;">arm-linux-gnueabihf</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">aarch64</td>
 <td style="text-align: left;">gcc-aarch64-linux-gnu</td>
 <td style="text-align: left;">g++-aarch64-linux-gnu</td>
-<td>arm64</td>
-<td>aarch64-linux-gnu</td>
+<td style="text-align: left;">arm64</td>
+<td style="text-align: left;">aarch64-linux-gnu</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">ppc64el</td>
 <td style="text-align: left;">gcc-powerpc64le-linux-gnu</td>
 <td style="text-align: left;">g++-powerpc64le-linux-gnu</td>
-<td>ppc64el</td>
-<td>powerpc64le-linux-gnu</td>
+<td style="text-align: left;">ppc64el</td>
+<td style="text-align: left;">powerpc64le-linux-gnu</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">s390x</td>
 <td style="text-align: left;">gcc-s390x-linux-gnu</td>
 <td style="text-align: left;">g++-s390x-linux-gnu</td>
-<td>s390x</td>
-<td>s390x-linux-gnu</td>
+<td style="text-align: left;">s390x</td>
+<td style="text-align: left;">s390x-linux-gnu</td>
 </tr>
 </tbody>
 </table>
@@ -813,7 +855,12 @@ cannot create ... Permission denied
 spawn failed</code></pre>
 <p>This can be a sign of a Cygwin problem. See the information about solving problems in the <a href="#cygwin">Cygwin</a> section. Rebooting the computer might help temporarily.</p>
 <h3 id="getting-help">Getting Help</h3>
-<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
+<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <script type="text/javascript">
+<!--
+h='&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#46;&#106;&#x61;&#118;&#x61;&#46;&#110;&#x65;&#116;';a='&#64;';n='&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;&#32;&#x61;&#116;&#32;&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#32;&#100;&#x6f;&#116;&#32;&#106;&#x61;&#118;&#x61;&#32;&#100;&#x6f;&#116;&#32;&#110;&#x65;&#116;</noscript>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</h3>

@@ -884,6 +884,64 @@ If all you want to do is to compile a 32-bit version, for the same OS, on a
 full-blown cross-compilation. (While this surely is possible, it's a lot more
 work and will take much longer to build.)
 
+### Cross compiling the easy way with OpenJDK devkits
+
+The OpenJDK build system provides out-of-the box support for creating and using
+so called devkits. A `devkit` is basically a collection of a cross-compiling
+toolchain and a sysroot environment which can easily be used together with the
+`--with-devkit` configure option to cross compile the OpenJDK. On Linux/x86_64,
+the following command:
+```
+bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64-linux-gnu && make
+```
+
+will configure and build OpenJDK for Linux/ppc64 assuming that `<devkit-path>`
+points to a Linux/x86_64 to Linux/ppc64 devkit.
+
+Devkits can be created from the `make/devkit` directory by executing:
+```
+make [ TARGETS="<TARGET_TRIPLET>+" ] [ BASE_OS=<OS> ] [ BASE_OS_VERSION=<VER> ]
+```
+
+where `TARGETS` contains one or more `TARGET_TRIPLET`s of the form
+described in [section 3.4 of the GNU Autobook](
+https://sourceware.org/autobook/autobook/autobook_17.html). If no
+targets are given, a native toolchain for the current platform will be
+created. Currently, at least the following targets are known to work:
+
+ Supported devkit targets
+ ------------------------
+ x86_64-linux-gnu
+ aarch64-linux-gnu
+ arm-linux-gnueabihf
+ ppc64-linux-gnu
+ ppc64le-linux-gnu
+ s390x-linux-gnu
+
+`BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or
+"Fedora" (if not specified "OEL6" will be the default). If the base OS
+is "Fedora" the corresponding Fedora release can be specified with the
+help of the `BASE_OS_VERSION` option (with "27" as default version).
+If the build is successful, the new devkits can be found in the
+`build/devkit/result` subdirectory:
+```
+cd make/devkit
+make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=21
+ls -1 ../../build/devkit/result/
+x86_64-linux-gnu-to-aarch64-linux-gnu
+x86_64-linux-gnu-to-ppc64le-linux-gnu
+```
+
+Notice that devkits are not only useful for targeting different build
+platforms. Because they contain the full build dependencies for a
+system (i.e. compiler and root file system), they can easily be used
+to build well-known, reliable and reproducible build environments. You
+can for example create and use a devkit with GCC 7.3 and a Fedora 12
+sysroot environment (with glibc 2.11) on Ubuntu 14.04 (which doesn't
+have GCC 7.3 by default) to produce OpenJDK binaries which will run on
+all Linux systems with runtime libraries newer than the ones from
+Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).
+
 ### Boot JDK and Build JDK
 
 When cross-compiling, make sure you use a boot JDK that runs on the *build*
