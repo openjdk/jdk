@@ -232,14 +232,19 @@ private:
   char* volatile _cur_addr;
   char* const _start_addr;
   char* const _end_addr;
-  size_t const _page_size;
+  size_t _page_size;
 public:
   G1PretouchTask(char* start_address, char* end_address, size_t page_size) :
     AbstractGangTask("G1 PreTouch"),
     _cur_addr(start_address),
     _start_addr(start_address),
     _end_addr(end_address),
-    _page_size(page_size) {
+    _page_size(0) {
+#ifdef LINUX
+    _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size(): page_size;
+#else
+    _page_size = page_size;
+#endif
   }
 
   virtual void work(uint worker_id) {
