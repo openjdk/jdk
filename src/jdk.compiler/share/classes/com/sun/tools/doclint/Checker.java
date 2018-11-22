@@ -882,12 +882,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         String sig = tree.getSignature();
-        if (sig.contains("<") || sig.contains(">"))
+        if (sig.contains("<") || sig.contains(">")) {
             env.messages.error(REFERENCE, tree, "dc.type.arg.not.allowed");
-
-        Element e = env.trees.getElement(getCurrentPath());
-        if (e == null)
-            env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        } else if (isArrayType(sig)) {
+            env.messages.error(REFERENCE, tree, "dc.array.type.not.allowed");
+        } else {
+            Element e = env.trees.getElement(getCurrentPath());
+            if (e == null)
+                env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        }
         return super.visitReference(tree, ignore);
     }
 
@@ -970,6 +973,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         warnIfEmpty(tree, tree.getDescription());
         return scan(tree.getDescription(), ignore);
+    }
+
+    private boolean isArrayType(String signature) {
+        int brackets = signature.indexOf('[');
+        int parens = signature.indexOf('(');
+        return brackets >= 0 && (parens < 0 || brackets < parens);
     }
 
     private boolean isThrowable(TypeMirror tm) {

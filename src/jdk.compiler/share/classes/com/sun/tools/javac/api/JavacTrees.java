@@ -443,13 +443,20 @@ public class JavacTrees extends DocTrees {
                 // we first check if qualifierExpression identifies a type,
                 // and if not, then we check to see if it identifies a package.
                 Type t = attr.attribType(ref.qualifierExpression, env);
-                if (t.isErroneous()) {
+
+                if (t.getKind() == TypeKind.ARRAY) {
+                    // cannot refer to an array type
+                    return null;
+                } else if (t.isErroneous()) {
                     JCCompilationUnit toplevel =
                         treeMaker.TopLevel(List.nil());
                     final ModuleSymbol msym = modules.getDefaultModule();
                     toplevel.modle = msym;
                     toplevel.packge = msym.unnamedPackage;
                     Symbol sym = attr.attribIdent(ref.qualifierExpression, toplevel);
+
+                    if (sym == null)
+                        return null;
 
                     sym.complete();
 
