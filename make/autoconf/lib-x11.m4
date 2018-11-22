@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,14 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
+    HEADERS_TO_CHECK="X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h"
+    # There is no Xrandr extension on AIX
+    if test "x$OPENJDK_TARGET_OS" != xaix; then
+      HEADERS_TO_CHECK="$HEADERS_TO_CHECK X11/extensions/Xrandr.h"
+    fi
+
     # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-    AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
+    AC_CHECK_HEADERS([$HEADERS_TO_CHECK],
         [X11_HEADERS_OK=yes],
         [X11_HEADERS_OK=no; break],
         [
@@ -111,7 +117,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
 
     if test "x$X11_HEADERS_OK" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([x11])
-      AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG])
+      AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h Xrander.h XTest.h Intrinsic.h). $HELP_MSG])
     fi
 
     # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
