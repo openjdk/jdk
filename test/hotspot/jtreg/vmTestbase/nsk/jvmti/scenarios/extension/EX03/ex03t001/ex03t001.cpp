@@ -41,7 +41,7 @@ static jrawMonitorID eventMon;
 /* ============================================================================= */
 
 static void JNICALL
-ClassUnload(jvmtiEnv jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass, ...) {
+ClassUnload(jvmtiEnv* jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass, ...) {
     /*
      * With the CMS GC the event can be posted on
      * a ConcurrentGC thread that is not a JavaThread.
