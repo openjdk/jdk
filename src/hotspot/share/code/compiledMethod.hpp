@@ -151,8 +151,6 @@ protected:
   bool _is_far_code; // Code is far from CodeCache.
                      // Have to use far call instructions to call it from code in CodeCache.
 
-  volatile uint8_t _is_unloading_state;      // Local state used to keep track of whether unloading is happening or not
-
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -390,10 +388,9 @@ public:
   // GC unloading support
   // Cleans unloaded klasses and unloaded nmethods in inline caches
 
-  bool is_unloading();
+  virtual bool is_unloading() = 0;
 
   void unload_nmethod_caches(bool class_unloading_occurred);
-  void clear_unloading_state();
   virtual void do_unloading(bool unloading_occurred) { }
 
 private:
