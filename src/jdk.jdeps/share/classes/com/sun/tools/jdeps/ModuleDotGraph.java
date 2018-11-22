@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -57,10 +58,12 @@ import java.util.stream.Stream;
  * Generate dot graph for modules
  */
 public class ModuleDotGraph {
+    private final JdepsConfiguration config;
     private final Map<String, Configuration> configurations;
     private final boolean apiOnly;
     public ModuleDotGraph(JdepsConfiguration config, boolean apiOnly) {
-        this(config.rootModules().stream()
+        this(config,
+             config.rootModules().stream()
                    .map(Module::name)
                    .sorted()
                    .collect(toMap(Function.identity(), mn -> config.resolve(Set.of(mn)))),
@@ -68,8 +71,15 @@ public class ModuleDotGraph {
     }
 
     public ModuleDotGraph(Map<String, Configuration> configurations, boolean apiOnly) {
+        this(null, configurations, apiOnly);
+    }
+
+    private ModuleDotGraph(JdepsConfiguration config,
+                           Map<String, Configuration> configurations,
+                           boolean apiOnly) {
         this.configurations = configurations;
         this.apiOnly = apiOnly;
+        this.config = config;
     }
 
     /**
@@ -86,12 +96,22 @@ public class ModuleDotGraph {
     {
         Files.createDirectories(dir);
         for (String mn : configurations.keySet()) {
-            Path path = dir.resolve(mn + ".dot");
+            Path path = dir.resolve(toDotFileBaseName(mn) + ".dot");
             genDotFile(path, mn, configurations.get(mn), attributes);
         }
         return true;
     }
 
+    private String toDotFileBaseName(String mn) {
+        if (config == null)
+            return mn;
+
+        Optional<Path> path = config.findModule(mn).flatMap(Module::path);
+        if (path.isPresent())
+            return path.get().getFileName().toString();
+        else
+            return mn;
+    }
     /**
      * Generate dotfile of the given path
      */

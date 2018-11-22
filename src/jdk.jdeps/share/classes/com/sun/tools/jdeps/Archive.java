@@ -37,9 +37,12 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import static com.sun.tools.jdeps.Module.trace;
 
 /**
  * Represents the source of the class files.
@@ -132,6 +135,10 @@ public class Archive implements Closeable {
         return path != null ? path.toString() : filename;
     }
 
+    public Optional<Path> path() {
+        return Optional.ofNullable(path);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(this.filename, this.path);
@@ -152,9 +159,6 @@ public class Archive implements Closeable {
         return filename;
     }
 
-    public Path path() {
-        return path;
-    }
 
     public static boolean isSameLocation(Archive archive, Archive other) {
         if (archive.path == null || other.path == null)
@@ -182,6 +186,7 @@ public class Archive implements Closeable {
 
     @Override
     public void close() throws IOException {
+        trace("closing %s %n", getPathName());
         if (reader != null)
             reader.close();
     }

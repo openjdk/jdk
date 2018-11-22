@@ -32,10 +32,12 @@ import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class JdepsWriter {
     public static JdepsWriter newDotWriter(Path outputdir, Analyzer.Type type) {
@@ -79,7 +81,10 @@ public abstract class JdepsWriter {
                 archives.stream()
                         .filter(analyzer::hasDependences)
                         .forEach(archive -> {
-                            Path dotfile = outputDir.resolve(archive.getName() + ".dot");
+                            // use the filename if path is present; otherwise
+                            // use the module name e.g. from jrt file system
+                            Path path = archive.path().orElse(Paths.get(archive.getName()));
+                            Path dotfile = outputDir.resolve(path.getFileName().toString() + ".dot");
                             try (PrintWriter pw = new PrintWriter(Files.newOutputStream(dotfile));
                                  DotFileFormatter formatter = new DotFileFormatter(pw, archive)) {
                                 analyzer.visitDependences(archive, formatter);
@@ -91,6 +96,7 @@ public abstract class JdepsWriter {
             // generate summary dot file
             generateSummaryDotFile(archives, analyzer);
         }
+
 
         private void generateSummaryDotFile(Collection<Archive> archives, Analyzer analyzer)
                 throws IOException
