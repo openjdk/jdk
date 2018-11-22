@@ -202,8 +202,9 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
 
         JNU_ThrowByName(env, "java/lang/Error",
                 "IP Helper Library GetIfTable function failed");
-
-        return -1;
+        // this different error code is to handle the case when we call
+        // GetIpAddrTable in pure IPv6 environment
+        return -2;
     }
 
     /*
@@ -400,7 +401,9 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
         }
         JNU_ThrowByName(env, "java/lang/Error",
                 "IP Helper Library GetIpAddrTable function failed");
-        return -1;
+        // this different error code is to handle the case when we call
+        // GetIpAddrTable in pure IPv6 environment
+        return -2;
     }
 
     /*
@@ -557,7 +560,7 @@ jobject createNetworkInterface
      */
     if (netaddrCount < 0) {
         netaddrCount = enumAddresses_win(env, ifs, &netaddrP);
-        if (netaddrCount == -1) {
+        if (netaddrCount < 0) {
             return NULL;
         }
     }
