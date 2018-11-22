@@ -63,7 +63,7 @@ template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsig
     if (_first_free_entry + _entry_size >= _end_block) {
       int block_size = MIN2(512, MAX2((int)_table_size / 2, (int)_number_of_entries));
       int len = _entry_size * block_size;
-      len = 1 << log2_intptr(len); // round down to power of 2
+      len = 1 << log2_int(len); // round down to power of 2
       assert(len >= _entry_size, "");
       _first_free_entry = NEW_C_HEAP_ARRAY2(char, len, F, CURRENT_PC);
       _entry_blocks->append(_first_free_entry);

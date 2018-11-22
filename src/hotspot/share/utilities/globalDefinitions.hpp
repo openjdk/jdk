@@ -1032,7 +1032,6 @@ inline bool is_power_of_2_long(jlong x) {
 }
 
 // Returns largest i such that 2^i <= x.
-// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
 // If x == 0, the function returns -1.
 inline int log2_intptr(uintptr_t x) {
   int i = -1;
@@ -1047,8 +1046,7 @@ inline int log2_intptr(uintptr_t x) {
 }
 
 //* largest i such that 2^i <= x
-//  A negative value of 'x' will return '63'
-inline int log2_long(unsigned long x) {
+inline int log2_long(julong x) {
   int i = -1;
   julong p =  1;
   while (p != 0 && p <= x) {
@@ -1060,20 +1058,30 @@ inline int log2_long(unsigned long x) {
   return i;
 }
 
+// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
 inline int log2_intptr(intptr_t x) {
   return log2_intptr((uintptr_t)x);
 }
 
-inline int log2_intptr(int x) {
+inline int log2_int(int x) {
+  STATIC_ASSERT(sizeof(int) <= sizeof(uintptr_t));
   return log2_intptr((uintptr_t)x);
 }
 
-inline int log2_intptr(uint x) {
+inline int log2_jint(jint x) {
+  STATIC_ASSERT(sizeof(jint) <= sizeof(uintptr_t));
   return log2_intptr((uintptr_t)x);
 }
 
-inline int log2_long(jlong x) {
-  return log2_long((unsigned long)x);
+inline int log2_uint(uint x) {
+  STATIC_ASSERT(sizeof(uint) <= sizeof(uintptr_t));
+  return log2_intptr((uintptr_t)x);
+}
+
+//  A negative value of 'x' will return '63'
+inline int log2_jlong(jlong x) {
+  STATIC_ASSERT(sizeof(jlong) <= sizeof(julong));
+  return log2_long((julong)x);
 }
 
 //* the argument must be exactly a power of 2
