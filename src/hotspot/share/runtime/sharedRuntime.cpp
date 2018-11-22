@@ -1279,7 +1279,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  assert(caller_nm->is_alive(), "It should be alive");
+  assert(caller_nm->is_alive() && !caller_nm->is_unloading(), "It should be alive");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -1606,8 +1606,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
       } else if (inline_cache->is_icholder_call()) {
         CompiledICHolder* ic_oop = inline_cache->cached_icholder();
         if (ic_oop != NULL) {
-
-          if (receiver()->klass() == ic_oop->holder_klass()) {
+          if (!ic_oop->is_loader_alive()) {
+            // Deferred IC cleaning due to concurrent class unloading
+            inline_cache->set_to_clean();
+          } else if (receiver()->klass() == ic_oop->holder_klass()) {
             // This isn't a real miss. We must have seen that compiled code
             // is now available and we want the call site converted to a
             // monomorphic compiled call site.

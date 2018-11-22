@@ -228,8 +228,8 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   // can be safely skipped.
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Iterate over non-profiled and profiled nmethods
-  NMethodIterator iter;
-  while(iter.next_alive()) {
+  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+  while(iter.next()) {
     nmethod* current = iter.method();
     // Lock the nmethod so it can't be freed
     nmethodLocker nml(current);

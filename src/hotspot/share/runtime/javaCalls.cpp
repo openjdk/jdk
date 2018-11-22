@@ -427,7 +427,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
 #if INCLUDE_JVMCI
   if (alternative_target != NULL) {
-    if (alternative_target->is_alive()) {
+    if (alternative_target->is_alive() && !alternative_target->is_unloading()) {
       thread->set_jvmci_alternate_call_target(alternative_target->verified_entry_point());
       entry_point = method->adapter()->get_i2c_entry();
     } else {

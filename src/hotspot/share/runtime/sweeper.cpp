@@ -142,7 +142,7 @@ void NMethodSweeper::init_sweeper_log() {
 #define SWEEP(nm)
 #endif
 
-CompiledMethodIterator NMethodSweeper::_current;               // Current compiled method
+CompiledMethodIterator NMethodSweeper::_current(CompiledMethodIterator::all_blobs); // Current compiled method
 long     NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
 long     NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
 long     NMethodSweeper::_time_counter                 = 0;    // Virtual time used to periodically invoke sweeper
@@ -274,7 +274,7 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   assert(wait_for_stack_scanning(), "should only happen between sweeper cycles");
 
   _seen = 0;
-  _current = CompiledMethodIterator();
+  _current = CompiledMethodIterator(CompiledMethodIterator::all_blobs);
   // Initialize to first nmethod
   _current.next();
   _traversals += 1;
@@ -653,7 +653,7 @@ class CompiledMethodMarker: public StackObj {
     JavaThread* current = JavaThread::current();
     assert (current->is_Code_cache_sweeper_thread(), "Must be");
     _thread = (CodeCacheSweeperThread*)current;
-    if (!cm->is_zombie() && !cm->is_unloaded()) {
+    if (!cm->is_zombie() && !cm->is_unloading()) {
       // Only expose live nmethods for scanning
       _thread->set_scanned_compiled_method(cm);
     }
@@ -697,7 +697,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
   // Skip methods that are currently referenced by the VM
   if (cm->is_locked_by_vm()) {
     // But still remember to clean-up inline caches for alive nmethods
-    if (cm->is_alive()) {
+    if (cm->is_alive() && !cm->is_unloading()) {
       // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
       CompiledICLocker ml(cm);
       cm->cleanup_inline_caches(false);
@@ -786,7 +786,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
 
 void NMethodSweeper::possibly_flush(nmethod* nm) {
   if (UseCodeCacheFlushing) {
-    if (!nm->is_locked_by_vm() && !nm->is_native_method() && !nm->is_not_installed()) {
+    if (!nm->is_locked_by_vm() && !nm->is_native_method() && !nm->is_not_installed() && !nm->is_unloading()) {
       bool make_not_entrant = false;
 
       // Do not make native methods not-entrant

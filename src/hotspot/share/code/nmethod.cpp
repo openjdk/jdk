@@ -1019,13 +1019,20 @@ void nmethod::mark_as_seen_on_stack() {
 // there are no activations on the stack, not in use by the VM,
 // and not in use by the ServiceThread)
 bool nmethod::can_convert_to_zombie() {
-  assert(is_not_entrant(), "must be a non-entrant method");
+  // Note that this is called when the sweeper has observed the nmethod to be
+  // not_entrant. However, with concurrent code cache unloading, the state
+  // might have moved on to unloaded if it is_unloading(), due to racing
+  // concurrent GC threads.
+  assert(is_not_entrant() || is_unloading(), "must be a non-entrant method");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the
   // nmethod for the second time.
-  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count() &&
-         !is_locked_by_vm();
+  // If an is_unloading() nmethod is still not_entrant, then it is not safe to
+  // convert it to zombie due to GC unloading interactions. However, if it
+  // has become unloaded, then it is okay to convert such nmethods to zombie.
+  return stack_traversal_mark() + 1 < NMethodSweeper::traversal_count() &&
+         !is_locked_by_vm() && (!is_unloading() || is_unloaded());
 }
 
 void nmethod::inc_decompile_count() {
@@ -1093,8 +1100,6 @@ void nmethod::make_unloaded() {
   // Unregister must be done before the state change
   Universe::heap()->unregister_nmethod(this);
 
-  _state = unloaded;
-
   // Log the unloading.
   log_state_change();
 
@@ -1110,6 +1115,13 @@ void nmethod::make_unloaded() {
 
   set_osr_link(NULL);
   NMethodSweeper::report_state_change(this);
+
+  // The release is only needed for compile-time ordering, as accesses
+  // into the nmethod after the store are not safe due to the sweeper
+  // being allowed to free it when the store is observed, during
+  // concurrent nmethod unloading. Therefore, there is no need for
+  // acquire on the loader side.
+  OrderAccess::release_store(&_state, (signed char)unloaded);
 }
 
 void nmethod::invalidate_osr_method() {
@@ -1913,11 +1925,11 @@ void nmethod::check_all_dependencies(DepChange& changes) {
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter;
+  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
-    if (nm->is_alive() && !nm->is_marked_for_deoptimization()) {
+    if (!nm->is_marked_for_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);
@@ -2912,7 +2924,7 @@ void nmethod::maybe_invalidate_installed_code() {
     // Update the values in the InstalledCode instance if it still refers to this nmethod
     nmethod* nm = (nmethod*)InstalledCode::address(installed_code);
     if (nm == this) {
-      if (!is_alive()) {
+      if (!is_alive() || is_unloading()) {
         // Break the link between nmethod and InstalledCode such that the nmethod
         // can subsequently be flushed safely.  The link must be maintained while
         // the method could have live activations since invalidateInstalledCode
@@ -2927,7 +2939,7 @@ void nmethod::maybe_invalidate_installed_code() {
       }
     }
   }
-  if (!is_alive()) {
+  if (!is_alive() || is_unloading()) {
     // Clear these out after the nmethod has been unregistered and any
     // updates to the InstalledCode instance have been performed.
     clear_jvmci_installed_code();
@@ -2951,7 +2963,7 @@ void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
   {
     MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
     // This relationship can only be checked safely under a lock
-    assert(!nm->is_alive() || nm->jvmci_installed_code() == installedCode(), "sanity check");
+    assert(!nm->is_alive() || nm->is_unloading() || nm->jvmci_installed_code() == installedCode(), "sanity check");
   }
 #endif
 
