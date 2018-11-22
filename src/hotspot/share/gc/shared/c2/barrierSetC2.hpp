@@ -281,6 +281,8 @@ public:
   // expanded later, then now is the time to do so.
   virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const { return false; }
 
+  virtual bool has_special_unique_user(const Node* node) const { return false; }
+
   enum CompilePhase {
     BeforeOptimize, /* post_parse = true */
     BeforeExpand, /* post_parse = false */
