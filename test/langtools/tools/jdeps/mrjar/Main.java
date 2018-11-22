@@ -21,7 +21,8 @@
  * questions.
  */
 
-package test;
+import test.Version;
+import p.Foo;
 
 public class Main {
     public void run() {
@@ -31,5 +32,6 @@ public class Main {
 
     public static void main(String[] args) {
         (new Main()).run();
+        Foo foo = new Foo();
     }
 }

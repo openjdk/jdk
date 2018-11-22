@@ -35,9 +35,11 @@
  * @run testng ListModuleDeps
  */
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.testng.annotations.BeforeTest;
@@ -53,6 +55,7 @@ public class ListModuleDeps {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path CLASSES_DIR = Paths.get("classes");
     private static final Path LIB_DIR = Paths.get("lib");
+    private static final Path LIB2_DIR = Paths.get("lib2");
 
     private static final Path HI_CLASS =
         CLASSES_DIR.resolve("hi").resolve("Hi.class");
@@ -69,7 +72,8 @@ public class ListModuleDeps {
     @BeforeTest
     public void compileAll() throws Exception {
         // compile library
-        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "lib"), LIB_DIR));
+        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "lib2"), LIB2_DIR));
+        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "lib"), LIB_DIR, "-cp", LIB2_DIR.toString()));
 
         // simple program depends only on java.base
         assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "hi"), CLASSES_DIR));
@@ -111,7 +115,7 @@ public class ListModuleDeps {
     @Test(dataProvider = "listdeps")
     public void testListDeps(Path classes, String[] expected) {
         JdepsRunner jdeps = JdepsRunner.run(
-            "--class-path", LIB_DIR.toString(),
+            "--class-path", LIB_DIR.toString() + File.pathSeparator + LIB2_DIR.toString(),
             "--list-deps", classes.toString()
         );
         String[] output = Arrays.stream(jdeps.output())
@@ -123,7 +127,7 @@ public class ListModuleDeps {
     @Test(dataProvider = "reduceddeps")
     public void testListReducedDeps(Path classes, String[]  expected) {
         JdepsRunner jdeps = JdepsRunner.run(
-            "--class-path", LIB_DIR.toString(),
+            "--class-path", LIB_DIR.toString() + File.pathSeparator + LIB2_DIR.toString(),
             "--list-reduced-deps", classes.toString()
         );
         String[] output = Arrays.stream(jdeps.output())
@@ -140,6 +144,7 @@ public class ListModuleDeps {
                                 "java.base/jdk.internal.misc",
                                 "java.base/sun.security.util",
                                 "java.logging",
+                                "java.management",
                                 "java.sql",
                                 "java.xml/jdk.xml.internal",
                                 "jdk.unsupported"
@@ -154,6 +159,7 @@ public class ListModuleDeps {
             { FOO_CLASS,    new String[] {
                                 "java.base",
                                 "java.logging",
+                                "java.management",
                                 "java.sql",
                                 "java.xml"
                             }
@@ -181,6 +187,7 @@ public class ListModuleDeps {
             { CLASSES_DIR,  new String[] {
                                 "java.base/jdk.internal.misc",
                                 "java.base/sun.security.util",
+                                "java.management",
                                 "java.sql",
                                 "java.xml/jdk.xml.internal",
                                 "jdk.unsupported"
@@ -194,6 +201,7 @@ public class ListModuleDeps {
 
             { FOO_CLASS,    new String[] {
                                 "java.base",
+                                "java.management",
                                 "java.sql"
                             }
             },
@@ -215,7 +223,7 @@ public class ListModuleDeps {
     @Test(dataProvider = "moduledeps")
     public void testPrintModuleDeps(Path classes, String expected) {
         JdepsRunner jdeps = JdepsRunner.run(
-            "--class-path", LIB_DIR.toString(),
+            "--class-path", LIB_DIR.toString() + File.pathSeparator + LIB2_DIR.toString(),
             "--print-module-deps", classes.toString()
         );
         String output = Arrays.stream(jdeps.output())
@@ -231,11 +239,80 @@ public class ListModuleDeps {
 
         return new Object[][] {
             // java.xml is an implied reads edge from java.sql
+            { CLASSES_DIR,  "java.base,java.management,java.sql,jdk.unsupported"},
+            { HI_CLASS,     "java.base"},
+            { FOO_CLASS,    "java.base,java.management,java.sql"},
+            { BAR_CLASS,    "java.base,java.xml"},
+            { UNSAFE_CLASS, "java.base,jdk.unsupported"},
+        };
+    }
+
+    @Test(dataProvider = "noRecursiveModuledeps")
+    public void testNoRecursiveModuleDeps(Path classes, String expected) {
+        JdepsRunner jdeps = JdepsRunner.run(
+            "--class-path", LIB_DIR.toString() + File.pathSeparator + LIB2_DIR.toString(),
+            "--print-module-deps", "--no-recursive", classes.toString()
+        );
+        String output = Arrays.stream(jdeps.output())
+            .map(s -> s.trim())
+            .collect(Collectors.joining(","));
+        assertEquals(output, expected);
+    }
+
+    @DataProvider(name = "noRecursiveModuledeps")
+    public Object[][] noRecursiveModuledeps() {
+        Path barClass = CLASSES_DIR.resolve("z").resolve("Bar.class");
+
+        return new Object[][] {
+            // java.xml is an implied reads edge from java.sql
             { CLASSES_DIR,  "java.base,java.sql,jdk.unsupported"},
             { HI_CLASS,     "java.base"},
             { FOO_CLASS,    "java.base,java.sql"},
             { BAR_CLASS,    "java.base,java.xml"},
             { UNSAFE_CLASS, "java.base,jdk.unsupported"},
         };
+    }
+
+    @DataProvider(name = "recursiveDeps")
+    public Object[][] recursiveDeps() {
+        return new Object[][] {
+            {   // lib2 is classpath but not analyzed because lib.Lib is not present
+                // but it is the only class depending on lib2.Lib2
+                List.of("--list-deps", "--class-path", LIB2_DIR.toString(),
+                        "--ignore-missing-deps", CLASSES_DIR.toString()),
+                new String[] {
+                    "java.base/jdk.internal.misc",
+                    "java.base/sun.security.util",
+                    "java.logging",
+                    "java.sql",
+                    "java.xml/jdk.xml.internal",
+                    "jdk.unsupported"
+                }
+            },
+            {   // lib2 is classpath but not analyzed because lib.Lib is not present
+                // but it is the only class depending on lib2.Lib2
+                List.of("--print-module-deps", "--class-path", LIB2_DIR.toString(),
+                        "--ignore-missing-deps", CLASSES_DIR.toString()),
+                new String[] {
+                    "java.base,java.sql,jdk.unsupported"
+                }
+            },
+            {   // Foo depends on lib.Lib which depends on lib2.Libs
+                List.of("--print-module-deps",
+                        "--ignore-missing-deps", FOO_CLASS.toString()),
+                new String[] {
+                    "java.base,java.sql"
+                }
+            },
+        };
+    }
+
+    @Test(dataProvider = "recursiveDeps")
+    public void testRecursiveDeps(List<String> options, String[] expected) {
+        JdepsRunner jdeps = JdepsRunner.run(options.toArray(new String[0]));
+        String[] output = Arrays.stream(jdeps.output())
+                                .map(s -> s.trim())
+                                .toArray(String[]::new);
+        assertEquals(output, expected);
     }
 }

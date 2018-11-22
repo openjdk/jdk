@@ -137,17 +137,13 @@ public class ModuleInfoBuilder {
         }
     }
 
-    boolean notFound(Archive m) {
-        return m == NOT_FOUND || m == REMOVED_JDK_INTERNALS;
-    }
-
     private Module toNormalModule(Module module, Set<Archive> requiresTransitive)
         throws IOException
     {
         // done analysis
         module.close();
 
-        if (analyzer.requires(module).anyMatch(this::notFound)) {
+        if (analyzer.requires(module).anyMatch(Analyzer::notFound)) {
             // missing dependencies
             return null;
         }
@@ -182,9 +178,9 @@ public class ModuleInfoBuilder {
 
     void visitMissingDeps(Analyzer.Visitor visitor) {
         automaticModules().stream()
-            .filter(m -> analyzer.requires(m).anyMatch(this::notFound))
+            .filter(m -> analyzer.requires(m).anyMatch(Analyzer::notFound))
             .forEach(m -> {
-                analyzer.visitDependences(m, visitor, Analyzer.Type.VERBOSE);
+                analyzer.visitDependences(m, visitor, Analyzer.Type.VERBOSE, Analyzer::notFound);
             });
     }
 

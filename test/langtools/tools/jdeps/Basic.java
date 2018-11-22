@@ -37,6 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.Collectors;
@@ -135,6 +136,19 @@ public class Basic {
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
              new String[] {"compact1", "compact1", dir1.toFile().getName(), dir2.toFile().getName()},
              new String[] {"-v", "-classpath", cpath.toString(), "Test.class"});
+
+        // tests --missing-deps option
+        test(new File(testDir, "Test.class"),
+             new String[] {"p.Foo", "p.Bar"},
+             new String[] {"not found", "not found"},
+             new String[] {"--missing-deps"});
+
+        // no missing dependence
+        test(new File(testDir, "Test.class"),
+             new String[0],
+             new String[0],
+             new String[] {"--missing-deps", "-classpath", cpath.toString()});
+
         return errors;
     }
 

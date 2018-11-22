@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,6 +76,7 @@ public class Analyzer {
     protected final Map<Location, Archive> locationToArchive = new HashMap<>();
     static final Archive NOT_FOUND
         = new Archive(JdepsTask.getMessage("artifact.not.found"));
+    static final Predicate<Archive> ANY = a -> true;
 
     /**
      * Constructs an Analyzer instance.
@@ -161,7 +164,7 @@ public class Analyzer {
      * Visit the dependencies of the given source.
      * If the requested level is SUMMARY, it will visit the required archives list.
      */
-    void visitDependences(Archive source, Visitor v, Type level) {
+    void visitDependences(Archive source, Visitor v, Type level, Predicate<Archive> targetFilter) {
         if (level == Type.SUMMARY) {
             final Dependences result = results.get(source);
             final Set<Archive> reqs = result.requires();
@@ -184,7 +187,7 @@ public class Analyzer {
             Dependences result = results.get(source);
             if (level != type) {
                 // requesting different level of analysis
-                result = new Dependences(source, level);
+                result = new Dependences(source, level, targetFilter);
                 source.visitDependences(result);
             }
             result.dependencies().stream()
@@ -196,7 +199,11 @@ public class Analyzer {
     }
 
     void visitDependences(Archive source, Visitor v) {
-        visitDependences(source, v, type);
+        visitDependences(source, v, type, ANY);
+    }
+
+    void visitDependences(Archive source, Visitor v, Type level) {
+        visitDependences(source, v, level, ANY);
     }
 
     /**
@@ -208,12 +215,17 @@ public class Analyzer {
         protected final Set<Archive> requires;
         protected final Set<Dep> deps;
         protected final Type level;
+        protected final Predicate<Archive> targetFilter;
         private Profile profile;
         Dependences(Archive archive, Type level) {
+            this(archive, level, ANY);
+        }
+        Dependences(Archive archive, Type level, Predicate<Archive> targetFilter) {
             this.archive = archive;
             this.deps = new HashSet<>();
             this.requires = new HashSet<>();
             this.level = level;
+            this.targetFilter = targetFilter;
         }
 
         Set<Dep> dependencies() {
@@ -266,7 +278,7 @@ public class Analyzer {
         @Override
         public void visit(Location o, Location t) {
             Archive targetArchive = findArchive(t);
-            if (filter.accepts(o, archive, t, targetArchive)) {
+            if (filter.accepts(o, archive, t, targetArchive) && targetFilter.test(targetArchive)) {
                 addDep(o, t);
                 if (archive != targetArchive && !requires.contains(targetArchive)) {
                     requires.add(targetArchive);
@@ -368,13 +380,21 @@ public class Analyzer {
         }
     }
 
+    /*
+     * Returns true if the given archive represents not found.
+     */
+    static boolean notFound(Archive archive) {
+        return archive == NOT_FOUND || archive == REMOVED_JDK_INTERNALS;
+    }
+
     static final Jdk8Internals REMOVED_JDK_INTERNALS = new Jdk8Internals();
 
     static class Jdk8Internals extends Module {
-        private final String JDK8_INTERNALS = "/com/sun/tools/jdeps/resources/jdk8_internals.txt";
+        private static final String NAME = "JDK removed internal API";
+        private static final String JDK8_INTERNALS = "/com/sun/tools/jdeps/resources/jdk8_internals.txt";
         private final Set<String> jdk8Internals;
         private Jdk8Internals() {
-            super("JDK removed internal API");
+            super(NAME, ModuleDescriptor.newModule("jdk8internals").build(), true);
             try (InputStream in = JdepsTask.class.getResourceAsStream(JDK8_INTERNALS);
                  BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 this.jdk8Internals = reader.lines()
@@ -391,11 +411,6 @@ public class Analyzer {
             String pn = i > 0 ? cn.substring(0, i) : "";
 
             return jdk8Internals.contains(pn);
-        }
-
-        @Override
-        public String name() {
-            return getName();
         }
 
         @Override

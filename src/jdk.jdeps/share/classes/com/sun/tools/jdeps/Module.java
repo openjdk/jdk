@@ -58,12 +58,16 @@ class Module extends Archive {
     private final URI location;
 
     protected Module(String name) {
+        this(name, null, false);
+    }
+
+    protected Module(String name, ModuleDescriptor descriptor, boolean isSystem) {
         super(name);
-        this.descriptor = null;
+        this.descriptor = descriptor;
         this.location = null;
         this.exports = Collections.emptyMap();
         this.opens = Collections.emptyMap();
-        this.isSystem = true;
+        this.isSystem = isSystem;
     }
 
     private Module(String name,
@@ -89,11 +93,11 @@ class Module extends Archive {
     }
 
     public boolean isNamed() {
-        return true;
+        return descriptor != null;
     }
 
     public boolean isAutomatic() {
-        return descriptor.isAutomatic();
+        return descriptor != null && descriptor.isAutomatic();
     }
 
     public Module getModule() {
@@ -232,24 +236,12 @@ class Module extends Archive {
 
     private static class UnnamedModule extends Module {
         private UnnamedModule() {
-            super("unnamed", null, null,
-                  Collections.emptyMap(), Collections.emptyMap(),
-                  false, null);
+            super("unnamed", null, false);
         }
 
         @Override
         public String name() {
             return "unnamed";
-        }
-
-        @Override
-        public boolean isNamed() {
-            return false;
-        }
-
-        @Override
-        public boolean isAutomatic() {
-            return false;
         }
 
         @Override

@@ -49,42 +49,47 @@ import java.util.stream.Stream;
 public class ModuleExportsAnalyzer extends DepsAnalyzer {
     // source archive to its dependences and JDK internal APIs it references
     private final Map<Archive, Map<Archive,Set<String>>> deps = new HashMap<>();
-    private final boolean showJdkInternals;
+    private final Map<String, Set<String>> missingDeps = new HashMap<>();
+    private final boolean showInternals;
     private final boolean reduced;
     private final PrintWriter writer;
     private final String separator;
     public ModuleExportsAnalyzer(JdepsConfiguration config,
                                  JdepsFilter filter,
-                                 boolean showJdkInternals,
+                                 boolean showInternals,
                                  boolean reduced,
                                  PrintWriter writer,
                                  String separator) {
         super(config, filter, null,
               Analyzer.Type.PACKAGE,
               false /* all classes */);
-        this.showJdkInternals = showJdkInternals;
+        this.showInternals = showInternals;
         this.reduced = reduced;
         this.writer = writer;
         this.separator = separator;
     }
 
-    @Override
-    public boolean run() throws IOException {
-        // analyze dependences
-        boolean rc = super.run();
+    public boolean run(int maxDepth, boolean ignoreMissingDeps) throws IOException {
+        // use compile time view so that the entire archive on classpath is analyzed
+        boolean rc = super.run(true, maxDepth);
 
         // A visitor to record the module-level dependences as well as
-        // use of JDK internal APIs
+        // use of internal APIs
         Analyzer.Visitor visitor = (origin, originArchive, target, targetArchive) -> {
-            Set<String> jdkInternals =
+            Set<String> internals =
                 deps.computeIfAbsent(originArchive, _k -> new HashMap<>())
                     .computeIfAbsent(targetArchive, _k -> new HashSet<>());
 
             Module module = targetArchive.getModule();
-            if (showJdkInternals && originArchive.getModule() != module &&
-                    module.isJDK() && !module.isExported(target)) {
-                // use of JDK internal APIs
-                jdkInternals.add(target);
+            if (showInternals && originArchive.getModule() != module &&
+                    module.isNamed() && !module.isExported(target, module.name())) {
+                // use of internal APIs
+                internals.add(target);
+            }
+            if (!ignoreMissingDeps && Analyzer.notFound(targetArchive)) {
+                Set<String> notFound =
+                    missingDeps.computeIfAbsent(origin, _k -> new HashSet<>());
+                notFound.add(target);
             }
         };
 
@@ -94,10 +99,26 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
             .sorted(Comparator.comparing(Archive::getName))
             .forEach(archive -> analyzer.visitDependences(archive, visitor));
 
+        // error if any missing dependence
+        if (!rc || !missingDeps.isEmpty()) {
+            return false;
+        }
+
+        Map<Module, Set<String>> internalPkgs = internalPackages();
         Set<Module> modules = modules();
-        if (showJdkInternals) {
+        if (showInternals) {
             // print modules and JDK internal API dependences
-            printDependences(modules);
+            Stream.concat(modules.stream(), internalPkgs.keySet().stream())
+                    .sorted(Comparator.comparing(Module::name))
+                    .distinct()
+                    .forEach(m -> {
+                        if (internalPkgs.containsKey(m)) {
+                            internalPkgs.get(m).stream()
+                                .forEach(pn -> writer.format("   %s/%s%s", m, pn, separator));
+                        } else {
+                            writer.format("   %s%s", m, separator);
+                        }
+                    });
         } else {
             // print module dependences
             writer.println(modules.stream().map(Module::name).sorted()
@@ -106,16 +127,28 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         return rc;
     }
 
+    /*
+     * Prints missing dependences
+     */
+    void visitMissingDeps(Analyzer.Visitor visitor) {
+        archives.stream()
+            .filter(analyzer::hasDependences)
+            .sorted(Comparator.comparing(Archive::getName))
+            .filter(m -> analyzer.requires(m).anyMatch(Analyzer::notFound))
+            .forEach(m -> {
+                analyzer.visitDependences(m, visitor, Analyzer.Type.VERBOSE, Analyzer::notFound);
+            });
+    }
+
     private Set<Module> modules() {
         // build module graph
         ModuleGraphBuilder builder = new ModuleGraphBuilder(configuration);
-        Module root = new RootModule("root");
+        Module root = new RootModule();
         builder.addModule(root);
         // find named module dependences
         dependenceStream()
             .flatMap(map -> map.keySet().stream())
-            .filter(m -> m.getModule().isNamed()
-                && !configuration.rootModules().contains(m))
+            .filter(m -> m.getModule().isNamed() && !configuration.rootModules().contains(m))
             .map(Archive::getModule)
             .forEach(m -> builder.addEdge(root, m));
 
@@ -125,28 +158,15 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         return g.adjacentNodes(root);
     }
 
-    private void printDependences(Set<Module> modules) {
-        // find use of JDK internals
-        Map<Module, Set<String>> jdkinternals = new HashMap<>();
+    private Map<Module, Set<String>> internalPackages() {
+        Map<Module, Set<String>> internalPkgs = new HashMap<>();
         dependenceStream()
             .flatMap(map -> map.entrySet().stream())
             .filter(e -> e.getValue().size() > 0)
-            .forEach(e -> jdkinternals.computeIfAbsent(e.getKey().getModule(),
-                                                       _k -> new TreeSet<>())
+            .forEach(e -> internalPkgs.computeIfAbsent(e.getKey().getModule(),
+                                                             _k -> new TreeSet<>())
                                       .addAll(e.getValue()));
-
-        // print modules and JDK internal API dependences
-        Stream.concat(modules.stream(), jdkinternals.keySet().stream())
-              .sorted(Comparator.comparing(Module::name))
-              .distinct()
-              .forEach(m -> {
-                  if (jdkinternals.containsKey(m)) {
-                      jdkinternals.get(m).stream()
-                          .forEach(pn -> writer.format("   %s/%s%s", m, pn, separator));
-                  } else {
-                      writer.format("   %s%s", m, separator);
-                  }
-              });
+        return internalPkgs;
     }
 
     /*
@@ -160,18 +180,13 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
                    .map(deps::get);
     }
 
-    private class RootModule extends Module {
-        final ModuleDescriptor descriptor;
-        RootModule(String name) {
-            super(name);
-
-            ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(name);
-            this.descriptor = builder.build();
-        }
-
-        @Override
-        public ModuleDescriptor descriptor() {
-            return descriptor;
+    /*
+     * RootModule serves as the root node for building the module graph
+     */
+    private static class RootModule extends Module {
+        static final String NAME = "root";
+        RootModule() {
+            super(NAME, ModuleDescriptor.newModule(NAME).build(), false);
         }
     }
 

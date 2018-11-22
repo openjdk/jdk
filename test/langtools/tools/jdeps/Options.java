@@ -53,7 +53,15 @@ public class Options {
             },
             {
                 new String[] { "-jdkinternal", "-p", "java.lang", TEST_CLASSES },
-                "--package, --regex, --require cannot be used with  -jdkinternals option"
+                "--package, --regex, --require cannot be used with -jdkinternals option"
+            },
+            {
+                new String[] { "--missing-deps", "-summary", TEST_CLASSES },
+                "-summary or -verbose cannot be used with --missing-deps option"
+            },
+            {
+                new String[] { "--missing-deps", "-p", "java.lang", TEST_CLASSES },
+                "--package, --regex, --require cannot be used with --missing-deps option"
             },
             {
                 new String[] { "--inverse", TEST_CLASSES },
