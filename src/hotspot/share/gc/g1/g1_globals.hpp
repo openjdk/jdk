@@ -190,9 +190,6 @@
           "to minimize the probability of promotion failure.")              \
           range(0, 50)                                                      \
                                                                             \
-  develop(bool, G1HRRSUseSparseTable, true,                                 \
-          "When true, use sparse table to save space.")                     \
-                                                                            \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
           range(0, 32*M)                                                    \
