@@ -1677,6 +1677,8 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
+
+    BarrierSet::barrier_set()->barrier_set_c2()->igvn_add_users_to_worklist(this, use);
   }
 }
 
@@ -1827,7 +1829,7 @@ void PhaseCCP::analyze() {
                 for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
                   Node* b = u->fast_out(i3);
                   if (bs->is_gc_barrier_node(b)) {
-                    _worklist.push(b);
+                    worklist.push(b);
                   }
                 }
               }
@@ -1835,6 +1837,8 @@ void PhaseCCP::analyze() {
             }
           }
         }
+
+        BarrierSet::barrier_set()->barrier_set_c2()->ccp_analyze(this, worklist, m);
       }
     }
   }
