@@ -1096,7 +1096,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
                                 si->_allow_exec);
     if (base == NULL || base != addr) {
       // dealloc the regions from java heap
-      dealloc_archive_heap_regions(regions, region_num);
+      dealloc_archive_heap_regions(regions, region_num, is_open_archive);
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                     INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                     p2i(addr), regions[i].byte_size());
@@ -1106,7 +1106,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 
   if (!verify_mapped_heap_regions(first, region_num)) {
     // dealloc the regions from java heap
-    dealloc_archive_heap_regions(regions, region_num);
+    dealloc_archive_heap_regions(regions, region_num, is_open_archive);
     log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
     return false;
   }
@@ -1171,10 +1171,10 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 }
 
 // dealloc the archive regions from java heap
-void FileMapInfo::dealloc_archive_heap_regions(MemRegion* regions, int num) {
+void FileMapInfo::dealloc_archive_heap_regions(MemRegion* regions, int num, bool is_open) {
   if (num > 0) {
     assert(regions != NULL, "Null archive ranges array with non-zero count");
-    G1CollectedHeap::heap()->dealloc_archive_regions(regions, num);
+    G1CollectedHeap::heap()->dealloc_archive_regions(regions, num, is_open);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -1428,9 +1428,11 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
     // Dealloc the archive heap regions only without unmapping. The regions are part
     // of the java heap. Unmapping of the heap regions are managed by GC.
     map_info->dealloc_archive_heap_regions(open_archive_heap_ranges,
-                                           num_open_archive_heap_ranges);
+                                           num_open_archive_heap_ranges,
+                                           true);
     map_info->dealloc_archive_heap_regions(closed_archive_heap_ranges,
-                                           num_closed_archive_heap_ranges);
+                                           num_closed_archive_heap_ranges,
+                                           false);
   } else if (DumpSharedSpaces) {
     fail_stop("%s", msg);
   }

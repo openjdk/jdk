@@ -262,8 +262,9 @@ public:
   // Create the _archive_region_map which is used to identify archive objects.
   static inline void enable_archive_object_check();
 
-  // Set the regions containing the specified address range as archive/non-archive.
+  // Mark regions containing the specified address range as archive/non-archive.
   static inline void set_range_archive(MemRegion range, bool open);
+  static inline void clear_range_archive(MemRegion range, bool open);
 
   // Check if the object is in closed archive
   static inline bool is_closed_archive_object(oop object);

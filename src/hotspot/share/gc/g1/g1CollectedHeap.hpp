@@ -683,7 +683,7 @@ public:
   // which had been allocated by alloc_archive_regions. This should be called
   // rather than fill_archive_regions at JVM init time if the archive file
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
-  void dealloc_archive_regions(MemRegion* range, size_t count);
+  void dealloc_archive_regions(MemRegion* range, size_t count, bool is_open);
 
   oop materialize_archived_object(oop obj);
 
