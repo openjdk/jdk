@@ -544,12 +544,12 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
                                                                bool heap) : DCmdWithParser(output, heap),
   _repository_path("repositorypath", "Path to repository,.e.g \\\"My Repository\\\"", "STRING", false, NULL),
   _dump_path("dumppath", "Path to dump,.e.g \\\"My Dump path\\\"", "STRING", false, NULL),
-  _stack_depth("stackdepth", "Stack Depth", "JLONG", false, "64"),
-  _global_buffer_count("globalbuffercount", "Number of global buffers,", "JLONG", false, "32"),
-  _global_buffer_size("globalbuffersize", "Size of a global buffers,", "JLONG", false, "524288"),
-  _thread_buffer_size("thread_buffer_size", "Size of a thread buffer", "JLONG", false, "8192"),
-  _memory_size("memorysize", "Overall memory size, ", "JLONG", false, "16777216"),
-  _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "JLONG", false, "12582912"),
+  _stack_depth("stackdepth", "Stack Depth", "JULONG", false, "64"),
+  _global_buffer_count("globalbuffercount", "Number of global buffers,", "JULONG", false, "20"),
+  _global_buffer_size("globalbuffersize", "Size of a global buffers,", "MEMORY SIZE", false, "512k"),
+  _thread_buffer_size("thread_buffer_size", "Size of a thread buffer", "MEMORY SIZE", false, "8k"),
+  _memory_size("memorysize", "Overall memory size, ", "MEMORY SIZE", false, "10m"),
+  _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "MEMORY SIZE", false, "12m"),
   _sample_threads("samplethreads", "Activate Thread sampling", "BOOLEAN", false, "true") {
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
@@ -612,22 +612,22 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
 
   jobject global_buffer_size = NULL;
   if (_global_buffer_size.is_set()) {
-    global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value(), CHECK);
+    global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value()._size, CHECK);
   }
 
   jobject thread_buffer_size = NULL;
   if (_thread_buffer_size.is_set()) {
-    thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value(), CHECK);
+    thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value()._size, CHECK);
   }
 
   jobject max_chunk_size = NULL;
   if (_max_chunk_size.is_set()) {
-    max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value(), CHECK);
+    max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value()._size, CHECK);
   }
 
   jobject memory_size = NULL;
   if (_memory_size.is_set()) {
-    memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value(), CHECK);
+    memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
   }
 
   jobject sample_threads = NULL;

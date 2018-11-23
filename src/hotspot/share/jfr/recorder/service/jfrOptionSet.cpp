@@ -352,19 +352,19 @@ bool JfrOptionSet::configure(TRAPS) {
   configure._stack_depth.set_value(_dcmd_stackdepth.value());
 
   configure._thread_buffer_size.set_is_set(_dcmd_threadbuffersize.is_set());
-  configure._thread_buffer_size.set_value(_dcmd_threadbuffersize.value()._size);
+  configure._thread_buffer_size.set_value(_dcmd_threadbuffersize.value());
 
   configure._global_buffer_count.set_is_set(_dcmd_numglobalbuffers.is_set());
   configure._global_buffer_count.set_value(_dcmd_numglobalbuffers.value());
 
   configure._global_buffer_size.set_is_set(_dcmd_globalbuffersize.is_set());
-  configure._global_buffer_size.set_value(_dcmd_globalbuffersize.value()._size);
+  configure._global_buffer_size.set_value(_dcmd_globalbuffersize.value());
 
   configure._max_chunk_size.set_is_set(_dcmd_maxchunksize.is_set());
-  configure._max_chunk_size.set_value(_dcmd_maxchunksize.value()._size);
+  configure._max_chunk_size.set_value(_dcmd_maxchunksize.value());
 
   configure._memory_size.set_is_set(_dcmd_memorysize.is_set());
-  configure._memory_size.set_value(_dcmd_memorysize.value()._size);
+  configure._memory_size.set_value(_dcmd_memorysize.value());
 
   configure._sample_threads.set_is_set(_dcmd_sample_threads.is_set());
   configure._sample_threads.set_value(_dcmd_sample_threads.value());
