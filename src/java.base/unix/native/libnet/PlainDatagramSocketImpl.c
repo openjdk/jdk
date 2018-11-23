@@ -684,19 +684,21 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
                 packetAddress = NULL;
             }
         }
-        if (packetAddress == NULL) {
-            packetAddress = NET_SockaddrToInetAddress(env, &rmtaddr, &port);
-            /* stuff the new Inetaddress in the packet */
-            (*env)->SetObjectField(env, packet, dp_addressID, packetAddress);
-        } else {
-            /* only get the new port number */
-            port = NET_GetPortFromSockaddr(&rmtaddr);
+        if (!(*env)->ExceptionCheck(env)){
+            if (packetAddress == NULL ) {
+                packetAddress = NET_SockaddrToInetAddress(env, &rmtaddr, &port);
+                /* stuff the new InetAddress in the packet */
+                (*env)->SetObjectField(env, packet, dp_addressID, packetAddress);
+            } else {
+                /* only get the new port number */
+                port = NET_GetPortFromSockaddr(&rmtaddr);
+            }
+            /* and fill in the data, remote address/port and such */
+            (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, n,
+                                    (jbyte *)fullPacket);
+            (*env)->SetIntField(env, packet, dp_portID, port);
+            (*env)->SetIntField(env, packet, dp_lengthID, n);
         }
-        /* and fill in the data, remote address/port and such */
-        (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, n,
-                                   (jbyte *)fullPacket);
-        (*env)->SetIntField(env, packet, dp_portID, port);
-        (*env)->SetIntField(env, packet, dp_lengthID, n);
     }
 
     if (mallocedPacket) {
