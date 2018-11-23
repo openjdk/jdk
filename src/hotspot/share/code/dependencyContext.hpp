@@ -118,13 +118,13 @@ class DependencyContext : public StackObj {
   // Safepoints are forbidden during DC lifetime. GC can invalidate
   // _dependency_context_addr if it relocates the holder
   // (e.g. CallSiteContext Java object).
-  int _safepoint_counter;
+  uint64_t _safepoint_counter;
 
   DependencyContext(intptr_t* addr) : _dependency_context_addr(addr),
-    _safepoint_counter(SafepointSynchronize::_safepoint_counter) {}
+    _safepoint_counter(SafepointSynchronize::safepoint_counter()) {}
 
   ~DependencyContext() {
-    assert(_safepoint_counter == SafepointSynchronize::_safepoint_counter, "safepoint happened");
+    assert(_safepoint_counter == SafepointSynchronize::safepoint_counter(), "safepoint happened");
   }
 #else
   DependencyContext(intptr_t* addr) : _dependency_context_addr(addr) {}

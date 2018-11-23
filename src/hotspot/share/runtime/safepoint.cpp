@@ -141,7 +141,7 @@ static void post_safepoint_end_event(EventSafepointEnd* event) {
 
 SafepointSynchronize::SynchronizeState volatile SafepointSynchronize::_state = SafepointSynchronize::_not_synchronized;
 volatile int  SafepointSynchronize::_waiting_to_block = 0;
-volatile int SafepointSynchronize::_safepoint_counter = 0;
+volatile uint64_t SafepointSynchronize::_safepoint_counter = 0;
 int SafepointSynchronize::_current_jni_active_count = 0;
 long  SafepointSynchronize::_end_of_last_safepoint = 0;
 int SafepointSynchronize::_defer_thr_suspend_loop_count = 4000;
