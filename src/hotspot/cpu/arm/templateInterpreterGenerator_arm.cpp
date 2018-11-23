@@ -316,13 +316,27 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 }
 
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
-  // Result handlers are not used on 32-bit ARM
-  // since the returned value is already in appropriate format.
-  __ should_not_reach_here();  // to avoid empty code block
+  address entry = __ pc();
 
-  // The result handler non-zero indicates an object is returned and this is
-  // used in the native entry code.
-  return type == T_OBJECT ? (address)(-1) : NULL;
+  switch (type) {
+  case T_CHAR    : /* Nothing to do */  break;
+  case T_BYTE    : /* Nothing to do */  break;
+  case T_SHORT   : /* Nothing to do */  break;
+  case T_INT     : /* Nothing to do */  break;
+  case T_LONG    : /* Nothing to do */  break;
+  case T_VOID    : /* Nothing to do */  break;
+  case T_DOUBLE  : /* Nothing to do */  break;
+  case T_FLOAT   : /* Nothing to do */  break;
+  case T_BOOLEAN : __ c2bool(R0);       break;
+  case T_OBJECT  :
+    __ ldr(R0, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize));
+    __ verify_oop(R0);
+    break;
+  default        : __ should_not_reach_here(); break;
+  }
+
+  __ ret();
+  return entry;
 }
 
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
@@ -985,8 +999,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Unbox oop result, e.g. JNIHandles::resolve result if it's an oop.
   {
     Label Lnot_oop;
-    // For ARM32, Rresult_handler is -1 for oop result, 0 otherwise.
-    __ cbz(Rresult_handler, Lnot_oop);
+    __ mov_slow(Rtemp, AbstractInterpreter::result_handler(T_OBJECT));
+    __ cmp(Rtemp, Rresult_handler);
+    __ b(Lnot_oop, ne);
     Register value = Rsaved_result_lo;
     __ resolve_jobject(value,   // value
                        Rtemp,   // tmp1
@@ -1028,10 +1043,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   //       not properly paired (was bug - gri 11/22/99).
   __ notify_method_exit(vtos, InterpreterMacroAssembler::NotifyJVMTI, true, Rsaved_result_lo, Rsaved_result_hi, saved_result_fp);
 
-  // Restore the result. Oop result is restored from the stack.
-  __ cmp(Rresult_handler, 0);
-  __ ldr(R0, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize), ne);
-  __ mov(R0, Rsaved_result_lo, eq);
+  // Restore the result. Oop result is restored from the stack by the
+  // result handler.
+  __ mov(R0, Rsaved_result_lo);
   __ mov(R1, Rsaved_result_hi);
 
 #ifdef __ABI_HARD__
@@ -1039,15 +1053,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ fcpyd(D0, D8);
 #endif // __ABI_HARD__
 
-#ifdef ASSERT
-  if (VerifyOops) {
-    Label L;
-    __ cmp(Rresult_handler, 0);
-    __ b(L, eq);
-    __ verify_oop(R0);
-    __ bind(L);
-  }
-#endif // ASSERT
+  __ blx(Rresult_handler);
 
   // Restore FP/LR, sender_sp and return
   __ mov(Rtemp, FP);
