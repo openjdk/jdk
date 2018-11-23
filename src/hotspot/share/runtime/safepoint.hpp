@@ -25,13 +25,10 @@
 #ifndef SHARE_VM_RUNTIME_SAFEPOINT_HPP
 #define SHARE_VM_RUNTIME_SAFEPOINT_HPP
 
-#include "asm/assembler.hpp"
-#include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 //
@@ -50,8 +47,7 @@
 
 
 class ThreadSafepointState;
-class SnippetCache;
-class nmethod;
+class JavaThread;
 
 //
 // Implements roll-forward to safepoint (safepoint synchronization)

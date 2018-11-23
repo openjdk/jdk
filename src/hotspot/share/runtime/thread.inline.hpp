@@ -29,6 +29,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
@@ -129,6 +130,26 @@ inline void JavaThread::set_thread_state(JavaThreadState s) {
   OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
 }
 #endif
+
+ThreadSafepointState* JavaThread::safepoint_state() const  {
+  return _safepoint_state;
+}
+
+void JavaThread::set_safepoint_state(ThreadSafepointState *state) {
+  _safepoint_state = state;
+}
+
+bool JavaThread::is_at_poll_safepoint() {
+  return _safepoint_state->is_at_poll_safepoint();
+}
+
+void JavaThread::enter_critical() {
+  assert(Thread::current() == this ||
+         (Thread::current()->is_VM_thread() &&
+         SafepointSynchronize::is_synchronizing()),
+         "this must be current thread or synchronizing");
+  _jni_active_critical++;
+}
 
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
