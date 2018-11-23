@@ -129,6 +129,17 @@ void VM_Version::initialize() {
     }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+
+  if (PowerArchitecturePPC64 >= 9) {
+    if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
+      FLAG_SET_ERGO(bool, UseCountTrailingZerosInstructionsPPC64, true);
+    }
+  } else {
+    if (UseCountTrailingZerosInstructionsPPC64) {
+      warning("UseCountTrailingZerosInstructionsPPC64 specified, but needs at least Power9.");
+      FLAG_SET_DEFAULT(UseCountTrailingZerosInstructionsPPC64, false);
+    }
+  }
 #endif
 
   // Create and print feature-string.
