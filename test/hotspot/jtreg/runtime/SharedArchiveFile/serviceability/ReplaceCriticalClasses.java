@@ -41,8 +41,13 @@ import sun.hotspot.WhiteBox;
 
 public class ReplaceCriticalClasses {
     public static void main(String args[]) throws Throwable {
+        ReplaceCriticalClasses rcc = new ReplaceCriticalClasses();
+        rcc.process(args);
+    }
+
+    public void process(String args[]) throws Throwable {
         if (args.length == 0) {
-            launchChildProcesses();
+            launchChildProcesses(getTests());
         } else if (args.length == 3 && args[0].equals("child")) {
             Class klass = Class.forName(args[2].replace("/", "."));
             if (args[1].equals("-shared")) {
@@ -58,7 +63,7 @@ public class ReplaceCriticalClasses {
         }
     }
 
-    static void launchChildProcesses() throws Throwable {
+    public String[] getTests() {
         String tests[] = {
             // CDS should be disabled -- these critical classes will be replaced
             // because JvmtiExport::early_class_hook_env() is true.
@@ -74,18 +79,25 @@ public class ReplaceCriticalClasses {
             "java/lang/Cloneable",
             "java/io/Serializable",
 
-            // Try to replace classes that are used by the archived subgraph graphs.
-            "-subgraph java/util/ArrayList",
-            "-subgraph java/lang/module/ResolvedModule",
+            /* Try to replace classes that are used by the archived subgraph graphs.
+               The following test cases are in ReplaceCriticalClassesForSubgraphs.java.
+            "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
+            "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
+            "-subgraph java/lang/Long java.lang.Long$LongCache",
+            */
 
-            // Replace classes that are loaded after JVMTI_PHASE_PRIMORDIAL. It's OK to replace such
+            // Replace classes that are loaded after JVMTI_PHASE_PRIMORDIAL. It's OK to replace
+            // such
             // classes even when CDS is enabled. Nothing bad should happen.
             "-notshared jdk/internal/vm/PostVMInitHook",
             "-notshared java/util/Locale",
             "-notshared sun/util/locale/BaseLocale",
             "-notshared java/lang/Readable",
         };
+        return tests;
+    }
 
+    static void launchChildProcesses(String tests[]) throws Throwable {
         int n = 0;
         for (String s : tests) {
             System.out.println("Test case[" + (n++) + "] = \"" + s + "\"");
@@ -96,9 +108,10 @@ public class ReplaceCriticalClasses {
 
     static void launchChild(String args[]) throws Throwable {
         if (args.length < 1) {
-            throw new RuntimeException("Invalid test case. Should be <-early> <-subgraph> <-notshared> klassName");
+            throw new RuntimeException("Invalid test case. Should be <-early> <-subgraph> <-notshared> klassName subgraphKlass");
         }
         String klassName = null;
+        String subgraphKlass = null;
         String early = "";
         boolean subgraph = false;
         String shared = "-shared";
@@ -112,11 +125,19 @@ public class ReplaceCriticalClasses {
             } else if (opt.equals("-notshared")) {
                 shared = opt;
             } else {
+              if (!subgraph) {
                 throw new RuntimeException("Unknown option: " + opt);
+              }
             }
         }
-        klassName = args[args.length-1];
+        if (subgraph) {
+          klassName = args[args.length-2];
+          subgraphKlass = args[args.length-1];
+        } else {
+          klassName = args[args.length-1];
+        }
         Class.forName(klassName.replace("/", ".")); // make sure it's a valid class
+        final String subgraphInit = "initialize_from_archived_subgraph " + subgraphKlass;
 
         // We will pass an option like "-agentlib:SimpleClassFileLoadHook=java/util/Locale,XXX,XXX".
         // The SimpleClassFileLoadHook agent would attempt to hook the java/util/Locale class
@@ -142,8 +163,7 @@ public class ReplaceCriticalClasses {
                        "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
 
         if (subgraph) {
-            opts.addSuffix("-Xlog:cds+heap",
-                           "-Xlog:class+load");
+            opts.addSuffix("-Xlog:cds,cds+heap");
         }
 
         opts.addSuffix("ReplaceCriticalClasses",
@@ -152,10 +172,21 @@ public class ReplaceCriticalClasses {
                        klassName);
 
         final boolean expectDisable = !early.equals("");
+        final boolean checkSubgraph = subgraph;
+        final boolean expectShared = shared.equals("-shared");
         CDSTestUtils.run(opts).assertNormalExit(out -> {
                 if (expectDisable) {
                     out.shouldContain("UseSharedSpaces: CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
                     System.out.println("CDS disabled as expected");
+                }
+                if (checkSubgraph) {
+                    if (expectShared) {
+                        if (!out.getOutput().contains("UseSharedSpaces: Unable to map at required address in java heap")) {
+                            out.shouldContain(subgraphInit);
+                        }
+                    } else {
+                      out.shouldNotContain(subgraphInit);
+                    }
                 }
             });
     }
