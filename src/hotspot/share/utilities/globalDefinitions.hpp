@@ -1110,16 +1110,16 @@ static inline unsigned int uabs(unsigned int n) {
   if (value < 0) result = 0-result;
   return result;
 }
-static inline unsigned long uabs(unsigned long n) {
+static inline julong uabs(julong n) {
   union {
-    unsigned long result;
-    long value;
+    julong result;
+    jlong value;
   };
   result = n;
   if (value < 0) result = 0-result;
   return result;
 }
-static inline unsigned long uabs(jlong n) { return uabs((unsigned long)n); }
+static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
