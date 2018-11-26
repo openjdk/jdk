@@ -78,9 +78,12 @@ import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
+import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.amd64.AMD64.CPUFeature;
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
@@ -270,6 +273,81 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
         AMD64AddressValue address = (AMD64AddressValue) operand(access.getAddress());
         LIRFrameState state = getState(access);
         return getArithmeticLIRGenerator().emitLoad(to, address, state);
+    }
+
+    private boolean supports(CPUFeature feature) {
+        return ((AMD64) getLIRGeneratorTool().target().arch).getFeatures().contains(feature);
+    }
+
+    @MatchRule("(And (Not a) b)")
+    public ComplexMatchResult logicalAndNot(ValueNode a, ValueNode b) {
+        if (!supports(CPUFeature.BMI1)) {
+            return null;
+        }
+        return builder -> getArithmeticLIRGenerator().emitLogicalAndNot(operand(a), operand(b));
+    }
+
+    @MatchRule("(And a (Negate a))")
+    public ComplexMatchResult lowestSetIsolatedBit(ValueNode a) {
+        if (!supports(CPUFeature.BMI1)) {
+            return null;
+        }
+        return builder -> getArithmeticLIRGenerator().emitLowestSetIsolatedBit(operand(a));
+    }
+
+    @MatchRule("(Xor a (Add a b))")
+    public ComplexMatchResult getMaskUpToLowestSetBit(ValueNode a, ValueNode b) {
+        if (!supports(CPUFeature.BMI1)) {
+            return null;
+        }
+
+        // Make sure that the pattern matches a subtraction by one.
+        if (!b.isJavaConstant()) {
+            return null;
+        }
+
+        JavaConstant bCst = b.asJavaConstant();
+        long bValue;
+        if (bCst.getJavaKind() == JavaKind.Int) {
+            bValue = bCst.asInt();
+        } else if (bCst.getJavaKind() == JavaKind.Long) {
+            bValue = bCst.asLong();
+        } else {
+            return null;
+        }
+
+        if (bValue == -1) {
+            return builder -> getArithmeticLIRGenerator().emitGetMaskUpToLowestSetBit(operand(a));
+        } else {
+            return null;
+        }
+    }
+
+    @MatchRule("(And a (Add a b))")
+    public ComplexMatchResult resetLowestSetBit(ValueNode a, ValueNode b) {
+        if (!supports(CPUFeature.BMI1)) {
+            return null;
+        }
+        // Make sure that the pattern matches a subtraction by one.
+        if (!b.isJavaConstant()) {
+            return null;
+        }
+
+        JavaConstant bCst = b.asJavaConstant();
+        long bValue;
+        if (bCst.getJavaKind() == JavaKind.Int) {
+            bValue = bCst.asInt();
+        } else if (bCst.getJavaKind() == JavaKind.Long) {
+            bValue = bCst.asLong();
+        } else {
+            return null;
+        }
+
+        if (bValue == -1) {
+            return builder -> getArithmeticLIRGenerator().emitResetLowestSetBit(operand(a));
+        } else {
+            return null;
+        }
     }
 
     @MatchRule("(If (IntegerTest Read=access value))")

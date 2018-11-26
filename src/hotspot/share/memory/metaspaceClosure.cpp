@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,15 @@ void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref, Writability w) {
 }
 
 bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) {
-  bool* found = _has_been_visited.get(ref->obj());
+  bool* found = _has_been_visited.lookup(ref->obj());
   if (found != NULL) {
     assert(*found == read_only, "must be");
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
-    bool isnew = _has_been_visited.put(ref->obj(), read_only);
-    assert(isnew, "sanity");
+    _has_been_visited.add(ref->obj(), read_only);
+    if (_has_been_visited.maybe_grow(MAX_TABLE_SIZE)) {
+      log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
+    }
     do_unique_ref(ref, read_only);
     return true;  // Saw this for the first time: iterate the embedded pointers.
   }

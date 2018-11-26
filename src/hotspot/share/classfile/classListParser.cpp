@@ -389,8 +389,8 @@ Klass* ClassListParser::load_current_class(TRAPS) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);
-    InstanceKlass* old = table()->lookup(id);
-    if (old != NULL && old != ik) {
+    InstanceKlass** old_ptr = table()->lookup(id);
+    if (old_ptr != NULL) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
     table()->add(id, ik);
@@ -404,11 +404,12 @@ bool ClassListParser::is_loading_from_source() {
 }
 
 InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
-  InstanceKlass* klass = table()->lookup(id);
-  if (klass == NULL) {
+  InstanceKlass** klass_ptr = table()->lookup(id);
+  if (klass_ptr == NULL) {
     error("Class ID %d has not been defined", id);
   }
-  return klass;
+  assert(*klass_ptr != NULL, "must be");
+  return *klass_ptr;
 }
 
 

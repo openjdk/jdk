@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public:
   // lookup Package with loader's package entry table, if not found add
   PackageEntry* lookup(Symbol* name, ModuleEntry* module);
 
-  // Only lookup Package within loader's package entry table.  The table read is lock-free.
+  // Only lookup Package within loader's package entry table.
   PackageEntry* lookup_only(Symbol* Package);
 
   void verify_javabase_packages(GrowableArray<Symbol*> *pkg_list);

@@ -124,12 +124,11 @@ public class PluginGenerator {
                 out.printf("\n");
                 createImports(out, plugins);
                 out.printf("\n");
-                out.printf("public class %s implements NodeIntrinsicPluginFactory {\n", genClassName);
                 for (GeneratedPlugin plugin : plugins) {
-                    out.printf("\n");
                     plugin.generate(processor, out);
+                    out.printf("\n");
                 }
-                out.printf("\n");
+                out.printf("public class %s implements NodeIntrinsicPluginFactory {\n", genClassName);
                 createPluginFactoryMethod(out, plugins);
                 out.printf("}\n");
             }
@@ -164,7 +163,7 @@ public class PluginGenerator {
 
     private static void createPluginFactoryMethod(PrintWriter out, List<GeneratedPlugin> plugins) {
         out.printf("    @Override\n");
-        out.printf("    public void registerPlugins(InvocationPlugins plugins, InjectionProvider injection) {\n");
+        out.printf("    public void registerPlugins(InvocationPlugins plugins, NodeIntrinsicPluginFactory.InjectionProvider injection) {\n");
         for (GeneratedPlugin plugin : plugins) {
             plugin.register(out);
         }

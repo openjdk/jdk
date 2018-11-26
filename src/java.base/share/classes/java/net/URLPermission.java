@@ -41,7 +41,7 @@ import java.security.Permission;
  * <p><b>The url</b><p>
  * The url string has the following expected structure.
  * <pre>
- *     scheme : // authority [ / path ]
+ *     scheme : // authority [ / path ] [ ignored-query-or-fragment ]
  * </pre>
  * <i>scheme</i> will typically be http or https, but is not restricted by this
  * class.
@@ -108,6 +108,16 @@ import java.security.Permission;
  * {@link #hashCode()} and {@link #implies(Permission)} are case insensitive with respect
  * to these components. If the <i>authority</i> contains a literal IP address,
  * then the address is normalized for comparison. The path component is case sensitive.
+ * <p>
+ * <i>ignored-query-or-fragment</i> refers to any query or fragment which appears after the
+ * path component, and which is ignored by the constructors of this class. It is defined as:
+ * <pre>
+ *     ignored-query-or-fragment = [ ? query ] [ # fragment ]
+ * </pre>
+ * where <i>query</i> and <i>fragment</i> are as defined in
+ * <a href="http://www.ietf.org/rfc/rfc2296.txt">RFC2396</a>. {@link #getName() getName()} therefore returns
+ * only the <i>scheme</i>, <i>authority</i> and <i>path</i> components of the url string that
+ * the permission was created with.
  * <p><b>The actions string</b><p>
  * The actions string of a URLPermission is a concatenation of the <i>method list</i>
  * and the <i>request headers list</i>. These are lists of the permitted request
@@ -167,8 +177,24 @@ public final class URLPermission extends Permission {
      * @exception IllegalArgumentException if url is invalid or if actions contains white-space.
      */
     public URLPermission(String url, String actions) {
-        super(url);
+        super(normalize(url));
         init(actions);
+    }
+
+    /**
+     * Remove any query or fragment from url string
+     */
+    private static String normalize(String url) {
+        int index = url.indexOf('?');
+        if (index >= 0) {
+            url = url.substring(0, index);
+        } else {
+            index = url.indexOf('#');
+            if (index >= 0) {
+                url = url.substring(0, index);
+            }
+        }
+        return url;
     }
 
     private void init(String actions) {

@@ -181,6 +181,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
     @Test
     @SuppressWarnings("try")
     public void test() {
+        assumeManagementLibraryIsLoadable();
         runTest(new InvariantsTool());
     }
 

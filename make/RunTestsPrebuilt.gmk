@@ -95,12 +95,12 @@ endef
 # $1: The output file name
 # $2..$N: The lines to output to the file
 define CreateNewSpec
-  $(if $(strip $(30)), \
+  $(if $(strip $(31)), \
     $(error Internal makefile error: \
       Too many arguments to macro, please update CreateNewSpec in RunTestsPrebuilt.gmk) \
   ) \
   $(shell $(RM) $1) \
-  $(foreach i, $(call sequence, 2, 29), \
+  $(foreach i, $(call sequence, 2, 30), \
     $(if $(strip $($i)), \
       $(call AppendFile, $(strip $($i)), $1) \
     ) \
@@ -220,19 +220,34 @@ else
   PATH_SEP:=:
 endif
 
-# Check number of cores
+# Check number of cores and memory in MB
 ifeq ($(OPENJDK_TARGET_OS), linux)
   NUM_CORES := $(shell $(CAT) /proc/cpuinfo  | $(GREP) -c processor)
+  MEMORY_SIZE := $(shell \
+      $(EXPR) `$(CAT) /proc/meminfo | $(GREP) MemTotal | $(AWK) '{print $$2}'` / 1024 \
+  )
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
   NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
+  MEMORY_SIZE := $(shell $(EXPR) `/usr/sbin/sysctl -n hw.memsize` / 1024 / 1024)
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | $(GREP) -c on-line)
+  MEMORY_SIZE := $(shell \
+      /usr/sbin/prtconf 2> /dev/null | $(GREP) "^Memory [Ss]ize" | $(AWK) '{print $$3}' \
+  )
 else ifeq ($(OPENJDK_TARGET_OS), windows)
   NUM_CORES := $(NUMBER_OF_PROCESSORS)
+  MEMORY_SIZE := $(shell \
+      $(EXPR) `wmic computersystem get totalphysicalmemory -value | $(GREP) = \
+          | $(CUT) -d "=" -f 2-` / 1024 / 1024 \
+  )
 endif
 ifeq ($(NUM_CORES), )
   $(warn Could not find number of CPUs, assuming 1)
   NUM_CORES := 1
+endif
+ifeq ($(MEMORY_SIZE), )
+  $(warn Could not find memory size, assuming 1024 MB)
+  MEMORY_SIZE := 1024
 endif
 
 # Setup LD for AOT support
@@ -298,6 +313,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     OPENJDK_TARGET_CPU_BITS := $(OPENJDK_TARGET_CPU_BITS), \
     OPENJDK_TARGET_CPU_ENDIAN := $(OPENJDK_TARGET_CPU_ENDIAN), \
     NUM_CORES := $(NUM_CORES), \
+    MEMORY_SIZE := $(MEMORY_SIZE), \
     LD := $(LD), \
     LIBRARY_PREFIX := $(LIBRARY_PREFIX), \
     SHARED_LIBRARY_SUFFIX := $(SHARED_LIBRARY_SUFFIX), \

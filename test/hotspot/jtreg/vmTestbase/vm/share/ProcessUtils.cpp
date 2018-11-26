@@ -147,7 +147,8 @@ jboolean doDumpCore() {
         static const char* name = "DBGHELP.DLL";
 
         printf("# TEST: creating Windows minidump...\n");
-        if ((size = GetSystemDirectory(path, pathLen)) > 0) {
+        size = GetSystemDirectory(path, pathLen);
+        if (size > 0) {
                 strcat(path, "\\");
                 strcat(path, name);
                 dbghelp = LoadLibrary(path);
@@ -158,12 +159,15 @@ jboolean doDumpCore() {
         }
 
         // try Windows directory
-        if (dbghelp == NULL && ((size = GetWindowsDirectory(path, pathLen)) > 6)) {
-                strcat(path, "\\");
-                strcat(path, name);
-                dbghelp = LoadLibrary(path);
-                if (dbghelp == NULL) {
-                        reportLastError("Load DBGHELP.DLL from Windows directory");
+        if (dbghelp == NULL) {
+                size = GetWindowsDirectory(path, pathLen);
+                if (size > 6) {
+                        strcat(path, "\\");
+                        strcat(path, name);
+                        dbghelp = LoadLibrary(path);
+                        if (dbghelp == NULL) {
+                                reportLastError("Load DBGHELP.DLL from Windows directory");
+                        }
                 }
         }
         if (dbghelp == NULL) {

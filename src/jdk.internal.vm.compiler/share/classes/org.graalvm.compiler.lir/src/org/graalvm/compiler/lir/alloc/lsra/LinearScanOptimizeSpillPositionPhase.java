@@ -150,10 +150,10 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
                 debug.log("Better spill position found (Block %s)", spillBlock);
             }
 
-            if (defBlock.probability() <= spillBlock.probability()) {
-                debug.log(DebugContext.VERBOSE_LEVEL, "Definition has lower probability %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.probability(), spillBlock,
-                                spillBlock.probability());
-                // better spill block has the same probability -> do nothing
+            if (defBlock.getRelativeFrequency() <= spillBlock.getRelativeFrequency()) {
+                debug.log(DebugContext.VERBOSE_LEVEL, "Definition has lower frequency %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.getRelativeFrequency(), spillBlock,
+                                spillBlock.getRelativeFrequency());
+                // better spill block has the same frequency -> do nothing
                 interval.setSpillState(SpillState.StoreAtDefinition);
                 return;
             }

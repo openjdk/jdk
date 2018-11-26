@@ -133,7 +133,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     }
 
     // Add rounding to the shift to handle the sign bit
-    int l = log2_intptr(d-1)+1;
+    int l = log2_jint(d-1)+1;
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive

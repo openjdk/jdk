@@ -253,7 +253,14 @@ public class URLPermissionTest {
         imtest("http://x/", "http://X/", true),
         imtest("http://x/", "http://x/", true),
         imtest("http://X/", "http://X/", true),
-        imtest("http://foo/bar", "https://foo/bar", false)
+        imtest("http://foo/bar", "https://foo/bar", false),
+        imtest("http://www.foo.com/*", "http://www.foo.com/#foo", true),
+        imtest("http://www.foo.com/a/*#foo", "http://www.foo.com/a/b#foo", true),
+        imtest("http://www.foo.com/a/-", "http://www.foo.com/a/b#foo", true),
+        imtest("http://www.foo.com/?q1=1&q2=2#foo", "http://www.foo.com/?q1=1&q2=2#bar", true),
+        imtest("http://www.foo.com/", "http://www.foo.com/?q1=1&q2=2#bar", true),
+        imtest("http://www.foo.com/", "http://www.foo.com?q1=1&q2=2#bar", false),
+        imtest("http://www.foo.com", "http://www.foo.com?q1=1&q2=2#bar", true)
     };
 
     // new functionality

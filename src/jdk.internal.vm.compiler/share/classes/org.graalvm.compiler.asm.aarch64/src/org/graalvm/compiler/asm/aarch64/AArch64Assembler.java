@@ -2775,7 +2775,8 @@ public abstract class AArch64Assembler extends Assembler {
         WFE(0x2),
         WFI(0x3),
         SEV(0x4),
-        SEVL(0x5);
+        SEVL(0x5),
+        CSDB(0x14);
 
         private final int encoding;
 

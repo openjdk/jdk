@@ -669,7 +669,6 @@ public final class IsoChronology extends AbstractChronology implements Serializa
      * @param years  the number of years, may be negative
      * @param months  the number of years, may be negative
      * @param days  the number of years, may be negative
-     * @return the period in terms of this chronology, not null
      * @return the ISO period, not null
      */
     @Override  // override with covariant return type

@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.word;
 
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -78,7 +80,9 @@ public class WordTypes {
         this.objectAccessType = metaAccess.lookupJavaType(ObjectAccess.class);
         this.barrieredAccessType = metaAccess.lookupJavaType(BarrieredAccess.class);
 
-        Word.ensureInitialized();
+        if (!IS_BUILDING_NATIVE_IMAGE) {
+            Word.ensureInitialized();
+        }
         this.wordImplType.initialize();
     }
 
@@ -88,7 +92,7 @@ public class WordTypes {
     public boolean isWordOperation(ResolvedJavaMethod targetMethod) {
         final boolean isWordFactory = wordFactoryType.equals(targetMethod.getDeclaringClass());
         if (isWordFactory) {
-            return true;
+            return !targetMethod.isConstructor();
         }
         final boolean isObjectAccess = objectAccessType.equals(targetMethod.getDeclaringClass());
         final boolean isBarrieredAccess = barrieredAccessType.equals(targetMethod.getDeclaringClass());

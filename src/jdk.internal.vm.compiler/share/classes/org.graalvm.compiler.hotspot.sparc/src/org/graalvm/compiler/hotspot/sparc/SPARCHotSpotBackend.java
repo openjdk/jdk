@@ -193,19 +193,19 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
         @Override
         public void enter(CompilationResultBuilder crb) {
             final int frameSize = crb.frameMap.totalFrameSize();
-            final int stackpoinerChange = -frameSize;
+            final int stackpointerChange = -frameSize;
             SPARCMacroAssembler masm = (SPARCMacroAssembler) crb.asm;
             if (!isStub) {
                 emitStackOverflowCheck(crb);
             }
 
-            if (SPARCAssembler.isSimm13(stackpoinerChange)) {
-                masm.save(sp, stackpoinerChange, sp);
+            if (SPARCAssembler.isSimm13(stackpointerChange)) {
+                masm.save(sp, stackpointerChange, sp);
             } else {
                 try (ScratchRegister sc = masm.getScratchRegister()) {
                     Register scratch = sc.getRegister();
                     assert isGlobalRegister(scratch) : "Only global registers are allowed before save. Got register " + scratch;
-                    masm.setx(stackpoinerChange, scratch, false);
+                    masm.setx(stackpointerChange, scratch, false);
                     masm.save(sp, scratch, sp);
                 }
             }

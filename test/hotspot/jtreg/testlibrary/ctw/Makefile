@@ -34,48 +34,66 @@ endif
 
 SRC_DIR = src
 BUILD_DIR = build
+DST_DIR = dist
 OUTPUT_DIR = $(BUILD_DIR)/classes
-TESTLIBRARY_DIR = ../../../../test/lib
+TESTLIBRARY_DIR = ../../../../../test/lib
 
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
-SRC_FILES = $(shell find $(SRC_DIR) $(TESTLIBRARY_DIR)/jdk/test/lib -name '*.java')
+SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
+LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
+    $(TESTLIBRARY_DIR)/jdk/test/lib/process \
+    $(TESTLIBRARY_DIR)/jdk/test/lib/util \
+    -depth 1 -name '*.java')
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
+EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
+	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
+	--add-exports java.base/jdk.internal.access=ALL-UNNAMED
 
 MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld
 
 .PHONY: clean cleantmp
 
-all: ctw.jar cleantmp
+all: $(DST_DIR)/ctw.zip cleantmp
 
 clean: cleantmp
-	@rm -rf ctw.jar wb.jar
+	@rm -rf $(DST_DIR)
 
 cleantmp:
 	@rm -rf filelist wb_filelist manifest.mf
 	@rm -rf $(BUILD_DIR)
 
-ctw.jar: filelist wb.jar
-	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
-		 --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-		 --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
-		 -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp wb.jar @filelist
-	$(JAR) --create --file=$@ --main-class $(MAIN_CLASS) -C $(OUTPUT_DIR) .
+$(DST_DIR):
+	@mkdir -p $@
 
-wb.jar: wb_filelist
+$(DST_DIR)/ctw.sh: $(DST_DIR)
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
+	chmod a+x $@
+
+$(DST_DIR)/ctw.jar: filelist $(DST_DIR)/wb.jar
+	@mkdir -p $(OUTPUT_DIR)
+	$(JAVAC) $(EXPORTS) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(DST_DIR)/wb.jar @filelist
+	$(JAR) --create --file=$@ --main-class $(MAIN_CLASS) -C $(OUTPUT_DIR) .
+	@rm -rf $(OUTPUT_DIR)
+
+$(DST_DIR)/wb.jar: wb_filelist $(DST_DIR)
 	@mkdir -p $(OUTPUT_DIR)
 	$(JAVAC)  -sourcepath $(TESTLIBRARY_DIR) \
 		-d $(OUTPUT_DIR) \
 		-cp $(OUTPUT_DIR) \
 		@wb_filelist
 	$(JAR) --create --file=$@ -C $(OUTPUT_DIR) .
+	@rm -rf $(OUTPUT_DIR)
+
+$(DST_DIR)/ctw.zip: $(DST_DIR)/ctw.sh $(DST_DIR)/wb.jar $(DST_DIR)/ctw.jar
+	zip -j $@ $?
 
 wb_filelist: $(WB_SRC_FILES)
 	@rm -f $@
 	@echo $(WB_SRC_FILES) > $@
 
-filelist: $(SRC_FILES)
+filelist: $(SRC_FILES) $(LIB_FILES)
 	@rm -f $@
-	@echo $(SRC_FILES) > $@
+	@echo $(SRC_FILES) $(LIB_FILES) > $@

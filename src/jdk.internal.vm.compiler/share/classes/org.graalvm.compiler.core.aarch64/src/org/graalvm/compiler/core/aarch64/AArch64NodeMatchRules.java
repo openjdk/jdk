@@ -25,11 +25,22 @@
 
 package org.graalvm.compiler.core.aarch64;
 
+import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
+import org.graalvm.compiler.core.match.ComplexMatchResult;
+import org.graalvm.compiler.core.match.MatchRule;
 import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.BinaryNode;
+import org.graalvm.compiler.nodes.calc.LeftShiftNode;
+import org.graalvm.compiler.nodes.calc.RightShiftNode;
+import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.memory.Access;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
@@ -49,6 +60,36 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
 
     protected AArch64Kind getMemoryKind(Access access) {
         return (AArch64Kind) gen.getLIRKind(access.asNode().stamp(NodeView.DEFAULT)).getPlatformKind();
+    }
+
+    private ComplexMatchResult emitAddSubShift(AArch64ArithmeticOp op, ValueNode value, BinaryNode shift) {
+        assert shift.getY() instanceof ConstantNode;
+        int shiftAmount = shift.getY().asJavaConstant().asInt();
+
+        if (shift instanceof LeftShiftNode) {
+            return builder -> getArithmeticLIRGenerator().emitAddSubShift(op, operand(value), operand(shift.getX()),
+                            AArch64MacroAssembler.ShiftType.LSL, shiftAmount);
+        } else if (shift instanceof RightShiftNode) {
+            return builder -> getArithmeticLIRGenerator().emitAddSubShift(op, operand(value), operand(shift.getX()),
+                            AArch64MacroAssembler.ShiftType.ASR, shiftAmount);
+        } else {
+            assert shift instanceof UnsignedRightShiftNode;
+            return builder -> getArithmeticLIRGenerator().emitAddSubShift(op, operand(value), operand(shift.getX()),
+                            AArch64MacroAssembler.ShiftType.LSR, shiftAmount);
+        }
+    }
+
+    @MatchRule("(Add=binary a (LeftShift=shift b Constant))")
+    @MatchRule("(Add=binary a (RightShift=shift b Constant))")
+    @MatchRule("(Add=binary a (UnsignedRightShift=shift b Constant))")
+    @MatchRule("(Sub=binary a (LeftShift=shift b Constant))")
+    @MatchRule("(Sub=binary a (RightShift=shift b Constant))")
+    @MatchRule("(Sub=binary a (UnsignedRightShift=shift b Constant))")
+    public ComplexMatchResult addSubShift(BinaryNode binary, ValueNode a, BinaryNode shift) {
+        if (binary instanceof AddNode) {
+            return emitAddSubShift(AArch64ArithmeticOp.ADD, a, shift);
+        }
+        return emitAddSubShift(AArch64ArithmeticOp.SUB, a, shift);
     }
 
     @Override

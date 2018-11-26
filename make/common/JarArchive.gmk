@@ -43,6 +43,7 @@ FALSE_FIND_PATTERN:=-name FILE_NAME_THAT_DOESNT_EXIST
 #       For this to work, the source files must exist when the makefile is
 #       parsed.
 #   SRCS:=List of directories in where to find files to add to archive
+#   BIN:=Directory where to store build control files
 #   SUFFIXES:=File suffixes to include in jar
 #   INCLUDES:=List of directories/packages in SRCS that should be included
 #   EXCLUDES:=List of directories/packages in SRCS that should be excluded
@@ -62,10 +63,11 @@ define SetupJarArchiveBody
 
   $1_JARMAIN:=$(strip $$($1_JARMAIN))
   $1_JARNAME:=$$(notdir $$($1_JAR))
-  $1_MANIFEST_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_manifest
-  $1_DELETESS_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_deletess
-  $1_DELETES_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_deletes
-  $1_BIN:=$$(dir $$($1_JAR))
+  $1_JAR_OUTPUT_DIR := $$(patsubst %/, %, $$(dir $$($1_JAR)))
+  $$(call SetIfEmpty, $1_BIN, $$($1_JAR_OUTPUT_DIR))
+  $1_MANIFEST_FILE:=$$($1_BIN)/_the.$$($1_JARNAME)_manifest
+  $1_DELETESS_FILE:=$$($1_BIN)/_the.$$($1_JARNAME)_deletess
+  $1_DELETES_FILE:=$$($1_BIN)/_the.$$($1_JARNAME)_deletes
   $$(call SetIfEmpty, $1_JAR_CMD, $$(JAR))
 
   ifeq (,$$($1_SUFFIXES))
@@ -231,11 +233,12 @@ define SetupJarArchiveBody
   $1_VARDEPS := $$($1_JAR_CMD) $$($1_JAR_CREATE_OPTIONS) $$($1_MANIFEST) \
       $$($1_JARMAIN) $$($1_EXTRA_MANIFEST_ATTR) $$($1_ORIG_DEPS) $$($1_SRCS) \
       $$($1_INCLUDES) $$($1_EXCLUDES) $$($1_EXCLUDE_FILES) $$($1_EXTRA_FILES)
-  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$(dir $$($1_JAR))_the.$$($1_JARNAME).vardeps)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$$($1_JARNAME).vardeps)
 
   # Here is the rule that creates/updates the jar file.
   $$($1_JAR) : $$($1_DEPENDENCIES) $$($1_MANIFEST) $$($1_VARDEPS_FILE)
 	$$(call MakeTargetDir)
+	$$(call MakeDir, $$($1_BIN))
 	$$($1_GREP_INCLUDE_OUTPUT)
 	$$($1_GREP_EXCLUDE_OUTPUT)
         # If the vardeps file is part of the newer prereq list, it means that

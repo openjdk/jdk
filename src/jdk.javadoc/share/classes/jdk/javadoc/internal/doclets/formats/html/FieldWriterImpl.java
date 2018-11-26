@@ -249,12 +249,12 @@ public class FieldWriterImpl extends AbstractMemberWriter
         Content label;
         if (configuration.summarizeOverriddenMethods) {
             label = new StringContent(utils.isClass(typeElement)
-                    ? configuration.getText("doclet.Fields_Declared_In_Class")
-                    : configuration.getText("doclet.Fields_Declared_In_Interface"));
+                    ? resources.getText("doclet.Fields_Declared_In_Class")
+                    : resources.getText("doclet.Fields_Declared_In_Interface"));
         } else {
             label = new StringContent(utils.isClass(typeElement)
-                    ? configuration.getText("doclet.Fields_Inherited_From_Class")
-                    : configuration.getText("doclet.Fields_Inherited_From_Interface"));
+                    ? resources.getText("doclet.Fields_Inherited_From_Class")
+                    : resources.getText("doclet.Fields_Inherited_From_Interface"));
         }
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);

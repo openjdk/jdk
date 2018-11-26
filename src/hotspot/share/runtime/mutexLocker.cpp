@@ -64,7 +64,6 @@ Mutex*   AdapterHandlerLibrary_lock   = NULL;
 Mutex*   SignatureHandlerLibrary_lock = NULL;
 Mutex*   VtableStubs_lock             = NULL;
 Mutex*   SymbolArena_lock             = NULL;
-Mutex*   StringTable_lock             = NULL;
 Monitor* StringDedupQueue_lock        = NULL;
 Mutex*   StringDedupTable_lock        = NULL;
 Monitor* CodeCache_lock               = NULL;
@@ -148,9 +147,12 @@ Monitor* CodeHeapStateAnalytics_lock  = NULL;
 
 Mutex*   MetaspaceExpand_lock         = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
-Monitor* ThreadsSMRDelete_lock       = NULL;
+Monitor* ThreadsSMRDelete_lock        = NULL;
 Mutex*   SharedDecoder_lock           = NULL;
 Mutex*   DCmdFactory_lock             = NULL;
+#if INCLUDE_NMT
+Mutex*   NMTQuery_lock                = NULL;
+#endif
 
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
@@ -255,7 +257,6 @@ void mutex_init() {
   def(JNIHandleBlockFreeList_lock  , PaddedMutex  , leaf-1,      true,  Monitor::_safepoint_check_never);      // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(SymbolArena_lock             , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_never);
-  def(StringTable_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);
   def(ProfilePrint_lock            , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);     // serial profile printing
   def(ExceptionCache_lock          , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);     // serial profile printing
   def(OsrList_lock                 , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
@@ -335,6 +336,9 @@ void mutex_init() {
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     false, Monitor::_safepoint_check_never);
   def(SharedDecoder_lock           , PaddedMutex  , native,      false, Monitor::_safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
+#if INCLUDE_NMT
+  def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
+#endif
 }
 
 GCMutexLocker::GCMutexLocker(Monitor * mutex) {

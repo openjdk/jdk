@@ -34,7 +34,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
  *
  * Fields are grouped according to the most recent JBS issue showing why they are versioned.
  *
- * JDK Version: 11+
+ * JDK Version: 12+
  */
 final class GraalHotSpotVMConfigVersioned extends HotSpotVMConfigAccess {
 
@@ -42,13 +42,8 @@ final class GraalHotSpotVMConfigVersioned extends HotSpotVMConfigAccess {
         super(store);
     }
 
-    private boolean initInlineNotify() {
-        String syncKnobs = getFlag("SyncKnobs", String.class, "");
-        return syncKnobs == null || !syncKnobs.contains("InlineNotify=0");
-    }
-
-    // JSK-8132287
-    boolean inlineNotify = initInlineNotify();
+    // JDK-8210848
+    boolean inlineNotify = true;
 
     // JDK-8073583
     boolean useCRC32CIntrinsics = getFlag("UseCRC32CIntrinsics", Boolean.class);

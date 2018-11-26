@@ -27,7 +27,7 @@
  * @summary Tests for jdeps tool with multi-release jar files
  * @modules jdk.jdeps/com.sun.tools.jdeps
  * @library mrjar mrjar/base mrjar/9 mrjar/10 mrjar/v9 mrjar/v10
- * @build test.* p.* q.* foo/*
+ * @build test.* p.* q.* foo/* Main
  * @run testng MultiReleaseJar
  */
 
@@ -59,10 +59,7 @@ public class MultiReleaseJar {
         testJdk = System.getProperty("test.jdk");
         fileSep = System.getProperty("file.separator");
         cmdPath = Paths.get(testJdk, "bin");
-    }
 
-    @Test
-    public void basic() throws Exception {
         // build Version.jar, Version_9.jar and main.jar
         Result r = run("jar -cf Version.jar -C base test --release 9 -C 9 test --release 10 -C 10 test");
         checkResult(r);
@@ -70,11 +67,20 @@ public class MultiReleaseJar {
         r = run("jar -cf Version_9.jar -C base test --release 9 -C 9 test");
         checkResult(r);
 
-        r = run("jar -cf Main.jar test/Main.class");
+        r = run("jar -cf Main.jar Main.class");
         checkResult(r);
 
-        // try out a bunch of things
-        r = run("jdeps --multi-release 9  -v missing.jar");
+        r = run("jar -cf Foo.jar -C base p");
+        checkResult(r);
+
+        Path foo = Paths.get(System.getProperty("test.classes")).resolve("modules").resolve("foo");
+        r = run("jar -uf Foo.jar --release 9 -C " + foo.toString() + " module-info.class --release 10 -C v10 q");
+        checkResult(r);
+    }
+
+    @Test
+    public void basic() throws Exception {
+        Result r = run("jdeps --multi-release 9  -v missing.jar");
         checkResult(r, false, "Warning: Path does not exist: missing.jar");
 
         r = run("jdeps -v Version.jar");
@@ -115,7 +121,7 @@ public class MultiReleaseJar {
         r = run("jdeps --multi-release 9.1  -v Version.jar");
         checkResult(r, false, "Error: invalid argument for option: 9.1");
 
-        runJdeps("test/Main.class");
+        runJdeps("Main.class");
         runJdeps("Main.jar");
     }
 
@@ -124,14 +130,14 @@ public class MultiReleaseJar {
         Result r = run("jdeps -v -R -cp Version.jar " + path);
         checkResult(r, false, "--multi-release option is not set");
 
-        r = run("jdeps -v -R -cp Version.jar -multi-release 9 " + path);
+        r = run("jdeps -v -R -cp Version.jar --module-path Foo.jar -multi-release 9 " + path);
         checkResult(r, false,
             "Error: unknown option: -multi-release",
             "Usage: jdeps <options> <path",
             "use --help"
         );
 
-        r = run("jdeps -v -R -cp Version.jar --multi-release 9 " + path);
+        r = run("jdeps -v -R -cp Version.jar --module-path Foo.jar --multi-release 9 " + path);
 
         String name = path;
         int index = path.lastIndexOf('/');
@@ -139,66 +145,94 @@ public class MultiReleaseJar {
             name = path.substring(index + 1, path.length());
         }
         checkResult(r, true,
-            name + " ->",
-            name + " ->",
-            "test.Main",
-            "test.Main",
-            "test.Main",
-            "Version.jar ->",
+            name + " -> Version.jar",
+            name + " -> foo",
+            name + " -> java.base",
+            "Main",
+            "Main",
+            "Main",
+            "Main",
+            "Version.jar -> java.base",
             "9/test.NonPublic",
             "9/test.NonPublic",
             "9/test.Version",
             "9/test.Version",
             "9/test.Version",
-            "9/test.Version"
+            "9/test.Version",
+            "foo",
+            "Foo.jar",
+            "requires mandated java.base",
+            "foo -> java.base",
+            "p.Foo"
         );
 
-        r = run("jdeps -v -R -cp Version.jar --multi-release 10 " + path);
+        r = run("jdeps -v -R -cp Version.jar --module-path Foo.jar --multi-release 10 " + path);
         checkResult(r, true,
-            name + " ->",
-            name + " ->",
-            "test.Main",
-            "test.Main",
-            "test.Main",
+            name + " -> Version.jar",
+            name + " -> foo",
+            name + " -> java.base",
+            "Main",
+            "Main",
+            "Main",
+            "Main",
             "Version.jar ->",
             "10/test.Version",
             "10/test.Version",
             "10/test.Version",
             "10/test.Version",
             "9/test.NonPublic",
-            "9/test.NonPublic"
+            "9/test.NonPublic",
+            "foo",
+            "Foo.jar",
+            "requires mandated java.base",
+            "foo -> java.base",
+            "p.Foo"
         );
 
-        r = run("jdeps -v -R -cp Version.jar --multi-release base " + path);
+        r = run("jdeps -v -R -cp Version.jar --module-path Foo.jar --multi-release base " + path);
         checkResult(r, true,
-            name + " ->",
-            name + " ->",
-            "test.Main",
-            "test.Main",
-            "test.Main",
+            name + " -> Version.jar",
+            name + " -> foo",
+            name + " -> java.base",
+            "Main",
+            "Main",
+            "Main",
+            "Main",
             "Version.jar ->",
             "test.Version",
-            "test.Version"
+            "test.Version",
+            "foo",
+            "Foo.jar",
+            "requires mandated java.base",
+            "foo -> java.base",
+            "p.Foo"
         );
 
-        r = run("jdeps -v -R -cp Version.jar --multi-release 9.1 " + path);
+        r = run("jdeps -v -R -cp Version.jar --module-path  Foo.jar --multi-release 9.1 " + path);
         checkResult(r, false, "Error: invalid argument for option: 9.1");
 
         // Version_9.jar does not have any version 10 entry
-        r = run("jdeps -v -R -cp Version_9.jar --multi-release 10 " + path);
+        r = run("jdeps -v -R -cp Version_9.jar --module-path Foo.jar --multi-release 10 " + path);
         checkResult(r, true,
-            name + " ->",
-            name + " ->",
-            "test.Main",
-            "test.Main",
-            "test.Main",
+            name + " -> Version_9.jar",
+            name + " -> foo",
+            name + " -> java.base",
+            "Main",
+            "Main",
+            "Main",
+            "Main",
             "Version_9.jar ->",
             "9/test.NonPublic",
             "9/test.NonPublic",
             "9/test.Version",
             "9/test.Version",
             "9/test.Version",
-            "9/test.Version"
+            "9/test.Version",
+            "foo",
+            "Foo.jar",
+            "requires mandated java.base",
+            "foo -> java.base",
+            "p.Foo"
         );
     }
 
@@ -236,17 +270,10 @@ public class MultiReleaseJar {
 
     @Test
     public void modularJar() throws Exception {
-        Result r = run("jar -cf foo.jar -C base p");
-        checkResult(r);
-
-        Path foo = Paths.get(System.getProperty("test.classes")).resolve("modules").resolve("foo");
-        r = run("jar -uf foo.jar --release 9 -C " + foo.toString() + " module-info.class --release 10 -C v10 q");
-        checkResult(r);
-
-        r = run("jdeps -v --multi-release 10 --module-path foo.jar -m foo");
+        Result r = run("jdeps -v --multi-release 10 --module-path Foo.jar -m foo");
         checkResult(r, true,
             "foo",                   // module name
-            "foo.jar",                      // the path to foo.jar
+            "Foo.jar",                      // the path to Foo.jar
             "requires mandated java.base",  // module dependences
             "foo -> java.base",
             "10/q.Bar",
@@ -255,27 +282,24 @@ public class MultiReleaseJar {
             "p.Foo"
         );
 
-        r = run("jdeps --multi-release 9 --module-path foo.jar Main.jar");
+        r = run("jdeps --multi-release 9 -cp Version.jar --module-path Foo.jar Main.jar");
         checkResult(r, true,
-            "Main.jar ->",
-            "test",
-            "foo",                          // module name
-            "foo.jar",                      // the path to foo.jar
-            "requires mandated java.base",  // module dependences
-            "foo -> java.base",
-            "p"
+            "Main.jar -> Version.jar",
+            "Main.jar -> foo",
+            "Main.jar -> java.base",
+            "-> java.lang",
+            "-> p",
+            "-> test"
         );
 
-        r = run("jdeps --multi-release 10 --module-path foo.jar Main.jar");
+        r = run("jdeps --multi-release 10 -cp Version.jar --module-path Foo.jar Main.jar");
         checkResult(r, true,
-            "Main.jar ->",
-            "test",
-            "foo",                          // module name
-            "foo.jar",                      // the path to foo.jar
-            "requires mandated java.base",  // module dependences
-            "foo -> java.base",
-            "p",
-            "q"
+            "Main.jar -> Version.jar",
+            "Main.jar -> foo",
+            "Main.jar -> java.base",
+            "-> java.lang",
+            "-> p",
+            "-> test"
         );
     }
 

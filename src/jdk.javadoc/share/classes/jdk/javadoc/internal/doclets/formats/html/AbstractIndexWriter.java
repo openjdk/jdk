@@ -440,7 +440,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         if (!configuration.packages.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
             si.setCategory(resources.getText("doclet.Packages"));
-            si.setLabel(configuration.getText("doclet.All_Packages"));
+            si.setLabel(resources.getText("doclet.All_Packages"));
             si.setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
             configuration.packageSearchIndex.add(si);
         }
@@ -448,7 +448,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 DocPaths.PACKAGE_SEARCH_INDEX_JS, configuration.packageSearchIndex, "packageSearchIndex");
         SearchIndexItem si = new SearchIndexItem();
         si.setCategory(resources.getText("doclet.Types"));
-        si.setLabel(configuration.getText("doclet.All_Classes"));
+        si.setLabel(resources.getText("doclet.All_Classes"));
         si.setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
         configuration.typeSearchIndex.add(si);
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JSON, DocPaths.TYPE_SEARCH_INDEX_ZIP,

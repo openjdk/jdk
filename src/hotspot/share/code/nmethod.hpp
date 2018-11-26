@@ -158,6 +158,9 @@ class nmethod : public CompiledMethod {
   // counter is decreased (by 1) while sweeping.
   int _hotness_counter;
 
+  // Local state used to keep track of whether unloading is happening or not
+  volatile uint8_t _is_unloading_state;
+
   // These are used for compiled synchronized native methods to
   // locate the owner and stack slot for the BasicLock so that we can
   // properly revoke the bias of the owner if necessary. They are
@@ -323,6 +326,8 @@ class nmethod : public CompiledMethod {
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded; }
 
+  void clear_unloading_state();
+  virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
 
 #if INCLUDE_RTM_OPT

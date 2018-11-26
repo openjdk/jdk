@@ -1688,7 +1688,13 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      st->print("Server 2016");
+      // distinguish Windows Server 2016 and 2019 by build number
+      // Windows server 2019 GA 10/2018 build number is 17763
+      if (build_number > 17762) {
+        st->print("Server 2019");
+      } else {
+        st->print("Server 2016");
+      }
     }
     break;
 
@@ -4030,6 +4036,11 @@ static jint initSock();
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+
+  // This could be set any time but all platforms
+  // have to set it the same so we have to mirror Solaris.
+  DEBUG_ONLY(os::set_mutex_init_done();)
+
   // Setup Windows Exceptions
 
   // for debugging float code generation bugs

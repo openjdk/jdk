@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.debug.OpaqueNode;
+import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
@@ -71,7 +71,7 @@ public class LongNodeChainTest extends GraalCompilerTest {
                 addNode.setY(newAddNode);
                 addNode = newAddNode;
             }
-            opaque.replaceAndDelete(opaque.getValue());
+            opaque.remove();
         } else {
             value = constant;
             for (int i = 0; i < N; ++i) {

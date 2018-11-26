@@ -158,7 +158,7 @@ public class WeakAlg {
         rm("ks");
         rm("ks2");
 
-        kt("-genkeypair -alias a -dname CN=A")
+        kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
                 .shouldNotContain("Warning:");
         kt("-list")
                 .shouldNotContain("Warning:");

@@ -127,8 +127,6 @@ public class DebugOptions {
     @Option(help = "Enable dumping LIR, register allocation and code generation info to the C1Visualizer.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintBackendCFG = new OptionKey<>(true);
 
-    @Option(help = "Output probabilities for fixed nodes during binary graph dumping.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PrintGraphProbabilities = new OptionKey<>(false);
     @Option(help = "Enable dumping to the IdealGraphVisualizer.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintGraph = new OptionKey<>(true);
     @Option(help = "Print graphs to files instead of sending them over the network.", type = OptionType.Debug)

@@ -70,6 +70,8 @@ public class Driver {
         runtest("10.policy", "10");
         runtest("11.policy", "11");
         runtest("12.policy", "12");
+        runtest("16.policy", "16", "-Djdk.httpclient.allowRestrictedHeaders=Host");
+        runtest("17.policy", "17", "-Djdk.httpclient.allowRestrictedHeaders=Host");
         System.out.println("DONE");
     }
 
@@ -114,7 +116,11 @@ public class Driver {
     }
 
     public static void runtest(String policy, String testnum) throws Throwable {
+        runtest(policy, testnum, null);
+    }
 
+
+    public static void runtest(String policy, String testnum, String addProp) throws Throwable {
         String testJdk = System.getProperty("test.jdk", "?");
         String testSrc = System.getProperty("test.src", "?");
         String testClassPath = System.getProperty("test.class.path", "?");
@@ -136,6 +142,9 @@ public class Driver {
             cmd.add("-Dport.number=" + Integer.toString(Utils.getFreePort()));
             cmd.add("-Dport.number1=" + Integer.toString(Utils.getFreePort()));
             cmd.add("-Djdk.httpclient.HttpClient.log=all,frames:all");
+            if (addProp != null) {
+                cmd.add(addProp);
+            }
             cmd.add("-cp");
             cmd.add(testClassPath);
             cmd.add("Security");

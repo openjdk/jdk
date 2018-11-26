@@ -75,7 +75,7 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
  */
 public class BenchmarkCounters {
 
-    static class Options {
+    public static class Options {
 
         //@formatter:off
         @Option(help = "Turn on the benchmark counters, and displays the results on VM shutdown", type = OptionType.Debug)
@@ -95,6 +95,8 @@ public class BenchmarkCounters {
         public static final OptionKey<Boolean> BenchmarkCountersDumpDynamic = new OptionKey<>(true);
         @Option(help = "Dump static counters", type = OptionType.Debug)
         public static final OptionKey<Boolean> BenchmarkCountersDumpStatic = new OptionKey<>(false);
+        @Option(help = "file:doc-files/AbortOnBenchmarkCounterOverflowHelp.txt", type = OptionType.Debug)
+        public static final OptionKey<Boolean> AbortOnBenchmarkCounterOverflow = new OptionKey<>(false);
         //@formatter:on
     }
 

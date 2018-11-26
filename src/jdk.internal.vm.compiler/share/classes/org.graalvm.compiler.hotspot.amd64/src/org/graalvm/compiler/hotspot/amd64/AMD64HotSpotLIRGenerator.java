@@ -133,6 +133,11 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         return (HotSpotProviders) super.getProviders();
     }
 
+    @Override
+    protected int getMaxVectorSize() {
+        return config.maxVectorSize;
+    }
+
     /**
      * Utility for emitting the instruction to save RBP.
      */

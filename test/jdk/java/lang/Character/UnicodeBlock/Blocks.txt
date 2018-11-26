@@ -1,6 +1,6 @@
-# Blocks-10.0.0.txt
-# Date: 2017-04-12, 17:30:00 GMT [KW]
-# Copyright (c) 2017 Unicode, Inc.
+# Blocks-11.0.0.txt
+# Date: 2017-10-16, 24:39:00 GMT [KW]
+# Copyright (c) 2018 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 #
 # Unicode Character Database
@@ -95,6 +95,7 @@
 1C00..1C4F; Lepcha
 1C50..1C7F; Ol Chiki
 1C80..1C8F; Cyrillic Extended-C
+1C90..1CBF; Georgian Extended
 1CC0..1CCF; Sundanese Supplement
 1CD0..1CFF; Vedic Extensions
 1D00..1D7F; Phonetic Extensions
@@ -234,7 +235,10 @@ FFF0..FFFF; Specials
 10B80..10BAF; Psalter Pahlavi
 10C00..10C4F; Old Turkic
 10C80..10CFF; Old Hungarian
+10D00..10D3F; Hanifi Rohingya
 10E60..10E7F; Rumi Numeral Symbols
+10F00..10F2F; Old Sogdian
+10F30..10F6F; Sogdian
 11000..1107F; Brahmi
 11080..110CF; Kaithi
 110D0..110FF; Sora Sompeng
@@ -253,6 +257,7 @@ FFF0..FFFF; Specials
 11660..1167F; Mongolian Supplement
 11680..116CF; Takri
 11700..1173F; Ahom
+11800..1184F; Dogra
 118A0..118FF; Warang Citi
 11A00..11A4F; Zanabazar Square
 11A50..11AAF; Soyombo
@@ -260,6 +265,8 @@ FFF0..FFFF; Specials
 11C00..11C6F; Bhaiksuki
 11C70..11CBF; Marchen
 11D00..11D5F; Masaram Gondi
+11D60..11DAF; Gunjala Gondi
+11EE0..11EFF; Makasar
 12000..123FF; Cuneiform
 12400..1247F; Cuneiform Numbers and Punctuation
 12480..1254F; Early Dynastic Cuneiform
@@ -269,6 +276,7 @@ FFF0..FFFF; Specials
 16A40..16A6F; Mro
 16AD0..16AFF; Bassa Vah
 16B00..16B8F; Pahawh Hmong
+16E40..16E9F; Medefaidrin
 16F00..16F9F; Miao
 16FE0..16FFF; Ideographic Symbols and Punctuation
 17000..187FF; Tangut
@@ -281,6 +289,7 @@ FFF0..FFFF; Specials
 1D000..1D0FF; Byzantine Musical Symbols
 1D100..1D1FF; Musical Symbols
 1D200..1D24F; Ancient Greek Musical Notation
+1D2E0..1D2FF; Mayan Numerals
 1D300..1D35F; Tai Xuan Jing Symbols
 1D360..1D37F; Counting Rod Numerals
 1D400..1D7FF; Mathematical Alphanumeric Symbols
@@ -288,6 +297,7 @@ FFF0..FFFF; Specials
 1E000..1E02F; Glagolitic Supplement
 1E800..1E8DF; Mende Kikakui
 1E900..1E95F; Adlam
+1EC70..1ECBF; Indic Siyaq Numbers
 1EE00..1EEFF; Arabic Mathematical Alphabetic Symbols
 1F000..1F02F; Mahjong Tiles
 1F030..1F09F; Domino Tiles
@@ -302,6 +312,7 @@ FFF0..FFFF; Specials
 1F780..1F7FF; Geometric Shapes Extended
 1F800..1F8FF; Supplemental Arrows-C
 1F900..1F9FF; Supplemental Symbols and Pictographs
+1FA00..1FA6F; Chess Symbols
 20000..2A6DF; CJK Unified Ideographs Extension B
 2A700..2B73F; CJK Unified Ideographs Extension C
 2B740..2B81F; CJK Unified Ideographs Extension D

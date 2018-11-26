@@ -69,7 +69,7 @@ public final class UnpackEndianHalfNode extends UnaryNode implements Lowerable {
 
     @Override
     public Node canonical(CanonicalizerTool tool, ValueNode forValue) {
-        if (forValue.isConstant() && forValue.asConstant().isDefaultForKind()) {
+        if (forValue.isDefaultConstant()) {
             return ConstantNode.defaultForKind(stamp.getStackKind());
         }
         return this;

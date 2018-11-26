@@ -54,6 +54,13 @@ template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, i
   _buckets = buckets;
 }
 
+template <MEMFLAGS F> inline BasicHashtable<F>::~BasicHashtable() {
+  for (int i = 0; i < _entry_blocks->length(); i++) {
+    FREE_C_HEAP_ARRAY(char, _entry_blocks->at(i));
+  }
+  delete _entry_blocks;
+  free_buckets();
+}
 
 template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, int entry_size,
                                        int number_of_entries) {
@@ -64,6 +71,7 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, 
   _first_free_entry = NULL;
   _end_block = NULL;
   _number_of_entries = number_of_entries;
+  _entry_blocks = new(ResourceObj::C_HEAP, F) GrowableArray<char*>(4, true, F);
 }
 
 

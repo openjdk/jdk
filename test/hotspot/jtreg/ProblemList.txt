@@ -61,6 +61,8 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
+compiler/intrinsics/mathexact/MulExactLConstantTest.java 8214189 windows-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -138,6 +140,8 @@ serviceability/sa/TestPrintMdo.java 8193639 solaris-all
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
 serviceability/sa/TestType.java 8193639 solaris-all
 serviceability/sa/TestUniverse.java#id0 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
+
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 
 #############################################################################
 

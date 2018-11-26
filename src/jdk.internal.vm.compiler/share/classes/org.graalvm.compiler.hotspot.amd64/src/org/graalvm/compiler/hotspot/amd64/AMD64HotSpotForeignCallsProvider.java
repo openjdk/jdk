@@ -48,6 +48,7 @@ import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.replacements.amd64.AMD64ArrayIndexOf;
 import org.graalvm.compiler.word.WordTypes;
 
 import jdk.vm.ci.code.CallingConvention;
@@ -107,6 +108,27 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
         if (config.useCRC32CIntrinsics) {
             registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         }
+
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_BYTES, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_BYTES, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_BYTES, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_BYTES, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_BYTES, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_BYTES, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
 
         super.initialize(providers, options);
     }

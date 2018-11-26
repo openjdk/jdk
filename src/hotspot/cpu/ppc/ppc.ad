@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2018 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2209,9 +2209,13 @@ const bool Matcher::match_rule_supported(int opcode) {
     return VM_Version::has_fsqrt();
   case Op_CountLeadingZerosI:
   case Op_CountLeadingZerosL:
+    if (!UseCountLeadingZerosInstructionsPPC64)
+      return false;
+    break;
   case Op_CountTrailingZerosI:
   case Op_CountTrailingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64)
+    if (!UseCountLeadingZerosInstructionsPPC64 &&
+        !UseCountTrailingZerosInstructionsPPC64)
       return false;
     break;
 
@@ -13425,7 +13429,7 @@ instruct countLeadingZerosP(iRegIdst dst, iRegPsrc src) %{
 
 instruct countTrailingZerosI_Ex(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (CountTrailingZerosI src));
-  predicate(UseCountLeadingZerosInstructionsPPC64);
+  predicate(UseCountLeadingZerosInstructionsPPC64 && !UseCountTrailingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -13442,9 +13446,22 @@ instruct countTrailingZerosI_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
+instruct countTrailingZerosI_cnttzw(iRegIdst dst, iRegIsrc src) %{
+  match(Set dst (CountTrailingZerosI src));
+  predicate(UseCountTrailingZerosInstructionsPPC64);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "CNTTZW  $dst, $src" %}
+  size(4);
+  ins_encode %{
+    __ cnttzw($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct countTrailingZerosL_Ex(iRegIdst dst, iRegLsrc src) %{
   match(Set dst (CountTrailingZerosL src));
-  predicate(UseCountLeadingZerosInstructionsPPC64);
+  predicate(UseCountLeadingZerosInstructionsPPC64 && !UseCountTrailingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -13458,6 +13475,19 @@ instruct countTrailingZerosL_Ex(iRegIdst dst, iRegLsrc src) %{
     countLeadingZerosL(tmpL3, tmpL2);
     subI_imm16_reg(dst, imm2, tmpL3);
  %}
+%}
+
+instruct countTrailingZerosL_cnttzd(iRegIdst dst, iRegLsrc src) %{
+  match(Set dst (CountTrailingZerosL src));
+  predicate(UseCountTrailingZerosInstructionsPPC64);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "CNTTZD  $dst, $src" %}
+  size(4);
+  ins_encode %{
+    __ cnttzd($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Expand nodes for byte_reverse_int.

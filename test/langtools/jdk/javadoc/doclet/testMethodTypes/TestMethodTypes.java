@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002304 8024096 8193671 8196201 8203791
+ * @bug      8002304 8024096 8193671 8196201 8203791 8184205
  * @summary  Test for various method type tabs in the method summary table
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -48,46 +48,56 @@ public class TestMethodTypes extends JavadocTester {
 
         checkOutput("pkg1/A.html", true,
                 "var data = {",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
-                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
-                + "Static Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
-                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
-                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">Static Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Instance Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " onclick=\"show(8);\">Concrete Methods</button><button role=\"tab\""
+                + " aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">"
+                + "Deprecated Methods</button></div>",
                 "<tr class=\"altColor\" id=\"i0\">");
 
         checkOutput("pkg1/B.html", true,
                 "var data = {\"i0\":6,\"i1\":18,\"i2\":18,\"i3\":1,\"i4\":1,"
                 + "\"i5\":6,\"i6\":6,\"i7\":6,\"i8\":6};\n",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(1);\">Static Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(2);\">Instance Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(4);\">Abstract Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t5\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(16);\">Default Methods</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>\n");
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\" onclick=\"show(1);\">"
+                + "Static Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Instance Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\""
+                + " onclick=\"show(4);\">Abstract Methods</button><button role=\"tab\""
+                + " aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"tableTab\" onclick=\"show(16);\">"
+                + "Default Methods</button></div>");
 
         checkOutput("pkg1/D.html", true,
                 "var data = {",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
-                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
-                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
-                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\""
+                + " onclick=\"show(2);\">Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t3\" class=\"tableTab\" onclick=\"show(4);\">Abstract Methods</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " onclick=\"show(8);\">Concrete Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Deprecated Methods</button></div>",
                 "<tr class=\"altColor\" id=\"i0\">");
 
         checkOutput("pkg1/A.html", false,

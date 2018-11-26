@@ -88,7 +88,7 @@ import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.debug.BindToRegisterNode;
 import org.graalvm.compiler.nodes.debug.BlackholeNode;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
-import org.graalvm.compiler.nodes.debug.OpaqueNode;
+import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.nodes.debug.SpillRegistersNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.extended.BranchProbabilityNode;

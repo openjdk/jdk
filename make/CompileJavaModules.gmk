@@ -450,21 +450,17 @@ jdk.internal.vm.compiler_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
 
 jdk.internal.vm.compiler_EXCLUDES += \
     jdk.internal.vm.compiler.collections.test \
-    org.graalvm.compiler.processor \
-    org.graalvm.compiler.core.match.processor \
-    org.graalvm.compiler.nodeinfo.processor \
-    org.graalvm.compiler.options.processor \
-    org.graalvm.compiler.serviceprovider.processor \
-    org.graalvm.compiler.replacements.processor \
-    org.graalvm.compiler.replacements.jdk9.test \
+    jdk.tools.jaotc.test \
     org.graalvm.compiler.api.directives.test \
     org.graalvm.compiler.api.test \
     org.graalvm.compiler.asm.aarch64.test \
     org.graalvm.compiler.asm.amd64.test \
     org.graalvm.compiler.asm.sparc.test \
     org.graalvm.compiler.asm.test \
+    org.graalvm.compiler.core.aarch64.test \
     org.graalvm.compiler.core.amd64.test \
-    org.graalvm.compiler.core.sparc.test \
+    org.graalvm.compiler.core.jdk9.test \
+    org.graalvm.compiler.core.match.processor \
     org.graalvm.compiler.core.test \
     org.graalvm.compiler.debug.test \
     org.graalvm.compiler.graph.test \
@@ -477,10 +473,18 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.lir.test \
     org.graalvm.compiler.loop.test \
     org.graalvm.compiler.microbenchmarks \
+    org.graalvm.compiler.nodeinfo.processor \
     org.graalvm.compiler.nodes.test \
+    org.graalvm.compiler.options.processor \
     org.graalvm.compiler.options.test \
     org.graalvm.compiler.phases.common.test \
+    org.graalvm.compiler.processor \
+    org.graalvm.compiler.replacements.jdk12.test \
+    org.graalvm.compiler.replacements.jdk9.test \
+    org.graalvm.compiler.replacements.jdk9_11.test \
+    org.graalvm.compiler.replacements.processor \
     org.graalvm.compiler.replacements.test \
+    org.graalvm.compiler.serviceprovider.processor \
     org.graalvm.compiler.test \
     org.graalvm.compiler.virtual.bench \
     org.graalvm.micro.benchmarks \

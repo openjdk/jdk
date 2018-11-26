@@ -1,6 +1,6 @@
 <?xml version="1.1"?>
 <!DOCTYPE  catalogtest  PUBLIC  "-//OPENJDK//XML CATALOG DTD//1.0"  
-     "http://openjdk.java.net/xml/catalog/dtd/system.dtd">
+     "http://openjdk_java_net/xml/catalog/dtd/system.dtd">
 <test:root xmlns:test="test"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="test pathto/val_test.xsd"

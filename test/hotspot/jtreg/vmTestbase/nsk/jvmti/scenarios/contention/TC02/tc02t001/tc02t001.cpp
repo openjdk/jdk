@@ -108,7 +108,8 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
     if (jni->IsSameObject(thread, thr) &&
             jni->IsSameObject(object_M, obj)) {
 
-        if (!(line = findLineNumber(jvmti, thread))) {
+        line = findLineNumber(jvmti, thread);
+        if (!line) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN2("MonitorContendedEnter event: thread=%p, object=%p\n",
                 thr, obj);
@@ -152,7 +153,8 @@ MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) 
     if (jni->IsSameObject(thread, thr) &&
             jni->IsSameObject(object_M, obj)) {
 
-        if (!(line = findLineNumber(jvmti, thread))) {
+        line = findLineNumber(jvmti, thread);
+        if (!line) {
             nsk_jvmti_setFailStatus();
             NSK_COMPLAIN2("MonitorContendedEntered event: thread=%p, object=%p\n",
                 thr, obj);

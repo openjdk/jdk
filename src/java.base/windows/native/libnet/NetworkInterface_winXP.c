@@ -253,6 +253,10 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     ret = enumInterfaces(env, netifPP);
     if (ret == -1) {
         return -1;
+    } else if( ret == -2){
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
     } else {
         count = ret;
     }
@@ -272,10 +276,16 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
         ret = enumAddresses_win(env, curr, &netaddrP);
         if (ret == -1) {
             return -1;
+        } else if (ret == -2) {
+            if ((*env)->ExceptionCheck(env)) {
+                (*env)->ExceptionClear(env);
+            }
+            break;
+        } else{
+            curr->addrs = netaddrP;
+            curr->naddrs += ret;
+            curr = curr->next;
         }
-        curr->addrs = netaddrP;
-        curr->naddrs += ret;
-        curr = curr->next;
     }
 
     ret = getAdapters (env, &adapters);
@@ -557,6 +567,12 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
         netaddrCount = enumAddresses_win(env, ifs, &netaddrPToFree);
         if (netaddrCount == -1) {
             return NULL;
+        }
+        if (netaddrCount == -2) {
+            // Clear the exception and continue.
+            if ((*env)->ExceptionCheck(env)) {
+                (*env)->ExceptionClear(env);
+            }
         }
         netaddrP = netaddrPToFree;
     }

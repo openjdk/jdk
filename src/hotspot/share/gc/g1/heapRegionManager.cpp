@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 class MasterFreeRegionListChecker : public HeapRegionSetChecker {
 public:
@@ -320,7 +321,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   uint curr = max_length() - 1;
   while (true) {
     HeapRegion *hr = _regions.get_by_index(curr);
-    if (hr == NULL) {
+    if (hr == NULL || !is_available(curr)) {
       uint res = expand_at(curr, 1, NULL);
       if (res == 1) {
         *expanded = true;

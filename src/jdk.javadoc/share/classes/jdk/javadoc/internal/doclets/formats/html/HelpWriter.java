@@ -87,7 +87,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem while generating the documentation
      */
     protected void generateHelpFile() throws DocFileIOException {
-        String title = configuration.getText("doclet.Window_Help_title");
+        String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
@@ -314,7 +314,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     : HtmlTree.LI(HtmlStyle.blockList, treeHead);
             Content treeIntro = contents.getContent("doclet.help.tree.intro",
                     links.createLink(DocPaths.OVERVIEW_TREE,
-                    configuration.getText("doclet.Class_Hierarchy")),
+                    resources.getText("doclet.Class_Hierarchy")),
                     HtmlTree.CODE(new StringContent("java.lang.Object")));
             Content treePara = HtmlTree.P(treeIntro);
             htmlTree.addContent(treePara);
@@ -338,7 +338,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     : HtmlTree.LI(HtmlStyle.blockList, dHead);
             Content deprBody = contents.getContent("doclet.help.deprecated.body",
                     links.createLink(DocPaths.DEPRECATED_LIST,
-                    configuration.getText("doclet.Deprecated_API")));
+                    resources.getText("doclet.Deprecated_API")));
             Content dPara = HtmlTree.P(deprBody);
             htmlTree.addContent(dPara);
             if (configuration.allowTag(HtmlTag.SECTION)) {
@@ -353,10 +353,10 @@ public class HelpWriter extends HtmlDocletWriter {
             Content indexlink;
             if (configuration.splitindex) {
                 indexlink = links.createLink(DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1)),
-                        configuration.getText("doclet.Index"));
+                        resources.getText("doclet.Index"));
             } else {
                 indexlink = links.createLink(DocPaths.INDEX_ALL,
-                        configuration.getText("doclet.Index"));
+                        resources.getText("doclet.Index"));
             }
             Content indexHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                     contents.getContent("doclet.help.index.head"));

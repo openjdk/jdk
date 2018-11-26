@@ -152,29 +152,10 @@ public class ReplaceCriticalClasses {
                        klassName);
 
         final boolean expectDisable = !early.equals("");
-        final boolean checkSubgraph = subgraph;
         CDSTestUtils.run(opts).assertNormalExit(out -> {
                 if (expectDisable) {
                     out.shouldContain("UseSharedSpaces: CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
                     System.out.println("CDS disabled as expected");
-                }
-                if (checkSubgraph) {
-                    // As of 2018/10/21 the classes in the archived subgraphs won't be
-                    // replaced because all archived subgraphs were loaded in JVMTI_PHASE_PRIMORDIAL.
-                    //
-                    // This is the first class to be loaded after JVMTI has exited JVMTI_PHASE_PRIMORDIAL.
-                    // Make sure no subgraphs are loaded afterwards.
-                    //
-                    // Can't use out.shouldNotMatch() because that doesn't match across multiple lines.
-                    String firstNonPrimordialClass = "jdk.jfr.internal.EventWriter";
-                    String regexp = firstNonPrimordialClass + ".*initialize_from_archived_subgraph";
-                    Pattern regex = Pattern.compile(regexp, Pattern.DOTALL);
-                    Matcher matcher = regex.matcher(out.getStdout());
-                    if (matcher.find()) {
-                        out.reportDiagnosticSummary();
-                        throw new RuntimeException("'" + regexp
-                                                   + "' found in stdout: '" + matcher.group() + "' \n");
-                    }
                 }
             });
     }

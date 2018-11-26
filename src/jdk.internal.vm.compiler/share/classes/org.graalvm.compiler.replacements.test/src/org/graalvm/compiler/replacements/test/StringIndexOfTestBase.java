@@ -24,13 +24,13 @@
 
 package org.graalvm.compiler.replacements.test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 public abstract class StringIndexOfTestBase extends GraalCompilerTest {

@@ -404,7 +404,7 @@ public class Start extends ToolOption.Helper {
                 if (apiMode) {
                     throw new ClientCodeException(exc);
                 }
-                error("main.could_not_instantiate_class", docletClass);
+                error("main.could_not_instantiate_class", docletClass.getName());
                 return ERROR;
             }
         } else {

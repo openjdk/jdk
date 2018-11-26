@@ -1013,10 +1013,9 @@ public final class Integer extends Number implements Comparable<Integer> {
                 VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
             if (integerCacheHighPropValue != null) {
                 try {
-                    int i = parseInt(integerCacheHighPropValue);
-                    i = Math.max(i, 127);
+                    h = Math.max(parseInt(integerCacheHighPropValue), 127);
                     // Maximum array size is Integer.MAX_VALUE
-                    h = Math.min(i, Integer.MAX_VALUE - (-low) -1);
+                    h = Math.min(h, Integer.MAX_VALUE - (-low) -1);
                 } catch( NumberFormatException nfe) {
                     // If the property cannot be parsed into an int, ignore it.
                 }
@@ -1031,8 +1030,9 @@ public final class Integer extends Number implements Comparable<Integer> {
             if (archivedCache == null || size > archivedCache.length) {
                 Integer[] c = new Integer[size];
                 int j = low;
-                for(int k = 0; k < c.length; k++)
-                    c[k] = new Integer(j++);
+                for(int i = 0; i < c.length; i++) {
+                    c[i] = new Integer(j++);
+                }
                 archivedCache = c;
             }
             cache = archivedCache;

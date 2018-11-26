@@ -118,6 +118,9 @@ private:
 
   // Find shared Nodes, or Nodes that otherwise are Matcher roots
   void find_shared( Node *n );
+  bool find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx);
+  void find_shared_post_visit(Node* n, uint opcode);
+
 #ifdef X86
   bool is_bmi_pattern(Node *n, Node *m);
 #endif

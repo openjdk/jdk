@@ -31,6 +31,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/compile.hpp"
+#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
@@ -840,3 +841,32 @@ void G1BarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) co
   }
 }
 #endif
+
+bool G1BarrierSetC2::escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const {
+  if (opcode == Op_StoreP) {
+    Node* adr = n->in(MemNode::Address);
+    const Type* adr_type = gvn->type(adr);
+    // Pointer stores in G1 barriers looks like unsafe access.
+    // Ignore such stores to be able scalar replace non-escaping
+    // allocations.
+    if (adr_type->isa_rawptr() && adr->is_AddP()) {
+      Node* base = conn_graph->get_addp_base(adr);
+      if (base->Opcode() == Op_LoadP &&
+          base->in(MemNode::Address)->is_AddP()) {
+        adr = base->in(MemNode::Address);
+        Node* tls = conn_graph->get_addp_base(adr);
+        if (tls->Opcode() == Op_ThreadLocal) {
+          int offs = (int) gvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
+          const int buf_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
+          if (offs == buf_offset) {
+            return true; // G1 pre barrier previous oop value store.
+          }
+          if (offs == in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset())) {
+            return true; // G1 post barrier card address store.
+          }
+        }
+      }
+    }
+  }
+  return false;
+}

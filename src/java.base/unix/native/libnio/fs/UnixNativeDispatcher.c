@@ -153,10 +153,9 @@ static futimesat_func* my_futimesat_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
 
 /**
- * fstatat missing from glibc on Linux. Temporary workaround
- * for x86/x64.
+ * fstatat missing from glibc on Linux.
  */
-#if defined(__linux__) && defined(__i386)
+#if defined(__linux__) && (defined(__i386) || defined(__arm__))
 #define FSTATAT64_SYSCALL_AVAILABLE
 static int fstatat64_wrapper(int dfd, const char *path,
                              struct stat64 *statbuf, int flag)

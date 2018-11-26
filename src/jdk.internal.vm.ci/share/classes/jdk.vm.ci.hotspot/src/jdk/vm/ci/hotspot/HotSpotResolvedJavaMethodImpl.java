@@ -33,10 +33,8 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,7 +52,6 @@ import jdk.vm.ci.meta.LocalVariableTable;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
 
@@ -75,11 +72,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private byte[] code;
 
     /**
-     * Cache for {@link #toJava()}. Set to {@link #signature} when resolving reflection object fails
-     * due to reflection filtering (see {@code Reflection.fieldFilterMap} and
-     * {@code Reflection.methodFilterMap}).
+     * Cache for {@link #toJava()}.
      */
-    private Object toJavaCache;
+    private volatile Executable toJavaCache;
 
     /**
      * Only 30% of {@link HotSpotResolvedJavaMethodImpl}s have their name accessed so compute it
@@ -492,12 +487,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Parameter[] getParameters() {
-        Executable javaMethod = toJava();
-        if (javaMethod == null) {
-            return null;
+        if (signature.getParameterCount(false) == 0) {
+            return new ResolvedJavaMethod.Parameter[0];
         }
-
-        java.lang.reflect.Parameter[] javaParameters = javaMethod.getParameters();
+        java.lang.reflect.Parameter[] javaParameters = toJava().getParameters();
         Parameter[] res = new Parameter[javaParameters.length];
         for (int i = 0; i < res.length; i++) {
             java.lang.reflect.Parameter src = javaParameters[i];
@@ -509,32 +502,34 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[][] getParameterAnnotations() {
-        Executable javaMethod = toJava();
-        return javaMethod == null ? new Annotation[signature.getParameterCount(false)][0] : javaMethod.getParameterAnnotations();
+        if ((getConstMethodFlags() & config().constMethodHasParameterAnnotations) == 0) {
+            return new Annotation[signature.getParameterCount(false)][0];
+        }
+        return toJava().getParameterAnnotations();
     }
 
     @Override
     public Annotation[] getAnnotations() {
-        Executable javaMethod = toJava();
-        if (javaMethod != null) {
-            return javaMethod.getAnnotations();
+        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0) {
+            return new Annotation[0];
         }
-        return new Annotation[0];
+        return toJava().getAnnotations();
     }
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        Executable javaMethod = toJava();
-        if (javaMethod != null) {
-            return javaMethod.getDeclaredAnnotations();
+        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0) {
+            return new Annotation[0];
         }
-        return new Annotation[0];
+        return toJava().getDeclaredAnnotations();
     }
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        Executable javaMethod = toJava();
-        return javaMethod == null ? null : javaMethod.getAnnotation(annotationClass);
+        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0) {
+            return null;
+        }
+        return toJava().getAnnotation(annotationClass);
     }
 
     @Override
@@ -561,60 +556,22 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Type[] getGenericParameterTypes() {
-        Executable javaMethod = toJava();
-        return javaMethod == null ? null : javaMethod.getGenericParameterTypes();
-    }
-
-    public Class<?>[] signatureToTypes() {
-        Signature sig = getSignature();
-        int count = sig.getParameterCount(false);
-        Class<?>[] result = new Class<?>[count];
-        for (int i = 0; i < result.length; ++i) {
-            JavaType parameterType = sig.getParameterType(i, holder);
-            HotSpotResolvedJavaType resolvedParameterType = (HotSpotResolvedJavaType) parameterType.resolve(holder);
-            result[i] = resolvedParameterType.mirror();
+        if (isClassInitializer()) {
+            return new Type[0];
         }
-        return result;
-    }
-
-    private static Method searchMethods(Method[] methods, String name, Class<?> returnType, Class<?>[] parameterTypes) {
-        for (Method m : methods) {
-            if (m.getName().equals(name) && returnType.equals(m.getReturnType()) && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
-                return m;
-            }
-        }
-        return null;
+        return toJava().getGenericParameterTypes();
     }
 
     private Executable toJava() {
-        if (toJavaCache != null) {
-            if (toJavaCache == signature) {
-                return null;
-            }
-            return (Executable) toJavaCache;
-        }
-        Class<?>[] parameterTypes = signatureToTypes();
-        Class<?> returnType = ((HotSpotResolvedJavaType) getSignature().getReturnType(holder).resolve(holder)).mirror();
-
-        Executable result;
-        if (isConstructor()) {
-            try {
-                result = holder.mirror().getDeclaredConstructor(parameterTypes);
-            } catch (NoSuchMethodException e) {
-                toJavaCache = signature;
-                return null;
-            }
-        } else {
-            // Do not use Method.getDeclaredMethod() as it can return a bridge method
-            // when this.isBridge() is false and vice versa.
-            result = searchMethods(holder.mirror().getDeclaredMethods(), getName(), returnType, parameterTypes);
-            if (result == null) {
-                toJavaCache = signature;
-                return null;
+        if (toJavaCache == null) {
+            assert !isClassInitializer() : this;
+            synchronized (this) {
+                if (toJavaCache == null) {
+                    toJavaCache = compilerToVM().asReflectionExecutable(this);
+                }
             }
         }
-        toJavaCache = result;
-        return result;
+        return toJavaCache;
     }
 
     @Override

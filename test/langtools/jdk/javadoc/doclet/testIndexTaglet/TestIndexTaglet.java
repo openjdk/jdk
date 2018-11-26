@@ -55,9 +55,17 @@ public class TestIndexTaglet extends JavadocTester {
     @Test
     void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
-        createTestClass(srcDir);
-
         Path outDir = base.resolve("out");
+
+        MethodBuilder method = MethodBuilder
+                .parse("public void func(A a) {}")
+                .setComments("test description with {@index search_phrase_a class a}");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(method)
+                .write(srcDir);
+
         javadoc("-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
                 "pkg");
@@ -74,15 +82,24 @@ public class TestIndexTaglet extends JavadocTester {
                 "<div class=\"block\">test description with search_phrase_a</div>");
     }
 
-    void createTestClass(Path srcDir) throws Exception {
-        MethodBuilder method = MethodBuilder
-                .parse("public void func(A a) {}")
-                .setComments("test description with {@index search_phrase_a class a}");
+    @Test
+    void testIndexWithinATag(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
 
-        new ClassBuilder(tb, "pkg.A")
+        new ClassBuilder(tb, "pkg2.A")
                 .setModifiers("public", "class")
-                .addMembers(method)
+                .addMembers(MethodBuilder.parse("public void func(){}")
+                        .setComments("a within a : <a href='..'>{@index check}</a>"))
                 .write(srcDir);
 
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg2");
+
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "warning: {@index} tag, which expands to <a>, within <a>");
     }
 }

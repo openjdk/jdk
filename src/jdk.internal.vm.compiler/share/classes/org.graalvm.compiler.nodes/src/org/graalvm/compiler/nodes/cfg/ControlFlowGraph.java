@@ -53,14 +53,14 @@ import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 
 public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     /**
-     * Don't allow probability values to be become too small or too high as this makes frequency
-     * calculations over- or underflow the range of a double. This commonly happens with infinite
-     * loops within infinite loops. The value is chosen a bit lower than half the maximum exponent
-     * supported by double. That way we can never overflow to infinity when multiplying two
-     * probability values.
+     * Don't allow relative frequency values to be become too small or too high as this makes
+     * frequency calculations over- or underflow the range of a double. This commonly happens with
+     * infinite loops within infinite loops. The value is chosen a bit lower than half the maximum
+     * exponent supported by double. That way we can never overflow to infinity when multiplying two
+     * relative frequency values.
      */
-    public static final double MIN_PROBABILITY = 0x1.0p-500;
-    public static final double MAX_PROBABILITY = 1 / MIN_PROBABILITY;
+    public static final double MIN_RELATIVE_FREQUENCY = 0x1.0p-500;
+    public static final double MAX_RELATIVE_FREQUENCY = 1 / MIN_RELATIVE_FREQUENCY;
 
     public final StructuredGraph graph;
 
@@ -78,7 +78,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     public static ControlFlowGraph compute(StructuredGraph graph, boolean connectBlocks, boolean computeLoops, boolean computeDominators, boolean computePostdominators) {
         ControlFlowGraph cfg = new ControlFlowGraph(graph);
         cfg.identifyBlocks();
-        cfg.computeProbabilities();
+        cfg.computeFrequencies();
 
         if (computeLoops) {
             cfg.computeLoopInformation();
@@ -424,7 +424,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     private void identifyBlock(Block block) {
         FixedWithNextNode cur = block.getBeginNode();
         while (true) {
-            assert !cur.isDeleted();
+            assert cur.isAlive() : cur;
             assert nodeToBlock.get(cur) == null;
             nodeToBlock.set(cur, block);
             FixedNode next = cur.next();
@@ -550,39 +550,44 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
         block.setPredecessors(predecessors);
     }
 
-    private void computeProbabilities() {
+    /**
+     * Computes the frequencies of all blocks relative to the start block. It uses the probability
+     * information attached to control flow splits to calculate the frequency of a block based on
+     * the frequency of its predecessor and the probability of its incoming control flow branch.
+     */
+    private void computeFrequencies() {
 
         for (Block block : reversePostOrder) {
             Block[] predecessors = block.getPredecessors();
 
-            double probability;
+            double relativeFrequency;
             if (predecessors.length == 0) {
-                probability = 1D;
+                relativeFrequency = 1D;
             } else if (predecessors.length == 1) {
                 Block pred = predecessors[0];
-                probability = pred.probability;
+                relativeFrequency = pred.relativeFrequency;
                 if (pred.getSuccessorCount() > 1) {
                     assert pred.getEndNode() instanceof ControlSplitNode;
                     ControlSplitNode controlSplit = (ControlSplitNode) pred.getEndNode();
-                    probability = multiplyProbabilities(probability, controlSplit.probability(block.getBeginNode()));
+                    relativeFrequency = multiplyRelativeFrequencies(relativeFrequency, controlSplit.probability(block.getBeginNode()));
                 }
             } else {
-                probability = predecessors[0].probability;
+                relativeFrequency = predecessors[0].relativeFrequency;
                 for (int i = 1; i < predecessors.length; ++i) {
-                    probability += predecessors[i].probability;
+                    relativeFrequency += predecessors[i].relativeFrequency;
                 }
 
                 if (block.getBeginNode() instanceof LoopBeginNode) {
                     LoopBeginNode loopBegin = (LoopBeginNode) block.getBeginNode();
-                    probability = multiplyProbabilities(probability, loopBegin.loopFrequency());
+                    relativeFrequency = multiplyRelativeFrequencies(relativeFrequency, loopBegin.loopFrequency());
                 }
             }
-            if (probability < MIN_PROBABILITY) {
-                probability = MIN_PROBABILITY;
-            } else if (probability > MAX_PROBABILITY) {
-                probability = MAX_PROBABILITY;
+            if (relativeFrequency < MIN_RELATIVE_FREQUENCY) {
+                relativeFrequency = MIN_RELATIVE_FREQUENCY;
+            } else if (relativeFrequency > MAX_RELATIVE_FREQUENCY) {
+                relativeFrequency = MAX_RELATIVE_FREQUENCY;
             }
-            block.setProbability(probability);
+            block.setRelativeFrequency(relativeFrequency);
         }
 
     }
@@ -763,17 +768,17 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     }
 
     /**
-     * Multiplies a and b and clamps the between {@link ControlFlowGraph#MIN_PROBABILITY} and
-     * {@link ControlFlowGraph#MAX_PROBABILITY}.
+     * Multiplies a and b and clamps the between {@link ControlFlowGraph#MIN_RELATIVE_FREQUENCY} and
+     * {@link ControlFlowGraph#MAX_RELATIVE_FREQUENCY}.
      */
-    public static double multiplyProbabilities(double a, double b) {
+    public static double multiplyRelativeFrequencies(double a, double b) {
         assert !Double.isNaN(a) && !Double.isNaN(b) && Double.isFinite(a) && Double.isFinite(b) : a + " " + b;
         double r = a * b;
-        if (r > MAX_PROBABILITY) {
-            return MAX_PROBABILITY;
+        if (r > MAX_RELATIVE_FREQUENCY) {
+            return MAX_RELATIVE_FREQUENCY;
         }
-        if (r < MIN_PROBABILITY) {
-            return MIN_PROBABILITY;
+        if (r < MIN_RELATIVE_FREQUENCY) {
+            return MIN_RELATIVE_FREQUENCY;
         }
         return r;
     }

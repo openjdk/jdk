@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8190003 8196201 8196202
+ * @bug 8190003 8196201 8196202 8184205
  * @summary Special characters in group names should be escaped
  * @library /tools/lib ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -65,7 +65,9 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("overview-summary.html", true,
-                "<span><a href=\"javascript:show(1);\">abc &lt; &amp; &gt; def</a></span>",
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">abc &lt; &amp; &gt; def</button>",
                 ",\"abc < & > def\"],");
     }
 
@@ -99,7 +101,9 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("overview-summary.html", true,
-                "<span><a href=\"javascript:show(1);\">abc &lt; &amp; &gt; def</a></span>",
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\""
+                + " onclick=\"show(2);\">Other Modules</button>",
                 ",\"abc < & > def\"],");
     }
 }

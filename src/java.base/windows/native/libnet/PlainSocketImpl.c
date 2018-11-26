@@ -303,6 +303,10 @@ JNIEXPORT jint JNICALL Java_java_net_PlainSocketImpl_accept0
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
 
     ia = NET_SockaddrToInetAddress(env, &sa, &port);
+    if (ia == NULL){
+        closesocket(newfd);
+        return -1;
+    }
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
     if (isa == NULL) {
         closesocket(newfd);

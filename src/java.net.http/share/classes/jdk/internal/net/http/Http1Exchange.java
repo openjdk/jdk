@@ -27,6 +27,7 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
@@ -704,6 +705,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 writeScheduler.runOrSchedule(client.theExecutor());
             }
         }
+    }
+
+    HttpClient client() {
+        return client;
     }
 
     String dbgString() {

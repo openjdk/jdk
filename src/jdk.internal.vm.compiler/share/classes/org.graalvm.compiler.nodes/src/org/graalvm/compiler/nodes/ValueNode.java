@@ -134,6 +134,11 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
         return value != null && value.isNull();
     }
 
+    public final boolean isDefaultConstant() {
+        Constant value = asConstant();
+        return value != null && value.isDefaultForKind();
+    }
+
     /**
      * Convert this value to a constant if it is a constant, otherwise return null.
      *

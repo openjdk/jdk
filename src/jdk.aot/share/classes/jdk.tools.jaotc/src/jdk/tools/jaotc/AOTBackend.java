@@ -33,8 +33,8 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
-import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin;
+import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.phases.LIRSuites;
@@ -167,7 +167,7 @@ final class AOTBackend {
 
     void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
         // This is really not installing the method.
-        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, resolvedMethod, null, compResult), null, null);
+        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, resolvedMethod, null, compResult, graalOptions), null, null);
         String disassembly = codeCache.disassemble(installedCode);
         if (disassembly != null) {
             main.printer.printlnDebug(disassembly);

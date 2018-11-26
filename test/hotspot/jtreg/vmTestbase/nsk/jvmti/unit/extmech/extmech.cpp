@@ -73,7 +73,7 @@ Java_nsk_jvmti_unit_extmech_isClassUnloadingEnabled
 }
 
 static void JNICALL
-ClassUnload(jvmtiEnv jvmti_env, JNIEnv *jni_env, jthread thread, jclass cls) {
+ClassUnload(jvmtiEnv* jvmti_env, JNIEnv *jni_env, jthread thread, jclass cls) {
 }
 
 /*

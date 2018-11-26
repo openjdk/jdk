@@ -103,15 +103,15 @@ void doRedirect(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRedirect: obtaining the JNI function table ...\n");
-    if ((err = jvmti->GetJNIFunctionTable(&orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
         env->FatalError("failed to get original JNI function table");
     }
-    if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->GetJNIFunctionTable(&redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -126,8 +126,8 @@ void doRedirect(JNIEnv *env) {
     redir_jni_functions->ThrowNew = MyThrowNew;
     redir_jni_functions->ExceptionOccurred = MyExceptionOccurred;
 
-    if ((err = jvmti->SetJNIFunctionTable(redir_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(redir_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -143,8 +143,8 @@ void doRestore(JNIEnv *env) {
 
     if (verbose)
         printf("\ndoRestore: restoring the original JNI function table ...\n");
-    if ((err = jvmti->SetJNIFunctionTable(orig_jni_functions)) !=
-            JVMTI_ERROR_NONE) {
+    err = jvmti->SetJNIFunctionTable(orig_jni_functions);
+    if (err != JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
@@ -157,7 +157,8 @@ void doRestore(JNIEnv *env) {
 void doExc(JNIEnv *env, jthrowable thrw, jclass thrCls, const char *msg) {
     jint res;
 
-    if ((res = env->ThrowNew(thrCls, msg)) != 0) {
+    res = env->ThrowNew(thrCls, msg);
+    if (res != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to throw new exception\n",
             __FILE__, __LINE__);
@@ -176,7 +177,8 @@ void doExc(JNIEnv *env, jthrowable thrw, jclass thrCls, const char *msg) {
             __FILE__, __LINE__, msg);
     }
 
-    if ((res = env->Throw(thrw)) != 0) {
+    res = env->Throw(thrw);
+    if (res != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to throw exception\n",
             __FILE__, __LINE__);
@@ -264,7 +266,8 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t003_check(JNIEnv *env, jobj
     if (verbose)
        printf("\ncheck: obtaining field ID for \"name=%s signature=%s\"...\n",
            javaField, excClassSig);
-    if ((fid = env->GetFieldID(objCls, javaField, excClassSig)) == 0) {
+    fid = env->GetFieldID(objCls, javaField, excClassSig);
+    if (fid == 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get ID for the field \"%s\"\n",
             __FILE__, __LINE__, javaField);

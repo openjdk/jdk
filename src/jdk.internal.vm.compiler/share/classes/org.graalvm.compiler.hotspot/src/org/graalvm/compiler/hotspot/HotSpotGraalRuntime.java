@@ -28,8 +28,8 @@ import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
-import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -276,7 +276,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     @Override
-    public DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories) {
+    public DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories, PrintStream logStream) {
         if (management != null && management.poll(false) != null) {
             if (compilable instanceof HotSpotResolvedJavaMethod) {
                 HotSpotResolvedObjectType type = ((HotSpotResolvedJavaMethod) compilable).getDeclaringClass();
@@ -294,7 +294,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             }
         }
         Description description = new Description(compilable, compilationId.toString(CompilationIdentifier.Verbosity.ID));
-        return DebugContext.create(compilationOptions, description, metricValues, DEFAULT_LOG_STREAM, factories);
+        return DebugContext.create(compilationOptions, description, metricValues, logStream, factories);
     }
 
     @Override

@@ -61,6 +61,7 @@ import org.graalvm.compiler.lir.aarch64.AArch64AtomicMove.CompareAndSwapOp;
 import org.graalvm.compiler.lir.aarch64.AArch64AtomicMove.AtomicReadAndWriteOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.MembarOp;
 import org.graalvm.compiler.lir.aarch64.AArch64PauseOp;
+import org.graalvm.compiler.lir.aarch64.AArch64SpeculativeBarrier;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.phases.util.Providers;
@@ -465,9 +466,9 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length) {
+    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
         Variable result = newVariable(LIRKind.value(AArch64Kind.DWORD));
-        append(new AArch64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length)));
+        append(new AArch64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length), directPointers));
         return result;
     }
 
@@ -513,4 +514,9 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     }
 
     public abstract void emitCCall(long address, CallingConvention nativeCallingConvention, Value[] args);
+
+    @Override
+    public void emitSpeculationFence() {
+        append(new AArch64SpeculativeBarrier());
+    }
 }

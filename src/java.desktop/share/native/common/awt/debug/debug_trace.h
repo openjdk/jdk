@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,12 @@ extern void DTrace_Shutdown();
 void DTrace_DisableMutex();
 extern void DTrace_VPrintImpl(const char * fmt, va_list arglist);
 extern void DTrace_PrintImpl(const char * fmt, ...);
-extern void DTrace_PrintFunction(DTRACE_PRINT_CALLBACK pfn, dtrace_id * pFileTraceId, dtrace_id * pTraceId, const char * file, int line, int argc, const char * fmt, ...);
+/* JNIEXPORT because these functions are also called from libawt_xawt */
+JNIEXPORT void JNICALL DTrace_PrintFunction(DTRACE_PRINT_CALLBACK pfn, dtrace_id * pFileTraceId, dtrace_id * pTraceId, const char * file, int line, int argc, const char * fmt, ...);
 
 /* these functions are exported only for use in macros-- do not call them directly!!! */
-extern void DTrace_VPrint(const char * file, int line, int argc, const char * fmt, va_list arglist);
-extern void DTrace_VPrintln(const char * file, int line, int argc, const char * fmt, va_list arglist);
+JNIEXPORT void JNICALL DTrace_VPrint(const char * file, int line, int argc, const char * fmt, va_list arglist);
+JNIEXPORT void JNICALL DTrace_VPrintln(const char * file, int line, int argc, const char * fmt, va_list arglist);
 
 /* each file includes this flag indicating module trace status */
 static dtrace_id        _Dt_FileTraceId = UNDEFINED_TRACE_ID;

@@ -64,14 +64,17 @@ public class GCDuringDump {
             // i = 1 -- run with agent = cause extra GCs
 
             String extraArg = (i == 0) ? "-showversion" : "-javaagent:" + agentJar;
+            String extraOption = (i == 0) ? "-showversion" : "-XX:+AllowArchivingWithJavaAgent";
 
             TestCommon.testDump(appJar, TestCommon.list("Hello"),
+                                "-XX:+UnlockDiagnosticVMOptions", extraOption,
                                 extraArg, "-Xmx32m", gcLog);
 
             TestCommon.run(
                 "-cp", appJar,
                 "-Xmx32m",
                 "-XX:+PrintSharedSpaces",
+                "-XX:+UnlockDiagnosticVMOptions", extraOption,
                 gcLog,
                 "Hello")
               .assertNormalExit();

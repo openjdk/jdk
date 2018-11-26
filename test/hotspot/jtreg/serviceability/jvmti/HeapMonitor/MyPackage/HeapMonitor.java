@@ -103,43 +103,41 @@ public class HeapMonitor {
     return sum;
   }
 
-  private static double averageOneElementSize;
-  private static native double getAverageSize();
+  private static long oneElementSize;
+  private static native long getSize(Frame[] frames, boolean checkLines);
+  private static long getSize(Frame[] frames) {
+    return getSize(frames, getCheckLines());
+  }
 
-  // Calculate the size of a 1-element array in order to assess average sampling interval
-  // via the HeapMonitorStatIntervalTest. This is needed because various GCs could add
-  // extra memory to arrays.
+  // Calculate the size of a 1-element array in order to assess sampling interval
+  // via the HeapMonitorStatIntervalTest.
   // This is done by allocating a 1-element array and then looking in the heap monitoring
-  // samples for the average size of objects collected.
-  public static void calculateAverageOneElementSize() {
+  // samples for the size of an object collected.
+  public static void calculateOneElementSize() {
     enableSamplingEvents();
-    // Assume a size of 24 for the average size.
-    averageOneElementSize = 24;
 
-    // Call allocateSize once, this allocates the internal array for the iterations.
-    int totalSize = 10 * 1024 * 1024;
-    allocateSize(totalSize);
-
-    // Reset the storage and now really track the size of the elements.
-    resetEventStorage();
-    allocateSize(totalSize);
+    List<Frame> frameList = allocate();
     disableSamplingEvents();
 
-    // Get the actual average size.
-    averageOneElementSize = getAverageSize();
-    if (averageOneElementSize == 0) {
-      throw new RuntimeException("Could not calculate the average size of a 1-element array.");
+    frameList.add(new Frame("calculateOneElementSize", "()V", "HeapMonitor.java", 119));
+    Frame[] frames = frameList.toArray(new Frame[0]);
+
+    // Get the actual size.
+    oneElementSize = getSize(frames);
+    System.out.println("Element size is: " + oneElementSize);
+
+    if (oneElementSize == 0) {
+      throw new RuntimeException("Could get the size of a 1-element array.");
     }
   }
 
   public static int allocateSize(int totalSize) {
-    if (averageOneElementSize == 0) {
-      throw new RuntimeException("Average size of a 1-element array was not calculated.");
+    if (oneElementSize == 0) {
+      throw new RuntimeException("Size of a 1-element array was not calculated.");
     }
 
     int sum = 0;
-
-    int iterations = (int) (totalSize / averageOneElementSize);
+    int iterations = (int) (totalSize / oneElementSize);
 
     if (arrays == null || arrays.length < iterations) {
       arrays = new int[iterations][];
@@ -200,7 +198,7 @@ public class HeapMonitor {
 
     List<Frame> frameList = allocate();
     frameList.add(new Frame("allocateAndCheckFrames", "()[LMyPackage/Frame;", "HeapMonitor.java",
-          201));
+          199));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     if (!obtainedEvents(frames) && !garbageContains(frames)) {

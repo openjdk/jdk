@@ -46,7 +46,7 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
     private static final String ESWITCH_S = "String res_string = switch (x) { case 0 -> { # } default -> \"default\"; };";
     private static final String INT_FN_ESWITCH = "java.util.function.IntSupplier r = switch (x) { case 0 -> { # } default -> null; };";
     private static final String INT_ESWITCH_DEFAULT = "int res = switch (x) { default -> { # } };";
-    private static final String IF = "if (cond) { # }";
+    private static final String IF = "if (cond) { # } else throw new RuntimeException();";
     private static final String BLOCK = "{ # }";
     private static final String BREAK_Z = "break 0;";
     private static final String BREAK_S = "break \"hello world\";";

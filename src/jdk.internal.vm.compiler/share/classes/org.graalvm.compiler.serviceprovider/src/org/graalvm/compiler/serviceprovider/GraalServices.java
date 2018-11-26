@@ -34,6 +34,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.Services;
 
@@ -76,7 +77,6 @@ public final class GraalServices {
      *             {@link JVMCIPermission}
      */
     public static <S> Iterable<S> load(Class<S> service) {
-        assert !service.getName().startsWith("jdk.vm.ci") : "JVMCI services must be loaded via " + Services.class.getName();
         Iterable<S> iterable = ServiceLoader.load(service);
         return new Iterable<>() {
             @Override
@@ -117,6 +117,11 @@ public final class GraalServices {
         if (jvmciModule != otherModule) {
             for (String pkg : jvmciModule.getPackages()) {
                 if (!jvmciModule.isOpen(pkg, otherModule)) {
+                    // JVMCI initialization opens all JVMCI packages
+                    // to Graal which is a prerequisite for Graal to
+                    // open JVMCI packages to other modules.
+                    JVMCI.initialize();
+
                     jvmciModule.addOpens(pkg, otherModule);
                 }
             }

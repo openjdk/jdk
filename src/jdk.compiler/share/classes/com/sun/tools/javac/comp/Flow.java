@@ -357,9 +357,9 @@ public class Flow {
         }
 
         /** Resolve all jumps of this statement. */
-        private boolean resolveJump(JCTree tree,
-                        ListBuffer<P> oldPendingExits,
-                        JumpKind jk) {
+        private Liveness resolveJump(JCTree tree,
+                         ListBuffer<P> oldPendingExits,
+                         JumpKind jk) {
             boolean resolved = false;
             List<P> exits = pendingExits.toList();
             pendingExits = oldPendingExits;
@@ -373,16 +373,16 @@ public class Flow {
                     pendingExits.append(exit);
                 }
             }
-            return resolved;
+            return Liveness.from(resolved);
         }
 
         /** Resolve all continues of this statement. */
-        boolean resolveContinues(JCTree tree) {
+        Liveness resolveContinues(JCTree tree) {
             return resolveJump(tree, new ListBuffer<P>(), JumpKind.CONTINUE);
         }
 
         /** Resolve all breaks of this statement. */
-        boolean resolveBreaks(JCTree tree, ListBuffer<P> oldPendingExits) {
+        Liveness resolveBreaks(JCTree tree, ListBuffer<P> oldPendingExits) {
             return resolveJump(tree, oldPendingExits, JumpKind.BREAK);
         }
 
@@ -417,11 +417,11 @@ public class Flow {
         /** A flag that indicates whether the last statement could
          *  complete normally.
          */
-        private boolean alive;
+        private Liveness alive;
 
         @Override
         void markDead() {
-            alive = false;
+            alive = Liveness.DEAD;
         }
 
     /*************************************************************************
@@ -432,7 +432,7 @@ public class Flow {
          */
         void scanDef(JCTree tree) {
             scanStat(tree);
-            if (tree != null && tree.hasTag(JCTree.Tag.BLOCK) && !alive) {
+            if (tree != null && tree.hasTag(JCTree.Tag.BLOCK) && alive == Liveness.DEAD) {
                 log.error(tree.pos(),
                           Errors.InitializerMustBeAbleToCompleteNormally);
             }
@@ -441,9 +441,9 @@ public class Flow {
         /** Analyze a statement. Check that statement is reachable.
          */
         void scanStat(JCTree tree) {
-            if (!alive && tree != null) {
+            if (alive == Liveness.DEAD && tree != null) {
                 log.error(tree.pos(), Errors.UnreachableStmt);
-                if (!tree.hasTag(SKIP)) alive = true;
+                if (!tree.hasTag(SKIP)) alive = Liveness.RECOVERY;
             }
             scan(tree);
         }
@@ -460,7 +460,7 @@ public class Flow {
 
         public void visitClassDef(JCClassDecl tree) {
             if (tree.sym == null) return;
-            boolean alivePrev = alive;
+            Liveness alivePrev = alive;
             ListBuffer<PendingExit> pendingExitsPrev = pendingExits;
             Lint lintPrev = lint;
 
@@ -506,10 +506,10 @@ public class Flow {
             Assert.check(pendingExits.isEmpty());
 
             try {
-                alive = true;
+                alive = Liveness.ALIVE;
                 scanStat(tree.body);
 
-                if (alive && !tree.sym.type.getReturnType().hasTag(VOID))
+                if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
                     log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
 
                 List<PendingExit> exits = pendingExits.toList();
@@ -544,21 +544,21 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scanStat(tree.body);
-            alive |= resolveContinues(tree);
+            alive = alive.or(resolveContinues(tree));
             scan(tree.cond);
-            alive = alive && !tree.cond.type.isTrue();
-            alive |= resolveBreaks(tree, prevPendingExits);
+            alive = alive.and(!tree.cond.type.isTrue());
+            alive = alive.or(resolveBreaks(tree, prevPendingExits));
         }
 
         public void visitWhileLoop(JCWhileLoop tree) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.cond);
-            alive = !tree.cond.type.isFalse();
+            alive = Liveness.from(!tree.cond.type.isFalse());
             scanStat(tree.body);
-            alive |= resolveContinues(tree);
-            alive = resolveBreaks(tree, prevPendingExits) ||
-                !tree.cond.type.isTrue();
+            alive = alive.or(resolveContinues(tree));
+            alive = resolveBreaks(tree, prevPendingExits).or(
+                !tree.cond.type.isTrue());
         }
 
         public void visitForLoop(JCForLoop tree) {
@@ -567,15 +567,15 @@ public class Flow {
             pendingExits = new ListBuffer<>();
             if (tree.cond != null) {
                 scan(tree.cond);
-                alive = !tree.cond.type.isFalse();
+                alive = Liveness.from(!tree.cond.type.isFalse());
             } else {
-                alive = true;
+                alive = Liveness.ALIVE;
             }
             scanStat(tree.body);
-            alive |= resolveContinues(tree);
+            alive = alive.or(resolveContinues(tree));
             scan(tree.step);
-            alive = resolveBreaks(tree, prevPendingExits) ||
-                tree.cond != null && !tree.cond.type.isTrue();
+            alive = resolveBreaks(tree, prevPendingExits).or(
+                tree.cond != null && !tree.cond.type.isTrue());
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -584,16 +584,16 @@ public class Flow {
             scan(tree.expr);
             pendingExits = new ListBuffer<>();
             scanStat(tree.body);
-            alive |= resolveContinues(tree);
+            alive = alive.or(resolveContinues(tree));
             resolveBreaks(tree, prevPendingExits);
-            alive = true;
+            alive = Liveness.ALIVE;
         }
 
         public void visitLabelled(JCLabeledStatement tree) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scanStat(tree.body);
-            alive |= resolveBreaks(tree, prevPendingExits);
+            alive = alive.or(resolveBreaks(tree, prevPendingExits));
         }
 
         public void visitSwitch(JCSwitch tree) {
@@ -602,7 +602,7 @@ public class Flow {
             scan(tree.selector);
             boolean hasDefault = false;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
-                alive = true;
+                alive = Liveness.ALIVE;
                 JCCase c = l.head;
                 if (c.pats.isEmpty())
                     hasDefault = true;
@@ -612,13 +612,13 @@ public class Flow {
                     }
                 }
                 scanStats(c.stats);
-                c.completesNormally = alive;
-                if (alive && c.caseKind == JCCase.RULE) {
+                c.completesNormally = alive != Liveness.DEAD;
+                if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
-                    alive = false;
+                    alive = Liveness.DEAD;
                 }
                 // Warn about fall-through if lint switch fallthrough enabled.
-                if (alive &&
+                if (alive == Liveness.ALIVE &&
                     lint.isEnabled(Lint.LintCategory.FALLTHROUGH) &&
                     c.stats.nonEmpty() && l.tail.nonEmpty())
                     log.warning(Lint.LintCategory.FALLTHROUGH,
@@ -626,9 +626,9 @@ public class Flow {
                                 Warnings.PossibleFallThroughIntoCase);
             }
             if (!hasDefault) {
-                alive = true;
+                alive = Liveness.ALIVE;
             }
-            alive |= resolveBreaks(tree, prevPendingExits);
+            alive = alive.or(resolveBreaks(tree, prevPendingExits));
         }
 
         @Override
@@ -644,9 +644,9 @@ public class Flow {
                 }
             }
             boolean hasDefault = false;
-            boolean prevAlive = alive;
+            Liveness prevAlive = alive;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
-                alive = true;
+                alive = Liveness.ALIVE;
                 JCCase c = l.head;
                 if (c.pats.isEmpty())
                     hasDefault = true;
@@ -662,13 +662,22 @@ public class Flow {
                     }
                 }
                 scanStats(c.stats);
-                c.completesNormally = alive;
+                if (alive == Liveness.ALIVE) {
+                    if (c.caseKind == JCCase.RULE) {
+                        log.error(TreeInfo.diagEndPos(c.body),
+                                  Errors.RuleCompletesNormally);
+                    } else if (l.tail.isEmpty()) {
+                        log.error(TreeInfo.diagEndPos(tree),
+                                  Errors.SwitchExpressionCompletesNormally);
+                    }
+                }
+                c.completesNormally = alive != Liveness.DEAD;
             }
             if ((constants == null || !constants.isEmpty()) && !hasDefault) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
-            alive |= resolveBreaks(tree, prevPendingExits);
+            alive = alive.or(resolveBreaks(tree, prevPendingExits));
         }
 
         public void visitTry(JCTry tree) {
@@ -686,22 +695,22 @@ public class Flow {
             }
 
             scanStat(tree.body);
-            boolean aliveEnd = alive;
+            Liveness aliveEnd = alive;
 
             for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
-                alive = true;
+                alive = Liveness.ALIVE;
                 JCVariableDecl param = l.head.param;
                 scan(param);
                 scanStat(l.head.body);
-                aliveEnd |= alive;
+                aliveEnd = aliveEnd.or(alive);
             }
             if (tree.finalizer != null) {
                 ListBuffer<PendingExit> exits = pendingExits;
                 pendingExits = prevPendingExits;
-                alive = true;
+                alive = Liveness.ALIVE;
                 scanStat(tree.finalizer);
-                tree.finallyCanCompleteNormally = alive;
-                if (!alive) {
+                tree.finallyCanCompleteNormally = alive != Liveness.DEAD;
+                if (alive == Liveness.DEAD) {
                     if (lint.isEnabled(Lint.LintCategory.FINALLY)) {
                         log.warning(Lint.LintCategory.FINALLY,
                                 TreeInfo.diagEndPos(tree.finalizer),
@@ -726,12 +735,12 @@ public class Flow {
             scan(tree.cond);
             scanStat(tree.thenpart);
             if (tree.elsepart != null) {
-                boolean aliveAfterThen = alive;
-                alive = true;
+                Liveness aliveAfterThen = alive;
+                alive = Liveness.ALIVE;
                 scanStat(tree.elsepart);
-                alive = alive | aliveAfterThen;
+                alive = alive.or(aliveAfterThen);
             } else {
-                alive = true;
+                alive = Liveness.ALIVE;
             }
         }
 
@@ -776,12 +785,12 @@ public class Flow {
             }
 
             ListBuffer<PendingExit> prevPending = pendingExits;
-            boolean prevAlive = alive;
+            Liveness prevAlive = alive;
             try {
                 pendingExits = new ListBuffer<>();
-                alive = true;
+                alive = Liveness.ALIVE;
                 scanStat(tree.body);
-                tree.canCompleteNormally = alive;
+                tree.canCompleteNormally = alive != Liveness.DEAD;
             }
             finally {
                 pendingExits = prevPending;
@@ -807,7 +816,7 @@ public class Flow {
                 attrEnv = env;
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<>();
-                alive = true;
+                alive = Liveness.ALIVE;
                 scan(tree);
             } finally {
                 pendingExits = null;
@@ -2776,4 +2785,58 @@ public class Flow {
             }
         }
     }
+
+    enum Liveness {
+        ALIVE {
+            @Override
+            public Liveness or(Liveness other) {
+                return this;
+            }
+            @Override
+            public Liveness and(Liveness other) {
+                return other;
+            }
+        },
+        DEAD {
+            @Override
+            public Liveness or(Liveness other) {
+                return other;
+            }
+            @Override
+            public Liveness and(Liveness other) {
+                return this;
+            }
+        },
+        RECOVERY {
+            @Override
+            public Liveness or(Liveness other) {
+                if (other == ALIVE) {
+                    return ALIVE;
+                } else {
+                    return this;
+                }
+            }
+            @Override
+            public Liveness and(Liveness other) {
+                if (other == DEAD) {
+                    return DEAD;
+                } else {
+                    return this;
+                }
+            }
+        };
+
+        public abstract Liveness or(Liveness other);
+        public abstract Liveness and(Liveness other);
+        public Liveness or(boolean value) {
+            return or(from(value));
+        }
+        public Liveness and(boolean value) {
+            return and(from(value));
+        }
+        public static Liveness from(boolean value) {
+            return value ? ALIVE : DEAD;
+        }
+    }
+
 }

@@ -101,7 +101,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * Print all the classes in the file.
      */
     protected void buildAllClassesFile() throws DocFileIOException {
-        String label = configuration.getText("doclet.All_Classes");
+        String label = resources.getText("doclet.All_Classes");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()

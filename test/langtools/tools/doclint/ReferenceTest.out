@@ -32,11 +32,35 @@ ReferenceTest.java:61: error: type arguments not allowed here
      * {@link java.util.List<String>#equals}
               ^
 ReferenceTest.java:62: error: type arguments not allowed here
+     * {@link not.Found<String>}
+              ^
+ReferenceTest.java:63: error: type arguments not allowed here
      * @see java.util.List<String>
             ^
-ReferenceTest.java:63: error: type arguments not allowed here
+ReferenceTest.java:64: error: type arguments not allowed here
      * @see java.util.List<String>#equals
             ^
-12 errors
+ReferenceTest.java:65: error: type arguments not allowed here
+     * @see not.Found<String>
+            ^
+ReferenceTest.java:70: error: array type not allowed here
+     * {@link java.lang.String[]}
+              ^
+ReferenceTest.java:71: error: array type not allowed here
+     * {@link java.lang.String[]#equals}
+              ^
+ReferenceTest.java:72: error: array type not allowed here
+     * {@link not.Found[]}
+              ^
+ReferenceTest.java:73: error: array type not allowed here
+     * @see java.lang.String[]
+            ^
+ReferenceTest.java:74: error: array type not allowed here
+     * @see java.lang.String[]#equals
+            ^
+ReferenceTest.java:75: error: array type not allowed here
+     * @see not.Found[]
+            ^
+20 errors
 1 warning
 

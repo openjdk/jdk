@@ -470,7 +470,7 @@ void Parse::do_call() {
   // Push appendix argument (MethodType, CallSite, etc.), if one.
   if (iter().has_appendix()) {
     ciObject* appendix_arg = iter().get_appendix();
-    const TypeOopPtr* appendix_arg_type = TypeOopPtr::make_from_constant(appendix_arg);
+    const TypeOopPtr* appendix_arg_type = TypeOopPtr::make_from_constant(appendix_arg, /* require_const= */ true);
     Node* appendix_arg_node = _gvn.makecon(appendix_arg_type);
     push(appendix_arg_node);
   }

@@ -44,11 +44,10 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
                                bool caller_must_gc_arguments)
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
     _mark_for_deoptimization_status(not_marked),
-    _is_unloading_state(0),
-    _method(method)
+    _method(method),
+    _gc_data(NULL)
 {
   init_defaults();
-  clear_unloading_state();
 }
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, int size,
@@ -57,11 +56,10 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
   : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
              frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
     _mark_for_deoptimization_status(not_marked),
-    _is_unloading_state(0),
-    _method(method)
+    _method(method),
+    _gc_data(NULL)
 {
   init_defaults();
-  clear_unloading_state();
 }
 
 void CompiledMethod::init_defaults() {
@@ -544,74 +542,6 @@ void CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
 
   // Check that the metadata embedded in the nmethod is alive
   DEBUG_ONLY(metadata_do(check_class));
-}
-
-// The _is_unloading_state encodes a tuple comprising the unloading cycle
-// and the result of IsUnloadingBehaviour::is_unloading() fpr that cycle.
-// This is the bit layout of the _is_unloading_state byte: 00000CCU
-// CC refers to the cycle, which has 2 bits, and U refers to the result of
-// IsUnloadingBehaviour::is_unloading() for that unloading cycle.
-
-class IsUnloadingState: public AllStatic {
-  static const uint8_t _is_unloading_mask = 1;
-  static const uint8_t _is_unloading_shift = 0;
-  static const uint8_t _unloading_cycle_mask = 6;
-  static const uint8_t _unloading_cycle_shift = 1;
-
-  static uint8_t set_is_unloading(uint8_t state, bool value) {
-    state &= ~_is_unloading_mask;
-    if (value) {
-      state |= 1 << _is_unloading_shift;
-    }
-    assert(is_unloading(state) == value, "unexpected unloading cycle overflow");
-    return state;
-  }
-
-  static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
-    state &= ~_unloading_cycle_mask;
-    state |= value << _unloading_cycle_shift;
-    assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
-    return state;
-  }
-
-public:
-  static bool is_unloading(uint8_t state) { return (state & _is_unloading_mask) >> _is_unloading_shift == 1; }
-  static uint8_t unloading_cycle(uint8_t state) { return (state & _unloading_cycle_mask) >> _unloading_cycle_shift; }
-
-  static uint8_t create(bool is_unloading, uint8_t unloading_cycle) {
-    uint8_t state = 0;
-    state = set_is_unloading(state, is_unloading);
-    state = set_unloading_cycle(state, unloading_cycle);
-    return state;
-  }
-};
-
-bool CompiledMethod::is_unloading() {
-  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
-  bool state_is_unloading = IsUnloadingState::is_unloading(state);
-  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
-  if (state_is_unloading) {
-    return true;
-  }
-  if (state_unloading_cycle == CodeCache::unloading_cycle()) {
-    return false;
-  }
-
-  // The IsUnloadingBehaviour is responsible for checking if there are any dead
-  // oops in the CompiledMethod, by calling oops_do on it.
-  state_unloading_cycle = CodeCache::unloading_cycle();
-  state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
-
-  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
-
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
-
-  return state_is_unloading;
-}
-
-void CompiledMethod::clear_unloading_state() {
-  uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
 }
 
 // Called to clean up after class unloading for live nmethods and from the sweeper

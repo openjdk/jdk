@@ -652,11 +652,13 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final long newInstanceAddress = getAddress("JVMCIRuntime::new_instance");
     public final long newArrayAddress = getAddress("JVMCIRuntime::new_array");
     public final long newMultiArrayAddress = getAddress("JVMCIRuntime::new_multi_array");
+    public final long dynamicNewInstanceAddress = getAddress("JVMCIRuntime::dynamic_new_instance");
 
     // Allocation stubs that return null when allocation fails
     public final long newInstanceOrNullAddress = getAddress("JVMCIRuntime::new_instance_or_null", 0L);
     public final long newArrayOrNullAddress = getAddress("JVMCIRuntime::new_array_or_null", 0L);
     public final long newMultiArrayOrNullAddress = getAddress("JVMCIRuntime::new_multi_array_or_null", 0L);
+    public final long dynamicNewInstanceOrNullAddress = getAddress("JVMCIRuntime::dynamic_new_instance_or_null", 0L);
 
     public boolean areNullAllocationStubsAvailable() {
         return newInstanceOrNullAddress != 0L;
@@ -669,9 +671,11 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
         if (newInstanceOrNullAddress == 0L) {
             assert newArrayOrNullAddress == 0L;
             assert newMultiArrayOrNullAddress == 0L;
+            assert dynamicNewInstanceOrNullAddress == 0L;
         } else {
             assert newArrayOrNullAddress != 0L;
             assert newMultiArrayOrNullAddress != 0L;
+            assert dynamicNewInstanceOrNullAddress != 0L;
         }
         return true;
     }

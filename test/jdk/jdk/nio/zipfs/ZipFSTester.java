@@ -484,8 +484,12 @@ public class ZipFSTester {
             byte[] buf = new byte[1024];
             ByteBuffer bb = ByteBuffer.wrap(buf);
             for (int i = 0; i < 10; i++) {
-                int pos = rdm.nextInt((int)sbc.size());
-                int len = rdm.nextInt(Math.min(buf.length, expected.length - pos));
+                int pos = 0;
+                int len = 0;
+                if (expected.length > 0) {
+                    pos = rdm.nextInt((int) sbc.size());
+                    len = rdm.nextInt(Math.min(buf.length, expected.length - pos));
+                }
                 // System.out.printf("  --> %d, %d%n", pos, len);
                 bb.position(0).limit(len);    // bb.flip().limit(len);
                 if (sbc.position(pos).position() != pos ||

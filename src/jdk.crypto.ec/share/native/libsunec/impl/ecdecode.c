@@ -49,6 +49,7 @@
 #ifdef _KERNEL
 #include <sys/kmem.h>
 #else
+#include <stdio.h>
 #include <string.h>
 #endif
 #include "ec.h"

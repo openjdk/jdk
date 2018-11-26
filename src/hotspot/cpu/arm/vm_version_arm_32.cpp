@@ -260,6 +260,8 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
+  } else {
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
@@ -293,6 +295,9 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(Tier3MinInvocationThreshold)) {
     Tier3MinInvocationThreshold = 500;
   }
+
+  UNSUPPORTED_OPTION(TypeProfileLevel);
+  UNSUPPORTED_OPTION(CriticalJNINatives);
 
   FLAG_SET_DEFAULT(TypeProfileLevel, 0); // unsupported
 

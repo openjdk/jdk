@@ -357,6 +357,11 @@ class JdepsTask {
                 task.command = task.listModuleDeps(CommandOption.PRINT_MODULE_DEPS);
             }
         },
+        new Option(false, "--ignore-missing-deps") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.ignoreMissingDeps = true;
+            }
+        },
 
         // ---- Target filtering options ----
         new Option(true, "-p", "-package", "--package") {
@@ -401,6 +406,11 @@ class JdepsTask {
                 }
             }
         },
+        new Option(false, "--missing-deps") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.findMissingDeps = true;
+            }
+        },
 
         // ---- Source filtering options ----
         new Option(true, "-include") {
@@ -415,15 +425,19 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-R", "-recursive") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.depth = 0;
+        new Option(false, "-R", "-recursive", "--recursive") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                task.options.recursive = Options.RECURSIVE;
                 // turn off filtering
                 task.options.filterSameArchive = false;
                 task.options.filterSamePackage = false;
             }
         },
-
+        new Option(false, "--no-recursive") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                task.options.recursive = Options.NO_RECURSIVE;
+            }
+        },
         new Option(false, "-I", "--inverse") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.inverse = true;
@@ -437,9 +451,9 @@ class JdepsTask {
         new Option(false, "--compile-time") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.compileTimeView = true;
+                task.options.recursive = Options.RECURSIVE;
                 task.options.filterSamePackage = true;
                 task.options.filterSameArchive = true;
-                task.options.depth = 0;
             }
         },
 
@@ -611,6 +625,13 @@ class JdepsTask {
     }
 
     private ListModuleDeps listModuleDeps(CommandOption option) throws BadArgs {
+        // do transitive dependence analysis unless --no-recursive is set
+        if (options.recursive != Options.NO_RECURSIVE) {
+            options.recursive = Options.RECURSIVE;
+        }
+        // no need to record the dependences on the same archive or same package
+        options.filterSameArchive = true;
+        options.filterSamePackage = true;
         switch (option) {
             case LIST_DEPS:
                 return new ListModuleDeps(option, true, false);
@@ -677,16 +698,16 @@ class JdepsTask {
 
         @Override
         boolean checkOptions() {
-            if (options.findJDKInternals) {
+            if (options.findJDKInternals || options.findMissingDeps) {
                 // cannot set any filter, -verbose and -summary option
                 if (options.showSummary || options.verbose != null) {
                     reportError("err.invalid.options", "-summary or -verbose",
-                                "-jdkinternals");
+                        options.findJDKInternals ? "-jdkinternals" : "--missing-deps");
                     return false;
                 }
                 if (options.hasFilter()) {
                     reportError("err.invalid.options", "--package, --regex, --require",
-                                "-jdkinternals");
+                        options.findJDKInternals ? "-jdkinternals" : "--missing-deps");
                     return false;
                 }
             }
@@ -715,7 +736,7 @@ class JdepsTask {
             if (options.showSummary)
                 return Type.SUMMARY;
 
-            if (options.findJDKInternals)
+            if (options.findJDKInternals || options.findMissingDeps)
                 return Type.CLASS;
 
             // default to package-level verbose
@@ -744,7 +765,7 @@ class JdepsTask {
                                                      type,
                                                      options.apiOnly);
 
-            boolean ok = analyzer.run(options.compileTimeView, options.depth);
+            boolean ok = analyzer.run(options.compileTimeView, options.depth());
 
             // print skipped entries, if any
             if (!options.nowarning) {
@@ -797,8 +818,8 @@ class JdepsTask {
 
         @Override
         boolean checkOptions() {
-            if (options.depth != 1) {
-                reportError("err.invalid.options", "-R", "--inverse");
+            if (options.recursive != -1 || options.depth != -1) {
+                reportError("err.invalid.options", "--recursive and --no-recursive", "--inverse");
                 return false;
             }
 
@@ -925,12 +946,7 @@ class JdepsTask {
 
             if (!ok && !options.nowarning) {
                 reportError("err.missing.dependences");
-                builder.visitMissingDeps(
-                        (origin, originArchive, target, targetArchive) -> {
-                            if (builder.notFound(targetArchive))
-                                log.format("   %-50s -> %-50s %s%n",
-                                    origin, target, targetArchive.getName());
-                        });
+                builder.visitMissingDeps(new SimpleDepVisitor());
             }
             return ok;
         }
@@ -993,13 +1009,15 @@ class JdepsTask {
         @Override
         boolean checkOptions() {
             if (options.showSummary || options.verbose != null) {
-                reportError("err.invalid.options", "-summary or -verbose",
-                            option);
+                reportError("err.invalid.options", "-summary or -verbose", option);
                 return false;
             }
             if (options.findJDKInternals) {
-                reportError("err.invalid.options", "-jdkinternals",
-                            option);
+                reportError("err.invalid.options", "-jdkinternals", option);
+                return false;
+            }
+            if (options.findMissingDeps) {
+                reportError("err.invalid.options", "--missing-deps", option);
                 return false;
             }
 
@@ -1015,15 +1033,21 @@ class JdepsTask {
 
         @Override
         boolean run(JdepsConfiguration config) throws IOException {
-            return new ModuleExportsAnalyzer(config,
-                                             dependencyFilter(config),
-                                             jdkinternals,
-                                             reduced,
-                                             log,
-                                             separator).run();
+            ModuleExportsAnalyzer analyzer = new ModuleExportsAnalyzer(config,
+                                                                       dependencyFilter(config),
+                                                                       jdkinternals,
+                                                                       reduced,
+                                                                       log,
+                                                                       separator);
+            boolean ok = analyzer.run(options.depth(), options.ignoreMissingDeps);
+            if (!ok) {
+                reportError("err.cant.list.module.deps");
+                log.println();
+                analyzer.visitMissingDeps(new SimpleDepVisitor());
+            }
+            return ok;
         }
     }
-
 
     class GenDotFile extends AnalyzeDeps {
         final Path dotOutputDir;
@@ -1053,6 +1077,18 @@ class JdepsTask {
         }
     }
 
+    class SimpleDepVisitor implements Analyzer.Visitor {
+        private Archive source;
+        @Override
+        public void visitDependence(String origin, Archive originArchive, String target, Archive targetArchive) {
+            if (source != originArchive) {
+                source = originArchive;
+                log.format("%s%n", originArchive);
+            }
+            log.format("   %-50s -> %-50s %s%n", origin, target, targetArchive.getName());
+        }
+    }
+
     /**
      * Returns a filter used during dependency analysis
      */
@@ -1066,6 +1102,7 @@ class JdepsTask {
         // target filters
         builder.filter(options.filterSamePackage, options.filterSameArchive);
         builder.findJDKInternals(options.findJDKInternals);
+        builder.findMissingDeps(options.findMissingDeps);
 
         // --require
         if (!options.requires.isEmpty()) {
@@ -1158,11 +1195,8 @@ class JdepsTask {
     private String version(String key) {
         // key=version:  mm.nn.oo[-milestone]
         // key=full:     mm.mm.oo[-milestone]-build
-        if (ResourceBundleHelper.versionRB == null) {
-            return System.getProperty("java.version");
-        }
         try {
-            return ResourceBundleHelper.versionRB.getString(key);
+            return ResourceBundleHelper.getVersion(key);
         } catch (MissingResourceException e) {
             return getMessage("version.unknown", System.getProperty("java.version"));
         }
@@ -1170,13 +1204,15 @@ class JdepsTask {
 
     static String getMessage(String key, Object... args) {
         try {
-            return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
+            return MessageFormat.format(ResourceBundleHelper.getMessage(key), args);
         } catch (MissingResourceException e) {
             throw new InternalError("Missing message: " + key);
         }
     }
 
     private static class Options {
+        static final int NO_RECURSIVE = 0;
+        static final int RECURSIVE = 1;
         boolean help;
         boolean version;
         boolean fullVersion;
@@ -1186,6 +1222,8 @@ class JdepsTask {
         boolean apiOnly;
         boolean showLabel;
         boolean findJDKInternals;
+        boolean findMissingDeps;
+        boolean ignoreMissingDeps;
         boolean nowarning = false;
         Analyzer.Type verbose;
         // default filter references from same package
@@ -1193,7 +1231,8 @@ class JdepsTask {
         boolean filterSameArchive = false;
         Pattern filterRegex;
         String classpath;
-        int depth = 1;
+        int recursive = -1;     // 0: --no-recursive, 1: --recursive
+        int depth = -1;
         Set<String> requires = new HashSet<>();
         Set<String> packageNames = new HashSet<>();
         Pattern regex;             // apply to the dependences
@@ -1222,9 +1261,23 @@ class JdepsTask {
             if (packageNames.size() > 0) count++;
             return count;
         }
+
+        int depth() {
+            // ignore -depth if --no-recursive is set
+            if (recursive == NO_RECURSIVE)
+                return 1;
+
+            // depth == 0 if recursive
+            if (recursive == RECURSIVE && depth == -1)
+                return 0;
+
+            // default depth is 1 unless specified via -depth option
+            return depth == -1 ? 1 : depth;
+        }
     }
 
     private static class ResourceBundleHelper {
+        static final String LS = System.lineSeparator();
         static final ResourceBundle versionRB;
         static final ResourceBundle bundle;
         static final ResourceBundle jdkinternals;
@@ -1247,6 +1300,21 @@ class JdepsTask {
                 throw new InternalError("Cannot find jdkinternals resource bundle");
             }
         }
+
+        static String getMessage(String key) {
+            return bundle.getString(key).replace("\n", LS);
+        }
+
+        static String getVersion(String key) {
+            if (ResourceBundleHelper.versionRB == null) {
+                return System.getProperty("java.version");
+            }
+            return versionRB.getString(key).replace("\n", LS);
+        }
+
+        static String getSuggestedReplacement(String key) {
+            return ResourceBundleHelper.jdkinternals.getString(key).replace("\n", LS);
+        }
     }
 
     /**
@@ -1258,7 +1326,7 @@ class JdepsTask {
         String value = null;
         while (value == null && name != null) {
             try {
-                value = ResourceBundleHelper.jdkinternals.getString(name);
+                value = ResourceBundleHelper.getSuggestedReplacement(name);
             } catch (MissingResourceException e) {
                 // go up one subpackage level
                 int i = name.lastIndexOf('.');

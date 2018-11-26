@@ -284,11 +284,11 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, int c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
   if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2_intptr(c + 1), result);
+    __ shift_left(left, log2_int(c + 1), result);
     __ sub(result, left, result);
     return true;
   } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2_intptr(c - 1), result);
+    __ shift_left(left, log2_int(c - 1), result);
     __ add(result, left, result);
     return true;
   }

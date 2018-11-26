@@ -59,11 +59,9 @@ public:
       _iter(iter) {}
 
   virtual void do_oop(oop* p) {
-    // Load barrier needed here for the same reason we
-    // need fixup_partial_loads() in ZHeap::mark_end().
-    // This barrier is also needed here in case we're
-    // treating the JVMTI weak tag map as strong roots.
-    const oop obj = ZBarrier::load_barrier_on_oop_field(p);
+    // Load barrier needed here, even on non-concurrent strong roots,
+    // for the same reason we need fixup_partial_loads() in ZHeap::mark_end().
+    const oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
     _iter->push(obj);
   }
 
@@ -80,9 +78,9 @@ private:
 
   oop load_oop(oop* p) const {
     if (_visit_referents) {
-      return HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+      return HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_load_at(_base, _base->field_offset(p));
     } else {
-      return HeapAccess<>::oop_load(p);
+      return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
     }
   }
 
@@ -164,18 +162,36 @@ void ZHeapIterator::push(oop obj) {
 }
 
 void ZHeapIterator::objects_do(ObjectClosure* cl) {
-  // Push roots onto stack
+  // Note that the heap iterator visits all reachable objects, including
+  // objects that might be unreachable from the application, such as a
+  // not yet cleared JNIWeakGloablRef. However, also note that visiting
+  // the JVMTI tag map is a requirement to make sure we visit all tagged
+  // objects, even those that might now have become phantom reachable.
+  // If we didn't do this the application would have expected to see
+  // ObjectFree events for phantom reachable objects in the tag map.
+
+  ZHeapIteratorRootOopClosure root_cl(this);
+
+  // Push strong roots onto stack
   {
-    // Note that we also visit the JVMTI weak tag map as if they were
-    // strong roots to make sure we visit all tagged objects, even
-    // those that might now have become unreachable. If we didn't do
-    // this the user would have expected to see ObjectFree events for
-    // unreachable objects in the tag map.
     ZRootsIterator roots;
-    ZConcurrentRootsIterator concurrent_roots(false /* marking */);
-    ZHeapIteratorRootOopClosure root_cl(this);
-    roots.oops_do(&root_cl, true /* visit_jvmti_weak_export */);
-    concurrent_roots.oops_do(&root_cl);
+    roots.oops_do(&root_cl);
+  }
+
+  {
+    ZConcurrentRootsIterator roots;
+    roots.oops_do(&root_cl);
+  }
+
+  // Push weak roots onto stack
+  {
+    ZWeakRootsIterator roots;
+    roots.oops_do(&root_cl);
+  }
+
+  {
+    ZConcurrentWeakRootsIterator roots;
+    roots.oops_do(&root_cl);
   }
 
   // Drain stack

@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_THREAD_HPP
 
 #include "jni.h"
+#include "code/compiledMethod.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
@@ -40,7 +41,6 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
-#include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
@@ -994,7 +994,7 @@ class JavaThread: public Thread {
  public:                                         // Expose _thread_state for SafeFetchInt()
   volatile JavaThreadState _thread_state;
  private:
-  ThreadSafepointState *_safepoint_state;        // Holds information about a thread during a safepoint
+  ThreadSafepointState* _safepoint_state;        // Holds information about a thread during a safepoint
   address               _saved_exception_pc;     // Saved pc of instruction where last implicit exception happened
 
   // JavaThread termination support
@@ -1226,9 +1226,9 @@ class JavaThread: public Thread {
   inline JavaThreadState thread_state() const;
   inline void set_thread_state(JavaThreadState s);
 #endif
-  ThreadSafepointState *safepoint_state() const  { return _safepoint_state; }
-  void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
-  bool is_at_poll_safepoint()                    { return _safepoint_state->is_at_poll_safepoint(); }
+  inline ThreadSafepointState* safepoint_state() const;
+  inline void set_safepoint_state(ThreadSafepointState* state);
+  inline bool is_at_poll_safepoint();
 
   // JavaThread termination and lifecycle support:
   void smr_delete();
@@ -1751,13 +1751,7 @@ class JavaThread: public Thread {
   // JNI critical regions. These can nest.
   bool in_critical()    { return _jni_active_critical > 0; }
   bool in_last_critical()  { return _jni_active_critical == 1; }
-  void enter_critical() {
-    assert(Thread::current() == this ||
-           (Thread::current()->is_VM_thread() &&
-           SafepointSynchronize::is_synchronizing()),
-           "this must be current thread or synchronizing");
-    _jni_active_critical++;
-  }
+  inline void enter_critical();
   void exit_critical() {
     assert(Thread::current() == this, "this must be current thread");
     _jni_active_critical--;

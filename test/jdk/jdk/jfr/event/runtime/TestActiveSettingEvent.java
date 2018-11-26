@@ -201,6 +201,10 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.ActiveRecording + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaExceptionThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaErrorThrow + "#threshold", "0 ns");
+        settingValues.put(EventNames.SecurityProperty + "#threshold", "0 ns");
+        settingValues.put(EventNames.TLSHandshake + "#threshold", "0 ns");
+        settingValues.put(EventNames.X509Certificate + "#threshold", "0 ns");
+        settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

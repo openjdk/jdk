@@ -2555,7 +2555,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
   Register dreg = result->as_register();
 
   if (right->is_constant()) {
-    int divisor = right->as_constant_ptr()->as_jint();
+    jint divisor = right->as_constant_ptr()->as_jint();
     assert(divisor > 0 && is_power_of_2(divisor), "must be");
     if (code == lir_idiv) {
       assert(lreg == rax, "must be rax,");
@@ -2567,7 +2567,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         __ andl(rdx, divisor - 1);
         __ addl(lreg, rdx);
       }
-      __ sarl(lreg, log2_intptr(divisor));
+      __ sarl(lreg, log2_jint(divisor));
       move_regs(lreg, dreg);
     } else if (code == lir_irem) {
       Label done;

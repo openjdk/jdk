@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem building the documentation
      */
     protected void buildAnnotationTypeDoc(Content contentTree) throws DocletException {
-        contentTree = writer.getHeader(configuration.getText("doclet.AnnotationType") +
+        contentTree = writer.getHeader(resources.getText("doclet.AnnotationType") +
                " " + utils.getSimpleName(annotationType));
         Content annotationContentTree = writer.getAnnotationContentHeader();
 

@@ -1946,7 +1946,8 @@ static void codecache_print(outputStream* out, bool detailed) {
   }
 }
 
-void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env) {
+void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
+                                 int compilable, const char* failure_reason) {
   if (success) {
     task->mark_success();
     if (ci_env != NULL) {
@@ -1957,6 +1958,13 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool
       if (code != NULL) {
         _compilation_log->log_nmethod(thread, code);
       }
+    }
+  } else if (AbortVMOnCompilationFailure) {
+    if (compilable == ciEnv::MethodCompilable_not_at_tier) {
+      fatal("Not compilable at tier %d: %s", task->comp_level(), failure_reason);
+    }
+    if (compilable == ciEnv::MethodCompilable_never) {
+      fatal("Never compilable: %s", failure_reason);
     }
   }
   // simulate crash during compilation
@@ -2068,7 +2076,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           compilable = ciEnv::MethodCompilable_not_at_tier;
         }
     }
-    post_compile(thread, task, task->code() != NULL, NULL);
+    post_compile(thread, task, task->code() != NULL, NULL, compilable, failure_reason);
     if (event.should_commit()) {
       post_compilation_event(&event, task);
     }
@@ -2128,7 +2136,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.report_failure(failure_reason);
     }
 
-    post_compile(thread, task, !ci_env.failing(), &ci_env);
+    post_compile(thread, task, !ci_env.failing(), &ci_env, compilable, failure_reason);
     if (event.should_commit()) {
       post_compilation_event(&event, task);
     }

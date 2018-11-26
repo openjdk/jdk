@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class CommentUtils {
 
     final BaseConfiguration configuration;
+    final Resources resources;
     final DocTreeFactory treeFactory;
     final HashMap<Element, DocCommentDuo> dcTreesMap = new HashMap<>();
     final DocTrees trees;
@@ -72,6 +73,7 @@ public class CommentUtils {
 
     protected CommentUtils(BaseConfiguration configuration) {
         this.configuration = configuration;
+        resources = configuration.getResources();
         trees = configuration.docEnv.getDocTrees();
         treeFactory = trees.getDocTreeFactory();
         elementUtils = configuration.docEnv.getElementUtils();
@@ -110,15 +112,15 @@ public class CommentUtils {
         return (DocTree) text;
     }
 
-    public void setEnumValuesTree(BaseConfiguration config, Element e) {
-        Utils utils = config.utils;
+    public void setEnumValuesTree(Element e) {
+        Utils utils = configuration.utils;
         String klassName = utils.getSimpleName(utils.getEnclosingTypeElement(e));
 
         List<DocTree> fullBody = new ArrayList<>();
-        fullBody.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.fullbody", klassName)));
+        fullBody.add(treeFactory.newTextTree(resources.getText("doclet.enum_values_doc.fullbody", klassName)));
 
         List<DocTree> descriptions = new ArrayList<>();
-        descriptions.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.return")));
+        descriptions.add(treeFactory.newTextTree(resources.getText("doclet.enum_values_doc.return")));
 
         List<DocTree> tags = new ArrayList<>();
         tags.add(treeFactory.newReturnTree(descriptions));
@@ -126,15 +128,15 @@ public class CommentUtils {
         dcTreesMap.put(e, new DocCommentDuo(null, docTree));
     }
 
-    public void setEnumValueOfTree(BaseConfiguration config, Element e) {
+    public void setEnumValueOfTree(Element e) {
 
         List<DocTree> fullBody = new ArrayList<>();
-        fullBody.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.fullbody")));
+        fullBody.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.fullbody")));
 
         List<DocTree> tags = new ArrayList<>();
 
         List<DocTree> paramDescs = new ArrayList<>();
-        paramDescs.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.param_name")));
+        paramDescs.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.param_name")));
         ExecutableElement ee = (ExecutableElement) e;
         java.util.List<? extends VariableElement> parameters = ee.getParameters();
         VariableElement param = parameters.get(0);
@@ -142,17 +144,17 @@ public class CommentUtils {
         tags.add(treeFactory.newParamTree(false, id, paramDescs));
 
         List<DocTree> returnDescs = new ArrayList<>();
-        returnDescs.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.return")));
+        returnDescs.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.return")));
         tags.add(treeFactory.newReturnTree(returnDescs));
 
         List<DocTree> throwsDescs = new ArrayList<>();
-        throwsDescs.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.throws_ila")));
+        throwsDescs.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.throws_ila")));
 
         ReferenceTree ref = treeFactory.newReferenceTree("java.lang.IllegalArgumentException");
         tags.add(treeFactory.newThrowsTree(ref, throwsDescs));
 
         throwsDescs = new ArrayList<>();
-        throwsDescs.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.throws_npe")));
+        throwsDescs.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.throws_npe")));
 
         ref = treeFactory.newReferenceTree("java.lang.NullPointerException");
         tags.add(treeFactory.newThrowsTree(ref, throwsDescs));

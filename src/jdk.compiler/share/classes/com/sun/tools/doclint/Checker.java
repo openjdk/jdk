@@ -59,7 +59,9 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
+import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
@@ -71,6 +73,7 @@ import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
+import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -765,6 +768,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitIndex(IndexTree tree, Void ignore) {
+        for (TagStackItem tsi : tagStack) {
+            if (tsi.tag == HtmlTag.A) {
+                env.messages.warning(HTML, tree, "dc.tag.a.within.a",
+                        "{@" + tree.getTagName() + "}");
+                break;
+            }
+        }
+        return super.visitIndex(tree, ignore);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitInheritDoc(InheritDocTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         // TODO: verify on overridden method
@@ -867,12 +882,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         String sig = tree.getSignature();
-        if (sig.contains("<") || sig.contains(">"))
+        if (sig.contains("<") || sig.contains(">")) {
             env.messages.error(REFERENCE, tree, "dc.type.arg.not.allowed");
-
-        Element e = env.trees.getElement(getCurrentPath());
-        if (e == null)
-            env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        } else if (isArrayType(sig)) {
+            env.messages.error(REFERENCE, tree, "dc.array.type.not.allowed");
+        } else {
+            Element e = env.trees.getElement(getCurrentPath());
+            if (e == null)
+                env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        }
         return super.visitReference(tree, ignore);
     }
 
@@ -921,6 +939,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSystemProperty(SystemPropertyTree tree, Void ignore) {
+        for (TagStackItem tsi : tagStack) {
+            if (tsi.tag == HtmlTag.A) {
+                env.messages.warning(HTML, tree, "dc.tag.a.within.a",
+                        "{@" + tree.getTagName() + "}");
+                break;
+            }
+        }
+        return super.visitSystemProperty(tree, ignore);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitThrows(ThrowsTree tree, Void ignore) {
         ReferenceTree exName = tree.getExceptionName();
         Element ex = env.trees.getElement(new DocTreePath(getCurrentPath(), exName));
@@ -943,6 +973,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         warnIfEmpty(tree, tree.getDescription());
         return scan(tree.getDescription(), ignore);
+    }
+
+    private boolean isArrayType(String signature) {
+        int brackets = signature.indexOf('[');
+        int parens = signature.indexOf('(');
+        return brackets >= 0 && (parens < 0 || brackets < parens);
     }
 
     private boolean isThrowable(TypeMirror tm) {

@@ -118,7 +118,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @throws DocFileIOException if there is a problem generating an index file
      */
     protected void generateIndexFile(Character unicode) throws DocFileIOException {
-        String title = configuration.getText("doclet.Window_Split_Index",
+        String title = resources.getText("doclet.Window_Split_Index",
                 unicode.toString());
         HtmlTree body = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))

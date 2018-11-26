@@ -39,6 +39,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public enum HtmlAttr {
     ALT,
+    ARIA_CONTROLS("aria-controls"),
+    ARIA_LABELLEDBY("aria-labelledby"),
+    ARIA_ORIENTATION("aria-orientation"),
+    ARIA_SELECTED("aria-selected"),
     CLASS,
     CLEAR,
     COLS,
@@ -51,6 +55,7 @@ public enum HtmlAttr {
     LANG,
     NAME,
     ONCLICK,
+    ONKEYDOWN,
     ONLOAD,
     REL,
     ROLE,
@@ -59,6 +64,7 @@ public enum HtmlAttr {
     SCROLLING,
     SRC,
     SUMMARY,
+    TABINDEX,
     TARGET,
     TITLE,
     TYPE,

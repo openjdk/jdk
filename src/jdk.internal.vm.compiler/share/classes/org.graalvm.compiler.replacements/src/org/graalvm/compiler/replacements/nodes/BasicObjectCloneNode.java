@@ -145,7 +145,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
                 tool.createVirtualObject(newVirtual, state, Collections.<MonitorIdNode> emptyList(), false);
                 tool.replaceWithVirtual(newVirtual);
             } else {
-                ValueNode length = findLength(FindLengthMode.SEARCH_ONLY, tool.getConstantReflectionProvider());
+                ValueNode length = findLength(FindLengthMode.SEARCH_ONLY, tool.getConstantReflection());
                 if (length == null) {
                     return;
                 }

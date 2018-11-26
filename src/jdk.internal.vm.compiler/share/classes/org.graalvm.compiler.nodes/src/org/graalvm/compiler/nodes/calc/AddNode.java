@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.compiler.nodes.calc;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Add;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
@@ -38,7 +39,9 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo(shortName = "+")
@@ -97,6 +100,54 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
                 ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY, view);
                 if (reassociated != self) {
                     return reassociated;
+                }
+            }
+
+            // Attempt to optimize the pattern of an extend node between two add nodes.
+            if (c instanceof JavaConstant && (forX instanceof SignExtendNode || forX instanceof ZeroExtendNode)) {
+                IntegerConvertNode<?, ?> integerConvertNode = (IntegerConvertNode<?, ?>) forX;
+                ValueNode valueNode = integerConvertNode.getValue();
+                long constant = ((JavaConstant) c).asLong();
+                if (valueNode instanceof AddNode) {
+                    AddNode addBeforeExtend = (AddNode) valueNode;
+                    if (addBeforeExtend.getY().isConstant()) {
+                        // There is a second add before the extend node that also has a constant as
+                        // second operand. Therefore there will be canonicalizations triggered if we
+                        // can move the add above the extension. For this we need to check whether
+                        // the result of the addition is the same before the extension (which can be
+                        // either zero extend or sign extend).
+                        IntegerStamp beforeExtendStamp = (IntegerStamp) addBeforeExtend.stamp(view);
+                        int bits = beforeExtendStamp.getBits();
+                        if (constant >= CodeUtil.minValue(bits) && constant <= CodeUtil.maxValue(bits)) {
+                            IntegerStamp narrowConstantStamp = IntegerStamp.create(bits, constant, constant);
+
+                            if (!IntegerStamp.addCanOverflow(narrowConstantStamp, beforeExtendStamp)) {
+                                ConstantNode constantNode = ConstantNode.forIntegerStamp(narrowConstantStamp, constant);
+                                if (forX instanceof SignExtendNode) {
+                                    return SignExtendNode.create(AddNode.create(addBeforeExtend, constantNode, view), integerConvertNode.getResultBits(), view);
+                                } else {
+                                    assert forX instanceof ZeroExtendNode;
+
+                                    // Must check to not cross zero with the new add.
+                                    boolean crossesZeroPoint = true;
+                                    if (constant > 0) {
+                                        if (beforeExtendStamp.lowerBound() >= 0 || beforeExtendStamp.upperBound() < -constant) {
+                                            // We are good here.
+                                            crossesZeroPoint = false;
+                                        }
+                                    } else {
+                                        if (beforeExtendStamp.lowerBound() >= -constant || beforeExtendStamp.upperBound() < 0) {
+                                            // We are good here as well.
+                                            crossesZeroPoint = false;
+                                        }
+                                    }
+                                    if (!crossesZeroPoint) {
+                                        return ZeroExtendNode.create(AddNode.create(addBeforeExtend, constantNode, view), integerConvertNode.getResultBits(), view);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

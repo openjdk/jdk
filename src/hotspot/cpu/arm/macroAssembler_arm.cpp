@@ -941,6 +941,12 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   bind(done);
 }
 
+void MacroAssembler::c2bool(Register x)
+{
+  tst(x, 0xff);   // Only look at the lowest byte
+  mov(x, 1, ne);
+}
+
 void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
   if (needs_explicit_null_check(offset)) {
     assert_different_registers(reg, tmp);

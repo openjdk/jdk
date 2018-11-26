@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178339 8182765
+ * @bug 8178339 8182765 8184205
  * @summary Tests indirect exports and opens in the module summary page
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -219,7 +219,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
         }
 
         checkOutput("a/module-summary.html", present,
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
@@ -231,7 +232,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 + "<td class=\"colLast\"><a href=\"../m/pm/package-summary.html\">pm</a></td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>\n");
+                + "</table>\n"
+                + "</div>");
     }
 
     void verifyIndirectExports_html4(boolean present) {
@@ -253,7 +255,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
         }
 
         checkOutput("a/module-summary.html", present,
-                "<table class=\"packagesSummary\" summary=\"" + typeString + " table, listing modules, and packages\">\n"
+                "<div class=\"packagesSummary\">\n"
+                + "<table summary=\"" + typeString + " table, listing modules, and packages\">\n"
                 + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
@@ -265,6 +268,7 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 + "<td class=\"colLast\"><a href=\"../m/pm/package-summary.html\">pm</a></td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
-                + "</table>\n");
+                + "</table>\n"
+                + "</div>");
     }
 }

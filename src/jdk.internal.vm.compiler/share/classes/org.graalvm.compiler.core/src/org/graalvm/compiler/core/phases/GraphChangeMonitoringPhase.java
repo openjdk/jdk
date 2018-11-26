@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
+import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /**
@@ -68,7 +68,7 @@ public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSui
          * Phase may add nodes but not end up using them so ignore additions. Nodes going dead and
          * having their inputs change are the main interesting differences.
          */
-        HashSetNodeEventListener listener = new HashSetNodeEventListener().exclude(NodeEvent.NODE_ADDED);
+        EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener().exclude(NodeEvent.NODE_ADDED);
         StructuredGraph graphCopy = (StructuredGraph) graph.copy(graph.getDebug());
         DebugContext debug = graph.getDebug();
         try (NodeEventScope s = graphCopy.trackNodeEvents(listener)) {
@@ -90,7 +90,7 @@ public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSui
         }
         if (!filteredNodes.isEmpty()) {
             /* rerun it on the real graph in a new Debug scope so Dump and Log can find it. */
-            listener = new HashSetNodeEventListener();
+            listener = new EconomicSetNodeEventListener();
             try (NodeEventScope s = graph.trackNodeEvents(listener)) {
                 try (DebugContext.Scope s2 = debug.scope("WithGraphChangeMonitoring")) {
                     if (debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {

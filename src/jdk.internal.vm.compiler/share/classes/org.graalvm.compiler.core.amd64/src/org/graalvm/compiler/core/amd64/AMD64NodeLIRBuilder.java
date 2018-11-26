@@ -25,8 +25,6 @@
 
 package org.graalvm.compiler.core.amd64;
 
-import static org.graalvm.compiler.core.amd64.AMD64NodeLIRBuilder.Options.MitigateSpeculativeExecutionAttacks;
-
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -41,24 +39,12 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode.Op;
-import org.graalvm.compiler.nodes.cfg.Block;
-import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 
 public abstract class AMD64NodeLIRBuilder extends NodeLIRBuilder {
-
-    public static class Options {
-        // @formatter:off
-        @Option(help = "AMD64: Emit lfence instructions at the beginning of basic blocks", type = OptionType.Expert)
-        public static final OptionKey<Boolean> MitigateSpeculativeExecutionAttacks = new OptionKey<>(false);
-        // @formatter:on
-    }
 
     public AMD64NodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, AMD64NodeMatchRules nodeMatchRules) {
         super(graph, gen, nodeMatchRules);
@@ -136,22 +122,5 @@ public abstract class AMD64NodeLIRBuilder extends NodeLIRBuilder {
     @Override
     public AMD64LIRGenerator getLIRGeneratorTool() {
         return (AMD64LIRGenerator) gen;
-    }
-
-    @Override
-    public void doBlockPrologue(Block block, OptionValues options) {
-        if (MitigateSpeculativeExecutionAttacks.getValue(options)) {
-            boolean hasControlSplitPredecessor = false;
-            for (Block b : block.getPredecessors()) {
-                if (b.getSuccessorCount() > 1) {
-                    hasControlSplitPredecessor = true;
-                    break;
-                }
-            }
-            boolean isStartBlock = block.getPredecessorCount() == 0;
-            if (hasControlSplitPredecessor || isStartBlock) {
-                getLIRGeneratorTool().emitLFence();
-            }
-        }
     }
 }

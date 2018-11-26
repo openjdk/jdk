@@ -85,8 +85,8 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_suspThread(JNIEnv *env,
     }
 
     printf(">>>>>>>> Invoke SuspendThread()\n");
-    if ((err = (jvmti->SuspendThread(earlyretThr)))
-                                         != JVMTI_ERROR_NONE) {
+    err = jvmti->SuspendThread(earlyretThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call SuspendThread(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         return JNI_ERR;
@@ -106,8 +106,8 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_resThread(JNIEnv *env,
     }
 
     printf(">>>>>>>> Invoke ResumeThread()\n");
-    if ((err = (jvmti->ResumeThread(earlyretThr)))
-                                        != JVMTI_ERROR_NONE) {
+    err = jvmti->ResumeThread(earlyretThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call ResumeThread(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         return JNI_ERR;
@@ -168,8 +168,8 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
     }
     printf("After call to GetMethodID(%s, %s)\n", name_exp, sig_exp);
 
-    if ((err = (jvmti->ForceEarlyReturnLong(earlyretThr, valToRet)))
-                                                          != JVMTI_ERROR_NONE) {
+    err = jvmti->ForceEarlyReturnLong(earlyretThr, valToRet);
+    if (err != JVMTI_ERROR_NONE) {
         printf("TEST FAILED: the function ForceEarlyReturn()"
                " returned the error %d: %s\n",
                err, TranslateError(err));

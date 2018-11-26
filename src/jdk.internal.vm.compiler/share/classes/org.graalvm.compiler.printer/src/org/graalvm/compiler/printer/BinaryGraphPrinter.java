@@ -229,29 +229,23 @@ public class BinaryGraphPrinter implements
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void nodeProperties(GraphInfo info, Node node, Map<String, Object> props) {
         node.getDebugProperties((Map) props);
-        Graph graph = info.graph;
-        ControlFlowGraph cfg = info.cfg;
         NodeMap<Block> nodeToBlocks = info.nodeToBlocks;
-        if (cfg != null && DebugOptions.PrintGraphProbabilities.getValue(graph.getOptions()) && node instanceof FixedNode) {
-            try {
-                props.put("probability", cfg.blockFor(node).probability());
-            } catch (Throwable t) {
-                props.put("probability", 0.0);
-                props.put("probability-exception", t);
+
+        if (nodeToBlocks != null) {
+            Block block = getBlockForNode(node, nodeToBlocks);
+            if (block != null) {
+                props.put("relativeFrequency", block.getRelativeFrequency());
+                props.put("nodeToBlock", block);
             }
         }
 
-        try {
-            props.put("NodeCost-Size", node.estimatedNodeSize());
-            props.put("NodeCost-Cycles", node.estimatedNodeCycles());
-        } catch (Throwable t) {
-            props.put("node-cost-exception", t.getMessage());
-        }
+        props.put("nodeCostSize", node.estimatedNodeSize());
+        props.put("nodeCostCycles", node.estimatedNodeCycles());
 
         if (nodeToBlocks != null) {
             Object block = getBlockForNode(node, nodeToBlocks);
             if (block != null) {
-                props.put("node-to-block", block);
+                props.put("nodeToBlock", block);
             }
         }
 
@@ -289,13 +283,13 @@ public class BinaryGraphPrinter implements
         }
     }
 
-    private Object getBlockForNode(Node node, NodeMap<Block> nodeToBlocks) {
+    private Block getBlockForNode(Node node, NodeMap<Block> nodeToBlocks) {
         if (nodeToBlocks.isNew(node)) {
-            return "NEW (not in schedule)";
+            return null;
         } else {
             Block block = nodeToBlocks.get(node);
             if (block != null) {
-                return block.getId();
+                return block;
             } else if (node instanceof PhiNode) {
                 return getBlockForNode(((PhiNode) node).merge(), nodeToBlocks);
             }

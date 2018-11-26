@@ -397,6 +397,7 @@ class Assembler : public AbstractAssembler {
     LWAX_OPCODE   = (31u << OPCODE_SHIFT | 341u << XO_21_30_SHIFT), // X-FORM
 
     CNTLZW_OPCODE = (31u << OPCODE_SHIFT |  26u << XO_21_30_SHIFT), // X-FORM
+    CNTTZW_OPCODE = (31u << OPCODE_SHIFT | 538u << XO_21_30_SHIFT), // X-FORM
 
     // 64 bit opcode encodings
 
@@ -428,6 +429,7 @@ class Assembler : public AbstractAssembler {
     DIVD_OPCODE   = (31u << OPCODE_SHIFT | 489u << 1),              // XO-FORM
 
     CNTLZD_OPCODE = (31u << OPCODE_SHIFT |  58u << XO_21_30_SHIFT), // X-FORM
+    CNTTZD_OPCODE = (31u << OPCODE_SHIFT | 570u << XO_21_30_SHIFT), // X-FORM
     NAND_OPCODE   = (31u << OPCODE_SHIFT | 476u << XO_21_30_SHIFT), // X-FORM
     NOR_OPCODE    = (31u << OPCODE_SHIFT | 124u << XO_21_30_SHIFT), // X-FORM
 
@@ -1500,6 +1502,10 @@ class Assembler : public AbstractAssembler {
   inline void cntlzw_( Register a, Register s);
   inline void cntlzd(  Register a, Register s);
   inline void cntlzd_( Register a, Register s);
+  inline void cnttzw(  Register a, Register s);
+  inline void cnttzw_( Register a, Register s);
+  inline void cnttzd(  Register a, Register s);
+  inline void cnttzd_( Register a, Register s);
 
   // PPC 1, section 3.3.12, Fixed-Point Rotate and Shift Instructions
   inline void sld(     Register a, Register s, Register b);

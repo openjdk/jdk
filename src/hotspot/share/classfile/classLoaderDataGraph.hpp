@@ -73,6 +73,8 @@ class ClassLoaderDataGraph : public AllStatic {
   static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
+  // Iteration through CLDG not by GC.
+  static void loaded_cld_do(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,56 +24,74 @@
 
 package org.graalvm.compiler.core.test;
 
-import static org.graalvm.compiler.graph.test.matchers.NodeIterableIsEmpty.isNotEmpty;
-
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class CompareCanonicalizerTest2 extends GraalCompilerTest {
 
-    @SuppressWarnings("unused") private static int sink0;
-    @SuppressWarnings("unused") private static int sink1;
+    @SuppressWarnings("unused") private static boolean sink;
 
     private StructuredGraph getCanonicalizedGraph(String name) {
-        StructuredGraph graph = parseEager(name, AllowAssumptions.YES);
+        StructuredGraph graph = getRegularGraph(name);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         return graph;
     }
 
-    public void testIntegerTestCanonicalization(String name) {
-        StructuredGraph graph = getCanonicalizedGraph(name);
-        Assert.assertThat(graph.getNodes().filter(IntegerLessThanNode.class), isNotEmpty());
+    private StructuredGraph getRegularGraph(String name) {
+        StructuredGraph graph = parseEager(name, AllowAssumptions.YES);
+        return graph;
     }
 
     @Test
     public void test0() {
-        testIntegerTestCanonicalization("integerTestCanonicalization0");
+        assertEquals(getCanonicalizedGraph("integerTestCanonicalization0"), getRegularGraph("integerTestCanonicalization0"));
+    }
+
+    public static void integerTestCanonicalization0(int a) {
+        sink = 1 < a + 1;
     }
 
     @Test
     public void test1() {
-        testIntegerTestCanonicalization("integerTestCanonicalization1");
-    }
-
-    public static void integerTestCanonicalization0(int a) {
-        if (1 < a + 1) {
-            sink1 = 0;
-        } else {
-            sink0 = -1;
-        }
+        assertEquals(getCanonicalizedGraph("integerTestCanonicalization1"), getRegularGraph("integerTestCanonicalization1"));
     }
 
     public static void integerTestCanonicalization1(int a) {
-        if (a - 1 < -1) {
-            sink1 = 0;
-        } else {
-            sink0 = -1;
-        }
+        sink = a - 1 < -1;
+    }
+
+    @Test
+    public void test2() {
+        assertEquals(getCanonicalizedGraph("integerTestCanonicalization2a"), getCanonicalizedGraph("integerTestCanonicalization2Reference"));
+        assertEquals(getCanonicalizedGraph("integerTestCanonicalization2b"), getCanonicalizedGraph("integerTestCanonicalization2Reference"));
+    }
+
+    public static boolean integerTestCanonicalization2a(Object[] arr) {
+        return arr.length - 1 < 0;
+    }
+
+    public static boolean integerTestCanonicalization2b(Object[] arr) {
+        return arr.length < 1;
+    }
+
+    public static boolean integerTestCanonicalization2Reference(Object[] arr) {
+        return arr.length == 0;
+    }
+
+    @Test
+    public void test3() {
+        assertEquals(getCanonicalizedGraph("integerTestCanonicalization3"), getCanonicalizedGraph("integerTestCanonicalization3Reference"));
+    }
+
+    public static boolean integerTestCanonicalization3(Object[] arr) {
+        return ((long) (arr.length - 1)) - 1 < 0;
+    }
+
+    public static boolean integerTestCanonicalization3Reference(Object[] arr) {
+        return arr.length < 2;
     }
 
 }

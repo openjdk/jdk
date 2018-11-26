@@ -87,8 +87,10 @@ import java.util.Formatter;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.graalvm.compiler.test.SubprocessUtil;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
@@ -123,6 +125,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * {@link ResolvedJavaMethod} objects.
  */
 public class ClassfileBytecodeProviderTest extends GraalCompilerTest {
+
+    @Before
+    public void checkJavaAgent() {
+        assumeManagementLibraryIsLoadable();
+        Assume.assumeFalse("Java Agent found -> skipping", SubprocessUtil.isJavaAgentAttached());
+    }
 
     private static boolean shouldProcess(String classpathEntry) {
         if (classpathEntry.endsWith(".jar")) {

@@ -85,6 +85,24 @@ public final class IntegerBelowNode extends IntegerLowerThanNode {
         }
 
         @Override
+        protected LogicNode findSynonym(ValueNode forX, ValueNode forY, NodeView view) {
+            LogicNode result = super.findSynonym(forX, forY, view);
+            if (result != null) {
+                return result;
+            }
+            if (forX.stamp(view) instanceof IntegerStamp) {
+                assert forY.stamp(view) instanceof IntegerStamp;
+                int bits = ((IntegerStamp) forX.stamp(view)).getBits();
+                assert ((IntegerStamp) forY.stamp(view)).getBits() == bits;
+                LogicNode logic = canonicalizeRangeFlip(forX, forY, bits, false, view);
+                if (logic != null) {
+                    return logic;
+                }
+            }
+            return null;
+        }
+
+        @Override
         protected long upperBound(IntegerStamp stamp) {
             return stamp.unsignedUpperBound();
         }

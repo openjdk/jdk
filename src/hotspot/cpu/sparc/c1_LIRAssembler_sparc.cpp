@@ -502,7 +502,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
         __ and3(Rscratch, divisor - 1, Rscratch);
       }
       __ add(Rdividend, Rscratch, Rscratch);
-      __ sra(Rscratch, log2_intptr(divisor), Rresult);
+      __ sra(Rscratch, log2_int(divisor), Rresult);
       return;
     } else {
       if (divisor == 2) {

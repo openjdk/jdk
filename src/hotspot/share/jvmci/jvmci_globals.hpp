@@ -98,7 +98,22 @@
           "Number of methods to record in call profile")                    \
                                                                             \
   develop(bool, TraceUncollectedSpeculations, false,                        \
-          "Print message when a failed speculation was not collected")
+          "Print message when a failed speculation was not collected")      \
+                                                                            \
+  NOT_COMPILER2(diagnostic(bool, UseMultiplyToLenIntrinsic, false,          \
+          "Enables intrinsification of BigInteger.multiplyToLen()"))        \
+                                                                            \
+  NOT_COMPILER2(diagnostic(bool, UseSquareToLenIntrinsic, false,            \
+          "Enables intrinsification of BigInteger.squareToLen()"))          \
+                                                                            \
+  NOT_COMPILER2(diagnostic(bool, UseMulAddIntrinsic, false,                 \
+          "Enables intrinsification of BigInteger.mulAdd()"))               \
+                                                                            \
+  NOT_COMPILER2(diagnostic(bool, UseMontgomeryMultiplyIntrinsic, false,     \
+          "Enables intrinsification of BigInteger.montgomeryMultiply()"))   \
+                                                                            \
+  NOT_COMPILER2(diagnostic(bool, UseMontgomerySquareIntrinsic, false,       \
+          "Enables intrinsification of BigInteger.montgomerySquare()"))
 
 
 // Read default values for JVMCI globals

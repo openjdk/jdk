@@ -84,7 +84,10 @@ import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64Shift;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.SSEOp;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexGeneralPurposeRVMOp;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexGeneralPurposeRMOp;
 import org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize;
+import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -106,6 +109,8 @@ import org.graalvm.compiler.lir.amd64.AMD64MulDivOp;
 import org.graalvm.compiler.lir.amd64.AMD64ShiftOp;
 import org.graalvm.compiler.lir.amd64.AMD64SignExtendOp;
 import org.graalvm.compiler.lir.amd64.AMD64Unary;
+import org.graalvm.compiler.lir.amd64.vector.AMD64VectorBinary;
+import org.graalvm.compiler.lir.amd64.vector.AMD64VectorUnary;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 
@@ -928,6 +933,57 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         } else {
             getLIRGen().append(new AMD64Unary.RMOp(TZCNT, DWORD, result, asAllocatable(value)));
         }
+        return result;
+    }
+
+    @Override
+    public Value emitLogicalAndNot(Value value1, Value value2) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value1, value2));
+
+        if (value1.getPlatformKind() == AMD64Kind.QWORD) {
+            getLIRGen().append(new AMD64VectorBinary.AVXBinaryOp(VexGeneralPurposeRVMOp.ANDN, AVXSize.QWORD, result, asAllocatable(value1), asAllocatable(value2)));
+        } else {
+            getLIRGen().append(new AMD64VectorBinary.AVXBinaryOp(VexGeneralPurposeRVMOp.ANDN, AVXSize.DWORD, result, asAllocatable(value1), asAllocatable(value2)));
+        }
+        return result;
+    }
+
+    @Override
+    public Value emitLowestSetIsolatedBit(Value value) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value));
+
+        if (value.getPlatformKind() == AMD64Kind.QWORD) {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSI, AVXSize.QWORD, result, asAllocatable(value)));
+        } else {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSI, AVXSize.DWORD, result, asAllocatable(value)));
+        }
+
+        return result;
+    }
+
+    @Override
+    public Value emitGetMaskUpToLowestSetBit(Value value) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value));
+
+        if (value.getPlatformKind() == AMD64Kind.QWORD) {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSMSK, AVXSize.QWORD, result, asAllocatable(value)));
+        } else {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSMSK, AVXSize.DWORD, result, asAllocatable(value)));
+        }
+
+        return result;
+    }
+
+    @Override
+    public Value emitResetLowestSetBit(Value value) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value));
+
+        if (value.getPlatformKind() == AMD64Kind.QWORD) {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSR, AVXSize.QWORD, result, asAllocatable(value)));
+        } else {
+            getLIRGen().append(new AMD64VectorUnary.AVXUnaryOp(VexGeneralPurposeRMOp.BLSR, AVXSize.DWORD, result, asAllocatable(value)));
+        }
+
         return result;
     }
 

@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/ad.hpp"
@@ -41,9 +43,6 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zBarrierSetRuntime.hpp"
-#endif // INCLUDE_ZGC
 
 OptoReg::Name OptoReg::c_frame_pointer;
 
@@ -2071,122 +2070,12 @@ void Matcher::find_shared( Node *n ) {
       set_visited(n);   // Flag as visited now
       bool mem_op = false;
       int mem_addr_idx = MemNode::Address;
-
-      switch( nop ) {  // Handle some opcodes special
-      case Op_Phi:             // Treat Phis as shared roots
-      case Op_Parm:
-      case Op_Proj:            // All handled specially during matching
-      case Op_SafePointScalarObject:
-        set_shared(n);
-        set_dontcare(n);
-        break;
-      case Op_If:
-      case Op_CountedLoopEnd:
-        mstack.set_state(Alt_Post_Visit); // Alternative way
-        // Convert (If (Bool (CmpX A B))) into (If (Bool) (CmpX A B)).  Helps
-        // with matching cmp/branch in 1 instruction.  The Matcher needs the
-        // Bool and CmpX side-by-side, because it can only get at constants
-        // that are at the leaves of Match trees, and the Bool's condition acts
-        // as a constant here.
-        mstack.push(n->in(1), Visit);         // Clone the Bool
-        mstack.push(n->in(0), Pre_Visit);     // Visit control input
-        continue; // while (mstack.is_nonempty())
-      case Op_ConvI2D:         // These forms efficiently match with a prior
-      case Op_ConvI2F:         //   Load but not a following Store
-        if( n->in(1)->is_Load() &&        // Prior load
-            n->outcnt() == 1 &&           // Not already shared
-            n->unique_out()->is_Store() ) // Following store
-          set_shared(n);       // Force it to be a root
-        break;
-      case Op_ReverseBytesI:
-      case Op_ReverseBytesL:
-        if( n->in(1)->is_Load() &&        // Prior load
-            n->outcnt() == 1 )            // Not already shared
-          set_shared(n);                  // Force it to be a root
-        break;
-      case Op_BoxLock:         // Cant match until we get stack-regs in ADLC
-      case Op_IfFalse:
-      case Op_IfTrue:
-      case Op_MachProj:
-      case Op_MergeMem:
-      case Op_Catch:
-      case Op_CatchProj:
-      case Op_CProj:
-      case Op_JumpProj:
-      case Op_JProj:
-      case Op_NeverBranch:
-        set_dontcare(n);
-        break;
-      case Op_Jump:
-        mstack.push(n->in(1), Pre_Visit);     // Switch Value (could be shared)
-        mstack.push(n->in(0), Pre_Visit);     // Visit Control input
-        continue;                             // while (mstack.is_nonempty())
-      case Op_StrComp:
-      case Op_StrEquals:
-      case Op_StrIndexOf:
-      case Op_StrIndexOfChar:
-      case Op_AryEq:
-      case Op_HasNegatives:
-      case Op_StrInflatedCopy:
-      case Op_StrCompressedCopy:
-      case Op_EncodeISOArray:
-      case Op_FmaD:
-      case Op_FmaF:
-      case Op_FmaVD:
-      case Op_FmaVF:
-        set_shared(n); // Force result into register (it will be anyways)
-        break;
-      case Op_ConP: {  // Convert pointers above the centerline to NUL
-        TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-        const TypePtr* tp = tn->type()->is_ptr();
-        if (tp->_ptr == TypePtr::AnyNull) {
-          tn->set_type(TypePtr::NULL_PTR);
+      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_visit(this, mstack, n, nop, mem_op, mem_addr_idx);
+      if (!gc_handled) {
+        if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
+          continue;
         }
-        break;
       }
-      case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
-        TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-        const TypePtr* tp = tn->type()->make_ptr();
-        if (tp && tp->_ptr == TypePtr::AnyNull) {
-          tn->set_type(TypeNarrowOop::NULL_PTR);
-        }
-        break;
-      }
-      case Op_Binary:         // These are introduced in the Post_Visit state.
-        ShouldNotReachHere();
-        break;
-      case Op_ClearArray:
-      case Op_SafePoint:
-        mem_op = true;
-        break;
-#if INCLUDE_ZGC
-      case Op_CallLeaf:
-        if (UseZGC) {
-          if (n->as_Call()->entry_point() == ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr() ||
-              n->as_Call()->entry_point() == ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr()) {
-            mem_op = true;
-            mem_addr_idx = TypeFunc::Parms+1;
-          }
-          break;
-        }
-#endif
-      default:
-        if( n->is_Store() ) {
-          // Do match stores, despite no ideal reg
-          mem_op = true;
-          break;
-        }
-        if( n->is_Mem() ) { // Loads and LoadStores
-          mem_op = true;
-          // Loads must be root of match tree due to prior load conflict
-          if( C->subsume_loads() == false )
-            set_shared(n);
-        }
-        // Fall into default case
-        if( !n->ideal_reg() )
-          set_dontcare(n);  // Unmatchable Nodes
-      } // end_switch
-
       for(int i = n->req() - 1; i >= 0; --i) { // For my children
         Node *m = n->in(i); // Get ith input
         if (m == NULL) continue;  // Ignore NULLs
@@ -2252,107 +2141,222 @@ void Matcher::find_shared( Node *n ) {
       mstack.pop(); // Remove node from stack
 
       // Now hack a few special opcodes
-      switch( n->Opcode() ) {       // Handle some opcodes special
-      case Op_StorePConditional:
-      case Op_StoreIConditional:
-      case Op_StoreLConditional:
-      case Op_CompareAndExchangeB:
-      case Op_CompareAndExchangeS:
-      case Op_CompareAndExchangeI:
-      case Op_CompareAndExchangeL:
-      case Op_CompareAndExchangeP:
-      case Op_CompareAndExchangeN:
-      case Op_WeakCompareAndSwapB:
-      case Op_WeakCompareAndSwapS:
-      case Op_WeakCompareAndSwapI:
-      case Op_WeakCompareAndSwapL:
-      case Op_WeakCompareAndSwapP:
-      case Op_WeakCompareAndSwapN:
-      case Op_CompareAndSwapB:
-      case Op_CompareAndSwapS:
-      case Op_CompareAndSwapI:
-      case Op_CompareAndSwapL:
-      case Op_CompareAndSwapP:
-      case Op_CompareAndSwapN: {   // Convert trinary to binary-tree
-        Node *newval = n->in(MemNode::ValueIn );
-        Node *oldval  = n->in(LoadStoreConditionalNode::ExpectedIn);
-        Node *pair = new BinaryNode( oldval, newval );
-        n->set_req(MemNode::ValueIn,pair);
-        n->del_req(LoadStoreConditionalNode::ExpectedIn);
-        break;
-      }
-      case Op_CMoveD:              // Convert trinary to binary-tree
-      case Op_CMoveF:
-      case Op_CMoveI:
-      case Op_CMoveL:
-      case Op_CMoveN:
-      case Op_CMoveP:
-      case Op_CMoveVF:
-      case Op_CMoveVD:  {
-        // Restructure into a binary tree for Matching.  It's possible that
-        // we could move this code up next to the graph reshaping for IfNodes
-        // or vice-versa, but I do not want to debug this for Ladybird.
-        // 10/2/2000 CNC.
-        Node *pair1 = new BinaryNode(n->in(1),n->in(1)->in(1));
-        n->set_req(1,pair1);
-        Node *pair2 = new BinaryNode(n->in(2),n->in(3));
-        n->set_req(2,pair2);
-        n->del_req(3);
-        break;
-      }
-      case Op_LoopLimit: {
-        Node *pair1 = new BinaryNode(n->in(1),n->in(2));
-        n->set_req(1,pair1);
-        n->set_req(2,n->in(3));
-        n->del_req(3);
-        break;
-      }
-      case Op_StrEquals:
-      case Op_StrIndexOfChar: {
-        Node *pair1 = new BinaryNode(n->in(2),n->in(3));
-        n->set_req(2,pair1);
-        n->set_req(3,n->in(4));
-        n->del_req(4);
-        break;
-      }
-      case Op_StrComp:
-      case Op_StrIndexOf: {
-        Node *pair1 = new BinaryNode(n->in(2),n->in(3));
-        n->set_req(2,pair1);
-        Node *pair2 = new BinaryNode(n->in(4),n->in(5));
-        n->set_req(3,pair2);
-        n->del_req(5);
-        n->del_req(4);
-        break;
-      }
-      case Op_StrCompressedCopy:
-      case Op_StrInflatedCopy:
-      case Op_EncodeISOArray: {
-        // Restructure into a binary tree for Matching.
-        Node* pair = new BinaryNode(n->in(3), n->in(4));
-        n->set_req(3, pair);
-        n->del_req(4);
-        break;
-      }
-      case Op_FmaD:
-      case Op_FmaF:
-      case Op_FmaVD:
-      case Op_FmaVF: {
-        // Restructure into a binary tree for Matching.
-        Node* pair = new BinaryNode(n->in(1), n->in(2));
-        n->set_req(2, pair);
-        n->set_req(1, n->in(3));
-        n->del_req(3);
-        break;
-      }
-      default:
-        break;
+      uint opcode = n->Opcode();
+      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_post_visit(this, n, opcode);
+      if (!gc_handled) {
+        find_shared_post_visit(n, opcode);
       }
     }
     else {
       ShouldNotReachHere();
     }
   } // end of while (mstack.is_nonempty())
+}
+
+bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) {
+  switch(opcode) {  // Handle some opcodes special
+    case Op_Phi:             // Treat Phis as shared roots
+    case Op_Parm:
+    case Op_Proj:            // All handled specially during matching
+    case Op_SafePointScalarObject:
+      set_shared(n);
+      set_dontcare(n);
+      break;
+    case Op_If:
+    case Op_CountedLoopEnd:
+      mstack.set_state(Alt_Post_Visit); // Alternative way
+      // Convert (If (Bool (CmpX A B))) into (If (Bool) (CmpX A B)).  Helps
+      // with matching cmp/branch in 1 instruction.  The Matcher needs the
+      // Bool and CmpX side-by-side, because it can only get at constants
+      // that are at the leaves of Match trees, and the Bool's condition acts
+      // as a constant here.
+      mstack.push(n->in(1), Visit);         // Clone the Bool
+      mstack.push(n->in(0), Pre_Visit);     // Visit control input
+      return true; // while (mstack.is_nonempty())
+    case Op_ConvI2D:         // These forms efficiently match with a prior
+    case Op_ConvI2F:         //   Load but not a following Store
+      if( n->in(1)->is_Load() &&        // Prior load
+          n->outcnt() == 1 &&           // Not already shared
+          n->unique_out()->is_Store() ) // Following store
+        set_shared(n);       // Force it to be a root
+      break;
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
+      if( n->in(1)->is_Load() &&        // Prior load
+          n->outcnt() == 1 )            // Not already shared
+        set_shared(n);                  // Force it to be a root
+      break;
+    case Op_BoxLock:         // Cant match until we get stack-regs in ADLC
+    case Op_IfFalse:
+    case Op_IfTrue:
+    case Op_MachProj:
+    case Op_MergeMem:
+    case Op_Catch:
+    case Op_CatchProj:
+    case Op_CProj:
+    case Op_JumpProj:
+    case Op_JProj:
+    case Op_NeverBranch:
+      set_dontcare(n);
+      break;
+    case Op_Jump:
+      mstack.push(n->in(1), Pre_Visit);     // Switch Value (could be shared)
+      mstack.push(n->in(0), Pre_Visit);     // Visit Control input
+      return true;                             // while (mstack.is_nonempty())
+    case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_AryEq:
+    case Op_HasNegatives:
+    case Op_StrInflatedCopy:
+    case Op_StrCompressedCopy:
+    case Op_EncodeISOArray:
+    case Op_FmaD:
+    case Op_FmaF:
+    case Op_FmaVD:
+    case Op_FmaVF:
+      set_shared(n); // Force result into register (it will be anyways)
+      break;
+    case Op_ConP: {  // Convert pointers above the centerline to NUL
+      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
+      const TypePtr* tp = tn->type()->is_ptr();
+      if (tp->_ptr == TypePtr::AnyNull) {
+        tn->set_type(TypePtr::NULL_PTR);
+      }
+      break;
+    }
+    case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
+      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
+      const TypePtr* tp = tn->type()->make_ptr();
+      if (tp && tp->_ptr == TypePtr::AnyNull) {
+        tn->set_type(TypeNarrowOop::NULL_PTR);
+      }
+      break;
+    }
+    case Op_Binary:         // These are introduced in the Post_Visit state.
+      ShouldNotReachHere();
+      break;
+    case Op_ClearArray:
+    case Op_SafePoint:
+      mem_op = true;
+      break;
+    default:
+      if( n->is_Store() ) {
+        // Do match stores, despite no ideal reg
+        mem_op = true;
+        break;
+      }
+      if( n->is_Mem() ) { // Loads and LoadStores
+        mem_op = true;
+        // Loads must be root of match tree due to prior load conflict
+        if( C->subsume_loads() == false )
+          set_shared(n);
+      }
+      // Fall into default case
+      if( !n->ideal_reg() )
+        set_dontcare(n);  // Unmatchable Nodes
+  } // end_switch
+  return false;
+}
+
+void Matcher::find_shared_post_visit(Node* n, uint opcode) {
+  switch(opcode) {       // Handle some opcodes special
+    case Op_StorePConditional:
+    case Op_StoreIConditional:
+    case Op_StoreLConditional:
+    case Op_CompareAndExchangeB:
+    case Op_CompareAndExchangeS:
+    case Op_CompareAndExchangeI:
+    case Op_CompareAndExchangeL:
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
+    case Op_WeakCompareAndSwapB:
+    case Op_WeakCompareAndSwapS:
+    case Op_WeakCompareAndSwapI:
+    case Op_WeakCompareAndSwapL:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
+    case Op_CompareAndSwapB:
+    case Op_CompareAndSwapS:
+    case Op_CompareAndSwapI:
+    case Op_CompareAndSwapL:
+    case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN: {   // Convert trinary to binary-tree
+      Node* newval = n->in(MemNode::ValueIn);
+      Node* oldval = n->in(LoadStoreConditionalNode::ExpectedIn);
+      Node* pair = new BinaryNode(oldval, newval);
+      n->set_req(MemNode::ValueIn, pair);
+      n->del_req(LoadStoreConditionalNode::ExpectedIn);
+      break;
+    }
+    case Op_CMoveD:              // Convert trinary to binary-tree
+    case Op_CMoveF:
+    case Op_CMoveI:
+    case Op_CMoveL:
+    case Op_CMoveN:
+    case Op_CMoveP:
+    case Op_CMoveVF:
+    case Op_CMoveVD:  {
+      // Restructure into a binary tree for Matching.  It's possible that
+      // we could move this code up next to the graph reshaping for IfNodes
+      // or vice-versa, but I do not want to debug this for Ladybird.
+      // 10/2/2000 CNC.
+      Node* pair1 = new BinaryNode(n->in(1), n->in(1)->in(1));
+      n->set_req(1, pair1);
+      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_LoopLimit: {
+      Node* pair1 = new BinaryNode(n->in(1), n->in(2));
+      n->set_req(1, pair1);
+      n->set_req(2, n->in(3));
+      n->del_req(3);
+      break;
+    }
+    case Op_StrEquals:
+    case Op_StrIndexOfChar: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
+      n->set_req(3, n->in(4));
+      n->del_req(4);
+      break;
+    }
+    case Op_StrComp:
+    case Op_StrIndexOf: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
+      Node* pair2 = new BinaryNode(n->in(4),n->in(5));
+      n->set_req(3, pair2);
+      n->del_req(5);
+      n->del_req(4);
+      break;
+    }
+    case Op_StrCompressedCopy:
+    case Op_StrInflatedCopy:
+    case Op_EncodeISOArray: {
+      // Restructure into a binary tree for Matching.
+      Node* pair = new BinaryNode(n->in(3), n->in(4));
+      n->set_req(3, pair);
+      n->del_req(4);
+      break;
+    }
+    case Op_FmaD:
+    case Op_FmaF:
+    case Op_FmaVD:
+    case Op_FmaVF: {
+      // Restructure into a binary tree for Matching.
+      Node* pair = new BinaryNode(n->in(1), n->in(2));
+      n->set_req(2, pair);
+      n->set_req(1, n->in(3));
+      n->del_req(3);
+      break;
+    }
+    default:
+      break;
+  }
 }
 
 #ifdef ASSERT
@@ -2516,7 +2520,8 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||
-        xop == Op_CompareAndSwapI) {
+        xop == Op_CompareAndSwapI ||
+        BarrierSet::barrier_set()->barrier_set_c2()->matcher_is_store_load_barrier(x, xop)) {
       return true;
     }
 

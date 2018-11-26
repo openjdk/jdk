@@ -31,7 +31,7 @@ import java.util.ResourceBundle;
 
 public class Main {
     public static void main(String... args) throws Exception {
-        ModuleFinder afterFinder = ModuleFinder.of(Paths.get("mods"));
+        ModuleFinder afterFinder = ModuleFinder.of(Paths.get(args[0], "mods"));
 
         Configuration cf = ModuleLayer.boot().configuration()
                 .resolveAndBind(ModuleFinder.of(), afterFinder,

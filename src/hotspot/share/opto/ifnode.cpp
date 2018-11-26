@@ -1551,7 +1551,6 @@ Node* IfNode::search_identical(int dist) {
   // Search up the dominator tree for an If with an identical test
   while (dom->Opcode() != op    ||  // Not same opcode?
          dom->in(1)    != in(1) ||  // Not same input 1?
-         (req() == 3 && dom->in(2) != in(2)) || // Not same input 2?
          prev_dom->in(0) != dom) {  // One path of test does not dominate?
     if (dist < 0) return NULL;
 

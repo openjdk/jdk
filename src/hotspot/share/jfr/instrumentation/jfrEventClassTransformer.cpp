@@ -447,6 +447,7 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
   if (registered_symbol == NULL) {
     registered_symbol = SymbolTable::lookup_only(registered_constant, sizeof registered_constant - 1, unused_hash);
     if (registered_symbol == NULL) {
+      untypedEventHandler = true;
       return false;
     }
   }

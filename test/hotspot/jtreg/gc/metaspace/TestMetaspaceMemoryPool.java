@@ -32,7 +32,7 @@ import static jdk.test.lib.Asserts.*;
  * @bug 8000754
  * @summary Tests that a MemoryPoolMXBeans is created for metaspace and that a
  *          MemoryManagerMXBean is created.
- * @requires vm.opt.final.UseCompressedOops
+ * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

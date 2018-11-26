@@ -565,6 +565,7 @@ nmethod::nmethod(
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  _is_unloading_state(0),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
@@ -609,6 +610,7 @@ nmethod::nmethod(
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
 
+    clear_unloading_state();
     if (ScavengeRootsInCode) {
       Universe::heap()->register_nmethod(this);
     }
@@ -672,6 +674,7 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  _is_unloading_state(0),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
@@ -1016,13 +1019,20 @@ void nmethod::mark_as_seen_on_stack() {
 // there are no activations on the stack, not in use by the VM,
 // and not in use by the ServiceThread)
 bool nmethod::can_convert_to_zombie() {
-  assert(is_not_entrant(), "must be a non-entrant method");
+  // Note that this is called when the sweeper has observed the nmethod to be
+  // not_entrant. However, with concurrent code cache unloading, the state
+  // might have moved on to unloaded if it is_unloading(), due to racing
+  // concurrent GC threads.
+  assert(is_not_entrant() || is_unloading(), "must be a non-entrant method");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the
   // nmethod for the second time.
-  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count() &&
-         !is_locked_by_vm();
+  // If an is_unloading() nmethod is still not_entrant, then it is not safe to
+  // convert it to zombie due to GC unloading interactions. However, if it
+  // has become unloaded, then it is okay to convert such nmethods to zombie.
+  return stack_traversal_mark() + 1 < NMethodSweeper::traversal_count() &&
+         !is_locked_by_vm() && (!is_unloading() || is_unloaded());
 }
 
 void nmethod::inc_decompile_count() {
@@ -1090,8 +1100,6 @@ void nmethod::make_unloaded() {
   // Unregister must be done before the state change
   Universe::heap()->unregister_nmethod(this);
 
-  _state = unloaded;
-
   // Log the unloading.
   log_state_change();
 
@@ -1107,6 +1115,13 @@ void nmethod::make_unloaded() {
 
   set_osr_link(NULL);
   NMethodSweeper::report_state_change(this);
+
+  // The release is only needed for compile-time ordering, as accesses
+  // into the nmethod after the store are not safe due to the sweeper
+  // being allowed to free it when the store is observed, during
+  // concurrent nmethod unloading. Therefore, there is no need for
+  // acquire on the loader side.
+  OrderAccess::release_store(&_state, (signed char)unloaded);
 }
 
 void nmethod::invalidate_osr_method() {
@@ -1505,6 +1520,74 @@ void nmethod::metadata_do(void f(Metadata*)) {
   if (_method != NULL) f(_method);
 }
 
+// The _is_unloading_state encodes a tuple comprising the unloading cycle
+// and the result of IsUnloadingBehaviour::is_unloading() fpr that cycle.
+// This is the bit layout of the _is_unloading_state byte: 00000CCU
+// CC refers to the cycle, which has 2 bits, and U refers to the result of
+// IsUnloadingBehaviour::is_unloading() for that unloading cycle.
+
+class IsUnloadingState: public AllStatic {
+  static const uint8_t _is_unloading_mask = 1;
+  static const uint8_t _is_unloading_shift = 0;
+  static const uint8_t _unloading_cycle_mask = 6;
+  static const uint8_t _unloading_cycle_shift = 1;
+
+  static uint8_t set_is_unloading(uint8_t state, bool value) {
+    state &= ~_is_unloading_mask;
+    if (value) {
+      state |= 1 << _is_unloading_shift;
+    }
+    assert(is_unloading(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+  static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
+    state &= ~_unloading_cycle_mask;
+    state |= value << _unloading_cycle_shift;
+    assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
+    return state;
+  }
+
+public:
+  static bool is_unloading(uint8_t state) { return (state & _is_unloading_mask) >> _is_unloading_shift == 1; }
+  static uint8_t unloading_cycle(uint8_t state) { return (state & _unloading_cycle_mask) >> _unloading_cycle_shift; }
+
+  static uint8_t create(bool is_unloading, uint8_t unloading_cycle) {
+    uint8_t state = 0;
+    state = set_is_unloading(state, is_unloading);
+    state = set_unloading_cycle(state, unloading_cycle);
+    return state;
+  }
+};
+
+bool nmethod::is_unloading() {
+  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
+  bool state_is_unloading = IsUnloadingState::is_unloading(state);
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
+  if (state_is_unloading) {
+    return true;
+  }
+  if (state_unloading_cycle == CodeCache::unloading_cycle()) {
+    return false;
+  }
+
+  // The IsUnloadingBehaviour is responsible for checking if there are any dead
+  // oops in the CompiledMethod, by calling oops_do on it.
+  state_unloading_cycle = CodeCache::unloading_cycle();
+  state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
+
+  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+
+  return state_is_unloading;
+}
+
+void nmethod::clear_unloading_state() {
+  uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
+  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+}
+
 
 // This is called at the end of the strong tracing/marking phase of a
 // GC to unload an nmethod if it contains otherwise unreachable
@@ -1842,11 +1925,11 @@ void nmethod::check_all_dependencies(DepChange& changes) {
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter;
+  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
-    if (nm->is_alive() && !nm->is_marked_for_deoptimization()) {
+    if (!nm->is_marked_for_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);
@@ -2841,7 +2924,7 @@ void nmethod::maybe_invalidate_installed_code() {
     // Update the values in the InstalledCode instance if it still refers to this nmethod
     nmethod* nm = (nmethod*)InstalledCode::address(installed_code);
     if (nm == this) {
-      if (!is_alive()) {
+      if (!is_alive() || is_unloading()) {
         // Break the link between nmethod and InstalledCode such that the nmethod
         // can subsequently be flushed safely.  The link must be maintained while
         // the method could have live activations since invalidateInstalledCode
@@ -2856,7 +2939,7 @@ void nmethod::maybe_invalidate_installed_code() {
       }
     }
   }
-  if (!is_alive()) {
+  if (!is_alive() || is_unloading()) {
     // Clear these out after the nmethod has been unregistered and any
     // updates to the InstalledCode instance have been performed.
     clear_jvmci_installed_code();
@@ -2880,7 +2963,7 @@ void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
   {
     MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
     // This relationship can only be checked safely under a lock
-    assert(!nm->is_alive() || nm->jvmci_installed_code() == installedCode(), "sanity check");
+    assert(!nm->is_alive() || nm->is_unloading() || nm->jvmci_installed_code() == installedCode(), "sanity check");
   }
 #endif
 

@@ -939,7 +939,7 @@ void JfrTypeSet::do_class_loaders() {
     ClassLoaderDataGraph::cld_unloading_do(&cld_cb);
     return;
   }
-  ClassLoaderDataGraph::cld_do(&cld_cb);
+  ClassLoaderDataGraph::loaded_cld_do(&cld_cb);
 }
 
 static void clear_artifacts(JfrArtifactSet* artifacts,

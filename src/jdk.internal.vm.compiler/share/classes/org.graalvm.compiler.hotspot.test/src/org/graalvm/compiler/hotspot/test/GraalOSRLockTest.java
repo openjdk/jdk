@@ -60,6 +60,7 @@ public class GraalOSRLockTest extends GraalOSRTestBase {
 
     @BeforeClass
     public static void checkVMArguments() {
+        assumeManagementLibraryIsLoadable();
         /*
          * Note: The -Xcomp execution mode of the VM will stop most of the OSR test cases from
          * working as every method is compiled at level3 (followed by level4 on the second

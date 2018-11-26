@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -35,6 +36,7 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/sizes.hpp"
 
 /* This data structure is per thread and only accessed by the thread itself, no locking required */
 JfrThreadLocal::JfrThreadLocal() :
@@ -73,53 +75,76 @@ const JfrCheckpointBlobHandle& JfrThreadLocal::thread_checkpoint() const {
   return _thread_cp;
 }
 
-void JfrThreadLocal::set_dead() {
-  assert(!is_dead(), "invariant");
-  _dead = true;
+static void send_java_thread_start_event(JavaThread* jt) {
+  EventThreadStart event;
+  event.set_thread(jt->jfr_thread_local()->thread_id());
+  event.commit();
 }
 
-void JfrThreadLocal::on_exit(JavaThread* thread) {
+void JfrThreadLocal::on_start(Thread* t) {
+  assert(t != NULL, "invariant");
+  assert(Thread::current() == t, "invariant");
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_thread_checkpoint(thread);
-    JfrThreadCPULoadEvent::send_event_for_thread(thread);
+    if (t->is_Java_thread()) {
+      send_java_thread_start_event((JavaThread*)t);
+    }
   }
-  thread->jfr_thread_local()->set_dead();
 }
 
-void JfrThreadLocal::on_destruct(Thread* thread) {
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
+static void send_java_thread_end_events(traceid id, JavaThread* jt) {
+  assert(jt != NULL, "invariant");
+  assert(Thread::current() == jt, "invariant");
+  assert(jt->jfr_thread_local()->trace_id() == id, "invariant");
+  EventThreadEnd event;
+  event.set_thread(id);
+  event.commit();
+  JfrThreadCPULoadEvent::send_event_for_thread(jt);
+}
+
+void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
+  assert(tl != NULL, "invariant");
+  assert(t != NULL, "invariant");
+  assert(Thread::current() == t, "invariant");
+  assert(!tl->is_dead(), "invariant");
+  assert(tl->shelved_buffer() == NULL, "invariant");
   if (tl->has_native_buffer()) {
-    release(tl->native_buffer(), thread);
+    JfrStorage::release_thread_local(tl->native_buffer(), t);
   }
   if (tl->has_java_buffer()) {
-    release(tl->java_buffer(), thread);
+    JfrStorage::release_thread_local(tl->java_buffer(), t);
   }
-  assert(tl->shelved_buffer() == NULL, "invariant");
-  if (thread->jfr_thread_local()->has_java_event_writer()) {
+  if (tl->has_java_event_writer()) {
+    assert(t->is_Java_thread(), "invariant");
     JfrJavaSupport::destroy_global_jni_handle(tl->java_event_writer());
   }
-  destroy_stackframes(thread);
+  if (tl->_stackframes != NULL) {
+    FREE_C_HEAP_ARRAY(JfrStackFrame, tl->_stackframes);
+  }
+  tl->_dead = true;
 }
 
-JfrBuffer* JfrThreadLocal::acquire(Thread* thread, size_t size) {
-  return JfrStorage::acquire_thread_local(thread, size);
-}
-
-void JfrThreadLocal::release(JfrBuffer* buffer, Thread* thread) {
-  assert(buffer != NULL, "invariant");
-  JfrStorage::release_thread_local(buffer, thread);
+void JfrThreadLocal::on_exit(Thread* t) {
+  assert(t != NULL, "invariant");
+  JfrThreadLocal * const tl = t->jfr_thread_local();
+  assert(!tl->is_dead(), "invariant");
+  if (JfrRecorder::is_recording()) {
+    if (t->is_Java_thread()) {
+      send_java_thread_end_events(tl->thread_id(), (JavaThread*)t);
+    }
+  }
+  release(tl, Thread::current()); // because it could be that Thread::current() != t
 }
 
 JfrBuffer* JfrThreadLocal::install_native_buffer() const {
   assert(!has_native_buffer(), "invariant");
-  _native_buffer = acquire(Thread::current());
+  _native_buffer = JfrStorage::acquire_thread_local(Thread::current());
   return _native_buffer;
 }
 
 JfrBuffer* JfrThreadLocal::install_java_buffer() const {
   assert(!has_java_buffer(), "invariant");
   assert(!has_java_event_writer(), "invariant");
-  _java_buffer = acquire(Thread::current());
+  _java_buffer = JfrStorage::acquire_thread_local(Thread::current());
   return _java_buffer;
 }
 
@@ -131,11 +156,10 @@ JfrStackFrame* JfrThreadLocal::install_stackframes() const {
   return _stackframes;
 }
 
-void JfrThreadLocal::destroy_stackframes(Thread* thread) {
-  assert(thread != NULL, "invariant");
-  JfrStackFrame* frames = thread->jfr_thread_local()->stackframes();
-  if (frames != NULL) {
-    FREE_C_HEAP_ARRAY(JfrStackFrame, frames);
-    thread->jfr_thread_local()->set_stackframes(NULL);
-  }
+ByteSize JfrThreadLocal::trace_id_offset() {
+  return in_ByteSize(offset_of(JfrThreadLocal, _trace_id));
+}
+
+ByteSize JfrThreadLocal::java_event_writer_offset() {
+  return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
 }

@@ -29,6 +29,7 @@ import java.lang.annotation.Native;
 import java.math.*;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -1145,13 +1146,25 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     private static class LongCache {
-        private LongCache(){}
+        private LongCache() {}
 
-        static final Long cache[] = new Long[-(-128) + 127 + 1];
+        static final Long[] cache;
+        static Long[] archivedCache;
 
         static {
-            for(int i = 0; i < cache.length; i++)
-                cache[i] = new Long(i - 128);
+            int size = -(-128) + 127 + 1;
+
+            // Load and use the archived cache if it exists
+            VM.initializeFromArchive(LongCache.class);
+            if (archivedCache == null || archivedCache.length != size) {
+                Long[] c = new Long[size];
+                long value = -128;
+                for(int i = 0; i < size; i++) {
+                    c[i] = new Long(value++);
+                }
+                archivedCache = c;
+            }
+            cache = archivedCache;
         }
     }
 

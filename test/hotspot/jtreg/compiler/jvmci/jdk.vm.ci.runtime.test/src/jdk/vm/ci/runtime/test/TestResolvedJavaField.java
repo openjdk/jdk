@@ -142,16 +142,15 @@ public class TestResolvedJavaField extends FieldUniverse {
             }
         }
     }
+
+    private static final String NON_EXISTENT_CLASS_NAME = "XXXXXXXXXXX";
+
     static class TestClassLoader extends ClassLoader {
 
         @Override
-        protected Class<?> findClass(final String name) {
+        protected Class<?> findClass(final String name) throws ClassNotFoundException {
             if (!name.equals(TypeWithUnresolvedFieldType.class.getName())) {
-                try {
-                    return super.findClass(name);
-                } catch (ClassNotFoundException e) {
-                    throw new AssertionError("unexpected: " + e);
-                }
+                return super.findClass(name);
             }
             // copy classfile to byte array
             byte[] classData = null;
@@ -176,7 +175,7 @@ public class TestResolvedJavaField extends FieldUniverse {
             int index = -1;
 
             while ((index = indexOf(classData, index + 1, "PrintStream")) != -1) {
-                replace(classData, index, "XXXXXXXXXXX");
+                replace(classData, index, NON_EXISTENT_CLASS_NAME);
             }
 
             Class<?> c = defineClass(null, classData, 0, classData.length);
@@ -211,13 +210,14 @@ public class TestResolvedJavaField extends FieldUniverse {
      * type of the field is not resolvable.
      */
     @Test
-    public void testGetType() {
+    public void testGetType() throws ClassNotFoundException {
         Class<?> c = new TestClassLoader().findClass(TypeWithUnresolvedFieldType.class.getName());
         ResolvedJavaType type = metaAccess.lookupJavaType(c);
         for (ResolvedJavaField field : type.getInstanceFields(false)) {
             assertTrue(field.getName().equals("fieldWithUnresolvableType"));
             field.getType();
             field.toString();
+            field.getAnnotations();
         }
     }
 }

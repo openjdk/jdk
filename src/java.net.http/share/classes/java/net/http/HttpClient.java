@@ -104,7 +104,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .thenApply(HttpResponse::body)
  *        .thenAccept(System.out::println);  }</pre>
  *
- * <p> <a id="securitychecks"></a><b>Security checks</b></a>
+ * <p> <a id="securitychecks"><b>Security checks</b></a>
  *
  * <p> If a security manager is present then security checks are performed by
  * the HTTP Client's sending methods. An appropriate {@link URLPermission} is
@@ -327,7 +327,7 @@ public abstract class HttpClient {
          * then newly built clients will use the {@linkplain
          * ProxySelector#getDefault() default proxy selector}, which is usually
          * adequate for client applications. The default proxy selector supports
-         * a set of system properties</a> related to
+         * a set of system properties related to
          * <a href="{@docRoot}/java.base/java/net/doc-files/net-properties.html#Proxies">
          * proxy settings</a>. This default behavior can be disabled by
          * supplying an explicit proxy selector, such as {@link #NO_PROXY} or

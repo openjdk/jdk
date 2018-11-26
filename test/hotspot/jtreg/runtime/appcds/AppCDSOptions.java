@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,8 @@ import jdk.test.lib.cds.CDSOptions;
 public class AppCDSOptions extends CDSOptions {
     public String appJar;
 
-    // Application classes to be archived
-    public String[] appClasses;
-
     public AppCDSOptions setAppJar(String appJar) {
         this.appJar = appJar;
         return this;
     }
-
-    public AppCDSOptions setAppClasses(String[] appClasses) {
-        this.appClasses = appClasses;
-        return this;
-    }
-
 }

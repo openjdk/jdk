@@ -383,6 +383,9 @@ public class TreeInfo {
             JCTry t = (JCTry) tree;
             return endPos((t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
+        } else if (tree.hasTag(SWITCH_EXPRESSION) &&
+                   ((JCSwitchExpression) tree).endpos != Position.NOPOS) {
+            return ((JCSwitchExpression) tree).endpos;
         } else
             return tree.pos;
     }

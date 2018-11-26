@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.nodes.virtual;
 
-import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -32,6 +31,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -103,7 +103,7 @@ public class VirtualInstanceNode extends VirtualObjectNode {
     }
 
     @Override
-    public int entryIndexForOffset(ArrayOffsetProvider arrayOffsetProvider, long constantOffset, JavaKind expectedEntryKind) {
+    public int entryIndexForOffset(MetaAccessProvider metaAccess, long constantOffset, JavaKind expectedEntryKind) {
         return fieldIndex(type.findInstanceFieldWithOffset(constantOffset, expectedEntryKind));
     }
 

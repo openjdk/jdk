@@ -1142,8 +1142,9 @@ bool Node::has_special_unique_user() const {
   } else if (is_If() && (n->is_IfFalse() || n->is_IfTrue())) {
     // See IfProjNode::Identity()
     return true;
+  } else {
+    return BarrierSet::barrier_set()->barrier_set_c2()->has_special_unique_user(this);
   }
-  return false;
 };
 
 //--------------------------find_exact_control---------------------------------

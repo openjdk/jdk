@@ -38,6 +38,7 @@ import com.sun.tools.classfile.Dependency.Location;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -172,7 +173,7 @@ class DependencyFinder {
 
         parsedArchives.get(finder).add(archive);
 
-        trace("parsing %s %s%n", archive.getName(), archive.path());
+        trace("parsing %s %s%n", archive.getName(), archive.getPathName());
         FutureTask<Set<Location>> task = new FutureTask<>(() -> {
             Set<Location> targets = new HashSet<>();
             for (ClassFile cf : archive.reader().getClassFiles()) {
@@ -206,7 +207,6 @@ class DependencyFinder {
                     parsedClasses.putIfAbsent(d.getOrigin(), archive);
                 }
             }
-
             return targets;
         });
         tasks.add(task);
@@ -264,8 +264,7 @@ class DependencyFinder {
             FutureTask<Set<Location>> task;
             while ((task = tasks.poll()) != null) {
                 // wait for completion
-                if (!task.isDone())
-                    targets.addAll(task.get());
+                targets.addAll(task.get());
             }
             return targets;
         } catch (InterruptedException|ExecutionException e) {

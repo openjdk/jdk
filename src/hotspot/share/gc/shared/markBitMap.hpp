@@ -49,6 +49,10 @@ protected:
   size_t addr_to_offset(const HeapWord* addr) const {
     return pointer_delta(addr, _covered.start()) >> _shifter;
   }
+
+  // Clear bitmap range
+  void do_clear(MemRegion mr, bool large);
+
 public:
   static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
@@ -88,7 +92,10 @@ public:
   inline bool par_mark(HeapWord* addr);
   inline bool par_mark(oop obj);
 
-  void clear_range(MemRegion mr);
+  // Clear bitmap.
+  void clear()                         { do_clear(_covered, true); }
+  void clear_range(MemRegion mr)       { do_clear(mr, false);      }
+  void clear_range_large(MemRegion mr) { do_clear(mr, true);       }
 };
 
 #endif // SHARE_VM_GC_SHARED_MARKBITMAP_HPP

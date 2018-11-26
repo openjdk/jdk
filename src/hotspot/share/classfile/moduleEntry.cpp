@@ -204,7 +204,7 @@ bool ModuleEntry::has_reads_list() const {
 
 // Purge dead module entries out of reads list.
 void ModuleEntry::purge_reads() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(Module_lock);
 
   if (_must_walk_reads && has_reads_list()) {
     // This module's _must_walk_reads flag will be reset based
@@ -245,7 +245,6 @@ void ModuleEntry::module_reads_do(ModuleClosure* f) {
 }
 
 void ModuleEntry::delete_reads() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   delete _reads;
   _reads = NULL;
 }
@@ -319,8 +318,6 @@ ModuleEntryTable::ModuleEntryTable(int table_size)
 }
 
 ModuleEntryTable::~ModuleEntryTable() {
-  assert_locked_or_safepoint(Module_lock);
-
   // Walk through all buckets and all entries in each bucket,
   // freeing each entry.
   for (int i = 0; i < table_size(); ++i) {
@@ -355,7 +352,6 @@ ModuleEntryTable::~ModuleEntryTable() {
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
-  free_buckets();
 }
 
 ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle,

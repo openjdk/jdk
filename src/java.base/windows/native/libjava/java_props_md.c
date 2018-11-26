@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,6 +359,7 @@ GetJavaProperties(JNIEnv* env)
     static java_props_t sprops = {0};
     int majorVersion;
     int minorVersion;
+    int buildNumber = 0;
 
     if (sprops.line_separator) {
         return &sprops;
@@ -398,6 +399,8 @@ GetJavaProperties(JNIEnv* env)
             GetVersionEx((OSVERSIONINFO *) &ver);
             majorVersion = ver.dwMajorVersion;
             minorVersion = ver.dwMinorVersion;
+            /* distinguish Windows Server 2016 and 2019 by build number */
+            buildNumber = ver.dwBuildNumber;
             is_workstation = (ver.wProductType == VER_NT_WORKSTATION);
             platformId = ver.dwPlatformId;
             sprops.patch_level = _strdup(ver.szCSDVersion);
@@ -448,6 +451,7 @@ GetJavaProperties(JNIEnv* env)
             }
             majorVersion = HIWORD(file_info->dwProductVersionMS);
             minorVersion = LOWORD(file_info->dwProductVersionMS);
+            buildNumber  = HIWORD(file_info->dwProductVersionLS);
             free(version_info);
         } while (0);
 
@@ -478,6 +482,8 @@ GetJavaProperties(JNIEnv* env)
          * Windows Server 2012 R2       6               3  (!VER_NT_WORKSTATION)
          * Windows 10                   10              0  (VER_NT_WORKSTATION)
          * Windows Server 2016          10              0  (!VER_NT_WORKSTATION)
+         * Windows Server 2019          10              0  (!VER_NT_WORKSTATION)
+         *       where (buildNumber > 17762)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -551,7 +557,14 @@ GetJavaProperties(JNIEnv* env)
                     }
                 } else {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows Server 2016";           break;
+                    case  0:
+                        /* Windows server 2019 GA 10/2018 build number is 17763 */
+                        if (buildNumber > 17762) {
+                            sprops.os_name = "Windows Server 2019";
+                        } else {
+                            sprops.os_name = "Windows Server 2016";
+                        }
+                        break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 }

@@ -308,7 +308,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 code.addContent(Contents.SPACE);
             } else {
                 code.addContent(
-                        configuration.getText("doclet.Package_private"));
+                        resources.getText("doclet.Package_private"));
             }
             tdSummaryType.addContent(code);
         }

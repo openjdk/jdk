@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class MetaKeywords {
     public List<String> getOverviewMetaKeywords(String title, String docTitle) {
          List<String> result = new ArrayList<>(1);
         if (config.keywords) {
-            String windowOverview = config.getText(title);
+            String windowOverview = config.getResources().getText(title);
             if (docTitle.length() > 0) {
                 result.add(windowOverview + ", " + docTitle);
             } else {

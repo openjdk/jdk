@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4492643 4689286 8196201
+ * @bug 4492643 4689286 8196201 8184205
  * @summary Test that a package page is properly generated when a .java file
  * passed to Javadoc.  Also test that the proper package links are generated
  * when single or multiple packages are documented.
@@ -83,14 +83,14 @@ public class TestPackagePage extends JavadocTester {
         checkOutput("help-doc.html", true,
             "<li>Package</li>");
         checkOutput("allclasses-index.html", true,
-                "<table class=\"typeSummary\">\n"
+                "<div class=\"typeSummary\">\n<table>\n"
                 + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n");
         checkOutput("allpackages-index.html", true,
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class DatagramSocket_receive extends AsyncCloseTest implements Runnable {
     public DatagramSocket_receive(int timeout) throws SocketException {
         this.timeout = timeout;
         latch = new CountDownLatch(1);
-        s = new DatagramSocket();
+        s = new DatagramSocket(0, InetAddress.getLoopbackAddress());
     }
 
     public String description() {
@@ -60,7 +60,7 @@ public class DatagramSocket_receive extends AsyncCloseTest implements Runnable {
             }
             latch.countDown();
             s.receive(p);
-            failed("DatagramSocket.receive(DatagramPacket) returned unexpectly!!");
+            failed("DatagramSocket.receive(DatagramPacket) returned unexpectly!!" + " - " + p.getAddress());
         } catch (SocketException se) {
             if (latch.getCount() != 1) {
                 closed();

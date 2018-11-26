@@ -27,6 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
         8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
+        8184205
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -702,7 +703,8 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", false,
                 "</table>\n"
@@ -711,7 +713,8 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -761,7 +764,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\">\n"
+                + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", false,
                 "</table>\n"
@@ -772,7 +775,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\">\n"
+                + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -856,14 +859,16 @@ public class TestModules extends JavadocTester {
 
     void checkOverviewSummaryModules() {
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\" summary=\"Package Summary table, listing packages, and an explanation\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -873,7 +878,8 @@ public class TestModules extends JavadocTester {
 
     void checkOverviewSummaryPackages() {
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
@@ -885,10 +891,12 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Package Summary table, listing packages, and an explanation\">\n"
+                + "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" summary=\"Package Summary table, listing packages, and an explanation\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -899,20 +907,23 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Package Summary table, listing packages, and an explanation\">\n"
+                + "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
     void checkHtml5OverviewSummaryModules() {
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -922,7 +933,8 @@ public class TestModules extends JavadocTester {
 
     void checkHtml5OverviewSummaryPackages() {
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
@@ -938,10 +950,11 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\"><a id=\"Packages\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<table class=\"overviewSummary\">\n"
+                + "<div class=\"overviewSummary\">\n"
+                + "<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -955,7 +968,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\">\n"
+                + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -1220,14 +1233,14 @@ public class TestModules extends JavadocTester {
                 + "<li><a href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;</li>\n"
                 + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
                 + "<li>Services</li>",
-                "<table class=\"requiresSummary\">\n"
+                "<div class=\"requiresSummary\">\n<table>\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<td class=\"colFirst\">transitive</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"../moduleB/module-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
                 + "</td>",
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Indirect Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<td class=\"colFirst\">transitive static</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"../moduleA/module-summary.html\">moduleA</a></th>\n"
@@ -1235,19 +1248,19 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
                 + "phrase search phrase.</div>\n"
                 + "</td>",
-                "<table class=\"requiresSummary\">\n"
+                "<div class=\"requiresSummary\">\n<table>\n"
                 + "<caption><span>Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"requiresSummary\">\n"
+                "<div class=\"requiresSummary\">\n<table>\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
@@ -1267,23 +1280,28 @@ public class TestModules extends JavadocTester {
                 + " Package Link: <a href=\"moduletags/testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.<br></div>\n"
                 + "</td>");
         checkOutput("moduletags/module-summary.html", true,
-                "<table class=\"requiresSummary\" summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
+                "<div class=\"requiresSummary\">\n"
+                + "<table summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<table class=\"packagesSummary\" summary=\"Indirect Exports table, listing modules, and packages\">\n"
+                "<div class=\"packagesSummary\">\n"
+                + "<table summary=\"Indirect Exports table, listing modules, and packages\">\n"
                 + "<caption><span>Indirect Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<table class=\"requiresSummary\" summary=\"Requires table, listing modules, and an explanation\">\n"
+                "<div class=\"requiresSummary\">\n"
+                + "<table summary=\"Requires table, listing modules, and an explanation\">\n"
                 + "<caption><span>Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"requiresSummary\" summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
+                "<div class=\"requiresSummary\">\n"
+                + "<table summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"packagesSummary\" summary=\"Indirect Opens table, listing modules, and packages\">\n"
+                "<div class=\"packagesSummary\">\n"
+                + "<table summary=\"Indirect Opens table, listing modules, and packages\">\n"
                 + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
@@ -1302,7 +1320,7 @@ public class TestModules extends JavadocTester {
                 + "<li><a href=\"#services.summary\">Services</a></li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
-                "<table class=\"packagesSummary\">\n"
+                "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -1322,7 +1340,8 @@ public class TestModules extends JavadocTester {
 
     void checkModuleModeApi_html4(boolean found) {
         checkOutput("moduleB/module-summary.html", found,
-                "<table class=\"packagesSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
+                "<div class=\"packagesSummary\">\n"
+                + "<table summary=\"Packages table, listing packages, and an explanation\">\n"
                 + "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
@@ -1352,10 +1371,13 @@ public class TestModules extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlA/package-summary.html\">testpkgmdlA</a></th>\n"
                 + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">Exports</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Concealed</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" aria-selected=\"true\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"0\" onkeydown=\"switchTab(event)\" id=\"t0\""
+                + " class=\"activeTableTab\">All Packages</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\""
+                + " class=\"tableTab\" onclick=\"show(1);\">Exports</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\""
+                + " class=\"tableTab\" onclick=\"show(4);\">Concealed</button></div>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"concealedpkgmdlA/package-summary.html\">concealedpkgmdlA</a></th>\n"
                 + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
@@ -1379,9 +1401,13 @@ public class TestModules extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkg2mdlB/TestInterfaceInModuleB.html\" title=\"interface in testpkg2mdlB\">TestInterfaceInModuleB</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"testpkgmdlB/TestClassInModuleB.html\" "
                 + "title=\"class in testpkgmdlB\">TestClassInModuleB</a>)</td>",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(1);\">Exports</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(2);\">Opens</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>");
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" aria-selected=\"true\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"0\" onkeydown=\"switchTab(event)\" id=\"t0\""
+                + " class=\"activeTableTab\">All Packages</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\""
+                + " class=\"tableTab\" onclick=\"show(1);\">Exports</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\""
+                + " class=\"tableTab\" onclick=\"show(2);\">Opens</button></div>");
         checkOutput("moduleC/module-summary.html", found,
                 "<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
@@ -1463,13 +1489,20 @@ public class TestModules extends JavadocTester {
     void checkGroupOption() {
         checkOutput("overview-summary.html", true,
                 "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Modules</span><span class=\"tabEnd\">&nbsp;"
-                + "</span></span><span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
-                + "Module Group A</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(2);\">Module Group B &amp; C</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Other Modules</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                + "<div class=\"overviewSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Modules</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">Module Group A</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Module Group B &amp; C</button><button"
+                + " role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\" onclick=\"show(4);\">"
+                + "Other Modules</button></div>\n"
+                + "<div id=\"overviewSummary_tabpanel\" role=\"tabpanel\">\n"
+                + "<table aria-labelledby=\"t0\">",
                 "var data = {\"i0\":1,\"i1\":2,\"i2\":2,\"i3\":4};\n"
                 + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B & C\"],4:[\"t4\",\"Other Modules\"]};\n"
                 + "var altColor = \"altColor\";\n"
@@ -1477,7 +1510,7 @@ public class TestModules extends JavadocTester {
                 + "var tableTab = \"tableTab\";\n"
                 + "var activeTableTab = \"activeTableTab\";");
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "Java SE Modules");
     }
@@ -1485,13 +1518,20 @@ public class TestModules extends JavadocTester {
     void checkGroupOption_html4() {
         checkOutput("overview-summary.html", true,
                 "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Modules</span><span class=\"tabEnd\">&nbsp;"
-                + "</span></span><span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
-                + "Module Group A</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(2);\">Module Group B &amp; C</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Other Modules</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                + "<div class=\"overviewSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Modules</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">Module Group A</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Module Group B &amp; C</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " onclick=\"show(4);\">Other Modules</button></div>\n"
+                + "<div id=\"overviewSummary_tabpanel\" role=\"tabpanel\">\n"
+                + "<table summary=\"Module Summary table, listing modules, and an explanation\" aria-labe",
                 "var data = {\"i0\":1,\"i1\":2,\"i2\":2,\"i3\":4};\n"
                 + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B & C\"],4:[\"t4\",\"Other Modules\"]};\n"
                 + "var altColor = \"altColor\";\n"
@@ -1499,32 +1539,42 @@ public class TestModules extends JavadocTester {
                 + "var tableTab = \"tableTab\";\n"
                 + "var activeTableTab = \"activeTableTab\";");
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                "<div class=\"overviewSummary\">\n<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "Java SE Modules");
     }
 
     void checkGroupOptionOrdering() {
         checkOutput("overview-summary.html", true,
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Modules</span><span "
-                + "class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(1);\">B Group</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "C Group</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(4);\">A Group</a></span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t8\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">Other Modules"
-                + "</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Modules</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">B Group</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">C Group</button><button role=\"tab\""
+                + " aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\" onclick=\"show(4);\">A Group"
+                + "</button><button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t8\" class=\"tableTab\" onclick=\"show(8);\">"
+                + "Other Modules</button></div>",
                 "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"B Group\"],2:[\"t2\",\"C Group\"],"
                 + "4:[\"t4\",\"A Group\"],8:[\"t8\",\"Other Modules\"]};");
         checkOutput("overview-summary.html", false,
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Modules</span><span "
-                + "class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(1);\">A Group</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "B Group</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(4);\">C Group</a></span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t8\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">Other Modules"
-                + "</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Modules</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">A Group</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">B Group</button><button role=\"tab\""
+                + " aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\" onclick=\"show(4);\">C Group"
+                + "</button><button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t8\" class=\"tableTab\""
+                + " onclick=\"show(8);\">Other Modules</button></div>",
                 "Java SE Modules");
     }
 
@@ -1534,12 +1584,17 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;"
-                + "</span></span><span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
-                + "Package Group 0</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" "
-                + "class=\"tableTab\"><span><a href=\"javascript:show(2);\">Package Group 1</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                + "<div class=\"overviewSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Packages</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">Package Group 0</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">Package Group 1</button></div>\n"
+                + "<div id=\"overviewSummary_tabpanel\" role=\"tabpanel\">\n"
+                + "<table aria-labelledby=\"t0\">",
                 "var data = {\"i0\":1,\"i1\":2};\n"
                 + "var tabs = {65535:[\"t0\",\"All Packages\"],1:[\"t1\",\"Package Group 0\"],2:[\"t2\",\"Package Group 1\"]};\n"
                 + "var altColor = \"altColor\";\n"
@@ -1554,21 +1609,29 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Package Summary table, listing packages, and an explanation\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;"
-                + "</span></span><span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
-                + "Package Group 0</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" "
-                + "class=\"tableTab\"><span><a href=\"javascript:show(2);\">Package Group 1</a></span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>");
+                + "<div class=\"overviewSummary\">\n"
+                + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Packages"
+                + "</button><button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\" onclick=\"show(1);\">"
+                + "Package Group 0</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\""
+                + " class=\"tableTab\" onclick=\"show(2);\">Package Group 1</button></div>\n"
+                + "<div id=\"overviewSummary_tabpanel\" role=\"tabpanel\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\" aria-labelledby=\"t0\">");
     }
 
     void checkGroupOptionPackageOrdering() {
         checkOutput("overview-summary.html", true,
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span "
-                + "class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(1);\">Z Group</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "A Group</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Packages</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overviewSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                + " onclick=\"show(1);\">Z Group</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"overviewSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">A Group</button></div>",
                 "var tabs = {65535:[\"t0\",\"All Packages\"],1:[\"t1\",\"Z Group\"],2:[\"t2\",\"A Group\"]};");
     }
 
@@ -1627,12 +1690,15 @@ public class TestModules extends JavadocTester {
 
     void checkAllPkgsAllClasses(boolean found) {
         checkOutput("allclasses-index.html", true,
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Classes</span>"
-                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\">"
-                + "<span><a href=\"javascript:show(2);\">Class Summary</a></span><span class=\"tabEnd\">"
-                + "&nbsp;</span></span><span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
-                + "Annotation Types Summary</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>\n"
-                + "<tr>\n"
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"typeSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Classes</button>"
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"typeSummary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\""
+                + " onclick=\"show(2);\">Class Summary</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"typeSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Annotation Types Summary</button></div>\n",
+                "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
@@ -1643,13 +1709,14 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n");
         checkOutput("allclasses-index.html", found,
-                "<table class=\"typeSummary\">\n");
+                "<table aria-labelledby=\"t0\">\n");
         checkOutput("allpackages-index.html", found,
-                "<table class=\"packagesSummary\">\n");
+                "<div class=\"packagesSummary\">\n<table>\n");
         checkOutput("allclasses-index.html", !found,
-                "<table class=\"typeSummary\" summary=\"Class Summary table, listing classes, and an explanation\">");
+                "<table summary=\"Class Summary table, listing classes, and an explanation\" aria-labelledby=\"t0\">");
         checkOutput("allpackages-index.html", !found,
-                "<table class=\"packagesSummary\" summary=\"Package Summary table, listing packages, and an explanation\">");
+                "<div class=\"packagesSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
         checkOutput("type-search-index.js", true,
                 "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
         checkOutput("package-search-index.js", true,

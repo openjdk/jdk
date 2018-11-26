@@ -269,10 +269,10 @@ public class NewObjectSnippets implements Snippets {
             DeoptimizeNode.deopt(None, RuntimeConstraint);
         }
 
-        return PiNode.piCastToSnippetReplaceeStamp(allocateInstanceDynamicHelper(fillContents, threadRegister, options, counters, nonNullType));
+        return PiNode.piCastToSnippetReplaceeStamp(allocateInstanceDynamicHelper(type, fillContents, threadRegister, options, counters, nonNullType));
     }
 
-    private static Object allocateInstanceDynamicHelper(boolean fillContents, Register threadRegister, OptionValues options, Counters counters, Class<?> nonNullType) {
+    private static Object allocateInstanceDynamicHelper(Class<?> type, boolean fillContents, Register threadRegister, OptionValues options, Counters counters, Class<?> nonNullType) {
         KlassPointer hub = ClassGetHubNode.readClass(nonNullType);
         if (probability(FAST_PATH_PROBABILITY, !hub.isNull())) {
             KlassPointer nonNullHub = ClassGetHubNode.piCastNonNull(hub, SnippetAnchorNode.anchor());
@@ -297,8 +297,7 @@ public class NewObjectSnippets implements Snippets {
                 DeoptimizeNode.deopt(None, RuntimeConstraint);
             }
         }
-        DeoptimizeNode.deopt(None, RuntimeConstraint);
-        return null;
+        return dynamicNewInstanceStub(type);
     }
 
     /**
@@ -385,6 +384,24 @@ public class NewObjectSnippets implements Snippets {
 
     @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = false)
     private static native Object newArrayOrNull(@ConstantNodeParameter ForeignCallDescriptor descriptor, KlassPointer hub, int length);
+
+    /**
+     * New dynamic array stub that throws an {@link OutOfMemoryError} on allocation failure.
+     */
+    public static final ForeignCallDescriptor DYNAMIC_NEW_INSTANCE = new ForeignCallDescriptor("dynamic_new_instance", Object.class, Class.class);
+
+    /**
+     * New dynamic array stub that returns null on allocation failure.
+     */
+    public static final ForeignCallDescriptor DYNAMIC_NEW_INSTANCE_OR_NULL = new ForeignCallDescriptor("dynamic_new_instance_or_null", Object.class, Class.class);
+
+    public static Object dynamicNewInstanceStub(Class<?> elementType) {
+        if (useNullAllocationStubs(INJECTED_VMCONFIG)) {
+            return nonNullOrDeopt(dynamicNewInstanceOrNull(DYNAMIC_NEW_INSTANCE_OR_NULL, elementType));
+        } else {
+            return dynamicNewInstance(DYNAMIC_NEW_INSTANCE, elementType);
+        }
+    }
 
     /**
      * Deoptimizes if {@code obj == null} otherwise returns {@code obj}.

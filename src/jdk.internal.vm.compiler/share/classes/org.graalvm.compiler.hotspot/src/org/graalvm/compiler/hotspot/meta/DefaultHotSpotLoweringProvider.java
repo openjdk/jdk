@@ -774,20 +774,6 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
     }
 
     @Override
-    public int arrayScalingFactor(JavaKind kind) {
-        if (runtime.getVMConfig().useCompressedOops && kind == JavaKind.Object) {
-            return super.arrayScalingFactor(JavaKind.Int);
-        } else {
-            return super.arrayScalingFactor(kind);
-        }
-    }
-
-    @Override
-    public int arrayBaseOffset(JavaKind kind) {
-        return metaAccess.getArrayBaseOffset(kind);
-    }
-
-    @Override
     public int arrayLengthOffset() {
         return runtime.getVMConfig().arrayOopDescLengthOffset();
     }

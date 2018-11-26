@@ -84,8 +84,8 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         this.kind2 = kind2;
 
         // Both offsets should be the same but better be safe than sorry.
-        this.array1BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind1);
-        this.array2BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind2);
+        this.array1BaseOffset = tool.getProviders().getMetaAccess().getArrayBaseOffset(kind1);
+        this.array2BaseOffset = tool.getProviders().getMetaAccess().getArrayBaseOffset(kind2);
 
         this.resultValue = result;
         this.array1Value = array1;

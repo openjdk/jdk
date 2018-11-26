@@ -260,7 +260,7 @@ void ZPageAllocator::destroy_page(ZPage* page) {
 
   // Free virtual memory
   {
-    ZLocker locker(&_lock);
+    ZLocker<ZLock> locker(&_lock);
     _virtual.free(page->virtual_memory());
   }
 
@@ -268,7 +268,7 @@ void ZPageAllocator::destroy_page(ZPage* page) {
 }
 
 void ZPageAllocator::flush_detached_pages(ZList<ZPage>* list) {
-  ZLocker locker(&_lock);
+  ZLocker<ZLock> locker(&_lock);
   list->transfer(&_detached);
 }
 
@@ -376,7 +376,7 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
       // thread have returned from sem_wait(). To avoid this race we are
       // forcing the waiting thread to acquire/release the lock held by the
       // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
-      ZLocker locker(&_lock);
+      ZLocker<ZLock> locker(&_lock);
     }
   }
 
@@ -384,7 +384,7 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
 }
 
 ZPage* ZPageAllocator::alloc_page_nonblocking(uint8_t type, size_t size, ZAllocationFlags flags) {
-  ZLocker locker(&_lock);
+  ZLocker<ZLock> locker(&_lock);
   return alloc_page_common(type, size, flags);
 }
 
@@ -477,7 +477,7 @@ void ZPageAllocator::flip_pre_mapped() {
 }
 
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
-  ZLocker locker(&_lock);
+  ZLocker<ZLock> locker(&_lock);
 
   // Update used statistics
   decrease_used(page->size(), reclaimed);
@@ -495,7 +495,7 @@ bool ZPageAllocator::is_alloc_stalled() const {
 }
 
 void ZPageAllocator::check_out_of_memory() {
-  ZLocker locker(&_lock);
+  ZLocker<ZLock> locker(&_lock);
 
   // Fail allocation requests that were enqueued before the
   // last GC cycle started, otherwise start a new GC cycle.

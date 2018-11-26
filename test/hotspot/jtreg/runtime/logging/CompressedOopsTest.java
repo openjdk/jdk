@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8149991
- * @requires (sun.arch.data.model == "64")
- * @requires vm.opt.final.UseCompressedOops
+ * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @summary -Xlog:gc+heap+coops=info should have output from the code
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

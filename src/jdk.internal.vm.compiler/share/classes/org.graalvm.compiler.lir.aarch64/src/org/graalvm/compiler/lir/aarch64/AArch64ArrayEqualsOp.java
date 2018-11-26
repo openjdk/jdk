@@ -64,14 +64,14 @@ public final class AArch64ArrayEqualsOp extends AArch64LIRInstruction {
     @Temp({REG}) protected Value temp3;
     @Temp({REG}) protected Value temp4;
 
-    public AArch64ArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, Value result, Value array1, Value array2, Value length) {
+    public AArch64ArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, Value result, Value array1, Value array2, Value length, boolean directPointers) {
         super(TYPE);
 
         assert !kind.isNumericFloat() : "Float arrays comparison (bitwise_equal || both_NaN) isn't supported";
         this.kind = kind;
 
-        this.arrayBaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind);
-        this.arrayIndexScale = tool.getProviders().getArrayOffsetProvider().arrayScalingFactor(kind);
+        this.arrayBaseOffset = directPointers ? 0 : tool.getProviders().getMetaAccess().getArrayBaseOffset(kind);
+        this.arrayIndexScale = tool.getProviders().getMetaAccess().getArrayIndexScale(kind);
 
         this.resultValue = result;
         this.array1Value = array1;

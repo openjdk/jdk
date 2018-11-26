@@ -495,7 +495,7 @@ class JfrClassLoaderStatsVMOperation : public ClassLoaderStatsVMOperation {
 
   void doit() {
     JfrClassLoaderStatsClosure clsc;
-    ClassLoaderDataGraph::cld_do(&clsc);
+    ClassLoaderDataGraph::loaded_cld_do(&clsc);
     clsc.createEvents();
   }
 };

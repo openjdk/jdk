@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/accessDecorators.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -55,12 +56,15 @@ const DecoratorSet C2_TIGHLY_COUPLED_ALLOC   = DECORATOR_LAST << 9;
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 
 class Compile;
+class ConnectionGraph;
 class GraphKit;
 class IdealKit;
 class Node;
+class PhaseGVN;
+class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class PhaseMacroExpand;
+class Unique_Node_List;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {
@@ -277,6 +281,8 @@ public:
   // expanded later, then now is the time to do so.
   virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const { return false; }
 
+  virtual bool has_special_unique_user(const Node* node) const { return false; }
+
   enum CompilePhase {
     BeforeOptimize, /* post_parse = true */
     BeforeExpand, /* post_parse = false */
@@ -290,6 +296,18 @@ public:
 #endif
 
   virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const { return false; }
+
+  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
+  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
+  virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
+  virtual bool escape_is_barrier_node(Node* n) const { return false; }
+
+  virtual bool matcher_find_shared_visit(Matcher* matcher, Matcher::MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) const { return false; };
+  virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
+  virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
+
+  virtual void igvn_add_users_to_worklist(PhaseIterGVN* igvn, Node* use) const {}
+  virtual void ccp_analyze(PhaseCCP* ccp, Unique_Node_List& worklist, Node* use) const {}
 
 };
 

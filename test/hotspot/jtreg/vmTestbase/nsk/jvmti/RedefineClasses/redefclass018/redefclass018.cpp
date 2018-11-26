@@ -162,7 +162,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass018_getReady(JNIEnv *env, jclass cls,
 
     classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
-    if ((err = (jvmti->GetCurrentThread(&thread))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCurrentThread(&thread);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
         result = STATUS_FAILED;
         return;

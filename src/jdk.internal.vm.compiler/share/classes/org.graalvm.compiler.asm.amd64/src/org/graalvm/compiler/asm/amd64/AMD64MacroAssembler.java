@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.asm.amd64;
 
+import static jdk.vm.ci.amd64.AMD64.rbp;
+import static jdk.vm.ci.amd64.AMD64.rsp;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseIncDec;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseXmmLoadAndClearUpper;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseXmmRegToRegMoveAll;
@@ -79,6 +81,20 @@ public class AMD64MacroAssembler extends AMD64Assembler {
             decq(dst);
         } else {
             subq(dst, value);
+        }
+    }
+
+    public final void enter(int frameSize) {
+        if (NumUtil.isUShort(frameSize)) {
+            // Can use enter instruction only for frame size that fits in 16 bits.
+            emitByte(0xC8);
+            emitShort(frameSize);
+            emitByte(0x00);
+        } else {
+            // Fall back to manual sequence.
+            push(rbp);
+            movq(rbp, rsp);
+            decrementq(rsp, frameSize);
         }
     }
 

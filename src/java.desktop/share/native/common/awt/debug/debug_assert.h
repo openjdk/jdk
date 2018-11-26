@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ extern "C" {
 /* prototype for assert function */
 typedef void (*DASSERT_CALLBACK)(const char * msg, const char * file, int line);
 
-extern void DAssert_Impl(const char * msg, const char * file, int line);
+/* JNIEXPORT because this function is also called from libawt_xawt */
+JNIEXPORT void JNICALL DAssert_Impl(const char * msg, const char * file, int line);
 extern void DAssert_SetCallback( DASSERT_CALLBACK pfn );
 
 #else /* DEBUG not defined */

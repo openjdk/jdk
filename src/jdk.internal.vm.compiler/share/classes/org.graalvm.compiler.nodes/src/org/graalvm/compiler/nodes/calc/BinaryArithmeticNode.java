@@ -32,6 +32,7 @@ import java.util.function.Function;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
@@ -131,6 +132,35 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
 
     public static ValueNode sub(ValueNode v1, ValueNode v2, NodeView view) {
         return SubNode.create(v1, v2, view);
+    }
+
+    public static ValueNode branchlessMin(ValueNode v1, ValueNode v2, NodeView view) {
+        if (v1.isDefaultConstant() && !v2.isDefaultConstant()) {
+            return branchlessMin(v2, v1, view);
+        }
+        int bits = ((IntegerStamp) v1.stamp(view)).getBits();
+        assert ((IntegerStamp) v2.stamp(view)).getBits() == bits;
+        ValueNode t1 = sub(v1, v2, view);
+        ValueNode t2 = RightShiftNode.create(t1, bits - 1, view);
+        ValueNode t3 = AndNode.create(t1, t2, view);
+        return add(v2, t3, view);
+    }
+
+    public static ValueNode branchlessMax(ValueNode v1, ValueNode v2, NodeView view) {
+        if (v1.isDefaultConstant() && !v2.isDefaultConstant()) {
+            return branchlessMax(v2, v1, view);
+        }
+        int bits = ((IntegerStamp) v1.stamp(view)).getBits();
+        assert ((IntegerStamp) v2.stamp(view)).getBits() == bits;
+        if (v2.isDefaultConstant()) {
+            // prefer a & ~(a>>31) to a - (a & (a>>31))
+            return AndNode.create(v1, NotNode.create(RightShiftNode.create(v1, bits - 1, view)), view);
+        } else {
+            ValueNode t1 = sub(v1, v2, view);
+            ValueNode t2 = RightShiftNode.create(t1, bits - 1, view);
+            ValueNode t3 = AndNode.create(t1, t2, view);
+            return sub(v1, t3, view);
+        }
     }
 
     private enum ReassociateMatch {

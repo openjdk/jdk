@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,35 @@ private:
 
 public:
   ZLock();
+  ~ZLock();
 
   void lock();
   bool try_lock();
   void unlock();
 };
 
-class ZLocker : public StackObj {
+class ZReentrantLock {
 private:
-  ZLock* const _lock;
+  ZLock            _lock;
+  Thread* volatile _owner;
+  uint64_t         _count;
 
 public:
-  ZLocker(ZLock* lock);
+  ZReentrantLock();
+
+  void lock();
+  void unlock();
+
+  bool is_owned() const;
+};
+
+template <typename T>
+class ZLocker : public StackObj {
+private:
+  T* const _lock;
+
+public:
+  ZLocker(T* lock);
   ~ZLocker();
 };
 

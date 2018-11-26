@@ -114,6 +114,13 @@ public final class SubprocessUtil {
     }
 
     /**
+     * Detects whether a java agent is attached.
+     */
+    public static boolean isJavaAgentAttached() {
+        return SubprocessUtil.getVMCommandLine().stream().anyMatch(args -> args.startsWith("-javaagent"));
+    }
+
+    /**
      * The details of a subprocess execution.
      */
     public static class Subprocess {

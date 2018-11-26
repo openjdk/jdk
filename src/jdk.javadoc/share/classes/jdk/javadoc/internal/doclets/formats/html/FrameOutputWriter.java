@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         if (configuration.windowtitle.length() > 0) {
             printFramesDocument(configuration.windowtitle, body);
         } else {
-            printFramesDocument(configuration.getText("doclet.Generated_Docs_Untitled"), body);
+            printFramesDocument(resources.getText("doclet.Generated_Docs_Untitled"), body);
         }
     }
 
@@ -172,7 +172,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     private void addAllModulesFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.MODULE_OVERVIEW_FRAME.getPath(),
-                "packageListFrame", configuration.getText("doclet.All_Modules"));
+                "packageListFrame", resources.getText("doclet.All_Modules"));
         HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
         contentTree.addContent(leftTop);
     }
@@ -184,7 +184,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     private void addAllPackagesFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.OVERVIEW_FRAME.getPath(),
-                "packageListFrame", configuration.getText("doclet.All_Packages"));
+                "packageListFrame", resources.getText("doclet.All_Packages"));
         HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
         contentTree.addContent(leftTop);
     }
@@ -196,7 +196,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     private void addAllClassesFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.ALLCLASSES_FRAME.getPath(),
-                "packageFrame", configuration.getText("doclet.All_classes_and_interfaces"));
+                "packageFrame", resources.getText("doclet.All_classes_and_interfaces"));
         HtmlTree leftBottom = HtmlTree.DIV(HtmlStyle.leftBottom, frame);
         contentTree.addContent(leftBottom);
     }
@@ -208,7 +208,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     private void addClassFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(configuration.topFile.getPath(), "classFrame",
-                configuration.getText("doclet.Package_class_and_interface_descriptions"));
+                resources.getText("doclet.Package_class_and_interface_descriptions"));
         frame.setStyle(HtmlStyle.rightIframe);
         contentTree.addContent(frame);
     }

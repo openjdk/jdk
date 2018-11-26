@@ -94,6 +94,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+    final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
     final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags", Integer.class, "u2");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
@@ -101,6 +102,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
     final int instanceKlassMiscIsUnsafeAnonymous = getConstant("InstanceKlass::_misc_is_unsafe_anonymous", Integer.class);
+
+    final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
+    final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
 
     final int arrayU1LengthOffset = getFieldOffset("Array<int>::_length", Integer.class, "int");
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
@@ -195,6 +199,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int constMethodHasLineNumberTable = getConstant("ConstMethod::_has_linenumber_table", Integer.class);
     final int constMethodHasLocalVariableTable = getConstant("ConstMethod::_has_localvariable_table", Integer.class);
+    final int constMethodHasMethodAnnotations = getConstant("ConstMethod::_has_method_annotations", Integer.class);
+    final int constMethodHasParameterAnnotations = getConstant("ConstMethod::_has_parameter_annotations", Integer.class);
     final int constMethodHasExceptionTable = getConstant("ConstMethod::_has_exception_table", Integer.class);
 
     final int exceptionTableElementSize = getFieldValue("CompilerToVM::Data::sizeof_ExceptionTableElement", Integer.class, "int");
@@ -244,8 +250,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int heapWordSize = getConstant("HeapWordSize", Integer.class);
 
-    final int symbolPointerSize = getFieldValue("CompilerToVM::Data::sizeof_SymbolPointer", Integer.class, "int");
-
     final long vmSymbolsSymbols = getFieldAddress("vmSymbols::_symbols[0]", "Symbol*");
     final int vmSymbolsFirstSID = getConstant("vmSymbols::FIRST_SID", Integer.class);
     final int vmSymbolsSIDLimit = getConstant("vmSymbols::SID_LIMIT", Integer.class);
@@ -263,8 +267,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     String symbolAt(int index) {
         HotSpotJVMCIRuntime runtime = runtime();
         assert vmSymbolsFirstSID <= index && index < vmSymbolsSIDLimit : "index " + index + " is out of bounds";
-        assert symbolPointerSize == Unsafe.ADDRESS_SIZE : "the following address read is broken";
-        int offset = index * symbolPointerSize;
+        int offset = index * Unsafe.ADDRESS_SIZE;
         return runtime.getCompilerToVM().getSymbol(UNSAFE.getAddress(vmSymbolsSymbols + offset));
     }
 

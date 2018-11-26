@@ -68,12 +68,35 @@ public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerabl
         this(TYPE, group, name, increment, withContext);
     }
 
+    public static final long MIN_INCREMENT = 0;
+    public static final long MAX_INCREMENT = 10_000;
+
+    /**
+     * Clamps {@code value} to a value between {@link #MIN_INCREMENT} and {@link #MAX_INCREMENT}.
+     * This mitigates the possibility of overflowing benchmark counters.
+     */
+    public static long clampIncrement(long value) {
+        return Math.min(Math.max(value, MIN_INCREMENT), MAX_INCREMENT);
+    }
+
+    private boolean checkIncrement() {
+        if (increment.isJavaConstant()) {
+            long incValue = increment.asJavaConstant().asLong();
+            if (incValue < MIN_INCREMENT || incValue > MAX_INCREMENT) {
+                String message = String.format("Benchmark counter %s:%s has increment out of range [%d .. %d]: %d", group, getNameWithContext(), MIN_INCREMENT, MAX_INCREMENT, incValue);
+                assert false : message;
+            }
+        }
+        return true;
+    }
+
     protected DynamicCounterNode(NodeClass<? extends DynamicCounterNode> c, String group, String name, ValueNode increment, boolean withContext) {
         super(c, StampFactory.forVoid());
         this.group = group;
         this.name = name;
         this.increment = increment;
         this.withContext = withContext;
+        assert checkIncrement();
     }
 
     public ValueNode getIncrement() {
@@ -103,6 +126,16 @@ public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerabl
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool lirGen = generator.getLIRGeneratorTool();
+        String nameWithContext = getNameWithContext();
+        LIRInstruction counterOp = lirGen.createBenchmarkCounter(nameWithContext, getGroup(), generator.operand(increment));
+        if (counterOp != null) {
+            lirGen.append(counterOp);
+        } else {
+            throw GraalError.unimplemented("Benchmark counters not enabled or not implemented by the back end.");
+        }
+    }
+
+    private String getNameWithContext() {
         String nameWithContext;
         if (isWithContext()) {
             nameWithContext = getName() + " @ ";
@@ -121,12 +154,6 @@ public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerabl
         } else {
             nameWithContext = getName();
         }
-        LIRInstruction counterOp = lirGen.createBenchmarkCounter(nameWithContext, getGroup(), generator.operand(increment));
-        if (counterOp != null) {
-            lirGen.append(counterOp);
-        } else {
-            throw GraalError.unimplemented("Benchmark counters not enabled or not implemented by the back end.");
-        }
+        return nameWithContext;
     }
-
 }

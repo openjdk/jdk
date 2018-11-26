@@ -86,12 +86,47 @@ public final class ICUBinary {
                 }
             })) {
 
-            BufferedInputStream b=new BufferedInputStream(is, 4096 /* data buffer size */);
-            DataInputStream inputStream = new DataInputStream(b);
-            byte[] bb = new byte[130000];
-            int n = inputStream.read(bb);
-            ByteBuffer bytes = ByteBuffer.wrap(bb, 0, n);
-            return bytes;
+            // is.available() may return 0, or 1, or the total number of bytes in the stream,
+            // or some other number.
+            // Do not try to use is.available() == 0 to find the end of the stream!
+            byte[] bytes;
+            int avail = is.available();
+            if (avail > 32) {
+                // There are more bytes available than just the ICU data header length.
+                // With luck, it is the total number of bytes.
+                bytes = new byte[avail];
+            } else {
+                bytes = new byte[128];  // empty .res files are even smaller
+            }
+            // Call is.read(...) until one returns a negative value.
+            int length = 0;
+            for(;;) {
+                if (length < bytes.length) {
+                    int numRead = is.read(bytes, length, bytes.length - length);
+                    if (numRead < 0) {
+                        break;  // end of stream
+                    }
+                    length += numRead;
+                } else {
+                    // See if we are at the end of the stream before we grow the array.
+                    int nextByte = is.read();
+                    if (nextByte < 0) {
+                        break;
+                    }
+                    int capacity = 2 * bytes.length;
+                    if (capacity < 128) {
+                        capacity = 128;
+                    } else if (capacity < 0x4000) {
+                        capacity *= 2;  // Grow faster until we reach 16kB.
+                    }
+                    // TODO Java 6 replace new byte[] and arraycopy(): bytes = Arrays.copyOf(bytes, capacity);
+                    byte[] newBytes = new byte[capacity];
+                    System.arraycopy(bytes, 0, newBytes, 0, length);
+                    bytes = newBytes;
+                    bytes[length++] = (byte) nextByte;
+                }
+           }
+            return ByteBuffer.wrap(bytes, 0, length);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);

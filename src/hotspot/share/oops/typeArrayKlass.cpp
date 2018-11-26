@@ -195,7 +195,6 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     ResourceMark rm;
     JavaThread *jt = (JavaThread *)THREAD;
     {
-      MutexLocker mc(Compile_lock, THREAD);   // for vtables
       // Atomic create higher dimension and link into list
       MutexLocker mu(MultiArray_lock, THREAD);
 

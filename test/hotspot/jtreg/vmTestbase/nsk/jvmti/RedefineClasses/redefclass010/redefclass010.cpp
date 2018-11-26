@@ -93,7 +93,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -159,8 +160,8 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
         }
 
         /* get the LineNumberTable attribute */
-        if ((err = (jvmti->GetLineNumberTable(methodsInfo[i].mid,
-                &count, &ln_table))) != JVMTI_ERROR_NONE) {
+        err = jvmti->GetLineNumberTable(methodsInfo[i].mid, &count, &ln_table);
+        if (err != JVMTI_ERROR_NONE) {
             printf("%s: Failed to call GetLineNumberTable(): error=%d: %s\n",
                 __FILE__, err, TranslateError(err));
             printf("\tfor the%s%s method \"%s\", signature \"%s\"\n\n",
@@ -241,7 +242,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass010_makeRedefinition(JNIEnv *env,
     if (vrb)
         printf("\n>>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
+    err = jvmti->RedefineClasses(1, &classDef);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call RedefineClasses(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");

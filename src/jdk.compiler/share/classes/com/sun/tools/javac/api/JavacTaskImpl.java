@@ -172,7 +172,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             if (compiler == null || compiler.errorCount() == 0
                     || Options.instance(context).isSet("dev")) {
                 Log log = Log.instance(context);
-                log.printLines("msg.bug", JavaCompiler.version());
+                log.printLines(PrefixKind.JAVAC, "msg.bug", JavaCompiler.version());
                 ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
             }
             return abnormalErrorResult;

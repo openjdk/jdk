@@ -75,4 +75,8 @@ public class JDK9StringSubstitutions {
     public static native byte[] getValue(String s);
 
     public static native int getCoder(String s);
+
+    public static boolean isCompactString(String s) {
+        return getCoder(s) == 0;
+    }
 }

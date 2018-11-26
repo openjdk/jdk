@@ -984,44 +984,50 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif
+
 #if COMPILER2_OR_JVMCI
-  if (MaxVectorSize > 0) {
+  int max_vector_size = 0;
+  if (UseSSE < 2) {
+    // Vectors (in XMM) are only supported with SSE2+
+    // SSE is always 2 on x64.
+    max_vector_size = 0;
+  } else if (UseAVX == 0 || !os_supports_avx_vectors()) {
+    // 16 byte vectors (in XMM) are supported with SSE2+
+    max_vector_size = 16;
+  } else if (UseAVX == 1 || UseAVX == 2) {
+    // 32 bytes vectors (in YMM) are only supported with AVX+
+    max_vector_size = 32;
+  } else if (UseAVX > 2 ) {
+    // 64 bytes vectors (in ZMM) are only supported with AVX 3
+    max_vector_size = 64;
+  }
+
+#ifdef _LP64
+  int min_vector_size = 4; // We require MaxVectorSize to be at least 4 on 64bit
+#else
+  int min_vector_size = 0;
+#endif
+
+  if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
+    if (MaxVectorSize < min_vector_size) {
+      warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, min_vector_size);
+    }
+    if (MaxVectorSize > max_vector_size) {
+      warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+    }
     if (!is_power_of_2(MaxVectorSize)) {
-      warning("MaxVectorSize must be a power of 2");
-      FLAG_SET_DEFAULT(MaxVectorSize, 64);
+      warning("MaxVectorSize must be a power of 2, setting to default: %i", max_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
     }
-    if (UseSSE < 2) {
-      // Vectors (in XMM) are only supported with SSE2+
-      if (MaxVectorSize > 0) {
-        if (!FLAG_IS_DEFAULT(MaxVectorSize))
-          warning("MaxVectorSize must be 0");
-        FLAG_SET_DEFAULT(MaxVectorSize, 0);
-      }
-    }
-    else if (UseAVX == 0 || !os_supports_avx_vectors()) {
-      // 32 bytes vectors (in YMM) are only supported with AVX+
-      if (MaxVectorSize > 16) {
-        if (!FLAG_IS_DEFAULT(MaxVectorSize))
-          warning("MaxVectorSize must be <= 16");
-        FLAG_SET_DEFAULT(MaxVectorSize, 16);
-      }
-    }
-    else if (UseAVX == 1 || UseAVX == 2) {
-      // 64 bytes vectors (in ZMM) are only supported with AVX 3
-      if (MaxVectorSize > 32) {
-        if (!FLAG_IS_DEFAULT(MaxVectorSize))
-          warning("MaxVectorSize must be <= 32");
-        FLAG_SET_DEFAULT(MaxVectorSize, 32);
-      }
-    }
-    else if (UseAVX > 2 ) {
-      if (MaxVectorSize > 64) {
-        if (!FLAG_IS_DEFAULT(MaxVectorSize))
-          warning("MaxVectorSize must be <= 64");
-        FLAG_SET_DEFAULT(MaxVectorSize, 64);
-      }
-    }
+  } else {
+    // If default, use highest supported configuration
+    FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+  }
+
 #if defined(COMPILER2) && defined(ASSERT)
+  if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
       int nreg = 2 LP64_ONLY(+2);
@@ -1034,11 +1040,9 @@ void VM_Version::get_processor_features() {
         tty->cr();
       }
     }
-#endif // COMPILER2 && ASSERT
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2 && ASSERT
 
-#ifdef COMPILER2
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
@@ -1086,8 +1090,8 @@ void VM_Version::get_processor_features() {
     }
     FLAG_SET_DEFAULT(UseMulAddIntrinsic, false);
   }
-#endif
-#endif // COMPILER2
+#endif // _LP64
+#endif // COMPILER2_OR_JVMCI
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.

@@ -97,8 +97,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
-        constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
-                configuration.getText("doclet.Constants_Summary"));
+        constantsTableSummary = resources.getText("doclet.Constants_Table_Summary",
+                resources.getText("doclet.Constants_Summary"));
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
         this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.CONSTANTVALUES, path);
@@ -109,7 +109,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     @Override
     public Content getHeader() {
-        String label = configuration.getText("doclet.Constants_Summary");
+        String label = resources.getText("doclet.Constants_Summary");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()

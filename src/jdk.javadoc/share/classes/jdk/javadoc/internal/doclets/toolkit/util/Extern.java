@@ -39,6 +39,7 @@ import javax.tools.DocumentationTool;
 
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 
 /**
  * Process and manage "-link" and "-linkoffline" to external packages. The
@@ -68,6 +69,10 @@ public class Extern {
      * The global configuration information for this run.
      */
     private final BaseConfiguration configuration;
+
+    private final Resources resources;
+
+    private final Utils utils;
 
     /**
      * True if we are using -linkoffline and false if -link is used instead.
@@ -122,6 +127,8 @@ public class Extern {
 
     public Extern(BaseConfiguration configuration) {
         this.configuration = configuration;
+        this.resources = configuration.getResources();
+        this.utils = configuration.utils;
     }
 
     /**
@@ -134,7 +141,7 @@ public class Extern {
         if (packageItems.isEmpty()) {
             return false;
         }
-        PackageElement pe = configuration.utils.containingPackage(element);
+        PackageElement pe = utils.containingPackage(element);
         if (pe.isUnnamed()) {
             return false;
         }
@@ -242,7 +249,7 @@ public class Extern {
         try {
             return new URL(url);
         } catch (MalformedURLException e) {
-            throw new Fault(configuration.getText("doclet.MalformedURL", url), e);
+            throw new Fault(resources.getText("doclet.MalformedURL", url), e);
         }
     }
 
@@ -262,13 +269,13 @@ public class Extern {
     private Item findElementItem(Element element) {
         Item item = null;
         if (element instanceof ModuleElement) {
-            item = moduleItems.get(configuration.utils.getModuleName((ModuleElement)element));
+            item = moduleItems.get(utils.getModuleName((ModuleElement)element));
         }
         else if (element instanceof PackageElement) {
             PackageElement packageElement = (PackageElement)element;
-            ModuleElement moduleElement = configuration.utils.containingModule(packageElement);
-            Map<String, Item> pkgMap = packageItems.get(configuration.utils.getModuleName(moduleElement));
-            item = (pkgMap != null) ? pkgMap.get(configuration.utils.getPackageName(packageElement)) : null;
+            ModuleElement moduleElement = utils.containingModule(packageElement);
+            Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
+            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(packageElement)) : null;
         }
         return item;
     }
@@ -291,7 +298,7 @@ public class Extern {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.ELEMENT_LIST.getPath()).toURL();
             readElementList(link.openStream(), urlpath, false);
         } catch (URISyntaxException | MalformedURLException exc) {
-            throw new Fault(configuration.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
+            throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
             readAlternateURL(urlpath, elemlisturlpath);
         }
@@ -308,9 +315,9 @@ public class Extern {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
             readElementList(link.openStream(), urlpath, false);
         } catch (URISyntaxException | MalformedURLException exc) {
-            throw new Fault(configuration.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
+            throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
-            throw new Fault(configuration.getText("doclet.URL_error", elemlisturlpath.toString()), exc);
+            throw new Fault(resources.getText("doclet.URL_error", elemlisturlpath.toString()), exc);
         }
     }
 
@@ -338,7 +345,7 @@ public class Extern {
             if (file1.exists()) {
                 readElementList(file1, path);
             } else {
-                throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
+                throw new Fault(resources.getText("doclet.File_error", file.getPath()), null);
             }
         }
     }
@@ -351,10 +358,10 @@ public class Extern {
                         && !DocFile.createFileForInput(configuration, path).isAbsolute();
                 readElementList(file.openInputStream(), path, pathIsRelative);
             } else {
-                throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
+                throw new Fault(resources.getText("doclet.File_error", file.getPath()), null);
             }
         } catch (IOException exc) {
-           throw new Fault(configuration.getText("doclet.File_error", file.getPath()), exc);
+            throw new Fault(resources.getText("doclet.File_error", file.getPath()), exc);
         }
     }
 
@@ -416,10 +423,10 @@ public class Extern {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
                 if (moduleName != null)
-                    throw new Fault(configuration.getText("doclet.linkMismatch_PackagedLinkedtoModule",
+                    throw new Fault(resources.getText("doclet.linkMismatch_PackagedLinkedtoModule",
                             path), null);
             } else if (moduleName == null)
-                throw new Fault(configuration.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
+                throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
                         path), null);
         }
     }

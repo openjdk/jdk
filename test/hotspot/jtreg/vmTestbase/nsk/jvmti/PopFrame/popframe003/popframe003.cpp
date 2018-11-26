@@ -87,7 +87,8 @@ Java_nsk_jvmti_PopFrame_popframe003_suspThread(JNIEnv *env,
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke SuspendThread()\n");
-    if ((err = (jvmti->SuspendThread(susThr))) != JVMTI_ERROR_NONE) {
+    err = jvmti->SuspendThread(susThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call SuspendThread(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         return JNI_ERR;
@@ -108,7 +109,8 @@ Java_nsk_jvmti_PopFrame_popframe003_resThread(JNIEnv *env, jclass cls, jint vrb,
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke ResumeThread()\n");
-    if ((err = (jvmti->ResumeThread(susThr))) != JVMTI_ERROR_NONE) {
+    err = jvmti->ResumeThread(susThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call ResumeThread(): error=%d: %s\n",
             __FILE__, err, TranslateError(err));
         return JNI_ERR;
@@ -148,7 +150,8 @@ Java_nsk_jvmti_PopFrame_popframe003_doPopFrame(JNIEnv *env, jclass cls, jint vrb
         printf(">>>>>>>> Invoke PopFrame()\n");
     set_watch_ev(1); /* watch JVMTI events */
 
-    if ((err = (jvmti->PopFrame(frameThr))) != JVMTI_ERROR_NONE) {
+    err = jvmti->PopFrame(frameThr);
+    if (err != JVMTI_ERROR_NONE) {
         printf("TEST FAILED: the function PopFrame() returned the error %d: %s\n",
             err, TranslateError(err));
         printf("\tFor more info about this error see the JVMTI spec.\n");

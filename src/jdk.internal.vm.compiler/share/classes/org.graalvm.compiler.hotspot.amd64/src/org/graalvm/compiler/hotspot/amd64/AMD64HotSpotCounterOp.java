@@ -24,18 +24,21 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static jdk.vm.ci.amd64.AMD64.rax;
 import static jdk.vm.ci.amd64.AMD64.rbx;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
+import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.hotspot.HotSpotCounterOp;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotCounterOp;
+import org.graalvm.compiler.hotspot.debug.BenchmarkCounters;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -90,7 +93,7 @@ public class AMD64HotSpotCounterOp extends HotSpotCounterOp {
 
         // load counters array
         masm.movptr(countersArrayReg, countersArrayAddr);
-        CounterProcedure emitProcedure = (counterIndex, increment, displacement) -> emitIncrement(masm, countersArrayReg, increment, displacement);
+        CounterProcedure emitProcedure = (counterIndex, increment, displacement) -> emitIncrement(crb, masm, countersArrayReg, increment, displacement);
         forEachCounter(emitProcedure, target);
 
         // restore scratch register
@@ -109,7 +112,7 @@ public class AMD64HotSpotCounterOp extends HotSpotCounterOp {
         return false;
     }
 
-    private static void emitIncrement(AMD64MacroAssembler masm, Register countersArrayReg, Value incrementValue, int displacement) {
+    private static void emitIncrement(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register countersArrayReg, Value incrementValue, int displacement) {
         // address for counter value
         AMD64Address counterAddr = new AMD64Address(countersArrayReg, displacement);
         // increment counter (in memory)
@@ -119,6 +122,12 @@ public class AMD64HotSpotCounterOp extends HotSpotCounterOp {
         } else {
             masm.addq(counterAddr, asRegister(incrementValue));
         }
-
+        if (BenchmarkCounters.Options.AbortOnBenchmarkCounterOverflow.getValue(crb.getOptions())) {
+            Label target = new Label();
+            masm.jccb(AMD64Assembler.ConditionFlag.NoOverflow, target);
+            crb.blockComment("[BENCHMARK COUNTER OVERFLOW]");
+            masm.illegal();
+            masm.bind(target);
+        }
     }
 }

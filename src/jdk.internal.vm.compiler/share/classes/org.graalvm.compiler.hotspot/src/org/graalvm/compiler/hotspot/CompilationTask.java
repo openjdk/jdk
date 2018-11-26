@@ -31,6 +31,7 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureA
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
 
+import java.io.PrintStream;
 import java.util.List;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
@@ -105,9 +106,9 @@ public class CompilationTask {
         }
 
         @Override
-        protected DebugContext createRetryDebugContext(OptionValues retryOptions) {
+        protected DebugContext createRetryDebugContext(OptionValues retryOptions, PrintStream logStream) {
             SnippetReflectionProvider snippetReflection = compiler.getGraalRuntime().getHostProviders().getSnippetReflection();
-            return DebugContext.create(retryOptions, new GraalDebugHandlersFactory(snippetReflection));
+            return DebugContext.create(retryOptions, logStream, new GraalDebugHandlersFactory(snippetReflection));
         }
 
         @Override

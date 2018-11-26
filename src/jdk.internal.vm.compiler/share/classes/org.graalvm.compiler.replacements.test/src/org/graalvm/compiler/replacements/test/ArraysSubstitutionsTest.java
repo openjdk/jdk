@@ -24,213 +24,71 @@
 
 package org.graalvm.compiler.replacements.test;
 
-import java.util.Arrays;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.graalvm.compiler.replacements.ArraysSubstitutions;
 import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Tests {@link ArraysSubstitutions}.
- */
-public class ArraysSubstitutionsTest extends MethodSubstitutionTest {
+import java.util.Arrays;
+
+import static org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+
+public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
 
     private static final int N = 10;
 
-    @Test
-    public void testEqualsBoolean() {
+    private void testEquals(String methodName, Class<?>[] parameterTypes, ArrayBuilder builder) {
         Object[] args1 = new Object[N];
         Object[] args2 = new Object[N];
         int n = 0;
-
         // equal arrays
         for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new boolean[i];
-            args2[n] = new boolean[i];
+            args1[n] = builder.newArray(i, 0, 1);
+            args2[n] = builder.newArray(i, 0, 1);
         }
-
         // non-equal arrays
         for (int i = 0; i < N / 2; i++, n++) {
-            boolean[] a2 = new boolean[i];
-            if (i > 0) {
-                a2[i - 1] = true;
-            }
-            args1[n] = new boolean[i];
-            args2[n] = a2;
+            args1[n] = builder.newArray(i, 0, 1);
+            args2[n] = builder.newArray(i, 1, 1);
         }
-        Class<?>[] parameterTypes = new Class<?>[]{boolean[].class, boolean[].class};
-        testSubstitution("arraysEqualsBoolean", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
+        testSubstitution(methodName, ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, false, args1, args2);
     }
 
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsBoolean(boolean[] a, boolean[] b) {
-        return Arrays.equals(a, b);
+    @Test
+    public void testEqualsBoolean() {
+        testEquals("arraysEqualsBoolean", new Class<?>[]{boolean[].class, boolean[].class}, ArraysSubstitutionsTestBase::booleanArray);
     }
 
     @Test
     public void testEqualsByte() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new byte[i];
-            args2[n] = new byte[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            byte[] a2 = new byte[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new byte[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{byte[].class, byte[].class};
-        testSubstitution("arraysEqualsByte", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsByte(byte[] a, byte[] b) {
-        return Arrays.equals(a, b);
+        testEquals("arraysEqualsByte", new Class<?>[]{byte[].class, byte[].class}, ArraysSubstitutionsTestBase::byteArray);
     }
 
     @Test
     public void testEqualsChar() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new char[i];
-            args2[n] = new char[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            char[] a2 = new char[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new char[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{char[].class, char[].class};
-        testSubstitution("arraysEqualsChar", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsChar(char[] a, char[] b) {
-        return Arrays.equals(a, b);
+        testEquals("arraysEqualsChar", new Class<?>[]{char[].class, char[].class}, ArraysSubstitutionsTestBase::charArray);
     }
 
     @Test
     public void testEqualsShort() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new short[i];
-            args2[n] = new short[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            short[] a2 = new short[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new short[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{short[].class, short[].class};
-        testSubstitution("arraysEqualsShort", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsShort(short[] a, short[] b) {
-        return Arrays.equals(a, b);
+        testEquals("arraysEqualsShort", new Class<?>[]{short[].class, short[].class}, ArraysSubstitutionsTestBase::shortArray);
     }
 
     @Test
     public void testEqualsInt() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new int[i];
-            args2[n] = new int[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            int[] a2 = new int[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new int[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{int[].class, int[].class};
-        testSubstitution("arraysEqualsInt", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsInt(int[] a, int[] b) {
-        return Arrays.equals(a, b);
+        testEquals("arraysEqualsInt", new Class<?>[]{int[].class, int[].class}, ArraysSubstitutionsTestBase::intArray);
     }
 
     @Test
     public void testEqualsLong() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new long[i];
-            args2[n] = new long[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            long[] a2 = new long[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new long[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{long[].class, long[].class};
-        testSubstitution("arraysEqualsLong", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsLong(long[] a, long[] b) {
-        return Arrays.equals(a, b);
+        testEquals("arraysEqualsLong", new Class<?>[]{long[].class, long[].class}, ArraysSubstitutionsTestBase::longArray);
     }
 
     @Test

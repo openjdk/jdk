@@ -31,6 +31,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"

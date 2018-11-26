@@ -26,8 +26,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test MaxMetaspaceSizeTest
- * @requires vm.bits == "64"
- * @requires vm.opt.final.UseCompressedOops
+ * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @bug 8087291
  * @library /test/lib
  * @run main/othervm MaxMetaspaceSizeTest

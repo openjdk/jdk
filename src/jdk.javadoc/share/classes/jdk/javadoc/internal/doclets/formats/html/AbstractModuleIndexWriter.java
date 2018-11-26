@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem building the module index file
      */
     protected void buildModuleIndexFile(String title, boolean includeScript) throws DocFileIOException {
-        String windowOverview = configuration.getText(title);
+        String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
         addNavigationBarHeader(header);
@@ -158,7 +158,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected void buildModulePackagesIndexFile(String title,
             boolean includeScript, ModuleElement mdle) throws DocFileIOException {
-        String windowOverview = configuration.getText(title);
+        String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
         addNavigationBarHeader(header);
@@ -190,9 +190,9 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected void addIndex(Content header, Content main) {
         addIndexContents(configuration.modules, "doclet.Module_Summary",
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Module_Summary"),
-                configuration.getText("doclet.modules")), header, main);
+                resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Module_Summary"),
+                resources.getText("doclet.modules")), header, main);
     }
 
     /**
@@ -204,9 +204,9 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected void addModulePackagesIndex(Content header, Content main, ModuleElement mdle) {
         addModulePackagesIndexContents("doclet.Module_Summary",
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Module_Summary"),
-                configuration.getText("doclet.modules")), header, main, mdle);
+                resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Module_Summary"),
+                resources.getText("doclet.modules")), header, main, mdle);
     }
 
     /**

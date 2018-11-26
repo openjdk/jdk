@@ -270,7 +270,8 @@ Java_nsk_jvmti_Exception_exception001_check(JNIEnv *env, jclass cls) {
         return STATUS_FAILED;
     }
 
-    if ((err = (jvmti->GetCurrentThread(&thread))) != JVMTI_ERROR_NONE) {
+    err = jvmti->GetCurrentThread(&thread);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
         result = STATUS_FAILED;
         return STATUS_FAILED;

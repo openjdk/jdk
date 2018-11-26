@@ -1032,12 +1032,11 @@ inline bool is_power_of_2_long(jlong x) {
 }
 
 // Returns largest i such that 2^i <= x.
-// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
 // If x == 0, the function returns -1.
-inline int log2_intptr(intptr_t x) {
+inline int log2_intptr(uintptr_t x) {
   int i = -1;
   uintptr_t p = 1;
-  while (p != 0 && p <= (uintptr_t)x) {
+  while (p != 0 && p <= x) {
     // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
     i++; p *= 2;
   }
@@ -1047,17 +1046,42 @@ inline int log2_intptr(intptr_t x) {
 }
 
 //* largest i such that 2^i <= x
-//  A negative value of 'x' will return '63'
-inline int log2_long(jlong x) {
+inline int log2_long(julong x) {
   int i = -1;
   julong p =  1;
-  while (p != 0 && p <= (julong)x) {
+  while (p != 0 && p <= x) {
     // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
     i++; p *= 2;
   }
   // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
   // (if p = 0 then overflow occurred and i = 63)
   return i;
+}
+
+// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
+inline int log2_intptr(intptr_t x) {
+  return log2_intptr((uintptr_t)x);
+}
+
+inline int log2_int(int x) {
+  STATIC_ASSERT(sizeof(int) <= sizeof(uintptr_t));
+  return log2_intptr((uintptr_t)x);
+}
+
+inline int log2_jint(jint x) {
+  STATIC_ASSERT(sizeof(jint) <= sizeof(uintptr_t));
+  return log2_intptr((uintptr_t)x);
+}
+
+inline int log2_uint(uint x) {
+  STATIC_ASSERT(sizeof(uint) <= sizeof(uintptr_t));
+  return log2_intptr((uintptr_t)x);
+}
+
+//  A negative value of 'x' will return '63'
+inline int log2_jlong(jlong x) {
+  STATIC_ASSERT(sizeof(jlong) <= sizeof(julong));
+  return log2_long((julong)x);
 }
 
 //* the argument must be exactly a power of 2
@@ -1074,6 +1098,29 @@ inline int exact_log2_long(jlong x) {
 
 inline bool is_odd (intx x) { return x & 1;      }
 inline bool is_even(intx x) { return !is_odd(x); }
+
+// abs methods which cannot overflow and so are well-defined across
+// the entire domain of integer types.
+static inline unsigned int uabs(unsigned int n) {
+  union {
+    unsigned int result;
+    int value;
+  };
+  result = n;
+  if (value < 0) result = 0-result;
+  return result;
+}
+static inline unsigned long uabs(unsigned long n) {
+  union {
+    unsigned long result;
+    long value;
+  };
+  result = n;
+  if (value < 0) result = 0-result;
+  return result;
+}
+static inline unsigned long uabs(jlong n) { return uabs((unsigned long)n); }
+static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
 inline intx byte_size(void* from, void* to) {
@@ -1260,5 +1307,18 @@ static inline void* dereference_vptr(const void* addr) {
 
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
+
+//----------------------------------------------------------------------------------------------------
+// Default hash/equals functions used by ResourceHashtable and KVHashtable
+
+template<typename K> unsigned primitive_hash(const K& k) {
+  unsigned hash = (unsigned)((uintptr_t)k);
+  return hash ^ (hash >> 3); // just in case we're dealing with aligned ptrs
+}
+
+template<typename K> bool primitive_equals(const K& k0, const K& k1) {
+  return k0 == k1;
+}
+
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

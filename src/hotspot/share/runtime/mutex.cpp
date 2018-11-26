@@ -875,7 +875,7 @@ void Monitor::lock(Thread * Self) {
   }
 #endif // CHECK_UNHANDLED_OOPS
 
-  debug_only(check_prelock_state(Self, StrictSafepointChecks));
+  DEBUG_ONLY(check_prelock_state(Self, StrictSafepointChecks);)
   assert(_owner != Self, "invariant");
   assert(_OnDeck != Self->_MutexEvent, "invariant");
 
@@ -902,7 +902,7 @@ void Monitor::lock(Thread * Self) {
   // Try a brief spin to avoid passing thru thread state transition ...
   if (TrySpin(Self)) goto Exeunt;
 
-  check_block_state(Self);
+  DEBUG_ONLY(check_block_state(Self);)
   if (Self->is_Java_thread()) {
     // Horrible dictu - we suffer through a state transition
     assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
@@ -943,7 +943,7 @@ void Monitor::lock_without_safepoint_check() {
 
 bool Monitor::try_lock() {
   Thread * const Self = Thread::current();
-  debug_only(check_prelock_state(Self, false));
+  DEBUG_ONLY(check_prelock_state(Self, false);)
   // assert(!thread->is_inside_signal_handler(), "don't lock inside signal handler");
 
   // Special case, where all Java threads are stopped.
@@ -1159,10 +1159,14 @@ void Monitor::ClearMonitor(Monitor * m, const char *name) {
   m->_WaitLock[0]       = 0;
 }
 
-Monitor::Monitor() { ClearMonitor(this); }
+Monitor::Monitor() {
+  assert(os::mutex_init_done(), "Too early!");
+  ClearMonitor(this);
+}
 
 Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
                  SafepointCheckRequired safepoint_check_required) {
+  assert(os::mutex_init_done(), "Too early!");
   ClearMonitor(this, name);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
@@ -1320,7 +1324,7 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
     // the thread is releasing this lock
 
     Thread* old_owner = _owner;
-    debug_only(_last_owner = old_owner);
+    DEBUG_ONLY(_last_owner = old_owner;)
 
     assert(old_owner != NULL, "removing the owner thread of an unowned mutex");
     assert(old_owner == Thread::current(), "removing the owner thread of an unowned mutex");
@@ -1360,7 +1364,7 @@ void Monitor::check_prelock_state(Thread *thread, bool safepoint_check) {
     if (thread->is_VM_thread() && !allow_vm_block()) {
       fatal("VM thread using lock %s (not allowed to block on)", name());
     }
-    debug_only(if (rank() != Mutex::special) \
+    DEBUG_ONLY(if (rank() != Mutex::special) \
                thread->check_for_valid_safepoint_state(false);)
   }
   assert(!os::ThreadCrashProtection::is_crash_protected(thread),

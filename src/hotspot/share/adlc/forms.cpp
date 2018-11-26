@@ -40,7 +40,7 @@ const char  *NameList::_signal3  = "$$SIGNAL3$$";
 
 // Constructor and Destructor
 NameList::NameList() : _cur(0), _max(4), _iter(0), _justReset(true) {
-  _names = (const char**)malloc(_max*sizeof(char*));
+  _names = (const char**) AllocateHeap(_max*sizeof(char*));
 }
 NameList::~NameList() {
   // The following free is a double-free, and crashes the program:

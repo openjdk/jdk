@@ -235,6 +235,10 @@ inline void Assembler::cntlzw(  Register a, Register s)              { emit_int3
 inline void Assembler::cntlzw_( Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(1)); }
 inline void Assembler::cntlzd(  Register a, Register s)              { emit_int32(CNTLZD_OPCODE | rta(a) | rs(s) | rc(0)); }
 inline void Assembler::cntlzd_( Register a, Register s)              { emit_int32(CNTLZD_OPCODE | rta(a) | rs(s) | rc(1)); }
+inline void Assembler::cnttzw(  Register a, Register s)              { emit_int32(CNTTZW_OPCODE | rta(a) | rs(s) | rc(0)); }
+inline void Assembler::cnttzw_( Register a, Register s)              { emit_int32(CNTTZW_OPCODE | rta(a) | rs(s) | rc(1)); }
+inline void Assembler::cnttzd(  Register a, Register s)              { emit_int32(CNTTZD_OPCODE | rta(a) | rs(s) | rc(0)); }
+inline void Assembler::cnttzd_( Register a, Register s)              { emit_int32(CNTTZD_OPCODE | rta(a) | rs(s) | rc(1)); }
 
 // PPC 1, section 3.3.12, Fixed-Point Rotate and Shift Instructions
 inline void Assembler::sld(     Register a, Register s, Register b)  { emit_int32(SLD_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }

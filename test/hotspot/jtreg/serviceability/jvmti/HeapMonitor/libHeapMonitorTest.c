@@ -502,6 +502,27 @@ static jboolean event_storage_contains(JNIEnv* env,
   return FALSE;
 }
 
+static jlong event_storage_get_size(JNIEnv* env,
+                                    EventStorage* storage,
+                                    ExpectedContentFrame* frames,
+                                    size_t size,
+                                    jboolean check_lines) {
+  int i;
+  event_storage_lock(storage);
+  fprintf(stderr, "Getting element from storage count, size %d\n", storage->live_object_count);
+  for (i = 0; i < storage->live_object_count; i++) {
+    ObjectTrace* trace = storage->live_objects[i];
+
+    if (check_sample_content(env, trace, frames, size, check_lines, PRINT_OUT)) {
+      jlong result = trace->size;
+      event_storage_unlock(storage);
+      return result;
+    }
+  }
+  event_storage_unlock(storage);
+  return 0;
+}
+
 static jboolean event_storage_garbage_contains(JNIEnv* env,
                                                EventStorage* storage,
                                                ExpectedContentFrame* frames,
@@ -968,30 +989,41 @@ Java_MyPackage_HeapMonitor_disableSamplingEvents(JNIEnv* env, jclass cls) {
               "Garbage Collection Finish");
 }
 
-JNIEXPORT jboolean JNICALL
-Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
-                                          jobjectArray frames,
-                                          jboolean check_lines) {
-  jboolean result;
-  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+static ExpectedContentFrame *get_native_frames(JNIEnv* env, jclass cls,
+                                               jobjectArray frames) {
   ExpectedContentFrame *native_frames;
+  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
 
   if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
     JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "obtainedEvents failed with the GetArrayLength call"));
+        JNI_ENV_ARG2(env, "get_native_frames failed with the GetArrayLength call"));
   }
 
   native_frames = malloc(size * sizeof(*native_frames));
 
   if (native_frames == NULL) {
     JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in obtainedEvents: malloc returned NULL for native_frames allocation\n"));
+        JNI_ENV_ARG2(env,
+                     "Error in get_native_frames: malloc returned NULL\n"));
   }
 
   if (fill_native_frames(env, frames, native_frames, size) != 0) {
     JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in obtainedEvents: fill_native_frames returned failed status\n"));
+        JNI_ENV_ARG2(env,
+                     "Error in get_native_frames: fill_native_frames returned failed status\n"));
   }
+
+  return native_frames;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
+                                          jobjectArray frames,
+                                          jboolean check_lines) {
+  jboolean result;
+  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
+
   result = event_storage_contains(env, &global_event_storage, native_frames,
                                   size, check_lines);
 
@@ -1005,26 +1037,25 @@ Java_MyPackage_HeapMonitor_garbageContains(JNIEnv* env, jclass cls,
                                            jboolean check_lines) {
   jboolean result;
   jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
-  ExpectedContentFrame *native_frames;
+  ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
-  if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "garbageContains failed with the GetArrayLength call"));
-  }
-
-  native_frames = malloc(size * sizeof(*native_frames));
-
-  if (native_frames == NULL) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in garbageContains: malloc returned NULL for native_frames allocation\n"));
-  }
-
-  if (fill_native_frames(env, frames, native_frames, size) != 0) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in garbageContains: fill_native_frames returned failed status\n"));
-  }
   result = event_storage_garbage_contains(env, &global_event_storage,
                                           native_frames, size, check_lines);
+
+  free(native_frames), native_frames = NULL;
+  return result;
+}
+
+JNIEXPORT jlong JNICALL
+Java_MyPackage_HeapMonitor_getSize(JNIEnv* env, jclass cls,
+                                   jobjectArray frames,
+                                   jboolean check_lines) {
+  jlong result = 0;
+  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
+
+  result = event_storage_get_size(env, &global_event_storage,
+                                  native_frames, size, check_lines);
 
   free(native_frames), native_frames = NULL;
   return result;

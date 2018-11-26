@@ -26,8 +26,6 @@ package org.graalvm.compiler.nodes.virtual;
 
 import java.nio.ByteOrder;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -37,7 +35,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 @NodeInfo(nameTemplate = "VirtualArray({p#objectId}) {p#componentType/s}[{p#length}]")
@@ -91,13 +91,13 @@ public class VirtualArrayNode extends VirtualObjectNode implements ArrayLengthPr
     }
 
     @Override
-    public int entryIndexForOffset(ArrayOffsetProvider arrayOffsetProvider, long constantOffset, JavaKind expectedEntryKind) {
-        return entryIndexForOffset(arrayOffsetProvider, constantOffset, expectedEntryKind, componentType, length);
+    public int entryIndexForOffset(MetaAccessProvider metaAccess, long constantOffset, JavaKind expectedEntryKind) {
+        return entryIndexForOffset(metaAccess, constantOffset, expectedEntryKind, componentType, length);
     }
 
-    public static int entryIndexForOffset(ArrayOffsetProvider arrayOffsetProvider, long constantOffset, JavaKind expectedEntryKind, ResolvedJavaType componentType, int length) {
-        int baseOffset = arrayOffsetProvider.arrayBaseOffset(componentType.getJavaKind());
-        int indexScale = arrayOffsetProvider.arrayScalingFactor(componentType.getJavaKind());
+    public static int entryIndexForOffset(MetaAccessProvider metaAccess, long constantOffset, JavaKind expectedEntryKind, ResolvedJavaType componentType, int length) {
+        int baseOffset = metaAccess.getArrayBaseOffset(componentType.getJavaKind());
+        int indexScale = metaAccess.getArrayIndexScale(componentType.getJavaKind());
 
         long offset;
         if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN && componentType.isPrimitive()) {

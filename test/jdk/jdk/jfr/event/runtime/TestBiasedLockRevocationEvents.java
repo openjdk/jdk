@@ -275,13 +275,13 @@ public class TestBiasedLockRevocationEvents {
         List<RecordedEvent> events = Events.fromRecording(recording);
 
         // Determine which safepoints included single and bulk revocation VM operations
-        Set<Integer> vmOperationsSingle = new HashSet<>();
-        Set<Integer> vmOperationsBulk = new HashSet<>();
+        Set<Long> vmOperationsSingle = new HashSet<>();
+        Set<Long> vmOperationsBulk = new HashSet<>();
 
         for (RecordedEvent event : events) {
             if (event.getEventType().getName().equals(EventNames.ExecuteVMOperation)) {
                 String operation = event.getValue("operation");
-                Integer safepointId = event.getValue("safepointId");
+                Long safepointId = event.getValue("safepointId");
 
                 if (operation.equals("RevokeBias")) {
                     vmOperationsSingle.add(safepointId);
@@ -297,14 +297,14 @@ public class TestBiasedLockRevocationEvents {
         // Match all revoke events to a corresponding VMOperation event
         for (RecordedEvent event : events) {
             if (event.getEventType().getName().equals(EventNames.BiasedLockRevocation)) {
-                Integer safepointId = event.getValue("safepointId");
+                Long safepointId = event.getValue("safepointId");
                 String lockClass = ((RecordedClass)event.getValue("lockClass")).getName();
                 if (lockClass.equals(MyLock.class.getName())) {
                     Asserts.assertTrue(vmOperationsSingle.contains(safepointId));
                     revokeCount++;
                 }
             } else if (event.getEventType().getName().equals(EventNames.BiasedLockClassRevocation)) {
-                Integer safepointId = event.getValue("safepointId");
+                Long safepointId = event.getValue("safepointId");
                 String lockClass = ((RecordedClass)event.getValue("revokedClass")).getName();
                 if (lockClass.toString().equals(MyLock.class.getName())) {
                     Asserts.assertTrue(vmOperationsBulk.contains(safepointId));

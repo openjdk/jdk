@@ -82,11 +82,12 @@ uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerpr
   // For ARM, the fast signature handler only needs to know whether
   // the return value must be unboxed. T_OBJECT and T_ARRAY need not
   // be distinguished from each other and all other return values
-  // behave like integers with respect to the handler.
+  // behave like integers with respect to the handler except T_BOOLEAN
+  // which must be mapped to the range 0..1.
   bool unbox = (ret_type == T_OBJECT) || (ret_type == T_ARRAY);
   if (unbox) {
     ret_type = T_OBJECT;
-  } else {
+  } else if (ret_type != T_BOOLEAN) {
     ret_type = T_INT;
   }
   result |= ((uint64_t) ret_type) << shift;
@@ -226,9 +227,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
 
   address result_handler = Interpreter::result_handler(result_type);
 
-  // Check that result handlers are not real handler on ARM (0 or -1).
-  // This ensures the signature handlers do not need symbolic information.
-  assert((result_handler == NULL)||(result_handler==(address)0xffffffff),"");
   __ mov_slow(R0, (intptr_t)result_handler);
 
   __ ret();

@@ -153,12 +153,12 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         Content label;
         if (configuration.summarizeOverriddenMethods) {
             label = new StringContent(utils.isInterface(typeElement)
-                    ? configuration.getText("doclet.Nested_Classes_Interfaces_Declared_In_Interface")
-                    : configuration.getText("doclet.Nested_Classes_Interfaces_Declared_In_Class"));
+                    ? resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Interface")
+                    : resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Class"));
         } else {
             label = new StringContent(utils.isInterface(typeElement)
-                    ? configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
-                    : configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
+                    ? resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
+                    : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);

@@ -92,16 +92,18 @@ public class CompareCanonicalizerTest3 extends GraalCompilerTest {
         assertCanonicallyEqual("integerTestCanonicalization1", "referenceSnippet1");
     }
 
-    public static void integerTestCanonicalization1(char a) {
-        if (Integer.compareUnsigned(a - 2, a) < 0) {
+    public static void integerTestCanonicalization1(char[] a) {
+        int len = a.length;
+        if (Integer.compareUnsigned(len - 2, len) < 0) {
             sink1 = 0;
         } else {
             sink0 = -1;
         }
     }
 
-    public static void referenceSnippet1(char a) {
-        if (Integer.compareUnsigned(a, 2) >= 0) {
+    public static void referenceSnippet1(char[] a) {
+        int len = a.length;
+        if (Integer.compareUnsigned(len, 2) >= 0) {
             sink1 = 0;
         } else {
             sink0 = -1;
@@ -238,12 +240,18 @@ public class CompareCanonicalizerTest3 extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
         PhaseContext context = new PhaseContext(getProviders());
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+
         canonicalizer.apply(graph, context);
         new GuardLoweringPhase().apply(graph, new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo()));
         new FrameStateAssignmentPhase().apply(graph);
         canonicalizer.apply(graph, context);
+
         StructuredGraph referenceGraph = parseEager(reference, AllowAssumptions.YES);
         canonicalizer.apply(referenceGraph, context);
+        new GuardLoweringPhase().apply(referenceGraph, new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo()));
+        new FrameStateAssignmentPhase().apply(referenceGraph);
+        canonicalizer.apply(referenceGraph, context);
+
         canonicalizer.apply(referenceGraph, context);
         assertEquals(referenceGraph, graph, true, true);
     }

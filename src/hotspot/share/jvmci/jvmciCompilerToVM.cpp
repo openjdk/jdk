@@ -1498,6 +1498,38 @@ C2V_VMENTRY(void, compileToBytecode, (JNIEnv*, jobject, jobject lambda_form_hand
   }
 C2V_END
 
+C2V_VMENTRY(jobject, asReflectionExecutable, (JNIEnv* env, jobject, jobject jvmci_method))
+  methodHandle m = CompilerToVM::asMethod(jvmci_method);
+  oop executable;
+  if (m->is_initializer()) {
+    if (m->is_static_initializer()) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        "Cannot create java.lang.reflect.Method for class initializer");
+    }
+    executable = Reflection::new_constructor(m, CHECK_NULL);
+  } else {
+    executable = Reflection::new_method(m, false, CHECK_NULL);
+  }
+  return JNIHandles::make_local(thread, executable);
+}
+
+C2V_VMENTRY(jobject, asReflectionField, (JNIEnv* env, jobject, jobject jvmci_type, jint index))
+  Klass* klass = CompilerToVM::asKlass(jvmci_type);
+  if (!klass->is_instance_klass()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("Expected non-primitive type, got %s", klass->external_name()));
+  }
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  Array<u2>* fields = iklass->fields();
+  if (index < 0 || index > fields->length()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("Field index %d out of bounds for %s", index, klass->external_name()));
+  }
+  fieldDescriptor fd(iklass, index);
+  oop reflected = Reflection::new_field(&fd, CHECK_NULL);
+  return JNIHandles::make_local(env, reflected);
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -1519,6 +1551,8 @@ C2V_END
 #define HS_METADATA             "Ljdk/vm/ci/hotspot/HotSpotMetaData;"
 #define HS_STACK_FRAME_REF      "Ljdk/vm/ci/hotspot/HotSpotStackFrameReference;"
 #define HS_SPECULATION_LOG      "Ljdk/vm/ci/hotspot/HotSpotSpeculationLog;"
+#define REFLECTION_EXECUTABLE   "Ljava/lang/reflect/Executable;"
+#define REFLECTION_FIELD        "Ljava/lang/reflect/Field;"
 #define METASPACE_METHOD_DATA   "J"
 
 JNINativeMethod CompilerToVM::methods[] = {
@@ -1586,6 +1620,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECT ")V",                                                                   FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},
+  {CC "asReflectionExecutable",                       CC "(" HS_RESOLVED_METHOD ")" REFLECTION_EXECUTABLE,                                  FN_PTR(asReflectionExecutable)},
+  {CC "asReflectionField",                            CC "(" HS_RESOLVED_KLASS "I)" REFLECTION_FIELD,                                       FN_PTR(asReflectionField)},
 };
 
 int CompilerToVM::methods_count() {

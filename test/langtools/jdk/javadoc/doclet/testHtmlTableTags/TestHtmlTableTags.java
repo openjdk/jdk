@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164 8162363 8169819 8183037 8182765
+ * @bug      6786688 8008164 8162363 8169819 8183037 8182765 8184205
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -78,70 +78,70 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableTag() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<table class=\"typeSummary\">",
-                "<table class=\"typeSummary\">");
+                "<div class=\"typeSummary\">\n<table>",
+                "<div class=\"typeSummary\">\n<table>");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<table class=\"typeSummary\">",
-                "<table class=\"typeSummary\">");
+                "<div class=\"typeSummary\">\n<table>",
+                "<div class=\"typeSummary\">\n<table>");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<table class=\"memberSummary\">",
-                "<table class=\"memberSummary\">");
+                "<div class=\"memberSummary\">\n<table>",
+                "<div class=\"memberSummary\">\n<table>");
 
         checkOutput("pkg2/C2.html", true,
-                "<table class=\"memberSummary\">",
-                "<table class=\"memberSummary\">");
+                "<div class=\"memberSummary\">\n<table>",
+                "<div class=\"memberSummary\">\n<table>");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<table class=\"memberSummary\">");
+                "<div class=\"memberSummary\">\n<table>");
 
         checkOutput("pkg2/C3.html", true,
-                "<table class=\"memberSummary\">");
+                "<div class=\"memberSummary\">\n<table>");
 
         checkOutput("pkg2/C4.html", true,
-                "<table class=\"memberSummary\">");
+                "<div class=\"memberSummary\">\n<table>");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>");
 
         checkOutput("pkg1/class-use/C1.html", true,
-                "<table class=\"useSummary\">",
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>",
+                "<div class=\"useSummary\">\n<table>");
 
         checkOutput("pkg2/class-use/C2.html", true,
-                "<table class=\"useSummary\">",
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>",
+                "<div class=\"useSummary\">\n<table>");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
-                "<table class=\"useSummary\">",
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>",
+                "<div class=\"useSummary\">\n<table>");
 
         checkOutput("pkg2/package-use.html", true,
-                "<table class=\"useSummary\">",
-                "<table class=\"useSummary\">");
+                "<div class=\"useSummary\">\n<table>",
+                "<div class=\"useSummary\">\n<table>");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<table class=\"deprecatedSummary\">",
-                "<table class=\"deprecatedSummary\">");
+                "<div class=\"deprecatedSummary\">\n<table>",
+                "<div class=\"deprecatedSummary\">\n<table>");
 
         // Constant values
         checkOutput("constant-values.html", true,
-                "<table class=\"constantsSummary\">");
+                "<div class=\"constantsSummary\">\n<table>");
 
         // Overview Summary
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\">");
+                "<div class=\"overviewSummary\">\n<table>");
     }
 
     /*
@@ -150,85 +150,110 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableSummaries() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<table class=\"typeSummary\" summary=\"Class Summary table, "
+                "<div class=\"typeSummary\">\n"
+                + "<table summary=\"Class Summary table, "
                 + "listing classes, and an explanation\">",
-                "<table class=\"typeSummary\" summary=\"Interface Summary table, "
+                "<div class=\"typeSummary\">\n"
+                + "<table summary=\"Interface Summary table, "
                 + "listing interfaces, and an explanation\">");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<table class=\"typeSummary\" summary=\"Enum Summary table, "
+                "<div class=\"typeSummary\">\n"
+                + "<table summary=\"Enum Summary table, "
                 + "listing enums, and an explanation\">",
-                "<table class=\"typeSummary\" summary=\"Annotation Types Summary table, "
+                "<div class=\"typeSummary\">\n"
+                + "<table summary=\"Annotation Types Summary table, "
                 + "listing annotation types, and an explanation\">");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<table class=\"memberSummary\" summary=\"Field Summary table, listing fields, "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Field Summary table, listing fields, "
                 + "and an explanation\">",
-                "<table class=\"memberSummary\" summary=\"Method Summary table, listing methods, "
-                + "and an explanation\">");
+                "<div class=\"memberSummary\">\n",
+                "<table summary=\"Method Summary table, listing methods, "
+                + "and an explanation\" aria-labelledby=\"t0\">");
 
         checkOutput("pkg2/C2.html", true,
-                "<table class=\"memberSummary\" summary=\"Nested Class Summary table, listing "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Nested Class Summary table, listing "
                 + "nested classes, and an explanation\">",
-                "<table class=\"memberSummary\" summary=\"Constructor Summary table, listing "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Constructor Summary table, listing "
                 + "constructors, and an explanation\">");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<table class=\"memberSummary\" summary=\"Enum Constant Summary table, listing "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Enum Constant Summary table, listing "
                 + "enum constants, and an explanation\">");
 
         checkOutput("pkg2/C3.html", true,
-                "<table class=\"memberSummary\" summary=\"Required Element Summary table, "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Required Element Summary table, "
                 + "listing required elements, and an explanation\">");
 
         checkOutput("pkg2/C4.html", true,
-                "<table class=\"memberSummary\" summary=\"Optional Element Summary table, "
+                "<div class=\"memberSummary\">\n"
+                + "<table summary=\"Optional Element Summary table, "
                 + "listing optional elements, and an explanation\">");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing packages, and an explanation\">");
 
         checkOutput("pkg1/class-use/C1.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">",
-                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing fields, and an explanation\">",
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing methods, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">",
-                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing fields, and an explanation\">",
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing methods, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing packages, and an explanation\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing methods, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing methods, and an explanation\">");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">",
-                "<table class=\"useSummary\" summary=\"Use table, listing classes, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing packages, and an explanation\">",
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing classes, and an explanation\">");
 
         checkOutput("pkg2/package-use.html", true,
-                "<table class=\"useSummary\" summary=\"Use table, listing packages, and an explanation\">",
-                "<table class=\"useSummary\" summary=\"Use table, listing classes, and an explanation\">");
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing packages, and an explanation\">",
+                "<div class=\"useSummary\">\n"
+                + "<table summary=\"Use table, listing classes, and an explanation\">");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<table class=\"deprecatedSummary\" summary=\"Fields table, listing fields, "
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"Fields table, listing fields, "
                 + "and an explanation\">",
-                "<table class=\"deprecatedSummary\" summary=\"Methods table, listing methods, "
+                "<div class=\"deprecatedSummary\">\n"
+                + "<table summary=\"Methods table, listing methods, "
                 + "and an explanation\">");
 
         // Constant values
         checkOutput("constant-values.html", true,
-                "<table class=\"constantsSummary\" summary=\"Constant Field Values table, listing "
+                "<div class=\"constantsSummary\">\n"
+                + "<table summary=\"Constant Field Values table, listing "
                 + "constant fields, and values\">");
 
         // Overview Summary
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" "
-                + "summary=\"Package Summary table, listing packages, and an explanation\">");
+                "<div class=\"overviewSummary\">\n"
+                + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
     }
 
     /*
@@ -251,15 +276,18 @@ public class TestHtmlTableTags extends JavadocTester {
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
-                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
-                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
-                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>");
+                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">"
+                + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\" onclick=\"show(8);\">"
+                + "Concrete Methods</button><button role=\"tab\" aria-selected=\"false\""
+                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Deprecated Methods</button></div>\n");
 
         checkOutput("pkg2/C2.html", true,
                 "<caption><span>Nested Classes</span><span class=\"tabEnd\">&nbsp;</span></caption>",

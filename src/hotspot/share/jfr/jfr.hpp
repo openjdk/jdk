@@ -46,13 +46,13 @@ class Jfr : AllStatic {
   static void on_vm_init();
   static void on_vm_start();
   static void on_unloading_classes();
-  static void on_thread_exit(JavaThread* thread);
-  static void on_thread_destruct(Thread* thread);
+  static void on_thread_start(Thread* thread);
+  static void on_thread_exit(Thread* thread);
+  static void on_java_thread_dismantle(JavaThread* jt);
   static void on_vm_shutdown(bool exception_handler = false);
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
-  static Thread* sampler_thread();
 };
 
 #endif // SHARE_VM_JFR_JFR_HPP

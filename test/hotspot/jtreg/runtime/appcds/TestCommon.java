@@ -95,17 +95,17 @@ public class TestCommon extends CDSTestUtils {
 
     // Create AppCDS archive using most common args - convenience method
     // Legacy name preserved for compatibility
-    public static OutputAnalyzer dump(String appJar, String appClasses[],
+    public static OutputAnalyzer dump(String appJar, String classList[],
                                                String... suffix) throws Exception {
-        return createArchive(appJar, appClasses, suffix);
+        return createArchive(appJar, classList, suffix);
     }
 
 
     // Create AppCDS archive using most common args - convenience method
-    public static OutputAnalyzer createArchive(String appJar, String appClasses[],
+    public static OutputAnalyzer createArchive(String appJar, String classList[],
                                                String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar)
-            .setAppClasses(appClasses);
+        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        opts.setClassList(classList);
         opts.addSuffix(suffix);
         return createArchive(opts);
     }
@@ -115,7 +115,6 @@ public class TestCommon extends CDSTestUtils {
         throws Exception {
 
         ArrayList<String> cmd = new ArrayList<String>();
-        File classList = makeClassList(opts.appClasses);
         startNewArchiveName();
 
         for (String p : opts.prefix) cmd.add(p);
@@ -129,12 +128,16 @@ public class TestCommon extends CDSTestUtils {
         }
 
         cmd.add("-Xshare:dump");
-        cmd.add("-XX:ExtraSharedClassListFile=" + classList.getPath());
 
         if (opts.archiveName == null)
             opts.archiveName = getCurrentArchiveName();
 
         cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
+
+        if (opts.classList != null) {
+            File classListFile = makeClassList(opts.classList);
+            cmd.add("-XX:ExtraSharedClassListFile=" + classListFile.getPath());
+        }
 
         for (String s : opts.suffix) cmd.add(s);
 
@@ -235,9 +238,9 @@ public class TestCommon extends CDSTestUtils {
 
 
     // A common operation: dump, then check results
-    public static OutputAnalyzer testDump(String appJar, String appClasses[],
+    public static OutputAnalyzer testDump(String appJar, String classList[],
                                           String... suffix) throws Exception {
-        OutputAnalyzer output = dump(appJar, appClasses, suffix);
+        OutputAnalyzer output = dump(appJar, classList, suffix);
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
         return output;
@@ -245,11 +248,11 @@ public class TestCommon extends CDSTestUtils {
 
 
     /**
-     * Simple test -- dump and execute appJar with the given appClasses in classlist.
+     * Simple test -- dump and execute appJar with the given classList in classlist.
      */
-    public static OutputAnalyzer test(String appJar, String appClasses[], String... args)
+    public static OutputAnalyzer test(String appJar, String classList[], String... args)
         throws Exception {
-        testDump(appJar, appClasses);
+        testDump(appJar, classList);
 
         OutputAnalyzer output = exec(appJar, args);
         return checkExec(output);

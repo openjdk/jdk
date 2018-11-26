@@ -585,6 +585,19 @@ final class Exchange<T> {
         } catch (SecurityException e) {
             return e;
         }
+        String hostHeader = userHeaders.firstValue("Host").orElse(null);
+        if (hostHeader != null && !hostHeader.equalsIgnoreCase(u.getHost())) {
+            // user has set a Host header different to request URI
+            // must check that for URLPermission also
+            URI u1 = replaceHostInURI(u, hostHeader);
+            URLPermission p1 = permissionForServer(u1, method, userHeaders.map());
+            try {
+                assert acc != null;
+                sm.checkPermission(p1, acc);
+            } catch (SecurityException e) {
+                return e;
+            }
+        }
         ProxySelector ps = client.proxySelector();
         if (ps != null) {
             if (!method.equals("CONNECT")) {
@@ -600,6 +613,15 @@ final class Exchange<T> {
             }
         }
         return null;
+    }
+
+    private static URI replaceHostInURI(URI u, String hostPort) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(u.getScheme())
+                .append("://")
+                .append(hostPort)
+                .append(u.getRawPath());
+        return URI.create(sb.toString());
     }
 
     HttpClient.Version version() {

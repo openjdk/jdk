@@ -110,7 +110,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
+    res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -149,15 +150,15 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if ((err = (jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-             JVMTI_EVENT_VM_INIT, NULL))) != JVMTI_ERROR_NONE) {
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable event JVMTI_EVENT_VM_INIT: %s (%d)\n",
                TranslateError(err), err);
         return JNI_ERR;
     }
 
-    if ((err = (jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-             JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL))) != JVMTI_ERROR_NONE) {
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
+    if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable event JVMTI_EVENT_CLASS_FILE_LOAD_HOOK: %s (%d)\n",
                TranslateError(err), err);
         return JNI_ERR;

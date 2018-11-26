@@ -25,7 +25,7 @@
 
 package java.lang;
 
-/** 
+/**
  * The CharacterData00 class encapsulates the large tables once found in
  * java.lang.Character
 */
@@ -265,6 +265,54 @@ class CharacterData00 extends CharacterData {
             case 0x13ED: mapChar = 0xABBD; break;
             case 0x13EE: mapChar = 0xABBE; break;
             case 0x13EF: mapChar = 0xABBF; break;
+            case 0x1C90: mapChar = 0x10D0; break;
+            case 0x1C91: mapChar = 0x10D1; break;
+            case 0x1C92: mapChar = 0x10D2; break;
+            case 0x1C93: mapChar = 0x10D3; break;
+            case 0x1C94: mapChar = 0x10D4; break;
+            case 0x1C95: mapChar = 0x10D5; break;
+            case 0x1C96: mapChar = 0x10D6; break;
+            case 0x1C97: mapChar = 0x10D7; break;
+            case 0x1C98: mapChar = 0x10D8; break;
+            case 0x1C99: mapChar = 0x10D9; break;
+            case 0x1C9A: mapChar = 0x10DA; break;
+            case 0x1C9B: mapChar = 0x10DB; break;
+            case 0x1C9C: mapChar = 0x10DC; break;
+            case 0x1C9D: mapChar = 0x10DD; break;
+            case 0x1C9E: mapChar = 0x10DE; break;
+            case 0x1C9F: mapChar = 0x10DF; break;
+            case 0x1CA0: mapChar = 0x10E0; break;
+            case 0x1CA1: mapChar = 0x10E1; break;
+            case 0x1CA2: mapChar = 0x10E2; break;
+            case 0x1CA3: mapChar = 0x10E3; break;
+            case 0x1CA4: mapChar = 0x10E4; break;
+            case 0x1CA5: mapChar = 0x10E5; break;
+            case 0x1CA6: mapChar = 0x10E6; break;
+            case 0x1CA7: mapChar = 0x10E7; break;
+            case 0x1CA8: mapChar = 0x10E8; break;
+            case 0x1CA9: mapChar = 0x10E9; break;
+            case 0x1CAA: mapChar = 0x10EA; break;
+            case 0x1CAB: mapChar = 0x10EB; break;
+            case 0x1CAC: mapChar = 0x10EC; break;
+            case 0x1CAD: mapChar = 0x10ED; break;
+            case 0x1CAE: mapChar = 0x10EE; break;
+            case 0x1CAF: mapChar = 0x10EF; break;
+            case 0x1CB0: mapChar = 0x10F0; break;
+            case 0x1CB1: mapChar = 0x10F1; break;
+            case 0x1CB2: mapChar = 0x10F2; break;
+            case 0x1CB3: mapChar = 0x10F3; break;
+            case 0x1CB4: mapChar = 0x10F4; break;
+            case 0x1CB5: mapChar = 0x10F5; break;
+            case 0x1CB6: mapChar = 0x10F6; break;
+            case 0x1CB7: mapChar = 0x10F7; break;
+            case 0x1CB8: mapChar = 0x10F8; break;
+            case 0x1CB9: mapChar = 0x10F9; break;
+            case 0x1CBA: mapChar = 0x10FA; break;
+            case 0x1CBB: mapChar = 0x10FB; break;
+            case 0x1CBC: mapChar = 0x10FC; break;
+            case 0x1CBD: mapChar = 0x10FD; break;
+            case 0x1CBE: mapChar = 0x10FE; break;
+            case 0x1CBF: mapChar = 0x10FF; break;
             case 0x1E9E: mapChar = 0x00DF; break;
             case 0x1F88: mapChar = 0x1F80; break;
             case 0x1F89: mapChar = 0x1F81; break;
@@ -355,6 +403,52 @@ class CharacterData00 extends CharacterData {
             case 0x0287: mapChar = 0xA7B1; break;
             case 0x029D: mapChar = 0xA7B2; break;
             case 0x029E: mapChar = 0xA7B0; break;
+            case 0x10D0: mapChar = 0x1C90; break;
+            case 0x10D1: mapChar = 0x1C91; break;
+            case 0x10D2: mapChar = 0x1C92; break;
+            case 0x10D3: mapChar = 0x1C93; break;
+            case 0x10D4: mapChar = 0x1C94; break;
+            case 0x10D5: mapChar = 0x1C95; break;
+            case 0x10D6: mapChar = 0x1C96; break;
+            case 0x10D7: mapChar = 0x1C97; break;
+            case 0x10D8: mapChar = 0x1C98; break;
+            case 0x10D9: mapChar = 0x1C99; break;
+            case 0x10DA: mapChar = 0x1C9A; break;
+            case 0x10DB: mapChar = 0x1C9B; break;
+            case 0x10DC: mapChar = 0x1C9C; break;
+            case 0x10DD: mapChar = 0x1C9D; break;
+            case 0x10DE: mapChar = 0x1C9E; break;
+            case 0x10DF: mapChar = 0x1C9F; break;
+            case 0x10E0: mapChar = 0x1CA0; break;
+            case 0x10E1: mapChar = 0x1CA1; break;
+            case 0x10E2: mapChar = 0x1CA2; break;
+            case 0x10E3: mapChar = 0x1CA3; break;
+            case 0x10E4: mapChar = 0x1CA4; break;
+            case 0x10E5: mapChar = 0x1CA5; break;
+            case 0x10E6: mapChar = 0x1CA6; break;
+            case 0x10E7: mapChar = 0x1CA7; break;
+            case 0x10E8: mapChar = 0x1CA8; break;
+            case 0x10E9: mapChar = 0x1CA9; break;
+            case 0x10EA: mapChar = 0x1CAA; break;
+            case 0x10EB: mapChar = 0x1CAB; break;
+            case 0x10EC: mapChar = 0x1CAC; break;
+            case 0x10ED: mapChar = 0x1CAD; break;
+            case 0x10EE: mapChar = 0x1CAE; break;
+            case 0x10EF: mapChar = 0x1CAF; break;
+            case 0x10F0: mapChar = 0x1CB0; break;
+            case 0x10F1: mapChar = 0x1CB1; break;
+            case 0x10F2: mapChar = 0x1CB2; break;
+            case 0x10F3: mapChar = 0x1CB3; break;
+            case 0x10F4: mapChar = 0x1CB4; break;
+            case 0x10F5: mapChar = 0x1CB5; break;
+            case 0x10F6: mapChar = 0x1CB6; break;
+            case 0x10F7: mapChar = 0x1CB7; break;
+            case 0x10F8: mapChar = 0x1CB8; break;
+            case 0x10F9: mapChar = 0x1CB9; break;
+            case 0x10FA: mapChar = 0x1CBA; break;
+            case 0x10FD: mapChar = 0x1CBD; break;
+            case 0x10FE: mapChar = 0x1CBE; break;
+            case 0x10FF: mapChar = 0x1CBF; break;
             case 0x1C80: mapChar = 0x0412; break;
             case 0x1C81: mapChar = 0x0414; break;
             case 0x1C82: mapChar = 0x041E; break;
@@ -544,9 +638,16 @@ class CharacterData00 extends CharacterData {
                 mapChar = ch + 1;
             }
             else if ((val & $$maskLowerCase) == 0) {
-                // The character does not have a lowercase equivalent, so it must
-                // already be lowercase; so subtract 1 to get the titlecase form.
-                mapChar = ch - 1;
+                // For some Georgian letters, titlecase form is 
+                // same as this character.
+                if(ch >= 0x10D0 && ch <= 0x10FF) {
+                    mapChar = ch;
+                }
+                else {
+                    // The character does not have a lowercase equivalent, so it must
+                    // already be lowercase; so subtract 1 to get the titlecase form.
+                    mapChar = ch - 1;
+                }                
             }
             // else {
             // The character has both an uppercase equivalent and a lowercase
@@ -741,6 +842,52 @@ class CharacterData00 extends CharacterData {
                     case 0x0287: mapChar = 0xA7B1; break;
                     case 0x029D: mapChar = 0xA7B2; break;
                     case 0x029E: mapChar = 0xA7B0; break;
+                    case 0x10D0: mapChar = 0x1C90; break;
+                    case 0x10D1: mapChar = 0x1C91; break;
+                    case 0x10D2: mapChar = 0x1C92; break;
+                    case 0x10D3: mapChar = 0x1C93; break;
+                    case 0x10D4: mapChar = 0x1C94; break;
+                    case 0x10D5: mapChar = 0x1C95; break;
+                    case 0x10D6: mapChar = 0x1C96; break;
+                    case 0x10D7: mapChar = 0x1C97; break;
+                    case 0x10D8: mapChar = 0x1C98; break;
+                    case 0x10D9: mapChar = 0x1C99; break;
+                    case 0x10DA: mapChar = 0x1C9A; break;
+                    case 0x10DB: mapChar = 0x1C9B; break;
+                    case 0x10DC: mapChar = 0x1C9C; break;
+                    case 0x10DD: mapChar = 0x1C9D; break;
+                    case 0x10DE: mapChar = 0x1C9E; break;
+                    case 0x10DF: mapChar = 0x1C9F; break;
+                    case 0x10E0: mapChar = 0x1CA0; break;
+                    case 0x10E1: mapChar = 0x1CA1; break;
+                    case 0x10E2: mapChar = 0x1CA2; break;
+                    case 0x10E3: mapChar = 0x1CA3; break;
+                    case 0x10E4: mapChar = 0x1CA4; break;
+                    case 0x10E5: mapChar = 0x1CA5; break;
+                    case 0x10E6: mapChar = 0x1CA6; break;
+                    case 0x10E7: mapChar = 0x1CA7; break;
+                    case 0x10E8: mapChar = 0x1CA8; break;
+                    case 0x10E9: mapChar = 0x1CA9; break;
+                    case 0x10EA: mapChar = 0x1CAA; break;
+                    case 0x10EB: mapChar = 0x1CAB; break;
+                    case 0x10EC: mapChar = 0x1CAC; break;
+                    case 0x10ED: mapChar = 0x1CAD; break;
+                    case 0x10EE: mapChar = 0x1CAE; break;
+                    case 0x10EF: mapChar = 0x1CAF; break;
+                    case 0x10F0: mapChar = 0x1CB0; break;
+                    case 0x10F1: mapChar = 0x1CB1; break;
+                    case 0x10F2: mapChar = 0x1CB2; break;
+                    case 0x10F3: mapChar = 0x1CB3; break;
+                    case 0x10F4: mapChar = 0x1CB4; break;
+                    case 0x10F5: mapChar = 0x1CB5; break;
+                    case 0x10F6: mapChar = 0x1CB6; break;
+                    case 0x10F7: mapChar = 0x1CB7; break;
+                    case 0x10F8: mapChar = 0x1CB8; break;
+                    case 0x10F9: mapChar = 0x1CB9; break;
+                    case 0x10FA: mapChar = 0x1CBA; break;
+                    case 0x10FD: mapChar = 0x1CBD; break;
+                    case 0x10FE: mapChar = 0x1CBE; break;
+                    case 0x10FF: mapChar = 0x1CBF; break;
                     case 0x1C80: mapChar = 0x0412; break;
                     case 0x1C81: mapChar = 0x0414; break;
                     case 0x1C82: mapChar = 0x041E; break;
@@ -928,5 +1075,5 @@ class CharacterData00 extends CharacterData {
 
     static {
         $$Initializers
-    }        
+    }
 }

@@ -25,7 +25,6 @@
 
 /**
  * Defines the API of the Java SE Platform.
- * <P>
  *
  * <dl>
  * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Optional for the Java SE Platform:</dt>

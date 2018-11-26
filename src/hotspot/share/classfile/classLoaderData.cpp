@@ -484,7 +484,7 @@ void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
 // Remove a klass from the _klasses list for scratch_class during redefinition
 // or parsed class in the case of an error.
 void ClassLoaderData::remove_class(Klass* scratch_class) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   // Adjust global class iterator.
   ClassLoaderDataGraph::adjust_saved_class(scratch_class);
@@ -804,7 +804,8 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
 
 // Deallocate free metadata on the free list.  How useful the PermGen was!
 void ClassLoaderData::free_deallocate_list() {
-  // Don't need lock, at safepoint
+  // This must be called at a safepoint because it depends on metadata walking at
+  // safepoint cleanup time.
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   assert(!is_unloading(), "only called for ClassLoaderData that are not unloading");
   if (_deallocate_list == NULL) {
@@ -844,8 +845,7 @@ void ClassLoaderData::free_deallocate_list() {
 // classes. The metadata is removed with the unloading metaspace.
 // There isn't C heap memory allocated for methods, so nothing is done for them.
 void ClassLoaderData::free_deallocate_list_C_heap_structures() {
-  // Don't need lock, at safepoint
-  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(is_unloading(), "only called for ClassLoaderData that are unloading");
   if (_deallocate_list == NULL) {
     return;

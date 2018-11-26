@@ -822,6 +822,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+#ifndef _WIN32
+  STEP("printing user info")
+
+     if (ExtensiveErrorReports && _verbose) {
+       os::Posix::print_user_info(st);
+     }
+#endif
+
   STEP("printing all threads")
 
      // all threads

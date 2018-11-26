@@ -11930,7 +11930,17 @@ instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
   match(Set cr (CmpI (AndI (LoadUB mem) imm) zero));
 
   ins_cost(125);
-  format %{ "testb   $mem, $imm" %}
+  format %{ "testb   $mem, $imm\t# ubyte" %}
+  ins_encode %{ __ testb($mem$$Address, $imm$$constant); %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI0 zero)
+%{
+  match(Set cr (CmpI (AndI (LoadB mem) imm) zero));
+
+  ins_cost(125);
+  format %{ "testb   $mem, $imm\t# byte" %}
   ins_encode %{ __ testb($mem$$Address, $imm$$constant); %}
   ins_pipe(ialu_cr_reg_mem);
 %}

@@ -172,7 +172,7 @@ public class DeferredAttr extends JCTree.Visitor {
                             if (previous == null || previous == OverloadKind.ERROR) {
                                 t.setOverloadKind(overloadKind);
                             } else {
-                                Assert.check(previous == overloadKind);
+                                Assert.check(previous == overloadKind || overloadKind == OverloadKind.ERROR);
                             }
                         }
 

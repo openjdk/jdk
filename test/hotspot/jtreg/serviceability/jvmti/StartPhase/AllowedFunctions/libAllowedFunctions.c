@@ -110,8 +110,8 @@ static void print_class_status(jvmtiEnv *jvmti, jclass klass) {
     // This function is only used in a ClassPrepare event context
     if ((status & JVMTI_CLASS_STATUS_VERIFIED)    == 0 ||
         (status & JVMTI_CLASS_STATUS_PREPARED)    == 0 ||
-        (status & JVMTI_CLASS_STATUS_INITIALIZED) == 1 ||
-        (status & JVMTI_CLASS_STATUS_ERROR)       == 1) {
+        (status & JVMTI_CLASS_STATUS_INITIALIZED) != 0 ||
+        (status & JVMTI_CLASS_STATUS_ERROR)       != 0) {
         printf("  ## Error: unexpected class status: 0x%08x\n", status);
     }
     printf("    Class status: 0x%08x\n", status);

@@ -333,6 +333,17 @@ bool MacroAssembler::uses_implicit_null_check(void* address) {
 }
 
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
+  // The offset -1 is used (hardcoded) in a number of places in C1 and MacroAssembler
+  // to indicate an unknown offset. For example, TemplateTable::pop_and_check_object(Register r)
+  // calls MacroAssembler::null_check(Register reg, int offset = -1) which gets here
+  // with -1. Another example is GraphBuilder::access_field(...) which uses -1 as placeholder
+  // for offsets to be patched in later. The -1 there means the offset is not yet known
+  // and may lie outside of the zero-trapping page, and thus we need to ensure we're forcing
+  // an explicit null check for -1, even if it may otherwise be in the range
+  // [-cell_header_size, os::vm_page_size).
+  // TODO: Find and replace all relevant uses of -1 with a reasonably named constant.
+  if (offset == -1) return true;
+
   // Check if offset is outside of [-cell_header_size, os::vm_page_size)
   return offset < -Universe::heap()->cell_header_size() ||
          offset >= os::vm_page_size();

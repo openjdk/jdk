@@ -201,6 +201,16 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         return result;
     }
 
+    public Value emitAddSubShift(AArch64ArithmeticOp op, Value a, Value b, AArch64MacroAssembler.ShiftType shiftType, int shiftAmount) {
+        assert isNumericInteger(a.getPlatformKind());
+        assert isNumericInteger(b.getPlatformKind());
+        Variable result = getLIRGen().newVariable(LIRKind.combine(a, b));
+        AllocatableValue x = moveSp(asAllocatable(a));
+        AllocatableValue y = moveSp(asAllocatable(b));
+        getLIRGen().append(new AArch64ArithmeticOp.AddSubShiftOp(op, result, x, y, shiftType, shiftAmount));
+        return result;
+    }
+
     private static PlatformKind getFloatConvertResultKind(FloatConvert op) {
         switch (op) {
             case F2I:

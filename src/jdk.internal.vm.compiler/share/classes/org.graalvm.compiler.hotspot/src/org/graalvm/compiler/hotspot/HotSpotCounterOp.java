@@ -27,6 +27,8 @@ package org.graalvm.compiler.hotspot;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
+import static org.graalvm.compiler.nodes.debug.DynamicCounterNode.MAX_INCREMENT;
+import static org.graalvm.compiler.nodes.debug.DynamicCounterNode.MIN_INCREMENT;
 
 import java.util.Arrays;
 
@@ -69,6 +71,21 @@ public abstract class HotSpotCounterOp extends LIRInstruction {
         this.increments = increments;
         this.thread = registers.getThreadRegister();
         this.config = config;
+        checkIncrements();
+    }
+
+    private boolean checkIncrements() {
+        for (int i = 0; i < increments.length; i++) {
+            Value increment = increments[i];
+            if (isJavaConstant(increment)) {
+                long incValue = asLong(asJavaConstant(increment));
+                if (incValue < MIN_INCREMENT || incValue > MAX_INCREMENT) {
+                    String message = String.format("Benchmark counter %s:%s has increment out of range [%d .. %d]: %d", groups[i], names[i], MIN_INCREMENT, MAX_INCREMENT, incValue);
+                    assert false : message;
+                }
+            }
+        }
+        return true;
     }
 
     protected static int getDisplacementForLongIndex(TargetDescription target, long index) {

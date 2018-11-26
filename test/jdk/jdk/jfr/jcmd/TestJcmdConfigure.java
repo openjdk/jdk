@@ -99,9 +99,7 @@ public class TestJcmdConfigure {
 
     private static void testNegative(String configName, Object value) {
         try {
-            // Syntactically invalid arguments are catched by the JCMD framework where an error code of 1 is returned.
-            // Syntactically valid arguments that are semantically invalid (invalid value ranges for example) are handled by JFR code, it will always return a value of 0.
-            JcmdHelper.jcmd(configName.equals(UNSUPPORTED_OPTION) ? 1 : 0, "JFR.configure", configName + "=" + value);
+            JcmdHelper.jcmd(1, "JFR.configure", configName + "=" + value);
         } catch(Exception e) {
             testExceptions.add(e);
         }

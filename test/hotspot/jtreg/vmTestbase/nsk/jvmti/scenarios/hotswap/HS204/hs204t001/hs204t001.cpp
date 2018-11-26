@@ -100,7 +100,8 @@ callbackClassPrepare(jvmtiEnv *jvmti_env,
         } else {
             NSK_COMPLAIN0("\nMyClass :: Failed to redefine ..\n");
         }
-        if ((myTestClass = (jclass) jni_env->NewGlobalRef(klass)) == NULL) {
+        myTestClass = (jclass) jni_env->NewGlobalRef(klass);
+        if (myTestClass == NULL) {
             NSK_COMPLAIN0("Failed to create global ref...");
         }
     }

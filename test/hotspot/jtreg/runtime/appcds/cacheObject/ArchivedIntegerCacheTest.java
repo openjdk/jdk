@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Test IntegerCache integrity in various scenarios
+ * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
  * @requires vm.cds.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile CheckIntegerCacheApp.java
- * @run driver ClassFileInstaller -jar integer.jar CheckIntegerCacheApp
+ * @run driver ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ArchivedIntegerCacheTest
  */
@@ -47,7 +47,7 @@ public class ArchivedIntegerCacheTest {
     public static void main(String[] args) throws Exception {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
-        String appJar = ClassFileInstaller.getJarPath("integer.jar");
+        String appJar = ClassFileInstaller.getJarPath("boxCache.jar");
 
         Path userDir = Paths.get(System.getProperty("user.dir"));
         Path moduleDir = Files.createTempDirectory(userDir, "mods");

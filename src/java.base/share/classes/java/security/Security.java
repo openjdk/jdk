@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
 
+import jdk.internal.event.EventHelper;
+import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.security.util.Debug;
@@ -792,9 +794,19 @@ public final class Security {
      * @see java.security.SecurityPermission
      */
     public static void setProperty(String key, String datum) {
-        check("setProperty."+key);
+        check("setProperty." + key);
         props.put(key, datum);
         invalidateSMCache(key);  /* See below. */
+
+        SecurityPropertyModificationEvent spe = new SecurityPropertyModificationEvent();
+        // following is a no-op if event is disabled
+        spe.key = key;
+        spe.value = datum;
+        spe.commit();
+
+        if (EventHelper.isLoggingSecurity()) {
+            EventHelper.logSecurityPropertyEvent(key, datum);
+        }
     }
 
     /*

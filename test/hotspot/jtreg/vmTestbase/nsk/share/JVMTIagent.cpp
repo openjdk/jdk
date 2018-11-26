@@ -581,8 +581,8 @@ static jint allocClsInfo(JNIEnv *jni_env, char *cls_sig, jclass clazz) {
     jbyteArray classBytes;
     jboolean isCopy;
 
-    if ((_clsInfo = (class_info*)
-            malloc(sizeof(class_info))) == NULL)
+    _clsInfo = (class_info*) malloc(sizeof(class_info));
+    if (_clsInfo == NULL)
         jni_env->FatalError("JVMTIagent: cannot allocate memory for class_info\n");
 
     /* fill the structure class_info */

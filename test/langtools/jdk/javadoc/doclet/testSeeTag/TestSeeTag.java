@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765
+ * @bug      8017191 8182765 8200432
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @author   jjg
  * @library  ../lib
@@ -83,5 +83,20 @@ public class TestSeeTag extends JavadocTester {
             + "<a href=\"http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see\">Javadoc</a>, \n"
             + "<a href=\"Test.InnerOne.html#baz-float-\"><code>something</code></a></dd>\n"
             + "</dl>");
-}
+    }
+
+    @Test
+    void testBadReference() {
+        javadoc("-d", "out-badref",
+                "-sourcepath", testSrc,
+                "badref");
+        checkExit(Exit.ERROR);
+
+        checkOutput("badref/Test.html", true,
+                "<dl>\n"
+                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd><code>Object[]</code>, \n"
+                + "<code>Foo<String></code></dd>\n"
+                + "</dl>");
+    }
 }

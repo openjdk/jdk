@@ -1,8 +1,8 @@
-Turn on the benchmark counters, and listen for specific patterns on System.out/System.err.
-The format of this option is:
+Turn on the benchmark counters. The format of this option is:
 
   (err|out),start pattern,end pattern
   
+Start counting when the start pattern matches on the given stream and stop when the end pattern occurs.
 You can use "~" to match 1 or more digits.
 Examples:
 
@@ -22,3 +22,6 @@ The JVMCICounterSize value depends on the granularity of the profiling -
 10000 should be sufficient. Omit JVMCICountersExcludeCompiler to exclude
 counting allocations on the compiler threads.
 The counters can be further configured by the ProfileAllocationsContext option.
+
+We highly recommend the use of -Dgraal.AbortOnBenchmarkCounterOverflow=true to
+detect counter overflows eagerly.

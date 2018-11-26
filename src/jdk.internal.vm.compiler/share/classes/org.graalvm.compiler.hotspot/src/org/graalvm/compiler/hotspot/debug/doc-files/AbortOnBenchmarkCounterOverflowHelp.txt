@@ -1,0 +1,4 @@
+Abort VM with SIGILL if benchmark counters controlled by the (Generic|Timed|Benchmark)DynamicCounters
+option overflow. This feature is only supported on AMD64.
+WARNING: No descriptive error message will be printed! In case of an overflow,
+manual inspection of the emitted code is required.

@@ -32,5 +32,8 @@ inline oop OopHandle::resolve() const {
   return (_obj == NULL) ? (oop)NULL : NativeAccess<>::oop_load(_obj);
 }
 
-#endif //  SHARE_VM_OOPS_OOPHANDLE_INLINE_HPP
+inline oop OopHandle::peek() const {
+  return (_obj == NULL) ? (oop)NULL : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
+}
 
+#endif //  SHARE_VM_OOPS_OOPHANDLE_INLINE_HPP

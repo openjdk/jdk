@@ -1211,6 +1211,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ restore_default_fp_mode();
   }
 
+  // Ensure a Boolean result is mapped to 0..1
+  if (ret_type == T_BOOLEAN) {
+    __ c2bool(R0);
+  }
+
   // Do a safepoint check while thread is in transition state
   InlinedAddress safepoint_state(SafepointSynchronize::address_of_state());
   Label call_safepoint_runtime, return_to_java;

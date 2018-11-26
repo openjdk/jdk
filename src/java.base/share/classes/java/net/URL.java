@@ -1393,39 +1393,39 @@ public final class URL implements java.io.Serializable {
             }
         }
 
+        if (handler == null) {
+            // Try the built-in protocol handler
+            handler = defaultFactory.createURLStreamHandler(protocol);
+        }
+
         synchronized (streamHandlerLock) {
-            if (handler == null) {
-                // Try the built-in protocol handler
-                handler = defaultFactory.createURLStreamHandler(protocol);
-            } else {
-                URLStreamHandler handler2 = null;
+            URLStreamHandler handler2 = null;
 
-                // Check again with hashtable just in case another
-                // thread created a handler since we last checked
-                handler2 = handlers.get(protocol);
+            // Check again with hashtable just in case another
+            // thread created a handler since we last checked
+            handler2 = handlers.get(protocol);
 
-                if (handler2 != null) {
-                    return handler2;
-                }
-
-                // Check with factory if another thread set a
-                // factory since our last check
-                if (!checkedWithFactory && (fac = factory) != null) {
-                    handler2 = fac.createURLStreamHandler(protocol);
-                }
-
-                if (handler2 != null) {
-                    // The handler from the factory must be given more
-                    // importance. Discard the default handler that
-                    // this thread created.
-                    handler = handler2;
-                }
+            if (handler2 != null) {
+                return handler2;
             }
 
-            // Insert this handler into the hashtable
-            if (handler != null) {
-                handlers.put(protocol, handler);
+            // Check with factory if another thread set a
+            // factory since our last check
+            if (!checkedWithFactory && (fac = factory) != null) {
+                handler2 = fac.createURLStreamHandler(protocol);
             }
+
+            if (handler2 != null) {
+                // The handler from the factory must be given more
+                // importance. Discard the default handler that
+                // this thread created.
+                handler = handler2;
+            }
+        }
+
+        // Insert this handler into the hashtable
+        if (handler != null) {
+            handlers.put(protocol, handler);
         }
 
         return handler;

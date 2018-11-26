@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib /
  *
- * @run driver/timeout=300 compiler.jsr292.ContinuousCallSiteTargetChange
+ * @run driver compiler.jsr292.ContinuousCallSiteTargetChange
  */
 
 package compiler.jsr292;

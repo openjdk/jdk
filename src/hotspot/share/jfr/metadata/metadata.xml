@@ -67,7 +67,7 @@
   <Event name="BiasedLockRevocation" category="Java Application" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
     stackTrace="true">
     <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="Thread" name="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation" />
   </Event>
 
@@ -80,7 +80,7 @@
     thread="true" stackTrace="true">
     <Field type="Class" name="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked" />
     <Field type="boolean" name="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed" />
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
@@ -519,14 +519,14 @@
   </Event>
 
   <Event name="SafepointBegin" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Begin" description="Safepointing begin" thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="int" name="totalThreadCount" label="Total Threads" description="The total number of threads at the start of safe point" />
     <Field type="int" name="jniCriticalThreadCount" label="JNI Critical Threads" description="The number of threads in JNI critical sections" />
   </Event>
 
   <Event name="SafepointStateSynchronization" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint State Synchronization" description="Synchronize run state of threads"
     thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="int" name="initialThreadCount" label="Initial Threads" description="The number of threads running at the beginning of state check" />
     <Field type="int" name="runningThreadCount" label="Running Threads" description="The number of threads still running" />
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
@@ -534,23 +534,23 @@
 
   <Event name="SafepointWaitBlocked" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Wait Blocked" description="Safepointing begin waiting on running threads to block"
     thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="int" name="runningThreadCount" label="Running Threads" description="The number running of threads wait for safe point" />
   </Event>
 
   <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"
     thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
   <Event name="SafepointCleanupTask" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup Task" description="Safepointing begin running cleanup tasks"
     thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="string" name="name" label="Task Name" description="The task name" />
   </Event>
 
   <Event name="SafepointEnd" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint End" description="Safepointing end" thread="true">
-    <Field type="int" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
@@ -559,7 +559,7 @@
     <Field type="boolean" name="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete" />
     <Field type="Thread" name="caller" label="Caller" transition="from"
       description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown" />
-    <Field type="int" name="safepointId" label="Safepoint Identifier" description="The safepoint (if any) under which this operation was completed"
+    <Field type="ulong" name="safepointId" label="Safepoint Identifier" description="The safepoint (if any) under which this operation was completed"
       relation="SafepointId" />
   </Event>
 

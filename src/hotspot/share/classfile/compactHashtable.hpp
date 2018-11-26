@@ -27,7 +27,7 @@
 
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/growableArray.hpp"
 
 
 template <
@@ -330,7 +330,7 @@ public:
 // offset from the CDS base address.
 
 template <typename V>
-V read_value_from_compact_hashtable(address base_address, u4 offset) {
+inline V read_value_from_compact_hashtable(address base_address, u4 offset) {
   return (V)(base_address + offset);
 }
 

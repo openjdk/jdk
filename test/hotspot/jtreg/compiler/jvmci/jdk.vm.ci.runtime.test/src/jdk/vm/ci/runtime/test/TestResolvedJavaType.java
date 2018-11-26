@@ -855,17 +855,25 @@ public class TestResolvedJavaType extends TypeUniverse {
 
     }
 
+    private static ResolvedJavaMethod getClassInitializer(Class<?> c) {
+        ResolvedJavaMethod clinit = metaAccess.lookupJavaType(c).getClassInitializer();
+        if (clinit != null) {
+            assertEquals(0, clinit.getAnnotations().length);
+            assertEquals(0, clinit.getDeclaredAnnotations().length);
+        }
+        return clinit;
+    }
+
     @Test
     public void getClassInitializerTest() {
-        assertNotNull(metaAccess.lookupJavaType(A.class).getClassInitializer());
-        assertNotNull(metaAccess.lookupJavaType(D.class).getClassInitializer());
-        assertNull(metaAccess.lookupJavaType(B.class).getClassInitializer());
-        assertNull(metaAccess.lookupJavaType(C.class).getClassInitializer());
-        assertNull(metaAccess.lookupJavaType(int.class).getClassInitializer());
-        assertNull(metaAccess.lookupJavaType(void.class).getClassInitializer());
+        assertNotNull(getClassInitializer(A.class));
+        assertNotNull(getClassInitializer(D.class));
+        assertNull(getClassInitializer(B.class));
+        assertNull(getClassInitializer(C.class));
+        assertNull(getClassInitializer(int.class));
+        assertNull(getClassInitializer(void.class));
         for (Class<?> c : classes) {
-            ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            type.getClassInitializer();
+            getClassInitializer(c);
         }
     }
 

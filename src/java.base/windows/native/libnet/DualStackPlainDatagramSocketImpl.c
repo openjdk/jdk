@@ -386,15 +386,14 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
                 packetAddress = NULL;
             }
         }
-        if (packetAddress == NULL) {
-            packetAddress = NET_SockaddrToInetAddress(env, &sa, &port);
-            if (packetAddress != NULL) {
-                /* stuff the new Inetaddress into the packet */
-                (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
+        if (!(*env)->ExceptionCheck(env)){
+            if (packetAddress == NULL ) {
+                packetAddress = NET_SockaddrToInetAddress(env, &sa, &port);
+                if (packetAddress != NULL) {
+                    /* stuff the new InetAddress into the packet */
+                    (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
+                }
             }
-        }
-
-        if (!(*env)->ExceptionCheck(env)) {
             /* populate the packet */
             (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, rv,
                                    (jbyte *)fullPacket);

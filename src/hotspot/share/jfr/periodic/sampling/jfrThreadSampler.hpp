@@ -50,7 +50,6 @@ class JfrThreadSampling : public JfrCHeapObj {
   static void set_java_sample_interval(size_t period);
   static void set_native_sample_interval(size_t period);
   static void on_javathread_suspend(JavaThread* thread);
-  static Thread* sampler_thread();
 };
 
 #endif // SHARE_VM_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP

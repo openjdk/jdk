@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class ServerSocket_accept extends AsyncCloseTest implements Runnable {
     public ServerSocket_accept(int timeout) throws IOException {
         this.timeout = timeout;
         latch = new CountDownLatch(1);
-        ss = new ServerSocket(0);
+        ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
     }
 
     public String description() {
@@ -56,7 +56,7 @@ public class ServerSocket_accept extends AsyncCloseTest implements Runnable {
         try {
             latch.countDown();
             Socket s = ss.accept();
-            failed("ServerSocket.accept() returned unexpectly!!");
+            failed("ServerSocket.accept() returned unexpectly!!" + " - " + s);
         } catch (SocketException se) {
             closed();
         } catch (Exception e) {

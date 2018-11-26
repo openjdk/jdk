@@ -210,6 +210,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
   _shared_base_address = SharedBaseAddress;
+  _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
 }
 
 void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) {
@@ -286,6 +287,12 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
       FileMapInfo::fail_continue("A jar file is not the one used while building"
                                  " the shared archive file: %s", name);
     }
+  }
+
+  if (PrintSharedArchiveAndExit && !ok) {
+    // If PrintSharedArchiveAndExit is enabled, don't report failure to the
+    // caller. Please see above comments for more details.
+    ok = true;
   }
   return ok;
 }
@@ -479,16 +486,17 @@ bool FileMapInfo::validate_shared_path_table() {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
     } else if (i >= module_paths_start_index) {
       if (shared_path(i)->validate(false /* not a class path entry */)) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
-    } else if (!PrintSharedArchiveAndExit) {
-      _validating_shared_path_table = false;
-      _shared_path_table = NULL;
-      _shared_path_table_size = 0;
-      return false;
     }
   }
 
@@ -1088,7 +1096,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
                                 si->_allow_exec);
     if (base == NULL || base != addr) {
       // dealloc the regions from java heap
-      dealloc_archive_heap_regions(regions, region_num);
+      dealloc_archive_heap_regions(regions, region_num, is_open_archive);
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                     INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                     p2i(addr), regions[i].byte_size());
@@ -1098,7 +1106,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 
   if (!verify_mapped_heap_regions(first, region_num)) {
     // dealloc the regions from java heap
-    dealloc_archive_heap_regions(regions, region_num);
+    dealloc_archive_heap_regions(regions, region_num, is_open_archive);
     log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
     return false;
   }
@@ -1163,10 +1171,10 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 }
 
 // dealloc the archive regions from java heap
-void FileMapInfo::dealloc_archive_heap_regions(MemRegion* regions, int num) {
+void FileMapInfo::dealloc_archive_heap_regions(MemRegion* regions, int num, bool is_open) {
   if (num > 0) {
     assert(regions != NULL, "Null archive ranges array with non-zero count");
-    G1CollectedHeap::heap()->dealloc_archive_regions(regions, num);
+    G1CollectedHeap::heap()->dealloc_archive_regions(regions, num, is_open);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -1351,6 +1359,21 @@ bool FileMapHeader::validate() {
     return false;
   }
 
+  // Java agents are allowed during run time. Therefore, the following condition is not
+  // checked: (!_allow_archiving_with_java_agent && AllowArchivingWithJavaAgent)
+  // Note: _allow_archiving_with_java_agent is set in the shared archive during dump time
+  // while AllowArchivingWithJavaAgent is set during the current run.
+  if (_allow_archiving_with_java_agent && !AllowArchivingWithJavaAgent) {
+    FileMapInfo::fail_continue("The setting of the AllowArchivingWithJavaAgent is different "
+                               "from the setting in the shared archive.");
+    return false;
+  }
+
+  if (_allow_archiving_with_java_agent) {
+    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment");
+  }
+
   return true;
 }
 
@@ -1405,9 +1428,11 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
     // Dealloc the archive heap regions only without unmapping. The regions are part
     // of the java heap. Unmapping of the heap regions are managed by GC.
     map_info->dealloc_archive_heap_regions(open_archive_heap_ranges,
-                                           num_open_archive_heap_ranges);
+                                           num_open_archive_heap_ranges,
+                                           true);
     map_info->dealloc_archive_heap_regions(closed_archive_heap_ranges,
-                                           num_closed_archive_heap_ranges);
+                                           num_closed_archive_heap_ranges,
+                                           false);
   } else if (DumpSharedSpaces) {
     fail_stop("%s", msg);
   }

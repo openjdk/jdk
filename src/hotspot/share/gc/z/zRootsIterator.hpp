@@ -124,7 +124,7 @@ private:
   ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
 
 public:
-  ZConcurrentRootsIterator(bool marking);
+  ZConcurrentRootsIterator(bool marking = false);
   ~ZConcurrentRootsIterator();
 
   void oops_do(ZRootsIteratorClosure* cl);

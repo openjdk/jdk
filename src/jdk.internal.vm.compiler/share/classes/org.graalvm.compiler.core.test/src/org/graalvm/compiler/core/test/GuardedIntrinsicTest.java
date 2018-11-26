@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.debug.OpaqueNode;
+import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;

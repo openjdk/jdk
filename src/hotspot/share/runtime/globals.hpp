@@ -498,8 +498,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Time out and warn or fail after SafepointTimeoutDelay "          \
           "milliseconds if failed to reach safepoint")                      \
                                                                             \
-  develop(bool, DieOnSafepointTimeout, false,                               \
-          "Die upon failure to reach safepoint (see SafepointTimeout)")     \
+  diagnostic(bool, AbortVMOnSafepointTimeout, false,                        \
+          "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
   /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
   /* typically, at most a few retries are needed                    */      \
@@ -2016,6 +2016,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   notproduct(bool, CIObjectFactoryVerify, false,                            \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
+  diagnostic(bool, AbortVMOnCompilationFailure, false,                      \
+          "Abort VM when method had failed to compile.")                    \
+                                                                            \
   /* Priorities */                                                          \
   product_pd(bool, UseThreadPriorities,  "Use native thread priorities")    \
                                                                             \
@@ -2430,6 +2433,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
+                                                                            \
+  diagnostic(bool, AllowArchivingWithJavaAgent, false,                      \
+          "Allow Java agent to be run with CDS dumping")                    \
                                                                             \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \

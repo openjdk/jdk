@@ -100,6 +100,8 @@ class MetaspaceShared : AllStatic {
   }
   static void commit_shared_space_to(char* newtop) NOT_CDS_RETURN;
   static size_t core_spaces_size() {
+    assert(DumpSharedSpaces || UseSharedSpaces, "sanity");
+    assert(_core_spaces_size != 0, "sanity");
     return _core_spaces_size;
   }
   static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;

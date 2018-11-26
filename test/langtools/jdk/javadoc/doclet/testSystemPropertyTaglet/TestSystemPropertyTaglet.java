@@ -55,9 +55,18 @@ public class TestSystemPropertyTaglet extends JavadocTester {
     @Test
     void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
-        createTestClass(srcDir);
-
         Path outDir = base.resolve("out");
+
+        MethodBuilder method = MethodBuilder
+                .parse("public void func(A a) {}")
+                .setComments("test with {@systemProperty java.version}");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setComments("test with {@systemProperty user.name}")
+                .setModifiers("public", "class")
+                .addMembers(method)
+                .write(srcDir);
+
         javadoc("-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
                 "pkg");
@@ -87,15 +96,24 @@ public class TestSystemPropertyTaglet extends JavadocTester {
                 + "\"u\":\"pkg/A.html#user.name\"}");
     }
 
-    void createTestClass(Path srcDir) throws Exception {
-        MethodBuilder method = MethodBuilder
-                .parse("public void func(A a) {}")
-                .setComments("test with {@systemProperty java.version}");
+    @Test
+    void testSystemProperytWithinATag(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
 
-        new ClassBuilder(tb, "pkg.A")
-                .setComments("test with {@systemProperty user.name}")
+        new ClassBuilder(tb, "pkg2.A")
                 .setModifiers("public", "class")
-                .addMembers(method)
+                .addMembers(MethodBuilder.parse("public void func(){}")
+                        .setComments("a within a : <a href='..'>{@systemProperty user.name}</a>"))
                 .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg2");
+
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "warning: {@systemProperty} tag, which expands to <a>, within <a>");
     }
 }

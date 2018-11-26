@@ -31,7 +31,6 @@ import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -44,6 +43,7 @@ import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class ConstantStringIndexOfSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
@@ -95,8 +95,8 @@ public class ConstantStringIndexOfSnippets implements Snippets {
             args.add("targetCount", utf16IndexOf.getArgument(3));
             args.add("origFromIndex", utf16IndexOf.getArgument(4));
             byte[] targetByteArray = snippetReflection.asObject(byte[].class, utf16IndexOf.getArgument(2).asJavaConstant());
-            args.addConst("md2", md2Utf16(targetByteArray));
-            args.addConst("cache", computeCacheUtf16(targetByteArray));
+            args.addConst("md2", md2Utf16(tool.getMetaAccess(), targetByteArray));
+            args.addConst("cache", computeCacheUtf16(tool.getMetaAccess(), targetByteArray));
             template(utf16IndexOf, args).instantiate(providers.getMetaAccess(), utf16IndexOf, DEFAULT_REPLACER, args);
         }
     }
@@ -151,12 +151,12 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         return cache;
     }
 
-    static int md2Utf16(byte[] target) {
+    static int md2Utf16(MetaAccessProvider metaAccess, byte[] target) {
         int c = target.length / 2;
         if (c == 0) {
             return 0;
         }
-        long base = UnsafeAccess.UNSAFE.arrayBaseOffset(byte[].class);
+        long base = metaAccess.getArrayBaseOffset(JavaKind.Byte);
         char lastChar = UnsafeAccess.UNSAFE.getChar(target, base + (c - 1) * 2);
         int md2 = c;
         for (int i = 0; i < c - 1; i++) {
@@ -168,11 +168,11 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         return md2;
     }
 
-    static long computeCacheUtf16(byte[] s) {
+    static long computeCacheUtf16(MetaAccessProvider metaAccess, byte[] s) {
         int c = s.length / 2;
         int cache = 0;
         int i;
-        long base = UnsafeAccess.UNSAFE.arrayBaseOffset(byte[].class);
+        long base = metaAccess.getArrayBaseOffset(JavaKind.Byte);
         for (i = 0; i < c - 1; i++) {
             char currChar = UnsafeAccess.UNSAFE.getChar(s, base + i * 2);
             cache |= (1 << (currChar & 63));
@@ -181,17 +181,17 @@ public class ConstantStringIndexOfSnippets implements Snippets {
     }
 
     @Fold
-    static int byteArrayBaseOffset(@InjectedParameter ArrayOffsetProvider arrayOffsetProvider) {
-        return arrayOffsetProvider.arrayBaseOffset(JavaKind.Byte);
+    static int byteArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayBaseOffset(JavaKind.Byte);
     }
 
     @Fold
-    static int charArrayBaseOffset(@InjectedParameter ArrayOffsetProvider arrayOffsetProvider) {
-        return arrayOffsetProvider.arrayBaseOffset(JavaKind.Char);
+    static int charArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayBaseOffset(JavaKind.Char);
     }
 
     /** Marker value for the {@link InjectedParameter} injected parameter. */
-    static final ArrayOffsetProvider INJECTED = null;
+    static final MetaAccessProvider INJECTED = null;
 
     @Snippet
     public static int indexOfConstant(char[] source, int sourceOffset, int sourceCount,

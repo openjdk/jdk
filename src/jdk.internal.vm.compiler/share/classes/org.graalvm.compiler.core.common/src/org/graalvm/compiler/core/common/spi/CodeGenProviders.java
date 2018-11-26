@@ -41,6 +41,4 @@ public interface CodeGenProviders {
     ForeignCallsProvider getForeignCalls();
 
     ConstantReflectionProvider getConstantReflection();
-
-    ArrayOffsetProvider getArrayOffsetProvider();
 }
