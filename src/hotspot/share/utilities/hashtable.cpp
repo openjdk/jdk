@@ -107,36 +107,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   }
 }
 
-template <MEMFLAGS F> void BasicHashtable<F>::BucketUnlinkContext::free_entry(BasicHashtableEntry<F>* entry) {
-  entry->set_next(_removed_head);
-  _removed_head = entry;
-  if (_removed_tail == NULL) {
-    _removed_tail = entry;
-  }
-  _num_removed++;
-}
-
-template <MEMFLAGS F> void BasicHashtable<F>::bulk_free_entries(BucketUnlinkContext* context) {
-  if (context->_num_removed == 0) {
-    assert(context->_removed_head == NULL && context->_removed_tail == NULL,
-           "Zero entries in the unlink context, but elements linked from " PTR_FORMAT " to " PTR_FORMAT,
-           p2i(context->_removed_head), p2i(context->_removed_tail));
-    return;
-  }
-
-  // MT-safe add of the list of BasicHashTableEntrys from the context to the free list.
-  BasicHashtableEntry<F>* current = _free_list;
-  while (true) {
-    context->_removed_tail->set_next(current);
-    BasicHashtableEntry<F>* old = Atomic::cmpxchg(context->_removed_head, &_free_list, current);
-    if (old == current) {
-      break;
-    }
-    current = old;
-  }
-  Atomic::add(-context->_num_removed, &_number_of_entries);
-}
-
 // For oops and Strings the size of the literal is interesting. For other types, nobody cares.
 static int literal_size(ConstantPool*) { return 0; }
 static int literal_size(Klass*)        { return 0; }
