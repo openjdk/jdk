@@ -25,8 +25,15 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,6 +42,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
 import jdk.javadoc.doclet.Reporter;
@@ -85,7 +93,7 @@ public class Extern {
     private class Item {
 
         /**
-         * Element name, found in the "element-list" file in the {@link path}.
+         * Element name, found in the "element-list" file in the {@link #path}.
          */
         final String elementName;
 
@@ -157,7 +165,7 @@ public class Extern {
      */
     public boolean isModule(String elementName) {
         Item elem = moduleItems.get(elementName);
-        return (elem == null) ? false : true;
+        return elem != null;
     }
 
     /**
@@ -245,14 +253,6 @@ public class Extern {
         }
     }
 
-    private URL toURL(String url) throws Fault {
-        try {
-            return new URL(url);
-        } catch (MalformedURLException e) {
-            throw new Fault(resources.getText("doclet.MalformedURL", url), e);
-        }
-    }
-
     private class Fault extends Exception {
         private static final long serialVersionUID = 0;
 
@@ -296,7 +296,9 @@ public class Extern {
     private void readElementListFromURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.ELEMENT_LIST.getPath()).toURL();
-            readElementList(link.openStream(), urlpath, false);
+            try (InputStream in = open(link)) {
+                readElementList(in, urlpath, false);
+            }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
@@ -313,7 +315,9 @@ public class Extern {
     private void readAlternateURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
             URL link = elemlisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
-            readElementList(link.openStream(), urlpath, false);
+            try (InputStream in = open(link)) {
+                readElementList(in, urlpath, false);
+            }
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(resources.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
@@ -377,9 +381,9 @@ public class Extern {
     private void readElementList(InputStream input, String path, boolean relative)
                          throws Fault, IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
-            String elemname = null;
+            String elemname;
+            DocPath elempath;
             String moduleName = null;
-            DocPath elempath = null;
             DocPath basePath  = DocPath.create(path);
             while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
@@ -406,9 +410,25 @@ public class Extern {
         }
     }
 
+    private void checkLinkCompatibility(String packageName, String moduleName, String path) throws Fault {
+        PackageElement pe = utils.elementUtils.getPackageElement(packageName);
+        if (pe != null) {
+            ModuleElement me = (ModuleElement)pe.getEnclosingElement();
+            if (me == null || me.isUnnamed()) {
+                if (moduleName != null) {
+                    throw new Fault(resources.getText("doclet.linkMismatch_PackagedLinkedtoModule",
+                            path), null);
+                }
+            } else if (moduleName == null) {
+                throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
+                        path), null);
+            }
+        }
+    }
+
     public boolean isUrl (String urlCandidate) {
         try {
-            URL ignore = new URL(urlCandidate);
+            new URL(urlCandidate);
             //No exception was thrown, so this must really be a URL.
             return true;
         } catch (MalformedURLException e) {
@@ -417,17 +437,70 @@ public class Extern {
         }
     }
 
-    private void checkLinkCompatibility(String packageName, String moduleName, String path) throws Fault {
-        PackageElement pe = configuration.utils.elementUtils.getPackageElement(packageName);
-        if (pe != null) {
-            ModuleElement me = (ModuleElement)pe.getEnclosingElement();
-            if (me == null || me.isUnnamed()) {
-                if (moduleName != null)
-                    throw new Fault(resources.getText("doclet.linkMismatch_PackagedLinkedtoModule",
-                            path), null);
-            } else if (moduleName == null)
-                throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
-                        path), null);
+    private URL toURL(String url) throws Fault {
+        try {
+            return new URL(url);
+        } catch (MalformedURLException e) {
+            throw new Fault(resources.getText("doclet.MalformedURL", url), e);
         }
+    }
+
+    /**
+     * Open a stream to a URL, following a limited number of redirects
+     * if necessary.
+     *
+     * @param url the URL
+     * @return the stream
+     * @throws IOException if an error occurred accessing the URL
+     */
+    private InputStream open(URL url) throws IOException {
+        URLConnection conn = url.openConnection();
+
+        boolean redir;
+        int redirects = 0;
+        InputStream in;
+
+        do {
+            // Open the input stream before getting headers,
+            // because getHeaderField() et al swallow IOExceptions.
+            in = conn.getInputStream();
+            redir = false;
+
+            if (conn instanceof HttpURLConnection) {
+                HttpURLConnection http = (HttpURLConnection)conn;
+                int stat = http.getResponseCode();
+                // See:
+                // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+                // https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection
+                switch (stat) {
+                    case 300: // Multiple Choices
+                    case 301: // Moved Permanently
+                    case 302: // Found (previously Moved Temporarily)
+                    case 303: // See Other
+                    case 307: // Temporary Redirect
+                    case 308: // Permanent Redirect
+                        URL base = http.getURL();
+                        String loc = http.getHeaderField("Location");
+                        URL target = null;
+                        if (loc != null) {
+                            target = new URL(base, loc);
+                        }
+                        http.disconnect();
+                        if (target == null || redirects >= 5) {
+                            throw new IOException("illegal URL redirect");
+                        }
+                        redir = true;
+                        conn = target.openConnection();
+                        redirects++;
+                }
+            }
+        } while (redir);
+
+        if (!url.equals(conn.getURL())) {
+            configuration.getReporter().print(Kind.WARNING,
+                    resources.getText("doclet.urlRedirected", url, conn.getURL()));
+        }
+
+        return in;
     }
 }
