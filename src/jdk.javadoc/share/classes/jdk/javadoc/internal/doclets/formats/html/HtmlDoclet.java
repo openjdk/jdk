@@ -139,19 +139,6 @@ public class HtmlDoclet extends AbstractDoclet {
         if (configuration.createtree) {
             TreeWriter.generate(configuration, classtree);
         }
-        if (configuration.createindex) {
-            configuration.buildSearchTagIndex();
-            if (configuration.splitindex) {
-                SplitIndexWriter.generate(configuration, indexbuilder);
-            } else {
-                SingleIndexWriter.generate(configuration, indexbuilder);
-            }
-            AllClassesIndexWriter.generate(configuration,
-                    new IndexBuilder(configuration, nodeprecated, true));
-            if (!configuration.packages.isEmpty()) {
-                AllPackagesIndexWriter.generate(configuration);
-            }
-        }
 
         if (!(configuration.nodeprecatedlist || nodeprecated)) {
             DeprecatedListWriter.generate(configuration);
@@ -169,6 +156,20 @@ public class HtmlDoclet extends AbstractDoclet {
                 ModuleIndexWriter.generate(configuration);
             } else {
                 PackageIndexWriter.generate(configuration);
+            }
+        }
+
+        if (configuration.createindex) {
+            configuration.buildSearchTagIndex();
+            if (configuration.splitindex) {
+                SplitIndexWriter.generate(configuration, indexbuilder);
+            } else {
+                SingleIndexWriter.generate(configuration, indexbuilder);
+            }
+            AllClassesIndexWriter.generate(configuration,
+                    new IndexBuilder(configuration, nodeprecated, true));
+            if (!configuration.packages.isEmpty()) {
+                AllPackagesIndexWriter.generate(configuration);
             }
         }
 

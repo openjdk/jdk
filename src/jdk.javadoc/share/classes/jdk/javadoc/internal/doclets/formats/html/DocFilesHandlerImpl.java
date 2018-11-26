@@ -169,7 +169,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
         DocPath dfilePath = dstPath.resolve(srcfile.getName());
         HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
-        configuration.messages.notice("doclet.Generating_0", docletWriter.filename);
+        configuration.messages.notice("doclet.Generating_0", docletWriter.filename.getPath());
 
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(true, title);
