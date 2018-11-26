@@ -25,7 +25,7 @@
  * @test
  * @bug 8214025
  * @summary Test compilation with non-default value for ScavengeRootsInCode.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:-TieredCompilation
  *                   -XX:ScavengeRootsInCode=1 compiler.arguments.TestScavengeRootsInCode
  */
 
