@@ -759,19 +759,27 @@ const char *Expr::compute_expr(const Expr *c1, const Expr *c2) {
 }
 
 int Expr::compute_min(const Expr *c1, const Expr *c2) {
-  int result = c1->_min_value + c2->_min_value;
-  assert( result >= 0, "Invalid cost computation");
+  int v1 = c1->_min_value;
+  int v2 = c2->_min_value;
+  assert(0 <= v2 && v2 <= Expr::Max, "sanity");
+  assert(v1 <= Expr::Max - v2, "Invalid cost computation");
 
-  return result;
+  return v1 + v2;
 }
 
+
 int Expr::compute_max(const Expr *c1, const Expr *c2) {
-  int result = c1->_max_value + c2->_max_value;
-  if( result < 0 ) {  // check for overflow
-    result = Expr::Max;
+  int v1 = c1->_max_value;
+  int v2 = c2->_max_value;
+
+  // Check for overflow without producing UB. If v2 is positive
+  // and not larger than Max, the subtraction cannot underflow.
+  assert(0 <= v2 && v2 <= Expr::Max, "sanity");
+  if (v1 > Expr::Max - v2) {
+    return Expr::Max;
   }
 
-  return result;
+  return v1 + v2;
 }
 
 void Expr::print() const {
