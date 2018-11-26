@@ -186,13 +186,19 @@ public class MallocStressTest {
                 if (size == 0) size = 1;
                 long addr = MallocStressTest.whiteBox.NMTMallocWithPseudoStack(size, r);
                 if (addr != 0) {
-                    MallocMemory mem = new MallocMemory(addr, size);
-                    synchronized(MallocStressTest.mallocd_memory) {
-                        MallocStressTest.mallocd_memory.add(mem);
-                        MallocStressTest.mallocd_total += size;
+                    try {
+                        MallocMemory mem = new MallocMemory(addr, size);
+                        synchronized(MallocStressTest.mallocd_memory) {
+                            MallocStressTest.mallocd_memory.add(mem);
+                            MallocStressTest.mallocd_total += size;
+                        }
+                    } catch (OutOfMemoryError e) {
+                        // Don't include this malloc memory because it didn't
+                        // get recorded in mallocd_memory list.
+                        MallocStressTest.whiteBox.NMTFree(addr);
+                        break;
                     }
                 } else {
-                    System.out.println("Out of malloc memory");
                     break;
                 }
             }
