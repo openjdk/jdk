@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -43,11 +43,11 @@
 
 #include <sys/types.h>
 #ifndef _KERNEL
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifndef _WIN32
-#include <stdio.h>
 #include <strings.h>
 #endif /* _WIN32 */
 
@@ -109,16 +109,16 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
     printf("\n");
 
         if (k1 != NULL) {
-                mp_tohex(k1, mpstr);
+                mp_tohex((mp_int*)k1, mpstr);
                 printf("ec_points_mul: scalar k1: %s\n", mpstr);
-                mp_todecimal(k1, mpstr);
+                mp_todecimal((mp_int*)k1, mpstr);
                 printf("ec_points_mul: scalar k1: %s (dec)\n", mpstr);
         }
 
         if (k2 != NULL) {
-                mp_tohex(k2, mpstr);
+                mp_tohex((mp_int*)k2, mpstr);
                 printf("ec_points_mul: scalar k2: %s\n", mpstr);
-                mp_todecimal(k2, mpstr);
+                mp_todecimal((mp_int*)k2, mpstr);
                 printf("ec_points_mul: scalar k2: %s (dec)\n", mpstr);
         }
 
