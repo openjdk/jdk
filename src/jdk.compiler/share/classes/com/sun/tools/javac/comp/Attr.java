@@ -2903,6 +2903,15 @@ public class Attr extends JCTree.Visitor {
                     }
                     super.scan(tree);
                 }
+
+                @Override
+                public void visitClassDef(JCClassDecl that) {
+                    // or class declaration trees!
+                }
+
+                public void visitLambda(JCLambda that) {
+                    // or lambda expressions!
+                }
             }.scan(tree);
         }
 

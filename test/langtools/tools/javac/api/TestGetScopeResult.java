@@ -134,7 +134,7 @@ public class TestGetScopeResult {
                implicitExplicitConflict1);
 
         String[] implicitExplicitConflict2 = {
-            "s:<any>",
+            "s:none",
             ":t",
             "super:java.lang.Object",
             "this:Test"
@@ -179,7 +179,8 @@ public class TestGetScopeResult {
             List<String> expectedList = List.of(expected);
 
             if (!expectedList.equals(actual)) {
-                throw new IllegalStateException("Unexpected scope content: " + actual);
+                throw new IllegalStateException("Unexpected scope content: " + actual + "\n" +
+                                                 "expected: " + expectedList);
             }
         }
     }
