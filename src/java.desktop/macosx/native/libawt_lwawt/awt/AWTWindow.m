@@ -965,6 +965,11 @@ AWT_ASSERT_APPKIT_THREAD;
                     // Currently, no need to deliver the whole NSEvent.
                     static JNF_MEMBER_CACHE(jm_deliverNCMouseDown, jc_CPlatformWindow, "deliverNCMouseDown", "()V");
                     JNFCallVoidMethod(env, platformWindow, jm_deliverNCMouseDown);
+                    // Deliver double click on title bar
+                    if ([event clickCount] > 1) {
+                        static JNF_MEMBER_CACHE(jm_deliverDoubleClickOnTitlebar, jc_CPlatformWindow, "deliverDoubleClickOnTitlebar", "()V");
+                        JNFCallVoidMethod(env, platformWindow, jm_deliverDoubleClickOnTitlebar);
+                    }
                     (*env)->DeleteLocalRef(env, platformWindow);
                 }
             }
