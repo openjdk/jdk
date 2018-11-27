@@ -35,9 +35,10 @@ class ObjectMonitor;
 class ThreadsList;
 
 struct DeflateMonitorCounters {
-  int nInuse;          // currently associated with objects
-  int nInCirculation;  // extant
-  int nScavenged;      // reclaimed
+  int nInuse;             // currently associated with objects
+  int nInCirculation;     // extant
+  int nScavenged;         // reclaimed
+  double perThreadTimes;  // per-thread scavenge times
 };
 
 class ObjectSynchronizer : AllStatic {
