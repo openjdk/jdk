@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -95,7 +95,7 @@ final class AttributeSet extends TopLevelElement {
             parser.reportError(Constants.ERROR, err);
         }
         _name = parser.getQNameIgnoreDefaultNs(name);
-        if ((_name == null) || (_name.equals(EMPTYSTRING))) {
+        if ((_name == null) || (_name.getStringRep().equals(EMPTYSTRING))) {
             ErrorMsg msg = new ErrorMsg(ErrorMsg.UNNAMED_ATTRIBSET_ERR, this);
             parser.reportError(Constants.ERROR, msg);
         }
