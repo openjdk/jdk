@@ -1122,7 +1122,7 @@ void Compile::Init(int aliaslevel) {
   set_decompile_count(0);
 
   set_do_freq_based_layout(_directive->BlockLayoutByFrequencyOption);
-  set_num_loop_opts(LoopOptsCount);
+  _loop_opts_cnt = LoopOptsCount;
   set_do_inlining(Inline);
   set_max_inline_size(MaxInlineSize);
   set_freq_inline_size(FreqInlineSize);
@@ -2169,14 +2169,14 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 }
 
 
-bool Compile::optimize_loops(int& loop_opts_cnt, PhaseIterGVN& igvn, LoopOptsMode mode) {
-  if(loop_opts_cnt > 0) {
+bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
+  if(_loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
-    while(major_progress() && (loop_opts_cnt > 0)) {
+    while(major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
       PhaseIdealLoop ideal_loop(igvn, mode);
-      loop_opts_cnt--;
+      _loop_opts_cnt--;
       if (failing())  return false;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
     }
@@ -2202,7 +2202,6 @@ void Compile::Optimize() {
 #endif
 
   ResourceMark rm;
-  int          loop_opts_cnt;
 
   print_inlining_reinit();
 
@@ -2305,28 +2304,27 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
 
   // Set loop opts counter
-  loop_opts_cnt = num_loop_opts();
-  if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
+  if((_loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop(igvn, LoopOptsDefault);
-      loop_opts_cnt--;
+      _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
     }
     // Loop opts pass if partial peeling occurred in previous pass
-    if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
+    if(PartialPeelLoop && major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
-      loop_opts_cnt--;
+      _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
       if (failing())  return;
     }
     // Loop opts pass for loop-unrolling before CCP
-    if(major_progress() && (loop_opts_cnt > 0)) {
+    if(major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
-      loop_opts_cnt--;
+      _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
     }
     if (!failing()) {
@@ -2361,7 +2359,7 @@ void Compile::Optimize() {
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
-  if (!optimize_loops(loop_opts_cnt, igvn, LoopOptsDefault)) {
+  if (!optimize_loops(igvn, LoopOptsDefault)) {
     return;
   }
 
@@ -2399,6 +2397,16 @@ void Compile::Optimize() {
     PhaseMacroExpand  mex(igvn);
     print_method(PHASE_BEFORE_MACRO_EXPANSION, 2);
     if (mex.expand_macro_nodes()) {
+      assert(failing(), "must bail out w/ explicit message");
+      return;
+    }
+  }
+
+  {
+    TracePhase tp("barrierExpand", &timers[_t_barrierExpand]);
+    print_method(PHASE_BEFORE_BARRIER_EXPAND, 2);
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    if (bs->expand_barriers(this, igvn)) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }

@@ -2774,9 +2774,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only;
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only &&
+    !bs->is_gc_specific_loop_opts_pass(mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
+  bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(mode);
   if (stop_early && !do_expensive_nodes) {
     _igvn.optimize();           // Cleanup NeverBranches
     return;
@@ -2854,8 +2857,9 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if( !_verify_me && !_verify_only )
+  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded) {
     _ltree_root->counted_loop( this );
+  }
 
   // Find latest loop placement.  Find ideal loop placement.
   visited.Clear();
@@ -2920,6 +2924,14 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // Cleanup any modified bits
     _igvn.optimize();
 
+    if (C->log() != NULL) {
+      log_loop_tree(_ltree_root, _ltree_root, C->log());
+    }
+    return;
+  }
+
+  if (bs->optimize_loops(this, mode, visited, nstack, worklist)) {
+    _igvn.optimize();
     if (C->log() != NULL) {
       log_loop_tree(_ltree_root, _ltree_root, C->log());
     }
@@ -4136,7 +4148,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
   }
 }
 
-// Verify that no data node is schedules in the outer loop of a strip
+// Verify that no data node is scheduled in the outer loop of a strip
 // mined loop.
 void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 #ifdef ASSERT
@@ -4145,7 +4157,9 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
   }
   IdealLoopTree* loop = get_loop(least);
   Node* head = loop->_head;
-  if (head->is_OuterStripMinedLoop()) {
+  if (head->is_OuterStripMinedLoop() &&
+      // Verification can't be applied to fully built strip mined loops
+      head->as_Loop()->outer_loop_end()->in(1)->find_int_con(-1) == 0) {
     Node* sfpt = head->as_Loop()->outer_safepoint();
     ResourceMark rm;
     Unique_Node_List wq;

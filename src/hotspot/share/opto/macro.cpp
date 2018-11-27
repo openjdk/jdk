@@ -2600,6 +2600,5 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   _igvn.optimize();
   if (C->failing())  return true;
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  return bs->expand_macro_nodes(this);
+  return false;
 }

@@ -60,6 +60,7 @@ class ConnectionGraph;
 class GraphKit;
 class IdealKit;
 class Node;
+class PhaseIdealLoop;
 class PhaseGVN;
 class PhaseMacroExpand;
 class Type;
@@ -277,9 +278,12 @@ public:
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
   virtual void* create_barrier_state(Arena* comp_arena) const { return NULL; }
-  // If the BarrierSetC2 state has kept macro nodes in its compilation unit state to be
-  // expanded later, then now is the time to do so.
-  virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const { return false; }
+  // If the BarrierSetC2 state has barrier nodes in its compilation
+  // unit state to be expanded later, then now is the time to do so.
+  virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
+  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
+  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
+  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
 
   virtual bool has_special_unique_user(const Node* node) const { return false; }
 

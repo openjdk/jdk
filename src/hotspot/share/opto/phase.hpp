@@ -80,6 +80,7 @@ public:
       _t_ccp,
       _t_iterGVN2,
       _t_macroExpand,
+      _t_barrierExpand,
       _t_graphReshaping,
     _t_matcher,
     _t_scheduler,
