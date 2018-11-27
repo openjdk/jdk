@@ -441,6 +441,7 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
   for (i = 0; i < n; i++) {
     if (!get_nth_lwp_regs(ph, i, &regs)) {
       print_debug("Could not get regs of thread %d, already set!\n", i);
+      (*env)->ReleaseLongArrayElements(env, thrinfos, (jlong*)cinfos, 0);
       return false;
     }
     for (j = 0; j < len; j += 3) {
@@ -519,8 +520,8 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
   regs[REG_INDEX(TRAPNO)] = gregs.r_trapno;
   regs[REG_INDEX(RFL)]    = gregs.r_rflags;
 
-#endif /* amd64 */
   (*env)->ReleaseLongArrayElements(env, array, regs, JNI_COMMIT);
+#endif /* amd64 */
   return array;
 }
 
