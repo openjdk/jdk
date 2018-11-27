@@ -362,6 +362,44 @@ public class TestSearch extends JavadocTester {
         checkSearchIndex(false);
     }
 
+    @Test
+    void testJapaneseLocale() {
+        javadoc("-locale", "ja_JP",
+                "-d", "out-jp",
+                "--no-module-directories",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+        checkOutput(Output.OUT, true,
+                "\u30d1\u30c3\u30b1\u30fc\u30b8pkg\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
+                        "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n",
+                "\u30d1\u30c3\u30b1\u30fc\u30b8pkg1\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
+                        "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n");
+        checkSearchJS();
+        checkSearchIndex(true);
+    }
+
+    @Test
+    void testChineseLocale() {
+        javadoc("-locale", "zh_CN",
+                "-d", "out-cn",
+                "--no-module-directories",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+        checkOutput(Output.OUT, true,
+                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg\u7684\u6e90\u6587\u4ef6...\n",
+                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg1\u7684\u6e90\u6587\u4ef6...\n",
+                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg2\u7684\u6e90\u6587\u4ef6...\n",
+                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg3\u7684\u6e90\u6587\u4ef6...\n");
+        checkSearchJS();
+        checkSearchIndex(true);
+    }
+
     void checkDocLintErrors() {
         checkOutput(Output.OUT, true,
                 "A sample method. Testing search tag for {@index \"unclosed quote}.",

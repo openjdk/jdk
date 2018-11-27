@@ -457,8 +457,7 @@ public class TagletWriterImpl extends TagletWriter {
                         return null;
                     }
                 }.visit(element);
-                Contents contents = configuration.getContents();
-                si.setCategory(contents.getContent("doclet.SearchTags").toString());
+                si.setCategory(SearchIndexItem.Category.SEARCH_TAGS);
                 configuration.tagSearchIndex.add(si);
             }
         }
