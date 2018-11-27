@@ -464,7 +464,10 @@ public final class ProcessTools {
      */
     public static OutputAnalyzer executeCommand(ProcessBuilder pb)
             throws Throwable {
-        String cmdLine = pb.command().stream().collect(Collectors.joining(" "));
+        String cmdLine = pb.command().stream()
+                .map(x -> (x.contains(" ") || x.contains("$"))
+                        ? ("'" + x + "'") : x)
+                .collect(Collectors.joining(" "));
         System.out.println("Command line: [" + cmdLine + "]");
         OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
         System.out.println(analyzer.getOutput());
