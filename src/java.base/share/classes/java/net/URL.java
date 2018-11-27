@@ -1421,13 +1421,12 @@ public final class URL implements java.io.Serializable {
                 // this thread created.
                 handler = handler2;
             }
-        }
 
-        // Insert this handler into the hashtable
-        if (handler != null) {
-            handlers.put(protocol, handler);
+            // Insert this handler into the hashtable
+            if (handler != null) {
+                handlers.put(protocol, handler);
+            }
         }
-
         return handler;
     }
 
