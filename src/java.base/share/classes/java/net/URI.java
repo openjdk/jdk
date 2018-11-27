@@ -83,7 +83,7 @@ import java.lang.NullPointerException;  // for javadoc
  * subject to further parsing.  Some examples of opaque URIs are:
  *
  * <blockquote><ul style="list-style-type:none">
- * <li>{@code mailto:java-net@java.sun.com}</li>
+ * <li>{@code mailto:java-net@www.example.com}</li>
  * <li>{@code news:comp.lang.java}</li>
  * <li>{@code urn:isbn:096139210x}</li>
  * </ul></blockquote>
@@ -399,7 +399,7 @@ import java.lang.NullPointerException;  // for javadoc
  * For any URI <i>u</i> that does not contain redundant syntax such as two
  * slashes before an empty authority (as in {@code file:///tmp/}&nbsp;) or a
  * colon following a host name but no port (as in
- * {@code http://java.sun.com:}&nbsp;), and that does not encode characters
+ * {@code http://www.example.com:}&nbsp;), and that does not encode characters
  * except those that must be quoted, the following identities also hold:
  * <pre>
  *     new URI(<i>u</i>.getScheme(),

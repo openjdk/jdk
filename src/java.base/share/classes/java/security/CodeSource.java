@@ -309,13 +309,13 @@ public class CodeSource implements java.io.Serializable {
      * <p>
      * For example, the codesource objects with the following locations
      * and null certificates all imply
-     * the codesource with the location "http://java.sun.com/classes/foo.jar"
+     * the codesource with the location "http://www.example.com/classes/foo.jar"
      * and null certificates:
      * <pre>
      *     http:
-     *     http://*.sun.com/classes/*
-     *     http://java.sun.com/classes/-
-     *     http://java.sun.com/classes/foo.jar
+     *     http://*.example.com/classes/*
+     *     http://www.example.com/classes/-
+     *     http://www.example.com/classes/foo.jar
      * </pre>
      *
      * Note that if this CodeSource has a null location and a null

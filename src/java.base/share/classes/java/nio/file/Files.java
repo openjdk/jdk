@@ -3067,7 +3067,7 @@ public final class Files {
      * it to a file:
      * <pre>
      *     Path path = ...
-     *     URI u = URI.create("http://java.sun.com/");
+     *     URI u = URI.create("http://www.example.com/");
      *     try (InputStream in = u.toURL().openStream()) {
      *         Files.copy(in, path);
      *     }
