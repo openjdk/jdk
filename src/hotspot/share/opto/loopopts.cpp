@@ -887,6 +887,11 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
 Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  Node* bs_res = bs->split_if_pre(this, n);
+  if (bs_res != NULL) {
+    return bs_res;
+  }
   // Cloning these guys is unlikely to win
   int n_op = n->Opcode();
   if( n_op == Op_MergeMem ) return n;

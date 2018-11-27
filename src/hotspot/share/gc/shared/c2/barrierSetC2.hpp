@@ -60,8 +60,8 @@ class ConnectionGraph;
 class GraphKit;
 class IdealKit;
 class Node;
-class PhaseIdealLoop;
 class PhaseGVN;
+class PhaseIdealLoop;
 class PhaseMacroExpand;
 class Type;
 class TypePtr;
@@ -313,6 +313,7 @@ public:
   virtual void igvn_add_users_to_worklist(PhaseIterGVN* igvn, Node* use) const {}
   virtual void ccp_analyze(PhaseCCP* ccp, Unique_Node_List& worklist, Node* use) const {}
 
+  virtual Node* split_if_pre(PhaseIdealLoop* phase, Node* n) const { return NULL; }
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP
