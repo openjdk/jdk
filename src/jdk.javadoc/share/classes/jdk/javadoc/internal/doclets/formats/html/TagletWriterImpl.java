@@ -41,11 +41,11 @@ import com.sun.source.doctree.SystemPropertyTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
@@ -421,42 +421,38 @@ public class TagletWriterImpl extends TagletWriter {
                 SearchIndexItem si = new SearchIndexItem();
                 si.setLabel(tagText);
                 si.setDescription(desc);
+                si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);
                 DocPaths docPaths = configuration.docPaths;
                 new SimpleElementVisitor9<Void, Void>() {
                     @Override
-                    public Void visitModule(ModuleElement e, Void p) {
-                        si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(element));
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitPackage(PackageElement e, Void p) {
-                        si.setUrl(docPaths.forPackage(e).getPath()
-                                + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
-                        si.setHolder(utils.getSimpleName(element));
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitType(TypeElement e, Void p) {
-                        si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
-                        si.setHolder(utils.getFullyQualifiedName(e));
-                        return null;
-                    }
-
-                    @Override
                     public Void visitVariable(VariableElement e, Void p) {
                         TypeElement te = utils.getEnclosingTypeElement(e);
-                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                         si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
                         return null;
                     }
 
                     @Override
+                    public Void visitUnknown(Element e, Void p) {
+                        if (e instanceof DocletElement) {
+                            DocletElement de = (DocletElement) e;
+                            switch (de.getSubKind()) {
+                                case OVERVIEW:
+                                    si.setHolder(resources.getText("doclet.Overview"));
+                                    break;
+                                case DOCFILE:
+                                    si.setHolder(de.getPackageElement().toString());
+                                    break;
+                                default:
+                                    throw new IllegalStateException();
+                            }
+                            return null;
+                        } else {
+                            return super.visitUnknown(e, p);
+                        }
+                    }
+
+                    @Override
                     protected Void defaultAction(Element e, Void p) {
-                        TypeElement te = utils.getEnclosingTypeElement(e);
-                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                         si.setHolder(utils.getFullyQualifiedName(e));
                         return null;
                     }

@@ -441,11 +441,6 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
   // during VM initialization time. No lock is needed.
   if (record != NULL) {
     Thread* THREAD = Thread::current();
-    if (log_is_enabled(Info, cds, heap)) {
-      ResourceMark rm;
-      log_info(cds, heap)("initialize_from_archived_subgraph " PTR_FORMAT " %s", p2i(k),
-                          k->external_name());
-    }
 
     int i;
     // Load/link/initialize the klasses of the objects in the subgraph.
@@ -511,8 +506,13 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
         log_debug(cds, heap)("  " PTR_FORMAT " init field @ %2d = " PTR_FORMAT, p2i(k), field_offset, p2i(v));
       }
 
-    // Done. Java code can see the archived sub-graphs referenced from k's
-    // mirror after this point.
+      // Done. Java code can see the archived sub-graphs referenced from k's
+      // mirror after this point.
+      if (log_is_enabled(Info, cds, heap)) {
+        ResourceMark rm;
+        log_info(cds, heap)("initialize_from_archived_subgraph %s " PTR_FORMAT,
+                            k->external_name(), p2i(k));
+      }
     }
   }
 }

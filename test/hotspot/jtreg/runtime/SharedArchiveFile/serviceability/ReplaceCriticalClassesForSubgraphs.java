@@ -19,22 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 8214025
- * @summary Test compilation with non-default value for ScavengeRootsInCode.
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:-TieredCompilation
- *                   -XX:ScavengeRootsInCode=1 compiler.arguments.TestScavengeRootsInCode
+ * @summary Tests how CDS works when critical library classes are replaced with JVMTI ClassFileLoadHook
+ * @library /test/lib
+ * @requires vm.cds.archived.java.heap
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
  */
 
-package compiler.arguments;
+public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
+    public static void main(String args[]) throws Throwable {
+        ReplaceCriticalClassesForSubgraphs rcc = new ReplaceCriticalClassesForSubgraphs();
+        rcc.process(args);
+    }
 
-public class TestScavengeRootsInCode {
-
-    static public void main(String[] args) {
-        System.out.println("Passed");
+    public String[] getTests() {
+        String tests[] = {
+            // Try to replace classes that are used by the archived subgraph graphs.
+            "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
+            "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
+            "-subgraph java/lang/Long java.lang.Long$LongCache",
+        };
+        return tests;
     }
 }
-

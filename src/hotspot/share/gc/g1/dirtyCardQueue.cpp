@@ -221,23 +221,22 @@ bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
 
 
 BufferNode* DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
-  BufferNode* nd = NULL;
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
   if (_n_completed_buffers <= stop_at) {
-    _process_completed = false;
     return NULL;
   }
 
-  if (_completed_buffers_head != NULL) {
-    nd = _completed_buffers_head;
-    assert(_n_completed_buffers > 0, "Invariant");
-    _completed_buffers_head = nd->next();
-    _n_completed_buffers--;
-    if (_completed_buffers_head == NULL) {
-      assert(_n_completed_buffers == 0, "Invariant");
-      _completed_buffers_tail = NULL;
-    }
+  assert(_n_completed_buffers > 0, "invariant");
+  assert(_completed_buffers_head != NULL, "invariant");
+  assert(_completed_buffers_tail != NULL, "invariant");
+
+  BufferNode* nd = _completed_buffers_head;
+  _completed_buffers_head = nd->next();
+  _n_completed_buffers--;
+  if (_completed_buffers_head == NULL) {
+    assert(_n_completed_buffers == 0, "Invariant");
+    _completed_buffers_tail = NULL;
   }
   DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   return nd;

@@ -530,22 +530,22 @@ enum SSLCipher {
             ProtocolVersion protocolVersion,
             SecretKey key, IvParameterSpec iv,
             SecureRandom random) throws GeneralSecurityException {
-        if (readCipherGenerators.length == 0) {
+        if (writeCipherGenerators.length == 0) {
             return null;
         }
 
-        WriteCipherGenerator rcg = null;
+        WriteCipherGenerator wcg = null;
         for (Map.Entry<WriteCipherGenerator,
                 ProtocolVersion[]> me : writeCipherGenerators) {
             for (ProtocolVersion pv : me.getValue()) {
                 if (protocolVersion == pv) {
-                    rcg = me.getKey();
+                    wcg = me.getKey();
                 }
             }
         }
 
-        if (rcg != null) {
-            return rcg.createCipher(this, authenticator,
+        if (wcg != null) {
+            return wcg.createCipher(this, authenticator,
                     protocolVersion, transformation, key, iv, random);
         }
         return null;

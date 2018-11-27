@@ -327,7 +327,7 @@ void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
 
 void PtrQueueSet::notify_if_necessary() {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  assert(_process_completed_threshold >= 0, "_process_completed is negative");
+  assert(_process_completed_threshold >= 0, "_process_completed_threshold is negative");
   if (_n_completed_buffers >= (size_t)_process_completed_threshold || _max_completed_queue == 0) {
     _process_completed = true;
     if (_notify_when_complete)
