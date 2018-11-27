@@ -815,7 +815,6 @@ javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/JPopupMenu/6583251/bug6583251.java 8213564 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
-javax/swing/GraphicsConfigNotifier/StalePreferredSize.java 8213121 macosx-all,linux-all
 javax/swing/JButton/4368790/bug4368790.java 8213123 macosx-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JTable/6263446/bug6263446.java 8169959 macosx-all

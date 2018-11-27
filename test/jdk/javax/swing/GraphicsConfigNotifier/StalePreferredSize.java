@@ -59,7 +59,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /**
  * @test
  * @key headful
- * @bug 8201552
+ * @bug 8201552 8213843
  * @summary Initial layout of the component should use correct graphics config.
  *          It is checked by SwingUtilities.updateComponentTreeUI(), if layout
  *          was correct the call to updateComponentTreeUI() will be no-op.
