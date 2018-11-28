@@ -89,7 +89,6 @@ public class ReplaceCriticalClasses {
             // Replace classes that are loaded after JVMTI_PHASE_PRIMORDIAL. It's OK to replace
             // such
             // classes even when CDS is enabled. Nothing bad should happen.
-            "-notshared jdk/internal/vm/PostVMInitHook",
             "-notshared java/util/Locale",
             "-notshared sun/util/locale/BaseLocale",
             "-notshared java/lang/Readable",
