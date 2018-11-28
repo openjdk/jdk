@@ -25,14 +25,14 @@
  * @test
  * @bug 8080535 8191410
  * @summary Expected size of Character.UnicodeBlock.map is not optimal
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/java.lang:open
  *          java.base/java.util:open
- * @build jdk.testlibrary.OptimalCapacity
+ * @build jdk.test.lib.util.OptimalCapacity
  * @run main OptimalMapSize
  */
 
-import jdk.testlibrary.OptimalCapacity;
+import jdk.test.lib.util.OptimalCapacity;
 
 // What will be the number of the Unicode blocks in the future.
 //

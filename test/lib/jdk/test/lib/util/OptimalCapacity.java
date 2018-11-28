@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.test.lib.util;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
