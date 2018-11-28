@@ -271,7 +271,7 @@ public class LongAccumulator extends Striped64 implements Serializable {
 
     /**
      * Returns a
-     * <a href="../../../../serialized-form.html#java.util.concurrent.atomic.LongAccumulator.SerializationProxy">
+     * <a href="{@docRoot}/serialized-form.html#java.util.concurrent.atomic.LongAccumulator.SerializationProxy">
      * SerializationProxy</a>
      * representing the state of this instance.
      *
