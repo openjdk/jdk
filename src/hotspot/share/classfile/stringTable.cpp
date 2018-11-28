@@ -206,6 +206,12 @@ StringTable::StringTable() : _local_table(NULL), _current_size(0), _has_work(0),
   _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
 }
 
+void StringTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
+  }
+}
+
 size_t StringTable::item_added() {
   return Atomic::add((size_t)1, &(the_table()->_items_count));
 }
@@ -281,9 +287,7 @@ oop StringTable::do_lookup(const jchar* name, int len, uintx hash) {
   StringTableGet stg(thread);
   bool rehash_warning;
   _local_table->get(thread, lookup, stg, &rehash_warning);
-  if (rehash_warning) {
-    _needs_rehashing = true;
-  }
+  update_needs_rehash(rehash_warning);
   return stg.get_res_oop();
 }
 
@@ -334,30 +338,6 @@ oop StringTable::intern(Handle string_or_null_h, const jchar* name, int len, TRA
                                              hash, CHECK_NULL);
 }
 
-class StringTableCreateEntry : public StackObj {
- private:
-   Thread* _thread;
-   Handle  _return;
-   Handle  _store;
- public:
-  StringTableCreateEntry(Thread* thread, Handle store)
-    : _thread(thread), _store(store) {}
-
-  WeakHandle<vm_string_table_data> operator()() { // No dups found
-    WeakHandle<vm_string_table_data> wh =
-      WeakHandle<vm_string_table_data>::create(_store);
-    return wh;
-  }
-  void operator()(bool inserted, WeakHandle<vm_string_table_data>* val) {
-    oop result = val->resolve();
-    assert(result != NULL, "Result should be reachable");
-    _return = Handle(_thread, result);
-  }
-  oop get_return() const {
-    return _return();
-  }
-};
-
 oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
                            int len, uintx hash, TRAPS) {
   HandleMark hm(THREAD);  // cleanup strings created
@@ -377,15 +357,23 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
   assert(java_lang_String::equals(string_h(), name, len),
          "string must be properly initialized");
   assert(len == java_lang_String::length(string_h()), "Must be same length");
+
   StringTableLookupOop lookup(THREAD, hash, string_h);
-  StringTableCreateEntry stc(THREAD, string_h);
+  StringTableGet stg(THREAD);
 
   bool rehash_warning;
-  _local_table->get_insert_lazy(THREAD, lookup, stc, stc, &rehash_warning);
-  if (rehash_warning) {
-    _needs_rehashing = true;
-  }
-  return stc.get_return();
+  do {
+    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+      update_needs_rehash(rehash_warning);
+      return stg.get_res_oop();
+    }
+    WeakHandle<vm_string_table_data> wh = WeakHandle<vm_string_table_data>::create(string_h);
+    // The hash table takes ownership of the WeakHandle, even if it's not inserted.
+    if (_local_table->insert(THREAD, lookup, wh, &rehash_warning)) {
+      update_needs_rehash(rehash_warning);
+      return wh.resolve();
+    }
+  } while(true);
 }
 
 // GC support
