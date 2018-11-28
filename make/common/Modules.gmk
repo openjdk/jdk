@@ -247,6 +247,8 @@ SRC_SUBDIRS += share/classes
 
 SPEC_SUBDIRS += share/specs
 
+MAN_SUBDIRS += share/man
+
 # Find all module-info.java files for the current build target platform and
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
@@ -304,6 +306,12 @@ FindModuleSrcDirs = \
 FindModuleSpecsDirs = \
     $(strip $(wildcard \
         $(foreach sub, $(SPEC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
+# Find all man dirs for a particular module
+# $1 - Module to find man dirs for
+FindModuleManDirs = \
+    $(strip $(wildcard \
+        $(foreach sub, $(MAN_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
 # Construct the complete module source path
 GetModuleSrcPath = \

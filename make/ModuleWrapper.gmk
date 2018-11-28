@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,12 @@ $(eval $(call SetupCopyFiles, COPY_CMDS, \
     FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE)/%, $(TARGETS)), \
 ))
 
+$(eval $(call SetupCopyFiles, COPY_MAN, \
+    SRC := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE), \
+    DEST := $(JDK_OUTPUTDIR)/man, \
+    FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/%, $(TARGETS)), \
+))
+
 $(eval $(call SetupCopyFiles, COPY_CONF, \
     SRC := $(SUPPORT_OUTPUTDIR)/modules_conf/$(MODULE), \
     DEST := $(JDK_OUTPUTDIR)/conf, \
@@ -104,5 +110,5 @@ ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   all: $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
 else
   all: $(TARGETS) $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
-      $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
+      $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_MAN) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
 endif

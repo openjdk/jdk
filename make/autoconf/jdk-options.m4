@@ -587,10 +587,10 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
 [
   AC_ARG_ENABLE([manpages], [AS_HELP_STRING([--disable-manpages],
-      [Set to disable building of man pages @<:@enabled@:>@])])
+      [Set to disable copy of static man pages @<:@enabled@:>@])])
 
   BUILD_MANPAGES="true"
-  AC_MSG_CHECKING([if man pages should be built])
+  AC_MSG_CHECKING([if static man pages should be copied])
   if test "x$enable_manpages" = "x"; then
     AC_MSG_RESULT([yes])
   elif test "x$enable_manpages" = "xyes"; then
