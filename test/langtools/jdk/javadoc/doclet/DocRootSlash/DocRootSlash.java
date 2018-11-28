@@ -51,13 +51,12 @@ public class DocRootSlash extends JavadocTester {
         // Directory that contains source files that javadoc runs on
         String srcdir = System.getProperty("test.src", ".");
 
-        setAutomaticCheckLinks(false); // @ignore JDK-8202621
 
         javadoc("-d", "out",
                 "-Xdoclint:none",
                 "-overview", (srcdir + "/overview.html"),
                 "--frames",
-                "-header", "<A HREF=\"{@docroot}/package-list\">{&#064;docroot}</A> <A HREF=\"{@docRoot}/help-doc\">{&#064;docRoot}</A>",
+                "-header", "<A HREF=\"{@docroot}/element-list\">{&#064;docroot}</A> <A HREF=\"{@docRoot}/help-doc.html\">{&#064;docRoot}</A>",
                 "-sourcepath", srcdir,
                 "p1", "p2");
 
@@ -69,8 +68,8 @@ public class DocRootSlash extends JavadocTester {
         // Bug 4633447: Special test for overview-frame.html
         // Find two strings in file "overview-frame.html"
         checkOutput("overview-frame.html", true,
-                "<A HREF=\"./package-list\">",
-                "<A HREF=\"./help-doc\">");
+                "<A HREF=\"./element-list\">",
+                "<A HREF=\"./help-doc.html\">");
     }
 
     void checkFiles(String... filenameArray) {
@@ -81,7 +80,7 @@ public class DocRootSlash extends JavadocTester {
             String fileString = readFile(f);
             System.out.println("\nSub-tests for file: " + f + " --------------");
             // Loop over all tests in a single file
-            for ( int j = 0; j < 11; j++ ) {
+            for ( int j = 0; j < 7; j++ ) {
 
                 // Compare actual to expected string for a single subtest
                 compareActualToExpected(++count, fileString);
@@ -107,9 +106,6 @@ public class DocRootSlash extends JavadocTester {
      */
     private static final String prefix = "(?i)(<a\\s+href=";    // <a href=     (start group1)
     private static final String ref1   = "\")([^\"]*)(\".*?>)"; // doublequotes (end group1, group2, group3)
-    private static final String ref2   = ")(\\S+?)([^<>]*>)";   // no quotes    (end group1, group2, group3)
-    private static final String label  = "(.*?)";               // text label   (group4)
-    private static final String end    = "(</a>)";              // </a>         (group5)
 
     /**
      * Compares the actual string to the expected string in the specified string

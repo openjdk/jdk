@@ -39,46 +39,24 @@ package p1;
  * Sub-test 2 Expect: <A HREF="..">..</A>
  * <p>
  *
- * Sub-test 3 Actual: <A HREF="{@docRoot}/package-list">{&#064;docRoot}/package-list</A> <br>
- * Sub-test 3 Expect: <A HREF="../package-list">../package-list</A>
+ * Sub-test 3 Actual: <A HREF="{@docRoot}/element-list">{&#064;docRoot}/element-list</A> <br>
+ * Sub-test 3 Expect: <A HREF="../element-list">../element-list</A>
  * <p>
  *
  * Sub-test 4 Actual: <A HREF="{@docRoot}/p2/C2.html">{&#064;docRoot}/p2/C2.html</A> <br>
  * Sub-test 4 Expect: <A HREF="../p2/C2.html">../p2/C2.html</A>
  * <p>
  *
- * Sub-test 5 Actual: <A HREF="{@docRoot}/../docs1/p2/C2.html">{&#064;docRoot}/../docs1/p2/C2.html</A> <br>
- * Sub-test 5 Expect: <A HREF="../../docs1/p2/C2.html">../../docs1/p2/C2.html</A>
+ * Sub-test 5 Actual: <A HREF="{@docRoot}/../out/p2/C2.html">{&#064;docRoot}/../out/p2/C2.html</A> <br>
+ * Sub-test 5 Expect: <A HREF="../../out/p2/C2.html">../../out/p2/C2.html</A>
  * <p>
  *
- * Sub-test 6 Actual: <A HREF="{@docRoot}/p2/package-summary.html#package_description">{&#064;docRoot}/p2/package-summary.html#package_description</A> <br>
- * Sub-test 6 Expect: <A HREF="../p2/package-summary.html#package_description">../p2/package-summary.html#package_description</A>
+ * Sub-test 6 Actual: <A HREF="{@docRoot}/p2/package-summary.html#package.description">{&#064;docRoot}/p2/package-summary.html#package.description</A> <br>
+ * Sub-test 6 Expect: <A HREF="../p2/package-summary.html#package.description">../p2/package-summary.html#package.description</A>
  * <p>
  *
- * Sub-test 7 Actual: <A HREF="{@docRoot}/../docs1/p2/package-summary.html#package_description">{&#064;docRoot}/../docs1/p2/package-summary.html#package_description</A> <br>
- * Sub-test 7 Expect: <A HREF="../../docs1/p2/package-summary.html#package_description">../../docs1/p2/package-summary.html#package_description</A>
- * <p>
- *
- * <!-- =================================================================== -->
- *
- * Allow docRoot to work without a trailing slash for those who had to change their comments
- * to work with the 1.4.0 bug:
- * <p>
- *
- * Sub-test 8 Actual: <A HREF="{@docRoot}p2/C2.html">{&#064;docRoot}p2/C2.html</A> <br>
- * Sub-test 8 Expect: <A HREF="..p2/C2.html">../p2/C2.html</A>
- * <p>
- *
- * Sub-test 9 Actual: <A HREF="{@docRoot}../docs1/p2/C2.html">{&#064;docRoot}../docs1/p2/C2.html</A> <br>
- * Sub-test 9 Expect: <A HREF="..../docs1/p2/C2.html">../../docs1/p2/C2.html</A>
- * <p>
- *
- * Sub-test 10 Actual: <A HREF="{@docRoot}p2/package-summary.html#package_description">{&#064;docRoot}/p2/package-summary.html#package_description</A> <br>
- * Sub-test 10 Expect: <A HREF="..p2/package-summary.html#package_description">../p2/package-summary.html#package_description#package_description</A>
- * <p>
- *
- * Sub-test 11 Actual: <A HREF="{@docRoot}../docs1/p2/package-summary.html#package_description">{&#064;docRoot}/../docs1/p2/package-summary.html#package_description</A> <br>
- * Sub-test 11 Expect: <A HREF="..../docs1/p2/package-summary.html#package_description">../../docs1/p2/package-summary.html#package_description</A>
+ * Sub-test 7 Actual: <A HREF="{@docRoot}/../out/p2/package-summary.html#package.description">{&#064;docRoot}/../out/p2/package-summary.html#package.description</A> <br>
+ * Sub-test 7 Expect: <A HREF="../../out/p2/package-summary.html#package.description">../../out/p2/package-summary.html#package.description</A>
  *
  */
 public class C1 {
