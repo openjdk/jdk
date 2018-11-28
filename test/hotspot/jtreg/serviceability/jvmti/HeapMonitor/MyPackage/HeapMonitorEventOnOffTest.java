@@ -34,40 +34,17 @@ import java.util.List;
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorEventOnOffTest
  */
 public class HeapMonitorEventOnOffTest {
-  private static void checkNoEventsAreBeingSent() {
-    HeapMonitor.resetEventStorage();
-    HeapMonitor.repeatAllocate(5);
-
-    // Check that the data is not available while heap sampling is disabled.
-    boolean status = HeapMonitor.eventStorageIsEmpty();
-    if (!status) {
-      throw new RuntimeException("Storage is not empty after allocating with disabled events.");
-    }
-  }
-
-  private static void checkEventsAreBeingSent() {
-    List<Frame> frameList = HeapMonitor.repeatAllocate(5);
-
-    frameList.add(new Frame("checkEventsAreBeingSent", "()V", "HeapMonitorEventOnOffTest.java", 49));
-    Frame[] frames = frameList.toArray(new Frame[0]);
-
-    // Check that the data is available while heap sampling is enabled.
-    boolean status = HeapMonitor.obtainedEvents(frames);
-    if (!status) {
-      throw new RuntimeException("Failed to find the traces after allocating with enabled events.");
-    }
-  }
-
   public static void main(String[] args) {
     HeapMonitor.enableSamplingEvents();
-    checkEventsAreBeingSent();
+    HeapMonitor.allocateAndCheckFrames();
 
     // Disabling the notification system should stop events.
     HeapMonitor.disableSamplingEvents();
-    checkNoEventsAreBeingSent();
+    HeapMonitor.resetEventStorage();
+    HeapMonitor.allocateAndCheckFrames(false, false);
 
     // Enabling the notification system should start events again.
     HeapMonitor.enableSamplingEvents();
-    checkEventsAreBeingSent();
+    HeapMonitor.allocateAndCheckFrames();
   }
 }
