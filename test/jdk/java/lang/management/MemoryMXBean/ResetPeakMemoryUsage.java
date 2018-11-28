@@ -34,10 +34,10 @@
  *
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
- * @library /lib/testlibrary/ /test/lib
+ * @library /test/lib
  * @modules jdk.management
  *
- * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
+ * @build ResetPeakMemoryUsage MemoryUtil RunUtil
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ResetPeakMemoryUsage

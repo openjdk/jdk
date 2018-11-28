@@ -44,13 +44,12 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
  * @summary Basic unit tests for the VM attach mechanism. This test will perform
  * a number of basic attach tests.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.instrument
  *          jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
- * @run build jdk.testlibrary.* Agent BadAgent RedefineAgent Application RedefineDummy RunnerUtil
+ * @run build Agent BadAgent RedefineAgent Application RedefineDummy RunnerUtil
  * @run main BasicTests
  */
 public class BasicTests {

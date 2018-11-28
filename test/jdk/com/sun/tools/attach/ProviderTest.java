@@ -33,12 +33,11 @@ import com.sun.tools.attach.spi.AttachProvider;
  * @summary Basic unit tests for the VM attach mechanism. The test will attach
  * and detach to/from the running Application.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
- * @run build jdk.testlibrary.* SimpleProvider
+ * @run build SimpleProvider
  * @run main ProviderTest
  */
 public class ProviderTest {
