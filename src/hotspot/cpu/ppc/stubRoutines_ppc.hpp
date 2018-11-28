@@ -62,7 +62,6 @@ class ppc64 {
  public:
 
   // CRC32 Intrinsics.
-  static void generate_load_table_addr(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents);
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
   static void generate_load_crc_constants_addr(MacroAssembler* masm, Register table);
   static void generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table);

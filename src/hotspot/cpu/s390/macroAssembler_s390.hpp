@@ -1056,9 +1056,6 @@ class MacroAssembler: public Assembler {
   void kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
                           Register t0,  Register t1,  Register t2,  Register t3,
                           bool invertCRC);
-  void kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3,
-                          bool invertCRC);
 
   // Emitters for BigInteger.multiplyToLen intrinsic
   // note: length of result array (zlen) is passed on the stack
