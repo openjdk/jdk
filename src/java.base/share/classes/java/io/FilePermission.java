@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.net.URI;
 import java.nio.file.*;
 import java.security.*;
 import java.util.Enumeration;
@@ -199,12 +198,11 @@ public final class FilePermission extends Permission implements Serializable {
     private static final long serialVersionUID = 7930732926638008763L;
 
     /**
-     * Always use the internal default file system, in case it was modified
-     * with java.nio.file.spi.DefaultFileSystemProvider.
+     * Use the platform's default file system to avoid recursive initialization
+     * issues when the VM is configured to use a custom file system provider.
      */
     private static final java.nio.file.FileSystem builtInFS =
-            DefaultFileSystemProvider.create()
-                    .getFileSystem(URI.create("file:///"));
+        DefaultFileSystemProvider.theFileSystem();
 
     private static final Path here = builtInFS.getPath(
             GetPropertyAction.privilegedGetProperty("user.dir"));
@@ -326,7 +324,7 @@ public final class FilePermission extends Permission implements Serializable {
 
             if (name.equals("<<ALL FILES>>")) {
                 allFiles = true;
-                npath = builtInFS.getPath("");
+                npath = EMPTY_PATH;
                 // other fields remain default
                 return;
             }
@@ -351,7 +349,7 @@ public final class FilePermission extends Permission implements Serializable {
                     npath = npath.getParent();
                 }
                 if (npath == null) {
-                    npath = builtInFS.getPath("");
+                    npath = EMPTY_PATH;
                 }
                 invalid = false;
             } catch (InvalidPathException ipe) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import jdk.internal.misc.VM;
+import sun.nio.fs.DefaultFileSystemProvider;
 
 /**
  * Factory methods for file systems. This class defines the {@link #getDefault
@@ -88,16 +89,6 @@ import jdk.internal.misc.VM;
 public final class FileSystems {
     private FileSystems() { }
 
-    // Built-in file system provider
-    private static final FileSystemProvider builtinFileSystemProvider =
-        sun.nio.fs.DefaultFileSystemProvider.create();
-
-    // built-in file system
-    private static class BuiltinFileSystemHolder {
-        static final FileSystem builtinFileSystem =
-            builtinFileSystemProvider.getFileSystem(URI.create("file:///"));
-    }
-
     // lazy initialization of default file system
     private static class DefaultFileSystemHolder {
         static final FileSystem defaultFileSystem = defaultFileSystem();
@@ -118,7 +109,8 @@ public final class FileSystems {
 
         // returns default provider
         private static FileSystemProvider getDefaultProvider() {
-            FileSystemProvider provider = builtinFileSystemProvider;
+            // start with the platform's default file system provider
+            FileSystemProvider provider = DefaultFileSystemProvider.instance();
 
             // if the property java.nio.file.spi.DefaultFileSystemProvider is
             // set then its value is the name of the default provider (or a list)
@@ -189,7 +181,8 @@ public final class FileSystems {
         if (VM.isModuleSystemInited()) {
             return DefaultFileSystemHolder.defaultFileSystem;
         } else {
-            return BuiltinFileSystemHolder.builtinFileSystem;
+            // always use the platform's default file system during startup
+            return DefaultFileSystemProvider.theFileSystem();
         }
     }
 

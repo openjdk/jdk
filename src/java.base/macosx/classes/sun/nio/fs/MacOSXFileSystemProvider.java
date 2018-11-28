@@ -34,7 +34,7 @@ import sun.security.action.GetPropertyAction;
  * MacOSX implementation of FileSystemProvider
  */
 
-public class MacOSXFileSystemProvider extends BsdFileSystemProvider {
+class MacOSXFileSystemProvider extends BsdFileSystemProvider {
     public MacOSXFileSystemProvider() {
         super();
     }

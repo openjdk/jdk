@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsSecurity.*;
 import static sun.nio.fs.WindowsConstants.*;
 
-public class WindowsFileSystemProvider
+class WindowsFileSystemProvider
     extends AbstractFileSystemProvider
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
@@ -51,6 +51,10 @@ public class WindowsFileSystemProvider
 
     public WindowsFileSystemProvider() {
         theFileSystem = new WindowsFileSystem(this, StaticProperty.userDir());
+    }
+
+    WindowsFileSystem theFileSystem() {
+        return theFileSystem;
     }
 
     @Override
