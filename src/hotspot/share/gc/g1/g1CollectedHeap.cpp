@@ -1563,16 +1563,33 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
 
+static size_t actual_reserved_page_size(ReservedSpace rs) {
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages) {
+    // There are two ways to manage large page memory.
+    // 1. OS supports committing large page memory.
+    // 2. OS doesn't support committing large page memory so ReservedSpace manages it.
+    //    And ReservedSpace calls it 'special'. If we failed to set 'special',
+    //    we reserved memory without large page.
+    if (os::can_commit_large_page_memory() || rs.special()) {
+      page_size = rs.alignment();
+    }
+  }
+
+  return page_size;
+}
+
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
                                                                  size_t size,
                                                                  size_t translation_factor) {
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
   ReservedSpace rs(size, preferred_page_size);
+  size_t page_size = actual_reserved_page_size(rs);
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
-                                         rs.alignment(),
+                                         page_size,
                                          HeapRegion::GrainBytes,
                                          translation_factor,
                                          mtGC);
@@ -1580,7 +1597,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
   os::trace_page_sizes_for_requested_size(description,
                                           size,
                                           preferred_page_size,
-                                          rs.alignment(),
+                                          page_size,
                                           rs.base(),
                                           rs.size());
 
@@ -1675,7 +1692,7 @@ jint G1CollectedHeap::initialize() {
 
   // Carve out the G1 part of the heap.
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
-  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t page_size = actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
                                          g1_rs.size(),
