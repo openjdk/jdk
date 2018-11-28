@@ -719,8 +719,8 @@ public class TestNestmateMembership {
 
     static void test_SelfHostInvoke() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
-        String msg = "Type TestNestmateMembership$TargetSelfHost is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.invokeTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -744,8 +744,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.invokeTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -753,8 +753,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.invokeTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -824,8 +824,8 @@ public class TestNestmateMembership {
 
     static void test_NotInstanceHostInvoke() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
-        String msg = "Type TestNestmateMembership$TargetNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.invokeTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -849,8 +849,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.invokeTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -858,8 +858,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.invokeTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -871,8 +871,8 @@ public class TestNestmateMembership {
 
     static void test_NotOurHostInvoke() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
-        String msg = "Type TestNestmateMembership$TargetNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.invokeTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -896,8 +896,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.invokeTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -905,8 +905,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.invokeTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -918,8 +918,8 @@ public class TestNestmateMembership {
 
     static void test_WrongPackageHostInvoke() {
         System.out.println("Testing for nest-host and nest-member in different packages");
-        String msg = "Type P2.PackagedNestHost2$Member is not a nest member of " +
-            "P1.PackagedNestHost: types are in different packages";
+        String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
+            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doInvoke();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -998,8 +998,8 @@ public class TestNestmateMembership {
 
     static void test_SelfHostConstruct() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
-        String msg = "Type TestNestmateMembership$TargetSelfHost is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.newTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1023,8 +1023,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1032,8 +1032,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.newTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1095,8 +1095,8 @@ public class TestNestmateMembership {
 
     static void test_NotInstanceHostConstruct() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
-        String msg = "Type TestNestmateMembership$TargetNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.newTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1120,8 +1120,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1129,8 +1129,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.newTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1142,8 +1142,8 @@ public class TestNestmateMembership {
 
     static void test_NotOurHostConstruct() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
-        String msg = "Type TestNestmateMembership$TargetNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.newTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1167,8 +1167,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1176,8 +1176,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.newTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1189,8 +1189,8 @@ public class TestNestmateMembership {
 
     static void test_WrongPackageHostConstruct() {
         System.out.println("Testing for nest-host and nest-member in different packages");
-        String msg = "Type P2.PackagedNestHost2$Member is not a nest member of " +
-            "P1.PackagedNestHost: types are in different packages";
+        String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
+            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doConstruct();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1269,8 +1269,8 @@ public class TestNestmateMembership {
 
     static void test_SelfHostGetField() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
-        String msg = "Type TestNestmateMembership$TargetSelfHost is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.getFieldTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1293,8 +1293,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.getFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1302,8 +1302,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.getFieldTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1364,8 +1364,8 @@ public class TestNestmateMembership {
 
     static void test_NotInstanceHostGetField() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
-        String msg = "Type TestNestmateMembership$TargetNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.getFieldTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1388,8 +1388,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.getFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1397,8 +1397,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.getFieldTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1410,8 +1410,8 @@ public class TestNestmateMembership {
 
     static void test_NotOurHostGetField() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
-        String msg = "Type TestNestmateMembership$TargetNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.getFieldTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1434,8 +1434,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.getFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1443,8 +1443,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.getFieldTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1456,8 +1456,8 @@ public class TestNestmateMembership {
 
     static void test_WrongPackageHostGetField() {
         System.out.println("Testing for nest-host and nest-member in different packages");
-        String msg = "Type P2.PackagedNestHost2$Member is not a nest member of " +
-            "P1.PackagedNestHost: types are in different packages";
+        String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
+            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doGetField();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1534,8 +1534,8 @@ public class TestNestmateMembership {
 
     static void test_SelfHostPutField() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
-        String msg = "Type TestNestmateMembership$TargetSelfHost is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.putFieldTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1558,8 +1558,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.putFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1567,8 +1567,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
+            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.putFieldTargetSelfHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1629,8 +1629,8 @@ public class TestNestmateMembership {
 
     static void test_NotInstanceHostPutField() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
-        String msg = "Type TestNestmateMembership$TargetNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.putFieldTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1653,8 +1653,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.putFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1662,8 +1662,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost is not a "+
-            "nest member of [LInvalidNestHost;: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
+            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.putFieldTargetNotInstanceHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1675,8 +1675,8 @@ public class TestNestmateMembership {
 
     static void test_NotOurHostPutField() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
-        String msg = "Type TestNestmateMembership$TargetNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.putFieldTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1699,8 +1699,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.putFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1708,8 +1708,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost is not a nest member" +
-            " of InvalidNestHost: current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
+            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.putFieldTargetNotOurHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1721,8 +1721,8 @@ public class TestNestmateMembership {
 
     static void test_WrongPackageHostPutField() {
         System.out.println("Testing for nest-host and nest-member in different packages");
-        String msg = "Type P2.PackagedNestHost2$Member is not a nest member of " +
-            "P1.PackagedNestHost: types are in different packages";
+        String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
+            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doPutField();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);

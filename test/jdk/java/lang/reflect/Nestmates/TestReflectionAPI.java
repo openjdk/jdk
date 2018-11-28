@@ -196,10 +196,10 @@ public class TestReflectionAPI {
             "declares a different nest host of HostOfMemberNoHost$MemberNoHost",
             "Unable to load nest-host class (NestHost) of " +
             "HostOfMemberMissingHost$MemberMissingHost",
-            "Type HostOfMemberNotOurHost$MemberNotOurHost is not a nest member " +
-            "of InvalidNestHost: current type is not listed as a nest member",
-            "Type HostOfMemberNotInstanceHost$MemberNotInstanceHost is not a nest " +
-            "member of [LInvalidNestHost;: current type is not listed as a nest member",
+            "Type HostOfMemberNotOurHost$MemberNotOurHost (loader: 'app') is not a nest member " +
+            "of InvalidNestHost (loader: 'app'): current type is not listed as a nest member",
+            "Type HostOfMemberNotInstanceHost$MemberNotInstanceHost (loader: 'app') is not a nest " +
+            "member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member",
             "Incompatible magic value 3735928559 in class file MalformedHost",
         };
         for (int i = 0; i < bad.length; i++) {
