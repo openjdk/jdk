@@ -85,9 +85,6 @@ public final class SystemProps {
         putIfAbsent(props, "ftp.proxyPort", raw.propDefault(Raw._ftp_proxyPort_NDX));
         putIfAbsent(props, "socksProxyHost", raw.propDefault(Raw._socksProxyHost_NDX));
         putIfAbsent(props, "socksProxyPort", raw.propDefault(Raw._socksProxyPort_NDX));
-        putIfAbsent(props, "gopherProxySet", raw.propDefault(Raw._gopherProxySet_NDX));
-        putIfAbsent(props, "gopherProxyHost", raw.propDefault(Raw._gopherProxyHost_NDX));
-        putIfAbsent(props, "gopherProxyPort", raw.propDefault(Raw._gopherProxyPort_NDX));
         putIfAbsent(props, "http.nonProxyHosts", raw.propDefault(Raw._http_nonProxyHosts_NDX));
         putIfAbsent(props, "ftp.nonProxyHosts", raw.propDefault(Raw._ftp_nonProxyHosts_NDX));
         putIfAbsent(props, "socksNonProxyHosts", raw.propDefault(Raw._socksNonProxyHosts_NDX));
@@ -201,10 +198,7 @@ public final class SystemProps {
         @Native private static final int _ftp_nonProxyHosts_NDX = 1 + _format_variant_NDX;
         @Native private static final int _ftp_proxyHost_NDX = 1 + _ftp_nonProxyHosts_NDX;
         @Native private static final int _ftp_proxyPort_NDX = 1 + _ftp_proxyHost_NDX;
-        @Native private static final int _gopherProxyHost_NDX = 1 + _ftp_proxyPort_NDX;
-        @Native private static final int _gopherProxyPort_NDX = 1 + _gopherProxyHost_NDX;
-        @Native private static final int _gopherProxySet_NDX = 1 + _gopherProxyPort_NDX;
-        @Native private static final int _http_nonProxyHosts_NDX = 1 + _gopherProxySet_NDX;
+        @Native private static final int _http_nonProxyHosts_NDX = 1 + _ftp_proxyPort_NDX;
         @Native private static final int _http_proxyHost_NDX = 1 + _http_nonProxyHosts_NDX;
         @Native private static final int _http_proxyPort_NDX = 1 + _http_proxyHost_NDX;
         @Native private static final int _https_proxyHost_NDX = 1 + _http_proxyPort_NDX;

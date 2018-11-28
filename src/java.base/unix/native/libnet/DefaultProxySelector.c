@@ -59,8 +59,6 @@
  * - /system/proxy/ftp_port                     int
  * - /system/proxy/secure_port                  int
  * - /system/proxy/no_proxy_for                 list
- * - /system/proxy/gopher_host                  string
- * - /system/proxy/gopher_port                  int
  *
  * The following keys are not used in the new gnome 3
  * - /system/http_proxy/use_http_proxy
@@ -220,18 +218,6 @@ static jobjectArray getProxyByGConf(JNIEnv *env, const char* cproto,
             if (strcasecmp(cproto, "ftp") == 0) {
                 phost = (*my_get_string_func)(gconf_client, "/system/proxy/ftp_host", NULL);
                 pport = (*my_get_int_func)(gconf_client, "/system/proxy/ftp_port", NULL);
-                use_proxy = (phost != NULL && pport != 0);
-            }
-
-            /**
-             * GOPHER:
-             * /system/proxy/mode (string) [ "manual" means use proxy settings ]
-             * /system/proxy/gopher_host (string)
-             * /system/proxy/gopher_port (integer)
-             */
-            if (strcasecmp(cproto, "gopher") == 0) {
-                phost = (*my_get_string_func)(gconf_client, "/system/proxy/gopher_host", NULL);
-                pport = (*my_get_int_func)(gconf_client, "/system/proxy/gopher_port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
             }
 

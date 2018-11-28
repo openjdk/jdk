@@ -184,15 +184,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
         PUTPROP(propArray, _socksProxyPort_NDX, sprops->socksPort);
     }
 
-    if (sprops->gopherProxyEnabled) {
-        // The gopher client is different in that it expects an 'is this set?' flag that the others don't.
-        PUTPROP(propArray, _gopherProxySet_NDX, "true");
-        PUTPROP(propArray, _gopherProxyHost_NDX, sprops->gopherHost);
-        PUTPROP(propArray, _gopherProxyPort_NDX, sprops->gopherPort);
-    } else {
-        PUTPROP(propArray, _gopherProxySet_NDX, "false");
-    }
-
     // Mac OS X only has a single proxy exception list which applies
     // to all protocols
     if (sprops->exceptionList) {
