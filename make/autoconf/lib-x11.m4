@@ -101,7 +101,9 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
 
     HEADERS_TO_CHECK="X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h"
     # There is no Xrandr extension on AIX
-    if test "x$OPENJDK_TARGET_OS" != xaix; then
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      X_CFLAGS="$X_CFLAGS -DNO_XRANDR"
+    else
       HEADERS_TO_CHECK="$HEADERS_TO_CHECK X11/extensions/Xrandr.h"
     fi
 
