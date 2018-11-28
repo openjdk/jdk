@@ -953,17 +953,19 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (Integer v1 : new Integer[] { 1, null })
     {
+        final AtomicInteger ran = new AtomicInteger(0);
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) assertTrue(f.complete(v1));
         final CompletableFuture<Integer> g = m.exceptionally
             (f, (Throwable t) -> {
-                threadFail("should not be called");
-                return null;            // unreached
+                ran.getAndIncrement();
+                throw new AssertionError("should not be called");
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedNormally(g, v1);
         checkCompletedNormally(f, v1);
+        assertEquals(0, ran.get());
     }}
 
     /**
@@ -975,21 +977,21 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (Integer v1 : new Integer[] { 1, null })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) f.completeExceptionally(ex);
         final CompletableFuture<Integer> g = m.exceptionally
             (f, (Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(t, ex);
-                a.getAndIncrement();
+                assertSame(t, ex);
+                ran.getAndIncrement();
                 return v1;
             });
         if (createIncomplete) f.completeExceptionally(ex);
 
         checkCompletedNormally(g, v1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1000,7 +1002,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (ExecutionMode m : ExecutionMode.values())
         for (boolean createIncomplete : new boolean[] { true, false })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex1 = new CFException();
         final CFException ex2 = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
@@ -1008,15 +1010,15 @@ public class CompletableFutureTest extends JSR166TestCase {
         final CompletableFuture<Integer> g = m.exceptionally
             (f, (Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(t, ex1);
-                a.getAndIncrement();
+                assertSame(t, ex1);
+                ran.getAndIncrement();
                 throw ex2;
             });
         if (createIncomplete) f.completeExceptionally(ex1);
 
         checkCompletedWithWrappedException(g, ex2);
         checkCompletedExceptionally(f, ex1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1028,22 +1030,22 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (Integer v1 : new Integer[] { 1, null })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) assertTrue(f.complete(v1));
         final CompletableFuture<Integer> g = m.whenComplete
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(result, v1);
-                threadAssertNull(t);
-                a.getAndIncrement();
+                assertSame(result, v1);
+                assertNull(t);
+                ran.getAndIncrement();
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedNormally(g, v1);
         checkCompletedNormally(f, v1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1054,7 +1056,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (ExecutionMode m : ExecutionMode.values())
         for (boolean createIncomplete : new boolean[] { true, false })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) f.completeExceptionally(ex);
@@ -1062,15 +1064,15 @@ public class CompletableFutureTest extends JSR166TestCase {
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertNull(result);
-                threadAssertSame(t, ex);
-                a.getAndIncrement();
+                assertNull(result);
+                assertSame(t, ex);
+                ran.getAndIncrement();
             });
         if (createIncomplete) f.completeExceptionally(ex);
 
         checkCompletedWithWrappedException(g, ex);
         checkCompletedExceptionally(f, ex);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1082,22 +1084,22 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean mayInterruptIfRunning : new boolean[] { true, false })
         for (boolean createIncomplete : new boolean[] { true, false })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) assertTrue(f.cancel(mayInterruptIfRunning));
         final CompletableFuture<Integer> g = m.whenComplete
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertNull(result);
-                threadAssertTrue(t instanceof CancellationException);
-                a.getAndIncrement();
+                assertNull(result);
+                assertTrue(t instanceof CancellationException);
+                ran.getAndIncrement();
             });
         if (createIncomplete) assertTrue(f.cancel(mayInterruptIfRunning));
 
         checkCompletedWithWrappedCancellationException(g);
         checkCancelled(f);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1109,7 +1111,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (ExecutionMode m : ExecutionMode.values())
         for (Integer v1 : new Integer[] { 1, null })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         if (!createIncomplete) assertTrue(f.complete(v1));
@@ -1117,16 +1119,16 @@ public class CompletableFutureTest extends JSR166TestCase {
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(result, v1);
-                threadAssertNull(t);
-                a.getAndIncrement();
+                assertSame(result, v1);
+                assertNull(t);
+                ran.getAndIncrement();
                 throw ex;
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedWithWrappedException(g, ex);
         checkCompletedNormally(f, v1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1138,7 +1140,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (ExecutionMode m : ExecutionMode.values())
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex1 = new CFException();
         final CFException ex2 = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
@@ -1148,9 +1150,9 @@ public class CompletableFutureTest extends JSR166TestCase {
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(t, ex1);
-                threadAssertNull(result);
-                a.getAndIncrement();
+                assertSame(t, ex1);
+                assertNull(result);
+                ran.getAndIncrement();
                 throw ex2;
             });
         if (createIncomplete) f.completeExceptionally(ex1);
@@ -1161,7 +1163,7 @@ public class CompletableFutureTest extends JSR166TestCase {
             assertEquals(1, ex1.getSuppressed().length);
             assertSame(ex2, ex1.getSuppressed()[0]);
         }
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1174,22 +1176,22 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (Integer v1 : new Integer[] { 1, null })
     {
         final CompletableFuture<Integer> f = new CompletableFuture<>();
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         if (!createIncomplete) assertTrue(f.complete(v1));
         final CompletableFuture<Integer> g = m.handle
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(result, v1);
-                threadAssertNull(t);
-                a.getAndIncrement();
+                assertSame(result, v1);
+                assertNull(t);
+                ran.getAndIncrement();
                 return inc(v1);
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedNormally(g, inc(v1));
         checkCompletedNormally(f, v1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1202,23 +1204,23 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (Integer v1 : new Integer[] { 1, null })
     {
         final CompletableFuture<Integer> f = new CompletableFuture<>();
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         if (!createIncomplete) f.completeExceptionally(ex);
         final CompletableFuture<Integer> g = m.handle
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertNull(result);
-                threadAssertSame(t, ex);
-                a.getAndIncrement();
+                assertNull(result);
+                assertSame(t, ex);
+                ran.getAndIncrement();
                 return v1;
             });
         if (createIncomplete) f.completeExceptionally(ex);
 
         checkCompletedNormally(g, v1);
         checkCompletedExceptionally(f, ex);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1232,22 +1234,22 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (Integer v1 : new Integer[] { 1, null })
     {
         final CompletableFuture<Integer> f = new CompletableFuture<>();
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         if (!createIncomplete) assertTrue(f.cancel(mayInterruptIfRunning));
         final CompletableFuture<Integer> g = m.handle
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertNull(result);
-                threadAssertTrue(t instanceof CancellationException);
-                a.getAndIncrement();
+                assertNull(result);
+                assertTrue(t instanceof CancellationException);
+                ran.getAndIncrement();
                 return v1;
             });
         if (createIncomplete) assertTrue(f.cancel(mayInterruptIfRunning));
 
         checkCompletedNormally(g, v1);
         checkCancelled(f);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1260,23 +1262,23 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (Integer v1 : new Integer[] { 1, null })
     {
         final CompletableFuture<Integer> f = new CompletableFuture<>();
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         if (!createIncomplete) assertTrue(f.complete(v1));
         final CompletableFuture<Integer> g = m.handle
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertSame(result, v1);
-                threadAssertNull(t);
-                a.getAndIncrement();
+                assertSame(result, v1);
+                assertNull(t);
+                ran.getAndIncrement();
                 throw ex;
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedWithWrappedException(g, ex);
         checkCompletedNormally(f, v1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -1288,7 +1290,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (ExecutionMode m : ExecutionMode.values())
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex1 = new CFException();
         final CFException ex2 = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
@@ -1298,16 +1300,16 @@ public class CompletableFutureTest extends JSR166TestCase {
             (f,
              (Integer result, Throwable t) -> {
                 m.checkExecutionMode();
-                threadAssertNull(result);
-                threadAssertSame(ex1, t);
-                a.getAndIncrement();
+                assertNull(result);
+                assertSame(ex1, t);
+                ran.getAndIncrement();
                 throw ex2;
             });
         if (createIncomplete) f.completeExceptionally(ex1);
 
         checkCompletedWithWrappedException(g, ex2);
         checkCompletedExceptionally(f, ex1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -3143,30 +3145,30 @@ public class CompletableFutureTest extends JSR166TestCase {
         case 0:
             assertTrue(f.complete(v1));
             assertTrue(g.completeExceptionally(ex));
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             break;
         case 1:
             assertTrue(f.complete(v1));
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             assertTrue(g.completeExceptionally(ex));
             break;
         case 2:
             assertTrue(g.completeExceptionally(ex));
             assertTrue(f.complete(v1));
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             break;
         case 3:
             assertTrue(g.completeExceptionally(ex));
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             assertTrue(f.complete(v1));
             break;
         case 4:
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             assertTrue(f.complete(v1));
             assertTrue(g.completeExceptionally(ex));
             break;
         case 5:
-            h = m.thenCompose(f, (x -> g));
+            h = m.thenCompose(f, x -> g);
             assertTrue(f.complete(v1));
             assertTrue(g.completeExceptionally(ex));
             break;
@@ -3258,30 +3260,30 @@ public class CompletableFutureTest extends JSR166TestCase {
         case 0:
             assertTrue(f.completeExceptionally(ex0));
             assertTrue(g.completeExceptionally(ex));
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             break;
         case 1:
             assertTrue(f.completeExceptionally(ex0));
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             assertTrue(g.completeExceptionally(ex));
             break;
         case 2:
             assertTrue(g.completeExceptionally(ex));
             assertTrue(f.completeExceptionally(ex0));
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             break;
         case 3:
             assertTrue(g.completeExceptionally(ex));
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             assertTrue(f.completeExceptionally(ex0));
             break;
         case 4:
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             assertTrue(f.completeExceptionally(ex0));
             assertTrue(g.completeExceptionally(ex));
             break;
         case 5:
-            h = m.exceptionallyCompose(f, (x -> g));
+            h = m.exceptionallyCompose(f, x -> g);
             assertTrue(f.completeExceptionally(ex0));
             assertTrue(g.completeExceptionally(ex));
             break;
@@ -3671,12 +3673,6 @@ public class CompletableFutureTest extends JSR166TestCase {
 
         final CompletableFuture<Integer> complete = CompletableFuture.completedFuture(v);
         final CompletableFuture<Integer> incomplete = new CompletableFuture<>();
-
-        List<CompletableFuture<?>> futures = new ArrayList<>();
-
-        List<CompletableFuture<Integer>> srcs = new ArrayList<>();
-        srcs.add(complete);
-        srcs.add(incomplete);
 
         List<CompletableFuture<?>> fs = new ArrayList<>();
         fs.add(incomplete.thenRunAsync(() -> {}, e));
@@ -4862,18 +4858,21 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (Integer v1 : new Integer[] { 1, null })
     {
+        final AtomicInteger ran = new AtomicInteger(0);
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         final DelegatedCompletionStage<Integer> d =
             new DelegatedCompletionStage<Integer>(f);
         if (!createIncomplete) assertTrue(f.complete(v1));
         final CompletionStage<Integer> g = d.exceptionallyAsync
             ((Throwable t) -> {
-                threadFail("should not be called");
-                return null;            // unreached
+                ran.getAndIncrement();
+                throw new AssertionError("should not be called");
             });
         if (createIncomplete) assertTrue(f.complete(v1));
 
         checkCompletedNormally(g.toCompletableFuture(), v1);
+        checkCompletedNormally(f, v1);
+        assertEquals(0, ran.get());
     }}
 
     /**
@@ -4884,7 +4883,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         for (boolean createIncomplete : new boolean[] { true, false })
         for (Integer v1 : new Integer[] { 1, null })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         final DelegatedCompletionStage<Integer> d =
@@ -4892,14 +4891,15 @@ public class CompletableFutureTest extends JSR166TestCase {
         if (!createIncomplete) f.completeExceptionally(ex);
         final CompletionStage<Integer> g = d.exceptionallyAsync
             ((Throwable t) -> {
-                threadAssertSame(t, ex);
-                a.getAndIncrement();
+                assertSame(t, ex);
+                ran.getAndIncrement();
                 return v1;
             });
         if (createIncomplete) f.completeExceptionally(ex);
 
         checkCompletedNormally(g.toCompletableFuture(), v1);
-        assertEquals(1, a.get());
+        checkCompletedExceptionally(f, ex);
+        assertEquals(1, ran.get());
     }}
 
     /**
@@ -4910,7 +4910,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     public void testDefaultExceptionallyAsync_exceptionalCompletionActionFailed() {
         for (boolean createIncomplete : new boolean[] { true, false })
     {
-        final AtomicInteger a = new AtomicInteger(0);
+        final AtomicInteger ran = new AtomicInteger(0);
         final CFException ex1 = new CFException();
         final CFException ex2 = new CFException();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
@@ -4919,8 +4919,8 @@ public class CompletableFutureTest extends JSR166TestCase {
         if (!createIncomplete) f.completeExceptionally(ex1);
         final CompletionStage<Integer> g = d.exceptionallyAsync
             ((Throwable t) -> {
-                threadAssertSame(t, ex1);
-                a.getAndIncrement();
+                assertSame(t, ex1);
+                ran.getAndIncrement();
                 throw ex2;
             });
         if (createIncomplete) f.completeExceptionally(ex1);
@@ -4928,7 +4928,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedWithWrappedException(g.toCompletableFuture(), ex2);
         checkCompletedExceptionally(f, ex1);
         checkCompletedExceptionally(d.toCompletableFuture(), ex1);
-        assertEquals(1, a.get());
+        assertEquals(1, ran.get());
     }}
 
     /**

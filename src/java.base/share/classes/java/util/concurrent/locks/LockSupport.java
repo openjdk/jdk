@@ -199,10 +199,11 @@ public class LockSupport {
      * Disables the current thread for thread scheduling purposes, for up to
      * the specified waiting time, unless the permit is available.
      *
-     * <p>If the permit is available then it is consumed and the call
-     * returns immediately; otherwise the current thread becomes disabled
-     * for thread scheduling purposes and lies dormant until one of four
-     * things happens:
+     * <p>If the specified waiting time is zero or negative, the
+     * method does nothing. Otherwise, if the permit is available then
+     * it is consumed and the call returns immediately; otherwise the
+     * current thread becomes disabled for thread scheduling purposes
+     * and lies dormant until one of four things happens:
      *
      * <ul>
      * <li>Some other thread invokes {@link #unpark unpark} with the
@@ -327,10 +328,11 @@ public class LockSupport {
      * Disables the current thread for thread scheduling purposes, for up to
      * the specified waiting time, unless the permit is available.
      *
-     * <p>If the permit is available then it is consumed and the call
-     * returns immediately; otherwise the current thread becomes disabled
-     * for thread scheduling purposes and lies dormant until one of four
-     * things happens:
+     * <p>If the specified waiting time is zero or negative, the
+     * method does nothing. Otherwise, if the permit is available then
+     * it is consumed and the call returns immediately; otherwise the
+     * current thread becomes disabled for thread scheduling purposes
+     * and lies dormant until one of four things happens:
      *
      * <ul>
      * <li>Some other thread invokes {@link #unpark unpark} with the

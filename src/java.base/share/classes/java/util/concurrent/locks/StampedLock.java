@@ -65,22 +65,23 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *   and timed versions of {@code tryReadLock} are also provided.
  *
  *  <li><b>Optimistic Reading.</b> Method {@link #tryOptimisticRead}
- *   returns a non-zero stamp only if the lock is not currently held
- *   in write mode. Method {@link #validate} returns true if the lock
- *   has not been acquired in write mode since obtaining a given
- *   stamp.  This mode can be thought of as an extremely weak version
- *   of a read-lock, that can be broken by a writer at any time.  The
- *   use of optimistic mode for short read-only code segments often
- *   reduces contention and improves throughput.  However, its use is
- *   inherently fragile.  Optimistic read sections should only read
- *   fields and hold them in local variables for later use after
- *   validation. Fields read while in optimistic mode may be wildly
- *   inconsistent, so usage applies only when you are familiar enough
- *   with data representations to check consistency and/or repeatedly
- *   invoke method {@code validate()}.  For example, such steps are
- *   typically required when first reading an object or array
- *   reference, and then accessing one of its fields, elements or
- *   methods.
+ *   returns a non-zero stamp only if the lock is not currently held in
+ *   write mode.  Method {@link #validate} returns true if the lock has not
+ *   been acquired in write mode since obtaining a given stamp, in which
+ *   case all actions prior to the most recent write lock release
+ *   happen-before actions following the call to {@code tryOptimisticRead}.
+ *   This mode can be thought of as an extremely weak version of a
+ *   read-lock, that can be broken by a writer at any time.  The use of
+ *   optimistic read mode for short read-only code segments often reduces
+ *   contention and improves throughput.  However, its use is inherently
+ *   fragile.  Optimistic read sections should only read fields and hold
+ *   them in local variables for later use after validation. Fields read
+ *   while in optimistic read mode may be wildly inconsistent, so usage
+ *   applies only when you are familiar enough with data representations to
+ *   check consistency and/or repeatedly invoke method {@code validate()}.
+ *   For example, such steps are typically required when first reading an
+ *   object or array reference, and then accessing one of its fields,
+ *   elements or methods.
  *
  * </ul>
  *
@@ -88,8 +89,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * conversions across the three modes. For example, method {@link
  * #tryConvertToWriteLock} attempts to "upgrade" a mode, returning
  * a valid write stamp if (1) already in writing mode (2) in reading
- * mode and there are no other readers or (3) in optimistic mode and
- * the lock is available. The forms of these methods are designed to
+ * mode and there are no other readers or (3) in optimistic read mode
+ * and the lock is available. The forms of these methods are designed to
  * help reduce some of the code bloat that otherwise occurs in
  * retry-based designs.
  *
@@ -128,6 +129,19 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * viewed {@link #asReadLock()}, {@link #asWriteLock()}, or {@link
  * #asReadWriteLock()} in applications requiring only the associated
  * set of functionality.
+ *
+ * <p><b>Memory Synchronization.</b> Methods with the effect of
+ * successfully locking in any mode have the same memory
+ * synchronization effects as a <em>Lock</em> action described in
+ * <a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4">
+ * Chapter 17 of <cite>The Java&trade; Language Specification</cite></a>.
+ * Methods successfully unlocking in write mode have the same memory
+ * synchronization effects as an <em>Unlock</em> action.  In optimistic
+ * read usages, actions prior to the most recent write mode unlock action
+ * are guaranteed to happen-before those following a tryOptimisticRead
+ * only if a later validate returns true; otherwise there is no guarantee
+ * that the reads between tryOptimisticRead and validate obtain a
+ * consistent snapshot.
  *
  * <p><b>Sample Usage.</b> The following illustrates some usage idioms
  * in a class that maintains simple two-dimensional points. The sample
