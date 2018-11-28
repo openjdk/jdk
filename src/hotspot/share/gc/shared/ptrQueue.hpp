@@ -284,7 +284,7 @@ protected:
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
   size_t _n_completed_buffers;
-  int _process_completed_threshold;
+  size_t _process_completed_buffers_threshold;
   volatile bool _process_completed;
 
   bool _all_active;
@@ -293,9 +293,9 @@ protected:
   bool _notify_when_complete;
 
   // Maximum number of elements allowed on completed queue: after that,
-  // enqueuer does the work itself.  Zero indicates no maximum.
-  int _max_completed_queue;
-  size_t _completed_queue_padding;
+  // enqueuer does the work itself.
+  size_t _max_completed_buffers;
+  size_t _completed_buffers_padding;
 
   size_t completed_buffers_list_length();
   void assert_completed_buffer_list_len_correct_locked();
@@ -316,10 +316,7 @@ protected:
 
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
-  void initialize(Monitor* cbl_mon,
-                  BufferNode::Allocator* allocator,
-                  int process_completed_threshold,
-                  int max_completed_queue);
+  void initialize(Monitor* cbl_mon, BufferNode::Allocator* allocator);
 
 public:
 
@@ -350,18 +347,34 @@ public:
   }
 
   // Get/Set the number of completed buffers that triggers log processing.
-  void set_process_completed_threshold(int sz) { _process_completed_threshold = sz; }
-  int process_completed_threshold() const { return _process_completed_threshold; }
+  // Log processing should be done when the number of buffers exceeds the
+  // threshold.
+  void set_process_completed_buffers_threshold(size_t sz) {
+    _process_completed_buffers_threshold = sz;
+  }
+  size_t process_completed_buffers_threshold() const {
+    return _process_completed_buffers_threshold;
+  }
+  static const size_t ProcessCompletedBuffersThresholdNever = ~size_t(0);
 
-  size_t completed_buffers_num() { return _n_completed_buffers; }
+  size_t completed_buffers_num() const { return _n_completed_buffers; }
 
   void merge_bufferlists(PtrQueueSet* src);
 
-  void set_max_completed_queue(int m) { _max_completed_queue = m; }
-  int max_completed_queue() { return _max_completed_queue; }
+  void set_max_completed_buffers(size_t m) {
+    _max_completed_buffers = m;
+  }
+  size_t max_completed_buffers() const {
+    return _max_completed_buffers;
+  }
+  static const size_t MaxCompletedBuffersUnlimited = ~size_t(0);
 
-  void set_completed_queue_padding(size_t padding) { _completed_queue_padding = padding; }
-  size_t completed_queue_padding() { return _completed_queue_padding; }
+  void set_completed_buffers_padding(size_t padding) {
+    _completed_buffers_padding = padding;
+  }
+  size_t completed_buffers_padding() const {
+    return _completed_buffers_padding;
+  }
 
   // Notify the consumer if the number of buffers crossed the threshold
   void notify_if_necessary();

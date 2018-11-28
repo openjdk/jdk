@@ -119,8 +119,6 @@ public:
 
   void initialize(Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
-                  int process_completed_threshold,
-                  int max_completed_queue,
                   Mutex* lock,
                   bool init_free_ids = false);
 
