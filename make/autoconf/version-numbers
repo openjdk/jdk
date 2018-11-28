@@ -43,6 +43,8 @@ PRODUCT_SUFFIX="Runtime Environment"
 JDK_RC_PLATFORM_NAME=Platform
 COMPANY_NAME=N/A
 HOTSPOT_VM_DISTRO="OpenJDK"
+VENDOR_URL=https://openjdk.java.net/
+VENDOR_URL_BUG=https://bugreport.java.com/bugreport/
 
 # Might need better names for these
 MACOSX_BUNDLE_NAME_BASE="OpenJDK"

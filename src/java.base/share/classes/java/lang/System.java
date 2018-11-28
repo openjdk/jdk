@@ -72,6 +72,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
+import jdk.internal.util.SystemProps;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -605,7 +606,6 @@ public final class System {
      */
 
     private static Properties props;
-    private static native Properties initProperties(Properties props);
 
     /**
      * Determines the current system properties.
@@ -799,9 +799,9 @@ public final class System {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
+
         if (props == null) {
-            props = new Properties();
-            initProperties(props);
+            props = SystemProps.initProperties();
             VersionProps.init(props);
         }
         System.props = props;
@@ -1966,15 +1966,11 @@ public final class System {
 
         // VM might invoke JNU_NewStringPlatform() to set those encoding
         // sensitive properties (user.home, user.name, boot.class.path, etc.)
-        // during "props" initialization, in which it may need access, via
-        // System.getProperty(), to the related system encoding property that
-        // have been initialized (put into "props") at early stage of the
-        // initialization. So make sure the "props" is available at the
-        // very beginning of the initialization and all system properties to
-        // be put into it directly.
-        props = new Properties(84);
-        initProperties(props);  // initialized by the VM
+        // during "props" initialization.
+        // The charset is initialized in System.c and does not depend on the Properties.
+        props = SystemProps.initProperties();
         VersionProps.init(props);
+        StaticProperty.javaHome();          // Load StaticProperty to cache the property values
 
         // There are certain system configurations that may be controlled by
         // VM options such as the maximum amount of direct memory and
@@ -1993,7 +1989,6 @@ public final class System {
         VM.saveAndRemoveProperties(props);
 
         lineSeparator = props.getProperty("line.separator");
-        StaticProperty.javaHome();          // Load StaticProperty to cache the property values
 
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
