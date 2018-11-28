@@ -1016,7 +1016,6 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   // Make sure we'll choose a new allocation region afterwards.
   _allocator->release_mutator_alloc_region();
   _allocator->abandon_gc_alloc_regions();
-  g1_rem_set()->cleanupHRRS();
 
   // We may have added regions to the current incremental collection
   // set between the last GC or pause and now. We need to clear the
@@ -2973,13 +2972,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->finalize_collection_set(target_pause_time_ms, &_survivor);
 
         evacuation_info.set_collectionset_regions(collection_set()->region_length());
-
-        // Make sure the remembered sets are up to date. This needs to be
-        // done before register_humongous_regions_with_cset(), because the
-        // remembered sets are used there to choose eager reclaim candidates.
-        // If the remembered sets are not up to date we might miss some
-        // entries that need to be handled.
-        g1_rem_set()->cleanupHRRS();
 
         register_humongous_regions_with_cset();
 

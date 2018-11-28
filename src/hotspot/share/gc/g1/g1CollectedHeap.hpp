@@ -60,7 +60,6 @@
 
 // Forward declarations
 class HeapRegion;
-class HRRSCleanupTask;
 class GenerationSpec;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
