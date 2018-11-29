@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.List;
  * jcstress tests wrapper
  */
 @Artifact(organization = "org.openjdk.jcstress", name = "jcstress-tests-all",
-        revision = "0.3", extension = "jar", unpack = false)
+        revision = "0.5", extension = "jar", unpack = false)
 public class JcstressRunner {
 
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
@@ -55,7 +55,7 @@ public class JcstressRunner {
             throw new Error("TESTBUG: Can not resolve artifacts for "
                             + JcstressRunner.class.getName(), e);
         }
-        return artifacts.get("org.openjdk.jcstress.jcstress-tests-all-0.3")
+        return artifacts.get("org.openjdk.jcstress.jcstress-tests-all-0.5")
                         .toAbsolutePath();
     }
 
@@ -115,4 +115,3 @@ public class JcstressRunner {
         return result;
     }
 }
-
