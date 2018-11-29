@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -1289,6 +1289,46 @@ public class PKCS11 {
 /* *****************************************************************************
  * Key management
  ******************************************************************************/
+
+    /**
+     * getNativeKeyInfo gets the key object attributes and values as an opaque
+     * byte array to be used in createNativeKey method.
+     * (Key management)
+     *
+     * @param hSession the session's handle
+     * @param hKey key's handle
+     * @param hWrappingKey key handle for wrapping the extracted sensitive keys.
+     *        -1 if not used.
+     * @param pWrappingMech mechanism for wrapping the extracted sensitive keys
+     * @return an opaque byte array containing the key object attributes
+     *         and values
+     * @exception PKCS11Exception If an internal PKCS#11 function returns other
+     *            value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native byte[] getNativeKeyInfo(long hSession, long hKey,
+            long hWrappingKey, CK_MECHANISM pWrappingMech) throws PKCS11Exception;
+
+    /**
+     * createNativeKey creates a key object with attributes and values
+     * specified by parameter as an opaque byte array.
+     * (Key management)
+     *
+     * @param hSession the session's handle
+     * @param keyInfo opaque byte array containing key object attributes
+     *        and values
+     * @param hWrappingKey key handle for unwrapping the extracted sensitive keys.
+     *        -1 if not used.
+     * @param pWrappingMech mechanism for unwrapping the extracted sensitive keys
+     * @return key object handle
+     * @exception PKCS11Exception If an internal PKCS#11 function returns other
+     *            value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native long createNativeKey(long hSession, byte[] keyInfo,
+            long hWrappingKey, CK_MECHANISM pWrappingMech) throws PKCS11Exception;
 
     /**
      * C_GenerateKey generates a secret key, creating a new key

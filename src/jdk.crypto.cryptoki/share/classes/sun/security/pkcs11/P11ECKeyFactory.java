@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,13 +290,16 @@ final class P11ECKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_EC_POINT),
                 new CK_ATTRIBUTE(CKA_EC_PARAMS),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
             try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
                 ECParameterSpec params = decodeParameters(attributes[1].getByteArray());
                 ECPoint point = decodePoint(attributes[0].getByteArray(), params.getCurve());
                 return keySpec.cast(new ECPublicKeySpec(point, params));
             } catch (IOException e) {
                 throw new InvalidKeySpecException("Could not parse key", e);
+            } finally {
+                key.releaseKeyID();
             }
         } else { // X.509 handled in superclass
             throw new InvalidKeySpecException("Only ECPublicKeySpec and "
@@ -312,13 +315,16 @@ final class P11ECKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_VALUE),
                 new CK_ATTRIBUTE(CKA_EC_PARAMS),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
             try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
                 ECParameterSpec params = decodeParameters(attributes[1].getByteArray());
                 return keySpec.cast(
                     new ECPrivateKeySpec(attributes[0].getBigInteger(), params));
             } catch (IOException e) {
                 throw new InvalidKeySpecException("Could not parse key", e);
+            } finally {
+                key.releaseKeyID();
             }
         } else { // PKCS#8 handled in superclass
             throw new InvalidKeySpecException("Only ECPrivateKeySpec "

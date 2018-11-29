@@ -263,7 +263,12 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_MODULUS),
                 new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
+            } finally {
+                key.releaseKeyID();
+            }
             KeySpec spec = new RSAPublicKeySpec(
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger()
@@ -289,7 +294,13 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_EXPONENT_2),
                 new CK_ATTRIBUTE(CKA_COEFFICIENT),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
+            } finally {
+                key.releaseKeyID();
+            }
+
             KeySpec spec = new RSAPrivateCrtKeySpec(
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger(),
@@ -307,7 +318,13 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_MODULUS),
                 new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
+            } finally {
+                key.releaseKeyID();
+            }
+
             KeySpec spec = new RSAPrivateKeySpec(
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger()
