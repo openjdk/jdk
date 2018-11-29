@@ -46,6 +46,11 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
     AC_MSG_CHECKING([for ABI profle])
     AC_MSG_RESULT([$OPENJDK_TARGET_ABI_PROFILE])
 
+    # --- Arm-sflt CFLAGS and ASFLAGS ---
+    # Armv5te is required for assembler, because pld insn used in arm32 hotspot is only in v5E and above.
+    # However, there is also a GCC bug which generates unaligned strd/ldrd instructions on armv5te:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=82445, and it was fixed only quite recently.
+    # The resulting compromise is to enable v5TE for assembler and let GCC generate code for v5T.
     if test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-sflt; then
       ARM_FLOAT_TYPE=vfp-sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
@@ -57,11 +62,11 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-sflt; then
       ARM_FLOAT_TYPE=sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
-      ARM_ARCH_TYPE_ASFLAGS='-march=armv5t'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv5te'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv5-vfp-sflt; then
       ARM_FLOAT_TYPE=vfp-sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
-      ARM_ARCH_TYPE_ASFLAGS='-march=armv5t'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv5te'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv6-vfp-hflt; then
       ARM_FLOAT_TYPE=vfp-hflt
       ARM_ARCH_TYPE_FLAGS='-march=armv6 -marm'
