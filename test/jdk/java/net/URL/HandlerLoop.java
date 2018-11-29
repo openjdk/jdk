@@ -21,16 +21,19 @@
  * questions.
  */
 
-import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
+
 /*
  * @test
  * @bug 4135031
- * @summary Test boostrap problem when a URLStreamHandlerFactory is loaded
+ * @summary Test bootstrap problem when a URLStreamHandlerFactory is loaded
  *          by the application class loader.
- *
+ * @modules java.base/sun.net.www.protocol.file
+ * @run main HandlerLoop
  */
-import java.net.*;
-
 public class HandlerLoop {
 
     public static void main(String args[]) throws Exception {
@@ -57,13 +60,13 @@ public class HandlerLoop {
             // shares the same stream handler factory.
             new Dummy();
             try {
-                Class c = Class.forName(name);
-                return (URLStreamHandler)c.newInstance();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
+                Class<?> c = Class.forName(name);
+                return (URLStreamHandler)c.getDeclaredConstructor().newInstance();
+            } catch (ClassNotFoundException |
+                    IllegalAccessException |
+                    InstantiationException |
+                    NoSuchMethodException |
+                    InvocationTargetException e) {
                 e.printStackTrace();
             }
             return null;
