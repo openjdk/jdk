@@ -395,8 +395,37 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
   elif test "x$enable_native_coverage" != "x"; then
     AC_MSG_ERROR([--enable-native-coverage can only be assigned "yes" or "no"])
   fi
-
   AC_SUBST(GCOV_ENABLED)
+
+  AC_ARG_WITH(jcov, [AS_HELP_STRING([--with-jcov],
+      [jcov library location])])
+  AC_ARG_WITH(jcov-input-jdk, [AS_HELP_STRING([--with-jcov-input-jdk],
+      [jdk image to instrument])])
+  JCOV_HOME=
+  JCOV_INPUT_JDK=
+  JCOV_ENABLED=
+  if test "x$with_jcov" = "x" ; then
+    JCOV_ENABLED="false"
+  else
+    JCOV_HOME="$with_jcov"
+    if test ! -f "$JCOV_HOME/lib/jcov.jar"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Invalid JCov bundle: "$JCOV_HOME/lib/jcov.jar" does not exist])
+    fi
+    JCOV_ENABLED="true"
+    BASIC_FIXUP_PATH(JCOV_HOME)
+    if test "x$with_jcov_input_jdk" != "x" ; then
+      JCOV_INPUT_JDK="$with_jcov_input_jdk"
+      if test ! -f "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX"; then
+        AC_MSG_RESULT([fail])
+        AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX" does not exist])
+      fi
+      BASIC_FIXUP_PATH(JCOV_INPUT_JDK)
+    fi
+  fi
+  AC_SUBST(JCOV_ENABLED)
+  AC_SUBST(JCOV_HOME)
+  AC_SUBST(JCOV_INPUT_JDK)
 ])
 
 ###############################################################################

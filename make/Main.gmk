@@ -371,10 +371,15 @@ release-file:
 exploded-image-optimize:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
 
+ifeq ($(JCOV_ENABLED), true)
+  jcov-image:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Coverage.gmk jcov-image)
+endif
+
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image legacy-jre-image \
     symbols-image mac-jdk-bundle mac-legacy-jre-bundle \
-    release-file exploded-image-optimize
+    release-file exploded-image-optimize jcov-image
 
 ################################################################################
 # Docs targets
@@ -577,7 +582,12 @@ test-bundles:
 docs-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk docs-bundles)
 
-ALL_TARGETS += product-bundles test-bundles docs-bundles
+ifeq ($(JCOV_ENABLED), true)
+  jcov-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk jcov-bundles)
+endif
+
+ALL_TARGETS += product-bundles test-bundles docs-bundles jcov-bundles
 
 ################################################################################
 # Install targets
@@ -820,6 +830,10 @@ else
   mac-jdk-bundle: jdk-image
   mac-legacy-jre-bundle: legacy-jre-image
 
+  ifeq ($(JCOV_INPUT_JDK), )
+    jcov-image: jdk-image
+  endif
+
   # The optimize target can run as soon as the modules dir has been completely
   # populated (java, copy and gendata targets) and the basic libs and launchers
   # have been built.
@@ -899,6 +913,8 @@ else
   test-bundles: test-image
 
   docs-bundles: docs-image
+
+  jcov-bundles: jcov-image
 
   generate-summary: jmods buildtools-modules
 
