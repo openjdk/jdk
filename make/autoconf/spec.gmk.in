@@ -275,6 +275,9 @@ VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
 # Control wether Hotspot builds gtest tests
 BUILD_GTEST := @BUILD_GTEST@
 
+# Allow overriding the default hotspot library path
+HOTSPOT_OVERRIDE_LIBPATH := @HOTSPOT_OVERRIDE_LIBPATH@
+
 # Control use of precompiled header in hotspot libjvm build
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 

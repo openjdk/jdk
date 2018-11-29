@@ -316,7 +316,11 @@ void os::init_system_properties_values() {
   //        ...
   //        7: The default directories, normally /lib and /usr/lib.
 #ifndef DEFAULT_LIBPATH
-  #define DEFAULT_LIBPATH "/lib:/usr/lib"
+  #ifndef OVERRIDE_LIBPATH
+    #define DEFAULT_LIBPATH "/lib:/usr/lib"
+  #else
+    #define DEFAULT_LIBPATH OVERRIDE_LIBPATH
+  #endif
 #endif
 
 // Base path of extensions installed on the system.

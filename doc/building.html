@@ -464,6 +464,10 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <li><code>--with-jvm-features=&lt;feature&gt;[,&lt;feature&gt;...]</code> - Use the specified JVM features when building Hotspot. The list of features will be enabled on top of the default list. For the <code>custom</code> JVM variant, this default list is empty. A complete list of available JVM features can be found using <code>bash configure --help</code>.</li>
 <li><code>--with-target-bits=&lt;bits&gt;</code> - Create a target binary suitable for running on a <code>&lt;bits&gt;</code> platform. Use this to create 32-bit output on a 64-bit build platform, instead of doing a full cross-compile. (This is known as a <em>reduced</em> build.)</li>
 </ul>
+<p>On Linux, BSD and AIX, it is possible to override where Java by default searches for runtime/JNI libraries. This can be useful in situations where there is a special shared directory for system JNI libraries. This setting can in turn be overriden at runtime by setting the <code>java.library.path</code> property.</p>
+<ul>
+<li><code>--with-jni-libpath=&lt;path&gt;</code> - Use the specified path as a default when searching for runtime libraries.</li>
+</ul>
 <h4 id="configure-arguments-for-native-compilation">Configure Arguments for Native Compilation</h4>
 <ul>
 <li><code>--with-devkit=&lt;path&gt;</code> - Use this devkit for compilers, tools and resources</li>

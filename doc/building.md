@@ -662,6 +662,14 @@ features, use `bash configure --help=short` instead.)
     platform, instead of doing a full cross-compile. (This is known as a
     *reduced* build.)
 
+On Linux, BSD and AIX, it is possible to override where Java by default
+searches for runtime/JNI libraries. This can be useful in situations where
+there is a special shared directory for system JNI libraries. This setting
+can in turn be overriden at runtime by setting the `java.library.path` property.
+
+  * `--with-jni-libpath=<path>` - Use the specified path as a default
+  when searching for runtime libraries.
+
 #### Configure Arguments for Native Compilation
 
   * `--with-devkit=<path>` - Use this devkit for compilers, tools and resources
