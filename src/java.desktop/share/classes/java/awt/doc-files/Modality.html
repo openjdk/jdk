@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <title>The AWT Modality</title>
+  <style>
+    td {text-align: center;}
+    tr {text-align: center;}
+  </style>
 </head>
 <!--
  Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
@@ -202,48 +206,46 @@
       </p><p>
       <u>Showing the toolkit-modal dialog: "M"</u><br>
       M remains unblocked.
-      </p><p>
-<!--        <center> -->
-          </p>
+
           <table border="1">
 	  <caption>The Standard Blocking Matrix</caption>
-            <tbody><tr align="center">
-              <td align="center">current/shown</td>
-              <td align="center">frame &amp; modeless</td>
-              <td align="center">document</td>
-              <td align="center">application</td>
-              <td align="center">toolkit</td>
+            <tbody><tr>
+              <td>current/shown</td>
+              <td>frame &amp; modeless</td>
+              <td>document</td>
+              <td>application</td>
+              <td>toolkit</td>
             </tr>
-            <tr align="center">
-              <td align="center">-</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
+            <tr>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
             </tr>
-            <tr align="center">
-              <td align="center">document</td>
-              <td align="center">blocked</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
+            <tr>
+              <td>document</td>
+              <td>blocked</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
             </tr>
-            <tr align="center">
-              <td align="center">application</td>
-              <td align="center">blocked</td>
-              <td align="center">blocked</td>
-              <td align="center">-</td>
-              <td align="center">-</td>
+            <tr>
+              <td>application</td>
+              <td>blocked</td>
+              <td>blocked</td>
+              <td>-</td>
+              <td>-</td>
             </tr>
-            <tr align="center">
-              <td align="center">toolkit</td>
-              <td align="center">blocked</td>
-              <td align="center">blocked</td>
-              <td align="center">blocked</td>
-              <td align="center">-</td>
+            <tr>
+              <td>toolkit</td>
+              <td>blocked</td>
+              <td>blocked</td>
+              <td>blocked</td>
+              <td>-</td>
             </tr>
-          </tbody></table>
-<!--        </center> -->
+          </tbody>
+        </table>
       <p>
       After the modal dialog is shown, all the windows from its SB are blocked,
       except those that block this modal dialog.
@@ -378,43 +380,43 @@
 
     <table border="0">
       <tbody><tr>
-        <td align="left" >
+        <td style="text-align:left" >
 	<ol>
           <li>Frame "F" is shown<br>
           <li>Document-modal dialog "D<sub>i</sub>" is shown<br>
           <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
           <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
           <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's in the
-	      same document<br>
+              same document<br>
 	  </ol>
           <br>
         </td>
-        <td align="center">
+        <td>
           <img src="modal-example1.gif" alt="Example 1">
           <br>
         </td>
       </tr>
       <tr>
-        <td align="left">
+        <td style="text-align:left">
 	<ol>
          <li>Frame "F" is shown<br>
          <li>Document-modal dialog "D<sub>i</sub>" is shown<br>
          <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
          <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
          <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash;
-	     it's in the same document<br>
+             it's in the same document<br>
          <li>D<sub>i</sub> is hidden<br>
          <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
          </ol>
 	 <br>
         </td>
-        <td align="center">
+        <td>
           <img src="modal-example2.gif" alt="Example 2">
           <br>
         </td>
       </tr>
       <tr>
-        <td align="left">
+        <td style="text-align:left">
 	<ol>
           <li>Frame "F" is shown<br>
           <li>Toolkit-modal dialog "D<sub>i</sub>" is created, but not shown<br>
@@ -422,37 +424,37 @@
           <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
           <li>Application-modal dialog "D<sub>iii</sub>" is shown<br>
           <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash;
-	      it's in the same application<br>
+              it's in the same application<br>
           <li>D<sub>i</sub> is shown<br>
           <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's its owner<br>
           <li>D<sub>iii</sub> remains unblocked &mdash; it blocks D<sub>ii</sub> and
-	      D<sub>ii</sub> blocks D<sub>i</sub><br>
+              D<sub>ii</sub> blocks D<sub>i</sub><br>
 	  </ol>
           <br>
         </td>
-        <td align="center">
+        <td>
           <img src="modal-example3.gif" alt="Example 3">
           <br>
         </td>
       </tr>
       <tr>
-        <td align="left">
-	<ol>
+        <td style="text-align:left">
+    <ol>
           <li>Frame "F" is shown<br>
           <li>Toolkit-modal dialog "D<sub>i</sub>" is created, but not shown<br>
           <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
           <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
           <li>Application-modal dialog "D<sub>iii</sub>" is shown<br>
           <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash; it's in the
-	      same application<br>
+              same application<br>
           <li>D<sub>i</sub> is shown<br>
           <li>D<sub>iii</sub> becomes blocked by D<sub>i</sub> &mdash; D<sub>i</sub>
-	      is not blocked<br>
+              is not blocked<br>
           <li>D<sub>i</sub> remains unblocked<br>
 	  </ol>
           <br>
         </td>
-        <td align="center">
+        <td>
           <img src="modal-example4.gif" alt="Example 4">
           <br>
         </td>
