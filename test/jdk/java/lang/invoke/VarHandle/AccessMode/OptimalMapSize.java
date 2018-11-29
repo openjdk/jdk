@@ -25,15 +25,15 @@
  * @test
  * @bug 8200788
  * @summary Optimal initial capacity of AccessMode.methodNameToAccessMode
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/java.lang.invoke:open
  *          java.base/java.util:open
- * @build jdk.testlibrary.OptimalCapacity
+ * @build jdk.test.lib.util.OptimalCapacity
  * @run main OptimalMapSize
  */
 
 import java.lang.invoke.VarHandle.AccessMode;
-import jdk.testlibrary.OptimalCapacity;
+import jdk.test.lib.util.OptimalCapacity;
 
 public class OptimalMapSize {
     public static void main(String[] args) throws Throwable {

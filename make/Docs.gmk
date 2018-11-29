@@ -332,7 +332,7 @@ define SetupApiDocsGenerationBody
     $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
         $$(NEW_JAVADOC)
   else
-    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS)) 
+    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS))
   endif
 
   $1_VARDEPS := $$($1_JAVA_ARGS) $$($1_OPTIONS) $$(MODULES_SOURCE_PATH) \
@@ -466,7 +466,7 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # Setup generation of the reference Java SE API documentation (javadoc + modulegraph)
 
 # The reference javadoc is just the same as javase, but using the BootJDK javadoc
-# and a stable set of javadoc options.  Typically it is used for generating 
+# and a stable set of javadoc options.  Typically it is used for generating
 # diffs between the reference javadoc and a javadoc bundle of a specific build
 # generated in the same way.
 
@@ -542,7 +542,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
     $(foreach d, $(SPECS_$m), \
       $(if $(filter %.md, $(call CacheFind, $d)), \
-        $(eval $m_$d_NAME := CONVERT_MARKDOWN_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
+        $(eval $m_$d_NAME := SPECS_TO_HTML_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
         $(eval $(call SetupProcessMarkdown, $($m_$d_NAME), \
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
@@ -553,6 +553,28 @@ ifeq ($(ENABLE_FULL_DOCS), true)
       ) \
     ) \
   )
+
+  # For all markdown files in $module/share/man directories, convert them to
+  # html.
+  $(foreach m, $(ALL_MODULES), \
+    $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
+    $(foreach d, $(MAN_$m), \
+      $(if $(filter %.md, $(call CacheFind, $d)), \
+        $(eval $m_$d_NAME := MAN_TO_HTML_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
+        $(eval $(call SetupProcessMarkdown, $($m_$d_NAME), \
+            SRC := $d, \
+            FILES := $(filter %.md, $(call CacheFind, $d)), \
+            DEST := $(DOCS_OUTPUTDIR)/specs/man, \
+            CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+            REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
+        )) \
+        $(eval JDK_SPECS_TARGETS += $($($m_$d_NAME))) \
+      ) \
+    ) \
+  )
+
+  # The html generated from markdown also needs the css file
+  JDK_SPECS_TARGETS += $(COPY_GLOBAL_RESOURCES)
 endif
 
 # Special treatment for generated documentation

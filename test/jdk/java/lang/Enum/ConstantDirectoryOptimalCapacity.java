@@ -25,14 +25,14 @@
  * @test
  * @bug 8200696
  * @summary Initial capacity of Class.enumConstantDirectory is not optimal
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/java.lang:open
  *          java.base/java.util:open
- * @build jdk.testlibrary.OptimalCapacity
+ * @build jdk.test.lib.util.OptimalCapacity
  * @run main ConstantDirectoryOptimalCapacity
  */
 
-import jdk.testlibrary.OptimalCapacity;
+import jdk.test.lib.util.OptimalCapacity;
 
 public class ConstantDirectoryOptimalCapacity {
 

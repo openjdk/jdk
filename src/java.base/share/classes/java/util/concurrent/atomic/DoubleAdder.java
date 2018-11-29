@@ -239,7 +239,7 @@ public class DoubleAdder extends Striped64 implements Serializable {
 
     /**
      * Returns a
-     * <a href="../../../../serialized-form.html#java.util.concurrent.atomic.DoubleAdder.SerializationProxy">
+     * <a href="{@docRoot}/serialized-form.html#java.util.concurrent.atomic.DoubleAdder.SerializationProxy">
      * SerializationProxy</a>
      * representing the state of this instance.
      *

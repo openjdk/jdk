@@ -435,6 +435,10 @@ public final class EventInstrumentation {
         // MyEvent#shouldCommit()
         updateMethod(METHOD_EVENT_SHOULD_COMMIT, methodVisitor -> {
             Label fail = new Label();
+            if (guardHandlerReference) {
+                getEventHandler(methodVisitor);
+                methodVisitor.visitJumpInsn(Opcodes.IFNULL, fail);
+            }
             // if (!eventHandler.shouldCommit(duration) goto fail;
             getEventHandler(methodVisitor);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);

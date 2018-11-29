@@ -5521,10 +5521,16 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, 
 
   assert(_klass == ik, "invariant");
 
+
+  if (ik->should_store_fingerprint()) {
+    ik->store_fingerprint(_stream->compute_fingerprint());
+  }
+
   ik->set_has_passed_fingerprint_check(false);
   if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
     uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-    if (aot_fp != 0 && aot_fp == _stream->compute_fingerprint()) {
+    uint64_t fp = ik->has_stored_fingerprint() ? ik->get_stored_fingerprint() : _stream->compute_fingerprint();
+    if (aot_fp != 0 && aot_fp == fp) {
       // This class matches with a class saved in an AOT library
       ik->set_has_passed_fingerprint_check(true);
     } else {

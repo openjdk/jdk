@@ -45,7 +45,7 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:G1HeapRegionSize=1m -Xmx64m -Xmn16m -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestEvacuationInfoEvent
  */
 public class TestEvacuationInfoEvent {
-    private final static String EVENT_INFO_NAME = EventNames.EvacuationInfo;
+    private final static String EVENT_INFO_NAME = EventNames.EvacuationInformation;
     private final static String EVENT_FAILED_NAME = EventNames.EvacuationFailed;
 
     public static void main(String[] args) throws Throwable {
@@ -69,8 +69,8 @@ public class TestEvacuationInfoEvent {
             long setUsedAfter = Events.assertField(event, "cSetUsedAfter").atLeast(0L).getValue();
             long setUsedBefore = Events.assertField(event, "cSetUsedBefore").atLeast(setUsedAfter).getValue();
             int allocationRegions = Events.assertField(event, "allocationRegions").atLeast(0).getValue();
-            long allocRegionsUsedBefore = Events.assertField(event, "allocRegionsUsedBefore").atLeast(0L).getValue();
-            long allocRegionsUsedAfter = Events.assertField(event, "allocRegionsUsedAfter").atLeast(0L).getValue();
+            long allocRegionsUsedBefore = Events.assertField(event, "allocationRegionsUsedBefore").atLeast(0L).getValue();
+            long allocRegionsUsedAfter = Events.assertField(event, "allocationRegionsUsedAfter").atLeast(0L).getValue();
             long bytesCopied = Events.assertField(event, "bytesCopied").atLeast(0L).getValue();
             int regionsFreed = Events.assertField(event, "regionsFreed").atLeast(0).getValue();
 

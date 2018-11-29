@@ -93,6 +93,7 @@ private:
 
   void try_rehash_table();
   bool do_rehash();
+  inline void update_needs_rehash(bool rehash);
 
  public:
   // The string table

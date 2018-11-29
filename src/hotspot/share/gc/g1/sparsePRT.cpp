@@ -287,165 +287,55 @@ size_t RSHashTable::mem_size() const {
 
 // ----------------------------------------------------------------------
 
-SparsePRT* volatile SparsePRT::_head_expanded_list = NULL;
-
-void SparsePRT::add_to_expanded_list(SparsePRT* sprt) {
-  // We could expand multiple times in a pause -- only put on list once.
-  if (sprt->expanded()) return;
-  sprt->set_expanded(true);
-  SparsePRT* hd = _head_expanded_list;
-  while (true) {
-    sprt->_next_expanded = hd;
-    SparsePRT* res = Atomic::cmpxchg(sprt, &_head_expanded_list, hd);
-    if (res == hd) return;
-    else hd = res;
-  }
-}
-
-
-SparsePRT* SparsePRT::get_from_expanded_list() {
-  SparsePRT* hd = _head_expanded_list;
-  while (hd != NULL) {
-    SparsePRT* next = hd->next_expanded();
-    SparsePRT* res = Atomic::cmpxchg(next, &_head_expanded_list, hd);
-    if (res == hd) {
-      hd->set_next_expanded(NULL);
-      return hd;
-    } else {
-      hd = res;
-    }
-  }
-  return NULL;
-}
-
-void SparsePRT::reset_for_cleanup_tasks() {
-  _head_expanded_list = NULL;
-}
-
-void SparsePRT::do_cleanup_work(SparsePRTCleanupTask* sprt_cleanup_task) {
-  if (should_be_on_expanded_list()) {
-    sprt_cleanup_task->add(this);
-  }
-}
-
-void SparsePRT::finish_cleanup_task(SparsePRTCleanupTask* sprt_cleanup_task) {
-  assert(ParGCRareEvent_lock->owned_by_self(), "pre-condition");
-  SparsePRT* head = sprt_cleanup_task->head();
-  SparsePRT* tail = sprt_cleanup_task->tail();
-  if (head != NULL) {
-    assert(tail != NULL, "if head is not NULL, so should tail");
-
-    tail->set_next_expanded(_head_expanded_list);
-    _head_expanded_list = head;
-  } else {
-    assert(tail == NULL, "if head is NULL, so should tail");
-  }
-}
-
-bool SparsePRT::should_be_on_expanded_list() {
-  if (_expanded) {
-    assert(_cur != _next, "if _expanded is true, cur should be != _next");
-  } else {
-    assert(_cur == _next, "if _expanded is false, cur should be == _next");
-  }
-  return expanded();
-}
-
-void SparsePRT::cleanup_all() {
-  // First clean up all expanded tables so they agree on next and cur.
-  SparsePRT* sprt = get_from_expanded_list();
-  while (sprt != NULL) {
-    sprt->cleanup();
-    sprt = get_from_expanded_list();
-  }
-}
-
-
 SparsePRT::SparsePRT() :
-  _expanded(false), _next_expanded(NULL)
-{
-  _cur = new RSHashTable(InitialCapacity);
-  _next = _cur;
+  _table(new RSHashTable(InitialCapacity)) {
 }
 
 
 SparsePRT::~SparsePRT() {
-  assert(_next != NULL && _cur != NULL, "Inv");
-  if (_cur != _next) { delete _cur; }
-  delete _next;
+  delete _table;
 }
 
 
 size_t SparsePRT::mem_size() const {
   // We ignore "_cur" here, because it either = _next, or else it is
   // on the deleted list.
-  return sizeof(SparsePRT) + _next->mem_size();
+  return sizeof(SparsePRT) + _table->mem_size();
 }
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
-  if (_next->should_expand()) {
+  if (_table->should_expand()) {
     expand();
   }
-  return _next->add_card(region_id, card_index);
+  return _table->add_card(region_id, card_index);
 }
 
 SparsePRTEntry* SparsePRT::get_entry(RegionIdx_t region_id) {
-  return _next->get_entry(region_id);
+  return _table->get_entry(region_id);
 }
 
 bool SparsePRT::delete_entry(RegionIdx_t region_id) {
-  return _next->delete_entry(region_id);
+  return _table->delete_entry(region_id);
 }
 
 void SparsePRT::clear() {
-  // If they differ, _next is bigger then cur, so next has no chance of
-  // being the initial size.
-  if (_next != _cur) {
-    delete _next;
-  }
-
-  if (_cur->capacity() != InitialCapacity) {
-    delete _cur;
-    _cur = new RSHashTable(InitialCapacity);
+  // If the entry table is not at initial capacity, just create a new one.
+  if (_table->capacity() != InitialCapacity) {
+    delete _table;
+    _table = new RSHashTable(InitialCapacity);
   } else {
-    _cur->clear();
+    _table->clear();
   }
-  _next = _cur;
-  _expanded = false;
-}
-
-void SparsePRT::cleanup() {
-  // Make sure that the current and next tables agree.
-  if (_cur != _next) {
-    delete _cur;
-  }
-  _cur = _next;
-  set_expanded(false);
 }
 
 void SparsePRT::expand() {
-  RSHashTable* last = _next;
-  _next = new RSHashTable(last->capacity() * 2);
+  RSHashTable* last = _table;
+  _table = new RSHashTable(last->capacity() * 2);
   for (size_t i = 0; i < last->num_entries(); i++) {
     SparsePRTEntry* e = last->entry((int)i);
     if (e->valid_entry()) {
-      _next->add_entry(e);
+      _table->add_entry(e);
     }
   }
-  if (last != _cur) {
-    delete last;
-  }
-  add_to_expanded_list(this);
-}
-
-void SparsePRTCleanupTask::add(SparsePRT* sprt) {
-  assert(sprt->should_be_on_expanded_list(), "pre-condition");
-
-  sprt->set_next_expanded(NULL);
-  if (_tail != NULL) {
-    _tail->set_next_expanded(sprt);
-  } else {
-    _head = sprt;
-  }
-  _tail = sprt;
+  delete last;
 }

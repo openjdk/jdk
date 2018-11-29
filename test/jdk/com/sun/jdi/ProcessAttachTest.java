@@ -38,11 +38,10 @@ import com.sun.jdi.connect.IllegalConnectorArgumentsException;
  * @bug 4527279
  * @summary Unit test for ProcessAttachingConnector
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
  *          jdk.jdi
- * @build jdk.testlibrary.* ProcessAttachTest
+ * @build ProcessAttachTest
  * @run driver ProcessAttachTest
  */
 

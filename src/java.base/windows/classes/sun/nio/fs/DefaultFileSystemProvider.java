@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,28 @@
 
 package sun.nio.fs;
 
-import java.nio.file.spi.FileSystemProvider;
+import java.nio.file.FileSystem;
 
 /**
- * Creates default provider on Windows
+ * Creates this platform's default FileSystemProvider.
  */
 public class DefaultFileSystemProvider {
+    private static final WindowsFileSystemProvider INSTANCE
+        = new WindowsFileSystemProvider();
+
     private DefaultFileSystemProvider() { }
-    public static FileSystemProvider create() {
-        return new WindowsFileSystemProvider();
+
+    /**
+     * Returns the platform's default file system provider.
+     */
+    public static WindowsFileSystemProvider instance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Returns the platform's default file system.
+     */
+    public static FileSystem theFileSystem() {
+        return INSTANCE.theFileSystem();
     }
 }

@@ -42,7 +42,7 @@ and detail all of these properties.</P>
 <a id="Ipv4IPv6"></a>
 <H2>IPv4 / IPv6</H2>
 <UL>
-	<LI><P><B>java.net.preferIPv4Stack</B> (default: false)<BR>
+	<LI><P><B>{@systemProperty java.net.preferIPv4Stack}</B> (default: false)<BR>
 	If IPv6 is available on the operating system the
 	underlying native socket will be, by default, an IPv6 socket which
 	lets applications connect to, and accept connections from, both
@@ -50,7 +50,7 @@ and detail all of these properties.</P>
 	rather use IPv4 only sockets, then this property can be set to <B>true</B>.
 	The implication is that it will not be possible for the application
 	to communicate with IPv6 only hosts.</P>
-	<LI><P><B>java.net.preferIPv6Addresses</B> (default: false)<BR>
+	<LI><P><B>{@systemProperty java.net.preferIPv6Addresses}</B> (default: false)<BR>
 	When dealing with a host which has both IPv4
 	and IPv6 addresses, and if IPv6 is available on the operating
 	system, the default behavior is to prefer using IPv4 addresses over
@@ -73,12 +73,12 @@ of proxies.</P>
 	<LI><P>HTTP</P>
 	<P>The following proxy settings are used by the HTTP protocol handler.</P>
 	<UL>
-		<LI><P><B>http.proxyHost</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty http.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server
 		</P>
-		<LI><P><B>http.proxyPort</B> (default: 80)<BR>
+		<LI><P><B>{@systemProperty http.proxyPort}</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>http.nonProxyHosts</B> (default:  localhost|127.*|[::1])<BR>
+		<LI><P><B>{@systemProperty http.nonProxyHosts}</B> (default:  localhost|127.*|[::1])<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts,
@@ -94,10 +94,10 @@ of proxies.</P>
 	mainly used when confidentiality (like on payment sites) is needed.</P>
 	<P>The following proxy settings are used by the HTTPS protocol handler.</P>
 	<UL>
-		<LI><P><B>https.proxyHost</B>(default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty https.proxyHost}</B>(default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server
 		</P>
-		<LI><P><B>https.proxyPort</B> (default: 443)<BR>
+		<LI><P><B>{@systemProperty https.proxyPort}</B> (default: 443)<BR>
 	        The port number of the proxy server.</P>
 		<P>The HTTPS protocol handler will use the same nonProxyHosts
 		property as the HTTP protocol.</P>
@@ -105,12 +105,12 @@ of proxies.</P>
 	<LI><P>FTP</P>
 	<P>The following proxy settings are used by the FTP protocol handler.</P>
 	<UL>
-		<LI><P><B>ftp.proxyHost</B>(default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty ftp.proxyHost}</B>(default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server
 		</P>
-		<LI><P><B>ftp.proxyPort</B> (default: 80)<BR>
+		<LI><P><B>{@systemProperty ftp.proxyPort}</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>ftp.nonProxyHosts</B> (default: localhost|127.*|[::1])<BR>
+		<LI><P><B>{@systemProperty ftp.nonProxyHosts}</B> (default: localhost|127.*|[::1])<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts, separated by
@@ -129,26 +129,26 @@ of proxies.</P>
 	are specified. If SOCKS is supported by a Java SE implementation, the
 	following properties will be used:</P>
 	<UL>
-		<LI><P><B>socksProxyHost</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty socksProxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
-		<LI><P><B>socksProxyPort</B> (default: 1080)<BR>
+		<LI><P><B>{@systemProperty socksProxyPort}</B> (default: 1080)<BR>
 	        The port number of the proxy server.</P>
-                <LI><P><B>socksProxyVersion</B> (default: 5)<BR>
+                <LI><P><B>{@systemProperty socksProxyVersion}</B> (default: 5)<BR>
                 The version of the SOCKS protocol supported by the server. The
                 default is <code>5</code> indicating SOCKS V5, alternatively
                 <code>4</code> can be specified for SOCKS V4. Setting the property
                 to values other than these leads to unspecified behavior.</P>
-		<LI><P><B>java.net.socks.username</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty java.net.socks.username}</B> (default: &lt;none&gt;)<BR>
 	        Username to use if the SOCKSv5 server asks for authentication
 	        and no java.net.Authenticator instance was found.</P>
-		<LI><P><B>java.net.socks.password</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>{@systemProperty java.net.socks.password}</B> (default: &lt;none&gt;)<BR>
 	        Password to use if the SOCKSv5 server asks for authentication
 	        and no java.net.Authenticator instance was found.</P>
 		<P>Note that if no authentication is provided with either the above
 		properties or an Authenticator, and the proxy requires one, then
 		the <B>user.name</B> property will be used with no password.</P>
 	</UL>
-	<LI><P><B>java.net.useSystemProxies</B> (default: false)<BR>
+	<LI><P><B>{@systemProperty java.net.useSystemProxies}</B> (default: false)<BR>
 	On Windows systems, macOS systems and on Gnome systems it is possible to
 	tell the java.net stack, setting this property to <B>true</B>, to use
 	the system proxy settings (both	these systems let you set proxies
@@ -158,29 +158,29 @@ of proxies.</P>
 <a id="MiscHTTP"></a>
 <H2>Misc HTTP URL stream protocol handler properties</H2>
 <UL>
-	<LI><P><B>http.agent</B> (default: &ldquo;Java/&lt;version&gt;&rdquo;)<BR>
+	<LI><P><B>{@systemProperty http.agent}</B> (default: &ldquo;Java/&lt;version&gt;&rdquo;)<BR>
 	Defines the string sent in the User-Agent request header in http
 	requests. Note that the string &ldquo;Java/&lt;version&gt;&rdquo; will
 	be appended to the one provided in the property (e.g. if
 	-Dhttp.agent=&rdquo;foobar&rdquo; is used, the User-Agent header will
 	contain &ldquo;foobar Java/1.5.0&rdquo; if the version of the VM is
 	1.5.0). This property is checked only once at startup.</P>
-	<LI><P><B>http.keepalive</B> (default: true)<BR>
+	<LI><P><B>{@systemProperty http.keepalive}</B> (default: true)<BR>
 	Indicates if persistent connections should be supported. They improve
 	performance by allowing the underlying socket connection to be reused
 	for multiple http requests. If this is set to true then persistent
 	connections will be requested with HTTP 1.1 servers.</P>
-	<LI><P><B>http.maxConnections</B> (default: 5)<BR>
+	<LI><P><B>{@systemProperty http.maxConnections}</B> (default: 5)<BR>
 	If HTTP keepalive is enabled (see above) this value determines the
 	maximum number of idle connections that will be simultaneously kept
 	alive, per destination.</P>
-	<LI><P><B>http.maxRedirects</B> (default: 20)<BR>
+	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: 20)<BR>
 	This integer value determines the maximum number, for a given request,
 	of HTTP redirects that will be automatically followed by the
 	protocol handler.</P>
-	<LI><P><B>http.auth.digest.validateServer</B> (default: false)</P>
-	<LI><P><B>http.auth.digest.validateProxy</B> (default: false)</P>
-	<LI><P><B>http.auth.digest.cnonceRepeat</B> (default: 5)</P>
+	<LI><P><B>{@systemProperty http.auth.digest.validateServer}</B> (default: false)</P>
+	<LI><P><B>{@systemProperty http.auth.digest.validateProxy}</B> (default: false)</P>
+	<LI><P><B>{@systemProperty http.auth.digest.cnonceRepeat}</B> (default: 5)</P>
 	<P>These 3 properties modify the behavior of the HTTP digest
 	authentication mechanism. Digest authentication provides a limited
 	ability for the server  to authenticate itself to the client (i.e.
@@ -194,7 +194,7 @@ of proxies.</P>
 	value reduces the computational overhead on both client and server
 	by reducing the amount of material that has to be hashed for each
 	HTTP request.</P>
-	<LI><P><B>http.auth.ntlm.domain</B> (default: &lt;none&gt;)<BR>
+	<LI><P><B>{@systemProperty http.auth.ntlm.domain}</B> (default: &lt;none&gt;)<BR>
 	NTLM is another authentication scheme. It uses the
 	java.net.Authenticator class to acquire usernames and passwords when
 	they are needed. However NTLM also needs the NT domain name. There are
@@ -224,14 +224,14 @@ successful or not, so that subsequent identical requests will not
 have to access the naming service. These properties allow for some
 tuning on how the cache is operating.</P>
 <UL>
-	<LI><P><B>networkaddress.cache.ttl</B> (default: see below)<BR>
+	<LI><P><B>{@systemProperty networkaddress.cache.ttl}</B> (default: see below)<BR>
 	Value is an integer corresponding to the number of seconds successful
 	name lookups will be kept in the cache. A value of -1, or any  other
 	negative value for that matter,	indicates a &ldquo;cache forever&rdquo;
 	policy, while a value of 0 (zero) means no caching. The default value
 	is -1 (forever) if a security manager is installed, and implementation
 	specific when no security manager is installed.</P>
-	<LI><P><B>networkaddress.cache.negative.ttl</B>	(default: 10)<BR>
+	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B>	(default: 10)<BR>
 	Value is an integer corresponding to the number of seconds an
 	unsuccessful name lookup will be kept in the cache. A value of -1,
 	or any negative value, means &ldquo;cache forever&rdquo;, while a

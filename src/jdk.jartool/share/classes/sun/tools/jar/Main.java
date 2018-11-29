@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -693,7 +693,7 @@ public class Main {
             usageError(getMsg("error.bad.cflag"));
             return false;
         } else if (uflag) {
-            if ((mname != null) || (ename != null)) {
+            if ((mname != null) || (ename != null) || moduleVersion != null) {
                 /* just want to update the manifest */
                 return true;
             } else {

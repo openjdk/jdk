@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "java_props.h"
 
 #include "java_lang_System.h"
+#include "jdk_internal_util_SystemProps_Raw.h"
 
 #define OBJ "Ljava/lang/Object;"
 
@@ -56,255 +57,154 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
     return JVM_IHashCode(env, x);
 }
 
-#define PUTPROP(props, key, val)                                     \
-    if (1) {                                                         \
-        jstring jkey, jval;                                          \
-        jobject r;                                                   \
-        jkey = (*env)->NewStringUTF(env, key);                       \
-        if (jkey == NULL) return NULL;                               \
-        jval = (*env)->NewStringUTF(env, val);                       \
-        if (jval == NULL) return NULL;                               \
-        r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
-        if ((*env)->ExceptionOccurred(env)) return NULL;             \
-        (*env)->DeleteLocalRef(env, jkey);                           \
-        (*env)->DeleteLocalRef(env, jval);                           \
-        (*env)->DeleteLocalRef(env, r);                              \
-    } else ((void) 0)
+/* VENDOR, VENDOR_URL, VENDOR_URL_BUG are set in VersionProps.java.template. */
 
-/*  "key" is a char type string with only ASCII character in it.
-    "val" is a nchar (typedefed in java_props.h) type string  */
-
-#define PUTPROP_ForPlatformNString(props, key, val)                  \
-    if (1) {                                                         \
-        jstring jkey, jval;                                          \
-        jobject r;                                                   \
-        jkey = (*env)->NewStringUTF(env, key);                       \
-        if (jkey == NULL) return NULL;                               \
-        jval = GetStringPlatform(env, val);                          \
-        if (jval == NULL) return NULL;                               \
-        r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
-        if ((*env)->ExceptionOccurred(env)) return NULL;             \
-        (*env)->DeleteLocalRef(env, jkey);                           \
-        (*env)->DeleteLocalRef(env, jval);                           \
-        (*env)->DeleteLocalRef(env, r);                              \
-    } else ((void) 0)
-#define REMOVEPROP(props, key)                                    \
-    if (1) {                                                      \
-        jstring jkey;                                             \
-        jobject r;                                                \
-        jkey = JNU_NewStringPlatform(env, key);                   \
-        if (jkey == NULL) return NULL;                            \
-        r = (*env)->CallObjectMethod(env, props, removeID, jkey); \
-        if ((*env)->ExceptionOccurred(env)) return NULL;          \
-        (*env)->DeleteLocalRef(env, jkey);                        \
-        (*env)->DeleteLocalRef(env, r);                           \
-    } else ((void) 0)
-#define GETPROP(props, key, jret)                                     \
-    if (1) {                                                          \
-        jstring jkey = JNU_NewStringPlatform(env, key);               \
-        if (jkey == NULL) return NULL;                                \
-        jret = (*env)->CallObjectMethod(env, props, getPropID, jkey); \
-        if ((*env)->ExceptionOccurred(env)) return NULL;              \
-        (*env)->DeleteLocalRef(env, jkey);                            \
-    } else ((void) 0)
-
-/* Third party may overwrite these values. */
-#ifndef VENDOR
-#define VENDOR "Oracle Corporation"
-#endif
-#ifndef VENDOR_URL
-#define VENDOR_URL "http://java.oracle.com/"
-#endif
-#ifndef VENDOR_URL_BUG
-#define VENDOR_URL_BUG "http://bugreport.java.com/bugreport/"
-#endif
-
-#ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
-  #error "ERROR: No override of JAVA_SPECIFICATION_VENDOR is allowed"
-#else
-  #define JAVA_SPECIFICATION_VENDOR "Oracle Corporation"
-#endif
-
-jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
-                      char *platformDispVal, char *platformFmtVal,
-                      jmethodID putID, jmethodID getPropID) {
-    jstring jVMBaseVal = NULL;
-
-    GETPROP(props, baseKey, jVMBaseVal);
-    if (jVMBaseVal) {
-        // user specified the base property.  there's nothing to do here.
-        (*env)->DeleteLocalRef(env, jVMBaseVal);
-    } else {
-        char buf[64];
-        jstring jVMVal = NULL;
-        const char *baseVal = "";
-
-        /* user.xxx base property */
-        if (platformDispVal) {
-            PUTPROP(props, baseKey, platformDispVal);
-            baseVal = platformDispVal;
-        }
-
-        /* user.xxx.display property */
-        jio_snprintf(buf, sizeof(buf), "%s.display", baseKey);
-        GETPROP(props, buf, jVMVal);
-        if (jVMVal == NULL) {
-            if (platformDispVal && (strcmp(baseVal, platformDispVal) != 0)) {
-                PUTPROP(props, buf, platformDispVal);
-            }
-        } else {
-            (*env)->DeleteLocalRef(env, jVMVal);
-        }
-
-        /* user.xxx.format property */
-        jio_snprintf(buf, sizeof(buf), "%s.format", baseKey);
-        GETPROP(props, buf, jVMVal);
-        if (jVMVal == NULL) {
-            if (platformFmtVal && (strcmp(baseVal, platformFmtVal) != 0)) {
-                PUTPROP(props, buf, platformFmtVal);
-            }
-        } else {
-            (*env)->DeleteLocalRef(env, jVMVal);
-        }
+/*
+ * Store the UTF-8 string encoding of the value in the array
+ * at the index if the value is non-null.  Store nothing if the value is null.
+ * On any error, return from Java_jdk_internal_util_SystemProps_00024Raw_platformProperties.
+ */
+#define PUTPROP(array, prop_index, val)                    \
+    if (val != NULL) {                                     \
+        jstring jval = (*env)->NewStringUTF(env, val);     \
+        if (jval == NULL)                                  \
+            return NULL;                                   \
+        (*env)->SetObjectArrayElement(env, array, jdk_internal_util_SystemProps_Raw_##prop_index, jval); \
+        if ((*env)->ExceptionOccurred(env))                \
+            return NULL;                                   \
+        (*env)->DeleteLocalRef(env, jval);                 \
     }
 
-    return NULL;
-}
+/*
+ * Store the Platform string encoding of the value in the array
+ * at the index if the value is non-null.  Store nothing if the value is null.
+ * On any error, return from Java_jdk_internal_util_SystemProps_00024Raw_platformProperties.
+ */
+#define PUTPROP_PlatformString(array, prop_index, val)     \
+    if (val != NULL) {                                     \
+        jstring jval = GetStringPlatform(env, val);        \
+        if (jval == NULL)                                  \
+            return NULL;                                   \
+        (*env)->SetObjectArrayElement(env, array, jdk_internal_util_SystemProps_Raw_##prop_index, jval); \
+        if ((*env)->ExceptionOccurred(env))                \
+            return NULL;                                   \
+        (*env)->DeleteLocalRef(env, jval);                 \
+    }
 
-JNIEXPORT jobject JNICALL
-Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
+/*
+ * Gather the system properties and return as a String[].
+ * The first FIXED_LENGTH entries are the platform defined property values, no names.
+ * The remaining array indices are alternating key/value pairs
+ * supplied by the VM including those defined on the command line
+ * using -Dkey=value that may override the platform defined value.
+ * The caller is responsible for replacing platform provided values as needed.
+ *
+ * Class:     jdk_internal_util_SystemProps_Raw
+ * Method:    platformProperties
+ * Signature: ()[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jclass cla)
 {
-    char buf[128];
     java_props_t *sprops;
-    jmethodID putID, removeID, getPropID;
-    jobject ret = NULL;
-    jstring jVMVal = NULL;
+    jobject propArray = NULL;
+    jclass classString;
+    int nstrings = jdk_internal_util_SystemProps_Raw_FIXED_LENGTH;
 
-    if ((*env)->EnsureLocalCapacity(env, 50) < 0) {
-        return NULL;
-    }
+    // Get the platform specific values
     sprops = GetJavaProperties(env);
     CHECK_NULL_RETURN(sprops, NULL);
 
-    putID = (*env)->GetMethodID(env,
-                                (*env)->GetObjectClass(env, props),
-                                "put",
-            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-    CHECK_NULL_RETURN(putID, NULL);
+    /*
+     * !!! DO NOT call PUTPROP_PlatformString (NewStringPlatform) before this line !!!
+     */
+    InitializeEncoding(env, sprops->sun_jnu_encoding);
 
-    removeID = (*env)->GetMethodID(env,
-                                   (*env)->GetObjectClass(env, props),
-                                   "remove",
-            "(Ljava/lang/Object;)Ljava/lang/Object;");
-    CHECK_NULL_RETURN(removeID, NULL);
-
-    getPropID = (*env)->GetMethodID(env,
-                                    (*env)->GetObjectClass(env, props),
-                                    "getProperty",
-            "(Ljava/lang/String;)Ljava/lang/String;");
-    CHECK_NULL_RETURN(getPropID, NULL);
-
-    PUTPROP(props, "java.specification.version",
-            VERSION_SPECIFICATION);
-    PUTPROP(props, "java.specification.name",
-            "Java Platform API Specification");
-    PUTPROP(props, "java.specification.vendor",
-            JAVA_SPECIFICATION_VENDOR);
-
-    PUTPROP(props, "java.vendor", VENDOR);
-    PUTPROP(props, "java.vendor.url", VENDOR_URL);
-    PUTPROP(props, "java.vendor.url.bug", VENDOR_URL_BUG);
-
-    jio_snprintf(buf, sizeof(buf), "%d.%d", JVM_CLASSFILE_MAJOR_VERSION,
-                                            JVM_CLASSFILE_MINOR_VERSION);
-    PUTPROP(props, "java.class.version", buf);
-
-    if (sprops->awt_toolkit) {
-        PUTPROP(props, "awt.toolkit", sprops->awt_toolkit);
+    // Ensure capacity for the array and for a string for each fixed length element
+    if ((*env)->EnsureLocalCapacity(env, nstrings + 2) < 0) {
+        return NULL;
     }
-#ifdef MACOSX
-    if (sprops->awt_headless) {
-        PUTPROP(props, "java.awt.headless", sprops->awt_headless);
-    }
-#endif
+
+    // Allocate an array of String for all the well known props
+    classString = JNU_ClassString(env);
+    CHECK_NULL_RETURN(classString, NULL);
+
+    propArray = (*env)->NewObjectArray(env, nstrings, classString, NULL);
+    CHECK_NULL_RETURN(propArray, NULL);
 
     /* os properties */
-    PUTPROP(props, "os.name", sprops->os_name);
-    PUTPROP(props, "os.version", sprops->os_version);
-    PUTPROP(props, "os.arch", sprops->os_arch);
+    PUTPROP(propArray, _os_name_NDX, sprops->os_name);
+    PUTPROP(propArray, _os_version_NDX, sprops->os_version);
+    PUTPROP(propArray, _os_arch_NDX, sprops->os_arch);
 
 #ifdef JDK_ARCH_ABI_PROP_NAME
-    PUTPROP(props, "sun.arch.abi", sprops->sun_arch_abi);
+    PUTPROP(propArray, _sun_arch_abi_NDX, sprops->sun_arch_abi);
 #endif
 
     /* file system properties */
-    PUTPROP(props, "file.separator", sprops->file_separator);
-    PUTPROP(props, "path.separator", sprops->path_separator);
-    PUTPROP(props, "line.separator", sprops->line_separator);
+    PUTPROP(propArray, _file_separator_NDX, sprops->file_separator);
+    PUTPROP(propArray, _path_separator_NDX, sprops->path_separator);
+    PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
+
+    PUTPROP(propArray, _file_encoding_NDX, sprops->encoding);
+    PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
     /*
      * file encoding for stdout and stderr
      */
-    if (sprops->sun_stdout_encoding != NULL) {
-        PUTPROP(props, "sun.stdout.encoding", sprops->sun_stdout_encoding);
-    }
-    if (sprops->sun_stderr_encoding != NULL) {
-        PUTPROP(props, "sun.stderr.encoding", sprops->sun_stderr_encoding);
-    }
+    PUTPROP(propArray, _sun_stdout_encoding_NDX, sprops->sun_stdout_encoding);
+    PUTPROP(propArray, _sun_stderr_encoding_NDX, sprops->sun_stderr_encoding);
 
     /* unicode_encoding specifies the default endianness */
-    PUTPROP(props, "sun.io.unicode.encoding", sprops->unicode_encoding);
-    if (sprops->cpu_isalist  != NULL) {
-        // leave undefined if none
-        PUTPROP(props, "sun.cpu.isalist", sprops->cpu_isalist);
-    }
-    PUTPROP(props, "sun.cpu.endian",  sprops->cpu_endian);
-
+    PUTPROP(propArray, _sun_io_unicode_encoding_NDX, sprops->unicode_encoding);
+    PUTPROP(propArray, _sun_cpu_endian_NDX, sprops->cpu_endian);
+    PUTPROP(propArray, _sun_cpu_isalist_NDX, sprops->cpu_isalist);
 
 #ifdef MACOSX
+    PUTPROP(propArray, _java_awt_headless_NDX, sprops->awt_headless);
+
     /* Proxy setting properties */
     if (sprops->httpProxyEnabled) {
-        PUTPROP(props, "http.proxyHost", sprops->httpHost);
-        PUTPROP(props, "http.proxyPort", sprops->httpPort);
+        PUTPROP(propArray, _http_proxyHost_NDX, sprops->httpHost);
+        PUTPROP(propArray, _http_proxyPort_NDX, sprops->httpPort);
     }
 
     if (sprops->httpsProxyEnabled) {
-        PUTPROP(props, "https.proxyHost", sprops->httpsHost);
-        PUTPROP(props, "https.proxyPort", sprops->httpsPort);
+        PUTPROP(propArray, _https_proxyHost_NDX, sprops->httpsHost);
+        PUTPROP(propArray, _https_proxyPort_NDX, sprops->httpsPort);
     }
 
     if (sprops->ftpProxyEnabled) {
-        PUTPROP(props, "ftp.proxyHost", sprops->ftpHost);
-        PUTPROP(props, "ftp.proxyPort", sprops->ftpPort);
+        PUTPROP(propArray, _ftp_proxyHost_NDX, sprops->ftpHost);
+        PUTPROP(propArray, _ftp_proxyPort_NDX, sprops->ftpPort);
     }
 
     if (sprops->socksProxyEnabled) {
-        PUTPROP(props, "socksProxyHost", sprops->socksHost);
-        PUTPROP(props, "socksProxyPort", sprops->socksPort);
-    }
-
-    if (sprops->gopherProxyEnabled) {
-        // The gopher client is different in that it expects an 'is this set?' flag that the others don't.
-        PUTPROP(props, "gopherProxySet", "true");
-        PUTPROP(props, "gopherProxyHost", sprops->gopherHost);
-        PUTPROP(props, "gopherProxyPort", sprops->gopherPort);
-    } else {
-        PUTPROP(props, "gopherProxySet", "false");
+        PUTPROP(propArray, _socksProxyHost_NDX, sprops->socksHost);
+        PUTPROP(propArray, _socksProxyPort_NDX, sprops->socksPort);
     }
 
     // Mac OS X only has a single proxy exception list which applies
     // to all protocols
     if (sprops->exceptionList) {
-        PUTPROP(props, "http.nonProxyHosts", sprops->exceptionList);
-        PUTPROP(props, "ftp.nonProxyHosts", sprops->exceptionList);
-        PUTPROP(props, "socksNonProxyHosts", sprops->exceptionList);
+        PUTPROP(propArray, _http_nonProxyHosts_NDX, sprops->exceptionList);
+        PUTPROP(propArray, _ftp_nonProxyHosts_NDX, sprops->exceptionList);
+        PUTPROP(propArray, _socksNonProxyHosts_NDX, sprops->exceptionList);
     }
 #endif
 
-    /* !!! DO NOT call PUTPROP_ForPlatformNString before this line !!!
-     * !!! The platform native encoding for strings has not been set up yet !!!
-     */
-    InitializeEncoding(env, sprops->sun_jnu_encoding);
+    /* data model */
+    if (sizeof(sprops) == 4) {
+        sprops->data_model = "32";
+    } else if (sizeof(sprops) == 8) {
+        sprops->data_model = "64";
+    } else {
+        sprops->data_model = "unknown";
+    }
+    PUTPROP(propArray, _sun_arch_data_model_NDX, sprops->data_model);
+
+    /* patch level */
+    PUTPROP(propArray, _sun_os_patch_level_NDX, sprops->patch_level);
 
     /* Printing properties */
     /* Note: java.awt.printerjob is an implementation private property which
@@ -317,24 +217,9 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
      * find and load classes that are part of the JRE.
      * This property may be removed if that mechanism is redesigned
      */
-    PUTPROP(props, "java.awt.printerjob", sprops->printerJob);
+    PUTPROP(propArray, _java_awt_printerjob_NDX, sprops->printerJob);
 
-    /* data model */
-    if (sizeof(sprops) == 4) {
-        sprops->data_model = "32";
-    } else if (sizeof(sprops) == 8) {
-        sprops->data_model = "64";
-    } else {
-        sprops->data_model = "unknown";
-    }
-    PUTPROP(props, "sun.arch.data.model",  \
-                    sprops->data_model);
-
-    /* patch level */
-    if (sprops->patch_level != NULL) {
-        PUTPROP(props, "sun.os.patch.level",  \
-                    sprops->patch_level);
-    }
+    PUTPROP(propArray, _awt_toolkit_NDX, sprops->awt_toolkit);
 
     /* Java2D properties */
     /* Note: java.awt.graphicsenv is an implementation private property which
@@ -347,55 +232,53 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
      * find and load classes that are part of the JRE.
      * This property may be removed if that mechanism is redesigned
      */
-    PUTPROP(props, "java.awt.graphicsenv", sprops->graphics_env);
-    if (sprops->font_dir != NULL) {
-        PUTPROP_ForPlatformNString(props,
-                                   "sun.java2d.fontpath", sprops->font_dir);
-    }
+    PUTPROP(propArray, _java_awt_graphicsenv_NDX, sprops->graphics_env);
+    PUTPROP_PlatformString(propArray, _sun_java2d_fontpath_NDX, sprops->font_dir);
 
-    PUTPROP_ForPlatformNString(props, "java.io.tmpdir", sprops->tmp_dir);
-
-    PUTPROP_ForPlatformNString(props, "user.name", sprops->user_name);
-    PUTPROP_ForPlatformNString(props, "user.home", sprops->user_home);
-    PUTPROP_ForPlatformNString(props, "user.dir", sprops->user_dir);
-
-    /* This is a sun. property as it is currently only set for Gnome and
-     * Windows desktops.
+    /*
+     * The sun.desktop property is currently only set for Gnome and Windows desktops.
      */
-    if (sprops->desktop != NULL) {
-        PUTPROP(props, "sun.desktop", sprops->desktop);
-    }
+    PUTPROP(propArray, _sun_desktop_NDX, sprops->desktop);
 
-    ret = JVM_InitProperties(env, props);
+    PUTPROP_PlatformString(propArray, _java_io_tmpdir_NDX, sprops->tmp_dir);
 
-    /* reconstruct i18n related properties */
-    fillI18nProps(env, props, "user.language", sprops->display_language,
-        sprops->format_language, putID, getPropID);
-    fillI18nProps(env, props, "user.script",
-        sprops->display_script, sprops->format_script, putID, getPropID);
-    fillI18nProps(env, props, "user.country",
-        sprops->display_country, sprops->format_country, putID, getPropID);
-    fillI18nProps(env, props, "user.variant",
-        sprops->display_variant, sprops->format_variant, putID, getPropID);
-    GETPROP(props, "file.encoding", jVMVal);
-    if (jVMVal == NULL) {
-#ifdef MACOSX
-        /*
-         * Since sun_jnu_encoding is now hard-coded to UTF-8 on Mac, we don't
-         * want to use it to overwrite file.encoding
-         */
-        PUTPROP(props, "file.encoding", sprops->encoding);
-#else
-        PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
-#endif
-    } else {
-        (*env)->DeleteLocalRef(env, jVMVal);
-    }
+    PUTPROP_PlatformString(propArray, _user_name_NDX, sprops->user_name);
+    PUTPROP_PlatformString(propArray, _user_home_NDX, sprops->user_home);
+    PUTPROP_PlatformString(propArray, _user_dir_NDX, sprops->user_dir);
 
-    // Platform defined encoding properties override any on the command line
-    PUTPROP(props, "sun.jnu.encoding", sprops->sun_jnu_encoding);
+   /*
+    * Set i18n related property fields from platform.
+    */
+   PUTPROP(propArray, _display_language_NDX, sprops->display_language);
+   PUTPROP(propArray, _display_script_NDX, sprops->display_script);
+   PUTPROP(propArray, _display_country_NDX, sprops->display_country);
+   PUTPROP(propArray, _display_variant_NDX, sprops->display_variant);
 
-    return ret;
+   PUTPROP(propArray, _format_language_NDX, sprops->format_language);
+   PUTPROP(propArray, _format_script_NDX, sprops->format_script);
+   PUTPROP(propArray, _format_country_NDX, sprops->format_country);
+   PUTPROP(propArray, _format_variant_NDX, sprops->format_variant);
+
+   return propArray;
+}
+
+/*
+ * Gather the VM and command line properties and return as a String[].
+ * The array indices are alternating key/value pairs
+ * supplied by the VM including those defined on the command line
+ * using -Dkey=value that may override the platform defined value.
+ *
+ * Note: The platform encoding must have been set.
+ *
+ * Class:     jdk_internal_util_SystemProps_Raw
+ * Method:    vmProperties
+ * Signature: ()[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_jdk_internal_util_SystemProps_00024Raw_vmProperties(JNIEnv *env, jclass cla)
+{
+    jobjectArray cmdProps = JVM_GetProperties(env);
+    return cmdProps;
 }
 
 /*

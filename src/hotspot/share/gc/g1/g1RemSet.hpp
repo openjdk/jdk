@@ -86,11 +86,6 @@ public:
   // Initialize data that depends on the heap size being known.
   void initialize(size_t capacity, uint max_regions);
 
-  // This is called to reset dual hash tables after the gc pause
-  // is finished and the initial hash table is no longer being
-  // scanned.
-  void cleanupHRRS();
-
   G1RemSet(G1CollectedHeap* g1h,
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);

@@ -30,9 +30,9 @@
  *
  * @author  Mandy Chung
  *
- * @library /lib/testlibrary/ /test/lib
+ * @library /test/lib
  * @modules jdk.management
- * @build jdk.testlibrary.* CollectionUsageThreshold MemoryUtil RunUtil
+ * @build CollectionUsageThreshold MemoryUtil RunUtil
  * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission

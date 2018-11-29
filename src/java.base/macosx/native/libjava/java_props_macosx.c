@@ -416,14 +416,12 @@ void setProxyProperties(java_props_t *sProps) {
     cf_httpHost = NULL,
     cf_httpsHost = NULL,
     cf_ftpHost = NULL,
-    cf_socksHost = NULL,
-    cf_gopherHost = NULL;
+    cf_socksHost = NULL;
     int
     httpPort = 80, // Default proxy port values
     httpsPort = 443,
     ftpPort = 21,
-    socksPort = 1080,
-    gopherPort = 70;
+    socksPort = 1080;
 
     CFDictionaryRef dict = SCDynamicStoreCopyProxies(NULL);
     if (dict == NULL) return;
@@ -479,7 +477,6 @@ void setProxyProperties(java_props_t *sProps) {
     CHECK_PROXY(https, HTTPS);
     CHECK_PROXY(ftp, FTP);
     CHECK_PROXY(socks, SOCKS);
-    CHECK_PROXY(gopher, Gopher);
 
 #undef CHECK_PROXY
 

@@ -116,4 +116,10 @@ TOOL_PUBLICSUFFIXLIST = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_clas
 
 ##########################################################################################
 
+# Executable javascript filter for man page generation using pandoc.
+
+PANDOC_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-manpage-filter
+
+##########################################################################################
+
 endif # _TOOLS_GMK

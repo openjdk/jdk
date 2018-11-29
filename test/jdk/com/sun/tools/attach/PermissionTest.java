@@ -34,12 +34,11 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Basic unit tests for the VM attach mechanism. Unit test for Attach
  * API - this checks that a SecurityException is thrown as expected.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
- * @run build jdk.testlibrary.* Application
+ * @run build Application
  * @run main PermissionTest
  */
 public class PermissionTest {

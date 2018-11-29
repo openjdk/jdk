@@ -39,7 +39,7 @@ public:
   void initialize(G1CollectedHeap* g1h,
                   Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
-                  int process_completed_threshold,
+                  size_t process_completed_buffers_threshold,
                   uint buffer_enqueue_threshold_percentage,
                   Mutex* lock);
 

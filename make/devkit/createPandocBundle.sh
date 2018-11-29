@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,43 +31,35 @@ trap "rm -rf \"$TMPDIR\"" EXIT
 
 ORIG_DIR=`pwd`
 cd "$TMPDIR"
-PANDOC_VERSION=1.17.2
-FULL_PANDOC_VERSION=1.17.2-1
+PANDOC_VERSION=2.3.1
 PACKAGE_VERSION=1.0
 TARGET_PLATFORM=linux_x64
+
+if [[ $TARGET_PLATFORM == linux_x64 ]] ; then
+  PANDOC_PLATFORM=linux
+  PANDOC_SUFFIX=tar.gz
+elif [[ $TARGET_PLATFORM == macosx_x64 ]] ; then
+  PANDOC_PLATFORM=macOS
+  PANDOC_SUFFIX=zip
+else
+  echo "Unknown platform"
+  exit 1
+fi
 BUNDLE_NAME=pandoc-$TARGET_PLATFORM-$PANDOC_VERSION+$PACKAGE_VERSION.tar.gz
 
-wget https://github.com/jgm/pandoc/releases/download/$PANDOC_VERSION/pandoc-$FULL_PANDOC_VERSION-amd64.deb
+wget https://github.com/jgm/pandoc/releases/download/$PANDOC_VERSION/pandoc-$PANDOC_VERSION-$PANDOC_PLATFORM.$PANDOC_SUFFIX
 
-mkdir pandoc
-cd pandoc
-ar p ../pandoc-$FULL_PANDOC_VERSION-amd64.deb data.tar.gz | tar xz
+mkdir tmp
+cd tmp
+if [[ $PANDOC_SUFFIX == zip ]]; then
+  unzip ../pandoc-$PANDOC_VERSION-$PANDOC_PLATFORM.$PANDOC_SUFFIX
+else
+  tar xzf ../pandoc-$PANDOC_VERSION-$PANDOC_PLATFORM.$PANDOC_SUFFIX
+fi
 cd ..
 
-# Pandoc depends on libgmp.so.10, which in turn depends on libc. No readily
-# available precompiled binaries exists which match the requirement of
-# support for older linuxes (glibc 2.12), so we'll compile it ourselves.
+mkdir pandoc
+cp tmp/pandoc-$PANDOC_VERSION/bin/pandoc pandoc
 
-LIBGMP_VERSION=6.1.2
-
-wget https://gmplib.org/download/gmp/gmp-$LIBGMP_VERSION.tar.xz
-mkdir gmp
-cd gmp
-tar xf ../gmp-$LIBGMP_VERSION.tar.xz
-cd gmp-$LIBGMP_VERSION
-./configure --prefix=$TMPDIR/pandoc/usr
-make
-make install
-cd ../..
-
-cat > pandoc/pandoc << EOF
-#!/bin/bash
-# Get an absolute path to this script
-this_script_dir=\`dirname \$0\`
-this_script_dir=\`cd \$this_script_dir > /dev/null && pwd\`
-export LD_LIBRARY_PATH="\$this_script_dir/usr/lib:\$LD_LIBRARY_PATH"
-exec \$this_script_dir/usr/bin/pandoc "\$@"
-EOF
-chmod +x pandoc/pandoc
 tar -cvzf ../$BUNDLE_NAME pandoc
 cp ../$BUNDLE_NAME "$ORIG_DIR"

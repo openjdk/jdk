@@ -36,7 +36,7 @@ import sun.security.action.GetPropertyAction;
  * Solaris implementation of FileSystemProvider
  */
 
-public class SolarisFileSystemProvider extends UnixFileSystemProvider {
+class SolarisFileSystemProvider extends UnixFileSystemProvider {
     public SolarisFileSystemProvider() {
         super();
     }

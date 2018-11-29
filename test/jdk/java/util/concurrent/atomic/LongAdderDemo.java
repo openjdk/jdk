@@ -93,14 +93,14 @@ public class LongAdderDemo {
         report(nthreads, incs, timeTasks(phaser), a.sum());
     }
 
-    static void report(int nthreads, int incs, long time, long sum) {
+    static void report(int nthreads, int incs, long elapsedNanos, long sum) {
         long total = (long)nthreads * incs;
         if (sum != total)
             throw new Error(sum + " != " + total);
-        double secs = (double)time / (1000L * 1000 * 1000);
-        long rate = total * (1000L) / time;
+        double elapsedSecs = (double)elapsedNanos / (1000L * 1000 * 1000);
+        long rate = total * 1000L / elapsedNanos;
         System.out.printf("threads:%3d  Time: %7.3fsec  Incs per microsec: %4d\n",
-                          nthreads, secs, rate);
+                          nthreads, elapsedSecs, rate);
     }
 
     static long timeTasks(Phaser phaser) {

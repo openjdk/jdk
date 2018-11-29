@@ -136,7 +136,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
                 return n;
             FibTask f1 = new FibTask(n - 1);
             f1.fork();
-            return (new FibTask(n - 2)).compute() + f1.join();
+            return new FibTask(n - 2).compute() + f1.join();
         }
     }
 

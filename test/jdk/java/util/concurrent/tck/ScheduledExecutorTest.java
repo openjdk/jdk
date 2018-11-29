@@ -634,7 +634,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         final ScheduledThreadPoolExecutor p = new ScheduledThreadPoolExecutor(1);
         try (PoolCleaner cleaner = cleaner(p, releaser)) {
             for (int i = 0; i < tasks.length; i++)
-                tasks[i] = p.schedule(new SmallPossiblyInterruptedRunnable(),
+                tasks[i] = p.schedule(possiblyInterruptedRunnable(SMALL_DELAY_MS),
                                       LONG_DELAY_MS, MILLISECONDS);
             int max = tasks.length;
             if (tasks[4].cancel(true)) --max;

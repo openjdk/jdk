@@ -263,6 +263,7 @@ int nsk_jvmti_aod_redefineClass(
             error = jvmti->Allocate(size, &classBytes);
             if (error != JVMTI_ERROR_NONE) {
                 NSK_DISPLAY1("Failed to create memory %s\n", TranslateError(error));
+                fclose(bytecode);
                 return NSK_FALSE;
             }
 

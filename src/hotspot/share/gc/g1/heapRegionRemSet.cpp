@@ -598,11 +598,6 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
   }
 }
 
-void
-OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
-  _sparse_table.do_cleanup_work(hrrs_cleanup_task);
-}
-
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
   : _bot(bot),
@@ -630,10 +625,6 @@ void HeapRegionRemSet::setup_remset_size() {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
   }
   guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
-}
-
-void HeapRegionRemSet::cleanup() {
-  SparsePRT::cleanup_all();
 }
 
 void HeapRegionRemSet::clear(bool only_cardset) {
@@ -817,18 +808,6 @@ bool HeapRegionRemSetIterator::has_next(size_t& card_index) {
     break;
   }
   return false;
-}
-
-void HeapRegionRemSet::reset_for_cleanup_tasks() {
-  SparsePRT::reset_for_cleanup_tasks();
-}
-
-void HeapRegionRemSet::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
-  _other_regions.do_cleanup_work(hrrs_cleanup_task);
-}
-
-void HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
-  SparsePRT::finish_cleanup_task(hrrs_cleanup_task);
 }
 
 #ifndef PRODUCT

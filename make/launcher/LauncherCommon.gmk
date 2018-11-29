@@ -24,6 +24,9 @@
 #
 
 include JdkNativeCompilation.gmk
+include Modules.gmk
+include ProcessMarkdown.gmk
+include ToolsJdk.gmk
 
 # Tell the compiler not to export any functions unless declared so in
 # the source code. On Windows, this is the default and cannot be changed.
@@ -189,3 +192,70 @@ define SetupBuildLauncherBody
         $$($1_WINDOWS_JLI_LIB)
   endif
 endef
+
+################################################################################
+# Create man pages for jmod to pick up. There should be a one-to-one
+# relationship between executables and man pages (even if this is not always
+# the case), so piggyback man page generation on the launcher compilation.
+
+ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+  # Only build manpages on unix systems.
+  # We assume all our man pages should reside in section 1.
+
+  MAN_FILES_MD := $(wildcard $(addsuffix /*.md, $(call FindModuleManDirs, $(MODULE))))
+  MAN_FILES_TROFF := $(wildcard $(addsuffix /*.1, $(call FindModuleManDirs, $(MODULE))))
+
+  ifneq ($(MAN_FILES_MD), )
+    # If we got markdown files, ignore the troff files
+    ifeq ($(PANDOC), )
+      $(info Warning: pandoc not found. Not generating man pages)
+    else
+      # Create dynamic man pages from markdown using pandoc. We need
+      # PANDOC_FILTER, a wrapper around PANDOC_FILTER_JAVASCRIPT. This is
+      # created by buildtools-jdk.
+
+      # We should also depend on the source javascript filter
+      PANDOC_FILTER_JAVASCRIPT := $(TOPDIR)/make/scripts/pandoc-manpage-filter.js
+
+      # The norm in man pages is to display code literals as bold, but pandoc
+      # "correctly" converts these constructs (encoded in markdown using `...`
+      # or ```...```) to \f[C]. Ideally, we should use the filter to encapsulate
+      # the Code/CodeBlock in Strong. While this works for Code, pandoc cannot
+      # correctly render man page output for CodeBlock wrapped in Strong. So we
+      # take the easy way out, and post-process the troff output, replacing
+      # \f[C] with \f[CB]. This has the added benefit of working correctly on
+      # pandoc prior to version 2.0, which cannot properly produced nested
+      # formatting in man pages (see https://github.com/jgm/pandoc/issues/3568).
+      #
+      # As of pandoc 2.3, the termination of formatting is still broken
+      # (see https://github.com/jgm/pandoc/issues/4973). We need to replace
+      # \f[] with \f[R].
+      MAN_POST_PROCESS := $(SED) -e 's/\\f\[C\]/\\f\[CB\]/g' \
+          -e 's/\\f\[\]/\\f\[R\]/g'
+
+      # Now generate the man pages from markdown using pandoc
+      $(eval $(call SetupProcessMarkdown, BUILD_MAN_PAGES, \
+          DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
+          FILES := $(MAN_FILES_MD), \
+          FORMAT := man, \
+          FILTER := $(PANDOC_FILTER), \
+          POST_PROCESS := $(MAN_POST_PROCESS), \
+          REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
+          EXTRA_DEPS := $(PANDOC_FILTER) $(PANDOC_FILTER_JAVASCRIPT), \
+      ))
+
+      TARGETS += $(BUILD_MAN_PAGES)
+    endif
+  else
+    # No markdown man pages present
+    ifeq ($(BUILD_MANPAGES), true)
+      # BUILD_MANPAGES is a mis-nomer. It really means "copy the pre-generated man pages".
+      $(eval $(call SetupCopyFiles, COPY_MAN_PAGES, \
+          DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
+          FILES := $(MAN_FILES_TROFF), \
+      ))
+
+      TARGETS += $(COPY_MAN_PAGES)
+    endif
+  endif
+endif

@@ -1217,18 +1217,15 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
     FreeRegionList* _local_cleanup_list;
     uint _old_regions_removed;
     uint _humongous_regions_removed;
-    HRRSCleanupTask* _hrrs_cleanup_task;
 
   public:
     G1ReclaimEmptyRegionsClosure(G1CollectedHeap* g1h,
-                                 FreeRegionList* local_cleanup_list,
-                                 HRRSCleanupTask* hrrs_cleanup_task) :
+                                 FreeRegionList* local_cleanup_list) :
       _g1h(g1h),
       _freed_bytes(0),
       _local_cleanup_list(local_cleanup_list),
       _old_regions_removed(0),
-      _humongous_regions_removed(0),
-      _hrrs_cleanup_task(hrrs_cleanup_task) { }
+      _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
     const uint old_regions_removed() { return _old_regions_removed; }
@@ -1248,8 +1245,6 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics_in_region(hr->hrm_index());
         log_trace(gc)("Reclaimed empty region %u (%s) bot " PTR_FORMAT, hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
-      } else {
-        hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
       }
 
       return false;
@@ -1266,16 +1261,11 @@ public:
     _g1h(g1h),
     _cleanup_list(cleanup_list),
     _hrclaimer(n_workers) {
-
-    HeapRegionRemSet::reset_for_cleanup_tasks();
   }
 
   void work(uint worker_id) {
     FreeRegionList local_cleanup_list("Local Cleanup List");
-    HRRSCleanupTask hrrs_cleanup_task;
-    G1ReclaimEmptyRegionsClosure cl(_g1h,
-                                    &local_cleanup_list,
-                                    &hrrs_cleanup_task);
+    G1ReclaimEmptyRegionsClosure cl(_g1h, &local_cleanup_list);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
     assert(cl.is_complete(), "Shouldn't have aborted!");
 
@@ -1287,8 +1277,6 @@ public:
 
       _cleanup_list->add_ordered(&local_cleanup_list);
       assert(local_cleanup_list.is_empty(), "post-condition");
-
-      HeapRegionRemSet::finish_cleanup_task(&hrrs_cleanup_task);
     }
   }
 };

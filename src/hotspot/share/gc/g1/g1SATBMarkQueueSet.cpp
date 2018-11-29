@@ -37,12 +37,12 @@ G1SATBMarkQueueSet::G1SATBMarkQueueSet() : _g1h(NULL) {}
 void G1SATBMarkQueueSet::initialize(G1CollectedHeap* g1h,
                                     Monitor* cbl_mon,
                                     BufferNode::Allocator* allocator,
-                                    int process_completed_threshold,
+                                    size_t process_completed_buffers_threshold,
                                     uint buffer_enqueue_threshold_percentage,
                                     Mutex* lock) {
   SATBMarkQueueSet::initialize(cbl_mon,
                                allocator,
-                               process_completed_threshold,
+                               process_completed_buffers_threshold,
                                buffer_enqueue_threshold_percentage,
                                lock);
   _g1h = g1h;

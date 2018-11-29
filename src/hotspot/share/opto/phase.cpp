@@ -83,6 +83,7 @@ void Phase::print_timers() {
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());
     tty->print_cr ("         GVN 2:               %7.3f s", timers[_t_iterGVN2].seconds());
     tty->print_cr ("         Macro Expand:        %7.3f s", timers[_t_macroExpand].seconds());
+    tty->print_cr ("         Barrier Expand:      %7.3f s", timers[_t_barrierExpand].seconds());
     tty->print_cr ("         Graph Reshape:       %7.3f s", timers[_t_graphReshaping].seconds());
 
     double other = timers[_t_optimizer].seconds() -
@@ -95,6 +96,7 @@ void Phase::print_timers() {
        timers[_t_ccp].seconds() +
        timers[_t_iterGVN2].seconds() +
        timers[_t_macroExpand].seconds() +
+       timers[_t_barrierExpand].seconds() +
        timers[_t_graphReshaping].seconds());
     if (other > 0) {
       tty->print_cr("         Other:               %7.3f s", other);

@@ -34,7 +34,7 @@
 #ifndef HEADLESS
 #include <X11/extensions/Xdbe.h>
 #include <X11/XKBlib.h>
-#ifndef _AIX
+#ifndef NO_XRANDR
 #include <X11/extensions/Xrandr.h>
 #endif
 #include "GLXGraphicsConfig.h"
@@ -1627,7 +1627,7 @@ Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
 
 #ifndef HEADLESS
 
-#ifndef _AIX
+#ifndef NO_XRANDR
 
 #define BIT_DEPTH_MULTI java_awt_DisplayMode_BIT_DEPTH_MULTI
 #define REFRESH_RATE_UNKNOWN java_awt_DisplayMode_REFRESH_RATE_UNKNOWN
@@ -1834,7 +1834,7 @@ X11GD_AddDisplayMode(JNIEnv *env, jobject arrayList,
     }
 }
 
-#endif /* !_AIX */
+#endif /* !NO_XRANDR */
 
 static void
 X11GD_SetFullscreenMode(Window win, jboolean enabled)
@@ -1875,7 +1875,7 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11GraphicsDevice_initXrandrExtension
     (JNIEnv *env, jclass x11gd)
 {
-#if defined(HEADLESS) || defined(_AIX)
+#if defined(HEADLESS) || defined(NO_XRANDR)
     return JNI_FALSE;
 #else
     int opcode = 0, firstEvent = 0, firstError = 0;
@@ -1902,7 +1902,7 @@ JNIEXPORT jobject JNICALL
 Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode
     (JNIEnv* env, jclass x11gd, jint screen)
 {
-#if defined(HEADLESS) || defined(_AIX)
+#if defined(HEADLESS) || defined(NO_XRANDR)
     return NULL;
 #else
     XRRScreenConfiguration *config;
@@ -1998,7 +1998,7 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
     (JNIEnv* env, jclass x11gd,
      jint screen, jobject arrayList)
 {
-#if !defined(HEADLESS) && !defined(_AIX)
+#if !defined(HEADLESS) && !defined(NO_XRANDR)
 
     AWT_LOCK();
 
@@ -2086,7 +2086,7 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
     (JNIEnv* env, jclass x11gd,
      jint screen, jint width, jint height, jint refreshRate)
 {
-#if !defined(HEADLESS) && !defined(_AIX)
+#if !defined(HEADLESS) && !defined(NO_XRANDR)
     jboolean success = JNI_FALSE;
     XRRScreenConfiguration *config;
     Drawable root;
@@ -2203,7 +2203,7 @@ Java_sun_awt_X11GraphicsDevice_exitFullScreenExclusive
  */
 
 static char *get_output_screen_name(JNIEnv *env, int screen) {
-#ifdef _AIX
+#ifdef NO_XRANDR
     return NULL;
 #else
     if (!awt_XRRGetScreenResources || !awt_XRRGetOutputInfo) {
@@ -2235,7 +2235,7 @@ static char *get_output_screen_name(JNIEnv *env, int screen) {
     }
     AWT_UNLOCK();
     return name;
-#endif /* _AIX */
+#endif /* NO_XRANDR */
 }
 
 /*

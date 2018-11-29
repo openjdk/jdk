@@ -54,7 +54,6 @@ public class EventNames {
     public final static String StringFlagChanged = PREFIX + "StringFlagChanged";
 
     // Runtime
-    public final static String VMException = PREFIX + "JavaErrorThrow";
     public final static String ThreadStart = PREFIX + "ThreadStart";
     public final static String ThreadEnd = PREFIX + "ThreadEnd";
     public final static String ThreadSleep = PREFIX + "ThreadSleep";
@@ -66,26 +65,26 @@ public class EventNames {
     public final static String ClassDefine = PREFIX + "ClassDefine";
     public final static String ClassUnload = PREFIX + "ClassUnload";
     public final static String SafepointBegin = PREFIX + "SafepointBegin";
-    public final static String SafepointStateSyncronization = PREFIX + "SafepointStateSynchronization";
+    public final static String SafepointStateSynchronization = PREFIX + "SafepointStateSynchronization";
     public final static String SafepointWaitBlocked = PREFIX + "SafepointWaitBlocked";
     public final static String SafepointCleanup = PREFIX + "SafepointCleanup";
     public final static String SafepointCleanupTask = PREFIX + "SafepointCleanupTask";
     public final static String SafepointEnd = PREFIX + "SafepointEnd";
     public final static String ExecuteVMOperation = PREFIX + "ExecuteVMOperation";
     public final static String Shutdown = PREFIX + "Shutdown";
-    public final static String VMError = PREFIX + "VMError";
     public final static String JavaThreadStatistics = PREFIX + "JavaThreadStatistics";
     public final static String ClassLoadingStatistics = PREFIX + "ClassLoadingStatistics";
     public final static String ClassLoaderStatistics = PREFIX + "ClassLoaderStatistics";
     public final static String ThreadAllocationStatistics = PREFIX + "ThreadAllocationStatistics";
     public final static String ExecutionSample = PREFIX + "ExecutionSample";
     public final static String NativeMethodSample = PREFIX + "NativeMethodSample";
-    public final static String ExecutionSampling = PREFIX + "ExecutionSampling";
     public final static String ThreadDump = PREFIX + "ThreadDump";
     public final static String OldObjectSample = PREFIX + "OldObjectSample";
     public final static String BiasedLockRevocation = PREFIX + "BiasedLockRevocation";
     public final static String BiasedLockSelfRevocation = PREFIX + "BiasedLockSelfRevocation";
     public final static String BiasedLockClassRevocation = PREFIX + "BiasedLockClassRevocation";
+    // This event is hard to test
+    public final static String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 
     // GC
     public final static String GCHeapSummary = PREFIX + "GCHeapSummary";
@@ -100,12 +99,13 @@ public class EventNames {
     public final static String G1HeapRegionTypeChange = PREFIX + "G1HeapRegionTypeChange";
     public final static String TenuringDistribution = PREFIX + "TenuringDistribution";
     public final static String GarbageCollection = PREFIX + "GarbageCollection";
-    public final static String ParallelOldCollection = PREFIX + "ParallelOldGarbageCollection";
+    public final static String ParallelOldGarbageCollection = PREFIX + "ParallelOldGarbageCollection";
+    public final static String ParallelOldCollection = ParallelOldGarbageCollection;
     public final static String YoungGarbageCollection = PREFIX + "YoungGarbageCollection";
     public final static String OldGarbageCollection = PREFIX + "OldGarbageCollection";
     public final static String G1GarbageCollection = PREFIX + "G1GarbageCollection";
     public final static String G1MMU = PREFIX + "G1MMU";
-    public final static String EvacuationInfo = PREFIX + "EvacuationInfo";
+    public final static String EvacuationInformation = PREFIX + "EvacuationInformation";
     public final static String GCReferenceStatistics = PREFIX + "GCReferenceStatistics";
     public final static String ObjectCountAfterGC = PREFIX + "ObjectCountAfterGC";
     public final static String PromoteObjectInNewPLAB = PREFIX + "PromoteObjectInNewPLAB";
@@ -117,6 +117,7 @@ public class EventNames {
     public final static String GCPhasePauseLevel1 = PREFIX + "GCPhasePauseLevel1";
     public final static String GCPhasePauseLevel2 = PREFIX + "GCPhasePauseLevel2";
     public final static String GCPhasePauseLevel3 = PREFIX + "GCPhasePauseLevel3";
+    public final static String GCPhasePauseLevel4 = PREFIX + "GCPhasePauseLevel4";
     public final static String ObjectCount = PREFIX + "ObjectCount";
     public final static String GCConfiguration = PREFIX + "GCConfiguration";
     public final static String GCSurvivorConfiguration = PREFIX + "GCSurvivorConfiguration";
@@ -129,6 +130,7 @@ public class EventNames {
     public final static String G1BasicIHOP = PREFIX + "G1BasicIHOP";
     public final static String AllocationRequiringGC = PREFIX + "AllocationRequiringGC";
     public final static String GCPhaseParallel = PREFIX + "GCPhaseParallel";
+    public final static String GCPhaseConcurrent = PREFIX + "GCPhaseConcurrent";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";
@@ -136,7 +138,7 @@ public class EventNames {
     public final static String CompilationFailure = PREFIX + "CompilationFailure";
     public final static String CompilerInlining = PREFIX + "CompilerInlining";
     public final static String CompilerStatistics = PREFIX + "CompilerStatistics";
-    public final static String CompilerConfig = PREFIX + "CompilerConfiguration";
+    public final static String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public final static String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";
     public final static String CodeCacheConfiguration = PREFIX + "CodeCacheConfiguration";
     public final static String CodeSweeperStatistics = PREFIX + "CodeSweeperStatistics";

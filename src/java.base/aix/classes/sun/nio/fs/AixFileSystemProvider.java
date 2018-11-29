@@ -32,7 +32,7 @@ import java.io.IOException;
  * AIX implementation of FileSystemProvider
  */
 
-public class AixFileSystemProvider extends UnixFileSystemProvider {
+class AixFileSystemProvider extends UnixFileSystemProvider {
     public AixFileSystemProvider() {
         super();
     }

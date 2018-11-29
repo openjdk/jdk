@@ -30,10 +30,8 @@
  * @author  Mandy Chung
  *
  * @library ../../Thread
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.*
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest
  */

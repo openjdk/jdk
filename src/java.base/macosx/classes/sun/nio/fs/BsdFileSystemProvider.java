@@ -31,7 +31,7 @@ import java.io.IOException;
  * Bsd implementation of FileSystemProvider
  */
 
-public class BsdFileSystemProvider extends UnixFileSystemProvider {
+class BsdFileSystemProvider extends UnixFileSystemProvider {
     public BsdFileSystemProvider() {
         super();
     }

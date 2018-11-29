@@ -168,9 +168,8 @@ void GCStatInfo::clear() {
   _index = 0;
   _start_time = 0L;
   _end_time = 0L;
-  size_t len = _usage_array_size * sizeof(MemoryUsage);
-  memset(_before_gc_usage_array, 0, len);
-  memset(_after_gc_usage_array, 0, len);
+  for (int i = 0; i < _usage_array_size; i++) ::new (&_before_gc_usage_array[i]) MemoryUsage();
+  for (int i = 0; i < _usage_array_size; i++) ::new (&_after_gc_usage_array[i]) MemoryUsage();
 }
 
 

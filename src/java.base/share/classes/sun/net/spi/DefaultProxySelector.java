@@ -53,7 +53,6 @@ import static java.util.stream.Collectors.toList;
  *
  * Supports http/https/ftp.proxyHost, http/https/ftp.proxyPort,
  * proxyHost, proxyPort, and http/https/ftp.nonProxyHost, and socks.
- * NOTE: need to do gopher as well
  */
 public class DefaultProxySelector extends ProxySelector {
 
@@ -82,7 +81,6 @@ public class DefaultProxySelector extends ProxySelector {
         {"http", "http.proxy", "proxy", "socksProxy"},
         {"https", "https.proxy", "proxy", "socksProxy"},
         {"ftp", "ftp.proxy", "ftpProxy", "proxy", "socksProxy"},
-        {"gopher", "gopherProxy", "socksProxy"},
         {"socket", "socksProxy"}
     };
 
@@ -350,8 +348,6 @@ public class DefaultProxySelector extends ProxySelector {
             return 80;
         } else if ("socket".equalsIgnoreCase(protocol)) {
             return 1080;
-        } else if ("gopher".equalsIgnoreCase(protocol)) {
-            return 80;
         } else {
             return -1;
         }

@@ -61,8 +61,6 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
-compiler/intrinsics/mathexact/MulExactLConstantTest.java 8214189 windows-all
-
 #############################################################################
 
 # :hotspot_gc

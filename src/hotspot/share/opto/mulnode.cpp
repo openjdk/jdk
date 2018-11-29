@@ -286,20 +286,20 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
-  unsigned long abs_con = uabs(con);
-  if (abs_con != (unsigned long)con) {
+  julong abs_con = uabs(con);
+  if (abs_con != (julong)con) {
     sign_flip = true;
   }
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  unsigned long bit1 = abs_con & (0-abs_con);      // Extract low bit
+  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2_long(bit1)));
   } else {
 
     // Check for constant with 2 bits set
-    unsigned long bit2 = abs_con-bit1;
+    julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
       Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit1))));
@@ -308,7 +308,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     } else if (is_power_of_2_long(abs_con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
-      unsigned long temp = abs_con + 1;
+      julong temp = abs_con + 1;
       Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2_long(temp))));
       res = new SubLNode(n1, in(1));
     } else {

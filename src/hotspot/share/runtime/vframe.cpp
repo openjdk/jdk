@@ -171,13 +171,15 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       // we are still waiting for notification or timeout. Otherwise if
       // we earlier reported java.lang.Thread.State == "BLOCKED (on object
       // monitor)", then we are actually waiting to re-lock the monitor.
-      // At this level we can't distinguish the two cases to report
-      // "waited on" rather than "waiting on" for the second case.
       StackValueCollection* locs = locals();
       if (!locs->is_empty()) {
         StackValue* sv = locs->at(0);
         if (sv->type() == T_OBJECT) {
           Handle o = locs->at(0)->get_obj();
+          if (java_lang_Thread::get_thread_status(thread()->threadObj()) ==
+                                java_lang_Thread::BLOCKED_ON_MONITOR_ENTER) {
+            wait_state = "waiting to re-lock in wait()";
+          }
           print_locked_object_class_name(st, o, wait_state);
         }
       } else {
@@ -229,25 +231,6 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
                 !mark->monitor()->is_entered(thread())
               )) {
             lock_state = "waiting to lock";
-          } else {
-            // We own the monitor which is not as interesting so
-            // disable the extra printing below.
-            mark = NULL;
-          }
-        } else if (frame_count != 0) {
-          // This is not the first frame so we either own this monitor
-          // or we owned the monitor before and called wait(). Because
-          // wait() could have been called on any monitor in a lower
-          // numbered frame on the stack, we have to check all the
-          // monitors on the list for this frame.
-          mark = monitor->owner()->mark();
-          if (mark->has_monitor() &&
-              ( // we have marked ourself as pending on this monitor
-                mark->monitor() == thread()->current_pending_monitor() ||
-                // we are not the owner of this monitor
-                !mark->monitor()->is_entered(thread())
-              )) {
-            lock_state = "waiting to re-lock in wait()";
           } else {
             // We own the monitor which is not as interesting so
             // disable the extra printing below.

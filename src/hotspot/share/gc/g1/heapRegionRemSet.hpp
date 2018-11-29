@@ -42,11 +42,6 @@ class PerRegionTable;
 class SparsePRT;
 class nmethod;
 
-// Essentially a wrapper around SparsePRTCleanupTask. See
-// sparsePRT.hpp for more details.
-class HRRSCleanupTask : public SparsePRTCleanupTask {
-};
-
 // The "_coarse_map" is a bitmap with one bit for each region, where set
 // bits indicate that the corresponding region may contain some pointer
 // into the owning region.
@@ -122,6 +117,10 @@ class OtherRegionsTable {
 
   bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
+  size_t occ_fine() const;
+  size_t occ_coarse() const;
+  size_t occ_sparse() const;
+
 public:
   // Create a new remembered set. The given mutex is used to ensure consistency.
   OtherRegionsTable(Mutex* m);
@@ -144,9 +143,6 @@ public:
 
   // Returns the number of cards contained in this remembered set.
   size_t occupied() const;
-  size_t occ_fine() const;
-  size_t occ_coarse() const;
-  size_t occ_sparse() const;
 
   static jint n_coarsenings() { return _n_coarsenings; }
 
@@ -159,8 +155,6 @@ public:
 
   // Clear the entire contents of this remembered set.
   void clear();
-
-  void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
 };
 
 class HeapRegionRemSet : public CHeapObj<mtGC> {
@@ -205,15 +199,6 @@ public:
   }
   size_t occupied_locked() {
     return _other_regions.occupied();
-  }
-  size_t occ_fine() const {
-    return _other_regions.occ_fine();
-  }
-  size_t occ_coarse() const {
-    return _other_regions.occ_coarse();
-  }
-  size_t occ_sparse() const {
-    return _other_regions.occ_sparse();
   }
 
   static jint n_coarsenings() { return OtherRegionsTable::n_coarsenings(); }
@@ -340,9 +325,6 @@ public:
   // consumed by the strong code roots.
   size_t strong_code_roots_mem_size();
 
-  // Called during a stop-world phase to perform any deferred cleanups.
-  static void cleanup();
-
   static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
     G1FromCardCache::invalidate(start_idx, num_regions);
   }
@@ -351,16 +333,7 @@ public:
   static void print_from_card_cache() {
     G1FromCardCache::print();
   }
-#endif
 
-  // These are wrappers for the similarly-named methods on
-  // SparsePRT. Look at sparsePRT.hpp for more details.
-  static void reset_for_cleanup_tasks();
-  void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
-  static void finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task);
-
-  // Run unit tests.
-#ifndef PRODUCT
   static void test();
 #endif
 };

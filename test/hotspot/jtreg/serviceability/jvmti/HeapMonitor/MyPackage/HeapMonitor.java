@@ -186,7 +186,8 @@ public class HeapMonitor {
     throw new RuntimeException("Could not set the sampler");
   }
 
-  public static Frame[] allocateAndCheckFrames() {
+  public static Frame[] allocateAndCheckFrames(boolean shouldFindFrames,
+      boolean enableSampling) {
     if (!eventStorageIsEmpty()) {
       throw new RuntimeException("Statistics should be null to begin with.");
     }
@@ -194,18 +195,34 @@ public class HeapMonitor {
     // Put sampling rate to 100k to ensure samples are collected.
     setSamplingInterval(100 * 1024);
 
-    enableSamplingEvents();
+    if (enableSampling) {
+      enableSamplingEvents();
+    }
 
     List<Frame> frameList = allocate();
-    frameList.add(new Frame("allocateAndCheckFrames", "()[LMyPackage/Frame;", "HeapMonitor.java",
-          199));
+    frameList.add(new Frame("allocateAndCheckFrames", "(ZZ)[LMyPackage/Frame;", "HeapMonitor.java",
+          202));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
-    if (!obtainedEvents(frames) && !garbageContains(frames)) {
-      throw new RuntimeException("No expected events were found.");
+    boolean foundLive = obtainedEvents(frames);
+    boolean foundGarbage = garbageContains(frames);
+    if (shouldFindFrames) {
+      if (!foundLive && !foundGarbage) {
+        throw new RuntimeException("No expected events were found: "
+            + foundLive + ", " + foundGarbage);
+      }
+    } else {
+      if (foundLive || foundGarbage) {
+        throw new RuntimeException("Were not expecting events, but found some: "
+            + foundLive + ", " + foundGarbage);
+      }
     }
 
     return frames;
+  }
+
+  public static Frame[] allocateAndCheckFrames() {
+    return allocateAndCheckFrames(true, true);
   }
 
   public native static int sampledEvents();

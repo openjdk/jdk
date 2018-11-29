@@ -231,10 +231,6 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
     result->set_cached_class_file(cached_class_file);
   }
 
-  if (result->should_store_fingerprint()) {
-    result->store_fingerprint(stream->compute_fingerprint());
-  }
-
   JFR_ONLY(ON_KLASS_CREATION(result, parser, THREAD);)
 
 #if INCLUDE_CDS

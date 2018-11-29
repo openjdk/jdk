@@ -164,12 +164,12 @@ PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
   _n_completed_buffers(0),
-  _process_completed_threshold(0),
+  _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
   _process_completed(false),
   _all_active(false),
   _notify_when_complete(notify_when_complete),
-  _max_completed_queue(0),
-  _completed_queue_padding(0)
+  _max_completed_buffers(MaxCompletedBuffersUnlimited),
+  _completed_buffers_padding(0)
 {}
 
 PtrQueueSet::~PtrQueueSet() {
@@ -179,12 +179,7 @@ PtrQueueSet::~PtrQueueSet() {
 }
 
 void PtrQueueSet::initialize(Monitor* cbl_mon,
-                             BufferNode::Allocator* allocator,
-                             int process_completed_threshold,
-                             int max_completed_queue) {
-  _max_completed_queue = max_completed_queue;
-  _process_completed_threshold = process_completed_threshold;
-  _completed_queue_padding = 0;
+                             BufferNode::Allocator* allocator) {
   assert(cbl_mon != NULL && allocator != NULL, "Init order issue?");
   _cbl_mon = cbl_mon;
   _allocator = allocator;
@@ -238,13 +233,14 @@ void PtrQueue::handle_zero_index() {
 
 bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
   if (Thread::current()->is_Java_thread()) {
-    // We don't lock. It is fine to be epsilon-precise here.
-    if (_max_completed_queue == 0 ||
-        (_max_completed_queue > 0 &&
-          _n_completed_buffers >= _max_completed_queue + _completed_queue_padding)) {
-      bool b = mut_process_buffer(node);
-      if (b) {
-        // True here means that the buffer hasn't been deallocated and the caller may reuse it.
+    // If the number of buffers exceeds the limit, make this Java
+    // thread do the processing itself.  We don't lock to access
+    // buffer count or padding; it is fine to be imprecise here.  The
+    // add of padding could overflow, which is treated as unlimited.
+    size_t limit = _max_completed_buffers + _completed_buffers_padding;
+    if ((_n_completed_buffers > limit) && (limit >= _max_completed_buffers)) {
+      if (mut_process_buffer(node)) {
+        // Successfully processed; return true to allow buffer reuse.
         return true;
       }
     }
@@ -267,8 +263,8 @@ void PtrQueueSet::enqueue_complete_buffer(BufferNode* cbn) {
   }
   _n_completed_buffers++;
 
-  if (!_process_completed && _process_completed_threshold >= 0 &&
-      _n_completed_buffers >= (size_t)_process_completed_threshold) {
+  if (!_process_completed &&
+      (_n_completed_buffers > _process_completed_buffers_threshold)) {
     _process_completed = true;
     if (_notify_when_complete) {
       _cbl_mon->notify();
@@ -327,8 +323,7 @@ void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
 
 void PtrQueueSet::notify_if_necessary() {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  assert(_process_completed_threshold >= 0, "_process_completed_threshold is negative");
-  if (_n_completed_buffers >= (size_t)_process_completed_threshold || _max_completed_queue == 0) {
+  if (_n_completed_buffers > _process_completed_buffers_threshold) {
     _process_completed = true;
     if (_notify_when_complete)
       _cbl_mon->notify();

@@ -541,7 +541,11 @@ query_multipage_support_end:
 
 void os::init_system_properties_values() {
 
-#define DEFAULT_LIBPATH "/lib:/usr/lib"
+#ifndef OVERRIDE_LIBPATH
+  #define DEFAULT_LIBPATH "/lib:/usr/lib"
+#else
+  #define DEFAULT_LIBPATH OVERRIDE_LIBPATH
+#endif
 #define EXTENSIONS_DIR  "/lib/ext"
 
   // Buffer that fits several sprintfs.

@@ -1011,7 +1011,11 @@ public class SubmissionPublisherTest extends JSR166TestCase {
      */
     public void testMissedSignal_8187947() throws Exception {
         if (!atLeastJava9()) return; // backport to jdk8 too hard
-        final int N = expensiveTests ? (1 << 20) : (1 << 10);
+        final int N =
+            ((ForkJoinPool.getCommonPoolParallelism() < 2) // JDK-8212899
+             ? (1 << 5)
+             : (1 << 10))
+            * (expensiveTests ? (1 << 10) : 1);
         final CountDownLatch finished = new CountDownLatch(1);
         final SubmissionPublisher<Boolean> pub = new SubmissionPublisher<>();
         class Sub implements Subscriber<Boolean> {

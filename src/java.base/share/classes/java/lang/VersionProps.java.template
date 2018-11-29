@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ class VersionProps {
     private static final boolean isLTS =
         "@@VERSION_OPT@@".startsWith("LTS");
 
+    private static final String CLASSFILE_MAJOR_MINOR =
+        "@@VERSION_CLASSFILE_MAJOR@@.@@VERSION_CLASSFILE_MINOR@@";
+
     private static final String VENDOR_VERSION_STRING =
         "@@VENDOR_VERSION_STRING@@";
 
@@ -70,6 +73,20 @@ class VersionProps {
         (VENDOR_VERSION_STRING.length() > 0
          ? " " + VENDOR_VERSION_STRING : "");
 
+    private static final String VENDOR =
+        "@@VENDOR@@";
+
+    private static final String VENDOR_URL =
+        "@@VENDOR_URL@@";
+
+    private static final String VENDOR_URL_BUG =
+        "@@VENDOR_URL_BUG@@";
+
+    /**
+     * Initialize system properties using build provided values.
+     *
+     * @param props Properties instance in which to insert the properties
+     */
     public static void init(Properties props) {
         props.setProperty("java.version", java_version);
         props.setProperty("java.version.date", java_version_date);
@@ -77,6 +94,16 @@ class VersionProps {
         props.setProperty("java.runtime.name", java_runtime_name);
         if (VENDOR_VERSION_STRING.length() > 0)
             props.setProperty("java.vendor.version", VENDOR_VERSION_STRING);
+
+        props.setProperty("java.class.version", CLASSFILE_MAJOR_MINOR);
+
+        props.setProperty("java.specification.version", VERSION_NUMBER);
+        props.setProperty("java.specification.name", "Java Platform API Specification");
+        props.setProperty("java.specification.vendor", "Oracle Corporation");
+
+        props.setProperty("java.vendor", VENDOR);
+        props.setProperty("java.vendor.url", VENDOR_URL);
+        props.setProperty("java.vendor.url.bug", VENDOR_URL_BUG);
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {

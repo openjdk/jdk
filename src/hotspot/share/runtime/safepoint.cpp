@@ -616,7 +616,7 @@ public:
     Threads::possibly_parallel_threads_do(true, &_cleanup_threads_cl);
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      const char* name = "deflating idle monitors";
+      const char* name = "deflating global idle monitors";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       ObjectSynchronizer::deflate_idle_monitors(_counters);

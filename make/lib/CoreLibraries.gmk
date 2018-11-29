@@ -102,7 +102,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
-    System.c_CFLAGS := $(VERSION_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     EXTRA_HEADER_DIRS := libfdlibm, \
     WARNINGS_AS_ERRORS_xlc := false, \

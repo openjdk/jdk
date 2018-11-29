@@ -37,7 +37,6 @@ package java.util;
 import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
 import jdk.internal.access.SharedSecrets;
 
 /**

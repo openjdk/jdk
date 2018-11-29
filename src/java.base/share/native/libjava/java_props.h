@@ -106,10 +106,6 @@ typedef struct {
     char *socksHost;
     char *socksPort;
 
-    int gopherProxyEnabled;
-    char *gopherHost;
-    char *gopherPort;
-
     char *exceptionList;
 
     char *awt_headless;  /* java.awt.headless setting, if NULL (default) will not be set */

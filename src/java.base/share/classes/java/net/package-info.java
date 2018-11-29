@@ -131,7 +131,7 @@
  *    InputStream.
  * <p>Here is an example:</p>
  * <pre>
- * URI uri = new URI("http://java.sun.com/");
+ * URI uri = new URI("http://www.example.com/");
  * URL url = uri.toURL();
  * InputStream in = url.openStream();
  * </pre>

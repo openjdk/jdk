@@ -31,6 +31,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
@@ -148,14 +149,9 @@ uint DirtyCardQueueSet::num_par_ids() {
 
 void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
                                    BufferNode::Allocator* allocator,
-                                   int process_completed_threshold,
-                                   int max_completed_queue,
                                    Mutex* lock,
                                    bool init_free_ids) {
-  PtrQueueSet::initialize(cbl_mon,
-                          allocator,
-                          process_completed_threshold,
-                          max_completed_queue);
+  PtrQueueSet::initialize(cbl_mon, allocator);
   _shared_dirty_card_queue.set_lock(lock);
   if (init_free_ids) {
     _free_ids = new FreeIdSet(num_par_ids(), _cbl_mon);
@@ -334,13 +330,11 @@ void DirtyCardQueueSet::concatenate_logs() {
   // Iterate over all the threads, if we find a partial log add it to
   // the global list of logs.  Temporarily turn off the limit on the number
   // of outstanding buffers.
-  int save_max_completed_queue = _max_completed_queue;
-  _max_completed_queue = max_jint;
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+  SizeTFlagSetting local_max(_max_completed_buffers,
+                             MaxCompletedBuffersUnlimited);
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
   }
   concatenate_log(_shared_dirty_card_queue);
-  // Restore the completed buffer queue limit.
-  _max_completed_queue = save_max_completed_queue;
 }

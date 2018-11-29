@@ -1168,7 +1168,7 @@ class InetAddress implements java.io.Serializable {
      * No name service is checked for the validity of the address.
      *
      * <p> The host name can either be a machine name, such as
-     * "{@code java.sun.com}", or a textual representation of its IP
+     * "{@code www.example.com}", or a textual representation of its IP
      * address.
      * <p> No validity checking is done on the host name either.
      *
@@ -1213,7 +1213,7 @@ class InetAddress implements java.io.Serializable {
      * Determines the IP address of a host, given the host's name.
      *
      * <p> The host name can either be a machine name, such as
-     * "{@code java.sun.com}", or a textual representation of its
+     * "{@code www.example.com}", or a textual representation of its
      * IP address. If a literal IP address is supplied, only the
      * validity of the address format is checked.
      *
@@ -1259,7 +1259,7 @@ class InetAddress implements java.io.Serializable {
      * based on the configured name service on the system.
      *
      * <p> The host name can either be a machine name, such as
-     * "{@code java.sun.com}", or a textual representation of its IP
+     * "{@code www.example.com}", or a textual representation of its IP
      * address. If a literal IP address is supplied, only the
      * validity of the address format is checked.
      *

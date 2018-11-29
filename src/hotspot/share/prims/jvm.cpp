@@ -354,19 +354,37 @@ static void set_property(Handle props, const char* key, const char* value, TRAPS
 
 #define PUTPROP(props, name, value) set_property((props), (name), (value), CHECK_(properties));
 
+/*
+ * Return all of the system properties in a Java String array with alternating
+ * names and values from the jvm SystemProperty.
+ * Which includes some internal and all commandline -D defined properties.
+ */
+JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
+  JVMWrapper("JVM_GetProperties");
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+  int ndx = 0;
+  int fixedCount = 2;
 
-JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
-  JVMWrapper("JVM_InitProperties");
-  ResourceMark rm;
+  SystemProperty* p = Arguments::system_properties();
+  int count = Arguments::PropertyList_count(p);
 
-  Handle props(THREAD, JNIHandles::resolve_non_null(properties));
+  // Allocate result String array
+  InstanceKlass* ik = SystemDictionary::String_klass();
+  objArrayOop r = oopFactory::new_objArray(ik, (count + fixedCount) * 2, CHECK_NULL);
+  objArrayHandle result_h(THREAD, r);
 
-  // System property list includes both user set via -D option and
-  // jvm system specific properties.
-  for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
-    if (strcmp(p->key(), "sun.nio.MaxDirectMemorySize") == 0)  // Can not be defined with -D
-      continue;
-    PUTPROP(props, p->key(), p->value());
+  while (p != NULL) {
+    const char * key = p->key();
+    if (strcmp(key, "sun.nio.MaxDirectMemorySize") != 0) {
+        const char * value = p->value();
+        Handle key_str    = java_lang_String::create_from_platform_dependent_str(key, CHECK_NULL);
+        Handle value_str  = java_lang_String::create_from_platform_dependent_str((value != NULL ? value : ""), CHECK_NULL);
+        result_h->obj_at_put(ndx * 2,  key_str());
+        result_h->obj_at_put(ndx * 2 + 1, value_str());
+        ndx++;
+    }
+    p = p->next();
   }
 
   // Convert the -XX:MaxDirectMemorySize= command line flag
@@ -377,7 +395,11 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
   if (!FLAG_IS_DEFAULT(MaxDirectMemorySize)) {
     char as_chars[256];
     jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
-    PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
+    Handle key_str = java_lang_String::create_from_platform_dependent_str("sun.nio.MaxDirectMemorySize", CHECK_NULL);
+    Handle value_str  = java_lang_String::create_from_platform_dependent_str(as_chars, CHECK_NULL);
+    result_h->obj_at_put(ndx * 2,  key_str());
+    result_h->obj_at_put(ndx * 2 + 1, value_str());
+    ndx++;
   }
 
   // JVM monitoring and management support
@@ -406,11 +428,15 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
 
     if (*compiler_name != '\0' &&
         (Arguments::mode() != Arguments::_int)) {
-      PUTPROP(props, "sun.management.compiler", compiler_name);
+      Handle key_str = java_lang_String::create_from_platform_dependent_str("sun.management.compiler", CHECK_NULL);
+      Handle value_str  = java_lang_String::create_from_platform_dependent_str(compiler_name, CHECK_NULL);
+      result_h->obj_at_put(ndx * 2,  key_str());
+      result_h->obj_at_put(ndx * 2 + 1, value_str());
+      ndx++;
     }
   }
 
-  return properties;
+  return (jobjectArray) JNIHandles::make_local(env, result_h());
 JVM_END
 
 

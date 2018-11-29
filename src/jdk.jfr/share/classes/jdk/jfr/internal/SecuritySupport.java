@@ -79,6 +79,14 @@ public final class SecuritySupport {
     static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
+    static {
+        // ensure module java.base can read module jdk.jfr as early as possible
+        addReadEdge(Object.class);
+        addHandlerExport(Object.class);
+        addEventsExport(Object.class);
+        addInstrumentExport(Object.class);
+    }
+
     final static class SecureRecorderListener implements FlightRecorderListener {
 
         private final AccessControlContext context;
@@ -260,6 +268,18 @@ public final class SecuritySupport {
      */
     static void addHandlerExport(Class<?> clazz) {
         Modules.addExports(JFR_MODULE, Utils.HANDLERS_PACKAGE_NAME, clazz.getModule());
+    }
+
+    static void addEventsExport(Class<?> clazz) {
+        Modules.addExports(JFR_MODULE, Utils.EVENTS_PACKAGE_NAME, clazz.getModule());
+    }
+
+    static void addInstrumentExport(Class<?> clazz) {
+        Modules.addExports(JFR_MODULE, Utils.INSTRUMENT_PACKAGE_NAME, clazz.getModule());
+    }
+
+    static void addReadEdge(Class<?> clazz) {
+        Modules.addReads(clazz.getModule(), JFR_MODULE);
     }
 
     public static void registerEvent(Class<? extends jdk.internal.event.Event> eventClass) {

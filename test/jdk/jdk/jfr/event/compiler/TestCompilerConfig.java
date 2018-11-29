@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm jdk.jfr.event.compiler.TestCompilerConfig
  */
 public class TestCompilerConfig {
-    private final static String EVENT_NAME = EventNames.CompilerConfig;
+    private final static String EVENT_NAME = EventNames.CompilerConfiguration;
 
     public static void main(String[] args) throws Exception {
         Recording recording = new Recording();

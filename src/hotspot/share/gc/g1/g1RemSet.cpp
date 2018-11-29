@@ -512,10 +512,6 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   }
 }
 
-void G1RemSet::cleanupHRRS() {
-  HeapRegionRemSet::cleanup();
-}
-
 void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss, uint worker_i) {
   update_rem_set(pss, worker_i);
   scan_rem_set(pss, worker_i);;

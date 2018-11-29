@@ -38,10 +38,9 @@ import jdk.test.lib.process.ProcessTools;
  *          Management agent may be disabled, started (only local connections) and started.
  *          The test asserts that the expected text is being printed.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
+ * @build PortAllocator TestApp ManagementAgentJcmd
  *        JMXStatusTest JMXStatus1Test JMXStatus2Test
  * @run testng/othervm -XX:+UsePerfData JMXStatus1Test
  * @run testng/othervm -XX:+UsePerfData JMXStatus2Test

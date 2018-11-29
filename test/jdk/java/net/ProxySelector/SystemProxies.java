@@ -53,7 +53,6 @@ public class SystemProxies {
         printProxies("https://");
         printProxies("ftp://");
         printProxies("none://");
-        printProxies("gopher://");
         printProxies("rtsp://");
         printProxies("socket://");
     }

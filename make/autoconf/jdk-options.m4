@@ -244,6 +244,28 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
   AC_SUBST(COPYRIGHT_YEAR)
+
+  # Override default library path
+  AC_ARG_WITH([jni-libpath], [AS_HELP_STRING([--with-jni-libpath],
+      [override default JNI library search path])])
+  AC_MSG_CHECKING([for jni library path])
+  if test "x${with_jni_libpath}" = "x" || test "x${with_jni_libpath}" = "xno"; then
+    AC_MSG_RESULT([default])
+  elif test "x${with_jni_libpath}" = "xyes"; then
+    AC_MSG_RESULT([invalid])
+    AC_MSG_ERROR([The --with-jni-libpath option requires an argument.])
+  else
+    HOTSPOT_OVERRIDE_LIBPATH=${with_jni_libpath}
+    if test "x$OPENJDK_TARGET_OS" != "xlinux" &&
+         test "x$OPENJDK_TARGET_OS" != "xbsd" &&
+         test "x$OPENJDK_TARGET_OS" != "xaix"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Overriding JNI library path is supported only on Linux, BSD and AIX.])
+    fi
+    AC_MSG_RESULT(${HOTSPOT_OVERRIDE_LIBPATH})
+  fi
+  AC_SUBST(HOTSPOT_OVERRIDE_LIBPATH)
+
 ])
 
 ###############################################################################
@@ -587,10 +609,10 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
 [
   AC_ARG_ENABLE([manpages], [AS_HELP_STRING([--disable-manpages],
-      [Set to disable building of man pages @<:@enabled@:>@])])
+      [Set to disable copy of static man pages @<:@enabled@:>@])])
 
   BUILD_MANPAGES="true"
-  AC_MSG_CHECKING([if man pages should be built])
+  AC_MSG_CHECKING([if static man pages should be copied])
   if test "x$enable_manpages" = "x"; then
     AC_MSG_RESULT([yes])
   elif test "x$enable_manpages" = "xyes"; then

@@ -63,7 +63,7 @@ import sun.security.util.Debug;
  * or as "localhost" (for the local machine).
  * The wildcard "*" may be included once in a DNS name host
  * specification. If it is included, it must be in the leftmost
- * position, as in "*.sun.com".
+ * position, as in "*.example.com".
  * <p>
  * The format of the IPv6reference should follow that specified in <a
  * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format
@@ -115,11 +115,11 @@ import sun.security.util.Debug;
  * note that if the following permission:
  *
  * <pre>
- *   p1 = new SocketPermission("puffin.eng.sun.com:7777", "connect,accept");
+ *   p1 = new SocketPermission("foo.example.com:7777", "connect,accept");
  * </pre>
  *
  * is granted to some code, it allows that code to connect to port 7777 on
- * {@code puffin.eng.sun.com}, and to accept connections on that port.
+ * {@code foo.example.com}, and to accept connections on that port.
  *
  * <p>Similarly, if the following permission:
  *
@@ -211,7 +211,7 @@ public final class SocketPermission extends Permission
     // all the IP addresses of the host
     private transient InetAddress[] addresses;
 
-    // true if the hostname is a wildcard (e.g. "*.sun.com")
+    // true if the hostname is a wildcard (e.g. "*.example.com")
     private transient boolean wildcard;
 
     // true if we were initialized with a single numeric IP address
@@ -274,9 +274,9 @@ public final class SocketPermission extends Permission
      * <p>
      * Examples of SocketPermission instantiation are the following:
      * <pre>
-     *    nr = new SocketPermission("www.catalog.com", "connect");
-     *    nr = new SocketPermission("www.sun.com:80", "connect");
-     *    nr = new SocketPermission("*.sun.com", "connect");
+     *    nr = new SocketPermission("www.example.com", "connect");
+     *    nr = new SocketPermission("www.example.com:80", "connect");
+     *    nr = new SocketPermission("*.example.com", "connect");
      *    nr = new SocketPermission("*.edu", "resolve");
      *    nr = new SocketPermission("204.160.241.0", "connect");
      *    nr = new SocketPermission("localhost:1024-65535", "listen");
@@ -400,7 +400,7 @@ public final class SocketPermission extends Permission
 
         // Parse the host name.  A name has up to three components, the
         // hostname, a port number, or two numbers representing a port
-        // range.   "www.sun.com:8080-9090" is a valid host name.
+        // range.   "www.example.com:8080-9090" is a valid host name.
 
         // With IPv6 an address can be 2010:836B:4179::836B:4179
         // An IPv6 address needs to be enclose in []
@@ -835,10 +835,10 @@ public final class SocketPermission extends Permission
      * <ul>
      * <li> If this object was initialized with a single IP address and one of <i>p</i>'s
      * IP addresses is equal to this object's IP address.
-     * <li>If this object is a wildcard domain (such as *.sun.com), and
+     * <li>If this object is a wildcard domain (such as *.example.com), and
      * <i>p</i>'s canonical name (the name without any preceding *)
-     * ends with this object's canonical host name. For example, *.sun.com
-     * implies *.eng.sun.com.
+     * ends with this object's canonical host name. For example, *.example.com
+     * implies *.foo.example.com.
      * <li>If this object was not initialized with a single IP address, and one of this
      * object's IP addresses equals one of <i>p</i>'s IP addresses.
      * <li>If this canonical name equals <i>p</i>'s canonical name.
@@ -878,7 +878,7 @@ public final class SocketPermission extends Permission
      * <li> Checks that "p"'s port range is included in this port range
      * <li> If this object was initialized with an IP address, checks that
      *      one of "p"'s IP addresses is equal to this object's IP address.
-     * <li> If either object is a wildcard domain (i.e., "*.sun.com"),
+     * <li> If either object is a wildcard domain (i.e., "*.example.com"),
      *      attempt to match based on the wildcard.
      * <li> If this object was not initialized with an IP address, attempt
      *      to find a match based on the IP addresses in both objects.
@@ -944,8 +944,8 @@ public final class SocketPermission extends Permission
             // check and see if we have any wildcards...
             if (this.wildcard || that.wildcard) {
                 // if they are both wildcards, return true iff
-                // that's cname ends with this cname (i.e., *.sun.com
-                // implies *.eng.sun.com)
+                // that's cname ends with this cname (i.e., *.example.com
+                // implies *.foo.example.com)
                 if (this.wildcard && that.wildcard)
                     return (that.cname.endsWith(this.cname));
 
@@ -1057,7 +1057,7 @@ public final class SocketPermission extends Permission
         // "1.2.3.4" equal to "1.2.3.4.", or
         //  "*.edu" equal to "*.edu", but it
         //  does not catch "crypto" equal to
-        // "crypto.eng.sun.com".
+        // "crypto.foo.example.com".
 
         if (this.getName().equalsIgnoreCase(that.getName())) {
             return true;
@@ -1313,7 +1313,7 @@ public final class SocketPermission extends Permission
         SocketPermissionCollection nps = new SocketPermissionCollection();
         nps.add(this_);
         nps.add(new SocketPermission("www-leland.stanford.edu","connect"));
-        nps.add(new SocketPermission("www-sun.com","connect"));
+        nps.add(new SocketPermission("www-example.com","connect"));
         System.out.println("nps.implies(that) = " + nps.implies(that_));
         System.out.println("-----\n");
     }

@@ -78,7 +78,7 @@ public class CleanProtectionDomain {
         if (cnt++ % 30 == 0) {
           System.gc();
         }
-        removedCount = wb.resolvedMethodRemovedCount();
+        removedCount = wb.protectionDomainRemovedCount();
         if (removedCountOrig != removedCount) {
           break;
         }

@@ -95,7 +95,7 @@ import sun.security.action.GetPropertyAction;
  * as a "ref" or a "reference". The fragment is indicated by the sharp
  * sign character "#" followed by more characters. For example,
  * <blockquote><pre>
- *     http://java.sun.com/index.html#chapter1
+ *     http://www.example.com/index.html#chapter1
  * </pre></blockquote>
  * <p>
  * This fragment is not technically part of the URL. Rather, it
@@ -109,7 +109,7 @@ import sun.security.action.GetPropertyAction;
  * relative to another URL. Relative URLs are frequently used within
  * HTML pages. For example, if the contents of the URL:
  * <blockquote><pre>
- *     http://java.sun.com/index.html
+ *     http://www.example.com/index.html
  * </pre></blockquote>
  * contained within it the relative URL:
  * <blockquote><pre>
@@ -117,7 +117,7 @@ import sun.security.action.GetPropertyAction;
  * </pre></blockquote>
  * it would be a shorthand for:
  * <blockquote><pre>
- *     http://java.sun.com/FAQ.html
+ *     http://www.example.com/FAQ.html
  * </pre></blockquote>
  * <p>
  * The relative URL need not specify all the components of a URL. If
@@ -1421,13 +1421,12 @@ public final class URL implements java.io.Serializable {
                 // this thread created.
                 handler = handler2;
             }
-        }
 
-        // Insert this handler into the hashtable
-        if (handler != null) {
-            handlers.put(protocol, handler);
+            // Insert this handler into the hashtable
+            if (handler != null) {
+                handlers.put(protocol, handler);
+            }
         }
-
         return handler;
     }
 

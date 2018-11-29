@@ -91,7 +91,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-vendor-url must have a value])
   elif [ ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-url contains non-printing characters: $with_vendor_url])
-  else
+  elif test "x$with_vendor_url" != x; then
+    # Only set VENDOR_URL if '--with-vendor-url' was used and is not empty.
+    # Otherwise we will use the value from "version-numbers" included above.
     VENDOR_URL="$with_vendor_url"
   fi
   AC_SUBST(VENDOR_URL)
@@ -103,7 +105,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-vendor-bug-url must have a value])
   elif [ ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url])
-  else
+  elif test "x$with_vendor_bug_url" != x; then
+    # Only set VENDOR_URL_BUG if '--with-vendor-bug-url' was used and is not empty.
+    # Otherwise we will use the value from "version-numbers" included above.
     VENDOR_URL_BUG="$with_vendor_bug_url"
   fi
   AC_SUBST(VENDOR_URL_BUG)

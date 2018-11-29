@@ -1016,7 +1016,6 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   // Make sure we'll choose a new allocation region afterwards.
   _allocator->release_mutator_alloc_region();
   _allocator->abandon_gc_alloc_regions();
-  g1_rem_set()->cleanupHRRS();
 
   // We may have added regions to the current incremental collection
   // set between the last GC or pause and now. We need to clear the
@@ -1660,19 +1659,15 @@ jint G1CollectedHeap::initialize() {
                                                  G1SATBBufferEnqueueingThresholdPercent,
                                                  Shared_SATB_Q_lock);
 
-  // process_completed_threshold and max_completed_queue are updated
+  // process_completed_buffers_threshold and max_completed_buffers are updated
   // later, based on the concurrent refinement object.
   G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                   &bs->dirty_card_queue_buffer_allocator(),
-                                                  -1, // temp. never trigger
-                                                  -1, // temp. no limit
                                                   Shared_DirtyCardQ_lock,
                                                   true); // init_free_ids
 
   dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                     &bs->dirty_card_queue_buffer_allocator(),
-                                    -1, // never trigger processing
-                                    -1, // no limit on length
                                     Shared_DirtyCardQ_lock);
 
   // Create the hot card cache.
@@ -1783,8 +1778,8 @@ jint G1CollectedHeap::initialize() {
 
   {
     DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed_threshold((int)concurrent_refine()->yellow_zone());
-    dcqs.set_max_completed_queue((int)concurrent_refine()->red_zone());
+    dcqs.set_process_completed_buffers_threshold(concurrent_refine()->yellow_zone());
+    dcqs.set_max_completed_buffers(concurrent_refine()->red_zone());
   }
 
   // Here we allocate the dummy HeapRegion that is required by the
@@ -2973,13 +2968,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->finalize_collection_set(target_pause_time_ms, &_survivor);
 
         evacuation_info.set_collectionset_regions(collection_set()->region_length());
-
-        // Make sure the remembered sets are up to date. This needs to be
-        // done before register_humongous_regions_with_cset(), because the
-        // remembered sets are used there to choose eager reclaim candidates.
-        // If the remembered sets are not up to date we might miss some
-        // entries that need to be handled.
-        g1_rem_set()->cleanupHRRS();
 
         register_humongous_regions_with_cset();
 

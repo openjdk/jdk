@@ -228,7 +228,8 @@ ifneq ($(COMPANY_NAME),)
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
   # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
-  # System.c in the jdk for "vm.vendor" and vm_version.cpp in the VM for "java.vm.vendor")
+  # VersionProps.java.template in the jdk for "vm.vendor" and
+  # vm_version.cpp in the VM for "java.vm.vendor")
   ifneq ($(COMPANY_NAME), N/A)
     VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
   endif
@@ -273,6 +274,9 @@ VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
 
 # Control wether Hotspot builds gtest tests
 BUILD_GTEST := @BUILD_GTEST@
+
+# Allow overriding the default hotspot library path
+HOTSPOT_OVERRIDE_LIBPATH := @HOTSPOT_OVERRIDE_LIBPATH@
 
 # Control use of precompiled header in hotspot libjvm build
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@

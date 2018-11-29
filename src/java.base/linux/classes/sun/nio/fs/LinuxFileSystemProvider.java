@@ -36,7 +36,7 @@ import jdk.internal.util.StaticProperty;
  * Linux implementation of FileSystemProvider
  */
 
-public class LinuxFileSystemProvider extends UnixFileSystemProvider {
+class LinuxFileSystemProvider extends UnixFileSystemProvider {
     public LinuxFileSystemProvider() {
         super();
     }
