@@ -119,6 +119,12 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
   # Misuse EXTRA_CFLAGS to mimic old behavior
   $2JVM_ASFLAGS="$JVM_BASIC_ASFLAGS ${$2EXTRA_CFLAGS}"
 
+  if test "x$1" = "xTARGET" && \
+      test "x$TOOLCHAIN_TYPE" = xgcc && \
+      test "x$OPENJDK_TARGET_CPU" = xarm; then
+    $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $ARM_ARCH_TYPE_ASFLAGS $ARM_FLOAT_TYPE_ASFLAGS"
+  fi
+
   AC_SUBST($2JVM_ASFLAGS)
 ])
 

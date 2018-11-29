@@ -49,38 +49,51 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
     if test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-sflt; then
       ARM_FLOAT_TYPE=vfp-sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv7-a -mthumb'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-hflt; then
       ARM_FLOAT_TYPE=vfp-hflt
       ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv7-a -mthumb'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-sflt; then
       ARM_FLOAT_TYPE=sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv5t'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv5-vfp-sflt; then
       ARM_FLOAT_TYPE=vfp-sflt
       ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv5t'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv6-vfp-hflt; then
       ARM_FLOAT_TYPE=vfp-hflt
       ARM_ARCH_TYPE_FLAGS='-march=armv6 -marm'
+      ARM_ARCH_TYPE_ASFLAGS='-march=armv6'
     elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xaarch64; then
       # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
       ARM_FLOAT_TYPE=
       ARM_ARCH_TYPE_FLAGS=
+      ARM_ARCH_TYPE_ASFLAGS=
     else
       AC_MSG_ERROR([Invalid ABI profile: "$OPENJDK_TARGET_ABI_PROFILE"])
     fi
 
     if test "x$ARM_FLOAT_TYPE" = xvfp-sflt; then
       ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=softfp -mfpu=vfp -DFLOAT_ARCH=-vfp-sflt'
+      ARM_FLOAT_TYPE_ASFLAGS="-mfloat-abi=softfp -mfpu=vfp"
     elif test "x$ARM_FLOAT_TYPE" = xvfp-hflt; then
       ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=hard -mfpu=vfp -DFLOAT_ARCH=-vfp-hflt'
+      ARM_FLOAT_TYPE_ASFLAGS="-mfloat-abi=hard -mfpu=vfp"
     elif test "x$ARM_FLOAT_TYPE" = xsflt; then
       ARM_FLOAT_TYPE_FLAGS='-msoft-float -mfpu=vfp'
+      ARM_FLOAT_TYPE_ASFLAGS="-mfloat-abi=soft -mfpu=vfp"
     fi
     AC_MSG_CHECKING([for $ARM_FLOAT_TYPE floating point flags])
     AC_MSG_RESULT([$ARM_FLOAT_TYPE_FLAGS])
+    AC_MSG_CHECKING([for $ARM_FLOAT_TYPE floating point flags for assembler])
+    AC_MSG_RESULT([$ARM_FLOAT_TYPE_ASFLAGS])
 
     AC_MSG_CHECKING([for arch type flags])
     AC_MSG_RESULT([$ARM_ARCH_TYPE_FLAGS])
+    AC_MSG_CHECKING([for arch type flags for assembler])
+    AC_MSG_RESULT([$ARM_ARCH_TYPE_ASFLAGS])
 
     # Now set JDK_ARCH_ABI_PROP_NAME. This is equivalent to the last part of the
     # autoconf target triplet.
