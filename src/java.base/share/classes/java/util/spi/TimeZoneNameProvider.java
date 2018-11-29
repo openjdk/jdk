@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * presentation to the user in the specified locale. The given time
      * zone ID is "GMT" or one of the names defined using "Zone" entries
      * in the "tz database", a public domain time zone database at
-     * <a href="ftp://elsie.nci.nih.gov/pub/">ftp://elsie.nci.nih.gov/pub/</a>.
+     * <a href="https://www.iana.org/time-zones">https://www.iana.org/time-zones</a>.
      * The data of this database is contained in a file whose name starts with
      * "tzdata", and the specification of the data format is part of the zic.8
      * man page, which is contained in a file whose name starts with "tzcode".
