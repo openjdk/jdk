@@ -745,7 +745,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
             hres = ppf->Load(wstr, STGM_READ);
             if (SUCCEEDED(hres)) {
                 if (resolve) {
-                    hres = psl->Resolve(NULL, 0);
+                    hres = psl->Resolve(NULL, SLR_NO_UI);
                     // Ignore failure
                 }
                 pidl = (LPITEMIDLIST)NULL;
