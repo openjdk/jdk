@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,16 @@ import sun.security.jca.GetInstance;
  * secure random bytes.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code SSLContext} protocols:
+ * following standard {@code SSLContext} protocol:
  * <ul>
- * <li>{@code TLSv1}</li>
- * <li>{@code TLSv1.1}</li>
  * <li>{@code TLSv1.2}</li>
  * </ul>
- * These protocols are described in the <a href=
+ * This protocol is described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
  * SSLContext section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
+ * other protocols are supported.
  *
  * @since 1.4
  */
