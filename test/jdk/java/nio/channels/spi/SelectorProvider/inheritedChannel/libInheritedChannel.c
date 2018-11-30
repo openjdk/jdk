@@ -36,6 +36,11 @@
 
 #include "jni.h"
 
+#define CHECK(X) if ((X) == 0) {printf("JNI init error line %d\n", __LINE__); _exit(1);}
+
+static jclass unixSocketClass;
+static jmethodID unixSocketCtor;
+
 /*
  * Throws the exception of the given class name and detail message
  */
@@ -181,4 +186,64 @@ JNIEXPORT void JNICALL Java_Launcher_launch0
 
     execvp(cmdv[0], cmdv);
     _exit(-1);
+}
+
+JNIEXPORT void JNICALL Java_UnixDomainSocket_init(JNIEnv *env, jclass cls) {
+    CHECK(unixSocketClass = (*env)->FindClass(env, "UnixDomainSocket"));
+    CHECK(unixSocketClass = (*env)->NewGlobalRef(env, unixSocketClass));
+    CHECK(unixSocketCtor = (*env)->GetMethodID(env, unixSocketClass, "<init>", "(I)V"));
+}
+
+/*
+ * Class:     UnixDomainSocket
+ * Method:    socketpair
+ * Signature: ()[LUnixDomainSocket
+ */
+JNIEXPORT jobjectArray JNICALL Java_UnixDomainSocket_socketpair
+  (JNIEnv *env, jclass cls)
+{
+    int fds[2];
+    jobject socket;
+    jobjectArray result = (*env)->NewObjectArray(env, 2, unixSocketClass, 0);
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
+        perror("socketpair");
+        return result;
+    }
+    socket = (*env)->NewObject(env, unixSocketClass, unixSocketCtor, fds[0]);
+    (*env)->SetObjectArrayElement(env, result, 0, socket);
+    socket = (*env)->NewObject(env, unixSocketClass, unixSocketCtor, fds[1]);
+    (*env)->SetObjectArrayElement(env, result, 1, socket);
+    return result;
+}
+
+JNIEXPORT jint JNICALL Java_UnixDomainSocket_read0
+  (JNIEnv *env, jclass cls, jint fd)
+{
+    int ret;
+    unsigned char res;
+    ret = read(fd, &res, 1);
+    if (ret == 0)
+        return -1; /* EOF */
+    else if (ret < 0) {
+        ThrowException(env, "java/io/IOException", "read error");
+        return -1;
+    }
+    return res;
+}
+
+JNIEXPORT void JNICALL Java_UnixDomainSocket_write0
+  (JNIEnv *env, jclass cls, jint fd, jint byte)
+{
+    int ret;
+    unsigned char w = (unsigned char)byte;
+    ret = write(fd, &w, 1);
+    if (ret < 0) {
+        ThrowException(env, "java/io/IOException", "write error");
+    }
+}
+
+JNIEXPORT void JNICALL Java_UnixDomainSocket_close0
+  (JNIEnv *env, jclass cls, jint fd)
+{
+    close(fd);
 }
