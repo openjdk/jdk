@@ -48,12 +48,19 @@ BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 
+BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
+    -I$(TOPDIR)/src/java.base/share/native/libjli \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
+
 # Platform specific setup
 ifeq ($(OPENJDK_TARGET_OS), windows)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c
 
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
+  WIN_LIB_JLI := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := $(WIN_LIB_JLI)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
@@ -62,14 +69,17 @@ else
   else ifeq ($(OPENJDK_TARGET_OS), solaris)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava -lsocket -lnsl
   endif
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libTestMainKeyWindow := -ObjC
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := -framework JavaVM \
       -framework Cocoa -framework JavaNativeFoundation
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJniInvocationTest := -ljli
 else
   BUILD_JDK_JTREG_EXCLUDE += libTestMainKeyWindow.c
+  BUILD_JDK_JTREG_EXCLUDE += exeJniInvocationTest.c
 endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_LIBRARIES, \

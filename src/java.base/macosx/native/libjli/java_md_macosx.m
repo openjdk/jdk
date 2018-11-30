@@ -508,7 +508,7 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
         return JNI_FALSE;
     }
 
-    const char lastPathComponent[] = "/lib/jli/libjli.dylib";
+    const char lastPathComponent[] = "/lib/libjli.dylib";
     size_t sizeOfLastPathComponent = sizeof(lastPathComponent) - 1;
     if (pathLen < sizeOfLastPathComponent) {
         return JNI_FALSE;
