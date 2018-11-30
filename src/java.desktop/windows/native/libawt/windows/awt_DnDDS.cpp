@@ -394,9 +394,12 @@ void AwtDragSource::LoadCache(jlongArray formats) {
         return;
     }
 
-    jboolean isCopy;
-    jlong *lFormats = env->GetLongArrayElements(formats, &isCopy),
+    jlong *lFormats = env->GetLongArrayElements(formats, 0),
         *saveFormats = lFormats;
+    if (lFormats == NULL) {
+        m_ntypes = 0;
+        return;
+    }
 
     for (i = 0, m_ntypes = 0; i < items; i++, lFormats++) {
         // Warning C4244.
@@ -422,6 +425,7 @@ void AwtDragSource::LoadCache(jlongArray formats) {
         m_types = (FORMATETC *)safe_Calloc(sizeof(FORMATETC), m_ntypes);
     } catch (std::bad_alloc&) {
         m_ntypes = 0;
+        env->ReleaseLongArrayElements(formats, saveFormats, 0);
         throw;
     }
 
