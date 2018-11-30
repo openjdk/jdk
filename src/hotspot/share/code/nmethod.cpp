@@ -1372,8 +1372,8 @@ oop nmethod::oop_at(int index) const {
 // notifies instanceKlasses that are reachable
 
 void nmethod::flush_dependencies(bool delete_immediately) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  assert(Universe::heap()->is_gc_active() != delete_immediately,
+  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread();)
+  assert(called_by_gc != delete_immediately,
   "delete_immediately is false if and only if we are called during GC");
   if (!has_flushed_dependencies()) {
     set_has_flushed_dependencies();
@@ -1381,7 +1381,12 @@ void nmethod::flush_dependencies(bool delete_immediately) {
       if (deps.type() == Dependencies::call_site_target_value) {
         // CallSite dependencies are managed on per-CallSite instance basis.
         oop call_site = deps.argument_oop(0);
-        MethodHandles::remove_dependent_nmethod(call_site, this);
+        if (delete_immediately) {
+          assert_locked_or_safepoint(CodeCache_lock);
+          MethodHandles::remove_dependent_nmethod(call_site, this);
+        } else {
+          MethodHandles::clean_dependency_context(call_site);
+        }
       } else {
         Klass* klass = deps.context_type();
         if (klass == NULL) {
@@ -1389,11 +1394,12 @@ void nmethod::flush_dependencies(bool delete_immediately) {
         }
         // During GC delete_immediately is false, and liveness
         // of dependee determines class that needs to be updated.
-        if (delete_immediately || klass->is_loader_alive()) {
-          // The GC defers deletion of this entry, since there might be multiple threads
-          // iterating over the _dependencies graph. Other call paths are single-threaded
-          // and may delete it immediately.
-          InstanceKlass::cast(klass)->remove_dependent_nmethod(this, delete_immediately);
+        if (delete_immediately) {
+          assert_locked_or_safepoint(CodeCache_lock);
+          InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
+        } else if (klass->is_loader_alive()) {
+          // The GC may clean dependency contexts concurrently and in parallel.
+          InstanceKlass::cast(klass)->clean_dependency_context();
         }
       }
     }

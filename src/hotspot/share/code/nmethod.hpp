@@ -257,6 +257,14 @@ class nmethod : public CompiledMethod {
 #endif
   );
 
+  // Only used for unit tests.
+  nmethod()
+    : CompiledMethod(),
+      _is_unloading_state(0),
+      _native_receiver_sp_offset(in_ByteSize(-1)),
+      _native_basic_lock_sp_offset(in_ByteSize(-1)) {}
+
+
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,

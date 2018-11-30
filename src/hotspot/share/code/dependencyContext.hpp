@@ -48,70 +48,50 @@ class nmethodBucket: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   nmethod*       _nmethod;
-  int            _count;
-  nmethodBucket* _next;
+  volatile int   _count;
+  nmethodBucket* volatile _next;
+  nmethodBucket* volatile _purge_list_next;
 
  public:
   nmethodBucket(nmethod* nmethod, nmethodBucket* next) :
-   _nmethod(nmethod), _count(1), _next(next) {}
+    _nmethod(nmethod), _count(1), _next(next), _purge_list_next(NULL) {}
 
-  int count()                             { return _count; }
-  int increment()                         { _count += 1; return _count; }
+  int count()                                { return _count; }
+  int increment()                            { _count += 1; return _count; }
   int decrement();
-  nmethodBucket* next()                   { return _next; }
-  void set_next(nmethodBucket* b)         { _next = b; }
-  nmethod* get_nmethod()                  { return _nmethod; }
+  nmethodBucket* next();
+  nmethodBucket* next_not_unloading();
+  void set_next(nmethodBucket* b);
+  nmethodBucket* purge_list_next();
+  void set_purge_list_next(nmethodBucket* b);
+  nmethod* get_nmethod()                     { return _nmethod; }
 };
 
 //
 // Utility class to manipulate nmethod dependency context.
-// The context consists of nmethodBucket* (a head of a linked list)
-// and a boolean flag (does the list contains stale entries). The structure is
-// encoded as an intptr_t: lower bit is used for the flag. It is possible since
-// nmethodBucket* is aligned - the structure is malloc'ed in C heap.
 // Dependency context can be attached either to an InstanceKlass (_dep_context field)
 // or CallSiteContext oop for call_site_target dependencies (see javaClasses.hpp).
-// DependencyContext class operates on some location which holds a intptr_t value.
+// DependencyContext class operates on some location which holds a nmethodBucket* value
+// and uint64_t integer recording the safepoint counter at the last cleanup.
 //
 class DependencyContext : public StackObj {
   friend class VMStructs;
   friend class TestDependencyContext;
  private:
-  enum TagBits { _has_stale_entries_bit = 1, _has_stale_entries_mask = 1 };
+  nmethodBucket* volatile* _dependency_context_addr;
+  volatile uint64_t*       _last_cleanup_addr;
 
-  intptr_t* _dependency_context_addr;
-
-  void set_dependencies(nmethodBucket* b) {
-    assert((intptr_t(b) & _has_stale_entries_mask) == 0, "should be aligned");
-    if (has_stale_entries()) {
-      *_dependency_context_addr = intptr_t(b) | _has_stale_entries_mask;
-    } else {
-      *_dependency_context_addr = intptr_t(b);
-    }
-  }
-
-  void set_has_stale_entries(bool x) {
-    if (x) {
-      *_dependency_context_addr |= _has_stale_entries_mask;
-    } else {
-      *_dependency_context_addr &= ~_has_stale_entries_mask;
-    }
-  }
-
-  nmethodBucket* dependencies() {
-    intptr_t value = *_dependency_context_addr;
-    return (nmethodBucket*) (value & ~_has_stale_entries_mask);
-  }
-
-  bool has_stale_entries() const {
-    intptr_t value = *_dependency_context_addr;
-    return (value & _has_stale_entries_mask) != 0;
-  }
+  bool claim_cleanup();
+  void set_dependencies(nmethodBucket* b);
+  nmethodBucket* dependencies();
+  nmethodBucket* dependencies_not_unloading();
 
   static PerfCounter* _perf_total_buckets_allocated_count;
   static PerfCounter* _perf_total_buckets_deallocated_count;
   static PerfCounter* _perf_total_buckets_stale_count;
   static PerfCounter* _perf_total_buckets_stale_acc_count;
+  static nmethodBucket* volatile _purge_list;
+  static volatile uint64_t       _cleaning_epoch;
 
  public:
 #ifdef ASSERT
@@ -120,31 +100,35 @@ class DependencyContext : public StackObj {
   // (e.g. CallSiteContext Java object).
   uint64_t _safepoint_counter;
 
-  DependencyContext(intptr_t* addr) : _dependency_context_addr(addr),
-    _safepoint_counter(SafepointSynchronize::safepoint_counter()) {}
+  DependencyContext(nmethodBucket* volatile* bucket_addr, volatile uint64_t* last_cleanup_addr)
+    : _dependency_context_addr(bucket_addr),
+      _last_cleanup_addr(last_cleanup_addr),
+      _safepoint_counter(SafepointSynchronize::safepoint_counter()) {}
 
   ~DependencyContext() {
     assert(_safepoint_counter == SafepointSynchronize::safepoint_counter(), "safepoint happened");
   }
 #else
-  DependencyContext(intptr_t* addr) : _dependency_context_addr(addr) {}
+  DependencyContext(nmethodBucket* volatile* bucket_addr, volatile uint64_t* last_cleanup_addr)
+    : _dependency_context_addr(bucket_addr),
+      _last_cleanup_addr(last_cleanup_addr) {}
 #endif // ASSERT
-
-  static const intptr_t EMPTY = 0; // dependencies = NULL, has_stale_entries = false
 
   static void init();
 
   int  mark_dependent_nmethods(DepChange& changes);
-  void add_dependent_nmethod(nmethod* nm, bool expunge_stale_entries = false);
-  void remove_dependent_nmethod(nmethod* nm, bool expunge_stale_entries = false);
+  void add_dependent_nmethod(nmethod* nm);
+  void remove_dependent_nmethod(nmethod* nm);
   int  remove_all_dependents();
-
-  void expunge_stale_entries();
+  void clean_unloading_dependents();
+  static void purge_dependency_contexts();
+  static void release(nmethodBucket* b);
+  static void cleaning_start();
+  static void cleaning_end();
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose);
   bool is_dependent_nmethod(nmethod* nm);
-  bool find_stale_entries();
 #endif //PRODUCT
 };
 #endif // SHARE_VM_CODE_DEPENDENCYCONTEXT_HPP

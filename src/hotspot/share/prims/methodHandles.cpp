@@ -1064,14 +1064,6 @@ int MethodHandles::find_MemberNames(Klass* k,
   return rfill + overflow;
 }
 
-// Is it safe to remove stale entries from a dependency list?
-static bool safe_to_expunge() {
-  // Since parallel GC threads can concurrently iterate over a dependency
-  // list during safepoint, it is safe to remove entries only when
-  // CodeCache lock is held.
-  return CodeCache_lock->owned_by_self();
-}
-
 void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 
@@ -1082,7 +1074,7 @@ void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   // in order to avoid memory leak, stale entries are purged whenever a dependency list
   // is changed (both on addition and removal). Though memory reclamation is delayed,
   // it avoids indefinite memory usage growth.
-  deps.add_dependent_nmethod(nm, /*expunge_stale_entries=*/safe_to_expunge());
+  deps.add_dependent_nmethod(nm);
 }
 
 void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
@@ -1090,7 +1082,15 @@ void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
 
   oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
   DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-  deps.remove_dependent_nmethod(nm, /*expunge_stale_entries=*/safe_to_expunge());
+  deps.remove_dependent_nmethod(nm);
+}
+
+void MethodHandles::clean_dependency_context(oop call_site) {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
+  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+  deps.clean_unloading_dependents();
 }
 
 void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
@@ -1500,7 +1500,6 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
     {
       NoSafepointVerifier nsv;
       MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      assert(safe_to_expunge(), "removal is not safe");
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
       marked = deps.remove_all_dependents();
     }

@@ -2117,7 +2117,7 @@ jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
 }
 
 inline DependencyContext InstanceKlass::dependencies() {
-  DependencyContext dep_context(&_dep_context);
+  DependencyContext dep_context(&_dep_context, &_dep_context_last_cleaned);
   return dep_context;
 }
 
@@ -2129,8 +2129,12 @@ void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   dependencies().add_dependent_nmethod(nm);
 }
 
-void InstanceKlass::remove_dependent_nmethod(nmethod* nm, bool delete_immediately) {
-  dependencies().remove_dependent_nmethod(nm, delete_immediately);
+void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
+  dependencies().remove_dependent_nmethod(nm);
+}
+
+void InstanceKlass::clean_dependency_context() {
+  dependencies().clean_unloading_dependents();
 }
 
 #ifndef PRODUCT
@@ -2146,10 +2150,6 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
 void InstanceKlass::clean_weak_instanceklass_links() {
   clean_implementors_list();
   clean_method_data();
-
-  // Since GC iterates InstanceKlasses sequentially, it is safe to remove stale entries here.
-  DependencyContext dep_context(&_dep_context);
-  dep_context.expunge_stale_entries();
 }
 
 void InstanceKlass::clean_implementors_list() {
@@ -2334,7 +2334,7 @@ void InstanceKlass::remove_unshareable_info() {
   // These are not allocated from metaspace, but they should should all be empty
   // during dump time, so we don't need to worry about them in InstanceKlass::iterate().
   guarantee(_source_debug_extension == NULL, "must be");
-  guarantee(_dep_context == DependencyContext::EMPTY, "must be");
+  guarantee(_dep_context == NULL, "must be");
   guarantee(_osr_nmethods_head == NULL, "must be");
 
 #if INCLUDE_JVMTI
@@ -2479,7 +2479,7 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  assert(_dep_context == DependencyContext::EMPTY,
+  assert(_dep_context == NULL,
          "dependencies should already be cleaned");
 
 #if INCLUDE_JVMTI

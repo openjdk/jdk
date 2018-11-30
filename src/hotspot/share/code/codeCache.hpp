@@ -180,17 +180,10 @@ class CodeCache : AllStatic {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive)
-      : _is_unloading_behaviour(is_alive)
-    {
-      IsUnloadingBehaviour::set_current(&_is_unloading_behaviour);
-      increment_unloading_cycle();
-    }
-
-    ~UnloadingScope() {
-      IsUnloadingBehaviour::set_current(NULL);
-    }
+    UnloadingScope(BoolObjectClosure* is_alive);
+    ~UnloadingScope();
   };
+
   static void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
   static void increment_unloading_cycle();

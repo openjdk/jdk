@@ -1201,7 +1201,8 @@ public:
 // Interface to java.lang.invoke.MethodHandleNatives$CallSiteContext objects
 
 #define CALLSITECONTEXT_INJECTED_FIELDS(macro) \
-  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, vmdependencies, intptr_signature, false)
+  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, vmdependencies, intptr_signature, false) \
+  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, last_cleanup, long_signature, false)
 
 class DependencyContext;
 
@@ -1210,6 +1211,7 @@ class java_lang_invoke_MethodHandleNatives_CallSiteContext : AllStatic {
 
 private:
   static int _vmdependencies_offset;
+  static int _last_cleanup_offset;
 
   static void compute_offsets();
 

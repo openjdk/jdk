@@ -75,6 +75,7 @@ class MethodHandleNatives {
     /** Represents a context to track nmethod dependencies on CallSite instance target. */
     static class CallSiteContext implements Runnable {
         //@Injected JVM_nmethodBucket* vmdependencies;
+        //@Injected jlong last_cleanup;
 
         static CallSiteContext make(CallSite cs) {
             final CallSiteContext newContext = new CallSiteContext();
