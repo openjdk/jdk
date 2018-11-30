@@ -1095,9 +1095,9 @@ public:
                      nonstatic_oop_map_count());
   }
 
-  Klass** adr_implementor() const {
+  Klass* volatile* adr_implementor() const {
     if (is_interface()) {
-      return (Klass**)end_of_nonstatic_oop_maps();
+      return (Klass* volatile*)end_of_nonstatic_oop_maps();
     } else {
       return NULL;
     }
@@ -1105,7 +1105,7 @@ public:
 
   InstanceKlass** adr_unsafe_anonymous_host() const {
     if (is_unsafe_anonymous()) {
-      InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
+      InstanceKlass** adr_impl = (InstanceKlass**)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
@@ -1123,7 +1123,7 @@ public:
         return (address)(adr_host + 1);
       }
 
-      Klass** adr_impl = adr_implementor();
+      Klass* volatile* adr_impl = adr_implementor();
       if (adr_impl != NULL) {
         return (address)(adr_impl + 1);
       }

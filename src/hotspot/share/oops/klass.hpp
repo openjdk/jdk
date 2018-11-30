@@ -140,9 +140,9 @@ class Klass : public Metadata {
   // Superclass
   Klass*      _super;
   // First subclass (NULL if none); _subklass->next_sibling() is next one
-  Klass*      _subklass;
+  Klass* volatile _subklass;
   // Sibling link (or NULL); links all subklasses of a klass
-  Klass*      _next_sibling;
+  Klass* volatile _next_sibling;
 
   // All klasses loaded by a class loader are chained through these links
   Klass*      _next_link;
@@ -284,8 +284,9 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass() const              { return _subklass; }
-  Klass* next_sibling() const          { return _next_sibling; }
+  Klass* subklass(bool log = false) const;
+  Klass* next_sibling(bool log = false) const;
+
   InstanceKlass* superklass() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 
@@ -658,6 +659,8 @@ protected:
   // pointer has been "peeked" and then must be kept alive before it may
   // be used safely.
   oop holder_phantom() const;
+
+  void clean_subklass();
 
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
   static void clean_subklass_tree() {

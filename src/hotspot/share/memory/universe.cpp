@@ -529,10 +529,6 @@ oop Universe::swap_reference_pending_list(oop list) {
 #undef assert_pll_locked
 #undef assert_pll_ownership
 
-// initialize_vtable could cause gc if
-// 1) we specified true to initialize_vtable and
-// 2) this ran after gc was enabled
-// In case those ever change we use handles for oops
 void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
   // init vtable of k and all subclasses
   ko->vtable().initialize_vtable(false, CHECK);
@@ -543,6 +539,14 @@ void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
       reinitialize_vtable_of(sk, CHECK);
     }
   }
+}
+
+void Universe::reinitialize_vtables(TRAPS) {
+  // The vtables are initialized by starting at java.lang.Object and
+  // initializing through the subclass links, so that the super
+  // classes are always initialized first.
+  Klass* ok = SystemDictionary::Object_klass();
+  Universe::reinitialize_vtable_of(ok, THREAD);
 }
 
 
@@ -961,9 +965,7 @@ bool universe_post_init() {
   { ResourceMark rm;
     Interpreter::initialize();      // needed for interpreter entry points
     if (!UseSharedSpaces) {
-      HandleMark hm(THREAD);
-      Klass* ok = SystemDictionary::Object_klass();
-      Universe::reinitialize_vtable_of(ok, CHECK_false);
+      Universe::reinitialize_vtables(CHECK_false);
       Universe::reinitialize_itables(CHECK_false);
     }
   }

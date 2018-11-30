@@ -1070,27 +1070,32 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 }
 
 Klass* InstanceKlass::implementor() const {
-  assert_locked_or_safepoint(Compile_lock);
-  Klass** k = adr_implementor();
+  Klass* volatile* k = adr_implementor();
   if (k == NULL) {
     return NULL;
   } else {
-    return *k;
+    // This load races with inserts, and therefore needs acquire.
+    Klass* kls = OrderAccess::load_acquire(k);
+    if (kls != NULL && !kls->is_loader_alive()) {
+      return NULL;  // don't return unloaded class
+    } else {
+      return kls;
+    }
   }
 }
+
 
 void InstanceKlass::set_implementor(Klass* k) {
   assert_lock_strong(Compile_lock);
   assert(is_interface(), "not interface");
-  Klass** addr = adr_implementor();
+  Klass* volatile* addr = adr_implementor();
   assert(addr != NULL, "null addr");
   if (addr != NULL) {
-    *addr = k;
+    OrderAccess::release_store(addr, k);
   }
 }
 
 int  InstanceKlass::nof_implementors() const {
-  assert_lock_strong(Compile_lock);
   Klass* k = implementor();
   if (k == NULL) {
     return 0;
@@ -2155,17 +2160,23 @@ void InstanceKlass::clean_weak_instanceklass_links() {
 void InstanceKlass::clean_implementors_list() {
   assert(is_loader_alive(), "this klass should be live");
   if (is_interface()) {
-    if (ClassUnloading) {
-      Klass* impl = implementor();
-      if (impl != NULL) {
-        if (!impl->is_loader_alive()) {
-          // remove this guy
-          Klass** klass = adr_implementor();
-          assert(klass != NULL, "null klass");
-          if (klass != NULL) {
-            *klass = NULL;
+    assert (ClassUnloading, "only called for ClassUnloading");
+    for (;;) {
+      // Use load_acquire due to competing with inserts
+      Klass* impl = OrderAccess::load_acquire(adr_implementor());
+      if (impl != NULL && !impl->is_loader_alive()) {
+        // NULL this field, might be an unloaded klass or NULL
+        Klass* volatile* klass = adr_implementor();
+        if (Atomic::cmpxchg((Klass*)NULL, klass, impl) == impl) {
+          // Successfully unlinking implementor.
+          if (log_is_enabled(Trace, class, unload)) {
+            ResourceMark rm;
+            log_trace(class, unload)("unlinking class (implementor): %s", impl->external_name());
           }
+          return;
         }
+      } else {
+        return;
       }
     }
   }
@@ -3106,7 +3117,6 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 
   if (is_interface()) {
-    MutexLocker ml(Compile_lock);
     st->print_cr(BULLET"nof implementors:  %d", nof_implementors());
     if (nof_implementors() == 1) {
       st->print_cr(BULLET"implementor:    ");
@@ -3513,9 +3523,6 @@ void InstanceKlass::verify_on(outputStream* st) {
     guarantee(sib->is_klass(), "should be klass");
     guarantee(sib->super() == super, "siblings should have same superklass");
   }
-
-  // Verify implementor fields requires the Compile_lock, but this is sometimes
-  // called inside a safepoint, so don't verify.
 
   // Verify local interfaces
   if (local_interfaces()) {

@@ -121,7 +121,7 @@ Klass *Klass::up_cast_abstract() {
   Klass *r = this;
   while( r->is_abstract() ) {   // Receiver is abstract?
     Klass *s = r->subklass();   // Check for exactly 1 subklass
-    if( !s || s->next_sibling() ) // Oops; wrong count; give up
+    if (s == NULL || s->next_sibling() != NULL) // Oops; wrong count; give up
       return this;              // Return 'this' as a no-progress flag
     r = s;                    // Loop till find concrete class
   }
@@ -362,22 +362,71 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 }
 
 
+// superklass links
 InstanceKlass* Klass::superklass() const {
   assert(super() == NULL || super()->is_instance_klass(), "must be instance klass");
   return _super == NULL ? NULL : InstanceKlass::cast(_super);
 }
 
+// subklass links.  Used by the compiler (and vtable initialization)
+// May be cleaned concurrently, so must use the Compile_lock.
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::subklass(bool log) const {
+  // Need load_acquire on the _subklass, because it races with inserts that
+  // publishes freshly initialized data.
+  for (Klass* chain = OrderAccess::load_acquire(&_subklass);
+       chain != NULL;
+       // Do not need load_acquire on _next_sibling, because inserts never
+       // create _next_sibling edges to dead data.
+       chain = Atomic::load(&chain->_next_sibling))
+  {
+    if (chain->is_loader_alive()) {
+      return chain;
+    } else if (log) {
+      if (log_is_enabled(Trace, class, unload)) {
+        ResourceMark rm;
+        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
+      }
+    }
+  }
+  return NULL;
+}
+
+Klass* Klass::next_sibling(bool log) const {
+  // Do not need load_acquire on _next_sibling, because inserts never
+  // create _next_sibling edges to dead data.
+  for (Klass* chain = Atomic::load(&_next_sibling);
+       chain != NULL;
+       chain = Atomic::load(&chain->_next_sibling)) {
+    // Only return alive klass, there may be stale klass
+    // in this chain if cleaned concurrently.
+    if (chain->is_loader_alive()) {
+      return chain;
+    } else if (log) {
+      if (log_is_enabled(Trace, class, unload)) {
+        ResourceMark rm;
+        log_trace(class, unload)("unlinking class (sibling): %s", chain->external_name());
+      }
+    }
+  }
+  return NULL;
+}
+
 void Klass::set_subklass(Klass* s) {
   assert(s != this, "sanity check");
-  _subklass = s;
+  OrderAccess::release_store(&_subklass, s);
 }
 
 void Klass::set_next_sibling(Klass* s) {
   assert(s != this, "sanity check");
-  _next_sibling = s;
+  // Does not need release semantics. If used by cleanup, it will link to
+  // already safely published data, and if used by inserts, will be published
+  // safely using cmpxchg.
+  Atomic::store(s, &_next_sibling);
 }
 
 void Klass::append_to_sibling_list() {
+  assert_locked_or_safepoint(Compile_lock);
   debug_only(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
@@ -385,14 +434,37 @@ void Klass::append_to_sibling_list() {
   assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == NULL || !is_interface())),
          "an interface can only be a subklass of Object");
-  Klass* prev_first_subklass = super->subklass();
-  if (prev_first_subklass != NULL) {
-    // set our sibling to be the superklass' previous first subklass
-    set_next_sibling(prev_first_subklass);
+
+  // Make sure there is no stale subklass head
+  super->clean_subklass();
+
+  for (;;) {
+    Klass* prev_first_subklass = OrderAccess::load_acquire(&_super->_subklass);
+    if (prev_first_subklass != NULL) {
+      // set our sibling to be the superklass' previous first subklass
+      assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
+      set_next_sibling(prev_first_subklass);
+    }
+    // Note that the prev_first_subklass is always alive, meaning no sibling_next links
+    // are ever created to not alive klasses. This is an important invariant of the lock-free
+    // cleaning protocol, that allows us to safely unlink dead klasses from the sibling list.
+    if (Atomic::cmpxchg(this, &super->_subklass, prev_first_subklass) == prev_first_subklass) {
+      return;
+    }
   }
-  // make ourselves the superklass' first subklass
-  super->set_subklass(this);
   debug_only(verify();)
+}
+
+void Klass::clean_subklass() {
+  for (;;) {
+    // Need load_acquire, due to contending with concurrent inserts
+    Klass* subklass = OrderAccess::load_acquire(&_subklass);
+    if (subklass == NULL || subklass->is_loader_alive()) {
+      return;
+    }
+    // Try to fix _subklass until it points at something not dead.
+    Atomic::cmpxchg(subklass->next_sibling(), &_subklass, subklass);
+  }
 }
 
 oop Klass::holder_phantom() const {
@@ -414,30 +486,14 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass();
-    while (sub != NULL && !sub->is_loader_alive()) {
-#ifndef PRODUCT
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", sub->external_name());
-      }
-#endif
-      sub = sub->next_sibling();
-    }
-    current->set_subklass(sub);
+    Klass* sub = current->subklass(true);
+    current->clean_subklass();
     if (sub != NULL) {
       stack.push(sub);
     }
 
     // Find and set the first alive sibling
-    Klass* sibling = current->next_sibling();
-    while (sibling != NULL && !sibling->is_loader_alive()) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("[Unlinking class (sibling) %s]", sibling->external_name());
-      }
-      sibling = sibling->next_sibling();
-    }
+    Klass* sibling = current->next_sibling(true);
     current->set_next_sibling(sibling);
     if (sibling != NULL) {
       stack.push(sibling);
@@ -470,8 +526,8 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_primary_supers[i]);
   }
   it->push(&_super);
-  it->push(&_subklass);
-  it->push(&_next_sibling);
+  it->push((Klass**)&_subklass);
+  it->push((Klass**)&_next_sibling);
   it->push(&_next_link);
 
   vtableEntry* vt = start_of_vtable();

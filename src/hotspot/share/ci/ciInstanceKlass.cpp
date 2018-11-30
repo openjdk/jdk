@@ -57,7 +57,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
   _has_finalizer = access_flags.has_finalizer();
-  _has_subklass = ik->subklass() != NULL;
+  _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
   _init_state = ik->init_state();
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
@@ -147,8 +147,8 @@ void ciInstanceKlass::compute_shared_init_state() {
 bool ciInstanceKlass::compute_shared_has_subklass() {
   GUARDED_VM_ENTRY(
     InstanceKlass* ik = get_instanceKlass();
-    _has_subklass = ik->subklass() != NULL;
-    return _has_subklass;
+    _has_subklass = ik->subklass() != NULL ? subklass_true : subklass_false;
+    return _has_subklass == subklass_true;
   )
 }
 
@@ -583,7 +583,7 @@ bool ciInstanceKlass::is_leaf_type() {
   if (is_shared()) {
     return is_final();  // approximately correct
   } else {
-    return !_has_subklass && (nof_implementors() == 0);
+    return !has_subklass() && (nof_implementors() == 0);
   }
 }
 
