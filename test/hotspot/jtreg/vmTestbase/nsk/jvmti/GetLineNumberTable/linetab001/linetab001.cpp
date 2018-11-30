@@ -42,15 +42,15 @@ static jvmtiEnv *jvmti;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jvmtiLineNumberEntry m0[] = {
-    {0, 64}
+    { 0, 64 }
 };
 static jvmtiLineNumberEntry m1[] = {
-    {0, 67},
-    {4, 68},
-    {7, 69},
-    {12,70}
+    { 0, 67 },
+    { 4, 68 },
+    { 7, 69 },
+    { 12,70 }
 };
-static info meth_tab[] = {{1, m0}, {4, m1}};
+static info meth_tab[] = { { 1, m0 }, { 4, m1 } };
 
 void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig,
                int stat, int meth_ind) {

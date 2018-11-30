@@ -41,7 +41,7 @@ extern "C" {
 static Options* options = NULL;
 static const char* agentName;
 
-static jvmtiEvent testEvents[] = {JVMTI_EVENT_MONITOR_CONTENDED_ENTER, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED};
+static jvmtiEvent testEvents[] = { JVMTI_EVENT_MONITOR_CONTENDED_ENTER, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED };
 static const int testEventsNumber = 2;
 
 static volatile int monitorEnter = 0;

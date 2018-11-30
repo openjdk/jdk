@@ -44,10 +44,10 @@ static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static frame_info frames[] = {
-    {"Ljava/lang/Object;", "wait", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr003;", "dummy", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr003;", "chain", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr003$TestThread;", "run", "()V"},
+    { "Ljava/lang/Object;", "wait", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr003;", "dummy", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr003;", "chain", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr003$TestThread;", "run", "()V" },
 };
 
 #define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))

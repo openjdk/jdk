@@ -49,64 +49,64 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 static meth_info m0[] = {
-    {"<init>", "(Lnsk/jvmti/GetClassMethods/getclmthd007;)V"},
-    {"meth_1", "(Ljava/lang/String;)V"}
+    { "<init>", "(Lnsk/jvmti/GetClassMethods/getclmthd007;)V" },
+    { "meth_1", "(Ljava/lang/String;)V" }
 };
 
 static meth_info m1[] = {
-    {"meth_n1", "()V"}
+    { "meth_n1", "()V" }
 };
 
 static meth_info m2[] = {
-    {"<init>", "()V"},
-    {"meth_n1", "()V"},
-    {"meth_n2", "()I"},
-    {"<clinit>", "()V"}
+    { "<init>", "()V" },
+    { "meth_n1", "()V" },
+    { "meth_n2", "()I" },
+    { "<clinit>", "()V" }
 };
 
 static meth_info m3[] = {
-    {"<init>", "()V"}
+    { "<init>", "()V" }
 };
 
 static meth_info m4[] = {
-    {"<init>", "()V"},
-    {"meth_o2", "()V"}
+    { "<init>", "()V" },
+    { "meth_o2", "()V" }
 };
 
 static meth_info m5[] = {
-    {"<init>", "()V"},
-    {"meth_o3", "()I"}
+    { "<init>", "()V" },
+    { "meth_o3", "()I" }
 };
 
 static meth_info m6[] = {
-    {"meth_i1", "()I"}
+    { "meth_i1", "()I" }
 };
 
 static meth_info m7[] = {
-    {"meth_i2", "()I"}
+    { "meth_i2", "()I" }
 };
 
 static meth_info m8[] = {
-    {"<init>", "()V"},
-    {"meth_i2", "()I"}
+    { "<init>", "()V" },
+    { "meth_i2", "()I" }
 };
 
 static meth_info m9[] = {
-    {"<init>", "()V"},
-    {"meth_i1", "()I"}
+    { "<init>", "()V" },
+    { "meth_i1", "()I" }
 };
 
 static class_info classes[] = {
-    {"InnerClass1", 2, m0},
-    {"InnerInterface", 1, m1},
-    {"InnerClass2", 4, m2},
-    {"OuterClass1", 1, m3},
-    {"OuterClass2", 2, m4},
-    {"OuterClass3", 2, m5},
-    {"OuterInterface1", 1, m6},
-    {"OuterInterface2", 1, m7},
-    {"OuterClass4", 2, m8},
-    {"OuterClass5", 2, m9}
+    { "InnerClass1", 2, m0 },
+    { "InnerInterface", 1, m1 },
+    { "InnerClass2", 4, m2 },
+    { "OuterClass1", 1, m3 },
+    { "OuterClass2", 2, m4 },
+    { "OuterClass3", 2, m5 },
+    { "OuterInterface1", 1, m6 },
+    { "OuterInterface2", 1, m7 },
+    { "OuterClass4", 2, m8 },
+    { "OuterClass5", 2, m9 }
 };
 
 #ifdef STATIC_BUILD

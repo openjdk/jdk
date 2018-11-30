@@ -38,8 +38,8 @@ extern "C" {
 
 #define METH_NUM 2
 static const char *METHODS[][2] = {
-    {"bpMethod", "()V"},
-    {"bpMethod2", "()I"}
+    { "bpMethod", "()V" },
+    { "bpMethod2", "()I" }
 };
 
 static const char *CLASS_SIG =

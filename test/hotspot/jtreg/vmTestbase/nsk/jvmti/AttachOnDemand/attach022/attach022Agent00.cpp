@@ -36,7 +36,7 @@ static jvmtiEnv* jvmti;
 static Options* options = NULL;
 static const char* agentName;
 
-static jvmtiEvent testEvents[] = {JVMTI_EVENT_OBJECT_FREE, JVMTI_EVENT_VM_OBJECT_ALLOC};
+static jvmtiEvent testEvents[] = { JVMTI_EVENT_OBJECT_FREE, JVMTI_EVENT_VM_OBJECT_ALLOC };
 static const int testEventsNumber = 2;
 
 static volatile int taggedObjectsCounter = 0;
@@ -100,8 +100,8 @@ void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
 int registerNativeMethods(JNIEnv* jni) {
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
-            {(char*)"shutdownAgent", (char*)"(I)Z",
-            (void*) Java_nsk_jvmti_AttachOnDemand_attach022_attach022Target_shutdownAgent}};
+            { (char*)"shutdownAgent", (char*)"(I)Z",
+              (void*) Java_nsk_jvmti_AttachOnDemand_attach022_attach022Target_shutdownAgent } };
     jint nativeMethodsNumber = 1;
 
     appClass = jni->FindClass(ATTACH022_TARGET_APP_CLASS_NAME);

@@ -47,12 +47,12 @@ static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jfieldID thrown_fid = NULL;
 static field fields[] = {
-    {"nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld0", "I", 0, NULL},
-    {"nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld1", "I", 1, NULL},
-    {"nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld2",
-        "Lnsk/jvmti/ClearFieldModificationWatch/clrfmodw001a;", 0, NULL},
-    {"nsk/jvmti/ClearFieldModificationWatch/clrfmodw001a", "fld3", "[I", 0, NULL},
-    {"nsk/jvmti/ClearFieldModificationWatch/clrfmodw001b", "fld4", "F", 0, NULL},
+    { "nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld0", "I", 0, NULL },
+    { "nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld1", "I", 1, NULL },
+    { "nsk/jvmti/ClearFieldModificationWatch/clrfmodw001", "fld2",
+      "Lnsk/jvmti/ClearFieldModificationWatch/clrfmodw001a;", 0, NULL },
+    { "nsk/jvmti/ClearFieldModificationWatch/clrfmodw001a", "fld3", "[I", 0, NULL },
+    { "nsk/jvmti/ClearFieldModificationWatch/clrfmodw001b", "fld4", "F", 0, NULL },
 };
 
 void switchWatch(JNIEnv *env, jint ind, jboolean on) {

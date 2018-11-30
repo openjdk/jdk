@@ -46,11 +46,11 @@ static jboolean printdump = JNI_FALSE;
 static jint result = PASSED;
 static jvmtiThreadInfo inf;
 static int sys_cnt;
-static const char *names0[] = {"main"};
-static const char *names1[] = {"main", "thread1"};
-static const char *names2[] = {"main", "Thread-"};
+static const char *names0[] = { "main" };
+static const char *names1[] = { "main", "thread1" };
+static const char *names2[] = { "main", "Thread-" };
 static info thrInfo[] = {
-    {1, names0}, {1, names0}, {2, names1}, {1, names0}, {2, names2}
+    { 1, names0 }, { 1, names0 }, { 2, names1 }, { 1, names0 }, { 2, names2 }
 };
 
 jthread jthr(JNIEnv *env) {

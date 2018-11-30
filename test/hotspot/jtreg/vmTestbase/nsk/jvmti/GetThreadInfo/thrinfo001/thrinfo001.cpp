@@ -43,9 +43,9 @@ static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 static jvmtiThreadInfo inf;
 static info threads[] = {
-    {"main", JVMTI_THREAD_NORM_PRIORITY, 0},
-    {"thread1", JVMTI_THREAD_MIN_PRIORITY + 2, 1},
-    {"Thread-", JVMTI_THREAD_MIN_PRIORITY, 1}
+    { "main", JVMTI_THREAD_NORM_PRIORITY, 0 },
+    { "thread1", JVMTI_THREAD_MIN_PRIORITY + 2, 1 },
+    { "Thread-", JVMTI_THREAD_MIN_PRIORITY, 1 }
 };
 
 #ifdef STATIC_BUILD

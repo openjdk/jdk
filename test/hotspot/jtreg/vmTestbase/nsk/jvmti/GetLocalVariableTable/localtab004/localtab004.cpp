@@ -44,30 +44,30 @@ typedef struct {   /* local variable info */
 
 /* expected local variable info are below */
 static localVar constr_lv[] = { /* constructor's local variables */
-    {(char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab004a;"},
-    {(char*) "constr_i", (char*) "I"},
-    {(char*) "constr_l", (char*) "J"},
-    {(char*) "constr_d", (char*) "D"},
-    {(char*) "constr_f", (char*) "F"},
-    {(char*) "constr_c", (char*) "C"}
+    { (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab004a;" },
+    { (char*) "constr_i", (char*) "I" },
+    { (char*) "constr_l", (char*) "J" },
+    { (char*) "constr_d", (char*) "D" },
+    { (char*) "constr_f", (char*) "F" },
+    { (char*) "constr_c", (char*) "C" }
 };
 
 static localVar finMeth_lv[] = { /* finMethod()'s local variables */
-    {(char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab004a;"},
-    {(char*) "fin_c", (char*) "C"},
-    {(char*) "fin_i", (char*) "J"},
-    {(char*) "fin_j", (char*) "I"},
-    {(char*) "fin_k", (char*) "J"},
-    {(char*) "fin_l", (char*) "J"},
-    {(char*) "fin_f", (char*) "F"}
+    { (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab004a;" },
+    { (char*) "fin_c", (char*) "C" },
+    { (char*) "fin_i", (char*) "J" },
+    { (char*) "fin_j", (char*) "I" },
+    { (char*) "fin_k", (char*) "J" },
+    { (char*) "fin_l", (char*) "J" },
+    { (char*) "fin_f", (char*) "F" }
 };
 
 static localVar statMeth_lv[] = { /* statMethod()'s local variables */
-    {(char*) "stat_x", (char*) "I"},
-    {(char*) "stat_y", (char*) "I"},
-    {(char*) "stat_z", (char*) "I"},
-    {(char*) "stat_j", (char*) "D"},
-    {(char*) "stat_i", (char*) "I"}
+    { (char*) "stat_x", (char*) "I" },
+    { (char*) "stat_y", (char*) "I" },
+    { (char*) "stat_z", (char*) "I" },
+    { (char*) "stat_j", (char*) "D" },
+    { (char*) "stat_i", (char*) "I" }
 };
 
 typedef struct {    /* local variables of a method */
@@ -81,9 +81,9 @@ typedef struct {    /* local variables of a method */
 
 /* list of tested methods */
 static methodInfo methInfo[] = {
-    {1, (char*) "<init>", (char*) "()V", 6, constr_lv, NULL},
-    {1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, NULL},
-    {0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL}
+    { 1, (char*) "<init>", (char*) "()V", 6, constr_lv, NULL },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, NULL },
+    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL }
 };
 
 static jvmtiEnv *jvmti = NULL;

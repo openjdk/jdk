@@ -41,8 +41,8 @@ typedef struct PropertyDescStruct {
 } PropertyDesc;
 
 static PropertyDesc propDescList[PROPERTIES_COUNT] = {
-    {"nsk.jvmti.test.property", "value of nsk.jvmti.test.property"},
-    {"nsk.jvmti.test.property.empty", ""}
+    { "nsk.jvmti.test.property", "value of nsk.jvmti.test.property" },
+    { "nsk.jvmti.test.property.empty", "" }
 };
 
 /* ============================================================================= */

@@ -52,7 +52,7 @@ static volatile jboolean agentGotCapabilities = JNI_FALSE;
 static jvmtiEvent testEvents[] = {
         JVMTI_EVENT_CLASS_LOAD,
         JVMTI_EVENT_CLASS_PREPARE,
-        JVMTI_EVENT_CLASS_FILE_LOAD_HOOK};
+        JVMTI_EVENT_CLASS_FILE_LOAD_HOOK };
 
 static const int testEventsNumber = 3;
 
@@ -70,7 +70,7 @@ Java_nsk_jvmti_AttachOnDemand_attach002_attach002Target_agentGotCapabilities(JNI
 int registerNativeMethods(JNIEnv* jni) {
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
-            {(char*) "agentGotCapabilities", (char*) "()Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach002_attach002Target_agentGotCapabilities}};
+            { (char*) "agentGotCapabilities", (char*) "()Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach002_attach002Target_agentGotCapabilities } };
     jint nativeMethodsNumber = 1;
 
     appClass = jni->FindClass(ATTACH002_TARGET_APP_CLASS_NAME);

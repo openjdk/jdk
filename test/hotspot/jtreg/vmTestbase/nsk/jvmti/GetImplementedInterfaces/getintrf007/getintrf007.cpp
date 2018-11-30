@@ -48,37 +48,37 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 static iface_info i2[] = {
-    {"Lnsk/jvmti/GetImplementedInterfaces/getintrf007$InnerInterface1;"}
+    { "Lnsk/jvmti/GetImplementedInterfaces/getintrf007$InnerInterface1;" }
 };
 
 static iface_info i3[] = {
-    {"Lnsk/jvmti/GetImplementedInterfaces/getintrf007$InnerInterface2;"}
+    { "Lnsk/jvmti/GetImplementedInterfaces/getintrf007$InnerInterface2;" }
 };
 
 static iface_info i7[] = {
-    {"Lnsk/jvmti/GetImplementedInterfaces/OuterInterface1;"}
+    { "Lnsk/jvmti/GetImplementedInterfaces/OuterInterface1;" }
 };
 
 static iface_info i8[] = {
-    {"Lnsk/jvmti/GetImplementedInterfaces/OuterInterface1;"}
+    { "Lnsk/jvmti/GetImplementedInterfaces/OuterInterface1;" }
 };
 
 static iface_info i9[] = {
-    {"Lnsk/jvmti/GetImplementedInterfaces/OuterInterface2;"}
+    { "Lnsk/jvmti/GetImplementedInterfaces/OuterInterface2;" }
 };
 
 static class_info classes[] = {
-    {"InnerClass1", 0, NULL},
-    {"InnerInterface1", 0, NULL},
-    {"InnerInterface2", 1, i2},
-    {"InnerClass2", 1, i3},
-    {"OuterClass1", 0, NULL},
-    {"OuterClass2", 0, NULL},
-    {"OuterInterface1", 0, NULL},
-    {"OuterClass3", 1, i7},
-    {"OuterInterface2", 1, i8},
-    {"OuterClass4", 1, i9},
-    {"OuterClass5", 0, NULL}
+    { "InnerClass1", 0, NULL },
+    { "InnerInterface1", 0, NULL },
+    { "InnerInterface2", 1, i2 },
+    { "InnerClass2", 1, i3 },
+    { "OuterClass1", 0, NULL },
+    { "OuterClass2", 0, NULL },
+    { "OuterInterface1", 0, NULL },
+    { "OuterClass3", 1, i7 },
+    { "OuterInterface2", 1, i8 },
+    { "OuterClass4", 1, i9 },
+    { "OuterClass5", 0, NULL }
 };
 
 #ifdef STATIC_BUILD

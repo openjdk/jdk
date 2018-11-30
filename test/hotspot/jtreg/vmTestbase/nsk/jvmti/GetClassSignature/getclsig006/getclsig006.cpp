@@ -40,15 +40,15 @@ extern "C" {
 
 /* expected class signatures are below */
 static const char *class_sig[][CLS_NUM] = {
-    {"getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "NULL"},
-    {"getclsig006b", "Lnsk/jvmti/GetClassSignature/getclsig006b;",
-        "<L:Ljava/lang/String;>Ljava/lang/Object;"},
-    {"getclsig006c", "Lnsk/jvmti/GetClassSignature/getclsig006c;",
-        "<A:Ljava/lang/Object;B:Ljava/lang/Integer;>Ljava/lang/Object;"},
-    {"getclsig006if", "Lnsk/jvmti/GetClassSignature/getclsig006if;",
-        "<I:Ljava/lang/Object;>Ljava/lang/Object;"},
-    {"getclsig006g", "Lnsk/jvmti/GetClassSignature/getclsig006g;",
-        "<E:Lnsk/jvmti/GetClassSignature/getclsig006e;:Lnsk/jvmti/GetClassSignature/getclsig006if;>Ljava/lang/Object;"}
+    { "getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "NULL" },
+    { "getclsig006b", "Lnsk/jvmti/GetClassSignature/getclsig006b;",
+      "<L:Ljava/lang/String;>Ljava/lang/Object;" },
+    { "getclsig006c", "Lnsk/jvmti/GetClassSignature/getclsig006c;",
+      "<A:Ljava/lang/Object;B:Ljava/lang/Integer;>Ljava/lang/Object;" },
+    { "getclsig006if", "Lnsk/jvmti/GetClassSignature/getclsig006if;",
+      "<I:Ljava/lang/Object;>Ljava/lang/Object;" },
+    { "getclsig006g", "Lnsk/jvmti/GetClassSignature/getclsig006g;",
+      "<E:Lnsk/jvmti/GetClassSignature/getclsig006e;:Lnsk/jvmti/GetClassSignature/getclsig006if;>Ljava/lang/Object;" }
 };
 
 static jvmtiEnv *jvmti = NULL;

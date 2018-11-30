@@ -49,8 +49,8 @@ static jboolean printdump = JNI_FALSE;
 static size_t eventsExpected = 0;
 static size_t eventsCount = 0;
 static pop_info pops[] = {
-    {"Lnsk/jvmti/FramePop/framepop001;", "chain", "()V", 0},
-    {"Lnsk/jvmti/FramePop/framepop001a;", "dummy", "()V", 3},
+    { "Lnsk/jvmti/FramePop/framepop001;", "chain", "()V", 0 },
+    { "Lnsk/jvmti/FramePop/framepop001a;", "dummy", "()V", 3 },
 };
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,

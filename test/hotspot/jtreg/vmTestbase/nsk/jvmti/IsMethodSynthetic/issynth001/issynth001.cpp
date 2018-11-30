@@ -46,19 +46,19 @@ static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static method_info methods[] = {
-    {1, "meth_stat", "(ILjava/lang/String;)[F", JNI_TRUE, JNI_FALSE},
-    {1, "meth_1", "(CCC)C", JNI_FALSE, JNI_FALSE},
-    {1, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", JNI_TRUE, JNI_TRUE},
-    {1, "access$000",
-        "(Lnsk/jvmti/IsMethodSynthetic/issynth001a;)I", JNI_TRUE, JNI_TRUE},
-    {1, "nmeth", "()V", JNI_FALSE, JNI_FALSE},
-    {1, "check", "(Ljava/lang/Class;Ljava/lang/Class;)I", JNI_TRUE, JNI_FALSE},
+    { 1, "meth_stat", "(ILjava/lang/String;)[F", JNI_TRUE, JNI_FALSE },
+    { 1, "meth_1", "(CCC)C", JNI_FALSE, JNI_FALSE },
+    { 1, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", JNI_TRUE, JNI_TRUE },
+    { 1, "access$000",
+        "(Lnsk/jvmti/IsMethodSynthetic/issynth001a;)I", JNI_TRUE, JNI_TRUE },
+    { 1, "nmeth", "()V", JNI_FALSE, JNI_FALSE },
+    { 1, "check", "(Ljava/lang/Class;Ljava/lang/Class;)I", JNI_TRUE, JNI_FALSE },
 
-    {2, "<init>", "()V", JNI_FALSE, JNI_FALSE},
-    {2, "run",
-        "([Ljava/lang/String;Ljava/io/PrintStream;)I", JNI_TRUE, JNI_FALSE},
+    { 2, "<init>", "()V", JNI_FALSE, JNI_FALSE },
+    { 2, "run",
+        "([Ljava/lang/String;Ljava/io/PrintStream;)I", JNI_TRUE, JNI_FALSE },
 
-    {3, "meth_inn", "(Ljava/lang/String;J)V", JNI_FALSE, JNI_FALSE},
+    { 3, "meth_inn", "(Ljava/lang/String;J)V", JNI_FALSE, JNI_FALSE },
 };
 
 #ifdef STATIC_BUILD
