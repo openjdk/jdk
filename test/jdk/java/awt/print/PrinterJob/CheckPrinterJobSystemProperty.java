@@ -23,8 +23,7 @@
 
 /**
  * @test
- * @run CheckPrinterJobSystemProperty
- * @bug 8130264 8214552
+ * @bug 8130264 8214552 8214558
  * @summary verify the PrinterJob implementation class name is not
  *          polluting system properties
  */
