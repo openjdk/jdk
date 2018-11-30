@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,16 +63,16 @@ public class OopUtilities {
   private static BooleanField threadDaemonField;
 
   // possible values of java_lang_Thread::ThreadStatus
-  private static int THREAD_STATUS_NEW;
+  public static int THREAD_STATUS_NEW;
 
-  private static int THREAD_STATUS_RUNNABLE;
-  private static int THREAD_STATUS_SLEEPING;
-  private static int THREAD_STATUS_IN_OBJECT_WAIT;
-  private static int THREAD_STATUS_IN_OBJECT_WAIT_TIMED;
-  private static int THREAD_STATUS_PARKED;
-  private static int THREAD_STATUS_PARKED_TIMED;
-  private static int THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER;
-  private static int THREAD_STATUS_TERMINATED;
+  public static int THREAD_STATUS_RUNNABLE;
+  public static int THREAD_STATUS_SLEEPING;
+  public static int THREAD_STATUS_IN_OBJECT_WAIT;
+  public static int THREAD_STATUS_IN_OBJECT_WAIT_TIMED;
+  public static int THREAD_STATUS_PARKED;
+  public static int THREAD_STATUS_PARKED_TIMED;
+  public static int THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER;
+  public static int THREAD_STATUS_TERMINATED;
 
   // java.util.concurrent.locks.AbstractOwnableSynchronizer fields
   private static OopField absOwnSyncOwnerThreadField;
