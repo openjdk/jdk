@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -892,9 +892,8 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
     public static final int TAG_TRANSFER_RANGE = 342;
 
     /**
-     * Constant specifying the "JPEGTables" tag.
-     *
-     * @see <a href="ftp://ftp.sgi.com/graphics/tiff/TTN2.draft.txt">JPEG-in-TIFF compression</a>
+     * Constant specifying the "JPEGTables" tag for
+     * "New style" JPEG-in-TIFF compression.
      */
     public static final int TAG_JPEG_TABLES = 347;
 
