@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package com.sun.beans.introspect;
 
-import com.sun.beans.TypeResolver;
-import com.sun.beans.finder.MethodFinder;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import com.sun.beans.TypeResolver;
+import com.sun.beans.finder.MethodFinder;
 
 final class MethodInfo {
     final Method method;
@@ -141,7 +140,10 @@ final class MethodInfo {
             if (aret.isAssignableFrom(bret)) {
                 return 1;
             }
-            return -1;
+            if (bret.isAssignableFrom(aret)) {
+                return -1;
+            }
+            return aret.getName().compareTo(bret.getName());
         }
 
         static final MethodOrder instance = new MethodOrder();
