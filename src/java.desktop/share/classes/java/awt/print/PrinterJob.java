@@ -72,20 +72,7 @@ public abstract class PrinterJob {
         if (security != null) {
             security.checkPrintJobAccess();
         }
-        return java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<PrinterJob>() {
-            public PrinterJob run() {
-                String nm = System.getProperty("java.awt.printerjob", null);
-                try {
-                    return (PrinterJob)Class.forName(nm).
-                                             getConstructor().newInstance();
-                } catch (ClassNotFoundException e) {
-                    throw new AWTError("PrinterJob not found: " + nm);
-                } catch (ReflectiveOperationException e) {
-                 throw new AWTError("Could not instantiate PrinterJob: " + nm);
-                }
-            }
-        });
+        return sun.print.PlatformPrinterJobProxy.getPrinterJob();
     }
 
     /**

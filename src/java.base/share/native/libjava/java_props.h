@@ -69,7 +69,6 @@ typedef struct {
     char *sun_stdout_encoding;
     char *sun_stderr_encoding;
 
-    char *printerJob;
     char *graphics_env;
     char *awt_toolkit;
 
