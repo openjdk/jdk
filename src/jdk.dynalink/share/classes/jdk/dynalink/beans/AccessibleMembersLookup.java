@@ -65,9 +65,8 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Utility class for discovering accessible methods and inner classes. Normally, a public member declared on a class is
@@ -78,7 +77,7 @@ import java.util.Set;
  */
 class AccessibleMembersLookup {
     private final Map<MethodSignature, Method> methods;
-    private final Set<Class<?>> innerClasses;
+    private final Map<String, Class<?>> innerClasses;
     private final boolean instance;
 
     /**
@@ -89,7 +88,7 @@ class AccessibleMembersLookup {
      */
     AccessibleMembersLookup(final Class<?> clazz, final boolean instance) {
         this.methods = new HashMap<>();
-        this.innerClasses = new LinkedHashSet<>();
+        this.innerClasses = new LinkedHashMap<>();
         this.instance = instance;
         lookupAccessibleMembers(clazz);
     }
@@ -110,7 +109,7 @@ class AccessibleMembersLookup {
     }
 
     Class<?>[] getInnerClasses() {
-        return innerClasses.toArray(new Class<?>[0]);
+        return innerClasses.values().toArray(new Class<?>[0]);
     }
 
     /**
@@ -216,7 +215,8 @@ class AccessibleMembersLookup {
                 // NOTE: getting inner class objects through getClasses() does not resolve them, so if those classes
                 // were not yet loaded, they'll only get loaded in a non-resolved state; no static initializers for
                 // them will trigger just by doing this.
-                innerClasses.add(innerClass);
+                // Don't overwrite an inner class with an inherited inner class with the same name.
+                innerClasses.putIfAbsent(innerClass.getSimpleName(), innerClass);
             }
         } else {
             searchSuperTypes = true;
