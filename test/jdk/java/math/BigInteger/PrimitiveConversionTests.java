@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class PrimitiveConversionTests {
     }
 
     public static int testDoubleValue() {
+        System.out.println("--- testDoubleValue ---");
         int failures = 0;
         for (BigInteger big : ALL_BIGINTEGER_CANDIDATES) {
             double expected = Double.parseDouble(big.toString());
@@ -71,7 +72,8 @@ public class PrimitiveConversionTests {
             // should be bitwise identical
             if (Double.doubleToRawLongBits(expected) != Double
                     .doubleToRawLongBits(actual)) {
-                System.out.println(big);
+                System.out.format("big: %s, expected: %f, actual: %f%n",
+                    big, expected, actual);
                 failures++;
             }
         }
@@ -79,6 +81,7 @@ public class PrimitiveConversionTests {
     }
 
     public static int testFloatValue() {
+        System.out.println("--- testFloatValue ---");
         int failures = 0;
         for (BigInteger big : ALL_BIGINTEGER_CANDIDATES) {
             float expected = Float.parseFloat(big.toString());
@@ -87,7 +90,8 @@ public class PrimitiveConversionTests {
             // should be bitwise identical
             if (Float.floatToRawIntBits(expected) != Float
                     .floatToRawIntBits(actual)) {
-                System.out.println(big + " " + expected + " " + actual);
+                System.out.format("big: %s, expected: %f, actual: %f%n",
+                    big, expected, actual);
                 failures++;
             }
         }
