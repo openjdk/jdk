@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,59 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6981576
  * @summary Tests that default border for the titled border is not null
- * @author Sergey Malenkov
  */
 
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.Graphics;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.TitledBorder;
 
-public class Test6981576 extends TitledBorder implements Runnable, Thread.UncaughtExceptionHandler {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Test6981576());
+import static javax.swing.UIManager.getInstalledLookAndFeels;
+
+public class Test6981576 extends TitledBorder {
+
+    private static volatile Throwable failed;
+
+    public static void main(String[] args) throws Throwable {
+        Thread.currentThread().setUncaughtExceptionHandler((t, e) -> {
+            e.printStackTrace();
+            failed = e;
+        });
+
+        for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
+            EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
+            EventQueue.invokeAndWait(() -> {
+                JPanel panel = new JPanel();
+                panel.setBorder(new Test6981576());
+                frame = new JFrame("Test6981576");
+                frame.add(panel);
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.setSize(300, 300);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+
+            });
+            EventQueue.invokeAndWait(() -> {
+                frame.repaint();
+            });
+            EventQueue.invokeAndWait(() -> {
+                frame.dispose();
+            });
+        }
+        if (failed != null) {
+            throw failed;
+        }
     }
 
-    private int index;
-    private LookAndFeelInfo[] infos;
-    private JFrame frame;
+    private static JFrame frame;
 
     private Test6981576() {
         super("");
@@ -55,37 +86,15 @@ public class Test6981576 extends TitledBorder implements Runnable, Thread.Uncaug
         getBorder().paintBorder(c, g, x, y, width, height);
     }
 
-    public void run() {
-        if (this.infos == null) {
-            this.infos = UIManager.getInstalledLookAndFeels();
-            Thread.currentThread().setUncaughtExceptionHandler(this);
-            JPanel panel = new JPanel();
-            panel.setBorder(this);
-            this.frame = new JFrame(getClass().getSimpleName());
-            this.frame.add(panel);
-            this.frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            this.frame.setVisible(true);
+    private static void setLookAndFeel(final UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println("LookAndFeel: " + laf.getClassName());
+        } catch (final UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
-        if (this.index == this.infos.length) {
-            this.frame.dispose();
-        }
-        else {
-            LookAndFeelInfo info = this.infos[this.index % this.infos.length];
-            try {
-                UIManager.setLookAndFeel(info.getClassName());
-            }
-            catch (Exception exception) {
-                System.err.println("could not change look and feel");
-            }
-            SwingUtilities.updateComponentTreeUI(this.frame);
-            this.frame.pack();
-            this.frame.setLocationRelativeTo(null);
-            this.index++;
-            SwingUtilities.invokeLater(this);
-        }
-    }
-
-    public void uncaughtException(Thread thread, Throwable throwable) {
-        System.exit(1);
     }
 }
