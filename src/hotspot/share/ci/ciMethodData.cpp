@@ -198,17 +198,28 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   }
 }
 
-
 void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
   for (int i = 0; i < number_of_entries(); i++) {
     intptr_t k = entries->type(i);
-    TypeStackSlotEntries::set_type(i, translate_klass(k));
+    Klass* klass = (Klass*)klass_part(k);
+    if (klass != NULL && !klass->is_loader_alive()) {
+      // With concurrent class unloading, the MDO could have stale metadata; override it
+      TypeStackSlotEntries::set_type(i, TypeStackSlotEntries::with_status((Klass*)NULL, k));
+    } else {
+      TypeStackSlotEntries::set_type(i, translate_klass(k));
+    }
   }
 }
 
 void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
   intptr_t k = ret->type();
-  set_type(translate_klass(k));
+  Klass* klass = (Klass*)klass_part(k);
+  if (klass != NULL && !klass->is_loader_alive()) {
+    // With concurrent class unloading, the MDO could have stale metadata; override it
+    set_type(ReturnTypeEntry::with_status((Klass*)NULL, k));
+  } else {
+    set_type(translate_klass(k));
+  }
 }
 
 void ciSpeculativeTrapData::translate_from(const ProfileData* data) {
