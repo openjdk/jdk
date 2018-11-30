@@ -995,13 +995,12 @@ void ZBarrierSetC2::expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBa
 }
 
 bool ZBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
-  PhaseMacroExpand macro(igvn);
   ZBarrierSetC2State* s = state();
   if (s->load_barrier_count() > 0) {
+    PhaseMacroExpand macro(igvn);
 #ifdef ASSERT
     verify_gc_barriers(false);
 #endif
-    igvn.set_delay_transform(true);
     int skipped = 0;
     while (s->load_barrier_count() > skipped) {
       int load_barrier_count = s->load_barrier_count();
