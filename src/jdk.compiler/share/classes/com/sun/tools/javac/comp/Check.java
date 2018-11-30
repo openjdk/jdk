@@ -2749,7 +2749,7 @@ public class Check {
         class AnnotationValidator extends TreeScanner {
             @Override
             public void visitAnnotation(JCAnnotation tree) {
-                if (!tree.type.isErroneous()) {
+                if (!tree.type.isErroneous() && tree.type.tsym.isAnnotationType()) {
                     super.visitAnnotation(tree);
                     validateAnnotation(tree);
                 }

@@ -344,17 +344,19 @@ public class Annotate {
 
             Assert.checkNonNull(c, "Failed to create annotation");
 
-            if (annotated.containsKey(a.type.tsym)) {
-                if (!allowRepeatedAnnos) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
+            if (a.type.tsym.isAnnotationType()) {
+                if (annotated.containsKey(a.type.tsym)) {
+                    if (!allowRepeatedAnnos) {
+                        log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
+                    }
+                    ListBuffer<T> l = annotated.get(a.type.tsym);
+                    l = l.append(c);
+                    annotated.put(a.type.tsym, l);
+                    pos.put(c, a.pos());
+                } else {
+                    annotated.put(a.type.tsym, ListBuffer.of(c));
+                    pos.put(c, a.pos());
                 }
-                ListBuffer<T> l = annotated.get(a.type.tsym);
-                l = l.append(c);
-                annotated.put(a.type.tsym, l);
-                pos.put(c, a.pos());
-            } else {
-                annotated.put(a.type.tsym, ListBuffer.of(c));
-                pos.put(c, a.pos());
             }
 
             // Note: @Deprecated has no effect on local variables and parameters
