@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -89,7 +89,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2018
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -855,7 +855,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // We've seen a new Reader.
         // Push it on the stack so we can close it later.
-        //fOwnReaders.add(reader);
+        fReaderStack.push(reader);
 
         // push entity on stack
         if (fCurrentEntity != null) {
@@ -1444,16 +1444,21 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             (fEntityStack.empty() ? null : fEntityStack.get(0));
     }
 
+    // A stack containing all the open readers
+    protected Stack<Reader> fReaderStack = new Stack<>();
 
     /**
      * Close all opened InputStreams and Readers opened by this parser.
      */
     public void closeReaders() {
-        /** this call actually does nothing, readers are closed in the endEntity method
-         * through the current entity.
-         * The change seems to have happened during the jdk6 development with the
-         * addition of StAX
-        **/
+        // close all readers
+        while (!fReaderStack.isEmpty()) {
+            try {
+                (fReaderStack.pop()).close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
     }
 
     public void endEntity() throws IOException, XNIException {
@@ -1485,6 +1490,13 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             }catch(IOException ex){
                 throw new XNIException(ex);
             }
+        }
+
+        // REVISIT: We should never encounter underflow if the calls
+        // to startEntity and endEntity are balanced, but guard
+        // against the EmptyStackException for now. -- mrglavas
+        if (!fReaderStack.isEmpty()) {
+            fReaderStack.pop();
         }
 
         if (fEntityHandler != null) {
