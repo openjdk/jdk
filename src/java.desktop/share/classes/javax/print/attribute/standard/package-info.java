@@ -162,96 +162,96 @@
  *     <th scope="col">Print<br>Service<br>Attribute
  *     <th scope="col">SupportedValuesAttribute
  * </thead>
- * <tbody>
+ * <tbody style="text-align: center">
  *   <tr>
  *     <th scope="row"><a href="Compression.html">Compression</a>
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="DocumentName.html">DocumentName</a>
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="Chromaticity.html">Chromaticity</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="Copies.html">Copies</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="CopiesSupported.html">CopiesSupported</a>
  *   <tr>
  *     <th scope="row"><a href="Finishings.html">Finishings</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="JobHoldUntil.html">JobHoldUntil</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="JobImpressions.html">JobImpressions</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="JobImpressionsSupported.html">JobImpressionsSupported</a>
  *   <tr>
  *     <th scope="row"><a href="JobKOctets.html">JobKOctets</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="JobKOctetsSupported.html">JobKOctetsSupported</a>
  *   <tr>
  *     <th scope="row"><a href="JobMediaSheets.html">JobMediaSheets</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="JobMediaSheetsSupported.html">JobMediaSheetsSupported</a>
  *   <tr>
  *     <th scope="row"><a href="JobName.html">JobName</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="JobPriority.html">JobPriority</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="JobPrioritySupported.html">JobPrioritySupported</a>
  *   <tr>
  *     <th scope="row"><a href="JobSheets.html">JobSheets</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="Media.html">Media</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -265,73 +265,73 @@
  *     <th scope="row"><a href="MultipleDocumentHandling.html">
  *     MultipleDocumentHandling</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="NumberUp.html">NumberUp</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td><a href="NumberUpSupported.html">NumberUpSupported</a>
  *   <tr>
  *     <th scope="row"><a href="OrientationRequested.html">
  *     OrientationRequested</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PageRanges.html">PageRanges</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PresentationDirection.html">
  *     PresentationDirection</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterResolution.html">PrinterResolution</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrintQuality.html">PrintQuality</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="RequestingUserName.html">RequestingUserName</a>
  *     <td>&nbsp;
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="SheetCollate.html">SheetCollate</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="Sides.html">Sides</a>
- *     <td align="center">X
- *     <td align="center">X
- *     <td align="center">X
+ *     <td>X
+ *     <td>X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -339,14 +339,14 @@
  *     DateTimeAtCompleted</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="DateTimeAtCreation.html">DateTimeAtCreation</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -354,7 +354,7 @@
  *     DateTimeAtProcessing</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -362,7 +362,7 @@
  *     JobImpressionsCompleted</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -370,7 +370,7 @@
  *     JobKOctetsProcessed</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -378,7 +378,7 @@
  *     JobMediaSheetsCompleted</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -386,7 +386,7 @@
  *     JobMessageFromOperator</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -394,14 +394,14 @@
  *     JobOriginatingUserName</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="JobState.html">JobState</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -410,7 +410,7 @@
  *     Contains zero or more --
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -424,7 +424,7 @@
  *     <th scope="row"><a href="NumberOfDocuments.html">NumberOfDocuments</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -432,7 +432,7 @@
  *     NumberOfInterveningJobs</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -440,7 +440,7 @@
  *     OutputDeviceAssigned</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
@@ -448,14 +448,14 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PagesPerMinute.html">PagesPerMinute</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PagesPerMinuteColor.html">
@@ -463,7 +463,7 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PDLOverrideSupported.html">
@@ -471,7 +471,7 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterIsAcceptingJobs.html">
@@ -479,21 +479,21 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterInfo.html">PrinterInfo</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterLocation.html">PrinterLocation</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterMessageFromOperator.html">
@@ -501,7 +501,7 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterMakeAndModel.html">
@@ -509,14 +509,14 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterMoreInfo.html">PrinterMoreInfo</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterMoreInfoManufacturer.html">
@@ -524,21 +524,21 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterName.html">PrinterName</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterState.html">PrinterState</a>
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="PrinterStateReasons.html">
@@ -548,7 +548,7 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row">-- <a href="PrinterStateReason.html">
@@ -570,7 +570,7 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *     <td>&nbsp;
- *     <td align="center">X
+ *     <td>X
  *     <td>&nbsp;
  *   <tr>
  *     <th scope="row"><a href="ReferenceUriSchemesSupported.html">
