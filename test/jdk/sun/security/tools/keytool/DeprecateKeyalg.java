@@ -26,7 +26,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @bug 8212003
+ * @bug 8212003 8214179
  * @summary Deprecating the default keytool -keyalg option
  * @library /test/lib
  */
@@ -55,6 +55,15 @@ public class DeprecateKeyalg {
                 .shouldContain("Generated")
                 .shouldContain("default key algorithm (DES)")
                 .shouldContain("-keyalg option must be specified");
+
+        kt("-genkeypair -alias e -dname CN=e -keyalg EC -groupname brainpoolP256r1")
+                .shouldContain("Generating 256 bit EC (brainpoolP256r1) key pair");
+
+        kt("-genkeypair -alias f -dname CN=f -keyalg EC")
+                .shouldContain("Generating 256 bit EC (secp256r1) key pair");
+
+        kt("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 384")
+                .shouldContain("Generating 384 bit EC (secp384r1) key pair");
     }
 
     private static OutputAnalyzer kt(String cmd) throws Throwable {
