@@ -1,15 +1,6 @@
 #
 #    source: Cp970.b2c, which is identical(?) to 03CA34B0.TPMAP100
 #
-#    Warning:
-#        following 3 c->b only entries exist in the "old" implementation,
-#        they don't appear existing in any of of the cdc 970 tables. Added
-#        them into c2b for "compatibility
-#        6950  ->  a1aa    2014
-#        84f1  ->  a1a9    2010
-#        cf7f  ->  a1ad    301c
-#
-#
 00         0000			
 01         0001			
 02         0002			
@@ -294,6 +285,7 @@ A2BD       2661
 A2BE       2665			
 A2BF       2667			
 A2C0       2663			
+A2C1       25C9			
 A2C2       25C8			
 A2C3       25A3			
 A2C4       25D0			

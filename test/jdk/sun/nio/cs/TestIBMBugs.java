@@ -174,6 +174,19 @@ public class TestIBMBugs {
         }
     }
 
+    private static void bug8213618 () throws Exception {
+        String cs = "x-IBM970";
+        byte[] ba = new byte[]{(byte)0xA2,(byte)0xC1};
+        String s = "\u25C9";
+        if (!(new String(ba, cs)).equals(s))
+            throw new Exception("Cp970 failed");
+        if (!Arrays.equals(ba, s.getBytes(cs)))
+            throw new Exception("Cp970 failed");
+        ba = new byte[]{0x3f,0x3f,0x3f};
+        if (!Arrays.equals(ba, "\u6950\u84f1\ucf7f".getBytes(cs)))
+            throw new Exception("Cp970 failed");
+    }
+
     private static void bug8202329() throws Exception {
         String original = "\\\u007E\u00A5\u203E"; // [backslash][tilde][yen][overscore]
         byte[] expectedBytes; // bytes after conversion
@@ -232,5 +245,6 @@ public class TestIBMBugs {
         bug6371431();
         bug6569191();
         bug8202329();
+        bug8213618();
     }
 }
