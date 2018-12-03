@@ -325,17 +325,13 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
   fi
 
-  # Only enable ZGC on Linux x86_64
-  AC_MSG_CHECKING([if zgc should be built])
-  if HOTSPOT_CHECK_JVM_FEATURE(zgc); then
-    if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-      AC_MSG_RESULT([yes])
-    else
-      DISABLED_JVM_FEATURES="$DISABLED_JVM_FEATURES zgc"
-      AC_MSG_RESULT([no, platform not supported])
-    fi
+  # Only enable ZGC on supported platforms
+  AC_MSG_CHECKING([if zgc can be built])
+  if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+    AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no])
+    DISABLED_JVM_FEATURES="$DISABLED_JVM_FEATURES zgc"
+    AC_MSG_RESULT([no, platform not supported])
   fi
 
   # Disable unsupported GCs for Zero
@@ -474,7 +470,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc jni-check jvmti management nmt services vm-structs"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc jni-check jvmti management nmt services vm-structs zgc"
 
   # Disable CDS on AIX.
   if test "x$OPENJDK_TARGET_OS" = "xaix"; then
