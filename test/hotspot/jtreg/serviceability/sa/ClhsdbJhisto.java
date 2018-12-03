@@ -34,6 +34,7 @@ import jdk.test.lib.Utils;
  * @bug 8191658
  * @summary Test clhsdb jhisto command
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @run main/othervm ClhsdbJhisto
  */
