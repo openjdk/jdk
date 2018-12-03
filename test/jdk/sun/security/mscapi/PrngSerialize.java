@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,27 @@
 
 /**
  * @test
- * @bug 6449335 8210476
+ * @bug 8210476
  * @requires os.family == "windows"
- * @summary MSCAPI's PRNG is too slow
- * @key randomness
+ * @summary MSCAPI's PRNG should support serialization
+ * @library /test/lib
+ * @run main PrngSerialize
  */
+
+import jdk.test.lib.util.SerializationUtils;
 
 import java.security.SecureRandom;
 
-public class PrngSlow {
+public class PrngSerialize {
 
     public static void main(String[] args) throws Exception {
-        double t = 0.0;
-        SecureRandom sr = null;
-        sr = SecureRandom.getInstance("Windows-PRNG", "SunMSCAPI");
-        long start = System.nanoTime();
-        for (int i = 0; i < 10000; i++) {
-            if (i % 100 == 0) System.err.print(".");
-            sr.nextBoolean();
-        };
-        t = (System.nanoTime() - start) / 1000000000.0;
-        System.err.println("\nSpend " + t + " seconds");
-        if (t > 0.5)
-            throw new RuntimeException("Still too slow");
+        SecureRandom sr = SecureRandom.getInstance("Windows-PRNG", "SunMSCAPI");
+        sr = (SecureRandom) SerializationUtils.deserialize(SerializationUtils.serialize(sr));
+
+        // This line is likely to release the context in the original sr.
+        System.gc();
+
+        // Make sure the new object is still useable.
+        sr.nextInt();
     }
 }
