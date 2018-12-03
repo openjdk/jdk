@@ -245,6 +245,7 @@ public class MemberEnter extends JCTree.Visitor {
                                                              tree.sym.type.getReturnType());
         }
         if ((tree.mods.flags & STATIC) != 0) localEnv.info.staticLevel++;
+        localEnv.info.breakResult = null;
         return localEnv;
     }
 
