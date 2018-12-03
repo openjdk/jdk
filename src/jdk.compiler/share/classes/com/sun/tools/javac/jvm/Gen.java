@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.jvm;
 
+import java.util.function.BiConsumer;
+
 import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -160,6 +162,10 @@ public class Gen extends JCTree.Visitor {
      *  ending source positions.
      */
     EndPosTable endPosTable;
+
+    boolean inCondSwitchExpression;
+    Chain switchExpressionTrueChain;
+    Chain switchExpressionFalseChain;
 
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
@@ -719,6 +725,42 @@ public class Gen extends JCTree.Visitor {
                                       Code.mergeChains(falseJumps, second.falseJumps));
             if (markBranches) result.tree = tree.falsepart;
             return result;
+        } else if (inner_tree.hasTag(SWITCH_EXPRESSION)) {
+            boolean prevInCondSwitchExpression = inCondSwitchExpression;
+            Chain prevSwitchExpressionTrueChain = switchExpressionTrueChain;
+            Chain prevSwitchExpressionFalseChain = switchExpressionFalseChain;
+            try {
+                inCondSwitchExpression = true;
+                switchExpressionTrueChain = null;
+                switchExpressionFalseChain = null;
+                try {
+                    doHandleSwitchExpression((JCSwitchExpression) inner_tree);
+                } catch (CompletionFailure ex) {
+                    chk.completionError(_tree.pos(), ex);
+                    code.state.stacksize = 1;
+                }
+                CondItem result = items.makeCondItem(goto_,
+                                                     switchExpressionTrueChain,
+                                                     switchExpressionFalseChain);
+                if (markBranches) result.tree = _tree;
+                return result;
+            } finally {
+                inCondSwitchExpression = prevInCondSwitchExpression;
+                switchExpressionTrueChain = prevSwitchExpressionTrueChain;
+                switchExpressionFalseChain = prevSwitchExpressionFalseChain;
+            }
+        } else if (inner_tree.hasTag(LETEXPR) && ((LetExpr) inner_tree).needsCond) {
+            LetExpr tree = (LetExpr) inner_tree;
+            int limit = code.nextreg;
+            int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
+            try {
+                genStats(tree.defs, env);
+            } finally {
+                code.setLetExprStackPos(prevLetExprStart);
+            }
+            CondItem result = genCond(tree.expr, markBranches);
+            code.endScopes(limit);
+            return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
             if (markBranches) result.tree = _tree;
@@ -1119,25 +1161,50 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitSwitch(JCSwitch tree) {
+        handleSwitch(tree, tree.selector, tree.cases);
+    }
+
+    @Override
+    public void visitSwitchExpression(JCSwitchExpression tree) {
+        code.resolvePending();
+        boolean prevInCondSwitchExpression = inCondSwitchExpression;
+        try {
+            inCondSwitchExpression = false;
+            doHandleSwitchExpression(tree);
+        } finally {
+            inCondSwitchExpression = prevInCondSwitchExpression;
+        }
+        result = items.makeStackItem(pt);
+    }
+
+    private void doHandleSwitchExpression(JCSwitchExpression tree) {
+        int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
+        try {
+            handleSwitch(tree, tree.selector, tree.cases);
+        } finally {
+            code.setLetExprStackPos(prevLetExprStart);
+        }
+    }
+
+    private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases) {
         int limit = code.nextreg;
-        Assert.check(!tree.selector.type.hasTag(CLASS));
+        Assert.check(!selector.type.hasTag(CLASS));
         int startpcCrt = genCrt ? code.curCP() : 0;
         Assert.check(code.isStatementStart());
-        Item sel = genExpr(tree.selector, syms.intType);
-        List<JCCase> cases = tree.cases;
+        Item sel = genExpr(selector, syms.intType);
         if (cases.isEmpty()) {
             // We are seeing:  switch <sel> {}
             sel.load().drop();
             if (genCrt)
-                code.crt.put(TreeInfo.skipParens(tree.selector),
+                code.crt.put(TreeInfo.skipParens(selector),
                              CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
         } else {
             // We are seeing a nonempty switch.
             sel.load();
             if (genCrt)
-                code.crt.put(TreeInfo.skipParens(tree.selector),
+                code.crt.put(TreeInfo.skipParens(selector),
                              CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
-            Env<GenContext> switchEnv = env.dup(tree, new GenContext());
+            Env<GenContext> switchEnv = env.dup(swtch, new GenContext());
             switchEnv.info.isSwitch = true;
 
             // Compute number of labels and minimum and maximum label values.
@@ -1593,10 +1660,35 @@ public class Gen extends JCTree.Visitor {
 
     public void visitBreak(JCBreak tree) {
         int tmpPos = code.pendingStatPos;
+        Assert.check(code.isStatementStart());
         Env<GenContext> targetEnv = unwind(tree.target, env);
         code.pendingStatPos = tmpPos;
-        Assert.check(code.isStatementStart());
-        targetEnv.info.addExit(code.branch(goto_));
+        if (tree.isValueBreak()) {
+            if (inCondSwitchExpression) {
+                CondItem value = genCond(tree.value, CRT_FLOW_TARGET);
+                Chain falseJumps = value.jumpFalse();
+                code.resolve(value.trueJumps);
+                Chain trueJumps = code.branch(goto_);
+                if (switchExpressionTrueChain == null) {
+                    switchExpressionTrueChain = trueJumps;
+                } else {
+                    switchExpressionTrueChain =
+                            Code.mergeChains(switchExpressionTrueChain, trueJumps);
+                }
+                if (switchExpressionFalseChain == null) {
+                    switchExpressionFalseChain = falseJumps;
+                } else {
+                    switchExpressionFalseChain =
+                            Code.mergeChains(switchExpressionFalseChain, falseJumps);
+                }
+            } else {
+                genExpr(tree.value, pt).load();
+                code.state.forceStackTop(tree.target.type);
+                targetEnv.info.addExit(code.branch(goto_));
+            }
+        } else {
+            targetEnv.info.addExit(code.branch(goto_));
+        }
         endFinalizerGaps(env, targetEnv);
     }
 

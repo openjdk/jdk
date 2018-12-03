@@ -3016,6 +3016,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class LetExpr extends JCExpression {
         public List<JCStatement> defs;
         public JCExpression expr;
+        /**true if a expr should be run through Gen.genCond:*/
+        public boolean needsCond;
         protected LetExpr(List<JCStatement> defs, JCExpression expr) {
             this.defs = defs;
             this.expr = expr;
