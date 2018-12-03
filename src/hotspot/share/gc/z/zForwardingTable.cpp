@@ -38,11 +38,18 @@ void ZForwardingTable::setup(size_t live_objects) {
   _size = ZUtils::round_up_power_of_2(live_objects * 2);
   _table = MallocArrayAllocator<ZForwardingTableEntry>::allocate(_size, mtGC);
 
-  // Clear table
-  memset(_table, ZForwardingTableEntry::empty(), _size * sizeof(ZForwardingTableEntry));
+  // Construct table entries
+  for (size_t i = 0; i < _size; i++) {
+    ::new (_table + i) ZForwardingTableEntry();
+  }
 }
 
 void ZForwardingTable::reset() {
+  // Destruct table entries
+  for (size_t i = 0; i < _size; i++) {
+    (_table + i)->~ZForwardingTableEntry();
+  }
+
   // Free table
   MallocArrayAllocator<ZForwardingTableEntry>::free(_table);
   _table = NULL;

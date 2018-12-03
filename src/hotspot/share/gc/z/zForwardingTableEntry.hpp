@@ -52,6 +52,10 @@ private:
 
   uint64_t _entry;
 
+  static uintptr_t empty() {
+    return (uintptr_t)-1;
+  }
+
 public:
   ZForwardingTableEntry() :
       _entry(empty()) {}
@@ -59,10 +63,6 @@ public:
   ZForwardingTableEntry(size_t from_index, size_t to_offset) :
       _entry(field_from_index::encode(from_index) |
              field_to_offset::encode(to_offset)) {}
-
-  static uintptr_t empty() {
-    return (uintptr_t)-1;
-  }
 
   bool is_empty() const {
     return _entry == empty();
