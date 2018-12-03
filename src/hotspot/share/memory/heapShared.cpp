@@ -581,7 +581,7 @@ void HeapShared::check_closed_archive_heap_region_object(InstanceKlass* k,
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       BasicType ft = fs.field_descriptor().field_type();
-      if (!fs.access_flags().is_final() && (ft == T_ARRAY || T_OBJECT)) {
+      if (!fs.access_flags().is_final() && (ft == T_ARRAY || ft == T_OBJECT)) {
         ResourceMark rm(THREAD);
         log_warning(cds, heap)(
           "Please check reference field in %s instance in closed archive heap region: %s %s",
