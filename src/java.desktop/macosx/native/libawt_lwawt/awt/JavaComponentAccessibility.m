@@ -221,6 +221,12 @@ static NSObject *sAttributeNamesLOCK = nil;
     NSAccessibilityPostNotification(self, NSAccessibilitySelectedChildrenChangedNotification);
 }
 
+-(void)postTitleChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, NSAccessibilityTitleChangedNotification);
+}
+
 - (void)postMenuOpened
 {
     AWT_ASSERT_APPKIT_THREAD;
@@ -497,7 +503,8 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (attributeStatesArray[6]) {
         [attributeNames addObject:NSAccessibilityChildrenAttribute];
         if ([javaRole isEqualToString:@"list"]
-                || [javaRole isEqualToString:@"table"]) {
+                || [javaRole isEqualToString:@"table"]
+                || [javaRole isEqualToString:@"pagetablist"]) {
             [attributeNames addObject:NSAccessibilitySelectedChildrenAttribute];
             [attributeNames addObject:NSAccessibilityVisibleChildrenAttribute];
         }
@@ -1440,6 +1447,19 @@ JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    titleChanged
+ * Signature: (I)V
+ */
+ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_titleChanged
+ (JNIEnv *env, jclass jklass, jlong element)
+ {
+JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThread:@selector(postTitleChanged) on:(JavaComponentAccessibility*)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
+JNF_COCOA_EXIT(env);
+ }
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible

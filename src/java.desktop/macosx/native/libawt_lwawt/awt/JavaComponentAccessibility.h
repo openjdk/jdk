@@ -52,6 +52,7 @@
 - (void)postValueChanged;
 - (void)postSelectedTextChanged;
 - (void)postSelectionChanged;
+- (void)postTitleChanged;
 - (BOOL)isEqual:(id)anObject;
 - (BOOL)isAccessibleWithEnv:(JNIEnv *)env forAccessible:(jobject)accessible;
 

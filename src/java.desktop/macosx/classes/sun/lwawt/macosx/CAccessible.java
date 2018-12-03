@@ -32,6 +32,7 @@ import java.beans.PropertyChangeListener;
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 import javax.swing.JProgressBar;
+import javax.swing.JTabbedPane;
 import javax.swing.JSlider;
 import javax.swing.JCheckBox;
 import javax.swing.event.ChangeEvent;
@@ -42,6 +43,8 @@ import static javax.accessibility.AccessibleContext.ACCESSIBLE_CARET_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_STATE_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_TEXT_PROPERTY;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_NAME_PROPERTY;
+
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import sun.awt.AWTAccessor;
@@ -67,6 +70,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
     private static native void valueChanged(long ptr);
     private static native void selectedTextChanged(long ptr);
     private static native void selectionChanged(long ptr);
+    private static native void titleChanged(long ptr);
     private static native void menuOpened(long ptr);
     private static native void menuClosed(long ptr);
     private static native void menuItemSelected(long ptr);
@@ -121,9 +125,9 @@ class CAccessible extends CFRetainedResource implements Accessible {
                 Object oldValue = e.getOldValue();
                 if (name.compareTo(ACCESSIBLE_CARET_PROPERTY) == 0) {
                     selectedTextChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_TEXT_PROPERTY) == 0 ) {
+                } else if (name.compareTo(ACCESSIBLE_TEXT_PROPERTY) == 0) {
                     valueChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_SELECTION_PROPERTY) == 0 ) {
+                } else if (name.compareTo(ACCESSIBLE_SELECTION_PROPERTY) == 0) {
                     selectionChanged(ptr);
                 } else if (name.compareTo(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0 ) {
                     if (newValue instanceof AccessibleContext) {
@@ -161,6 +165,11 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
                         valueChanged(ptr);
+                    }
+                } else if (name.compareTo(ACCESSIBLE_NAME_PROPERTY) == 0) {
+                    //for now trigger only for JTabbedPane.
+                    if (e.getSource() instanceof JTabbedPane) {
+                        titleChanged(ptr);
                     }
                 }
             }
