@@ -64,8 +64,9 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     include lib/JvmFeatures.gmk
     include lib/JvmFlags.gmk
 
-    # We cannot compile until the JVMTI gensrc has finished
+    # We cannot compile until the JVMTI and JFR gensrc has finished
     JVMTI_H := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles/jvmti.h
+    JFR_FILES := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles/jfrEventClasses.hpp
 
     $(eval $(call SetupNativeCompilation, BUILD_DTRACE_GEN_OFFSETS, \
         NAME := dtraceGenOffsets, \
@@ -76,7 +77,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         CFLAGS := -m64 $(JVM_CFLAGS), \
         DISABLED_WARNINGS_solstudio := hidef w_novirtualdescr unknownpragma \
             doubunder nokeyworddefine wunreachable, \
-        EXTRA_DEPS := $(JVMTI_H), \
+        EXTRA_DEPS := $(JVMTI_H) $(JFR_FILES), \
         OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \
         OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets, \
     ))
