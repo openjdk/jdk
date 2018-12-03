@@ -3230,7 +3230,7 @@ MemBarNode* MemBarNode::leading_membar() const {
   while (leading != NULL && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {
     while (leading == NULL || leading->is_top() || seen.test_set(leading->_idx)) {
       leading = NULL;
-      while (regions.size() > 0) {
+      while (regions.size() > 0 && leading == NULL) {
         Node* r = regions.node();
         uint i = regions.index();
         if (i < r->req()) {
