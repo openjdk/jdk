@@ -44,10 +44,12 @@ void G1Arguments::initialize_verification_types() {
     size_t length = strlen(VerifyGCType);
     char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
     strncpy(type_list, VerifyGCType, length + 1);
-    char* token = strtok(type_list, delimiter);
+    char* save_ptr;
+
+    char* token = strtok_r(type_list, delimiter, &save_ptr);
     while (token != NULL) {
       parse_verification_type(token);
-      token = strtok(NULL, delimiter);
+      token = strtok_r(NULL, delimiter, &save_ptr);
     }
     FREE_C_HEAP_ARRAY(char, type_list);
   }
