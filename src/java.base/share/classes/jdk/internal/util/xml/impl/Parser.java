@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -650,6 +650,8 @@ public abstract class Parser {
      * @exception IOException
      */
     private void dtdsub() throws Exception {
+        startInternalSub(); // reports the event before parsing the subset
+
         char ch;
         for (short st = 0; st >= 0;) {
             ch = getch();
@@ -2229,6 +2231,13 @@ public abstract class Parser {
      */
     protected abstract void docType(String name, String pubid, String sysid)
             throws SAXException;
+
+    /**
+     * Reports the start of DTD internal subset.
+     *
+     * @throws SAXException if the receiver throws SAXException
+     */
+    public abstract void startInternalSub () throws SAXException;
 
     /**
      * Reports a comment.

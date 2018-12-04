@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,7 +551,16 @@ final class ParserSAX
      * @param sysid The system identifier of the entity or <code>null</code>.
      */
     protected void docType(String name, String pubid, String sysid) throws SAXException {
-        mHandDtd.notationDecl(name, pubid, sysid);
+        mHandDtd.startDTD(name, pubid, sysid);
+    }
+
+    /**
+     * Reports the start of DTD internal subset.
+     *
+     * @throws SAXException if the receiver throws SAXException
+     */
+    public void startInternalSub () throws SAXException {
+        mHandDtd.startInternalSub();
     }
 
     /**
