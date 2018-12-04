@@ -51,6 +51,9 @@ class VersionProps {
     private static final String VERSION_NUMBER =
         "@@VERSION_NUMBER@@";
 
+    private static final String VERSION_SPECIFICATION =
+        "@@VERSION_SPECIFICATION@@";
+
     private static final String VERSION_BUILD =
         "@@VERSION_BUILD@@";
 
@@ -97,7 +100,7 @@ class VersionProps {
 
         props.setProperty("java.class.version", CLASSFILE_MAJOR_MINOR);
 
-        props.setProperty("java.specification.version", VERSION_NUMBER);
+        props.setProperty("java.specification.version", VERSION_SPECIFICATION);
         props.setProperty("java.specification.name", "Java Platform API Specification");
         props.setProperty("java.specification.vendor", "Oracle Corporation");
 
