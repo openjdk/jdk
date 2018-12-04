@@ -1151,7 +1151,7 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
     InstanceKlass* ck = InstanceKlass::cast(current_klass);
     InstanceKlass *klass_to_check = !ck->is_unsafe_anonymous() ?
                                     ck :
-                                    InstanceKlass::cast(ck->unsafe_anonymous_host());
+                                    ck->unsafe_anonymous_host();
     // Disable verification for the dynamically-generated reflection bytecodes.
     bool is_reflect = klass_to_check->is_subclass_of(
                         SystemDictionary::reflect_MagicAccessorImpl_klass());

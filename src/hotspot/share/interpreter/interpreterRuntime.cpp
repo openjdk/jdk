@@ -728,7 +728,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
   // class is initialized.  This is required so that access to the static
   // field will call the initialization function every time until the class
   // is completely initialized ala. in 2.17.5 in JVM Specification.
-  InstanceKlass* klass = InstanceKlass::cast(info.field_holder());
+  InstanceKlass* klass = info.field_holder();
   bool uninitialized_static = is_static && !klass->is_initialized();
   bool has_initialized_final_update = info.field_holder()->major_version() >= 53 &&
                                       info.has_initialized_final_update();
