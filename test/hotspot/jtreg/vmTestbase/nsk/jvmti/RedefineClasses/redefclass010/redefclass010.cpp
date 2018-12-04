@@ -37,18 +37,18 @@ extern "C" {
 
 /* line number matrix of original methods */
 static int orig_ln[METH_NUM][8] = {
-    {34, 0, 0, 0, 0, 0, 0, 0}, /* <init> */
-    {40,41,43, 0, 0, 0, 0, 0}, /* checkIt */
-    {55, 0, 0, 0, 0, 0, 0, 0}, /* finMethod */
-    {48,50,51,50,52, 0, 0, 0}  /* statMethod */
+    { 34, 0, 0, 0, 0, 0, 0, 0 }, /* <init> */
+    { 40,41,43, 0, 0, 0, 0, 0 }, /* checkIt */
+    { 55, 0, 0, 0, 0, 0, 0, 0 }, /* finMethod */
+    { 48,50,51,50,52, 0, 0, 0 }  /* statMethod */
 };
 
 /* line number matrix of redefined methods */
 static int redf_ln[METH_NUM][8] = {
-    {38,39,40,41,42,43,44,46}, /* <init> */
-    {51,53,55, 0, 0, 0, 0, 0}, /* checkIt */
-    {64,66,67,68,69,70,72, 0}, /* finMethod */
-    {60, 0, 0, 0, 0, 0, 0, 0}  /* statMethod */
+    { 38,39,40,41,42,43,44,46 }, /* <init> */
+    { 51,53,55, 0, 0, 0, 0, 0 }, /* checkIt */
+    { 64,66,67,68,69,70,72, 0 }, /* finMethod */
+    { 60, 0, 0, 0, 0, 0, 0, 0 }  /* statMethod */
 };
 
 typedef struct {   /* line numbers of a method */
@@ -61,18 +61,18 @@ typedef struct {   /* line numbers of a method */
 
 /* list of original methods */
 static methInfo origMethInfo[] = {
-    {1, (char*) "<init>", (char*) "()V", 1, NULL},
-    {1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, NULL},
-    {1, (char*) "finMethod", (char*) "(CJIJ)V", 1, NULL},
-    {0, (char*) "statMethod", (char*) "(III)D", 5, NULL}
+    { 1, (char*) "<init>", (char*) "()V", 1, NULL },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, NULL },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 1, NULL },
+    { 0, (char*) "statMethod", (char*) "(III)D", 5, NULL }
 };
 
 /* list of redefined methods */
 static methInfo redefMethInfo[] = {
-    {1, (char*) "<init>", (char*) "()V", 8, NULL},
-    {1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, NULL},
-    {1, (char*) "finMethod", (char*) "(CJIJ)V", 7, NULL},
-    {0, (char*) "statMethod", (char*) "(III)D", 1, NULL}
+    { 1, (char*) "<init>", (char*) "()V", 8, NULL },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, NULL },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, NULL },
+    { 0, (char*) "statMethod", (char*) "(III)D", 1, NULL }
 };
 
 static jvmtiEnv *jvmti = NULL;

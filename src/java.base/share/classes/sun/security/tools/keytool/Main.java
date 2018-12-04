@@ -51,6 +51,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.URICertStoreParameters;
 
 
+import java.security.interfaces.ECKey;
+import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
@@ -70,6 +72,7 @@ import java.util.Base64;
 
 import sun.security.util.ECKeySizeParameterSpec;
 import sun.security.util.KeyUtil;
+import sun.security.util.NamedCurve;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -1882,11 +1885,12 @@ public final class Main {
 
         MessageFormat form = new MessageFormat(rb.getString
             ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
-        Object[] source = {keysize,
-                            privKey.getAlgorithm(),
-                            chain[0].getSigAlgName(),
-                            validity,
-                            x500Name};
+        Object[] source = {
+                groupName == null ? keysize : KeyUtil.getKeySize(privKey),
+                fullDisplayAlgName(privKey),
+                chain[0].getSigAlgName(),
+                validity,
+                x500Name};
         System.err.println(form.format(source));
 
         if (keyPass == null) {
@@ -3266,19 +3270,28 @@ public final class Main {
         }
     }
 
-    private String withWeak(PublicKey key) {
+    private String fullDisplayAlgName(Key key) {
+        String result = key.getAlgorithm();
+        if (key instanceof ECKey) {
+            ECParameterSpec paramSpec = ((ECKey) key).getParams();
+            if (paramSpec instanceof NamedCurve) {
+                result += " (" + paramSpec.toString().split(" ")[0] + ")";
+            }
+        }
+        return result;
+    }
+
+    private String withWeak(Key key) {
+        int kLen = KeyUtil.getKeySize(key);
+        String displayAlg = fullDisplayAlgName(key);
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
-            int kLen = KeyUtil.getKeySize(key);
             if (kLen >= 0) {
-                return String.format(rb.getString("key.bit"),
-                        kLen, key.getAlgorithm());
+                return String.format(rb.getString("key.bit"), kLen, displayAlg);
             } else {
-                return String.format(
-                        rb.getString("unknown.size.1"), key.getAlgorithm());
+                return String.format(rb.getString("unknown.size.1"), displayAlg);
             }
         } else {
-            return String.format(rb.getString("key.bit.weak"),
-                    KeyUtil.getKeySize(key), key.getAlgorithm());
+            return String.format(rb.getString("key.bit.weak"), kLen, displayAlg);
         }
     }
 

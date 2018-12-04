@@ -2585,7 +2585,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, VerifyMetaspace, false,                                     \
           "Verify metaspace on chunk movements.")                           \
                                                                             \
-  diagnostic(bool, ShowRegistersOnAssert, false,                            \
+  diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \
                                                                             \
   experimental(bool, UseSwitchProfiling, true,                              \

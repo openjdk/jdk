@@ -69,6 +69,7 @@ class fieldDescriptor;
 class jniIdMapBase;
 class JNIid;
 class JvmtiCachedClassFieldMap;
+class nmethodBucket;
 class SuperTypeClosure;
 
 // This is used in iterators below.
@@ -249,7 +250,8 @@ class InstanceKlass: public Klass {
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
-  intptr_t        _dep_context;          // packed DependencyContext structure
+  nmethodBucket*  volatile _dep_context;          // packed DependencyContext structure
+  uint64_t        volatile _dep_context_last_cleaned;
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
@@ -976,7 +978,8 @@ public:
   inline DependencyContext dependencies();
   int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
+  void remove_dependent_nmethod(nmethod* nm);
+  void clean_dependency_context();
 
   // On-stack replacement support
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
@@ -1092,9 +1095,9 @@ public:
                      nonstatic_oop_map_count());
   }
 
-  Klass** adr_implementor() const {
+  Klass* volatile* adr_implementor() const {
     if (is_interface()) {
-      return (Klass**)end_of_nonstatic_oop_maps();
+      return (Klass* volatile*)end_of_nonstatic_oop_maps();
     } else {
       return NULL;
     }
@@ -1102,7 +1105,7 @@ public:
 
   InstanceKlass** adr_unsafe_anonymous_host() const {
     if (is_unsafe_anonymous()) {
-      InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
+      InstanceKlass** adr_impl = (InstanceKlass**)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
@@ -1120,7 +1123,7 @@ public:
         return (address)(adr_host + 1);
       }
 
-      Klass** adr_impl = adr_implementor();
+      Klass* volatile* adr_impl = adr_implementor();
       if (adr_impl != NULL) {
         return (address)(adr_impl + 1);
       }

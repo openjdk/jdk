@@ -50,12 +50,12 @@ typedef struct {
 
 /* descriptions of tested threads */
 static ThreadDesc threadsDesc[THREADS_COUNT] = {
-    {"threadRunning", 2, NULL},
-    {"threadEntering", 2, NULL},
-    {"threadWaiting", 2, NULL},
-    {"threadSleeping", 2, NULL},
-    {"threadRunningInterrupted", 2, NULL},
-    {"threadRunningNative", 2, NULL}
+    { "threadRunning", 2, NULL },
+    { "threadEntering", 2, NULL },
+    { "threadWaiting", 2, NULL },
+    { "threadSleeping", 2, NULL },
+    { "threadRunningInterrupted", 2, NULL },
+    { "threadRunningNative", 2, NULL }
 };
 
 /* ============================================================================= */

@@ -135,9 +135,11 @@ define SetupAotModuleBody
     $1_LD := $$(LD)
   endif
 
+  # Create jaotc flags.
+  # VM flags which don't affect AOT code generation are filtered out: -Xcomp, -XX:+-TieredCompilation
   $1_JAOTC_OPTS := \
       -J-Xmx4g --info \
-      $$(addprefix -J, $$($1_VM_OPTIONS)) \
+      $$(addprefix -J, $$(filter-out -Xcomp %TieredCompilation, $$($1_VM_OPTIONS))) \
       $$(addprefix --compile-commands$(SPACE), $$($1_AOT_CCLIST)) \
       --linker-path $$($1_LD) \
       #

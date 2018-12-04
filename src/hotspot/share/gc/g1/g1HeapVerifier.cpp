@@ -273,6 +273,69 @@ public:
 };
 
 // Should be only used at CDS dump time
+class VerifyReadyForArchivingRegionClosure : public HeapRegionClosure {
+  bool _seen_free;
+  bool _has_holes;
+  bool _has_unexpected_holes;
+  bool _has_humongous;
+public:
+  bool has_holes() {return _has_holes;}
+  bool has_unexpected_holes() {return _has_unexpected_holes;}
+  bool has_humongous() {return _has_humongous;}
+
+  VerifyReadyForArchivingRegionClosure() : HeapRegionClosure() {
+    _seen_free = false;
+    _has_holes = false;
+    _has_unexpected_holes = false;
+    _has_humongous = false;
+  }
+  virtual bool do_heap_region(HeapRegion* hr) {
+    const char* hole = "";
+
+    if (hr->is_free()) {
+      _seen_free = true;
+    } else {
+      if (_seen_free) {
+        _has_holes = true;
+        if (hr->is_humongous()) {
+          hole = " hole";
+        } else {
+          _has_unexpected_holes = true;
+          hole = " hole **** unexpected ****";
+        }
+      }
+    }
+    if (hr->is_humongous()) {
+      _has_humongous = true;
+    }
+    log_info(gc, region, cds)("HeapRegion " INTPTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
+    return false;
+  }
+};
+
+// We want all used regions to be moved to the bottom-end of the heap, so we have
+// a contiguous range of free regions at the top end of the heap. This way, we can
+// avoid fragmentation while allocating the archive regions.
+//
+// Before calling this, a full GC should have been executed with a single worker thread,
+// so that no old regions would be moved to the middle of the heap.
+void G1HeapVerifier::verify_ready_for_archiving() {
+  VerifyReadyForArchivingRegionClosure cl;
+  G1CollectedHeap::heap()->heap_region_iterate(&cl);
+  if (cl.has_holes()) {
+    log_warning(gc, verify)("All free regions should be at the top end of the heap, but"
+                            " we found holes. This is probably caused by (unmovable) humongous"
+                            " allocations, and may lead to fragmentation while"
+                            " writing archive heap memory regions.");
+  }
+  if (cl.has_humongous()) {
+    log_warning(gc, verify)("(Unmovable) humongous regions have been found and"
+                            " may lead to fragmentation while"
+                            " writing archive heap memory regions.");
+  }
+  assert(!cl.has_unexpected_holes(), "all holes should have been caused by humongous regions");
+}
+
 class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
 private:
   G1CollectedHeap* _g1h;

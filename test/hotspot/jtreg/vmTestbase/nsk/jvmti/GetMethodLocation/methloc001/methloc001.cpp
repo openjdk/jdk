@@ -39,9 +39,9 @@ typedef struct {
 static jvmtiEnv *jvmti;
 static jint result = PASSED;
 static info meth_tab[] = {
-    {0, 4},  /* 0 <init> */
-    {0, 0},  /* 1 meth1 */
-    {0, 5}   /* 2 meth2 */
+    { 0, 4 },  /* 0 <init> */
+    { 0, 0 },  /* 1 meth1 */
+    { 0, 5 }   /* 2 meth2 */
 };
 
 void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig,

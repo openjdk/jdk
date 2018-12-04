@@ -45,11 +45,11 @@ typedef struct {
 
 /* list of breakpoints */
 static breakpoint breakpoints[] = {
-    {1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 0, NULL},
-    {1, (char*) "finMethod", (char*) "(JIJ)V", 5, NULL},
-    {1, (char*) "finMethod", (char*) "(JIJ)V", 4, NULL},
-    {1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 1, NULL},
-    {0, (char*) "statMethod", (char*) "(III)I", 1, NULL}
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 0, NULL },
+    { 1, (char*) "finMethod", (char*) "(JIJ)V", 5, NULL },
+    { 1, (char*) "finMethod", (char*) "(JIJ)V", 4, NULL },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 1, NULL },
+    { 0, (char*) "statMethod", (char*) "(III)I", 1, NULL }
 };
 
 static jclass redefCls; /* JNI's Java class object */

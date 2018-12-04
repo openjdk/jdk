@@ -32,11 +32,13 @@ import java.util.Locale;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetIntegerAction;
 import sun.security.util.Cache;
 
 
 final class SSLSessionContextImpl implements SSLSessionContext {
+    private final static int DEFAULT_MAX_CACHE_SIZE = 20480;
+
     private final Cache<SessionId, SSLSessionImpl> sessionCache;
                                         // session cache, session id as key
     private final Cache<String, SSLSessionImpl> sessionHostPortCache;
@@ -196,16 +198,29 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     private static int getDefaultCacheLimit() {
-        int defaultCacheLimit = 0;
         try {
-            String s = GetPropertyAction
-                    .privilegedGetProperty("javax.net.ssl.sessionCacheSize");
-            defaultCacheLimit = (s != null) ? Integer.parseInt(s) : 0;
+            int defaultCacheLimit = GetIntegerAction.privilegedGetProperty(
+                    "javax.net.ssl.sessionCacheSize", DEFAULT_MAX_CACHE_SIZE);
+
+            if (defaultCacheLimit >= 0) {
+                return defaultCacheLimit;
+            } else if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning(
+                    "invalid System Property javax.net.ssl.sessionCacheSize, " +
+                    "use the default session cache size (" +
+                    DEFAULT_MAX_CACHE_SIZE + ") instead");
+            }
         } catch (Exception e) {
-            // swallow the exception
+            // unlikely, log it for safe
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning(
+                    "the System Property javax.net.ssl.sessionCacheSize is " +
+                    "not available, use the default value (" +
+                    DEFAULT_MAX_CACHE_SIZE + ") instead");
+            }
         }
 
-        return (defaultCacheLimit > 0) ? defaultCacheLimit : 0;
+        return DEFAULT_MAX_CACHE_SIZE;
     }
 
     private boolean isTimedout(SSLSession sess) {

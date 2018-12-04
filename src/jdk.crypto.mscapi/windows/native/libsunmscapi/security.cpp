@@ -242,32 +242,54 @@ bool GetCertificateChain(LPSTR lpszKeyUsageIdentifier, PCCERT_CONTEXT pCertConte
 
 /*
  * Class:     sun_security_mscapi_PRNG
+ * Method:    getContext
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_sun_security_mscapi_PRNG_getContext
+        (JNIEnv *env, jclass clazz) {
+    HCRYPTPROV hCryptProv = NULL;
+    if(::CryptAcquireContext(
+       &hCryptProv,
+       NULL,
+       NULL,
+       PROV_RSA_FULL,
+       CRYPT_VERIFYCONTEXT) == FALSE)
+    {
+        ThrowException(env, PROVIDER_EXCEPTION, GetLastError());
+    }
+    return hCryptProv;
+}
+
+
+/*
+ * Class:     sun_security_mscapi_PRNG
+ * Method:    releaseContext
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_security_mscapi_PRNG_releaseContext
+        (JNIEnv *env, jclass clazz, jlong ctxt) {
+    if (ctxt) {
+        ::CryptReleaseContext((HCRYPTPROV)ctxt, 0);
+    }
+}
+
+
+/*
+ * Class:     sun_security_mscapi_PRNG
  * Method:    generateSeed
- * Signature: (I[B)[B
+ * Signature: (JI[B)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
-  (JNIEnv *env, jclass clazz, jint length, jbyteArray seed)
+  (JNIEnv *env, jclass clazz, jlong ctxt, jint length, jbyteArray seed)
 {
 
-    HCRYPTPROV hCryptProv = NULL;
+    HCRYPTPROV hCryptProv = (HCRYPTPROV)ctxt;
     jbyte*     reseedBytes = NULL;
     jbyte*     seedBytes = NULL;
     jbyteArray result = NULL;
 
     __try
     {
-        //  Acquire a CSP context.
-        if(::CryptAcquireContext(
-           &hCryptProv,
-           NULL,
-           NULL,
-           PROV_RSA_FULL,
-           CRYPT_VERIFYCONTEXT) == FALSE)
-        {
-            ThrowException(env, PROVIDER_EXCEPTION, GetLastError());
-            __leave;
-        }
-
         /*
          * If length is negative then use the supplied seed to re-seed the
          * generator and return null.
@@ -330,9 +352,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 
         if (seedBytes)
             env->ReleaseByteArrayElements(seed, seedBytes, 0); // update orig
-
-        if (hCryptProv)
-            ::CryptReleaseContext(hCryptProv, 0);
     }
 
     return result;

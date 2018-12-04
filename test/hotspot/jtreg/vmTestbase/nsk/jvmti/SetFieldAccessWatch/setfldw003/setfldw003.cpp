@@ -40,7 +40,7 @@ static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jfieldID actual_fid = NULL;
-static jfieldID fids[4] = {NULL, NULL, NULL, NULL};
+static jfieldID fids[4] = { NULL, NULL, NULL, NULL };
 
 void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method,

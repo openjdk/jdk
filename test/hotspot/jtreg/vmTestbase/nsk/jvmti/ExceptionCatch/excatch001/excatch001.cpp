@@ -55,12 +55,12 @@ static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static exceptionInfo exs[] = {
-  {"Lnsk/jvmti/ExceptionCatch/excatch001c;",
-   "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 14},
-  {"Ljava/lang/ArithmeticException;",
-   "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 24},
-  {"Ljava/lang/ArrayIndexOutOfBoundsException;",
-   "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 34}
+  { "Lnsk/jvmti/ExceptionCatch/excatch001c;",
+    "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 14 },
+  { "Ljava/lang/ArithmeticException;",
+    "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 24 },
+  { "Ljava/lang/ArrayIndexOutOfBoundsException;",
+    "Lnsk/jvmti/ExceptionCatch/excatch001a;", "run", "()V", 34 }
 };
 static int eventsCount = 0;
 static int eventsExpected = 0;

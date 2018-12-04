@@ -57,6 +57,7 @@ public class InvalidFileFormat {
         test("OverflowPrefix.txt", "Num overflow. Corrupted at line 4");
         test("UnrecognizedPrefix.txt", "Unrecognized format. Corrupted at line 5");
         test("TruncatedString.txt", "Truncated. Corrupted at line 3");
+        test("LengthOverflow.txt", "string length too large: 2147483647");
     }
 
     private static void

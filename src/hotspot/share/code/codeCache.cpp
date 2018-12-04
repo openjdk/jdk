@@ -29,6 +29,7 @@
 #include "code/codeHeapState.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
+#include "code/dependencyContext.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -938,6 +939,19 @@ void CodeCache::increment_unloading_cycle() {
   } else {
     _unloading_cycle = 1;
   }
+}
+
+CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
+  : _is_unloading_behaviour(is_alive)
+{
+  IsUnloadingBehaviour::set_current(&_is_unloading_behaviour);
+  increment_unloading_cycle();
+  DependencyContext::cleaning_start();
+}
+
+CodeCache::UnloadingScope::~UnloadingScope() {
+  IsUnloadingBehaviour::set_current(NULL);
+  DependencyContext::cleaning_end();
 }
 
 void CodeCache::verify_oops() {

@@ -719,21 +719,21 @@ const char *Expr::compute_external(const Expr *c1, const Expr *c2) {
 
   // Preserve use of external name which has a zero value
   if( c1->_external_name != NULL ) {
-    sprintf(string_buffer, "%s", c1->as_string());
-    if( !c2->is_zero() ) {
-      strncat(string_buffer, "+", STRING_BUFFER_LENGTH);
-      strncat(string_buffer, c2->as_string(), STRING_BUFFER_LENGTH);
+    if( c2->is_zero() ) {
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s", c1->as_string());
+    } else {
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s+%s", c1->as_string(), c2->as_string());
     }
+    string_buffer[STRING_BUFFER_LENGTH - 1] = '\0';
     result = strdup(string_buffer);
   }
   else if( c2->_external_name != NULL ) {
-    if( !c1->is_zero() ) {
-      sprintf(string_buffer, "%s", c1->as_string());
-      strncat(string_buffer, " + ", STRING_BUFFER_LENGTH);
+    if( c1->is_zero() ) {
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s", c2->_external_name);
     } else {
-      string_buffer[0] = '\0';
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s + %s", c1->as_string(), c2->as_string());
     }
-    strncat(string_buffer, c2->_external_name, STRING_BUFFER_LENGTH);
+    string_buffer[STRING_BUFFER_LENGTH - 1] = '\0';
     result = strdup(string_buffer);
   }
   return result;
@@ -741,18 +741,19 @@ const char *Expr::compute_external(const Expr *c1, const Expr *c2) {
 
 const char *Expr::compute_expr(const Expr *c1, const Expr *c2) {
   if( !c1->is_zero() ) {
-    sprintf( string_buffer, "%s", c1->_expr);
-    if( !c2->is_zero() ) {
-      strncat(string_buffer, "+", STRING_BUFFER_LENGTH);
-      strncat(string_buffer, c2->_expr, STRING_BUFFER_LENGTH);
+    if( c2->is_zero() ) {
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s", c1->_expr);
+    } else {
+      snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s+%s", c1->_expr, c2->_expr);
     }
   }
   else if( !c2->is_zero() ) {
-    sprintf( string_buffer, "%s", c2->_expr);
+    snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s", c2->_expr);
   }
   else {
     sprintf( string_buffer, "0");
   }
+  string_buffer[STRING_BUFFER_LENGTH - 1] = '\0';
   char *cost = strdup(string_buffer);
 
   return cost;

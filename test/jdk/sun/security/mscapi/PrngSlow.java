@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6449335
+ * @bug 6449335 8210476
  * @requires os.family == "windows"
  * @summary MSCAPI's PRNG is too slow
  * @key randomness
@@ -44,7 +44,7 @@ public class PrngSlow {
         };
         t = (System.nanoTime() - start) / 1000000000.0;
         System.err.println("\nSpend " + t + " seconds");
-        if (t > 5)
+        if (t > 0.5)
             throw new RuntimeException("Still too slow");
     }
 }

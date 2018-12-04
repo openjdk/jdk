@@ -49,14 +49,14 @@ static jthread testedThread;
 static jmethodID mid_checkPoint, mid_chain4;
 static jbyteArray classBytes;
 static frame_info frames[] = {
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "checkPoint", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain5", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain4", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008;", "nativeChain", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain3", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain2", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain1", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "run", "()V"},
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "checkPoint", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain5", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain4", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008;", "nativeChain", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain3", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain2", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "chain1", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "run", "()V" },
 };
 
 #define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))

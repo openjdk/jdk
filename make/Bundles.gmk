@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -262,6 +262,21 @@ endif
 
 ################################################################################
 
+ifneq ($(filter jcov-bundles, $(MAKECMDGOALS)), )
+  JCOV_BUNDLE_FILES := $(call CacheFind, $(JCOV_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_JCOV_BUNDLE, \
+      BUNDLE_NAME := $(JCOV_BUNDLE_NAME), \
+      FILES := $(JCOV_BUNDLE_FILES), \
+      BASE_DIRS := $(JCOV_IMAGE_DIR), \
+      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+  ))
+
+  JCOV_TARGETS += $(BUILD_JCOV_BUNDLE)
+endif
+
+################################################################################
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, Bundles.gmk))
 
@@ -270,5 +285,6 @@ $(eval $(call IncludeCustomExtension, Bundles.gmk))
 product-bundles: $(PRODUCT_TARGETS)
 test-bundles: $(TEST_TARGETS)
 docs-bundles: $(DOCS_TARGETS)
+jcov-bundles: $(JCOV_TARGETS)
 
-.PHONY: all default product-bundles test-bundles docs-bundles
+.PHONY: all default product-bundles test-bundles docs-bundles jcov-bundles

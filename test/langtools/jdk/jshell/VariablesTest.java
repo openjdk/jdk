@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694
+ * @bug 8144903 8177466 8191842 8211694 8213725
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -490,6 +490,21 @@ public class VariablesTest extends KullaTesting {
         assertVarDeclRedefNoInit("char", "c", "'x'", "'\\000'");
         assertVarDeclRedefNoInit("Object", "o", "new Object()", IGNORE_VALUE, "null");
         assertVarDeclRedefNoInit("String", "s", "\"hi\"", "null");
+    }
+
+    public void badPkgVarDecl() {
+        Compiler compiler = new Compiler();
+        Path nopkgdirpath = Paths.get("cp", "xyz");
+        compiler.compile(nopkgdirpath,
+                "public class TestZ { public static int V = 0; }\n");
+        assertDeclareFail("import static xyz.TestZ.V;",
+                        "compiler.err.cant.access");
+
+
+        VarSnippet v1 = varKey(assertEval("var v = xyz.TestZ.V;", IGNORE_VALUE, null,
+                DiagCheck.DIAG_ERROR, DiagCheck.DIAG_OK, added(RECOVERABLE_NOT_DEFINED)));
+        assertVariableDeclSnippet(v1, "v", "java.lang.Object", RECOVERABLE_NOT_DEFINED, SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, 0, 1);
+        assertEval("1+1", "2");
     }
 
     private void assertVarDeclRedefNoInit(String typeName, String name, String value, String dvalue) {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206986
+ * @bug 8206986 8214529
  * @summary Verify various corner cases with nested switch expressions.
  * @compile --enable-preview -source 12 ExpressionSwitchBugs.java
  * @run main/othervm --enable-preview ExpressionSwitchBugs
@@ -32,6 +32,7 @@
 public class ExpressionSwitchBugs {
     public static void main(String... args) {
         new ExpressionSwitchBugs().testNested();
+        new ExpressionSwitchBugs().testAnonymousClasses();
     }
 
     private void testNested() {
@@ -66,6 +67,23 @@ public class ExpressionSwitchBugs {
         }));
     }
 
+    private void testAnonymousClasses() {
+        for (int i : new int[] {1, 2}) {
+            check(3, id((switch (i) {
+                case 1: break new I() {
+                    public int g() { return 3; }
+                };
+                default: break (I) () -> { return 3; };
+            }).g()));
+            check(3, id((switch (i) {
+                case 1 -> new I() {
+                    public int g() { return 3; }
+                };
+                default -> (I) () -> { return 3; };
+            }).g()));
+        }
+    }
+
     private int id(int i) {
         return i;
     }
@@ -78,5 +96,9 @@ public class ExpressionSwitchBugs {
         if (actual != expected) {
             throw new AssertionError("Unexpected result: " + actual);
         }
+    }
+
+    public interface I {
+        public int g();
     }
 }

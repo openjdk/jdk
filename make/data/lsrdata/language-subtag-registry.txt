@@ -1,4 +1,4 @@
-File-Date: 2018-04-23
+File-Date: 2018-10-31
 %%
 Type: language
 Subtag: aa
@@ -3351,7 +3351,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: aue
-Description: =/Kx'au//'ein
+Description: ǂKxʼauǁʼein
 Added: 2009-07-29
 Deprecated: 2015-02-12
 Preferred-Value: ktz
@@ -9812,6 +9812,12 @@ Description: Dzùùngoo
 Added: 2009-07-29
 %%
 Type: language
+Subtag: dno
+Description: Ndrulo
+Description: Northern Lendu
+Added: 2018-10-28
+%%
+Type: language
 Subtag: dnr
 Description: Danaru
 Added: 2009-07-29
@@ -10336,6 +10342,11 @@ Type: language
 Subtag: dwy
 Description: Dhuwaya
 Added: 2016-05-30
+%%
+Type: language
+Subtag: dwz
+Description: Dewas Rai
+Added: 2018-10-28
 %%
 Type: language
 Subtag: dya
@@ -12022,7 +12033,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: gfx
-Description: Mangetti Dune !Xung
+Description: Mangetti Dune ǃXung
 Added: 2012-08-12
 Deprecated: 2015-02-12
 Preferred-Value: vaj
@@ -12328,7 +12339,6 @@ Macrolanguage: kpe
 Type: language
 Subtag: gku
 Description: ǂUngkue
-Description: =/Ungkue
 Added: 2015-02-12
 %%
 Type: language
@@ -12523,7 +12533,6 @@ Added: 2018-03-08
 %%
 Type: language
 Subtag: gnk
-Description: //Gana
 Description: ǁGana
 Added: 2009-07-29
 %%
@@ -13156,7 +13165,6 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: gwj
-Description: /Gwi
 Description: ǀGwi
 Added: 2009-07-29
 %%
@@ -13489,7 +13497,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: hgm
-Description: Hai//om
 Description: Haiǁom
 Added: 2009-07-29
 %%
@@ -13833,7 +13840,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: hnh
-Description: //Ani
 Description: ǁAni
 Added: 2009-07-29
 %%
@@ -14113,7 +14119,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: huc
-Description: =/Hua
 Description: ǂHua
 Added: 2009-07-29
 %%
@@ -18425,7 +18430,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: ktz
-Description: Ju/'hoan
 Description: Juǀʼhoan
 Description: Juǀʼhoansi
 Added: 2009-07-29
@@ -24926,7 +24930,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: ngh
-Description: N/u
 Description: Nǀu
 Added: 2009-07-29
 %%
@@ -25641,7 +25644,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: nmn
-Description: !Xóõ
 Description: ǃXóõ
 Added: 2009-07-29
 %%
@@ -27613,7 +27615,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: oun
-Description: !O!ung
+Description: ǃOǃung
 Added: 2009-07-29
 Deprecated: 2015-02-12
 Preferred-Value: vaj
@@ -36667,7 +36669,6 @@ Added: 2005-10-16
 Type: language
 Subtag: vaj
 Description: Sekele
-Description: Northwestern !Kung
 Description: Northwestern ǃKung
 Description: Vasekele
 Added: 2009-07-29
@@ -38299,7 +38300,6 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: xam
-Description: /Xam
 Description: ǀXam
 Added: 2009-07-29
 %%
@@ -38559,7 +38559,6 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: xeg
-Description: //Xegwi
 Description: ǁXegwi
 Added: 2009-07-29
 %%
@@ -44036,6 +44035,11 @@ Description: Elbasan
 Added: 2010-08-16
 %%
 Type: script
+Subtag: Elym
+Description: Elymaic
+Added: 2018-10-28
+%%
+Type: script
 Subtag: Ethi
 Description: Ethiopic
 Description: Geʻez
@@ -44430,6 +44434,11 @@ Subtag: Mymr
 Description: Myanmar
 Description: Burmese
 Added: 2005-10-16
+%%
+Type: script
+Subtag: Nand
+Description: Nandinagari
+Added: 2018-10-28
 %%
 Type: script
 Subtag: Narb
@@ -46032,6 +46041,8 @@ Added: 2005-10-16
 %%
 Type: region
 Subtag: SZ
+Description: Eswatini
+Description: eSwatini
 Description: Swaziland
 Added: 2005-10-16
 %%

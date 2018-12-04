@@ -327,7 +327,7 @@ class Eval {
                     String initCode = rinit.part(compileSource);
                     ExpressionInfo ei =
                             ExpressionToTypeInfo.localVariableTypeForInitializer(initCode, state, false);
-                    if (ei != null) {
+                    if (ei != null && ei.declareTypeName != null) {
                         typeName = ei.declareTypeName;
                         fullTypeName = ei.fullTypeName;
                         displayType = ei.displayTypeName;

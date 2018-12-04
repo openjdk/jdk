@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -28,30 +28,29 @@
 # shared with other test cases.)
 # @build MissingResourceCauseTest
 # @build NonResourceBundle PrivateConstructorRB AbstractRB BadStaticInitRB
+#   NoNoArgConstructorRB
 # @run shell MissingResourceCauseTest.sh
 
 case "`uname`" in
-Windows*)
-    DEL=";";
+Windows* | CYGWIN*)
+    exit 0;
     ;;
 *)
     DEL=":";
+    PS="/";
     ;;
 esac
 
 #
 # Create an unreadble properties file
 #
-UNREADABLE=UnreadableRB.properties
+UNREADABLE=${TESTCLASSPATH}${PS}UnreadableRB.properties
 rm -f $UNREADABLE
 echo "type=unreadable" >$UNREADABLE
 chmod 000 $UNREADABLE
 
-: ${TESTCLASS:=.}
-: ${TESTSRC:=.}
-
-${TESTJAVA}/bin/java ${TESTVMOPTS} -esa -cp ${TESTCLASS}${DEL}${TESTSRC} MissingResourceCauseTest
+${TESTJAVA}/bin/java ${TESTVMOPTS} -esa -cp ${TESTCLASSES}${DEL}${TESTSRC} MissingResourceCauseTest
 STATUS=$?
 chmod 666 $UNREADABLE
 rm -f $UNREADABLE
-exit $?
+exit $STATUS

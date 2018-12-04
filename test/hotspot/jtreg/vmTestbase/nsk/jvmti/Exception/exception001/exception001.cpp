@@ -63,15 +63,15 @@ static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static exceptionInfo exs[] = {
-  {"Lnsk/jvmti/Exception/exception001c;",
-   "Lnsk/jvmti/Exception/exception001b;", "meth1", "()V", 7,
-   "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 14},
-  {"Ljava/lang/ArithmeticException;",
-   "Lnsk/jvmti/Exception/exception001b;", "meth2", "(I)I", 3,
-   "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 24},
-  {"Ljava/lang/ArrayIndexOutOfBoundsException;",
-   "Lnsk/jvmti/Exception/exception001b;", "meth3", "(I)I", 10,
-   "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 34}
+  { "Lnsk/jvmti/Exception/exception001c;",
+    "Lnsk/jvmti/Exception/exception001b;", "meth1", "()V", 7,
+    "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 14 },
+  { "Ljava/lang/ArithmeticException;",
+    "Lnsk/jvmti/Exception/exception001b;", "meth2", "(I)I", 3,
+    "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 24 },
+  { "Ljava/lang/ArrayIndexOutOfBoundsException;",
+    "Lnsk/jvmti/Exception/exception001b;", "meth3", "(I)I", 10,
+    "Lnsk/jvmti/Exception/exception001a;", "run", "()V", 34 }
 };
 static int eventsCount = 0;
 static int eventsExpected = 0;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@
       <arg value="${javadoc.option}"/>
       <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
-      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.element.list}"/>
     </javadoc>
   </target>
 
@@ -296,7 +296,7 @@
       <arg value="."/>
       <arg value="${javadoc.option}"/>
       <fileset dir="${nashorn.module.src.dir}" includes="jdk/nashorn/api/**/*.java"/>
-      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.element.list}"/>
     </javadoc>
   </target>
 
@@ -314,7 +314,7 @@
       <arg value="."/>
       <arg value="${javadoc.option}"/>
       <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
-      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.element.list}"/>
     </javadoc>
   </target>
 
@@ -835,8 +835,8 @@ grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
 
     <!-- yui -->
     <mkdir dir="${test.external.dir}/yui"/>
-    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
-    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true" tryGzipEncoding="true"/>
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true" tryGzipEncoding="true"/>
 
     <!-- showdown -->
     <mkdir dir="${test.external.dir}/showdown"/>

@@ -44,7 +44,7 @@ extern "C" {
 static Options* options = NULL;
 static const char* agentName;
 
-static jvmtiEvent testEvents[] = {JVMTI_EVENT_GARBAGE_COLLECTION_START, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH};
+static jvmtiEvent testEvents[] = { JVMTI_EVENT_GARBAGE_COLLECTION_START, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH };
 static const int testEventsNumber = 2;
 
 static jrawMonitorID gcFinishMonitor;

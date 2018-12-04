@@ -683,7 +683,7 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
   int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
   if(arr_len > max_num_regions) {
     fail_stop("Unable to write archive heap memory regions: "
-              "number of memory regions exceeds maximum due to fragmentation."
+              "number of memory regions exceeds maximum due to fragmentation. "
               "Please increase java heap size "
               "(current MaxHeapSize is " SIZE_FORMAT ", InitialHeapSize is " SIZE_FORMAT ").",
               MaxHeapSize, InitialHeapSize);

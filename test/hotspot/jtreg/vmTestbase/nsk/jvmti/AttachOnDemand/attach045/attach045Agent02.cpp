@@ -41,7 +41,7 @@ extern "C" {
 static Options* options = NULL;
 static const char* agentName;
 
-static jvmtiEvent testEvents[] = {JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END};
+static jvmtiEvent testEvents[] = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END };
 static const int testEventsNumber = 2;
 
 static jrawMonitorID eventsCounterMonitor;

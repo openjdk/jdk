@@ -79,6 +79,7 @@ class MethodHandles: AllStatic {
   // CallSite support
   static void add_dependent_nmethod(oop call_site, nmethod* nm);
   static void remove_dependent_nmethod(oop call_site, nmethod* nm);
+  static void clean_dependency_context(oop call_site);
 
   static void flush_dependent_nmethods(Handle call_site, Handle target);
 

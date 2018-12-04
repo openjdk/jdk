@@ -46,13 +46,13 @@ static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
-static unsigned char m0[] = {0x2A, 0xB7, 0x00, 0x01, 0xB1};
-static unsigned char m1[] = {0xB1};
-static unsigned char m2[] = {0x1A, 0xBC, 0x06, 0x4C, 0x2B, 0xB0};
+static unsigned char m0[] = { 0x2A, 0xB7, 0x00, 0x01, 0xB1 };
+static unsigned char m1[] = { 0xB1 };
+static unsigned char m2[] = { 0x1A, 0xBC, 0x06, 0x4C, 0x2B, 0xB0 };
 static info meth_tab[3] = {
-    {"<init>", "()V",   JNI_FALSE, 5, m0},
-    {"meth1",  "()V",   JNI_FALSE, 1, m1},
-    {"meth2",  "(I)[F", JNI_TRUE,  6, m2}
+    { "<init>", "()V",   JNI_FALSE, 5, m0 },
+    { "meth1",  "()V",   JNI_FALSE, 1, m1 },
+    { "meth2",  "(I)[F", JNI_TRUE,  6, m2 }
 };
 
 #ifdef STATIC_BUILD

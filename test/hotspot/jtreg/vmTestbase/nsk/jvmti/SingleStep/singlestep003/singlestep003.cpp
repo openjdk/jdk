@@ -39,19 +39,19 @@ extern "C" {
 /* tested methods */
 #define METH_NUM 4
 static const char *METHODS[][2] = {
-    {"bpMethod", "()V"},
-    {"nativeMethod", "()V"},
-    {"anotherNativeMethod", "(I)V"},
-    {"runThis", "([Ljava/lang/String;Ljava/io/PrintStream;)I"}
+    { "bpMethod", "()V" },
+    { "nativeMethod", "()V" },
+    { "anotherNativeMethod", "(I)V" },
+    { "runThis", "([Ljava/lang/String;Ljava/io/PrintStream;)I" }
 };
 
 /* event counters for the tested methods and expected numbers
  of the events */
 static volatile long stepEv[][2] = {
-    {0, 1},
-    {0, 0},
-    {0, 0},
-    {0, 1}
+    { 0, 1 },
+    { 0, 0 },
+    { 0, 0 },
+    { 0, 1 }
 };
 
 static const char *CLASS_SIG =

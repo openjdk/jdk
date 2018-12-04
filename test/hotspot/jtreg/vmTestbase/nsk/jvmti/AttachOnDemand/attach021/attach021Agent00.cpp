@@ -90,8 +90,8 @@ void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
 int registerNativeMethods(JNIEnv* jni) {
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
-            {(char*) "setTagFor", (char*) "(Ljava/lang/Object;)Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor},
-            {(char*) "shutdownAgent", (char*) "()V", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent}};
+            { (char*) "setTagFor", (char*) "(Ljava/lang/Object;)Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor },
+            { (char*) "shutdownAgent", (char*) "()V", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent } };
     jint nativeMethodsNumber = 2;
 
     appClass = jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME);

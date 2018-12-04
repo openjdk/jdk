@@ -737,7 +737,7 @@ public class KullaTesting {
                 expectedSubKind, unressz, othersz);
         String signature = var.typeName();
         assertEquals(signature, expectedTypeName,
-                "Expected " + var.source() + " to have the name: " +
+                "Expected " + var.source() + " to have the type name: " +
                         expectedTypeName + ", got: " + signature);
     }
 

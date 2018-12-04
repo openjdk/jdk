@@ -75,14 +75,14 @@ extern "C" {
 #define ARRAY_LENGTH 5
 
 static const wchar_t *STRING = L"I hope you'll find me in the heap!";
-static jboolean BOOLEAN_ARRAY[] = {JNI_TRUE, JNI_TRUE, JNI_FALSE, JNI_TRUE, JNI_FALSE};
-static jbyte BYTE_ARRAY[] = {BYTE, BYTE+1, BYTE+2, BYTE+3, BYTE+4};
-static jchar CHAR_ARRAY[] = {CHAR, CHAR+1, CHAR+2, CHAR+3, CHAR+4};
-static jshort SHORT_ARRAY[] = {SHORT, SHORT+1, SHORT+2, SHORT+3, SHORT+4};
-static jint INT_ARRAY[] = {INT, INT+1, INT+2, INT+3, INT+4};
-static jlong LONG_ARRAY[] = {LONG, LONG+1, LONG+2, LONG+3, LONG+4};
-static jfloat FLOAT_ARRAY[] = {FLOAT, FLOAT+1, FLOAT+2, FLOAT+3, FLOAT+4};
-static jdouble DOUBLE_ARRAY[] = {DOUBLE, DOUBLE+1, DOUBLE+2, DOUBLE+3, DOUBLE+4};
+static jboolean BOOLEAN_ARRAY[] = { JNI_TRUE, JNI_TRUE, JNI_FALSE, JNI_TRUE, JNI_FALSE };
+static jbyte BYTE_ARRAY[] = { BYTE, BYTE+1, BYTE+2, BYTE+3, BYTE+4 };
+static jchar CHAR_ARRAY[] = { CHAR, CHAR+1, CHAR+2, CHAR+3, CHAR+4 };
+static jshort SHORT_ARRAY[] = { SHORT, SHORT+1, SHORT+2, SHORT+3, SHORT+4 };
+static jint INT_ARRAY[] = { INT, INT+1, INT+2, INT+3, INT+4 };
+static jlong LONG_ARRAY[] = { LONG, LONG+1, LONG+2, LONG+3, LONG+4 };
+static jfloat FLOAT_ARRAY[] = { FLOAT, FLOAT+1, FLOAT+2, FLOAT+3, FLOAT+4 };
+static jdouble DOUBLE_ARRAY[] = { DOUBLE, DOUBLE+1, DOUBLE+2, DOUBLE+3, DOUBLE+4 };
 
 static long timeout = 0;
 

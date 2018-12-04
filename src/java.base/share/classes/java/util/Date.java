@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,12 @@ import sun.util.calendar.ZoneInfo;
  * <i>not</i> adjusted for leap seconds. An interesting source of
  * further information is the United States Naval Observatory (USNO):
  * <blockquote><pre>
- *     <a href="http://www.usno.navy.mil/USNO">http://www.usno.navy.mil/USNO</a>
+ *     <a href="https://www.usno.navy.mil/USNO">https://www.usno.navy.mil/USNO</a>
  * </pre></blockquote>
  * <p>
  * and the material regarding "Systems of Time" at:
  * <blockquote><pre>
- *     <a href="http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time">http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time</a>
+ *     <a href="https://www.usno.navy.mil/USNO/time/master-clock/systems-of-time">https://www.usno.navy.mil/USNO/time/master-clock/systems-of-time</a>
  * </pre></blockquote>
  * <p>
  * which has descriptions of various different time systems including

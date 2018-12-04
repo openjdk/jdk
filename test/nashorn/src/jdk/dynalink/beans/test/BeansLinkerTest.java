@@ -47,6 +47,7 @@ import jdk.dynalink.Namespace;
 import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.NoSuchDynamicMethodException;
 import jdk.dynalink.Operation;
+import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -222,6 +223,25 @@ public class BeansLinkerTest {
             // No assertion for the setter; we just expect it to silently succeed
             testPermutations(SETTER_PERMUTATIONS, (op) -> call(op, receiver, "foo", "newValue"));
         });
+    }
+
+    public static class A {
+        public static class Inner {}
+    }
+
+    public static class B extends A {
+        public static class Inner {}
+    }
+
+    @Test
+    public static void testInnerClassGetter() {
+        Object inner1 = call(GET.withNamespace(PROPERTY), StaticClass.forClass(A.class), "Inner");
+        Assert.assertTrue(inner1 instanceof StaticClass);
+        Assert.assertEquals(A.Inner.class, ((StaticClass) inner1).getRepresentedClass());
+
+        Object inner2 = call(GET.withNamespace(PROPERTY), StaticClass.forClass(B.class), "Inner");
+        Assert.assertTrue(inner2 instanceof StaticClass);
+        Assert.assertEquals(B.Inner.class, ((StaticClass) inner2).getRepresentedClass());
     }
 
     private static void expectNoSuchDynamicMethodException(final Runnable r) {

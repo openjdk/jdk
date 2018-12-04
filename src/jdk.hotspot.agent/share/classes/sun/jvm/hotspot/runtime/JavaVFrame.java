@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,13 +99,14 @@ public abstract class JavaVFrame extends VFrame {
         // we are still waiting for notification or timeout. Otherwise if
         // we earlier reported java.lang.Thread.State == "BLOCKED (on object
         // monitor)", then we are actually waiting to re-lock the monitor.
-        // At this level we can't distinguish the two cases to report
-        // "waited on" rather than "waiting on" for the second case.
         StackValueCollection locs = getLocals();
         if (!locs.isEmpty()) {
           StackValue sv = locs.get(0);
           if (sv.getType() == BasicType.getTObject()) {
             OopHandle o = sv.getObject();
+            if (OopUtilities.threadOopGetThreadStatus(thread.getThreadObj()) == OopUtilities.THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER) {
+              waitState = "waiting to re-lock in wait()";
+            }
             printLockedObjectClassName(tty, o, waitState);
           }
         } else {
@@ -146,13 +147,6 @@ public abstract class JavaVFrame extends VFrame {
             // an inflated monitor that is first on the monitor list in
             // the first frame can block us on a monitor enter.
             lockState = identifyLockState(monitor, "waiting to lock");
-          } else if (frameCount != 0) {
-            // This is not the first frame so we either own this monitor
-            // or we owned the monitor before and called wait(). Because
-            // wait() could have been called on any monitor in a lower
-            // numbered frame on the stack, we have to check all the
-            // monitors on the list for this frame.
-            lockState = identifyLockState(monitor, "waiting to re-lock in wait()");
           }
           printLockedObjectClassName(tty, monitor.owner(), lockState);
           foundFirstMonitor = true;

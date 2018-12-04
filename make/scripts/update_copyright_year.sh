@@ -98,7 +98,7 @@ updateChangesetFiles() # changeset
   count=0
   files=${tmp}/files.$1
   rm -f ${files}
-  hg log --rev $1 -v --template '{files}\n' | expand \
+  hg log -l1 --rev $1 -v --template '{files}\n' | expand \
     | ${awk} -F' ' '{for(i=1;i<=NF;i++)print $i}' \
     > ${files}
   if [ -f "${files}" -a -s "${files}" ] ; then
@@ -120,8 +120,8 @@ updateChangesetFiles() # changeset
     printf "  ERROR: No files changed in the changeset? Must be a mistake.\n"
     set -x
     ls -al ${files}
-    hg log --rev $1 -v --template '{files}\n'
-    hg log --rev $1 -v --template '{files}\n' | expand \
+    hg log -l1 --rev $1 -v --template '{files}\n'
+    hg log -l1 --rev $1 -v --template '{files}\n' | expand \
       | ${awk} -F' ' '{for(i=1;i<=NF;i++)print $i}'
     set +x
     exit 1
@@ -150,7 +150,7 @@ if [ -s ${all_changesets} ] ; then
     desc=${tmp}/desc.${changeset}
     rm -f ${desc}
     echo "------------------------------------------------"
-    hg log --rev ${changeset} --template '{desc}\n' > ${desc}
+    hg log -l1 --rev ${changeset} --template '{desc}\n' > ${desc}
     printf "%d: %s\n%s\n" ${index} "${changeset}" "`cat ${desc}|head -1`"
     if [ "${year}" = "2010" ] ; then
       if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then

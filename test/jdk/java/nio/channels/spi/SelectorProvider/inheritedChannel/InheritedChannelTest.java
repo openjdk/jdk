@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4673940 4930794
+ * @bug 4673940 4930794 8211842
  * @summary Unit tests for inetd feature
  * @requires (os.family == "linux" | os.family == "solaris")
  * @library /test/lib
@@ -33,7 +33,7 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- *        StateTest StateTestService EchoTest EchoService CloseTest Launcher Util
+ *        UnixSocketTest StateTest StateTestService EchoTest EchoService CloseTest Launcher Util
  * @run testng/othervm/native InheritedChannelTest
  * @key intermittent
  */
@@ -73,6 +73,7 @@ public class InheritedChannelTest {
     @DataProvider
     public Object[][] testCases() {
         return new Object[][]{
+            { "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
             { "StateTest", List.of(StateTest.class.getName()) },
             { "EchoTest",  List.of(EchoTest.class.getName())  },
             { "CloseTest", List.of(CloseTest.class.getName()) },

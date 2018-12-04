@@ -45,37 +45,37 @@ typedef struct {      /* local variable info */
 
 /* expected local variable info are below */
 static localVar constr_lv[] = { /* constructor's local variables */
-    {"this", "Lnsk/jvmti/GetLocalVariableTable/localtab005a;", "NULL"},
-    {"constr_b", "Lnsk/jvmti/GetLocalVariableTable/localtab005b;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005b<Ljava/lang/String;>;"},
-    {"constr_i", "I", "NULL"},
-    {"constr_c", "Lnsk/jvmti/GetLocalVariableTable/localtab005c;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005c<Ljava/lang/Boolean;Ljava/lang/Integer;>;"},
-    {"constr_f", "F", "NULL"},
-    {"constr_ch", "C", "NULL"},
-    {"constr_if", "Lnsk/jvmti/GetLocalVariableTable/localtab005if;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005if<Ljava/lang/Object;>;"}
+    { "this", "Lnsk/jvmti/GetLocalVariableTable/localtab005a;", "NULL" },
+    { "constr_b", "Lnsk/jvmti/GetLocalVariableTable/localtab005b;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005b<Ljava/lang/String;>;" },
+    { "constr_i", "I", "NULL" },
+    { "constr_c", "Lnsk/jvmti/GetLocalVariableTable/localtab005c;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005c<Ljava/lang/Boolean;Ljava/lang/Integer;>;" },
+    { "constr_f", "F", "NULL" },
+    { "constr_ch", "C", "NULL" },
+    { "constr_if", "Lnsk/jvmti/GetLocalVariableTable/localtab005if;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005if<Ljava/lang/Object;>;" }
 };
 
 static localVar insMeth_lv[] = { /* finMethod()'s local variables */
-    {"this", "Lnsk/jvmti/GetLocalVariableTable/localtab005a;", "NULL"},
-    {"ins_c", "C", "NULL"},
-    {"ins_i", "J", "NULL"},
-    {"ltab005d", "Lnsk/jvmti/GetLocalVariableTable/localtab005d;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005d<Ljava/lang/Object;>;"},
-    {"ins_k", "J", "NULL"},
-    {"ins_l", "J", "NULL"},
-    {"ins_g", "Lnsk/jvmti/GetLocalVariableTable/localtab005g;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005g<Lnsk/jvmti/GetLocalVariableTable/localtab005f;>;"}
+    { "this", "Lnsk/jvmti/GetLocalVariableTable/localtab005a;", "NULL" },
+    { "ins_c", "C", "NULL" },
+    { "ins_i", "J", "NULL" },
+    { "ltab005d", "Lnsk/jvmti/GetLocalVariableTable/localtab005d;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005d<Ljava/lang/Object;>;" },
+    { "ins_k", "J", "NULL" },
+    { "ins_l", "J", "NULL" },
+    { "ins_g", "Lnsk/jvmti/GetLocalVariableTable/localtab005g;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005g<Lnsk/jvmti/GetLocalVariableTable/localtab005f;>;" }
 };
 
 static localVar statMeth_lv[] = { /* statMethod()'s local variables */
-    {"stat_x", "I", "NULL"},
-    {"stat_y", "I", "NULL"},
-    {"stat_z", "I", "NULL"},
-    {"stat_j", "D", "NULL"},
-    {"stat_d", "Lnsk/jvmti/GetLocalVariableTable/localtab005d;",
-        "Lnsk/jvmti/GetLocalVariableTable/localtab005d<Ljava/lang/Byte;>;"}
+    { "stat_x", "I", "NULL" },
+    { "stat_y", "I", "NULL" },
+    { "stat_z", "I", "NULL" },
+    { "stat_j", "D", "NULL" },
+    { "stat_d", "Lnsk/jvmti/GetLocalVariableTable/localtab005d;",
+      "Lnsk/jvmti/GetLocalVariableTable/localtab005d<Ljava/lang/Byte;>;" }
 };
 
 typedef struct {    /* local variables of a method */
@@ -89,9 +89,9 @@ typedef struct {    /* local variables of a method */
 
 /* list of tested methods */
 static methodInfo methInfo[] = {
-    {1, (char*) "<init>", (char*) "()V", 7, constr_lv, NULL},
-    {1, (char*) "insMethod", (char*) "(CJLnsk/jvmti/GetLocalVariableTable/localtab005d;J)V", 7, insMeth_lv, NULL},
-    {0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL}
+    { 1, (char*) "<init>", (char*) "()V", 7, constr_lv, NULL },
+    { 1, (char*) "insMethod", (char*) "(CJLnsk/jvmti/GetLocalVariableTable/localtab005d;J)V", 7, insMeth_lv, NULL },
+    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL }
 };
 
 static jvmtiEnv *jvmti = NULL;

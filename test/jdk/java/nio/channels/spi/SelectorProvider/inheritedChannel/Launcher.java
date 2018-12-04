@@ -62,6 +62,19 @@ public class Launcher {
         launch0(cmdarray, fd);
     }
 
+
+    /**
+     * Launch 'java' with specified class using a UnixDomainSocket pair linking calling
+     * process to the child VM. UnixDomainSocket is a simplified interface to PF_UNIX sockets
+     * which supports byte a time reads and writes.
+     */
+    public static UnixDomainSocket launchWithUnixDomainSocket(String className) throws IOException {
+        UnixDomainSocket[] socks = UnixDomainSocket.socketpair();
+        launch(className, null, null, socks[0].fd());
+        socks[0].close();
+        return socks[1];
+    }
+
     /*
      * Launch 'java' with specified class with the specified arguments (may be null).
      * The launched process will inherit a connected TCP socket. The remote endpoint

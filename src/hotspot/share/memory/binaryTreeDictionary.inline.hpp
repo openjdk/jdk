@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,8 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_tail(TreeChunk<Chunk_t, Free
   assert(chunk->list() == this, "list should be set for chunk");
   assert(tail() != NULL, "The tree list is embedded in the first chunk");
   // which means that the list can never be empty.
-  assert(!this->verify_chunk_in_free_list(chunk), "Double entry");
+  // This is expensive for metaspace
+  assert(!FLSVerifyDictionary || !this->verify_chunk_in_free_list(chunk), "Double entry");
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 
@@ -253,7 +254,8 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_head(TreeChunk<Chunk_t, Free
   assert(chunk->list() == this, "list should be set for chunk");
   assert(head() != NULL, "The tree list is embedded in the first chunk");
   assert(chunk != NULL, "returning NULL chunk");
-  assert(!this->verify_chunk_in_free_list(chunk), "Double entry");
+  // This is expensive for metaspace
+  assert(!FLSVerifyDictionary || !this->verify_chunk_in_free_list(chunk), "Double entry");
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 

@@ -43,14 +43,14 @@ static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static frame_info frames[] = {
-    {"Lnsk/jvmti/GetStackTrace/getstacktr001;", "check",
-     "(Ljava/lang/Thread;)V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr001;", "dummy", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr001;", "chain", "()I"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr001;", "run",
-     "([Ljava/lang/String;Ljava/io/PrintStream;)I"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr001;", "main",
-     "([Ljava/lang/String;)V"}
+    { "Lnsk/jvmti/GetStackTrace/getstacktr001;", "check",
+     "(Ljava/lang/Thread;)V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr001;", "dummy", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr001;", "chain", "()I" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr001;", "run",
+     "([Ljava/lang/String;Ljava/io/PrintStream;)I" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr001;", "main",
+     "([Ljava/lang/String;)V" }
 };
 
 #define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))

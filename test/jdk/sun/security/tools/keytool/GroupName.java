@@ -31,7 +31,7 @@ import java.security.interfaces.ECKey;
 
 /**
  * @test
- * @bug 8213400
+ * @bug 8213400 8214179
  * @summary Support choosing group name in keytool keypair generation
  * @library /test/lib
  */
@@ -69,6 +69,10 @@ public class GroupName {
                 .shouldHaveExitValue(0)
                 .shouldNotContain("Specifying -keysize for generating EC keys is deprecated");
         checkCurveName("f", "brainpoolP256r1");
+
+        kt("-list -v")
+                .shouldHaveExitValue(0)
+                .shouldContain("Subject Public Key Algorithm: 256-bit EC (secp256r1) key");
     }
 
     private static void checkCurveName(String a, String name)

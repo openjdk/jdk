@@ -35,6 +35,8 @@ PerfCounter* DependencyContext::_perf_total_buckets_allocated_count   = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_deallocated_count = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_stale_count       = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_stale_acc_count   = NULL;
+nmethodBucket* volatile DependencyContext::_purge_list = NULL;
+volatile uint64_t DependencyContext::_cleaning_epoch = 0;
 
 void dependencyContext_init() {
   DependencyContext::init();
@@ -61,7 +63,7 @@ void DependencyContext::init() {
 //
 int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
   int found = 0;
-  for (nmethodBucket* b = dependencies(); b != NULL; b = b->next()) {
+  for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
@@ -86,21 +88,49 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
 // so a count is kept for each bucket to guarantee that creation and
 // deletion of dependencies is consistent.
 //
-void DependencyContext::add_dependent_nmethod(nmethod* nm, bool expunge) {
+void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
-  for (nmethodBucket* b = dependencies(); b != NULL; b = b->next()) {
+  for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     if (nm == b->get_nmethod()) {
       b->increment();
       return;
     }
   }
-  set_dependencies(new nmethodBucket(nm, dependencies()));
+  nmethodBucket* new_head = new nmethodBucket(nm, NULL);
+  for (;;) {
+    nmethodBucket* head = Atomic::load(_dependency_context_addr);
+    new_head->set_next(head);
+    if (Atomic::cmpxchg(new_head, _dependency_context_addr, head) == head) {
+      break;
+    }
+  }
   if (UsePerfData) {
     _perf_total_buckets_allocated_count->inc();
   }
+}
+
+void DependencyContext::release(nmethodBucket* b) {
+  bool expunge = Atomic::load(&_cleaning_epoch) == 0;
   if (expunge) {
-    // Remove stale entries from the list.
-    expunge_stale_entries();
+    assert_locked_or_safepoint(CodeCache_lock);
+    delete b;
+    if (UsePerfData) {
+      _perf_total_buckets_deallocated_count->inc();
+    }
+  } else {
+    // Mark the context as having stale entries, since it is not safe to
+    // expunge the list right now.
+    for (;;) {
+      nmethodBucket* purge_list_head = Atomic::load(&_purge_list);
+      b->set_purge_list_next(purge_list_head);
+      if (Atomic::cmpxchg(b, &_purge_list, purge_list_head) == purge_list_head) {
+        break;
+      }
+    }
+    if (UsePerfData) {
+      _perf_total_buckets_stale_count->inc();
+      _perf_total_buckets_stale_acc_count->inc();
+    }
   }
 }
 
@@ -111,92 +141,71 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm, bool expunge) {
 // a corresponding bucket otherwise there's a bug in the recording of dependencies.
 // Can be called concurrently by parallel GC threads.
 //
-void DependencyContext::remove_dependent_nmethod(nmethod* nm, bool expunge) {
+void DependencyContext::remove_dependent_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* first = dependencies();
+  nmethodBucket* first = dependencies_not_unloading();
   nmethodBucket* last = NULL;
-  for (nmethodBucket* b = first; b != NULL; b = b->next()) {
+  for (nmethodBucket* b = first; b != NULL; b = b->next_not_unloading()) {
     if (nm == b->get_nmethod()) {
       int val = b->decrement();
       guarantee(val >= 0, "Underflow: %d", val);
       if (val == 0) {
-        if (expunge) {
-          if (last == NULL) {
-            set_dependencies(b->next());
-          } else {
-            last->set_next(b->next());
-          }
-          delete b;
-          if (UsePerfData) {
-            _perf_total_buckets_deallocated_count->inc();
-          }
+        if (last == NULL) {
+          // If there was not a head that was not unloading, we can set a new
+          // head without a CAS, because we know there is no contending cleanup.
+          set_dependencies(b->next_not_unloading());
         } else {
-          // Mark the context as having stale entries, since it is not safe to
-          // expunge the list right now.
-          set_has_stale_entries(true);
-          if (UsePerfData) {
-            _perf_total_buckets_stale_count->inc();
-            _perf_total_buckets_stale_acc_count->inc();
-          }
+          // Only supports a single inserting thread (protected by CodeCache_lock)
+          // for now. Therefore, the next pointer only competes with another cleanup
+          // operation. That interaction does not need a CAS.
+          last->set_next(b->next_not_unloading());
         }
-      }
-      if (expunge) {
-        // Remove stale entries from the list.
-        expunge_stale_entries();
+        release(b);
       }
       return;
     }
     last = b;
   }
-#ifdef ASSERT
-  tty->print_raw_cr("### can't find dependent nmethod");
-  nm->print();
-#endif // ASSERT
-  ShouldNotReachHere();
 }
 
 //
 // Reclaim all unused buckets.
 //
-void DependencyContext::expunge_stale_entries() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  if (!has_stale_entries()) {
-    assert(!find_stale_entries(), "inconsistent info");
-    return;
-  }
-  nmethodBucket* first = dependencies();
-  nmethodBucket* last = NULL;
+void DependencyContext::purge_dependency_contexts() {
   int removed = 0;
-  for (nmethodBucket* b = first; b != NULL;) {
-    assert(b->count() >= 0, "bucket count: %d", b->count());
-    nmethodBucket* next = b->next();
-    if (b->count() == 0) {
-      if (last == NULL) {
-        first = next;
-      } else {
-        last->set_next(next);
-      }
-      removed++;
-      delete b;
-      // last stays the same.
-    } else {
-      last = b;
-    }
+  for (nmethodBucket* b = _purge_list; b != NULL;) {
+    nmethodBucket* next = b->purge_list_next();
+    removed++;
+    delete b;
     b = next;
   }
-  set_dependencies(first);
-  set_has_stale_entries(false);
   if (UsePerfData && removed > 0) {
     _perf_total_buckets_deallocated_count->inc(removed);
-    _perf_total_buckets_stale_count->dec(removed);
+  }
+  _purge_list = NULL;
+}
+
+//
+// Cleanup a dependency context by unlinking and placing all dependents corresponding
+// to is_unloading nmethods on a purge list, which will be deleted later when it is safe.
+void DependencyContext::clean_unloading_dependents() {
+  if (!claim_cleanup()) {
+    // Somebody else is cleaning up this dependency context.
+    return;
+  }
+  // Walk the nmethodBuckets and move dead entries on the purge list, which will
+  // be deleted during ClassLoaderDataGraph::purge().
+  nmethodBucket* b = dependencies_not_unloading();
+  while (b != NULL) {
+    nmethodBucket* next = b->next_not_unloading();
+    b = next;
   }
 }
 
 //
 // Invalidate all dependencies in the context
 int DependencyContext::remove_all_dependents() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* b = dependencies();
+  nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(NULL);
   int marked = 0;
   int removed = 0;
@@ -206,12 +215,11 @@ int DependencyContext::remove_all_dependents() {
       nm->mark_for_deoptimization();
       marked++;
     }
-    nmethodBucket* next = b->next();
+    nmethodBucket* next = b->next_not_unloading();
     removed++;
-    delete b;
+    release(b);
     b = next;
   }
-  set_has_stale_entries(false);
   if (UsePerfData && removed > 0) {
     _perf_total_buckets_deallocated_count->inc(removed);
   }
@@ -221,7 +229,7 @@ int DependencyContext::remove_all_dependents() {
 #ifndef PRODUCT
 void DependencyContext::print_dependent_nmethods(bool verbose) {
   int idx = 0;
-  for (nmethodBucket* b = dependencies(); b != NULL; b = b->next()) {
+  for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     tty->print("[%d] count=%d { ", idx++, b->count());
     if (!verbose) {
@@ -236,7 +244,7 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
 }
 
 bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
-  for (nmethodBucket* b = dependencies(); b != NULL; b = b->next()) {
+  for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     if (nm == b->get_nmethod()) {
 #ifdef ASSERT
       int count = b->count();
@@ -248,15 +256,112 @@ bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
   return false;
 }
 
-bool DependencyContext::find_stale_entries() {
-  for (nmethodBucket* b = dependencies(); b != NULL; b = b->next()) {
-    if (b->count() == 0)  return true;
-  }
-  return false;
-}
-
 #endif //PRODUCT
 
 int nmethodBucket::decrement() {
   return Atomic::sub(1, &_count);
+}
+
+// We use a safepoint counter to track the safepoint counter the last time a given
+// dependency context was cleaned. GC threads claim cleanup tasks by performing
+// a CAS on this value.
+bool DependencyContext::claim_cleanup() {
+  uint64_t cleaning_epoch = Atomic::load(&_cleaning_epoch);
+  uint64_t last_cleanup = Atomic::load(_last_cleanup_addr);
+  if (last_cleanup >= cleaning_epoch) {
+    return false;
+  }
+  return Atomic::cmpxchg(cleaning_epoch, _last_cleanup_addr, last_cleanup) == last_cleanup;
+}
+
+// Retrieve the first nmethodBucket that has a dependent that does not correspond to
+// an is_unloading nmethod. Any nmethodBucket entries observed from the original head
+// that is_unloading() will be unlinked and placed on the purge list.
+nmethodBucket* DependencyContext::dependencies_not_unloading() {
+  for (;;) {
+    // Need acquire becase the read value could come from a concurrent insert.
+    nmethodBucket* head = OrderAccess::load_acquire(_dependency_context_addr);
+    if (head == NULL || !head->get_nmethod()->is_unloading()) {
+      return head;
+    }
+    nmethodBucket* head_next = head->next();
+    OrderAccess::loadload();
+    if (Atomic::load(_dependency_context_addr) != head) {
+      // Unstable load of head w.r.t. head->next
+      continue;
+    }
+    if (Atomic::cmpxchg(head_next, _dependency_context_addr, head) == head) {
+      // Release is_unloading entries if unlinking was claimed
+      DependencyContext::release(head);
+    }
+  }
+}
+
+// Relaxed accessors
+void DependencyContext::set_dependencies(nmethodBucket* b) {
+  Atomic::store(b, _dependency_context_addr);
+}
+
+nmethodBucket* DependencyContext::dependencies() {
+  return Atomic::load(_dependency_context_addr);
+}
+
+// After the gc_prologue, the dependency contexts may be claimed by the GC
+// and releasing of nmethodBucket entries will be deferred and placed on
+// a purge list to be deleted later.
+void DependencyContext::cleaning_start() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  uint64_t epoch = SafepointSynchronize::safepoint_counter();
+  Atomic::store(epoch, &_cleaning_epoch);
+}
+
+// The epilogue marks the end of dependency context cleanup by the GC,
+// and also makes subsequent releases of nmethodBuckets case immediate
+// deletion. It is admitted to end the cleanup in a concurrent phase.
+void DependencyContext::cleaning_end() {
+  uint64_t epoch = 0;
+  Atomic::store(epoch, &_cleaning_epoch);
+}
+
+// This function skips over nmethodBuckets in the list corresponding to
+// nmethods that are is_unloading. This allows exposing a view of the
+// dependents as-if they were already cleaned, despite being cleaned
+// concurrently. Any entry observed that is_unloading() will be unlinked
+// and placed on the purge list.
+nmethodBucket* nmethodBucket::next_not_unloading() {
+  for (;;) {
+    // Do not need acquire because the loaded entry can never be
+    // concurrently inserted.
+    nmethodBucket* next = Atomic::load(&_next);
+    if (next == NULL || !next->get_nmethod()->is_unloading()) {
+      return next;
+    }
+    nmethodBucket* next_next = Atomic::load(&next->_next);
+    OrderAccess::loadload();
+    if (Atomic::load(&_next) != next) {
+      // Unstable load of next w.r.t. next->next
+      continue;
+    }
+    if (Atomic::cmpxchg(next_next, &_next, next) == next) {
+      // Release is_unloading entries if unlinking was claimed
+      DependencyContext::release(next);
+    }
+  }
+}
+
+// Relaxed accessors
+nmethodBucket* nmethodBucket::next() {
+  return Atomic::load(&_next);
+}
+
+void nmethodBucket::set_next(nmethodBucket* b) {
+  Atomic::store(b, &_next);
+}
+
+nmethodBucket* nmethodBucket::purge_list_next() {
+  return Atomic::load(&_purge_list_next);
+}
+
+void nmethodBucket::set_purge_list_next(nmethodBucket* b) {
+  Atomic::store(b, &_purge_list_next);
 }

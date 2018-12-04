@@ -49,52 +49,52 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 static fld_info f0[] = {
-    {"fld_1", "Ljava/lang/String;"}
+    { "fld_1", "Ljava/lang/String;" }
 };
 
 static fld_info f1[] = {
-    {"fld_n1", "I"}
+    { "fld_n1", "I" }
 };
 
 static fld_info f2[] = {
-    {"fld_n2", "I"}
+    { "fld_n2", "I" }
 };
 
 static fld_info f4[] = {
-    {"fld_o2", "I"}
+    { "fld_o2", "I" }
 };
 
 static fld_info f5[] = {
-    {"fld_o3", "I"}
+    { "fld_o3", "I" }
 };
 
 static fld_info f6[] = {
-    {"fld_i1", "I"}
+    { "fld_i1", "I" }
 };
 
 static fld_info f7[] = {
-    {"fld_i2", "I"}
+    { "fld_i2", "I" }
 };
 
 static fld_info f8[] = {
-    {"fld_i2", "I"}
+    { "fld_i2", "I" }
 };
 
 static fld_info f9[] = {
-    {"fld_i1", "I"}
+    { "fld_i1", "I" }
 };
 
 static class_info classes[] = {
-    {"InnerClass1", 1, f0},
-    {"InnerInterface", 1, f1},
-    {"InnerClass2", 1, f2},
-    {"OuterClass1", 0, NULL},
-    {"OuterClass2", 1, f4},
-    {"OuterClass3", 1, f5},
-    {"OuterInterface1", 1, f6},
-    {"OuterInterface2", 1, f7},
-    {"OuterClass4", 1, f8},
-    {"OuterClass5", 1, f9}
+    { "InnerClass1", 1, f0 },
+    { "InnerInterface", 1, f1 },
+    { "InnerClass2", 1, f2 },
+    { "OuterClass1", 0, NULL },
+    { "OuterClass2", 1, f4 },
+    { "OuterClass3", 1, f5 },
+    { "OuterInterface1", 1, f6 },
+    { "OuterInterface2", 1, f7 },
+    { "OuterClass4", 1, f8 },
+    { "OuterClass5", 1, f9 }
 };
 
 #ifdef STATIC_BUILD

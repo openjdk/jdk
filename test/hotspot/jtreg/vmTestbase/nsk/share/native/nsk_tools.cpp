@@ -43,7 +43,7 @@ static struct {
     int verbose;
     int tracing;
     int nComplains;
-} nsk_context = {NSK_FALSE, NSK_TRACE_NONE, 0};
+} nsk_context = { NSK_FALSE, NSK_TRACE_NONE, 0 };
 
 void nsk_setVerboseMode(int verbose) {
     nsk_context.verbose = verbose;

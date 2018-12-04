@@ -305,12 +305,12 @@ jint  IPv6_supported()
     }
 
     /*
-     * If fd 0 is a socket it means we've been launched from inetd or
+     * If fd 0 is a socket it means we may have been launched from inetd or
      * xinetd. If it's a socket then check the family - if it's an
      * IPv4 socket then we need to disable IPv6.
      */
     if (getsockname(0, &sa.sa, &sa_len) == 0) {
-        if (sa.sa.sa_family != AF_INET6) {
+        if (sa.sa.sa_family == AF_INET) {
             close(fd);
             return JNI_FALSE;
         }

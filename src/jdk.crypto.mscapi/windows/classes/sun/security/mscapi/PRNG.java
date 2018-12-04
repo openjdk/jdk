@@ -25,6 +25,7 @@
 
 package sun.security.mscapi;
 
+import java.lang.ref.Cleaner;
 import java.security.ProviderException;
 import java.security.SecureRandomSpi;
 
@@ -43,12 +44,31 @@ public final class PRNG extends SecureRandomSpi
      * The CryptGenRandom function fills a buffer with cryptographically random
      * bytes.
      */
-    private static native byte[] generateSeed(int length, byte[] seed);
+    private static native byte[] generateSeed(long ctxt, int length, byte[] seed);
+    private static native long getContext();
+    private static native void releaseContext(long ctxt);
+    private static final Cleaner CLEANER = Cleaner.create();
 
+    private transient long ctxt;
+
+    private static class State implements Runnable {
+        private final long ctxt;
+
+        State(long ctxt) {
+            this.ctxt = ctxt;
+        }
+
+        @Override
+        public void run() {
+            releaseContext(ctxt);
+        }
+    }
     /**
      * Creates a random number generator.
      */
     public PRNG() {
+        ctxt = getContext();
+        CLEANER.register(this, new State(ctxt));
     }
 
     /**
@@ -59,9 +79,9 @@ public final class PRNG extends SecureRandomSpi
      * @param seed the seed.
      */
     @Override
-    protected void engineSetSeed(byte[] seed) {
+    protected synchronized void engineSetSeed(byte[] seed) {
         if (seed != null) {
-            generateSeed(-1, seed);
+            generateSeed(ctxt, -1, seed);
         }
     }
 
@@ -71,9 +91,9 @@ public final class PRNG extends SecureRandomSpi
      * @param bytes the array to be filled in with random bytes.
      */
     @Override
-    protected void engineNextBytes(byte[] bytes) {
+    protected synchronized void engineNextBytes(byte[] bytes) {
         if (bytes != null) {
-            if (generateSeed(0, bytes) == null) {
+            if (generateSeed(ctxt, 0, bytes) == null) {
                 throw new ProviderException("Error generating random bytes");
             }
         }
@@ -88,12 +108,20 @@ public final class PRNG extends SecureRandomSpi
      * @return the seed bytes.
      */
     @Override
-    protected byte[] engineGenerateSeed(int numBytes) {
-        byte[] seed = generateSeed(numBytes, null);
+    protected synchronized byte[] engineGenerateSeed(int numBytes) {
+        byte[] seed = generateSeed(ctxt, numBytes, null);
 
         if (seed == null) {
             throw new ProviderException("Error generating seed bytes");
         }
         return seed;
+    }
+
+    private void readObject(java.io.ObjectInputStream s)
+            throws java.io.IOException, ClassNotFoundException
+    {
+        s.defaultReadObject();
+        ctxt = getContext();
+        CLEANER.register(this, new State(ctxt));
     }
 }

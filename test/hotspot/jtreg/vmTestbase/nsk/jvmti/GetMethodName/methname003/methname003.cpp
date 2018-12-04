@@ -44,40 +44,40 @@ extern "C" {
 
 /* expected class signatures are below */
 static const char *meth_sig[][METH_NUM][TOT_NUM] = {
-    {{"methname003bMeth", "instance",
+    { { "methname003bMeth", "instance",
         "(Lnsk/jvmti/GetMethodName/methname003b;)Lnsk/jvmti/GetMethodName/methname003b;",
-        "<L:Ljava/lang/String;>(Lnsk/jvmti/GetMethodName/methname003b<TL;>;)Lnsk/jvmti/GetMethodName/methname003b<Ljava/lang/String;>;"},
-     {"methname003bMethSt", "static",
-        "(Lnsk/jvmti/GetMethodName/methname003b;)Lnsk/jvmti/GetMethodName/methname003b;",
-        "<T:Ljava/lang/String;>(Lnsk/jvmti/GetMethodName/methname003b<TT;>;)Lnsk/jvmti/GetMethodName/methname003b<Ljava/lang/String;>;"}},
+        "<L:Ljava/lang/String;>(Lnsk/jvmti/GetMethodName/methname003b<TL;>;)Lnsk/jvmti/GetMethodName/methname003b<Ljava/lang/String;>;" },
+     { "methname003bMethSt", "static",
+       "(Lnsk/jvmti/GetMethodName/methname003b;)Lnsk/jvmti/GetMethodName/methname003b;",
+       "<T:Ljava/lang/String;>(Lnsk/jvmti/GetMethodName/methname003b<TT;>;)Lnsk/jvmti/GetMethodName/methname003b<Ljava/lang/String;>;" } },
 
-    {{"methname003cMeth", "instance",
+    { { "methname003cMeth", "instance",
         "(Ljava/lang/Class;)Ljava/lang/Object;",
-        "<U:Ljava/lang/Object;>(Ljava/lang/Class<TU;>;)TU;"},
-     {"methname003cMethSt", "static",
-        "(Ljava/lang/Class;)Ljava/lang/Object;",
-        "<U:Ljava/lang/Object;>(Ljava/lang/Class<TU;>;)TU;"}},
+        "<U:Ljava/lang/Object;>(Ljava/lang/Class<TU;>;)TU;" },
+     { "methname003cMethSt", "static",
+       "(Ljava/lang/Class;)Ljava/lang/Object;",
+       "<U:Ljava/lang/Object;>(Ljava/lang/Class<TU;>;)TU;" } },
 
-    {{"methname003eMeth", "instance",
+    { { "methname003eMeth", "instance",
         "(Lnsk/jvmti/GetMethodName/methname003e;)V",
-        "NULL"},
-     {"methname003eMethSt", "static",
-        "(Lnsk/jvmti/GetMethodName/methname003e;)V",
-        "NULL"}},
+        "NULL" },
+     { "methname003eMethSt", "static",
+       "(Lnsk/jvmti/GetMethodName/methname003e;)V",
+       "NULL" } },
 
-    {{"methname003ifMeth", "instance",
+    { { "methname003ifMeth", "instance",
         "()I",
-        "NULL"},
-     {"methname003ifMeth2", "instance",
-        "(Ljava/lang/Object;)I",
-        "<T:Ljava/lang/Object;>(TT;)I"}},
+        "NULL" },
+     { "methname003ifMeth2", "instance",
+       "(Ljava/lang/Object;)I",
+       "<T:Ljava/lang/Object;>(TT;)I" } },
 
-    {{"methname003gMeth", "instance",
+    { { "methname003gMeth", "instance",
         "(Ljava/lang/Byte;Ljava/lang/Double;[Ljava/lang/Class;)V",
-        "<A:Ljava/lang/Byte;B:Ljava/lang/Double;>(TA;TB;[Ljava/lang/Class<*>;)V"},
-     {"methname003gMethSt", "static",
-        "(Ljava/lang/Byte;Ljava/lang/Double;)V",
-        "<A:Ljava/lang/Byte;B:Ljava/lang/Double;>(TA;TB;)V"}}
+        "<A:Ljava/lang/Byte;B:Ljava/lang/Double;>(TA;TB;[Ljava/lang/Class<*>;)V" },
+     { "methname003gMethSt", "static",
+       "(Ljava/lang/Byte;Ljava/lang/Double;)V",
+       "<A:Ljava/lang/Byte;B:Ljava/lang/Double;>(TA;TB;)V" } }
 };
 
 static jvmtiEnv *jvmti = NULL;

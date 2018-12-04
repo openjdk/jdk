@@ -50,8 +50,8 @@ static jboolean printdump = JNI_FALSE;
 static size_t eventsExpected = 0;
 static size_t eventsCount = 0;
 static exit_info exits[] = {
-    {"Lnsk/jvmti/MethodExit/mexit001a;", "chain", "()V", -1},
-    {"Lnsk/jvmti/MethodExit/mexit001a;", "dummy", "()V", 3}
+    { "Lnsk/jvmti/MethodExit/mexit001a;", "chain", "()V", -1 },
+    { "Lnsk/jvmti/MethodExit/mexit001a;", "dummy", "()V", 3 }
 };
 
 void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,

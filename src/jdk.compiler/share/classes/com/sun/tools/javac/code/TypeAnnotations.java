@@ -169,9 +169,12 @@ public class TypeAnnotations {
 
     /**
      * Determine whether an annotation is a declaration annotation,
-     * a type annotation, or both.
+     * a type annotation, or both (or none, i.e a non-annotation masquerading as one).
      */
     public AnnotationType annotationTargetType(Attribute.Compound a, Symbol s) {
+        if (!a.type.tsym.isAnnotationType()) {
+            return AnnotationType.NONE;
+        }
         List<Attribute> targets = annotationTargets(a.type.tsym);
         return (targets == null) ?
                 AnnotationType.DECLARATION :
@@ -319,6 +322,8 @@ public class TypeAnnotations {
                         onlyTypeAnnos.append(ta);
                         break;
                     }
+                    case NONE: // Error signaled already, just drop the non-annotation.
+                        break;
                 }
             }
 

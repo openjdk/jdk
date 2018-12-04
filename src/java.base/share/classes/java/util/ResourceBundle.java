@@ -3184,10 +3184,16 @@ public abstract class ResourceBundle {
                                 bundleClass.getName() + " in " + m.toString());
                         }
                         try {
-                            // bundle in a unnamed module
-                            Constructor<ResourceBundle> ctor = bundleClass.getConstructor();
+                            Constructor<ResourceBundle> ctor = AccessController.doPrivileged(
+                                new PrivilegedExceptionAction<>() {
+                                    @Override
+                                    public Constructor<ResourceBundle> run() throws NoSuchMethodException {
+                                        return bundleClass.getDeclaredConstructor();
+                                    }
+                                });
                             if (!Modifier.isPublic(ctor.getModifiers())) {
-                                return null;
+                                throw new IllegalAccessException("no-arg constructor in " +
+                                    bundleClass.getName() + " is not publicly accessible.");
                             }
 
                             // java.base may not be able to read the bundleClass's module.
@@ -3196,12 +3202,16 @@ public abstract class ResourceBundle {
                             bundle = ctor.newInstance((Object[]) null);
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
+                        } catch (PrivilegedActionException e) {
+                            assert e.getException() instanceof NoSuchMethodException;
+                            throw new InstantiationException("public no-arg constructor " +
+                                "does not exist in " + bundleClass.getName());
                         }
                     } else {
                         throw new ClassCastException(c.getName()
                                 + " cannot be cast to ResourceBundle");
                     }
-                } catch (ClassNotFoundException|NoSuchMethodException e) {
+                } catch (ClassNotFoundException e) {
                 }
             } else if (format.equals("java.properties")) {
                 final String resourceName = toResourceName0(bundleName, "properties");

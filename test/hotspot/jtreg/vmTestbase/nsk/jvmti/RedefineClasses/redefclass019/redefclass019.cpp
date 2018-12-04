@@ -62,33 +62,33 @@ static jint framesCount = 0;
 static const char *cls_exp = "Lnsk/jvmti/RedefineClasses/redefclass019a;";
 
 static var_info run[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0 }
 };
 
 static var_info checkPoint[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0 }
 };
 
 static var_info chain1[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0},
-    {"localInt1", "I", 2},
-    {"localInt2", "I", 3333}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0 },
+    { "localInt1", "I", 2 },
+    { "localInt2", "I", 3333 }
 };
 
 static var_info chain2[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0 }
 };
 
 static var_info chain3[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass019a;", 0 }
 };
 
 static frame_info frames[] = {
-    {JNI_TRUE,  "checkPoint", "()V", 115, 1, checkPoint},
-    {JNI_FALSE, "chain3",     "()V", 49, 1, chain3},
-    {JNI_FALSE, "chain2",     "()V", 44, 1, chain2},
-    {JNI_FALSE, "chain1",     "()V", 39, 3, chain1},
-    {JNI_FALSE, "run",        "()V", 32, 1, run},
+    { JNI_TRUE,  "checkPoint", "()V", 115, 1, checkPoint },
+    { JNI_FALSE, "chain3",     "()V", 49, 1, chain3 },
+    { JNI_FALSE, "chain2",     "()V", 44, 1, chain2 },
+    { JNI_FALSE, "chain1",     "()V", 39, 3, chain1 },
+    { JNI_FALSE, "run",        "()V", 32, 1, run },
 };
 
 

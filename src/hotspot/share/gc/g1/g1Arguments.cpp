@@ -81,6 +81,13 @@ void G1Arguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
   }
 
+  // When dumping the CDS archive we want to reduce fragmentation by
+  // triggering a full collection. To get as low fragmentation as
+  // possible we only use one worker thread.
+  if (DumpSharedSpaces) {
+    FLAG_SET_ERGO(uint, ParallelGCThreads, 1);
+  }
+
   if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
     FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
   }

@@ -47,12 +47,12 @@ static jboolean printdump = JNI_FALSE;
 static jmethodID mid;
 static jbyteArray classBytes;
 static frame_info frames[] = {
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "checkPoint", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain4", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain3", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain2", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain1", "()V"},
-    {"Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "run", "()V"},
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "checkPoint", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain4", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain3", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain2", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "chain1", "()V" },
+    { "Lnsk/jvmti/GetStackTrace/getstacktr007$TestThread;", "run", "()V" },
 };
 
 #define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))

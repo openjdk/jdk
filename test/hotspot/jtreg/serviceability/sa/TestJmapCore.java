@@ -37,6 +37,7 @@ import jdk.test.lib.classloader.GeneratingClassLoader;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Utils;
 import jtreg.SkippedException;
 
 import java.io.File;
@@ -134,10 +135,24 @@ public class TestJmapCore {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        Asserts.assertTrue(dumpFile.exists() && dumpFile.isFile(),
-                "Could not find dump file " + dumpFile.getAbsolutePath());
+        if (dumpFile.exists() && dumpFile.isFile()) {
+            HprofParser.parse(dumpFile);
+        } else {
+            boolean ZGCUsed = false;
 
-        HprofParser.parse(dumpFile);
+            for (String opt: Utils.getFilteredTestJavaOpts()) {
+                if (opt.contains("+UseZGC")) {
+                    ZGCUsed = true;
+                    break;
+                }
+            }
+
+            if (!ZGCUsed) {
+                throw new RuntimeException(
+                    "Could not find dump file " + dumpFile.getAbsolutePath());
+            }
+        }
+
         System.out.println("PASSED");
     }
 }

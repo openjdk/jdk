@@ -658,8 +658,6 @@ Node* ZBarrierSetC2::load_barrier(GraphKit* kit, Node* val, Node* adr, bool weak
       kit->set_control(gvn.transform(new ProjNode(barrier, LoadBarrierNode::Control)));
     }
     Node* result = gvn.transform(new ProjNode(transformed_barrier, LoadBarrierNode::Oop));
-    assert(is_gc_barrier_node(result), "sanity");
-    assert(step_over_gc_barrier(result) == val, "sanity");
     return result;
   } else {
     return val;
