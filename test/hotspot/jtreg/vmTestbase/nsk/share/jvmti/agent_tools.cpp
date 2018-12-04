@@ -42,7 +42,7 @@ static jvmtiStartFunction agentThreadProc = NULL;
 static void* agentThreadArg = NULL;
 
 
-typedef enum {NEW, RUNNABLE, WAITING, SUSPENDED, TERMINATED} thread_state_t;
+typedef enum { NEW, RUNNABLE, WAITING, SUSPENDED, TERMINATED } thread_state_t;
 
 typedef struct agent_data_t {
     volatile thread_state_t thread_state;

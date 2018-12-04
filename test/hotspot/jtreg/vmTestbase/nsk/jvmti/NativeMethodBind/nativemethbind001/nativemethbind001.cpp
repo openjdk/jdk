@@ -39,15 +39,15 @@ extern "C" {
 /* tested methods */
 #define METH_NUM 2
 static const char *METHODS[][2] = {
-    {"nativeMethod", "(Z)V"},
-    {"anotherNativeMethod", "()V"},
+    { "nativeMethod", "(Z)V" },
+    { "anotherNativeMethod", "()V" },
 };
 
 /* event counters for the tested methods and expected numbers
    of the events */
 static volatile int bindEv[][2] = {
-    {0, 1},
-    {0, 1}
+    { 0, 1 },
+    { 0, 1 }
 };
 
 static const char *CLASS_SIG =

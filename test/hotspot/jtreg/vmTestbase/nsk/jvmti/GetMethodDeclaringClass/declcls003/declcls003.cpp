@@ -37,7 +37,7 @@ static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static const char *exp_class_sig = "Ljava/lang/Object;";
-static const char *arr_sigs[] = {"[B", "[C", "[D", "[F", "[I", "[J", "[S", "[Z",
+static const char *arr_sigs[] = { "[B", "[C", "[D", "[F", "[I", "[J", "[S", "[Z",
     "[Lnsk/jvmti/GetMethodDeclaringClass/declcls003;",
     "[[Lnsk/jvmti/GetMethodDeclaringClass/declcls003;"
 };

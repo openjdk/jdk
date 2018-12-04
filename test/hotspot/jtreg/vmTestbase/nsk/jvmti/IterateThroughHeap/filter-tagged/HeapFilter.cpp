@@ -66,10 +66,8 @@ static jint TAGGED_STATIC_INT_VALUE = 0xC0DE01 + POISON;
 static jint TAGGED_INT_VALUE = 0xC0DE02 + POISON;
 static jint UNTAGGED_STATIC_INT_VALUE = 0xC0DE03 + POISON;
 static jint UNTAGGED_INT_VALUE = 0xC0DE04 + POISON;
-static jint TAGGED_INT_ARRAY_VALUE[] = {0xC0DE01,
-                                                 0xC0DE01+1};
-static jint UNTAGGED_INT_ARRAY_VALUE[] = {0xC0DE03,
-                                                   0xC0DE03+1};
+static jint TAGGED_INT_ARRAY_VALUE[] = { 0xC0DE01, 0xC0DE01 + 1 };
+static jint UNTAGGED_INT_ARRAY_VALUE[] = { 0xC0DE03, 0xC0DE03 + 1 };
 static const wchar_t *TAGGED_STRING_VALUE = L"I'm a tagged string";
 static const wchar_t *UNTAGGED_STRING_VALUE = L"I'm an untagged string";
 

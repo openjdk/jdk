@@ -45,8 +45,8 @@ static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static frame_info fi =
-    {"Lnsk/jvmti/GetFrameLocation/frameloc002;", "check",
-     "(Ljava/lang/Thread;)I", -1};
+    { "Lnsk/jvmti/GetFrameLocation/frameloc002;", "check",
+      "(Ljava/lang/Thread;)I", -1 };
 
 #ifdef STATIC_BUILD
 JNIEXPORT jint JNICALL Agent_OnLoad_frameloc002(JavaVM *jvm, char *options, void *reserved) {

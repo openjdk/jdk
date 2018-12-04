@@ -71,8 +71,8 @@ typedef struct {
 
 /* descriptions of tested methods */
 static MethodDesc methodsDesc[METHODS_COUNT] = {
-    {"javaMethod", "(I)I", NULL, 0, {}, {} },
-    {"nativeMethod", "(I)I", NULL, 0, {}, {} }
+    { "javaMethod", "(I)I", NULL, 0, {}, {} },
+    { "nativeMethod", "(I)I", NULL, 0, {}, {} }
 };
 
 /* current compilation moment */

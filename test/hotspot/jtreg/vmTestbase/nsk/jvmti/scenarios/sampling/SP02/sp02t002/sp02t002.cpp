@@ -54,12 +54,12 @@ typedef struct {
 
 /* descriptions of tested threads */
 static ThreadDesc threadsDesc[THREADS_COUNT] = {
-    {"threadRunning", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION},
-    {"threadEntering", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION},
-    {"threadWaiting", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION},
-    {"threadSleeping", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION},
-    {"threadRunningInterrupted", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION},
-    {"threadRunningNative", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION}
+    { "threadRunning", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadEntering", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadWaiting", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadSleeping", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadRunningInterrupted", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadRunningNative", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION }
 };
 
 /* indexes of known threads */

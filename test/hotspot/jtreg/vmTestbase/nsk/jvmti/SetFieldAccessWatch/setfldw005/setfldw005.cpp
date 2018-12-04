@@ -49,22 +49,22 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jfieldID actual_fid = NULL;
 static field fields[] = {
-    {"fld0", "J", JNI_TRUE, NULL, "static long"},
-    {"fld1", "J", JNI_FALSE, NULL, "long"},
-    {"fld2", "F", JNI_TRUE, NULL, "static float"},
-    {"fld3", "F", JNI_FALSE, NULL, "float"},
-    {"fld4", "D", JNI_TRUE, NULL, "static double"},
-    {"fld5", "D", JNI_FALSE, NULL, "double"},
-    {"fld6", "Ljava/lang/Object;", JNI_TRUE, NULL, "static Object"},
-    {"fld7", "Ljava/lang/Object;", JNI_FALSE, NULL, "Object"},
-    {"fld8", "Z", JNI_TRUE, NULL, "static boolean"},
-    {"fld9", "Z", JNI_FALSE, NULL, "boolean"},
-    {"fld10", "B", JNI_TRUE, NULL, "static byte"},
-    {"fld11", "B", JNI_FALSE, NULL, "byte"},
-    {"fld12", "S", JNI_TRUE, NULL, "static short"},
-    {"fld13", "S", JNI_FALSE, NULL, "short"},
-    {"fld14", "C", JNI_TRUE, NULL, "static char"},
-    {"fld15", "C", JNI_FALSE, NULL, "char"}
+    { "fld0", "J", JNI_TRUE, NULL, "static long" },
+    { "fld1", "J", JNI_FALSE, NULL, "long" },
+    { "fld2", "F", JNI_TRUE, NULL, "static float" },
+    { "fld3", "F", JNI_FALSE, NULL, "float" },
+    { "fld4", "D", JNI_TRUE, NULL, "static double" },
+    { "fld5", "D", JNI_FALSE, NULL, "double" },
+    { "fld6", "Ljava/lang/Object;", JNI_TRUE, NULL, "static Object" },
+    { "fld7", "Ljava/lang/Object;", JNI_FALSE, NULL, "Object" },
+    { "fld8", "Z", JNI_TRUE, NULL, "static boolean" },
+    { "fld9", "Z", JNI_FALSE, NULL, "boolean" },
+    { "fld10", "B", JNI_TRUE, NULL, "static byte" },
+    { "fld11", "B", JNI_FALSE, NULL, "byte" },
+    { "fld12", "S", JNI_TRUE, NULL, "static short" },
+    { "fld13", "S", JNI_FALSE, NULL, "short" },
+    { "fld14", "C", JNI_TRUE, NULL, "static char" },
+    { "fld15", "C", JNI_FALSE, NULL, "char" }
 };
 
 void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,

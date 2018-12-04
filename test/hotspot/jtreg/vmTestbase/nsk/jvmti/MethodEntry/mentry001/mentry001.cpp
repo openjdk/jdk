@@ -54,9 +54,9 @@ static jboolean printdump = JNI_FALSE;
 static size_t eventsExpected = 0;
 static size_t eventsCount = 0;
 static entry_info entries[] = {
-    {"check", "()I", -1},
-    {"dummy", "()V", 0},
-    {"chain", "()V", -1}
+    { "check", "()I", -1 },
+    { "dummy", "()V", 0 },
+    { "chain", "()V", -1 }
 };
 
 void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,

@@ -53,8 +53,8 @@ typedef struct {   /* line numbers of a method */
 } methInfo;
 
 static methInfo meth_info[] = {
-    {0, "statMeth", "(I)D", NULL, "statMeth_calls", NULL, 0, 0},
-    {1, "voidMeth", "()V", NULL, "voidMeth_calls", NULL, 0, 0}
+    { 0, "statMeth", "(I)D", NULL, "statMeth_calls", NULL, 0, 0 },
+    { 1, "voidMeth", "()V", NULL, "voidMeth_calls", NULL, 0, 0 }
 };
 
 /* the original JNI function table */

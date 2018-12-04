@@ -48,7 +48,7 @@ static const char *METHOD_SIGS[] = {
     "([Ljava/lang/String;Ljava/io/PrintStream;)I"
 };
 
-static volatile long stepEv[] = {0, 0};
+static volatile long stepEv[] = { 0, 0 };
 
 static const char *CLASS_SIG =
     "Lnsk/jvmti/SingleStep/singlestep001;";

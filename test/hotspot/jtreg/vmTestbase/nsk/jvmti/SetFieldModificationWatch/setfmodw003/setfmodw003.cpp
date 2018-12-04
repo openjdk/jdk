@@ -51,10 +51,10 @@ static jfieldID actual_fid = NULL;
 static char actual_sig = '\0';
 static jint actual_val = 0;
 static field flds[] = {
-    {"fld0", 'I', JNI_TRUE, 42, NULL},
-    {"fld1", 'I', JNI_TRUE, 43, NULL},
-    {"fld2", 'I', JNI_FALSE, 44, NULL},
-    {"fld3", 'I', JNI_FALSE, 45, NULL}
+    { "fld0", 'I', JNI_TRUE, 42, NULL },
+    { "fld1", 'I', JNI_TRUE, 43, NULL },
+    { "fld2", 'I', JNI_FALSE, 44, NULL },
+    { "fld3", 'I', JNI_FALSE, 45, NULL }
 };
 
 void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,

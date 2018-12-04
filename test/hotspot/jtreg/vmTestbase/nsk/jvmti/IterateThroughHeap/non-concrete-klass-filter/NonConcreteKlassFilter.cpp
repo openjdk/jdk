@@ -52,7 +52,7 @@ static int timeout = 0;
 //klass-filters used in this test
 #define FILTER_COUNT 2
 static const char *types[] = { "nsk/jvmti/IterateThroughHeap/non_concrete_klass_filter/Interface",
-                               "nsk/jvmti/IterateThroughHeap/non_concrete_klass_filter/AbstractClass"};
+                               "nsk/jvmti/IterateThroughHeap/non_concrete_klass_filter/AbstractClass" };
 
 jint JNICALL field_callback(jvmtiHeapReferenceKind kind,
                             const jvmtiHeapReferenceInfo* info,

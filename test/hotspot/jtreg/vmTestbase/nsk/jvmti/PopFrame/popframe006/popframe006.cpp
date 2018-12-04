@@ -51,15 +51,15 @@ static int bpCount = 0, bpExpected = 0;
 static int stepCount = 0, stepExpected = 0;
 static int popCount = 0, popExpected = 0;
 static check_info checks[] = {
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "run", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "C", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "C", "()V", 0},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 3},
-    {"Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 3}
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "run", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "C", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "C", "()V", 0 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "B", "()V", 3 },
+    { "Lnsk/jvmti/PopFrame/popframe006$TestThread;", "A", "()V", 3 }
 };
 
 void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {

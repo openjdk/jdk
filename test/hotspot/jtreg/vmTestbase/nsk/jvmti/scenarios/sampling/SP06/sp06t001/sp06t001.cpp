@@ -62,12 +62,12 @@ typedef struct {
 
 /* descriptions of tested threads */
 static ThreadDesc threadsDesc[THREADS_COUNT] = {
-    {"threadRunning", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE},
-    {"threadEntering", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE},
-    {"threadWaiting", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE},
-    {"threadSleeping", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE},
-    {"threadRunningInterrupted", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE},
-    {"threadRunningNative", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE}
+    { "threadRunning", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE },
+    { "threadEntering", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE },
+    { "threadWaiting", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE },
+    { "threadSleeping", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE },
+    { "threadRunningInterrupted", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE },
+    { "threadRunningNative", "testedMethod", "(ZI)V", 2, NULL, NULL, NULL, NSK_FALSE }
 };
 
 /* indexes of known threads */

@@ -494,7 +494,7 @@ extern "C" {
                 //    verification_type_info locals[number_of_locals];
                 //    u2 number_of_stack_items;
                 //    verification_type_info stack[number_of_stack_items];
-                //}
+                // }
 
                 put_u1(FULL_FRAME);
                 frameOffsetDelta = get_u2();

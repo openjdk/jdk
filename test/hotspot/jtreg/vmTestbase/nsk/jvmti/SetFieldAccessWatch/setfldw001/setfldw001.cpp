@@ -48,12 +48,12 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static field fields[] = {
-    {"nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld0", "I", 0, NULL, NULL},
-    {"nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld1", "I", 1, NULL, NULL},
-    {"nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld2",
-        "Lnsk/jvmti/SetFieldAccessWatch/setfldw001a;", 0, NULL, NULL},
-    {"nsk/jvmti/SetFieldAccessWatch/setfldw001a", "fld3", "[I", 0, NULL, NULL},
-    {"nsk/jvmti/SetFieldAccessWatch/setfldw001b", "fld4", "F", 0, NULL, NULL},
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld0", "I", 0, NULL, NULL },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld1", "I", 1, NULL, NULL },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld2",
+      "Lnsk/jvmti/SetFieldAccessWatch/setfldw001a;", 0, NULL, NULL },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001a", "fld3", "[I", 0, NULL, NULL },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001b", "fld4", "F", 0, NULL, NULL },
 };
 
 void setWatch(JNIEnv *env, jint ind) {

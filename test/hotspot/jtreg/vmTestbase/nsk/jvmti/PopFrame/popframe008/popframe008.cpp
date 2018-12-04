@@ -50,10 +50,10 @@ static jmethodID midRun = NULL;
 static int framesExpected = 0;
 static int framesCount = 0;
 static frame_info frames[] = {
-    {"Lnsk/jvmti/PopFrame/popframe008$TestThread;", "C", "()V", 1},
-    {"Lnsk/jvmti/PopFrame/popframe008$TestThread;", "B", "()V", 1},
-    {"Lnsk/jvmti/PopFrame/popframe008$TestThread;", "A", "()V", 1},
-    {"Lnsk/jvmti/PopFrame/popframe008$TestThread;", "run", "()V", 1}
+    { "Lnsk/jvmti/PopFrame/popframe008$TestThread;", "C", "()V", 1 },
+    { "Lnsk/jvmti/PopFrame/popframe008$TestThread;", "B", "()V", 1 },
+    { "Lnsk/jvmti/PopFrame/popframe008$TestThread;", "A", "()V", 1 },
+    { "Lnsk/jvmti/PopFrame/popframe008$TestThread;", "run", "()V", 1 }
 };
 
 void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {

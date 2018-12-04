@@ -52,22 +52,22 @@ static jfieldID actual_fid = NULL;
 static char actual_sig = '\0';
 static jvalue actual_val = {};
 static field flds[] = {
-    {"fld0", "J", JNI_TRUE, "static long", NULL, {} },
-    {"fld1", "J", JNI_FALSE, "long", NULL, {} },
-    {"fld2", "F", JNI_TRUE, "static float", NULL, {} },
-    {"fld3", "F", JNI_FALSE, "float", NULL, {} },
-    {"fld4", "D", JNI_TRUE, "static double", NULL, {} },
-    {"fld5", "D", JNI_FALSE, "double", NULL, {} },
-    {"fld6", "Ljava/lang/Object;", JNI_TRUE, "static Object", NULL, {} },
-    {"fld7", "Ljava/lang/Object;", JNI_FALSE, "Object", NULL, {} },
-    {"fld8", "Z", JNI_TRUE, "static boolean", NULL, {} },
-    {"fld9", "Z", JNI_FALSE, "boolean", NULL, {} },
-    {"fld10", "B", JNI_TRUE, "static byte", NULL, {} },
-    {"fld11", "B", JNI_FALSE, "byte", NULL, {} },
-    {"fld12", "S", JNI_TRUE, "static short", NULL, {} },
-    {"fld13", "S", JNI_FALSE, "short", NULL, {} },
-    {"fld14", "C", JNI_TRUE, "static char", NULL, {} },
-    {"fld15", "C", JNI_FALSE, "char", NULL, {} }
+    { "fld0", "J", JNI_TRUE, "static long", NULL, {} },
+    { "fld1", "J", JNI_FALSE, "long", NULL, {} },
+    { "fld2", "F", JNI_TRUE, "static float", NULL, {} },
+    { "fld3", "F", JNI_FALSE, "float", NULL, {} },
+    { "fld4", "D", JNI_TRUE, "static double", NULL, {} },
+    { "fld5", "D", JNI_FALSE, "double", NULL, {} },
+    { "fld6", "Ljava/lang/Object;", JNI_TRUE, "static Object", NULL, {} },
+    { "fld7", "Ljava/lang/Object;", JNI_FALSE, "Object", NULL, {} },
+    { "fld8", "Z", JNI_TRUE, "static boolean", NULL, {} },
+    { "fld9", "Z", JNI_FALSE, "boolean", NULL, {} },
+    { "fld10", "B", JNI_TRUE, "static byte", NULL, {} },
+    { "fld11", "B", JNI_FALSE, "byte", NULL, {} },
+    { "fld12", "S", JNI_TRUE, "static short", NULL, {} },
+    { "fld13", "S", JNI_FALSE, "short", NULL, {} },
+    { "fld14", "C", JNI_TRUE, "static char", NULL, {} },
+    { "fld15", "C", JNI_FALSE, "char", NULL, {} }
 };
 
 void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,

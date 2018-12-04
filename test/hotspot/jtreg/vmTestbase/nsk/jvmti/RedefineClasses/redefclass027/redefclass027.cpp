@@ -80,38 +80,38 @@ static jint redefinesCount = 0;
 static const char *cls_exp = "Lnsk/jvmti/RedefineClasses/redefclass027a;";
 
 static var_info run[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0},
-    {"localInt1", "I", 1}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0 },
+    { "localInt1", "I", 1 }
 };
 
 static var_info method1[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0},
-    {"argInt1", "I", 10},
-    {"localInt2", "I", 2},
-    {"ex", "Ljava/lang/Exception;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0 },
+    { "argInt1", "I", 10 },
+    { "localInt2", "I", 2 },
+    { "ex", "Ljava/lang/Exception;", 0 }
 };
 
 static var_info pop[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0},
-    {"argInt1", "I", 10},
-    {"localInt2", "I", 2},
-    {"ex", "Ljava/lang/Exception;", 0}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0 },
+    { "argInt1", "I", 10 },
+    { "localInt2", "I", 2 },
+    { "ex", "Ljava/lang/Exception;", 0 }
 };
 
 static var_info method2[] = {
-    {"this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0},
-    {"argInt2", "I", 20},
-    {"localInt4", "I", 4}
+    { "this", "Lnsk/jvmti/RedefineClasses/redefclass027a;", 0 },
+    { "argInt2", "I", 20 },
+    { "localInt4", "I", 4 }
 };
 
 static frame_info frames[] = {
-    {JNI_FALSE, "run",     "()V",  97,  2, run,     "bp"},
-    {JNI_FALSE, "run",     "()V",  97,  2, run,     "step"},
-    {JNI_FALSE, "run",     "()V",  99,  2, run,     "mod"},
-    {JNI_FALSE, "method2", "(I)V", 116, 3, method2, "acc"},
-    {JNI_FALSE, "method2", "(I)V", 117, 3, method2, "exc"},
-    {JNI_FALSE, "method1", "(I)V", 108, 4, method1, "catch"},
-    {JNI_FALSE, "method1", "(I)V", 112, 4, pop,     "pop"},
+    { JNI_FALSE, "run",     "()V",  97,  2, run,     "bp" },
+    { JNI_FALSE, "run",     "()V",  97,  2, run,     "step" },
+    { JNI_FALSE, "run",     "()V",  99,  2, run,     "mod" },
+    { JNI_FALSE, "method2", "(I)V", 116, 3, method2, "acc" },
+    { JNI_FALSE, "method2", "(I)V", 117, 3, method2, "exc" },
+    { JNI_FALSE, "method1", "(I)V", 108, 4, method1, "catch" },
+    { JNI_FALSE, "method1", "(I)V", 112, 4, pop,     "pop" },
 };
 
 

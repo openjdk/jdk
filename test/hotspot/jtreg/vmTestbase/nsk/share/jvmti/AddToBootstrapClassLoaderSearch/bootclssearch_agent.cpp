@@ -37,7 +37,7 @@ static jlong timeout = 0;
 static char segment1[3000] = "";
 static char segment2[3000] = "";
 
-static const char* const illegal_segments[] = {"", "tmp/"};
+static const char* const illegal_segments[] = { "", "tmp/" };
 
 jboolean use_segment2 = JNI_FALSE;
 
