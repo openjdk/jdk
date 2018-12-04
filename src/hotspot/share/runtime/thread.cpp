@@ -3902,6 +3902,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_live_phase();
 
+  // Make perfmemory accessible
+  PerfMemory::set_accessible(true);
+
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
 
