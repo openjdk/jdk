@@ -86,11 +86,12 @@ class DependencyContext : public StackObj {
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
 
-  static PerfCounter* _perf_total_buckets_allocated_count;
-  static PerfCounter* _perf_total_buckets_deallocated_count;
-  static PerfCounter* _perf_total_buckets_stale_count;
-  static PerfCounter* _perf_total_buckets_stale_acc_count;
+  static PerfCounter*            _perf_total_buckets_allocated_count;
+  static PerfCounter*            _perf_total_buckets_deallocated_count;
+  static PerfCounter*            _perf_total_buckets_stale_count;
+  static PerfCounter*            _perf_total_buckets_stale_acc_count;
   static nmethodBucket* volatile _purge_list;
+  static uint64_t                _cleaning_epoch_monotonic;
   static volatile uint64_t       _cleaning_epoch;
 
  public:
