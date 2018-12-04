@@ -224,7 +224,6 @@ public class Deflater {
      * One of the {@code setInput()} methods should be called whenever
      * {@code needsInput()} returns true indicating that more input data
      * is required.
-     * <p>
      * @param input the input data bytes
      * @param off the start offset of the data
      * @param len the length of the data
@@ -248,7 +247,6 @@ public class Deflater {
      * One of the {@code setInput()} methods should be called whenever
      * {@code needsInput()} returns true indicating that more input data
      * is required.
-     * <p>
      * @param input the input data bytes
      * @see Deflater#needsInput
      */
