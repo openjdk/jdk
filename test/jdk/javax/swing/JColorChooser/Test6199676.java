@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,24 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6199676
  * @summary Tests preview panel after L&F changing
- * @author Sergey Malenkov
  */
 
 import java.awt.Component;
 import java.awt.Container;
+
 import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class Test6199676 implements Runnable {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Test6199676());
-    }
-
-    private static void exit(String error) {
-        if (error != null) {
-            System.err.println(error);
-            System.exit(1);
-        }
-        else {
-            System.exit(0);
-        }
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(new Test6199676());
     }
 
     private static Component getPreview(Container container) {
@@ -74,44 +65,42 @@ public class Test6199676 implements Runnable {
         return (component != null) && component.isShowing();
     }
 
-    private int index;
-    private boolean updated;
-    private JColorChooser chooser;
-
     public synchronized void run() {
-        if (this.chooser == null) {
-            this.chooser = new JColorChooser();
-
-            JFrame frame = new JFrame(getClass().getName());
-            frame.add(this.chooser);
+        JColorChooser chooser = new JColorChooser();
+        JFrame frame = new JFrame(getClass().getName());
+        try {
+            frame.add(chooser);
             frame.setVisible(true);
-        }
-        else if (this.updated) {
-            if (isShowing(this.chooser.getPreviewPanel())) {
-                exit("custom preview panel is showing");
-            }
-            exit(null);
-        }
-        else {
-            Component component = this.chooser.getPreviewPanel();
+            // Check default preview panel
+            setLookAndFeel(UIManager.getInstalledLookAndFeels()[0]);
+            SwingUtilities.updateComponentTreeUI(chooser);
+            Component component = chooser.getPreviewPanel();
             if (component == null) {
-                component = getPreview(this.chooser);
+                component = getPreview(chooser);
             }
             if (!isShowing(component)) {
-                exit("default preview panel is not showing");
+                throw new RuntimeException(
+                        "default preview panel is not showing");
             }
-            this.updated = true;
-            this.chooser.setPreviewPanel(new JPanel());
+            // Check custom preview panel
+            chooser.setPreviewPanel(new JPanel());
+            setLookAndFeel(UIManager.getInstalledLookAndFeels()[1]);
+            SwingUtilities.updateComponentTreeUI(chooser);
+            if (isShowing(chooser.getPreviewPanel())) {
+                throw new RuntimeException("custom preview panel is showing");
+            }
+        } finally {
+            frame.dispose();
         }
-        LookAndFeelInfo[] infos = UIManager.getInstalledLookAndFeels();
-        LookAndFeelInfo info = infos[++this.index % infos.length];
+    }
+
+    private static void setLookAndFeel(final UIManager.LookAndFeelInfo laf) {
         try {
-            UIManager.setLookAndFeel(info.getClassName());
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (final UnsupportedLookAndFeelException ignored){
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
-        catch (Exception exception) {
-            exit("could not change L&F");
-        }
-        SwingUtilities.updateComponentTreeUI(this.chooser);
-        SwingUtilities.invokeLater(this);
     }
 }
