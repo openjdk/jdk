@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -925,7 +926,7 @@ public final class SystemModulesPlugin implements Plugin {
             mv.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
 
             int index = 0;
-            for (Map.Entry<String, Set<String>> e : map.entrySet()) {
+            for (var e : new TreeMap<>(map).entrySet()) {
                 String name = e.getKey();
                 Set<String> s = e.getValue();
 
@@ -971,7 +972,7 @@ public final class SystemModulesPlugin implements Plugin {
                 pushInt(mv, size);
                 mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
                 int i = 0;
-                for (String element : set) {
+                for (String element : sorted(set)) {
                     mv.visitInsn(DUP);
                     pushInt(mv, i);
                     mv.visitLdcInsn(element);
@@ -985,7 +986,7 @@ public final class SystemModulesPlugin implements Plugin {
                         true);
             } else {
                 StringBuilder sb = new StringBuilder("(");
-                for (String element : set) {
+                for (String element : sorted(set)) {
                     mv.visitLdcInsn(element);
                     sb.append("Ljava/lang/Object;");
                 }
@@ -1146,7 +1147,7 @@ public final class SystemModulesPlugin implements Plugin {
                 pushInt(mv, requires.size());
                 mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Requires");
                 int arrayIndex = 0;
-                for (Requires require : requires) {
+                for (Requires require : sorted(requires)) {
                     String compiledVersion = null;
                     if (require.compiledVersion().isPresent()) {
                         compiledVersion = require.compiledVersion().get().toString();
@@ -1192,7 +1193,7 @@ public final class SystemModulesPlugin implements Plugin {
                 pushInt(mv, exports.size());
                 mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Exports");
                 int arrayIndex = 0;
-                for (Exports export : exports) {
+                for (Exports export : sorted(exports)) {
                     mv.visitInsn(DUP);    // arrayref
                     pushInt(mv, arrayIndex++);
                     newExports(export.modifiers(), export.source(), export.targets());
@@ -1245,7 +1246,7 @@ public final class SystemModulesPlugin implements Plugin {
                 pushInt(mv, opens.size());
                 mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Opens");
                 int arrayIndex = 0;
-                for (Opens open : opens) {
+                for (Opens open : sorted(opens)) {
                     mv.visitInsn(DUP);    // arrayref
                     pushInt(mv, arrayIndex++);
                     newOpens(open.modifiers(), open.source(), open.targets());
@@ -1310,7 +1311,7 @@ public final class SystemModulesPlugin implements Plugin {
                 pushInt(mv, provides.size());
                 mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Provides");
                 int arrayIndex = 0;
-                for (Provides provide : provides) {
+                for (Provides provide : sorted(provides)) {
                     mv.visitInsn(DUP);    // arrayref
                     pushInt(mv, arrayIndex++);
                     newProvides(provide.service(), provide.providers());
@@ -1420,6 +1421,8 @@ public final class SystemModulesPlugin implements Plugin {
                 // Invoke ModuleHashes.Builder::hashForModule
                 recordedHashes
                     .names()
+                    .stream()
+                    .sorted()
                     .forEach(mn -> hashForModule(mn, recordedHashes.hashFor(mn)));
 
                 // Put ModuleHashes into the hashes array
@@ -1600,7 +1603,7 @@ public final class SystemModulesPlugin implements Plugin {
          * it will reuse defaultVarIndex.  For a Set with multiple references,
          * it will use a new local variable retrieved from the nextLocalVar
          */
-        class SetBuilder<T> {
+        class SetBuilder<T extends Comparable<T>> {
             private final Set<T> elements;
             private final int defaultVarIndex;
             private final IntSupplier nextLocalVar;
@@ -1660,7 +1663,7 @@ public final class SystemModulesPlugin implements Plugin {
                 if (elements.size() <= 10) {
                     // call Set.of(e1, e2, ...)
                     StringBuilder sb = new StringBuilder("(");
-                    for (T t : elements) {
+                    for (T t : sorted(elements)) {
                         sb.append("Ljava/lang/Object;");
                         visitElement(t, mv);
                     }
@@ -1672,7 +1675,7 @@ public final class SystemModulesPlugin implements Plugin {
                     pushInt(mv, elements.size());
                     mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
                     int arrayIndex = 0;
-                    for (T t : elements) {
+                    for (T t : sorted(elements)) {
                         mv.visitInsn(DUP);    // arrayref
                         pushInt(mv, arrayIndex);
                         visitElement(t, mv);  // value
@@ -1690,7 +1693,7 @@ public final class SystemModulesPlugin implements Plugin {
          * Generates bytecode to create one single instance of EnumSet
          * for a given set of modifiers and assign to a local variable slot.
          */
-        class EnumSetBuilder<T> extends SetBuilder<T> {
+        class EnumSetBuilder<T extends Comparable<T>> extends SetBuilder<T> {
 
             private final String className;
 
@@ -1788,7 +1791,7 @@ public final class SystemModulesPlugin implements Plugin {
         mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
 
         int index = 0;
-        for (String moduleName : map.keySet()) {
+        for (String moduleName : sorted(map.keySet())) {
             mv.visitInsn(DUP);                  // arrayref
             pushInt(mv, index);
             mv.visitLdcInsn(moduleName);
@@ -1811,7 +1814,7 @@ public final class SystemModulesPlugin implements Plugin {
         mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
 
         index = 0;
-        for (String className : map.values()) {
+        for (String className : sorted(map.values())) {
             mv.visitInsn(DUP);                  // arrayref
             pushInt(mv, index);
             mv.visitLdcInsn(className.replace('/', '.'));
@@ -1829,6 +1832,19 @@ public final class SystemModulesPlugin implements Plugin {
         out.add(e);
 
         return rn;
+    }
+
+    /**
+     * Returns a sorted copy of a collection.
+     *
+     * This is useful to ensure a deterministic iteration order.
+     *
+     * @return a sorted copy of the given collection.
+     */
+    private static <T extends Comparable<T>> List<T> sorted(Collection<T> c) {
+        var l = new ArrayList<T>(c);
+        Collections.sort(l);
+        return l;
     }
 
     /**
