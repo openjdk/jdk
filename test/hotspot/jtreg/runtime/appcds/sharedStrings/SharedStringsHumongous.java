@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,71 +24,73 @@
 
 /*
  * @test
- * @summary Write a lots of shared strings.
+ * @summary Use a shared string allocated in a humongous G1 region.
+ * @comment -- the following implies that G1 is used (by command-line or by default)
  * @requires vm.cds.archived.java.heap
+ *
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
  * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run driver/timeout=500 SharedStringsStress
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedStringsHumongous
  */
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import sun.hotspot.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Asserts;
 
-public class SharedStringsStress {
-    static String sharedArchiveConfigFile = System.getProperty("user.dir") + File.separator + "SharedStringsStress_gen.txt";
+public class SharedStringsHumongous {
+    static String sharedArchiveConfigFile = System.getProperty("user.dir") + File.separator + "SharedStringsHumongous_gen.txt";
 
     public static void main(String[] args) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveConfigFile)) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
             out.println("VERSION: 1.0");
             out.println("@SECTION: String");
             out.println("31: shared_test_string_unique_14325");
-            for (int i=0; i<200000; i++) {
-                String s = "generated_string " + i;
-                out.println(s.length() + ": " + s);
+            int region_size = wb.g1RegionSize();
+            char body[] = new char[region_size + region_size / 2];
+            for (int i = 0; i < body.length; i++) {
+              body[i] = 'x';
             }
+            Asserts.assertTrue(wb.g1IsHumongous(body));
+            String prefix = "generated_string (followed by " + body.length + " 'x') ";
+
+            System.out.println("G1 region size: " + region_size);
+            System.out.println("Using a humongous string: " + prefix);
+
+            String s = prefix + new String(body);
+            out.println(s.length() + ": " + s);
             out.close();
         }
 
-        SharedStringsUtils.run(args, SharedStringsStress::test);
+        SharedStringsUtils.run(args, SharedStringsHumongous::test);
     }
 
     public static void test(String[] args) throws Exception {
         String vmOptionsPrefix[] = SharedStringsUtils.getChildVMOptionsPrefix();
-        String appJar = JarBuilder.build("SharedStringsStress", "HelloString");
+        String appJar = JarBuilder.build("SharedStringsHumongous", "HelloString");
 
-        String test_cases[][] = {
-            // default heap size
-            {},
-
-            // Test for handling of heap fragmentation. With sharedArchiveConfigFile, we will dump about
-            // 18MB of shared objects on 64 bit VM (smaller on 32-bit).
-            //
-            // During dump time, an extra copy of these objects are allocated,
-            // so we need about 36MB, plus a few MB for other system data. So 64MB total heap
-            // should be enough.
-            //
-            // The VM should executed a full GC to maximize contiguous free space and
-            // avoid fragmentation.
-            {"-Xmx64m"},
-        };
-
-        for (String[] extra_opts: test_cases) {
-            vmOptionsPrefix = TestCommon.concat(vmOptionsPrefix, extra_opts);
-
-            OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
+        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
                 TestCommon.concat(vmOptionsPrefix,
                     "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
                     "-Xlog:gc+region+cds",
                     "-Xlog:gc+region=trace"));
-            TestCommon.checkDump(dumpOutput);
-            OutputAnalyzer execOutput = TestCommon.exec(appJar,
-                TestCommon.concat(vmOptionsPrefix, "HelloString"));
-            TestCommon.checkExec(execOutput);
-        }
+        TestCommon.checkDump(dumpOutput, "extra interned string ignored; size too large");
+        // Extra strings that are humongous are not kelp alive, so they should be GC'ed
+        // before dumping the string table. That means the heap should contain no
+        // humongous regions.
+        dumpOutput.shouldNotMatch("gc,region,cds. HeapRegion 0x[0-9a-f]* HUM");
+
+        OutputAnalyzer execOutput = TestCommon.exec(appJar,
+            TestCommon.concat(vmOptionsPrefix, "HelloString"));
+        TestCommon.checkExec(execOutput);
     }
 }

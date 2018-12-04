@@ -375,6 +375,9 @@ public:
   inline int remain() {
     return (int)(_end - _p);
   }
+  int last_line_no() {
+    return _line_no - 1;
+  }
 
   void corrupted(const char *p, const char *msg);
 

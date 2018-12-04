@@ -29,6 +29,7 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -350,7 +351,11 @@ void MetaspaceShared::post_initialize(TRAPS) {
   }
 }
 
+static GrowableArray<Handle>* _extra_interned_strings = NULL;
+
 void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
+  _extra_interned_strings = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<Handle>(10000, true);
+
   HashtableTextDump reader(filename);
   reader.check_version("VERSION: 1.0");
 
@@ -358,15 +363,45 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
     int utf8_length;
     int prefix_type = reader.scan_prefix(&utf8_length);
     ResourceMark rm(THREAD);
-    char* utf8_buffer = NEW_RESOURCE_ARRAY(char, utf8_length);
+    if (utf8_length == 0x7fffffff) {
+      // buf_len will overflown 32-bit value.
+      vm_exit_during_initialization(err_msg("string length too large: %d", utf8_length));
+    }
+    int buf_len = utf8_length+1;
+    char* utf8_buffer = NEW_RESOURCE_ARRAY(char, buf_len);
     reader.get_utf8(utf8_buffer, utf8_length);
+    utf8_buffer[utf8_length] = '\0';
 
     if (prefix_type == HashtableTextDump::SymbolPrefix) {
-      SymbolTable::new_symbol(utf8_buffer, utf8_length, THREAD);
+      SymbolTable::new_permanent_symbol(utf8_buffer, THREAD);
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
-      utf8_buffer[utf8_length] = '\0';
       oop s = StringTable::intern(utf8_buffer, THREAD);
+
+      if (HAS_PENDING_EXCEPTION) {
+        log_warning(cds, heap)("[line %d] extra interned string allocation failed; size too large: %d",
+                               reader.last_line_no(), utf8_length);
+        CLEAR_PENDING_EXCEPTION;
+      } else {
+#if INCLUDE_G1GC
+        if (UseG1GC) {
+          typeArrayOop body = java_lang_String::value(s);
+          const HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(body);
+          if (hr->is_humongous()) {
+            // Don't keep it alive, so it will be GC'ed before we dump the strings, in order
+            // to maximize free heap space and minimize fragmentation.
+            log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
+                                reader.last_line_no(), utf8_length);
+            continue;
+          }
+        }
+#endif
+        // Interned strings are GC'ed if there are no references to it, so let's
+        // add a reference to keep this string alive.
+        assert(s != NULL, "must succeed");
+        Handle h(THREAD, s);
+        _extra_interned_strings->append(h);
+      }
     }
   }
 }
@@ -450,8 +485,6 @@ address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
   assert(_cds_i2i_entry_code_buffers_size == total_size, "must not change");
   return _cds_i2i_entry_code_buffers;
 }
-
-// CDS code for dumping shared archive.
 
 // Global object for holding classes that have been loaded.  Since this
 // is run at a safepoint just before exit, this is the entire set of classes.
@@ -1685,6 +1718,13 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     // are implemented by K are not verified.
     link_and_cleanup_shared_classes(CATCH);
     tty->print_cr("Rewriting and linking classes: done");
+
+    if (HeapShared::is_heap_object_archiving_allowed()) {
+      // Avoid fragmentation while archiving heap objects.
+      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
+      Universe::heap()->collect(GCCause::_archive_time_gc);
+      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
+    }
 
     VM_PopulateDumpSharedSpace op;
     VMThread::execute(&op);

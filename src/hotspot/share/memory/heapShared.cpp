@@ -193,6 +193,8 @@ void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
     return;
   }
 
+  G1HeapVerifier::verify_ready_for_archiving();
+
   {
     NoSafepointVerifier nsv;
 

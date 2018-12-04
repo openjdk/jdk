@@ -57,16 +57,12 @@ public class LotsOfClasses {
         opts.addSuffix("--add-modules");
         opts.addSuffix("ALL-SYSTEM");
         opts.addSuffix("-Xlog:hashtables");
-        opts.addSuffix("-Xms500m");
         opts.addSuffix("-Xmx500m");
+        opts.addSuffix("-Xlog:gc+region+cds");
+        opts.addSuffix("-Xlog:gc+region=trace");
 
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
-        try {
-            CDSTestUtils.checkDump(out);
-        } catch (java.lang.RuntimeException re) {
-            out.shouldContain(
-                "number of memory regions exceeds maximum due to fragmentation");
-        }
+        CDSTestUtils.checkDump(out);
     }
 
     static void findAllClasses(ArrayList<String> list) throws Throwable {
