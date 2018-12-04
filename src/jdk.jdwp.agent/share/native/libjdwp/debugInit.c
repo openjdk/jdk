@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,7 +647,7 @@ jniFatalError(JNIEnv *env, const char *msg, jvmtiError error, int exit_code)
         (void)snprintf(buf, sizeof(buf), "JDWP %s, jvmtiError=%s(%d)",
                     msg, jvmtiErrorText(error), error);
     } else {
-        (void)snprintf(buf, sizeof(buf), "JDWP %s", buf);
+        (void)snprintf(buf, sizeof(buf), "JDWP %s", msg);
     }
     if (env != NULL) {
         (*((*env)->FatalError))(env, buf);
