@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"
 #include "runtime/frame.inline.hpp"
