@@ -776,17 +776,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
-
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-      ifeq ($(USE_EXTERNAL_LIBZ), true)
-        # When building our own libpng and using an external libz, we need to
-        # inject our own libz.h to tweak the exported ZLIB_VERNUM macro. See
-        # $(TOPDIR)/src/java.desktop/macosx/native/libsplashscreen/libpng/zlibwrapper/zlib.h
-        # for details. This must be specified with -iquote, not -I to avoid a
-        # circular include.
-        LIBSPLASHSCREEN_CFLAGS += -iquote $(TOPDIR)/src/$(MODULE)/macosx/native/libsplashscreen/libpng/zlibwrapper
-      endif
-    endif
   else
     LIBSPLASHSCREEN_EXCLUDES += libpng
   endif
