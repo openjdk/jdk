@@ -89,7 +89,6 @@ void VirtualSpaceList::dec_virtual_space_count() {
 // nodes with a 0 container_count.  Remove Metachunks in
 // the node from their respective freelists.
 void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint for contains to work");
   assert_lock_strong(MetaspaceExpand_lock);
   // Don't use a VirtualSpaceListIterator because this
   // list is being changed and a straightforward use of an iterator is not safe.
