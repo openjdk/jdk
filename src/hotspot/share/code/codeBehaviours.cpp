@@ -30,10 +30,10 @@
 CompiledICProtectionBehaviour* CompiledICProtectionBehaviour::_current = NULL;
 
 bool DefaultICProtectionBehaviour::lock(CompiledMethod* method) {
-  if (CompiledIC_lock->owned_by_self()) {
+  if (is_safe(method)) {
     return false;
   }
-  CompiledIC_lock->lock();
+  CompiledIC_lock->lock_without_safepoint_check();
   return true;
 }
 

@@ -28,6 +28,7 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/compiledICHolder.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.
@@ -67,6 +68,7 @@ class CompiledICLocker: public StackObj {
   CompiledMethod* _method;
   CompiledICProtectionBehaviour* _behaviour;
   bool _locked;
+  NoSafepointVerifier _nsv;
 
 public:
   CompiledICLocker(CompiledMethod* method);
@@ -272,13 +274,13 @@ class CompiledIC: public ResourceObj {
   //
   // They all takes a TRAP argument, since they can cause a GC if the inline-cache buffer is full.
   //
-  void set_to_clean(bool in_use = true);
-  void set_to_monomorphic(CompiledICInfo& info);
+  bool set_to_clean(bool in_use = true);
+  bool set_to_monomorphic(CompiledICInfo& info);
   void clear_ic_stub();
 
   // Returns true if successful and false otherwise. The call can fail if memory
-  // allocation in the code cache fails.
-  bool set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS);
+  // allocation in the code cache fails, or ic stub refill is required.
+  bool set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, bool& needs_ic_stub_refill, TRAPS);
 
   static void compute_monomorphic_entry(const methodHandle& method, Klass* receiver_klass,
                                         bool is_optimized, bool static_bound, bool caller_is_nmethod,
@@ -372,7 +374,7 @@ public:
   virtual address destination() const = 0;
 
   // Clean static call (will force resolving on next use)
-  void set_to_clean(bool in_use = true);
+  bool set_to_clean(bool in_use = true);
 
   // Set state. The entry must be the same, as computed by compute_entry.
   // Computation and setting is split up, since the actions are separate during

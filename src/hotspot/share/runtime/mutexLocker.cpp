@@ -251,7 +251,7 @@ void mutex_init() {
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
   def(Module_lock                  , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_always);
-  def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);
+  def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(VMStatistic_lock             , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(ExpandHeap_lock              , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // Used during compilation by VM thread
   def(JNIHandleBlockFreeList_lock  , PaddedMutex  , leaf-1,      true,  Monitor::_safepoint_check_never);      // handles are used by VM thread
@@ -281,7 +281,7 @@ void mutex_init() {
   def(VMOperationRequest_lock      , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);
   def(RetData_lock                 , PaddedMutex  , nonleaf,     false, Monitor::_safepoint_check_always);
   def(Terminator_lock              , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);
-  def(VtableStubs_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
+  def(VtableStubs_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(Notify_lock                  , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);
   def(JNIGlobalAlloc_lock          , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(JNIGlobalActive_lock         , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
@@ -294,7 +294,7 @@ void mutex_init() {
   def(JfieldIdCreation_lock        , PaddedMutex  , nonleaf+1,   true,  Monitor::_safepoint_check_always);     // jfieldID, Used in VM_Operation
   def(ResolvedMethodTable_lock     , PaddedMutex  , nonleaf+1,   false, Monitor::_safepoint_check_always);     // Used to protect ResolvedMethodTable
 
-  def(CompiledIC_lock              , PaddedMutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // locks VtableStubs_lock, InlineCacheBuffer_lock
+  def(CompiledIC_lock              , PaddedMutex  , nonleaf+2,   false, Monitor::_safepoint_check_never);      // locks VtableStubs_lock, InlineCacheBuffer_lock
   def(CompileTaskAlloc_lock        , PaddedMutex  , nonleaf+2,   true,  Monitor::_safepoint_check_always);
   def(CompileStatistics_lock       , PaddedMutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);
   def(DirectivesStack_lock         , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);

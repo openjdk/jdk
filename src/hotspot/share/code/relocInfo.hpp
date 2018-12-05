@@ -814,7 +814,7 @@ class Relocation {
   // all relocations are able to reassert their values
   virtual void set_value(address x);
 
-  virtual void clear_inline_cache()              { }
+  virtual bool clear_inline_cache()              { return true; }
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always posisition dependent (depending on the state of the cache)). However, this is
@@ -1052,7 +1052,7 @@ class virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest);
   void unpack_data();
 
-  void clear_inline_cache();
+  bool clear_inline_cache();
 };
 
 
@@ -1083,7 +1083,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest);
   void unpack_data();
 
-  void clear_inline_cache();
+  bool clear_inline_cache();
 
   // find the matching static_stub
   address static_stub(bool is_aot);
@@ -1117,7 +1117,7 @@ class static_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest);
   void unpack_data();
 
-  void clear_inline_cache();
+  bool clear_inline_cache();
 
   // find the matching static_stub
   address static_stub(bool is_aot);
@@ -1146,7 +1146,7 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() { }
 
  public:
-  void clear_inline_cache();
+  bool clear_inline_cache();
 
   address static_call() { return _static_call; }
   bool is_aot() { return _is_aot; }

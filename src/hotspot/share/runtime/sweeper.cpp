@@ -699,7 +699,6 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     // But still remember to clean-up inline caches for alive nmethods
     if (cm->is_alive() && !cm->is_unloading()) {
       // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
-      CompiledICLocker ml(cm);
       cm->cleanup_inline_caches(false);
       SWEEP(cm);
     }
@@ -745,19 +744,16 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
       }
     } else {
       // Still alive, clean up its inline caches
-      CompiledICLocker ml(cm);
       cm->cleanup_inline_caches(false);
       SWEEP(cm);
     }
   } else if (cm->is_unloaded()) {
     // Code is unloaded, so there are no activations on the stack.
     // Convert the nmethod to zombie or flush it directly in the OSR case.
-    {
-      // Clean ICs of unloaded nmethods as well because they may reference other
-      // unloaded nmethods that may be flushed earlier in the sweeper cycle.
-      CompiledICLocker ml(cm);
-      cm->cleanup_inline_caches(false);
-    }
+
+    // Clean ICs of unloaded nmethods as well because they may reference other
+    // unloaded nmethods that may be flushed earlier in the sweeper cycle.
+    cm->cleanup_inline_caches(false);
     if (cm->is_osr_method()) {
       SWEEP(cm);
       // No inline caches will ever point to osr methods, so we can just remove it
@@ -776,7 +772,6 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
       possibly_flush((nmethod*)cm);
     }
     // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
-    CompiledICLocker ml(cm);
     cm->cleanup_inline_caches(false);
     SWEEP(cm);
   }

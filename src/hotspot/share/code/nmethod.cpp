@@ -1650,7 +1650,8 @@ void nmethod::do_unloading(bool unloading_occurred) {
     }
 #endif
 
-    unload_nmethod_caches(unloading_occurred);
+    guarantee(unload_nmethod_caches(unloading_occurred),
+              "Should not need transition stubs");
   }
 }
 
