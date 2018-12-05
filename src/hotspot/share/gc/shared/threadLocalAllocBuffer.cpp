@@ -279,18 +279,6 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
             _fast_refill_waste * HeapWordSize);
 }
 
-void ThreadLocalAllocBuffer::verify() {
-  HeapWord* p = start();
-  HeapWord* t = top();
-  HeapWord* prev_p = NULL;
-  while (p < t) {
-    oopDesc::verify(oop(p));
-    prev_p = p;
-    p += oop(p)->size();
-  }
-  guarantee(p == top(), "end of last object must match end of space");
-}
-
 void ThreadLocalAllocBuffer::set_sample_end() {
   size_t heap_words_remaining = pointer_delta(_end, _top);
   size_t bytes_until_sample = thread()->heap_sampler().bytes_until_sample();
