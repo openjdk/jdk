@@ -78,22 +78,29 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_suspThread(JNIEnv *env,
         jclass cls, jobject earlyretThr) {
-    jvmtiError err;
 
     if (!caps.can_force_early_return || !caps.can_suspend) {
         return PASSED;
     }
 
-    printf(">>>>>>>> Invoke SuspendThread()\n");
-    err = jvmti->SuspendThread(earlyretThr);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("%s: Failed to call SuspendThread(): error=%d: %s\n",
-            __FILE__, err, TranslateError(err));
-        return JNI_ERR;
+    jclass clazz = env->GetObjectClass(earlyretThr);
+    if (clazz == NULL) {
+        printf("Cannot get class of thread object\n");
+        RETURN_FAILED;
     }
-    printf("<<<<<<<< SuspendThread() is successfully done\n");
-    fflush(0);
-    return PASSED;
+
+    midActiveMethod = env->GetMethodID(clazz, name_exp, sig_exp);
+    if (midActiveMethod == NULL) {
+        printf("Cannot find Method ID for method %s\n", name_exp);
+        RETURN_FAILED;
+    }
+
+    int result = suspendThreadAtMethod(jvmti, cls, earlyretThr, midActiveMethod);
+    if( result == NSK_TRUE) {
+        return PASSED;
+    } else {
+        RETURN_FAILED;
+    }
 }
 
 JNIEXPORT jint JNICALL
@@ -119,7 +126,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_resThread(JNIEnv *env,
 
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env,
-        jclass cls, jclass targCls, jthread earlyretThr, jlong valToRet) {
+        jclass cls, jthread earlyretThr, jlong valToRet) {
     jvmtiError err;
 
     if (!caps.can_force_early_return || !caps.can_suspend) {
@@ -159,14 +166,6 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
         pop_frame_exp_events++;
     }
     printf(">>>>>>>> Invoke ForceEarlyReturn()\n");
-
-    printf("Before call to GetMethodID(%s, %s)\n", name_exp, sig_exp);
-    midActiveMethod = env->GetMethodID(targCls, name_exp, sig_exp);
-    if (midActiveMethod == NULL) {
-        printf("Cannot find Method ID for method %s\n", name_exp);
-        RETURN_FAILED;
-    }
-    printf("After call to GetMethodID(%s, %s)\n", name_exp, sig_exp);
 
     err = jvmti->ForceEarlyReturnLong(earlyretThr, valToRet);
     if (err != JVMTI_ERROR_NONE) {

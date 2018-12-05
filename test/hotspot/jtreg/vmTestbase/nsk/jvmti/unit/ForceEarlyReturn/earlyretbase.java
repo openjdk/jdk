@@ -54,8 +54,7 @@ public class earlyretbase {
         }
     }
 
-    native static int doForceEarlyReturn(Class targCls,
-                          Thread earlyretThr, long valToRet);
+    native static int doForceEarlyReturn(Thread earlyretThr, long valToRet);
     native static int suspThread(earlyretThread earlyretThr);
     native static int resThread(earlyretThread earlyretThr);
     native static int check();
@@ -96,8 +95,7 @@ public class earlyretbase {
         out.println("Forcing early return...");
 
         // force return from a top frame of the child thread
-        retCode = doForceEarlyReturn(earlyretThread.class,
-                                     earlyretThr, JAVA_BIRTH_YEAR);
+        retCode = doForceEarlyReturn(earlyretThr, JAVA_BIRTH_YEAR);
         earlyretDone = true;
         earlyretThr.letItGo();
         if (retCode != Consts.TEST_PASSED) {
