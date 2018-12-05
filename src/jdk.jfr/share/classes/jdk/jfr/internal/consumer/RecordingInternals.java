@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.consumer;
 
-/**
- * Defines the API for JDK Flight Recorder.
- * <p>
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jfr_tool_reference jfr}
- * </dl>
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.jfr {
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
+import java.io.IOException;
+import java.util.List;
 
-    exports jdk.jfr.internal.management to jdk.management.jfr;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedObject;
+import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.internal.Type;
+
+public abstract class RecordingInternals {
+
+    public static RecordingInternals INSTANCE;
+
+    public abstract boolean isLastEventInChunk(RecordingFile file);
+
+    public abstract Object getOffsetDataTime(RecordedObject event, String name);
+
+    public abstract List<Type> readTypes(RecordingFile file) throws IOException;
+
+    public abstract void sort(List<RecordedEvent> events);
+
 }

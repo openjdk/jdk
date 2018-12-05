@@ -41,7 +41,8 @@ import jdk.jfr.internal.EventInstrumentation;
 public final class RecordedEvent extends RecordedObject {
     private final EventType eventType;
     private final long startTime;
-    private final long endTime;
+    // package private needed for efficient sorting
+    final long endTime;
 
     // package private
     RecordedEvent(EventType type, List<ValueDescriptor> vds, Object[] values, long startTime, long endTime, TimeConverter timeConverter) {

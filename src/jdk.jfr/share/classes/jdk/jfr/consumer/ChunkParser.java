@@ -53,7 +53,7 @@ final class ChunkParser {
     private final TimeConverter timeConverter;
 
     public ChunkParser(RecordingInput input) throws IOException {
-      this(new ChunkHeader(input));
+        this(new ChunkHeader(input));
     }
 
     private ChunkParser(ChunkHeader header) throws IOException {
@@ -61,7 +61,7 @@ final class ChunkParser {
         this.chunkHeader = header;
         this.metadata = header.readMetadata();
         this.absoluteChunkEnd = header.getEnd();
-        this.timeConverter =  new TimeConverter(chunkHeader);
+        this.timeConverter = new TimeConverter(chunkHeader, metadata.getGMTOffset());
 
         ParserFactory factory = new ParserFactory(metadata, timeConverter);
         LongMap<ConstantMap> constantPools = factory.getConstantPools();
@@ -114,9 +114,7 @@ final class ChunkParser {
             boolean flush = input.readBoolean();
             int poolCount = input.readInt();
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, () -> {
-                return "New constant pool: startPosition=" + position +
-                        ", size=" + size + ", deltaToNext=" + delta +
-                        ", flush=" + flush + ", poolCount=" + poolCount;
+                return "New constant pool: startPosition=" + position + ", size=" + size + ", deltaToNext=" + delta + ", flush=" + flush + ", poolCount=" + poolCount;
             });
 
             for (int i = 0; i < poolCount; i++) {
@@ -155,7 +153,7 @@ final class ChunkParser {
 
     private String getName(long id) {
         Type type = typeMap.get(id);
-        return type == null ? ("unknown(" + id +")") : type.getName();
+        return type == null ? ("unknown(" + id + ")") : type.getName();
     }
 
     public Collection<Type> getTypes() {

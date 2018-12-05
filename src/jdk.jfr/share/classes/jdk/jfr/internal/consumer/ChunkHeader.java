@@ -161,7 +161,7 @@ public final class ChunkHeader {
         return chunkSize;
     }
 
-    public long getDuration() {
+    public long getDurationNanos() {
         return durationNanos;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,35 @@
  * questions.
  */
 
-/**
- * Defines the API for JDK Flight Recorder.
- * <p>
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jfr_tool_reference jfr}
- * </dl>
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.jfr {
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
+package jdk.jfr.tool;
 
-    exports jdk.jfr.internal.management to jdk.management.jfr;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+/**
+ * @test
+ * @summary Test help
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main/othervm jdk.jfr.tool.TestHelp
+ */
+public class TestHelp {
+
+    public static void main(String[] args) throws Throwable {
+        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "help");
+        output.shouldContain("print");
+        output.shouldContain("assemble");
+        output.shouldContain("disassemble");
+        output.shouldContain("metadata");
+        output.shouldContain("summary");
+        output.shouldContain("help");
+
+        output = ProcessTools.executeProcess("jfr", "help", "version");
+        output.shouldContain("Display version of the jfr tool");
+        output.shouldContain("jfr version");
+
+        output = ProcessTools.executeProcess("jfr", "help", "wrongcommand");
+        output.shouldContain("unknown command 'wrongcommand'");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,32 @@
  * questions.
  */
 
-/**
- * Defines the API for JDK Flight Recorder.
- * <p>
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jfr_tool_reference jfr}
- * </dl>
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.jfr {
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
+package jdk.jfr.tool;
 
-    exports jdk.jfr.internal.management to jdk.management.jfr;
+import java.nio.file.Path;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+/**
+ * @test
+ * @key jfr
+ * @summary Tests print --json
+ * @requires vm.hasJFR
+ *
+ * @library /test/lib /test/jdk
+ * @modules java.scripting
+ *          jdk.jfr
+ *
+ * @run main/othervm jdk.jfr.tool.TestPrintDefault
+ */
+public class TestPrintDefault {
+
+    public static void main(String... args) throws Throwable {
+
+        Path recordingFile = ExecuteHelper.createProfilingRecording().toAbsolutePath();
+
+        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "print", recordingFile.toString());
+        output.shouldContain("JVMInformation");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,28 @@
  * questions.
  */
 
-/**
- * Defines the API for JDK Flight Recorder.
- * <p>
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jfr_tool_reference jfr}
- * </dl>
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.jfr {
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
+package jdk.jfr.internal.tool;
 
-    exports jdk.jfr.internal.management to jdk.management.jfr;
+import java.util.Deque;
+import java.util.List;
+
+final class Version extends Command {
+    @Override
+    public String getName() {
+        return "version";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Display version of the jfr tool";
+    }
+
+    @Override
+    public void execute(Deque<String> options) {
+        System.out.println("1.0");
+    }
+
+    protected List<String> getAliases() {
+        return List.of("--version");
+    }
 }

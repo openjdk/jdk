@@ -102,6 +102,9 @@ public final class Utils {
     }
 
     public static String formatBytes(long bytes, String separation) {
+        if (bytes == 1) {
+            return "1 byte";
+        }
         if (bytes < 1024) {
             return bytes + " bytes";
         }

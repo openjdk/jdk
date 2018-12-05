@@ -45,6 +45,10 @@ ObjectSample* SampleList::last() const {
   return _in_use_list.head();
 }
 
+ObjectSample* SampleList::first() const {
+  return _in_use_list.tail();
+}
+
 const ObjectSample* SampleList::last_resolved() const {
   return _last_resolved;
 }

@@ -122,6 +122,10 @@ const ObjectSample* ObjectSampler::last() const {
   return _list->last();
 }
 
+const ObjectSample* ObjectSampler::first() const {
+  return _list->first();
+}
+
 const ObjectSample* ObjectSampler::last_resolved() const {
   return _list->last_resolved();
 }

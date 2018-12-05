@@ -1,0 +1,501 @@
+/*
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.jfr.internal.tool;
+
+import java.io.PrintWriter;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+
+import jdk.jfr.AnnotationElement;
+import jdk.jfr.DataAmount;
+import jdk.jfr.Frequency;
+import jdk.jfr.MemoryAddress;
+import jdk.jfr.Percentage;
+import jdk.jfr.ValueDescriptor;
+import jdk.jfr.consumer.RecordedClass;
+import jdk.jfr.consumer.RecordedClassLoader;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedObject;
+import jdk.jfr.consumer.RecordedStackTrace;
+import jdk.jfr.consumer.RecordedThread;
+import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.Type;
+import jdk.jfr.internal.Utils;
+
+/**
+ * Print events in a human-readable format.
+ *
+ * This class is also used by {@link RecordedObject#toString()}
+ */
+public final class PrettyWriter extends EventPrintWriter {
+    private final static DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    private final static Long ZERO = 0L;
+    private boolean showIds;
+
+    public PrettyWriter(PrintWriter destination) {
+        super(destination);
+    }
+
+    @Override
+    protected void print(List<RecordedEvent> events) {
+        for (RecordedEvent e : events) {
+            print(e);
+            flush(false);
+        }
+    }
+
+    public void printType(Type t) {
+        if (showIds) {
+            print("// id: ");
+            println(String.valueOf(t.getId()));
+        }
+        int commentIndex = t.getName().length() + 10;
+        String typeName = t.getName();
+        int index = typeName.lastIndexOf(".");
+        if (index != -1) {
+            println("@Name(\"" + typeName + "\")");
+        }
+        printAnnotations(commentIndex, t.getAnnotationElements());
+        print("class " + typeName.substring(index + 1));
+        String superType = t.getSuperType();
+        if (superType != null) {
+            print(" extends " + superType);
+        }
+        println(" {");
+        indent();
+        boolean first = true;
+        for (ValueDescriptor v : t.getFields()) {
+            printField(commentIndex, v, first);
+            first = false;
+        }
+        retract();
+        println("}");
+        println();
+    }
+
+    private void printField(int commentIndex, ValueDescriptor v, boolean first) {
+        if (!first) {
+            println();
+        }
+        printAnnotations(commentIndex, v.getAnnotationElements());
+        printIndent();
+        Type vType = PrivateAccess.getInstance().getType(v);
+        if (Type.SUPER_TYPE_SETTING.equals(vType.getSuperType())) {
+            print("static ");
+        }
+        print(makeSimpleType(v.getTypeName()));
+        if (v.isArray()) {
+            print("[]");
+        }
+        print(" ");
+        print(v.getName());
+        print(";");
+        printCommentRef(commentIndex, v.getTypeId());
+    }
+
+    private void printCommentRef(int commentIndex, long typeId) {
+        if (showIds) {
+            int column = getColumn();
+            if (column > commentIndex) {
+                print("  ");
+            } else {
+                while (column < commentIndex) {
+                    print(" ");
+                    column++;
+                }
+            }
+            println(" // id=" + typeId);
+        } else {
+            println();
+        }
+    }
+
+    private void printAnnotations(int commentIndex, List<AnnotationElement> annotations) {
+        for (AnnotationElement a : annotations) {
+            printIndent();
+            print("@");
+            print(makeSimpleType(a.getTypeName()));
+            List<ValueDescriptor> vs = a.getValueDescriptors();
+            if (!vs.isEmpty()) {
+                printAnnotation(a);
+                printCommentRef(commentIndex, a.getTypeId());
+            } else {
+                println();
+            }
+        }
+    }
+
+    private void printAnnotation(AnnotationElement a) {
+        StringJoiner sj = new StringJoiner(", ", "(", ")");
+        List<ValueDescriptor> vs = a.getValueDescriptors();
+        for (ValueDescriptor v : vs) {
+            Object o = a.getValue(v.getName());
+            if (vs.size() == 1 && v.getName().equals("value")) {
+                sj.add(textify(o));
+            } else {
+                sj.add(v.getName() + "=" + textify(o));
+            }
+        }
+        print(sj.toString());
+    }
+
+    private String textify(Object o) {
+        if (o.getClass().isArray()) {
+            Object[] array = (Object[]) o;
+            if (array.length == 1) {
+                return quoteIfNeeded(array[0]);
+            }
+            StringJoiner s = new StringJoiner(", ", "{", "}");
+            for (Object ob : array) {
+                s.add(quoteIfNeeded(ob));
+            }
+            return s.toString();
+        } else {
+            return quoteIfNeeded(o);
+        }
+    }
+
+    private String quoteIfNeeded(Object o) {
+        if (o instanceof String) {
+            return "\"" + o + "\"";
+        } else {
+            return String.valueOf(o);
+        }
+    }
+
+    private String makeSimpleType(String typeName) {
+        int index = typeName.lastIndexOf(".");
+        return typeName.substring(index + 1);
+    }
+
+    public void print(RecordedEvent event) {
+        print(event.getEventType().getName(), " ");
+        println("{");
+        indent();
+        for (ValueDescriptor v : event.getFields()) {
+            String name = v.getName();
+            if (!isZeroDuration(event, name) && !isLateField(name)) {
+                printFieldValue(event, v);
+            }
+        }
+        if (event.getThread() != null) {
+            printIndent();
+            print(EVENT_THREAD_FIELD + " = ");
+            printThread(event.getThread(), "");
+        }
+        if (event.getStackTrace() != null) {
+            printIndent();
+            print(STACK_TRACE_FIELD + " = ");
+            printStackTrace(event.getStackTrace());
+        }
+        retract();
+        printIndent();
+        println("}");
+        println();
+    }
+
+    private boolean isZeroDuration(RecordedEvent event, String name) {
+        return name.equals("duration") && ZERO.equals(event.getValue("duration"));
+    }
+
+    private void printStackTrace(RecordedStackTrace stackTrace) {
+        println("[");
+        List<RecordedFrame> frames = stackTrace.getFrames();
+        indent();
+        int i = 0;
+        while (i < frames.size() && i < getStackDepth()) {
+            RecordedFrame frame = frames.get(i);
+            if (frame.isJavaFrame()) {
+                printIndent();
+                printValue(frame, null, "");
+                println();
+                i++;
+            }
+        }
+        if (stackTrace.isTruncated() || i == getStackDepth()) {
+            printIndent();
+            println("...");
+        }
+        retract();
+        printIndent();
+        println("]");
+    }
+
+    public void print(RecordedObject struct, String postFix) {
+        println("{");
+        indent();
+        for (ValueDescriptor v : struct.getFields()) {
+            printFieldValue(struct, v);
+        }
+        retract();
+        printIndent();
+        println("}" + postFix);
+    }
+
+    private void printFieldValue(RecordedObject struct, ValueDescriptor v) {
+        printIndent();
+        print(v.getName(), " = ");
+        printValue(getValue(struct, v), v, "");
+    }
+
+    private void printArray(Object[] array) {
+        println("[");
+        indent();
+        for (int i = 0; i < array.length; i++) {
+            printIndent();
+            printValue(array[i], null, i + 1 < array.length ? ", " : "");
+        }
+        retract();
+        printIndent();
+        println("]");
+    }
+
+    private void printValue(Object value, ValueDescriptor field, String postFix) {
+        if (value == null) {
+            println("null" + postFix);
+            return;
+        }
+        if (value instanceof RecordedObject) {
+            if (value instanceof RecordedThread) {
+                printThread((RecordedThread) value, postFix);
+                return;
+            }
+            if (value instanceof RecordedClass) {
+                printClass((RecordedClass) value, postFix);
+                return;
+            }
+            if (value instanceof RecordedClassLoader) {
+                printClassLoader((RecordedClassLoader) value, postFix);
+                return;
+            }
+            if (value instanceof RecordedFrame) {
+                RecordedFrame frame = (RecordedFrame) value;
+                if (frame.isJavaFrame()) {
+                    printJavaFrame((RecordedFrame) value, postFix);
+                    return;
+                }
+            }
+            if (value instanceof RecordedMethod) {
+                println(formatMethod((RecordedMethod) value));
+                return;
+            }
+            print((RecordedObject) value, postFix);
+            return;
+        }
+        if (value.getClass().isArray()) {
+            printArray((Object[]) value);
+            return;
+        }
+        if (field.getContentType() != null) {
+            if (printFormatted(field, value)) {
+                return;
+            }
+        }
+        String text = String.valueOf(value);
+        if (value instanceof String) {
+            text = "\"" + text + "\"";
+        }
+        println(text);
+    }
+
+    private void printClassLoader(RecordedClassLoader cl, String postFix) {
+        // Purposely not printing class loader name to avoid cluttered output
+        RecordedClass clazz = cl.getType();
+        print(clazz == null ? "null" : clazz.getName());
+        if (clazz != null) {
+            print(" (");
+            print("id = ");
+            print(String.valueOf(cl.getId()));
+            println(")");
+        }
+    }
+
+    private void printJavaFrame(RecordedFrame f, String postFix) {
+        print(formatMethod(f.getMethod()));
+        int line = f.getLineNumber();
+        if (line >= 0) {
+            print(" line: " + line);
+        }
+        print(postFix);
+    }
+
+    private String formatMethod(RecordedMethod m) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(m.getType().getName());
+        sb.append(".");
+        sb.append(m.getName());
+        sb.append("(");
+        StringJoiner sj = new StringJoiner(", ");
+        String md = m.getDescriptor().replace("/", ".");
+        String parameter = md.substring(1, md.lastIndexOf(")"));
+        for (String qualifiedName : decodeDescriptors(parameter)) {
+            String typeName = qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1);
+            sj.add(typeName);
+        }
+        sb.append(sj);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    private void printClass(RecordedClass clazz, String postFix) {
+        RecordedClassLoader classLoader = clazz.getClassLoader();
+        String classLoaderName = "null";
+        if (classLoader != null) {
+            if (classLoader.getName() != null) {
+                classLoaderName = classLoader.getName();
+            } else {
+                classLoaderName = classLoader.getType().getName();
+            }
+        }
+        String className = clazz.getName();
+        if (className.startsWith("[")) {
+            className = decodeDescriptors(className).get(0);
+        }
+        println(className + " (classLoader = " + classLoaderName + ")" + postFix);
+    }
+
+    List<String> decodeDescriptors(String descriptor) {
+        List<String> descriptors = new ArrayList<>();
+        for (int index = 0; index < descriptor.length(); index++) {
+            String arrayBrackets = "";
+            while (descriptor.charAt(index) == '[') {
+                arrayBrackets += "[]";
+                index++;
+            }
+            char c = descriptor.charAt(index);
+            String type;
+            switch (c) {
+            case 'L':
+                int endIndex = descriptor.indexOf(';', index);
+                type = descriptor.substring(index + 1, endIndex);
+                index = endIndex;
+                break;
+            case 'I':
+                type = "int";
+                break;
+            case 'J':
+                type = "long";
+                break;
+            case 'Z':
+                type = "boolean";
+                break;
+            case 'D':
+                type = "double";
+                break;
+            case 'F':
+                type = "float";
+                break;
+            case 'S':
+                type = "short";
+                break;
+            case 'C':
+                type = "char";
+                break;
+            case 'B':
+                type = "byte";
+                break;
+            default:
+                type = "<unknown-descriptor-type>";
+            }
+            descriptors.add(type + arrayBrackets);
+        }
+        return descriptors;
+    }
+
+    private void printThread(RecordedThread thread, String postFix) {
+        long javaThreadId = thread.getJavaThreadId();
+        if (javaThreadId > 0) {
+            println("\"" + thread.getJavaName() + "\" (javaThreadId = " + thread.getJavaThreadId() + ")" + postFix);
+        } else {
+            println("\"" + thread.getOSName() + "\" (osThreadId = " + thread.getOSThreadId() + ")" + postFix);
+        }
+    }
+
+    private boolean printFormatted(ValueDescriptor field, Object value) {
+        if (value instanceof Duration) {
+            Duration d = (Duration) value;
+            double s = d.toNanosPart() / 1000_000_000.0 + d.toSecondsPart();
+            if (s < 1.0) {
+                if (s < 0.001) {
+                    println(String.format("%.3f", s * 1_000_000) + " us");
+                } else {
+                    println(String.format("%.3f", s * 1_000) + " ms");
+                }
+            } else {
+                if (s < 1000.0) {
+                    println(String.format("%.3f", s) + " s");
+                } else {
+                    println(String.format("%.0f", s) + " s");
+                }
+            }
+            return true;
+        }
+        if (value instanceof OffsetDateTime) {
+            OffsetDateTime zdt = (OffsetDateTime) value;
+            println(TIME_FORMAT.format(zdt));
+            return true;
+        }
+        Percentage percentage = field.getAnnotation(Percentage.class);
+        if (percentage != null) {
+            if (value instanceof Number) {
+                double d = ((Number) value).doubleValue();
+                println(String.format("%.2f", d * 100) + "%");
+                return true;
+            }
+        }
+        DataAmount dataAmount = field.getAnnotation(DataAmount.class);
+        if (dataAmount != null) {
+            if (value instanceof Number) {
+                Number n = (Number) value;
+                String bytes = Utils.formatBytes(n.longValue(), " ");
+                if (field.getAnnotation(Frequency.class) != null) {
+                    bytes += "/s";
+                }
+                println(bytes);
+                return true;
+            }
+        }
+        MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
+        if (memoryAddress != null) {
+            if (value instanceof Number) {
+                long d = ((Number) value).longValue();
+                println(String.format("0x%08X", d));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setShowIds(boolean showIds) {
+        this.showIds = showIds;
+    }
+}

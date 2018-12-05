@@ -291,7 +291,7 @@ public final class ValueDescriptor {
         if (type.isSimpleType()) {
             return Collections.emptyList();
         }
-        return Collections.unmodifiableList(type.getFields());
+        return type.getFields();
     }
 
     // package private

@@ -69,6 +69,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);
   int item_count() const;
+  const ObjectSample* first() const;
   const ObjectSample* last() const;
   const ObjectSample* last_resolved() const;
   void set_last_resolved(const ObjectSample* sample);
