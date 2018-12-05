@@ -42,6 +42,7 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@VERSION_DATE@@ => $(VERSION_DATE) ; \
         @@VERSION_CLASSFILE_MAJOR@@ => $(VERSION_CLASSFILE_MAJOR) ; \
         @@VERSION_CLASSFILE_MINOR@@ => $(VERSION_CLASSFILE_MINOR) ; \
+        @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
         @@VENDOR_VERSION_STRING@@ => $(VENDOR_VERSION_STRING) ; \
         @@VENDOR@@ => $(COMPANY_NAME) ; \
         @@VENDOR_URL@@ => $(VENDOR_URL) ; \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ package jdk.internal.org.xml.sax;
  */
 public interface DTDHandler {
 
-
     /**
      * Receive notification of a notation declaration event.
      *
@@ -136,6 +135,39 @@ public interface DTDHandler {
                                              String notationName)
         throws SAXException;
 
+    // from SAX2 extension DeclHandler
+    /**
+     * Receive notification of the start of DTD declarations.
+     *
+     * The start/endDTD events appear within the start/endDocument events
+     * from ContentHandler.
+     *
+     * @param name The document type name.
+     * @param publicId The declared public identifier for the
+     *        external DTD subset, or null if none was declared.
+     * @param systemId The declared system identifier for the
+     *        external DTD subset, or null if none was declared.
+     *        (Note that this is not resolved against the document
+     *        base URI.)
+     * @throws SAXException the event receiver may throw an exception during processing
+     */
+    default public void startDTD (String name, String publicId, String systemId)
+        throws SAXException
+    {
+        // no op
+    }
+
+    // Custom API for the Properties
+
+    /**
+     * Receive notification of the start of DTD internal subset.
+     *
+     * @throws SAXException the event receiver may throw an exception during processing
+     */
+    default public void startInternalSub () throws SAXException
+    {
+        // no op
+    }
 }
 
 // end of DTDHandler.java

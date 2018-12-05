@@ -191,7 +191,7 @@ public class TestNonIsoFormatter {
         String mdStr = "-01-01";
         DateTimeFormatter dtf = new DateTimeFormatterBuilder()
             .appendPattern("GGGG y-M-d")
-            .toFormatter()
+            .toFormatter(Locale.ROOT)
             .withChronology(chrono);
         DateTimeFormatter dtfLenient = dtf.withResolverStyle(ResolverStyle.LENIENT);
         assertEquals(LocalDate.parse(lenient+mdStr, dtfLenient), LocalDate.parse(strict+mdStr, dtf));

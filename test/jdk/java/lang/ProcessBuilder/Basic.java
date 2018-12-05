@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2084,7 +2084,7 @@ public class Basic {
 
         //----------------------------------------------------------------
         // Check that reads which are pending when Process.destroy is
-        // called, get EOF, not IOException("Stream closed").
+        // called, get EOF, or IOException("Stream closed").
         //----------------------------------------------------------------
         try {
             final int cases = 4;
@@ -2112,6 +2112,11 @@ public class Basic {
                                 default: throw new Error();
                             }
                             equal(-1, r);
+                        } catch (IOException ioe) {
+                            if (!ioe.getMessage().equals("Stream closed")) {
+                                // BufferedInputStream may throw IOE("Stream closed").
+                                unexpected(ioe);
+                            }
                         } catch (Throwable t) { unexpected(t); }}};
 
                 thread.start();

@@ -33,7 +33,7 @@ include ToolsJdk.gmk
 # On Mac, we have always exported all symbols, probably due to oversight
 # and/or misunderstanding. To emulate this, don't hide any symbols
 # by default.
-# On AIX/xlc we need at least xlc 13.1 for the symbol hiding
+# On AIX/xlc we need at least xlc 13.1 for the symbol hiding (see JDK-8214063)
 # Also provide an override for non-conformant libraries.
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   LAUNCHER_CFLAGS += -fvisibility=hidden
@@ -42,10 +42,6 @@ else ifeq ($(TOOLCHAIN_TYPE), clang)
   LAUNCHER_CFLAGS += -fvisibility=hidden
 else ifeq ($(TOOLCHAIN_TYPE), solstudio)
   LAUNCHER_CFLAGS += -xldscope=hidden
-else ifeq ($(TOOLCHAIN_TYPE), xlc)
-  ifneq ($(CC_VERSION_NUMBER), 12.1)
-    CXXFLAGS_JDKEXE += -qvisibility=hidden
-  endif
 endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher

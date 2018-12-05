@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,11 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     private static final String ATTR_KEY = "key";
     // The required DTD URI for exported properties
     private static final String PROPS_DTD_DECL =
-            "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">";
+        "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">";
     private static final String PROPS_DTD_URI =
-            "http://java.sun.com/dtd/properties.dtd";
+        "http://java.sun.com/dtd/properties.dtd";
     private static final String PROPS_DTD =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             + "<!-- DTD for properties -->"
             + "<!ELEMENT properties ( comment?, entry* ) >"
             + "<!ATTLIST properties"
@@ -136,15 +136,15 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     ////////////////////////////////////////////////////////////////////
     // Validate while parsing
     ////////////////////////////////////////////////////////////////////
-    static final String ALLOWED_ELEMENTS = "properties, comment, entry";
+    static final String ALLOWED_ELEMENTS = "comment, entry";
     static final String ALLOWED_COMMENT = "comment";
     ////////////////////////////////////////////////////////////////////
     // Handler methods
     ////////////////////////////////////////////////////////////////////
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
+    boolean sawRoot = false; // whether a valid root element exists
     boolean sawComment = false;
     boolean validEntry = false;
-    int rootElem = 0;
     String key;
     String rootElm;
 
@@ -152,32 +152,38 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     public void startElement(String uri, String localName, String qName, Attributes attributes)
         throws SAXException
     {
-        if (rootElem < 2) {
-            rootElem++;
-        }
-
-        if (rootElm == null) {
-            fatalError(new SAXParseException("An XML properties document must contain"
+        if (sawRoot) {
+            if (!ALLOWED_ELEMENTS.contains(qName)) {
+                fatalError(new SAXParseException("Element type \"" + qName + "\" must be declared.", null));
+            }
+        } else {
+            // check whether the root has been declared in the DTD
+            if (rootElm == null) {
+                fatalError(new SAXParseException("An XML properties document must contain"
                     + " the DOCTYPE declaration as defined by java.util.Properties.", null));
+            }
+
+            // check whether the element name matches the declaration
+            if (!rootElm.equals(qName)) {
+                fatalError(new SAXParseException("Document root element \"" + qName
+                    + "\", must match DOCTYPE root \"" + rootElm + "\"", null));
+            }
+
+            // this is a valid root element
+            sawRoot = true;
         }
 
-        if (rootElem == 1 && !rootElm.equals(qName)) {
-            fatalError(new SAXParseException("Document root element \"" + qName
-                    + "\", must match DOCTYPE root \"" + rootElm + "\"", null));
-        }
-        if (!ALLOWED_ELEMENTS.contains(qName)) {
-            fatalError(new SAXParseException("Element type \"" + qName + "\" must be declared.", null));
-        }
         if (qName.equals(ELEMENT_ENTRY)) {
             validEntry = true;
             key = attributes.getValue(ATTR_KEY);
             if (key == null) {
-                fatalError(new SAXParseException("Attribute \"key\" is required and must be specified for element type \"entry\"", null));
+                fatalError(new SAXParseException("Attribute \"key\" is required and " +
+                    "must be specified for element type \"entry\"", null));
             }
         } else if (qName.equals(ALLOWED_COMMENT)) {
             if (sawComment) {
                 fatalError(new SAXParseException("Only one comment element may be allowed. "
-                        + "The content of element type \"properties\" must match \"(comment?,entry*)\"", null));
+                    + "The content of element type \"properties\" must match \"(comment?,entry*)\"", null));
             }
             sawComment = true;
         }
@@ -192,8 +198,9 @@ public class PropertiesDefaultHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (!ALLOWED_ELEMENTS.contains(qName)) {
-            fatalError(new SAXParseException("Element: " + qName + " is invalid, must match  \"(comment?,entry*)\".", null));
+        if (!ALLOWED_ELEMENTS.contains(qName) && !ELEMENT_ROOT.equals(qName)) {
+            fatalError(new SAXParseException("Element: " + qName +
+                " is invalid, must match  \"(comment?,entry*)\".", null));
         }
 
         if (validEntry) {
@@ -204,19 +211,12 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     }
 
     @Override
-    public void notationDecl(String name, String publicId, String systemId) throws SAXException {
-        rootElm = name;
-    }
-
-    @Override
     public InputSource resolveEntity(String pubid, String sysid)
-            throws SAXException, IOException {
+        throws SAXException, IOException {
         {
             if (sysid.equals(PROPS_DTD_URI)) {
-                InputSource is;
-                is = new InputSource(new StringReader(PROPS_DTD));
-                is.setSystemId(PROPS_DTD_URI);
-                return is;
+                // The properties DTD is known to the handler, no need to parse it
+                return null;
             }
             throw new SAXException("Invalid system identifier: " + sysid);
         }
@@ -235,5 +235,25 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     @Override
     public void warning(SAXParseException x) throws SAXException {
         throw x;
+    }
+
+    // SAX2 extension from DTDHandler
+
+    @Override
+    public void startDTD (String name, String publicId, String systemId) throws SAXException
+    {
+        if (!ELEMENT_ROOT.equals(name) || !PROPS_DTD_URI.equals(systemId)) {
+            fatalError(new SAXParseException("An XML properties document must contain"
+                + " the DOCTYPE declaration as defined by java.util.Properties.", null));
+        }
+        rootElm = name;
+    }
+
+    @Override
+    public void startInternalSub () throws SAXException
+    {
+        fatalError(new SAXParseException("Internal DTD subset is not allowed. " +
+            "The Properties XML document must have the following DOCTYPE declaration: \n" +
+            PROPS_DTD_DECL, null));
     }
 }

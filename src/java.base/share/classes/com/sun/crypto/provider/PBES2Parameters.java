@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.crypto.provider;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.AlgorithmParametersSpi;
 import java.security.spec.AlgorithmParameterSpec;
@@ -264,7 +263,20 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             throw new IOException("PBE parameter parsing error: "
                 + "not an ASN.1 SEQUENCE tag");
         }
-        kdfAlgo = parseKDF(pBES2_params.data.getDerValue());
+        DerValue kdf = pBES2_params.data.getDerValue();
+
+        // Before JDK-8202837, PBES2-params was mistakenly encoded like
+        // an AlgorithmId which is a sequence of its own OID and the real
+        // PBES2-params. If the first DerValue is an OID instead of a
+        // PBES2-KDFs (which should be a SEQUENCE), we are likely to be
+        // dealing with this buggy encoding. Skip the OID and treat the
+        // next DerValue as the real PBES2-params.
+        if (kdf.getTag() == DerValue.tag_ObjectId) {
+            pBES2_params = pBES2_params.data.getDerValue();
+            kdf = pBES2_params.data.getDerValue();
+        }
+
+        kdfAlgo = parseKDF(kdf);
 
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
