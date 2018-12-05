@@ -13,6 +13,6 @@ import java.lang.annotation.Repeatable;
     Foo[] value() default {};
 }
 
-@Foo() @Foo()
+@Foo @Foo
 public class BaseAnnoAsContainerAnno {}
 

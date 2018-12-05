@@ -29,5 +29,5 @@ import java.lang.annotation.*;
 @interface Anno { }
 
 
-@Anno()
+@Anno
 class AnnoNotApplicable { }

@@ -84,11 +84,11 @@ public class ArrayCreationTree {
             foundAnnotations++;
 
             int expected = -1;
-            if (annotation.equals("@A()"))
+            if (annotation.equals("@A"))
                 expected = 0;
-            else if (annotation.equals("@B()"))
+            else if (annotation.equals("@B"))
                 expected = 1;
-            else if (annotation.equals("@C()"))
+            else if (annotation.equals("@C"))
                 expected = 2;
             else
                 throw new AssertionError("found an unexpected annotation: " + annotation);

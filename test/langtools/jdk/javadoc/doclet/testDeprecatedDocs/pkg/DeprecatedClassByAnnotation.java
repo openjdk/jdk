@@ -23,7 +23,7 @@
 
 package pkg;
 
-@Deprecated()
+@Deprecated
 public class DeprecatedClassByAnnotation {
 
     @Deprecated(forRemoval=true)
@@ -32,6 +32,6 @@ public class DeprecatedClassByAnnotation {
     @Deprecated(forRemoval=true)
     public DeprecatedClassByAnnotation() {}
 
-    @Deprecated()
+    @Deprecated
     public void method() {}
 }

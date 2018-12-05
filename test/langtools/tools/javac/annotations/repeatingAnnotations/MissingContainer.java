@@ -8,7 +8,7 @@
 
 import java.lang.annotation.Repeatable;
 
-@Repeatable()
+@Repeatable
 @interface Foo {}
 
 @interface FooContainer {

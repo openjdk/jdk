@@ -31,7 +31,7 @@
 import java.lang.annotation.*;
 
 @Anno(req = true)
-@Anno()
+@Anno
 public class CannotCompileRepeatedAnnoTest {
 }
 
