@@ -694,7 +694,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     int error, imageSize;
     UInt16 width, height;
     GlyphInfo *glyphInfo;
-    int renderFlags = FT_LOAD_RENDER, target;
+    int renderFlags = FT_LOAD_DEFAULT, target;
     FT_GlyphSlot ftglyph;
 
     FTScalerContext* context =
