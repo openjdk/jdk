@@ -234,6 +234,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         try {
+            f = f.getCanonicalFile();
             f.createNewFile();
         } catch (IOException x) {
             f = new File(tmpdir, fn);

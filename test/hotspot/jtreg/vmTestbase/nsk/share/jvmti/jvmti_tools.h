@@ -371,6 +371,12 @@ void nsk_jvmti_agentFailed();
 
 int isThreadExpected(jvmtiEnv *jvmti, jthread thread);
 
+/**
+* This method makes the thread to be suspended at the right place when the top frame
+* belongs to the test rather than to incidental Java code (classloading, JVMCI, etc).
+*/
+int suspendThreadAtMethod(jvmtiEnv *jvmti, jclass cls, jobject thread, jmethodID method);
+
 jint createRawMonitor(jvmtiEnv *env, const char *name, jrawMonitorID *monitor);
 
 void exitOnError(jvmtiError error);

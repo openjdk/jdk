@@ -237,7 +237,7 @@ define SetupCompileNativeFileBody
     $1_SRC_FILE := $$($1_FILE)
 
     ifneq ($$($1_DISABLE_THIS_FILE_DEFINE), true)
-      $1_THIS_FILE = -DTHIS_FILE='"$$(<F)"'
+      $1_THIS_FILE = -DTHIS_FILE='"$$($1_FILENAME)"'
     endif
 
     ifeq ($$($1_OPTIMIZATION), )

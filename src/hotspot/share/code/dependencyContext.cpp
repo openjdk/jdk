@@ -35,8 +35,9 @@ PerfCounter* DependencyContext::_perf_total_buckets_allocated_count   = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_deallocated_count = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_stale_count       = NULL;
 PerfCounter* DependencyContext::_perf_total_buckets_stale_acc_count   = NULL;
-nmethodBucket* volatile DependencyContext::_purge_list = NULL;
-volatile uint64_t DependencyContext::_cleaning_epoch = 0;
+nmethodBucket* volatile DependencyContext::_purge_list                = NULL;
+volatile uint64_t DependencyContext::_cleaning_epoch                  = 0;
+uint64_t  DependencyContext::_cleaning_epoch_monotonic                = 0;
 
 void dependencyContext_init() {
   DependencyContext::init();
@@ -262,7 +263,7 @@ int nmethodBucket::decrement() {
   return Atomic::sub(1, &_count);
 }
 
-// We use a safepoint counter to track the safepoint counter the last time a given
+// We use a monotonically increasing epoch counter to track the last epoch a given
 // dependency context was cleaned. GC threads claim cleanup tasks by performing
 // a CAS on this value.
 bool DependencyContext::claim_cleanup() {
@@ -311,13 +312,15 @@ nmethodBucket* DependencyContext::dependencies() {
 // a purge list to be deleted later.
 void DependencyContext::cleaning_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
-  uint64_t epoch = SafepointSynchronize::safepoint_counter();
+  uint64_t epoch = ++_cleaning_epoch_monotonic;
   Atomic::store(epoch, &_cleaning_epoch);
 }
 
 // The epilogue marks the end of dependency context cleanup by the GC,
-// and also makes subsequent releases of nmethodBuckets case immediate
-// deletion. It is admitted to end the cleanup in a concurrent phase.
+// and also makes subsequent releases of nmethodBuckets cause immediate
+// deletion. It is okay to delay calling of cleaning_end() to a concurrent
+// phase, subsequent to the safepoint operation in which cleaning_start()
+// was called. That allows dependency contexts to be cleaned concurrently.
 void DependencyContext::cleaning_end() {
   uint64_t epoch = 0;
   Atomic::store(epoch, &_cleaning_epoch);
