@@ -131,13 +131,13 @@ public class URIName implements GeneralNameInterface {
                 try {
                     hostDNS = new DNSName(host);
                 } catch (IOException ioe) {
-                    // Not a valid DNS Name; see if it is a valid IPv4
+                    // Not a valid DNSName; see if it is a valid IPv4
                     // IPAddressName
                     try {
                         hostIP = new IPAddressName(host);
                     } catch (Exception ioe2) {
                         throw new IOException("invalid URI name (host " +
-                            "portion is not a valid DNS name, IPv4 address," +
+                            "portion is not a valid DNSName, IPv4 address," +
                             " or IPv6 address):" + name);
                     }
                 }
@@ -339,7 +339,7 @@ public class URIName implements GeneralNameInterface {
                     // If one (or both) is an IP address, only same type
                     constraintType = NAME_SAME_TYPE;
                 } else {
-                    // Both host portions are DNS names. Are they domains?
+                    // Both host portions are DNSNames. Are they domains?
                     boolean thisDomain = (host.charAt(0) == '.');
                     boolean otherDomain = (otherHost.charAt(0) == '.');
                     DNSName otherDNS = (DNSName) otherHostObject;
