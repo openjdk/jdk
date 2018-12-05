@@ -2363,16 +2363,19 @@ public class LambdaToMethod extends TreeTranslator {
                 List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
                 for (; tl.nonEmpty(); tl = tl.tail) {
                     Type pt = tl.head;
-                    switch (pt.getKind()) {
-                        case INTERSECTION:
-                        case UNION:
-                            return true;
-                        case TYPEVAR:
-                            TypeVar tv = (TypeVar) pt;
-                            if (tv.bound.getKind() == TypeKind.INTERSECTION) {
-                                return true;
-                            }
-                    }
+                    return isIntersectionOrUnionType(pt);
+                }
+                return false;
+            }
+
+            boolean isIntersectionOrUnionType(Type t) {
+                switch (t.getKind()) {
+                    case INTERSECTION:
+                    case UNION:
+                        return true;
+                    case TYPEVAR:
+                        TypeVar tv = (TypeVar) t;
+                        return isIntersectionOrUnionType(tv.bound);
                 }
                 return false;
             }
