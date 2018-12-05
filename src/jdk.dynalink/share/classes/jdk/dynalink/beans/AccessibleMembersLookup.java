@@ -216,7 +216,10 @@ class AccessibleMembersLookup {
                 // were not yet loaded, they'll only get loaded in a non-resolved state; no static initializers for
                 // them will trigger just by doing this.
                 // Don't overwrite an inner class with an inherited inner class with the same name.
-                innerClasses.putIfAbsent(innerClass.getSimpleName(), innerClass);
+                Class<?> previousClass = innerClasses.get(innerClass.getSimpleName());
+                if (previousClass == null || previousClass.getDeclaringClass().isAssignableFrom(innerClass.getDeclaringClass())) {
+                    innerClasses.put(innerClass.getSimpleName(), innerClass);
+                }
             }
         } else {
             searchSuperTypes = true;
