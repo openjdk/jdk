@@ -370,7 +370,7 @@ public interface Action extends ActionListener {
      * Determines whether the action should be performed with the specified
      * sender object. The {@code sender} can be {@code null}.
      * The method must return false if the action is disabled.
-     * <p>
+     *
      * @param sender the object to check, can be null
      * @return {@code true} if the action should be performed with the sender
      *         object, must be false if the action is disabled.
