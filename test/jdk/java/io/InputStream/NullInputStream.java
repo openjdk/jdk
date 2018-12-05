@@ -22,6 +22,7 @@
  */
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.IOException;
 import org.testng.annotations.AfterGroups;
@@ -31,7 +32,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 4358774 8139206
+ * @bug 4358774 6516099 8139206
  * @run testng NullInputStream
  * @summary Check for expected behavior of InputStream.nullInputStream().
  */
@@ -146,6 +147,21 @@ public class NullInputStream {
     }
 
     @Test(groups = "open")
+    public static void testSkipNBytes() {
+        try {
+            openStream.skipNBytes(-1);
+            openStream.skipNBytes(0);
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test(groups = "open", expectedExceptions = EOFException.class)
+    public static void testSkipNBytesEOF() throws IOException {
+        openStream.skipNBytes(1);
+    }
+
+    @Test(groups = "open")
     public static void testTransferTo() {
         try {
             assertEquals(0, openStream.transferTo(new ByteArrayOutputStream(7)),
@@ -213,6 +229,15 @@ public class NullInputStream {
     public static void testSkipClosed() {
         try {
             closedStream.skip(1);
+            fail("Expected IOException not thrown");
+        } catch (IOException e) {
+        }
+    }
+
+    @Test(groups = "closed")
+    public static void testSkipNBytesClosed() {
+        try {
+            closedStream.skipNBytes(1);
             fail("Expected IOException not thrown");
         } catch (IOException e) {
         }
