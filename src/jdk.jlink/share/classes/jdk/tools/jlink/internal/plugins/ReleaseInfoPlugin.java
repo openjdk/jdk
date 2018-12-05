@@ -108,7 +108,11 @@ public final class ReleaseInfoPlugin implements Plugin {
 
             case "del": {
                 // --release-info del:keys=openjdk,java_version
-                Utils.parseList(config.get(KEYS)).stream().forEach((k) -> {
+                String keys = config.get(KEYS);
+                if (keys == null || keys.isEmpty()) {
+                    throw new IllegalArgumentException("No key specified for delete");
+                }
+                Utils.parseList(keys).stream().forEach((k) -> {
                     release.remove(k);
                 });
             }

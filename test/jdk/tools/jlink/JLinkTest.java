@@ -44,6 +44,7 @@ import tests.JImageGenerator;
  * @summary Test image creation
  * @bug 8189777
  * @bug 8194922
+ * @bug 8206962
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
@@ -343,6 +344,16 @@ public class JLinkTest {
             JImageGenerator.getJLinkTask()
                     .option("--help")
                     .call().assertSuccess();
+        }
+
+        {
+            String imageDir = "bug8206962";
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(imageDir))
+                    .addMods("java.base")
+                    .option("--release-info=del")
+                    .call().assertFailure("Error: No key specified for delete");
         }
     }
 
