@@ -126,7 +126,6 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
 
   {
     CodeBlob* cb = CodeCache::find_blob_unsafe(_call->instruction_address());
-    MutexLockerEx pl(CompiledICLocker::is_safe(cb->as_compiled_method()) ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
     assert(cb != NULL && cb->is_compiled(), "must be compiled");
     _call->set_destination_mt_safe(entry_point);
   }
@@ -374,7 +373,7 @@ bool CompiledIC::set_to_clean(bool in_use) {
 
   // A zombie transition will always be safe, since the metadata has already been set to NULL, so
   // we only need to patch the destination
-  bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || CompiledICLocker::is_safe(_method);
+  bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
     // Kill any leftover stub we might have too
@@ -427,8 +426,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   if (info.to_interpreter() || info.to_aot()) {
     // Call to interpreter
     if (info.is_optimized() && is_optimized()) {
-       assert(is_clean(), "unsafe IC path");
-       MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+      assert(is_clean(), "unsafe IC path");
       // the call analysis (callee structure) specifies that the call is optimized
       // (either because of CHA or the static target is final)
       // At code generation time, this call has been emitted as static call
@@ -602,7 +600,6 @@ bool CompiledStaticCall::set_to_clean(bool in_use) {
   // in_use is unused but needed to match template function in CompiledMethod
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
   // Reset call site
-  MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
   set_destination_mt_safe(resolve_call_stub());
 
   // Do not reset stub here:  It is too expensive to call find_stub.
@@ -648,7 +645,6 @@ void CompiledStaticCall::set_to_compiled(address entry) {
 
 void CompiledStaticCall::set(const StaticCallInfo& info) {
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
   // Updating a cache to the wrong entry can cause bugs that are very hard
   // to track down - if cache entry gets invalid - we just clean it. In
   // this way it is always the same code path that is responsible for

@@ -1059,7 +1059,7 @@ methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
-    MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
+    CompiledICLocker ic_locker(caller);
     return caller->attached_method_before_pc(pc);
   }
   return NULL;
@@ -1765,7 +1765,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
     {
       // Get call instruction under lock because another thread may be
       // busy patching it.
-      MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
+      CompiledICLocker ml(caller_nm);
       // Location of call instruction
       call_addr = caller_nm->call_instruction_address(pc);
     }
@@ -1940,9 +1940,8 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   if (moop->code() == NULL) return;
 
   if (nm->is_in_use()) {
-
     // Expect to find a native call there (unless it was no-inline cache vtable dispatch)
-    MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
+    CompiledICLocker ic_locker(nm);
     if (NativeCall::is_call_before(return_pc)) {
       ResourceMark mark;
       NativeCallWrapper* call = nm->call_wrapper_before(return_pc);
