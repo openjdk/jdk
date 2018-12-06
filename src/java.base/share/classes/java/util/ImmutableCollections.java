@@ -1091,9 +1091,9 @@ final class CollSer implements Serializable {
      * Creates and returns an immutable collection from this proxy class.
      * The instance returned is created as if by calling one of the
      * static factory methods for
-     * <a href="List.html#immutable">List</a>,
-     * <a href="Map.html#immutable">Map</a>, or
-     * <a href="Set.html#immutable">Set</a>.
+     * <a href="List.html#unmodifiable">List</a>,
+     * <a href="Map.html#unmodifiable">Map</a>, or
+     * <a href="Set.html#unmodifiable">Set</a>.
      * This proxy class is the serial form for all immutable collection instances,
      * regardless of implementation type. This is necessary to ensure that the
      * existence of any particular implementation type is kept out of the
