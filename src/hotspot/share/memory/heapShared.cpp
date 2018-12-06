@@ -71,10 +71,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
 };
 // Entry fields for subgraphs archived in the open archive heap region.
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
-  {"jdk/internal/module/ArchivedModuleGraph",  "archivedSystemModules"},
-  {"jdk/internal/module/ArchivedModuleGraph",  "archivedModuleFinder"},
-  {"jdk/internal/module/ArchivedModuleGraph",  "archivedMainModule"},
-  {"jdk/internal/module/ArchivedModuleGraph",  "archivedConfiguration"},
+  {"jdk/internal/module/ArchivedModuleGraph",  "archivedModuleGraph"},
   {"java/util/ImmutableCollections$ListN",     "EMPTY_LIST"},
   {"java/util/ImmutableCollections$MapN",      "EMPTY_MAP"},
   {"java/util/ImmutableCollections$SetN",      "EMPTY_SET"},
