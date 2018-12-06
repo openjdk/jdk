@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,11 @@ import java.math.RoundingMode;
 import java.text.spi.NumberFormatProvider;
 import java.util.Currency;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.spi.LocaleServiceProvider;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 
@@ -112,9 +110,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Use <code>getInstance</code> or <code>getNumberInstance</code> to get the
  * normal number format. Use <code>getIntegerInstance</code> to get an
  * integer number format. Use <code>getCurrencyInstance</code> to get the
- * currency number format. And use <code>getPercentInstance</code> to get a
- * format for displaying percentages. With this format, a fraction like
- * 0.53 is displayed as 53%.
+ * currency number format. Use {@code getCompactNumberInstance} to get the
+ * compact number format to format a number in shorter form. For example,
+ * {@code 2000} can be formatted as {@code "2K"} in
+ * {@link java.util.Locale#US US locale}. Use <code>getPercentInstance</code>
+ * to get a format for displaying percentages. With this format, a fraction
+ * like 0.53 is displayed as 53%.
  *
  * <p>
  * You can also control the display of numbers with such methods as
@@ -122,9 +123,10 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * If you want even more control over the format or parsing,
  * or want to give your users more control,
  * you can try casting the <code>NumberFormat</code> you get from the factory methods
- * to a <code>DecimalFormat</code>. This will work for the vast majority
- * of locales; just remember to put it in a <code>try</code> block in case you
- * encounter an unusual one.
+ * to a {@code DecimalFormat} or {@code CompactNumberFormat} depending on
+ * the factory method used. This will work for the vast majority of locales;
+ * just remember to put it in a <code>try</code> block in case you encounter
+ * an unusual one.
  *
  * <p>
  * NumberFormat and DecimalFormat are designed such that some controls
@@ -201,6 +203,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * @see          DecimalFormat
  * @see          ChoiceFormat
+ * @see          CompactNumberFormat
  * @author       Mark Davis
  * @author       Helena Shih
  * @since 1.1
@@ -472,7 +475,7 @@ public abstract class NumberFormat extends Format  {
      * formatting
      */
     public static final NumberFormat getInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, NUMBERSTYLE);
     }
 
     /**
@@ -485,7 +488,7 @@ public abstract class NumberFormat extends Format  {
      * formatting
      */
     public static NumberFormat getInstance(Locale inLocale) {
-        return getInstance(inLocale, NUMBERSTYLE);
+        return getInstance(inLocale, null, NUMBERSTYLE);
     }
 
     /**
@@ -501,7 +504,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale.Category#FORMAT
      */
     public static final NumberFormat getNumberInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, NUMBERSTYLE);
     }
 
     /**
@@ -512,7 +515,7 @@ public abstract class NumberFormat extends Format  {
      * formatting
      */
     public static NumberFormat getNumberInstance(Locale inLocale) {
-        return getInstance(inLocale, NUMBERSTYLE);
+        return getInstance(inLocale, null, NUMBERSTYLE);
     }
 
     /**
@@ -534,7 +537,7 @@ public abstract class NumberFormat extends Format  {
      * @since 1.4
      */
     public static final NumberFormat getIntegerInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), INTEGERSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, INTEGERSTYLE);
     }
 
     /**
@@ -551,7 +554,7 @@ public abstract class NumberFormat extends Format  {
      * @since 1.4
      */
     public static NumberFormat getIntegerInstance(Locale inLocale) {
-        return getInstance(inLocale, INTEGERSTYLE);
+        return getInstance(inLocale, null, INTEGERSTYLE);
     }
 
     /**
@@ -566,7 +569,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale.Category#FORMAT
      */
     public static final NumberFormat getCurrencyInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), CURRENCYSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, CURRENCYSTYLE);
     }
 
     /**
@@ -576,7 +579,7 @@ public abstract class NumberFormat extends Format  {
      * @return the {@code NumberFormat} instance for currency formatting
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
-        return getInstance(inLocale, CURRENCYSTYLE);
+        return getInstance(inLocale, null, CURRENCYSTYLE);
     }
 
     /**
@@ -591,7 +594,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale.Category#FORMAT
      */
     public static final NumberFormat getPercentInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), PERCENTSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, PERCENTSTYLE);
     }
 
     /**
@@ -601,14 +604,14 @@ public abstract class NumberFormat extends Format  {
      * @return the {@code NumberFormat} instance for percentage formatting
      */
     public static NumberFormat getPercentInstance(Locale inLocale) {
-        return getInstance(inLocale, PERCENTSTYLE);
+        return getInstance(inLocale, null, PERCENTSTYLE);
     }
 
     /**
      * Returns a scientific format for the current default locale.
      */
     /*public*/ final static NumberFormat getScientificInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), SCIENTIFICSTYLE);
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, SCIENTIFICSTYLE);
     }
 
     /**
@@ -617,7 +620,50 @@ public abstract class NumberFormat extends Format  {
      * @param inLocale the desired locale
      */
     /*public*/ static NumberFormat getScientificInstance(Locale inLocale) {
-        return getInstance(inLocale, SCIENTIFICSTYLE);
+        return getInstance(inLocale, null, SCIENTIFICSTYLE);
+    }
+
+    /**
+     * Returns a compact number format for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale with
+     * {@link NumberFormat.Style#SHORT "SHORT"} format style.
+     *
+     * @return A {@code NumberFormat} instance for compact number
+     *         formatting
+     *
+     * @see CompactNumberFormat
+     * @see NumberFormat.Style
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
+     * @since 12
+     */
+    public static NumberFormat getCompactNumberInstance() {
+        return getInstance(Locale.getDefault(
+                Locale.Category.FORMAT), NumberFormat.Style.SHORT, COMPACTSTYLE);
+    }
+
+    /**
+     * Returns a compact number format for the specified {@link java.util.Locale locale}
+     * and {@link NumberFormat.Style formatStyle}.
+     *
+     * @param locale the desired locale
+     * @param formatStyle the style for formatting a number
+     * @return A {@code NumberFormat} instance for compact number
+     *         formatting
+     * @throws NullPointerException if {@code locale} or {@code formatStyle}
+     *                              is {@code null}
+     *
+     * @see CompactNumberFormat
+     * @see NumberFormat.Style
+     * @see java.util.Locale
+     * @since 12
+     */
+    public static NumberFormat getCompactNumberInstance(Locale locale,
+            NumberFormat.Style formatStyle) {
+
+        Objects.requireNonNull(locale);
+        Objects.requireNonNull(formatStyle);
+        return getInstance(locale, formatStyle, COMPACTSTYLE);
     }
 
     /**
@@ -900,20 +946,22 @@ public abstract class NumberFormat extends Format  {
     // =======================privates===============================
 
     private static NumberFormat getInstance(Locale desiredLocale,
-                                           int choice) {
+                                            Style formatStyle, int choice) {
         LocaleProviderAdapter adapter;
         adapter = LocaleProviderAdapter.getAdapter(NumberFormatProvider.class,
-                                                   desiredLocale);
-        NumberFormat numberFormat = getInstance(adapter, desiredLocale, choice);
+                desiredLocale);
+        NumberFormat numberFormat = getInstance(adapter, desiredLocale,
+                formatStyle, choice);
         if (numberFormat == null) {
             numberFormat = getInstance(LocaleProviderAdapter.forJRE(),
-                                       desiredLocale, choice);
+                    desiredLocale, formatStyle, choice);
         }
         return numberFormat;
     }
 
     private static NumberFormat getInstance(LocaleProviderAdapter adapter,
-                                            Locale locale, int choice) {
+                                            Locale locale, Style formatStyle,
+                                            int choice) {
         NumberFormatProvider provider = adapter.getNumberFormatProvider();
         NumberFormat numberFormat = null;
         switch (choice) {
@@ -928,6 +976,9 @@ public abstract class NumberFormat extends Format  {
             break;
         case INTEGERSTYLE:
             numberFormat = provider.getIntegerInstance(locale);
+            break;
+        case COMPACTSTYLE:
+            numberFormat = provider.getCompactNumberInstance(locale, formatStyle);
             break;
         }
         return numberFormat;
@@ -1001,6 +1052,7 @@ public abstract class NumberFormat extends Format  {
     private static final int PERCENTSTYLE = 2;
     private static final int SCIENTIFICSTYLE = 3;
     private static final int INTEGERSTYLE = 4;
+    private static final int COMPACTSTYLE = 5;
 
     /**
      * True if the grouping (i.e. thousands) separator is used when
@@ -1276,5 +1328,43 @@ public abstract class NumberFormat extends Format  {
          * Constant identifying the exponent sign field.
          */
         public static final Field EXPONENT_SIGN = new Field("exponent sign");
+
+        /**
+         * Constant identifying the prefix field.
+         *
+         * @since 12
+         */
+        public static final Field PREFIX = new Field("prefix");
+
+        /**
+         * Constant identifying the suffix field.
+         *
+         * @since 12
+         */
+        public static final Field SUFFIX = new Field("suffix");
+    }
+
+    /**
+     * A number format style.
+     * <p>
+     * {@code Style} is an enum which represents the style for formatting
+     * a number within a given {@code NumberFormat} instance.
+     *
+     * @see CompactNumberFormat
+     * @see NumberFormat#getCompactNumberInstance(Locale, Style)
+     * @since 12
+     */
+    public enum Style {
+
+        /**
+         * The {@code SHORT} number format style.
+         */
+        SHORT,
+
+        /**
+         * The {@code LONG} number format style.
+         */
+        LONG
+
     }
 }

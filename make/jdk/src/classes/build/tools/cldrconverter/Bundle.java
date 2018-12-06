@@ -53,6 +53,10 @@ class Bundle {
         "NumberPatterns/percent"
     };
 
+    private final static String[] COMPACT_NUMBER_PATTERN_KEYS = {
+            "short.CompactNumberPatterns",
+            "long.CompactNumberPatterns"};
+
     private final static String[] NUMBER_ELEMENT_KEYS = {
         "NumberElements/decimal",
         "NumberElements/group",
@@ -225,6 +229,16 @@ class Bundle {
                 }
                 myMap.put("NumberPatterns", numberPatterns);
                 break;
+            }
+        }
+
+        for (String k : COMPACT_NUMBER_PATTERN_KEYS) {
+            List<String> patterns = (List<String>) myMap.remove(k);
+            if (patterns != null) {
+                // Replace any null entry with empty strings.
+                String[] arrPatterns = patterns.stream()
+                        .map(s -> s == null ? "" : s).toArray(String[]::new);
+                myMap.put(k, arrPatterns);
             }
         }
 

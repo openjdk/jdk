@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,14 @@
 
 package sun.util.locale.provider;
 
+import java.text.CompactNumberFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -223,6 +225,49 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
                 }
             }
         }
+    }
+
+    /**
+     * Returns a new {@code NumberFormat} instance which formats
+     * a number in its compact form for the specified
+     * {@code locale} and {@code formatStyle}.
+     *
+     * @param locale the desired locale
+     * @param formatStyle the style for formatting a number
+     * @throws NullPointerException if {@code locale} or {@code formatStyle}
+     *     is {@code null}
+     * @throws IllegalArgumentException if {@code locale} isn't
+     *     one of the locales returned from
+     *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
+     *     getAvailableLocales()}.
+     * @return a compact number formatter
+     *
+     * @see java.text.NumberFormat#getCompactNumberInstance(Locale,
+     *                      NumberFormat.Style)
+     * @since 12
+     */
+    @Override
+    public NumberFormat getCompactNumberInstance(Locale locale,
+            NumberFormat.Style formatStyle) {
+
+        Objects.requireNonNull(locale);
+        Objects.requireNonNull(formatStyle);
+
+        // Check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null
+                ? CalendarDataUtility.findRegionOverride(locale)
+                : locale;
+
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
+        LocaleResources resource = adapter.getLocaleResources(override);
+
+        String[] numberPatterns = resource.getNumberPatterns();
+        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(override);
+        String[] cnPatterns = resource.getCNPatterns(formatStyle);
+
+        CompactNumberFormat format = new CompactNumberFormat(numberPatterns[0],
+                symbols, cnPatterns);
+        return format;
     }
 
     @Override

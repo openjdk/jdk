@@ -888,6 +888,8 @@ public class CLDRConverter {
             copyIfPresent(map, "NumberElements", formatData);
         }
         copyIfPresent(map, "NumberPatterns", formatData);
+        copyIfPresent(map, "short.CompactNumberPatterns", formatData);
+        copyIfPresent(map, "long.CompactNumberPatterns", formatData);
 
         // put extra number elements for available scripts into formatData, if it is "root"
         if (id.equals("root")) {
