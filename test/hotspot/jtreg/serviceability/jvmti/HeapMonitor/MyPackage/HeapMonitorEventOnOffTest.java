@@ -35,7 +35,6 @@ import java.util.List;
  */
 public class HeapMonitorEventOnOffTest {
   public static void main(String[] args) {
-    HeapMonitor.enableSamplingEvents();
     HeapMonitor.allocateAndCheckFrames();
 
     // Disabling the notification system should stop events.
@@ -43,8 +42,8 @@ public class HeapMonitorEventOnOffTest {
     HeapMonitor.resetEventStorage();
     HeapMonitor.allocateAndCheckFrames(false, false);
 
-    // Enabling the notification system should start events again.
-    HeapMonitor.enableSamplingEvents();
+    // By calling allocateAndCheckFrames(), we enable the notifications and check if allocations
+    // get sampled again.
     HeapMonitor.allocateAndCheckFrames();
   }
 }
