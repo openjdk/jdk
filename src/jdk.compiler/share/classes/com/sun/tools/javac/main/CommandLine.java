@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.javac.main;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -125,7 +126,7 @@ public class CommandLine {
     }
 
     private static void loadCmdFile(String name, List<String> args) throws IOException {
-        try (Reader r = Files.newBufferedReader(Paths.get(name))) {
+        try (Reader r = Files.newBufferedReader(Paths.get(name), Charset.defaultCharset())) {
             Tokenizer t = new Tokenizer(r);
             String s;
             while ((s = t.nextToken()) != null) {
