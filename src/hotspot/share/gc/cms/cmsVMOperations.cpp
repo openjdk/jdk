@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/cmsHeap.hpp"
+#include "gc/cms/cmsVMOperations.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/cms/vmCMSOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"

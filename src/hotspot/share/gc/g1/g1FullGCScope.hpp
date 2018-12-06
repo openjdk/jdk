@@ -31,8 +31,8 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/vmGCOperations.hpp"
 #include "memory/allocation.hpp"
 #include "services/memoryService.hpp"
 

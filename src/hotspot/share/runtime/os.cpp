@@ -32,7 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "logging/log.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_VMPSOPERATIONS_HPP
-#define SHARE_VM_GC_PARALLEL_VMPSOPERATIONS_HPP
+#ifndef SHARE_VM_GC_PARALLEL_PSVMOPERATIONS_HPP
+#define SHARE_VM_GC_PARALLEL_PSVMOPERATIONS_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 
 class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
  public:
@@ -46,4 +46,4 @@ class VM_ParallelGCSystemGC: public VM_GC_Operation {
   virtual void doit();
 };
 
-#endif // SHARE_VM_GC_PARALLEL_VMPSOPERATIONS_HPP
+#endif // SHARE_VM_GC_PARALLEL_PSVMOPERATIONS_HPP

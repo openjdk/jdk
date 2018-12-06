@@ -36,7 +36,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
-#include "gc/parallel/vmPSOperations.hpp"
+#include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"

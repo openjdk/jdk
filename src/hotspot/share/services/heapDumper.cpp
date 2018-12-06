@@ -30,7 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

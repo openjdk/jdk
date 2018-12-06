@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"

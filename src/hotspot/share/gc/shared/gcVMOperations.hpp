@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_VMGCOPERATIONS_HPP
-#define SHARE_VM_GC_SHARED_VMGCOPERATIONS_HPP
+#ifndef SHARE_VM_GC_SHARED_GCVMOPERATIONS_HPP
+#define SHARE_VM_GC_SHARED_GCVMOPERATIONS_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -238,4 +238,4 @@ class SvcGCMarker : public StackObj {
   }
 };
 
-#endif // SHARE_VM_GC_SHARED_VMGCOPERATIONS_HPP
+#endif // SHARE_VM_GC_SHARED_GCVMOPERATIONS_HPP

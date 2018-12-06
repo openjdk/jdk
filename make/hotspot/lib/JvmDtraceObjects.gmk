@@ -60,6 +60,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         ciEnv.o \
         classLoadingService.o \
         compileBroker.o \
+        gcVMOperations.o \
         hashtable.o \
         instanceKlass.o \
         java.o \
@@ -74,18 +75,17 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         thread.o \
         unsafe.o \
         vmThread.o \
-        vmGCOperations.o \
     )
 
     ifeq ($(call check-jvm-feature, cmsgc), true)
       DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
-          vmCMSOperations.o \
+          cmsVMOperations.o \
       )
     endif
 
     ifeq ($(call check-jvm-feature, parallelgc), true)
       DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
-          vmPSOperations.o \
+          psVMOperations.o \
       )
     endif
 

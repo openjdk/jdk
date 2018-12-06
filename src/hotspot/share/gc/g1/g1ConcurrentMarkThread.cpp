@@ -31,7 +31,7 @@
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/vm_operations_g1.hpp"
+#include "gc/g1/g1VMOperations.hpp"
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTrace.hpp"

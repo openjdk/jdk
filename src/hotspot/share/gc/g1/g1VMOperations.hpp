@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
-#define SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
+#ifndef SHARE_VM_GC_G1_G1VMOPERATIONS_HPP
+#define SHARE_VM_GC_G1_G1VMOPERATIONS_HPP
 
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 
 // VM_operations for the G1 collector.
 // VM_GC_Operation:
@@ -81,4 +81,4 @@ public:
   virtual void doit_epilogue();
 };
 
-#endif // SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
+#endif // SHARE_VM_GC_G1_G1VMOPERATIONS_HPP
