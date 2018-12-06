@@ -84,6 +84,19 @@ public class TestSerializedForm extends JavadocTester {
                 + "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>",
                 "<h3>Class pkg1.PublicExcludeInnerClass.PubInnerClass extends java.lang.Object implements "
                 + "Serializable</h3>");
+
+        checkOutput("serialized-form.html", true,
+                "<h3>Serialized Fields</h3>\n" +
+                "<ul class=\"blockList\">\n" +
+                "<li class=\"blockList\">\n" +
+                "<h4>longs</h4>\n" +
+                "<pre>Long[] longs</pre>\n" +
+                "<div class=\"block\">the longs</div>\n" +
+                "</li>\n" +
+                "<li class=\"blockListLast\">\n" +
+                "<h4>name</h4>\n" +
+                "<pre>java.lang.String name</pre>\n" +
+                "<div class=\"block\">a test</div>");
     }
 
     @Test
@@ -113,6 +126,19 @@ public class TestSerializedForm extends JavadocTester {
                 "<h3>Class <a href=\"pkg1/PublicExcludeInnerClass.PubInnerClass.html\" "
                 + "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> "
                 + "extends java.lang.Object implements Serializable</h3>");
+
+        checkOutput("serialized-form.html", true,
+                "<h3>Serialized Fields</h3>\n" +
+                "<ul class=\"blockList\">\n" +
+                "<li class=\"blockList\">\n" +
+                "<h4>longs</h4>\n" +
+                "<pre>Long[] longs</pre>\n" +
+                "<div class=\"block\">the longs</div>\n" +
+                "</li>\n" +
+                "<li class=\"blockListLast\">\n" +
+                "<h4>name</h4>\n" +
+                "<pre>java.lang.String name</pre>\n" +
+                "<div class=\"block\">a test</div>");
     }
 
     @Test

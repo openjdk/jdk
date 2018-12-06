@@ -31,13 +31,15 @@ public class SerializedForm implements Serializable {
 
     /**
      * @serialField name String a test
+     * @serialField longs Long[] the longs
      * @see TestSerializedForm
      */
     @Deprecated
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("i", int.class),
         new ObjectStreamField("count", Integer.TYPE),
-        new ObjectStreamField("name", String.class)
+        new ObjectStreamField("name", String.class),
+        new ObjectStreamField("longs", Long[].class)
     };
 
     /**
