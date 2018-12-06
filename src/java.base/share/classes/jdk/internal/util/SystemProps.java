@@ -152,16 +152,18 @@ public final class SystemProps {
                                       String format) {
         // Do not override command line setting
         String baseValue = cmdProps.getProperty(base);
-        if (baseValue == null) {
-            // Not overridden on the command line; define the properties if there are platform defined values
-            baseValue = display;
-        }
         if (baseValue != null) {
-            cmdProps.put(base, baseValue);
+            return;     // Do not override value from the command line
+        }
+
+        // Not overridden on the command line; define the properties if there are platform defined values
+        if (display != null) {
+            cmdProps.put(base, display);
+            baseValue = display;
         }
 
         /* user.xxx.display property */
-        String disp = base + ".display";
+        String disp = base.concat(".display");
         String dispValue = cmdProps.getProperty(disp);
         if (dispValue == null && display != null && !display.equals(baseValue)) {
             // Create the property only if different from the base property
@@ -169,7 +171,7 @@ public final class SystemProps {
         }
 
         /* user.xxx.format property */
-        String fmt = base + ".format";
+        String fmt = base.concat(".format");
         String fmtValue = cmdProps.getProperty(fmt);
         if (fmtValue == null && format != null && !format.equals(baseValue)) {
             // Create the property only if different than the base property
