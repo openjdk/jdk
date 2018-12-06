@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -46,13 +45,13 @@ public class TestSummary {
         Path f = ExecuteHelper.createProfilingRecording().toAbsolutePath();
         String file = f.toAbsolutePath().toString();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "summary");
+        OutputAnalyzer output = ExecuteHelper.jfr("summary");
         output.shouldContain("missing file");
 
-        output = ProcessTools.executeProcess("jfr", "summary", "--wrongOption", file);
+        output = ExecuteHelper.jfr("summary", "--wrongOption", file);
         output.shouldContain("too many arguments");
 
-        output = ProcessTools.executeProcess("jfr", "summary", file);
+        output = ExecuteHelper.jfr("summary", file);
         try (RecordingFile rf = new RecordingFile(f)) {
             for (EventType t : rf.readEventTypes()) {
                 output.shouldContain(t.getName());

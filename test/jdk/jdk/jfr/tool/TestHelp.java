@@ -26,7 +26,6 @@
 package jdk.jfr.tool;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -39,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestHelp {
 
     public static void main(String[] args) throws Throwable {
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "help");
+        OutputAnalyzer output = ExecuteHelper.jfr("help");
         output.shouldContain("print");
         output.shouldContain("assemble");
         output.shouldContain("disassemble");
@@ -47,11 +46,11 @@ public class TestHelp {
         output.shouldContain("summary");
         output.shouldContain("help");
 
-        output = ProcessTools.executeProcess("jfr", "help", "version");
+        output = ExecuteHelper.jfr("help", "version");
         output.shouldContain("Display version of the jfr tool");
         output.shouldContain("jfr version");
 
-        output = ProcessTools.executeProcess("jfr", "help", "wrongcommand");
+        output = ExecuteHelper.jfr("help", "wrongcommand");
         output.shouldContain("unknown command 'wrongcommand'");
     }
 }

@@ -28,7 +28,6 @@ package jdk.jfr.tool;
 import java.nio.file.Path;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -48,7 +47,7 @@ public class TestPrintDefault {
 
         Path recordingFile = ExecuteHelper.createProfilingRecording().toAbsolutePath();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "print", recordingFile.toString());
+        OutputAnalyzer output = ExecuteHelper.jfr("print", recordingFile.toString());
         output.shouldContain("JVMInformation");
     }
 }

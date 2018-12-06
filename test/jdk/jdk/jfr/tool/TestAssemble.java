@@ -40,7 +40,6 @@ import jdk.jfr.internal.Repository;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -90,30 +89,30 @@ public class TestAssemble {
         String destination = destinationPath.toAbsolutePath().toString();
 
         // Test failure
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "assemble");
+        OutputAnalyzer output = ExecuteHelper.jfr("assemble");
         output.shouldContain("too few arguments");
 
-        output = ProcessTools.executeProcess("jfr", "assemble", directory);
+        output = ExecuteHelper.jfr("assemble", directory);
         output.shouldContain("too few arguments");
 
-        output = ProcessTools.executeProcess("jfr", "assemble", "not-a-directory", destination);
+        output = ExecuteHelper.jfr("assemble", "not-a-directory", destination);
         output.shouldContain("directory does not exist, not-a-directory");
 
-        output = ProcessTools.executeProcess("jfr", "assemble", directory, "not-a-destination");
+        output = ExecuteHelper.jfr("assemble", directory, "not-a-destination");
         output.shouldContain("filename must end with '.jfr'");
 
-        output = ProcessTools.executeProcess("jfr","assemble", "--wrongOption", directory, destination);
+        output = ExecuteHelper.jfr("assemble", "--wrongOption", directory, destination);
         output.shouldContain("too many arguments");
 
         FileWriter fw = new FileWriter(destination);
         fw.write('d');
         fw.close();
-        output = ProcessTools.executeProcess("jfr", "assemble", directory, destination);
+        output = ExecuteHelper.jfr("assemble", directory, destination);
         output.shouldContain("already exists");
         Files.delete(destinationPath);
 
         // test success
-        output = ProcessTools.executeProcess("jfr", "assemble", directory, destination);
+        output = ExecuteHelper.jfr("assemble", directory, destination);
         System.out.println(output.getOutput());
         output.shouldContain("Finished.");
 

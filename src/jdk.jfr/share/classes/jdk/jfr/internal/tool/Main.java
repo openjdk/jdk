@@ -72,7 +72,7 @@ public final class Main {
             System.out.println();
             System.out.println(" jfr summary recording.jfr");
             System.out.println();
-            System.out.println(" jfr metadata recoding.jfr");
+            System.out.println(" jfr metadata recording.jfr");
             System.out.println();
             System.out.println("For more information about available commands, use 'jfr help'");
             System.exit(EXIT_OK);

@@ -31,7 +31,6 @@ import java.nio.file.Path;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -45,17 +44,17 @@ public class TestPrint {
 
     public static void main(String[] args) throws Throwable {
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "print");
+        OutputAnalyzer output = ExecuteHelper.jfr("print");
         output.shouldContain("missing file");
 
-        output = ProcessTools.executeProcess("jfr", "print", "missing.jfr");
+        output = ExecuteHelper.jfr("print", "missing.jfr");
         output.shouldContain("could not find file ");
 
         Path file = Utils.createTempFile("faked-print-file",  ".jfr");
         FileWriter fw = new FileWriter(file.toFile());
         fw.write('d');
         fw.close();
-        output = ProcessTools.executeProcess("jfr", "print", "--wrongOption", file.toAbsolutePath().toString());
+        output = ExecuteHelper.jfr("print", "--wrongOption", file.toAbsolutePath().toString());
         output.shouldContain("unknown option");
         Files.delete(file);
     }

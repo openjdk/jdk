@@ -58,7 +58,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -77,7 +76,7 @@ public class TestPrintXML {
 
         Path recordingFile = ExecuteHelper.createProfilingRecording().toAbsolutePath();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "print", "--xml", "--stack-depth", "9999", recordingFile.toString());
+        OutputAnalyzer output = ExecuteHelper.jfr("print", "--xml", "--stack-depth", "9999", recordingFile.toString());
         System.out.println(recordingFile);
         String xml = output.getStdout();
 

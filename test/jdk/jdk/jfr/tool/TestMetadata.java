@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -46,13 +45,13 @@ public class TestMetadata {
         Path f = ExecuteHelper.createProfilingRecording().toAbsolutePath();
         String file = f.toAbsolutePath().toString();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "metadata");
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata");
         output.shouldContain("missing file");
 
-        output = ProcessTools.executeProcess("jfr", "metadata", "--wrongOption", file);
+        output = ExecuteHelper.jfr("metadata", "--wrongOption", file);
         output.shouldContain("unknown option --wrongOption");
 
-        output = ProcessTools.executeProcess("jfr", "metadata", file);
+        output = ExecuteHelper.jfr("metadata", file);
         try (RecordingFile rf = new RecordingFile(f)) {
             for (EventType t : rf.readEventTypes()) {
                 String name = t.getName();

@@ -37,7 +37,6 @@ import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -64,40 +63,40 @@ public class TestDisassemble {
         String fileBText = recordingFileB.toAbsolutePath().toString();
         String fileCText = recordingFileC.toAbsolutePath().toString();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "disassemble");
+        OutputAnalyzer output = ExecuteHelper.jfr("disassemble");
         output.shouldContain("missing file");
 
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--wrongOption", fileAText);
+        output = ExecuteHelper.jfr("disassemble", "--wrongOption", fileAText);
         output.shouldContain("unknown option");
 
-        output = ProcessTools.executeProcess("jfr","disassemble", "--wrongOption", "1", fileAText);
+        output = ExecuteHelper.jfr("disassemble", "--wrongOption", "1", fileAText);
         output.shouldContain("unknown option");
 
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--max-chunks", "-3", fileAText);
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "-3", fileAText);
         output.shouldContain("max chunks must be at least 1");
 
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--max-chunks", "1000", fileAText);
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "1000", fileAText);
         output.shouldContain("number of chunks in recording");
         output.shouldContain("doesn't exceed max chunks");
-        output =  ProcessTools.executeProcess("jfr", "disassemble", fileAText); // maxchunks is 5 by
+        output = ExecuteHelper.jfr("disassemble", fileAText); // maxchunks is 5 by
                                                         // default
         System.out.println(output.getOutput());
         System.out.println(fileAText);
         verifyRecording(fileAText.substring(0, fileAText.length() - 4) + "_1.jfr");
         verifyRecording(fileAText.substring(0, fileAText.length() - 4) + "_2.jfr");
 
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--max-chunks", "2", fileBText);
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "2", fileBText);
 
         verifyRecording(fileBText.substring(0, fileBText.length() - 4) + "_1.jfr");
         verifyRecording(fileBText.substring(0, fileBText.length() - 4) + "_2.jfr");
         verifyRecording(fileBText.substring(0, fileBText.length() - 4) + "_3.jfr");
 
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--max-chunks", "2", fileBText);
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "2", fileBText);
         output.shouldContain("file with that name already exist");
 
         // sanity check
-        output =  ProcessTools.executeProcess("jfr","disassemble", "--max-size", "500000", fileCText);
-        verifyRecording(fileCText.substring(0, fileCText.length() - 4) + "_1.jfr");
+        output = ExecuteHelper.jfr("disassemble", "--max-size", "10000", fileCText);
+        verifyRecording(fileCText.substring(0, fileCText.length() - 4) + "_01.jfr");
     }
 
     private static void verifyRecording(String name) throws IOException {

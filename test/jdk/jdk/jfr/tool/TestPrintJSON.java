@@ -43,7 +43,6 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -63,7 +62,7 @@ public class TestPrintJSON {
 
         Path recordingFile = ExecuteHelper.createProfilingRecording().toAbsolutePath();
 
-        OutputAnalyzer output = ProcessTools.executeProcess("jfr", "print", "--json", "--stack-depth", "999", recordingFile.toString());
+        OutputAnalyzer output = ExecuteHelper.jfr("print", "--json", "--stack-depth", "999", recordingFile.toString());
         String json = output.getStdout();
 
         // Parse JSON using Nashorn

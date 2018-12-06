@@ -32,7 +32,10 @@ import java.util.regex.Pattern;
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
-import jdk.test.lib.Utils;;
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;;
 
 final class ExecuteHelper {
 
@@ -121,5 +124,13 @@ final class ExecuteHelper {
        Pattern p = Pattern.compile("a*b");
        Matcher m = p.matcher("aaaaab");
        m.matches();
+    }
+
+    public static OutputAnalyzer jfr(String... args) throws Throwable {
+        JDKToolLauncher l = JDKToolLauncher.createUsingTestJDK("jfr");
+        for (String arg : args) {
+            l.addToolArg(arg);
+        }
+        return ProcessTools.executeCommand(l.getCommand());
     }
 }
