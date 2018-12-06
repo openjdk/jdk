@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 /*
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
@@ -43,7 +43,7 @@ public class IBM964
 {
 
     public IBM964() {
-        super("x-IBM964", ExtendedCharsets.aliasesFor("x-IBM964"));
+        super("x-IBM964", $ALIASES$);
     }
 
     public String historicalName() {
