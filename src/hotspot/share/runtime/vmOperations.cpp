@@ -40,7 +40,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,

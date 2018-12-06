@@ -42,7 +42,7 @@
 #include "runtime/tieredThresholdPolicy.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -50,7 +50,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
 // set data iff *dest == NULL

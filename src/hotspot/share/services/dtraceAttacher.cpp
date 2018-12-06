@@ -28,7 +28,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/dtraceAttacher.hpp"
 
 #ifdef SOLARIS

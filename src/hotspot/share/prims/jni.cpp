@@ -79,7 +79,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/defaultStream.hpp"

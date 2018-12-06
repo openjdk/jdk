@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_LEAKPROFILER_EMITEVENTOPERATION_HPP
 #define SHARE_VM_LEAKPROFILER_EMITEVENTOPERATION_HPP
 
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 class BFSClosure;
 class EdgeStore;

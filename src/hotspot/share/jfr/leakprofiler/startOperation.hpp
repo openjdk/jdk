@@ -30,7 +30,7 @@
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 // Safepoint operation for starting leak profiler object sampler
 class StartOperation : public VM_Operation {

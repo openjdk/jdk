@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VM_OPERATIONS_HPP
-#define SHARE_VM_RUNTIME_VM_OPERATIONS_HPP
+#ifndef SHARE_VM_RUNTIME_VMOPERATIONS_HPP
+#define SHARE_VM_RUNTIME_VMOPERATIONS_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "memory/allocation.hpp"
@@ -509,4 +509,4 @@ class VM_PrintClassHierarchy: public VM_Operation {
 };
 #endif // INCLUDE_SERVICES
 
-#endif // SHARE_VM_RUNTIME_VM_OPERATIONS_HPP
+#endif // SHARE_VM_RUNTIME_VMOPERATIONS_HPP

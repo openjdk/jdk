@@ -32,7 +32,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 // The following class hierarchy represents
 // a set of operations (VM_Operation) related to GC.

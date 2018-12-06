@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 // Introduction:
 //

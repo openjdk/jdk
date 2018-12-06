@@ -27,7 +27,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/exceptions.hpp"
 
 //

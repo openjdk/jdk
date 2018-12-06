@@ -29,7 +29,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 // The VM_CMS_Operation is slightly different from
 // a VM_GC_Operation -- and would not have subclassed easily

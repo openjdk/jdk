@@ -61,7 +61,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"

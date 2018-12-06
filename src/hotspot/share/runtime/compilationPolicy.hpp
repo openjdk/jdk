@@ -28,7 +28,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/growableArray.hpp"
 
 // The CompilationPolicy selects which method (if any) should be compiled.

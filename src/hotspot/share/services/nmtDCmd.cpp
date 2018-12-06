@@ -25,7 +25,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/nmtDCmd.hpp"
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"

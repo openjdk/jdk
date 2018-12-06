@@ -48,7 +48,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/heapDumper.hpp"
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"

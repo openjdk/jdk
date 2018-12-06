@@ -39,7 +39,7 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 
 // TODO: we need to define a naming convention for perf counters

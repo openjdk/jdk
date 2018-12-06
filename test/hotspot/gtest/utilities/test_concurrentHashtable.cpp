@@ -26,7 +26,7 @@
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "threadHelper.inline.hpp"

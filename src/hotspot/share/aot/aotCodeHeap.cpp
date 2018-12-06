@@ -40,7 +40,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 bool AOTLib::_narrow_oop_shift_initialized = false;
 int  AOTLib::_narrow_oop_shift = 0;

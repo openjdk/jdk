@@ -30,7 +30,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/resourceHash.hpp"
 

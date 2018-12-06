@@ -32,7 +32,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
