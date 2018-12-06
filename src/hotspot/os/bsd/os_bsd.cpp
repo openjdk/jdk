@@ -3388,7 +3388,7 @@ bool os::message_box(const char* title, const char* message) {
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
-  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, os::strerror(errno));
 #ifdef __APPLE__
   return st.st_mtimespec;
 #else

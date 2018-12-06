@@ -46,5 +46,5 @@ bool ZErrno::operator!=(int error) const {
 }
 
 const char* ZErrno::to_string() const {
-  return strerror(_error);
+  return os::strerror(_error);
 }

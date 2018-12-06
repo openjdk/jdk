@@ -248,7 +248,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   _stream = os::fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
     errstream->print_cr("Error opening log file '%s': %s",
-                        _file_name, strerror(errno));
+                        _file_name, os::strerror(errno));
     return false;
   }
 
