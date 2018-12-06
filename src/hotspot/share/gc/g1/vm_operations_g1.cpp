@@ -43,13 +43,14 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause,
                                                      bool           should_initiate_conc_mark,
-                                                     double         target_pause_time_ms)
-  : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-    _pause_succeeded(false),
-    _should_initiate_conc_mark(should_initiate_conc_mark),
-    _should_retry_gc(false),
-    _target_pause_time_ms(target_pause_time_ms),
-    _old_marking_cycles_completed_before(0) {
+                                                     double         target_pause_time_ms) :
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+  _pause_succeeded(false),
+  _should_initiate_conc_mark(should_initiate_conc_mark),
+  _should_retry_gc(false),
+  _target_pause_time_ms(target_pause_time_ms),
+  _old_marking_cycles_completed_before(0) {
+
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive",
             target_pause_time_ms);
@@ -199,23 +200,23 @@ void VM_G1CollectForAllocation::doit_epilogue() {
   }
 }
 
-void VM_CGC_Operation::doit() {
+void VM_G1Concurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCTraceTime(Info, gc) t(_printGCMessage, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) t(_message, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
   TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
   _cl->do_void();
 }
 
-bool VM_CGC_Operation::doit_prologue() {
+bool VM_G1Concurrent::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
-void VM_CGC_Operation::doit_epilogue() {
+void VM_G1Concurrent::doit_epilogue() {
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
