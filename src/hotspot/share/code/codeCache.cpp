@@ -289,7 +289,7 @@ void CodeCache::initialize_heaps() {
 
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(page_size(false), (size_t) os::vm_allocation_granularity());
+  const size_t alignment = MAX2(page_size(false, 8), (size_t) os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
 
@@ -314,10 +314,14 @@ void CodeCache::initialize_heaps() {
   add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
 }
 
-size_t CodeCache::page_size(bool aligned) {
+size_t CodeCache::page_size(bool aligned, size_t min_pages) {
   if (os::can_execute_large_page_memory()) {
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, 8) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8);
+    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
+      // Make sure that the page size allows for an incremental commit of the reserved space
+      min_pages = MAX2(min_pages, (size_t)8);
+    }
+    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
   } else {
     return os::vm_page_size();
   }

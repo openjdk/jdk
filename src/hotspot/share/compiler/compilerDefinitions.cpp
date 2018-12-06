@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -200,8 +201,10 @@ void CompilerConfig::set_tiered_flags() {
     FLAG_SET_ERGO(uintx, ReservedCodeCacheSize,
                   MIN2(CODE_CACHE_DEFAULT_LIMIT, (size_t)ReservedCodeCacheSize * 5));
   }
-  // Enable SegmentedCodeCache if TieredCompilation is enabled and ReservedCodeCacheSize >= 240M
-  if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
+  // Enable SegmentedCodeCache if TieredCompilation is enabled, ReservedCodeCacheSize >= 240M
+  // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+  if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
+      8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
     FLAG_SET_ERGO(bool, SegmentedCodeCache, true);
   }
   if (!UseInterpreter) { // -Xcomp
