@@ -4533,8 +4533,6 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
     }
     _g1_policy->remset_tracker()->update_at_allocate(new_alloc_region);
     _hr_printer.alloc(new_alloc_region);
-    bool during_im = collector_state()->in_initial_mark_gc();
-    new_alloc_region->note_start_of_copying(during_im);
     return new_alloc_region;
   }
   return NULL;
@@ -4543,11 +4541,14 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              InCSetState dest) {
-  bool during_im = collector_state()->in_initial_mark_gc();
-  alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {
     old_set_add(alloc_region);
+  }
+
+  bool const during_im = collector_state()->in_initial_mark_gc();
+  if (during_im && allocated_bytes > 0) {
+    _cm->root_regions()->add(alloc_region);
   }
   _hr_printer.retire(alloc_region);
 }

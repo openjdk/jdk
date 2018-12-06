@@ -526,14 +526,6 @@ class HeapRegion: public G1ContiguousSpace {
   // info fields.
   inline void note_end_of_marking();
 
-  // Notify the region that it will be used as to-space during a GC
-  // and we are about to start copying objects into it.
-  inline void note_start_of_copying(bool during_initial_mark);
-
-  // Notify the region that it ceases being to-space during a GC and
-  // we will not copy objects into it any more.
-  inline void note_end_of_copying(bool during_initial_mark);
-
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
   void note_self_forwarding_removal_start(bool during_initial_mark,

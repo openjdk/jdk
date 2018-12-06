@@ -208,21 +208,6 @@ void G1ParCopyHelper::mark_object(oop obj) {
   _cm->mark_in_next_bitmap(_worker_id, obj);
 }
 
-void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-  assert(from_obj->is_forwarded(), "from obj should be forwarded");
-  assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
-  assert(from_obj != to_obj, "should not be self-forwarded");
-
-  assert(_g1h->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
-  assert(!_g1h->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
-
-  // The object might be in the process of being copied by another
-  // worker so we cannot trust that its to-space image is
-  // well-formed. So we have to read its size from its from-space
-  // image which we know should not be changing.
-  _cm->mark_in_next_bitmap(_worker_id, to_obj, from_obj->size());
-}
-
 void G1ParCopyHelper::trim_queue_partially() {
   _par_scan_state->trim_queue_partially();
 }
@@ -251,11 +236,6 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
-    if (do_mark_object != G1MarkNone && forwardee != obj) {
-      // If the object is self-forwarded we don't need to explicitly
-      // mark it, the evacuation failure protocol will do so.
-      mark_forwarded_object(obj, forwardee);
-    }
 
     if (barrier == G1BarrierCLD) {
       do_cld_barrier(forwardee);

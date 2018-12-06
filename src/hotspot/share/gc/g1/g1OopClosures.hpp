@@ -141,11 +141,6 @@ protected:
   // during the GC (i.e., non-CSet objects). It is MT-safe.
   inline void mark_object(oop obj);
 
-  // Mark the object if it's not already marked. This is used to mark
-  // objects pointed to by roots that have been forwarded during a
-  // GC. It is MT-safe.
-  inline void mark_forwarded_object(oop from_obj, oop to_obj);
-
   G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* par_scan_state);
   ~G1ParCopyHelper() { }
 

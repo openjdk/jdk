@@ -255,21 +255,35 @@ void G1CMMarkStack::set_empty() {
   _free_list = NULL;
 }
 
-G1CMRootRegions::G1CMRootRegions() :
-  _survivors(NULL), _cm(NULL), _scan_in_progress(false),
-  _should_abort(false), _claimed_survivor_index(0) { }
+G1CMRootRegions::G1CMRootRegions(uint const max_regions) :
+  _root_regions(NEW_C_HEAP_ARRAY(HeapRegion*, max_regions, mtGC)),
+  _max_regions(max_regions),
+  _num_root_regions(0),
+  _claimed_root_regions(0),
+  _scan_in_progress(false),
+  _should_abort(false) { }
 
-void G1CMRootRegions::init(const G1SurvivorRegions* survivors, G1ConcurrentMark* cm) {
-  _survivors = survivors;
-  _cm = cm;
+G1CMRootRegions::~G1CMRootRegions() {
+  FREE_C_HEAP_ARRAY(HeapRegion*, _max_regions);
+}
+
+void G1CMRootRegions::reset() {
+  _num_root_regions = 0;
+}
+
+void G1CMRootRegions::add(HeapRegion* hr) {
+  assert_at_safepoint();
+  size_t idx = Atomic::add((size_t)1, &_num_root_regions) - 1;
+  assert(idx < _max_regions, "Trying to add more root regions than there is space " SIZE_FORMAT, _max_regions);
+  _root_regions[idx] = hr;
 }
 
 void G1CMRootRegions::prepare_for_scan() {
   assert(!scan_in_progress(), "pre-condition");
 
-  // Currently, only survivors can be root regions.
-  _claimed_survivor_index = 0;
-  _scan_in_progress = _survivors->regions()->is_nonempty();
+  _scan_in_progress = _num_root_regions > 0;
+
+  _claimed_root_regions = 0;
   _should_abort = false;
 }
 
@@ -280,18 +294,19 @@ HeapRegion* G1CMRootRegions::claim_next() {
     return NULL;
   }
 
-  // Currently, only survivors can be root regions.
-  const GrowableArray<HeapRegion*>* survivor_regions = _survivors->regions();
+  if (_claimed_root_regions >= _num_root_regions) {
+    return NULL;
+  }
 
-  int claimed_index = Atomic::add(1, &_claimed_survivor_index) - 1;
-  if (claimed_index < survivor_regions->length()) {
-    return survivor_regions->at(claimed_index);
+  size_t claimed_index = Atomic::add((size_t)1, &_claimed_root_regions) - 1;
+  if (claimed_index < _num_root_regions) {
+    return _root_regions[claimed_index];
   }
   return NULL;
 }
 
 uint G1CMRootRegions::num_root_regions() const {
-  return (uint)_survivors->regions()->length();
+  return (uint)_num_root_regions;
 }
 
 void G1CMRootRegions::notify_scan_done() {
@@ -307,12 +322,10 @@ void G1CMRootRegions::cancel_scan() {
 void G1CMRootRegions::scan_finished() {
   assert(scan_in_progress(), "pre-condition");
 
-  // Currently, only survivors can be root regions.
   if (!_should_abort) {
-    assert(_claimed_survivor_index >= 0, "otherwise comparison is invalid: %d", _claimed_survivor_index);
-    assert((uint)_claimed_survivor_index >= _survivors->length(),
-           "we should have claimed all survivors, claimed index = %u, length = %u",
-           (uint)_claimed_survivor_index, _survivors->length());
+    assert(_claimed_root_regions >= num_root_regions(),
+           "we should have claimed all root regions, claimed " SIZE_FORMAT ", length = %u",
+           _claimed_root_regions, num_root_regions());
   }
 
   notify_scan_done();
@@ -353,7 +366,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _heap(_g1h->reserved_region()),
 
-  _root_regions(),
+  _root_regions(_g1h->max_regions()),
 
   _global_mark_stack(),
 
@@ -405,8 +418,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   }
 
   assert(CGC_lock != NULL, "CGC_lock must be initialized");
-
-  _root_regions.init(_g1h->survivor(), this);
 
   if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
     // Calculate the number of concurrent worker threads by scaling
@@ -728,6 +739,8 @@ void G1ConcurrentMark::pre_initial_mark() {
   // For each region note start of marking.
   NoteStartOfMarkHRClosure startcl;
   _g1h->heap_region_iterate(&startcl);
+
+  _root_regions.reset();
 }
 
 
@@ -859,12 +872,12 @@ uint G1ConcurrentMark::calc_active_marking_workers() {
 }
 
 void G1ConcurrentMark::scan_root_region(HeapRegion* hr, uint worker_id) {
-  // Currently, only survivors can be root regions.
-  assert(hr->next_top_at_mark_start() == hr->bottom(), "invariant");
+  assert(hr->is_old() || (hr->is_survivor() && hr->next_top_at_mark_start() == hr->bottom()),
+         "Root regions must be old or survivor but region %u is %s", hr->hrm_index(), hr->get_type_str());
   G1RootRegionScanClosure cl(_g1h, this, worker_id);
 
   const uintx interval = PrefetchScanIntervalInBytes;
-  HeapWord* curr = hr->bottom();
+  HeapWord* curr = hr->next_top_at_mark_start();
   const HeapWord* end = hr->top();
   while (curr < end) {
     Prefetch::read(curr, interval);
