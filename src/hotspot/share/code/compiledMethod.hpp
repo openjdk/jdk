@@ -400,7 +400,7 @@ public:
   virtual bool is_unloading() = 0;
 
   bool unload_nmethod_caches(bool class_unloading_occurred);
-  virtual void do_unloading(bool unloading_occurred) { }
+  virtual void do_unloading(bool unloading_occurred) = 0;
 
 private:
   PcDesc* find_pc_desc(address pc, bool approximate) {
