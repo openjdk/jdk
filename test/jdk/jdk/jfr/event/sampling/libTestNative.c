@@ -30,7 +30,7 @@
 #include <unistd.h>
 #endif
 
-JNIEXPORT void JNICALL Java_com_oracle_jfr_event_sampling_TestNative_longTime
+JNIEXPORT void JNICALL Java_jdk_jfr_event_sampling_TestNative_longTime
   (JNIEnv *env, jclass jc)
 {
 #ifdef WINDOWS
