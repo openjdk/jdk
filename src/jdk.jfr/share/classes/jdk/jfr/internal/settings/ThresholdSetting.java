@@ -54,21 +54,27 @@ public final class ThresholdSetting extends Control {
 
     @Override
     public String combine(Set<String> values) {
-        long min = Long.MAX_VALUE;
-        String text = "0 ns";
+        Long min = null;
+        String text = null;
         for (String value : values) {
-            long l = Utils.parseTimespan(value);
-            if (l < min) {
-                text = value;
+            long l = Utils.parseTimespanWithInfinity(value);
+            // always accept first value
+            if (min == null) {
                 min = l;
+                text = value;
+            } else {
+                if (l < min) {
+                    text = value;
+                    min = l;
+                }
             }
         }
-        return text;
+        return text == null ? "0 ns" : text;
     }
 
     @Override
     public void setValue(String value) {
-        long l = Utils.parseTimespan(value);
+        long l = Utils.parseTimespanWithInfinity(value);
         this.value = value;
         eventType.setThreshold(l);
     }

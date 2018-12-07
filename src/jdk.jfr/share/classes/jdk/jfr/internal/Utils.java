@@ -65,6 +65,8 @@ import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
 
+    private static final String INFINITY = "infinity";
+
     private static Boolean SAVE_GENERATED;
 
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
@@ -117,7 +119,6 @@ public final class Utils {
         if (dValue == null) {
             return "0";
         }
-
         long value = dValue.toNanos();
         TimespanUnit result = TimespanUnit.NANOSECONDS;
         for (TimespanUnit unit : TimespanUnit.values()) {
@@ -129,6 +130,13 @@ public final class Utils {
             value /= amount;
         }
         return String.format("%d%s%s", value, separation, result.text);
+    }
+
+    public static long parseTimespanWithInfinity(String s) {
+        if (INFINITY.equals(s)) {
+            return Long.MAX_VALUE;
+        }
+        return parseTimespan(s);
     }
 
     public static long parseTimespan(String s) {
