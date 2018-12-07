@@ -117,7 +117,7 @@ inline void ParCompactionManager::mark_and_push(T* p) {
 }
 
 inline void ParCompactionManager::follow_klass(Klass* klass) {
-  oop holder = klass->klass_holder();
+  oop holder = klass->class_loader_data()->holder_no_keepalive();
   mark_and_push(&holder);
 }
 
