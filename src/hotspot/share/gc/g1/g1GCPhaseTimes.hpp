@@ -63,11 +63,13 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UpdateRS,
     ScanHCC,
     ScanRS,
+    OptScanRS,
     CodeRoots,
 #if INCLUDE_AOT
     AOTCodeRoots,
 #endif
     ObjCopy,
+    OptObjCopy,
     Termination,
     Other,
     GCWorkerTotal,
@@ -92,6 +94,13 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UpdateRSSkippedCards
   };
 
+  enum GCOptCSetWorkItems {
+      OptCSetScannedCards,
+      OptCSetClaimedCards,
+      OptCSetSkippedCards,
+      OptCSetUsedMemory
+  };
+
  private:
   // Markers for grouping the phases in the GCPhases enum above
   static const int GCMainParPhasesLast = GCWorkerEnd;
@@ -108,11 +117,17 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _scan_rs_claimed_cards;
   WorkerDataArray<size_t>* _scan_rs_skipped_cards;
 
+  WorkerDataArray<size_t>* _opt_cset_scanned_cards;
+  WorkerDataArray<size_t>* _opt_cset_claimed_cards;
+  WorkerDataArray<size_t>* _opt_cset_skipped_cards;
+  WorkerDataArray<size_t>* _opt_cset_used_memory;
+
   WorkerDataArray<size_t>* _termination_attempts;
 
   WorkerDataArray<size_t>* _redirtied_cards;
 
   double _cur_collection_par_time_ms;
+  double _cur_optional_evac_ms;
   double _cur_collection_code_root_fixup_time_ms;
   double _cur_strong_code_root_purge_time_ms;
 
@@ -184,6 +199,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double print_pre_evacuate_collection_set() const;
   double print_evacuate_collection_set() const;
+  double print_evacuate_optional_collection_set() const;
   double print_post_evacuate_collection_set() const;
   void print_other(double accounted_ms) const;
 
@@ -199,9 +215,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   // add a number of seconds to a phase
   void add_time_secs(GCParPhases phase, uint worker_i, double secs);
 
-  void record_or_add_objcopy_time_secs(uint worker_i, double secs);
+  void record_or_add_time_secs(GCParPhases phase, uint worker_i, double secs);
 
   void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
+
+  void record_or_add_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
 
   // return the average time for a phase in milliseconds
   double average_time_ms(GCParPhases phase);
@@ -232,6 +250,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_par_time(double ms) {
     _cur_collection_par_time_ms = ms;
+  }
+
+  void record_optional_evacuation(double ms) {
+    _cur_optional_evac_ms = ms;
   }
 
   void record_code_root_fixup_time(double ms) {

@@ -73,11 +73,13 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
     _gc_par_phases[ScanHCC] = NULL;
   }
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms):");
+  _gc_par_phases[OptScanRS] = new WorkerDataArray<double>(max_gc_threads, "Optional Scan RS (ms):");
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms):");
 #if INCLUDE_AOT
   _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scanning (ms):");
 #endif
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
+  _gc_par_phases[OptObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Optional Object Copy (ms):");
   _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
   _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms):");
@@ -89,6 +91,15 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_claimed_cards, ScanRSClaimedCards);
   _scan_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
   _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_skipped_cards, ScanRSSkippedCards);
+
+  _opt_cset_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
+  _gc_par_phases[OptScanRS]->link_thread_work_items(_opt_cset_scanned_cards, OptCSetScannedCards);
+  _opt_cset_claimed_cards = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Cards:");
+  _gc_par_phases[OptScanRS]->link_thread_work_items(_opt_cset_claimed_cards, OptCSetClaimedCards);
+  _opt_cset_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+  _gc_par_phases[OptScanRS]->link_thread_work_items(_opt_cset_skipped_cards, OptCSetSkippedCards);
+  _opt_cset_used_memory = new WorkerDataArray<size_t>(max_gc_threads, "Used Memory:");
+  _gc_par_phases[OptScanRS]->link_thread_work_items(_opt_cset_used_memory, OptCSetUsedMemory);
 
   _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
   _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers, UpdateRSProcessedBuffers);
@@ -120,6 +131,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
 void G1GCPhaseTimes::reset() {
   _cur_collection_par_time_ms = 0.0;
+  _cur_optional_evac_ms = 0.0;
   _cur_collection_code_root_fixup_time_ms = 0.0;
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
@@ -227,16 +239,20 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs
   _gc_par_phases[phase]->add(worker_i, secs);
 }
 
-void G1GCPhaseTimes::record_or_add_objcopy_time_secs(uint worker_i, double secs) {
-  if (_gc_par_phases[ObjCopy]->get(worker_i) == _gc_par_phases[ObjCopy]->uninitialized()) {
-    record_time_secs(ObjCopy, worker_i, secs);
+void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_i, double secs) {
+  if (_gc_par_phases[phase]->get(worker_i) == _gc_par_phases[phase]->uninitialized()) {
+    record_time_secs(phase, worker_i, secs);
   } else {
-    add_time_secs(ObjCopy, worker_i, secs);
+    add_time_secs(phase, worker_i, secs);
   }
 }
 
 void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
   _gc_par_phases[phase]->set_thread_work_item(worker_i, count, index);
+}
+
+void G1GCPhaseTimes::record_or_add_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
+  _gc_par_phases[phase]->set_or_add_thread_work_item(worker_i, count, index);
 }
 
 // return the average time for a phase in milliseconds
@@ -344,6 +360,16 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   if (_recorded_clear_claimed_marks_time_ms > 0.0) {
     debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+  }
+  return sum_ms;
+}
+
+double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
+  const double sum_ms = _cur_optional_evac_ms;
+  if (sum_ms > 0) {
+    info_time("Evacuate Optional Collection Set", sum_ms);
+    debug_phase(_gc_par_phases[OptScanRS]);
+    debug_phase(_gc_par_phases[OptObjCopy]);
   }
   return sum_ms;
 }
@@ -457,6 +483,7 @@ void G1GCPhaseTimes::print() {
   double accounted_ms = 0.0;
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_collection_set();
+  accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set();
   print_other(accounted_ms);
 
@@ -485,11 +512,13 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "UpdateRS",
       "ScanHCC",
       "ScanRS",
+      "OptScanRS",
       "CodeRoots",
 #if INCLUDE_AOT
       "AOTCodeRoots",
 #endif
       "ObjCopy",
+      "OptObjCopy",
       "Termination",
       "Other",
       "GCWorkerTotal",
@@ -561,7 +590,7 @@ G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
     _trim_tracker.stop();
     // Exclude trim time by increasing the start time.
     _start_time += _trim_time;
-    _phase_times->record_or_add_objcopy_time_secs(_worker_id, _trim_time.seconds());
+    _phase_times->record_or_add_time_secs(G1GCPhaseTimes::ObjCopy, _worker_id, _trim_time.seconds());
   }
 }
 

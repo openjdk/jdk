@@ -83,6 +83,16 @@ public:
   virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
 };
 
+// Used during Optional RS scanning to make sure we trim the queues in a timely manner.
+class G1ScanRSForOptionalClosure : public OopClosure {
+  G1ScanObjsDuringScanRSClosure* _scan_cl;
+public:
+  G1ScanRSForOptionalClosure(G1ScanObjsDuringScanRSClosure* cl) : _scan_cl(cl) { }
+
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)          { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
+};
 
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {

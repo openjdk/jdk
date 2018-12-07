@@ -35,6 +35,7 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -567,6 +568,9 @@ public:
   void register_old_region_with_cset(HeapRegion* r) {
     _in_cset_fast_test.set_in_old(r->hrm_index());
   }
+  void register_optional_region_with_cset(HeapRegion* r) {
+    _in_cset_fast_test.set_optional(r->hrm_index());
+  }
   void clear_in_cset(const HeapRegion* hr) {
     _in_cset_fast_test.clear(hr);
   }
@@ -723,6 +727,8 @@ private:
 
   // Actually do the work of evacuating the collection set.
   void evacuate_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  void evacuate_optional_regions(G1ParScanThreadStateSet* per_thread_states, G1OptionalCSet* ocset);
 
   void pre_evacuate_collection_set();
   void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
@@ -1405,6 +1411,7 @@ protected:
   G1ParScanThreadState*         _par_scan_state;
   RefToScanQueueSet*            _queues;
   ParallelTaskTerminator*       _terminator;
+  G1GCPhaseTimes::GCParPhases   _phase;
 
   G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
   RefToScanQueueSet*      queues()         { return _queues; }
@@ -1414,10 +1421,11 @@ public:
   G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
                                 G1ParScanThreadState* par_scan_state,
                                 RefToScanQueueSet* queues,
-                                ParallelTaskTerminator* terminator)
+                                ParallelTaskTerminator* terminator,
+                                G1GCPhaseTimes::GCParPhases phase)
     : _start_term(0.0), _term_time(0.0), _term_attempts(0),
       _g1h(g1h), _par_scan_state(par_scan_state),
-      _queues(queues), _terminator(terminator) {}
+      _queues(queues), _terminator(terminator), _phase(phase) {}
 
   void do_void();
 

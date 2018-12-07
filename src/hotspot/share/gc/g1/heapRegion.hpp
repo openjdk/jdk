@@ -250,6 +250,9 @@ class HeapRegion: public G1ContiguousSpace {
   // The calculated GC efficiency of the region.
   double _gc_efficiency;
 
+  // The index in the optional regions array, if this region
+  // is considered optional during a mixed collections.
+  uint _index_in_opt_cset;
   int  _young_index_in_cset;
   SurvRateGroup* _surv_rate_group;
   int  _age_index;
@@ -545,6 +548,9 @@ class HeapRegion: public G1ContiguousSpace {
 
   void calc_gc_efficiency(void);
   double gc_efficiency() { return _gc_efficiency;}
+
+  uint index_in_opt_cset() const { return _index_in_opt_cset; }
+  void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
 
   int  young_index_in_cset() const { return _young_index_in_cset; }
   void set_young_index_in_cset(int index) {

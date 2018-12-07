@@ -64,6 +64,8 @@ template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj) {
   if (state.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
+  } else if (state.is_optional()) {
+    _par_scan_state->remember_reference_into_optional_region(p);
   }
 }
 
@@ -195,6 +197,12 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_work(T* p) {
   }
 }
 
+template <class T>
+inline void G1ScanRSForOptionalClosure::do_oop_work(T* p) {
+  _scan_cl->do_oop_work(p);
+  _scan_cl->trim_queue_partially();
+}
+
 void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
   if (_g1h->heap_region_containing(new_obj)->is_young()) {
     _scanned_cld->record_modified_oops();
@@ -243,6 +251,8 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   } else {
     if (state.is_humongous()) {
       _g1h->set_humongous_is_live(obj);
+    } else if (state.is_optional()) {
+      _par_scan_state->remember_root_into_optional_region(p);
     }
 
     // The object is not in collection set. If we're a root scanning
