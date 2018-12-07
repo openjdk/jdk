@@ -289,7 +289,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 throw new MalformedURLException(msg);
             }
             final String urlPath = url.getURLPath();
-            if (!urlPath.equals("")
+            if (!urlPath.isEmpty()
                 && !urlPath.equals("/")
                 && !urlPath.startsWith("/jndi/")) {
                 final String msg = "URL path must be empty or start with " +
@@ -746,7 +746,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
             port = 0;
         } else {
             protocol = address.getProtocol();
-            host = (address.getHost().equals("")) ? null : address.getHost();
+            host = (address.getHost().isEmpty()) ? null : address.getHost();
             port = address.getPort();
         }
 

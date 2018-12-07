@@ -665,7 +665,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
         }
 
         public void focusLost(FocusEvent e) {
-            if (promptRemoved && getText().equals("")) {
+            if (promptRemoved && getText().isEmpty()) {
                 setText(prompt);
                 setForeground(Color.gray);
                 promptRemoved = false;

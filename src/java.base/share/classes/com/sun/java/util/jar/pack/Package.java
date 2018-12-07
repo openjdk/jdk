@@ -685,7 +685,7 @@ class Package {
                 return;  // do not choose yet
             }
             String canonName = canonicalFileName();
-            if (file.nameString.equals("")) {
+            if (file.nameString.isEmpty()) {
                 file.nameString = canonName;
             }
             if (file.nameString.equals(canonName)) {
@@ -706,7 +706,7 @@ class Package {
 
         public java.io.File getFileName(java.io.File parent) {
             String name = file.name.stringValue();
-            if (name.equals(""))
+            if (name.isEmpty())
                 name = canonicalFileName();
             String fname = name.replace('/', java.io.File.separatorChar);
             return new java.io.File(parent, fname);
@@ -779,7 +779,7 @@ class Package {
         }
         public boolean isTrivialClassStub() {
             return isClassStub()
-                && name.stringValue().equals("")
+                && name.stringValue().isEmpty()
                 && (modtime == NO_MODTIME || modtime == default_modtime)
                 && (options &~ FO_IS_CLASS_STUB) == 0;
         }

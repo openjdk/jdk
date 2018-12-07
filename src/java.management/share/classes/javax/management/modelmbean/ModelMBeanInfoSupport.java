@@ -367,7 +367,7 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
             MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
-        if ((inDescriptorType == null) || (inDescriptorType.equals(""))) {
+        if ((inDescriptorType == null) || (inDescriptorType.isEmpty())) {
             inDescriptorType = "all";
         }
 
@@ -600,7 +600,7 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
             inDescriptor = new DescriptorSupport();
         }
 
-        if ((inDescriptorType == null) || (inDescriptorType.equals(""))) {
+        if ((inDescriptorType == null) || (inDescriptorType.isEmpty())) {
             inDescriptorType =
                     (String) inDescriptor.getFieldValue("descriptorType");
 

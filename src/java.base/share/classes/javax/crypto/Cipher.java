@@ -531,7 +531,7 @@ public class Cipher {
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
-        if ((transformation == null) || transformation.equals("")) {
+        if ((transformation == null) || transformation.isEmpty()) {
             throw new NoSuchAlgorithmException("Null or empty transformation");
         }
         List<Transform> transforms = getTransforms(transformation);
@@ -631,7 +631,7 @@ public class Cipher {
             throws NoSuchAlgorithmException, NoSuchProviderException,
             NoSuchPaddingException
     {
-        if ((transformation == null) || transformation.equals("")) {
+        if ((transformation == null) || transformation.isEmpty()) {
             throw new NoSuchAlgorithmException("Null or empty transformation");
         }
         if ((provider == null) || (provider.length() == 0)) {
@@ -698,7 +698,7 @@ public class Cipher {
                                            Provider provider)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
-        if ((transformation == null) || transformation.equals("")) {
+        if ((transformation == null) || transformation.isEmpty()) {
             throw new NoSuchAlgorithmException("Null or empty transformation");
         }
         if (provider == null) {

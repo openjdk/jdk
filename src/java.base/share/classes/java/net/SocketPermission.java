@@ -305,7 +305,7 @@ public final class SocketPermission extends Permission
     }
 
     private static String getHost(String host) {
-        if (host.equals("")) {
+        if (host.isEmpty()) {
             return "localhost";
         } else {
             /* IPv6 literal address used in this context should follow
@@ -344,7 +344,7 @@ public final class SocketPermission extends Permission
         throws Exception
     {
 
-        if (port == null || port.equals("") || port.equals("*")) {
+        if (port == null || port.isEmpty() || port.equals("*")) {
             return new int[] {PORT_MIN, PORT_MAX};
         }
 
@@ -358,13 +358,13 @@ public final class SocketPermission extends Permission
             String high = port.substring(dash+1);
             int l,h;
 
-            if (low.equals("")) {
+            if (low.isEmpty()) {
                 l = PORT_MIN;
             } else {
                 l = Integer.parseInt(low);
             }
 
-            if (high.equals("")) {
+            if (high.isEmpty()) {
                 h = PORT_MAX;
             } else {
                 h = Integer.parseInt(high);
@@ -496,7 +496,7 @@ public final class SocketPermission extends Permission
             throw new NullPointerException("action can't be null");
         }
 
-        if (action.equals("")) {
+        if (action.isEmpty()) {
             throw new IllegalArgumentException("action can't be empty");
         }
 

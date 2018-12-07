@@ -89,7 +89,7 @@ public class DnsUrl extends Uri {
         domain = path.startsWith("/")
             ? path.substring(1)
             : path;
-        domain = domain.equals("")
+        domain = domain.isEmpty()
             ? "."
             : UrlUtil.decode(domain);
 

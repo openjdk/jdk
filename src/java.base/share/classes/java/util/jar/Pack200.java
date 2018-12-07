@@ -704,7 +704,7 @@ public abstract class Pack200 {
             if (impl == null) {
                 // The first time, we must decide which class to use.
                 implName = GetPropertyAction.privilegedGetProperty(prop,"");
-                if (implName != null && !implName.equals(""))
+                if (implName != null && !implName.isEmpty())
                     impl = Class.forName(implName);
                 else if (PACK_PROVIDER.equals(prop))
                     impl = com.sun.java.util.jar.pack.PackerImpl.class;

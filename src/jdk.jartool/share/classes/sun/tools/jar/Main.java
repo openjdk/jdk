@@ -1180,7 +1180,7 @@ public class Main {
         String name = entry.name;
         boolean isDir = entry.isDir;
 
-        if (name.equals("") || name.equals(".") || name.equals(zname)) {
+        if (name.isEmpty() || name.equals(".") || name.equals(zname)) {
             return;
         } else if ((name.equals(MANIFEST_DIR) || name.equals(MANIFEST_NAME))
                    && !Mflag) {
@@ -1886,7 +1886,7 @@ public class Main {
                 .map(ModuleInfoEntry::name)
                 .map(Main::versionFromEntryName)
                 .collect(joining(" "));
-        if (!releases.equals(""))
+        if (!releases.isEmpty())
             output("releases: " + releases + "\n");
 
         // Describe the operative descriptor for the specified --release, if any
@@ -1955,7 +1955,7 @@ public class Main {
 
         sb.append(md.toNameAndVersion());
 
-        if (!uriString.equals(""))
+        if (!uriString.isEmpty())
             sb.append(" ").append(uriString);
         if (md.isOpen())
             sb.append(" open");

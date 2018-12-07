@@ -624,7 +624,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
                     (getDataSourceName());
                 //return ds.getConnection(getUsername(),getPassword());
 
-                if(getUsername() != null && !getUsername().equals("")) {
+                if(getUsername() != null && !getUsername().isEmpty()) {
                      return ds.getConnection(getUsername(),getPassword());
                 } else {
                      return ds.getConnection();
@@ -3873,7 +3873,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     public void setMatchColumn(String[] columnNames) throws SQLException {
 
         for(int j = 0; j < columnNames.length; j++) {
-           if( columnNames[j] == null || columnNames[j].equals("")) {
+           if( columnNames[j] == null || columnNames[j].isEmpty()) {
               throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.matchcols2").toString());
            }
         }
@@ -3928,7 +3928,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      */
     public void setMatchColumn(String columnName) throws SQLException {
         // validate, if col is ok to be set
-        if(columnName == null || (columnName= columnName.trim()).equals("")) {
+        if(columnName == null || (columnName= columnName.trim()).isEmpty()) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.matchcols2").toString());
         } else {
             // set strMatchColumn

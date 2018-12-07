@@ -646,7 +646,7 @@ class PackageWriter extends BandStructure {
             return;  // nothing to write
 
         // The first element must always be the empty string.
-        assert(cpMap[0].stringValue().equals(""));
+        assert(cpMap[0].stringValue().isEmpty());
         final int SUFFIX_SKIP_1 = 1;
         final int PREFIX_SKIP_2 = 2;
 

@@ -628,8 +628,8 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
             }
 
             if (!fIsRepairingNamespace) {
-                if (prefix == null || prefix.equals("")){
-                    if (!namespaceURI.equals("")) {
+                if (prefix == null || prefix.isEmpty()){
+                    if (!namespaceURI.isEmpty()) {
                         throw new XMLStreamException("prefix cannot be null or empty");
                     } else {
                         writeAttributeWithPrefix(null, localName, value);
@@ -908,7 +908,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
                 } else {
                     fWriter.write(OPEN_END_TAG);
 
-                    if ((elem.prefix != null) && !(elem.prefix).equals("")) {
+                    if ((elem.prefix != null) && !(elem.prefix).isEmpty()) {
                         fWriter.write(elem.prefix);
                         fWriter.write(":");
                     }
@@ -945,7 +945,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
             fWriter.write(OPEN_END_TAG);
 
             if ((currentElement.prefix != null) &&
-                    !(currentElement.prefix).equals("")) {
+                    !(currentElement.prefix).isEmpty()) {
                 fWriter.write(currentElement.prefix);
                 fWriter.write(":");
             }
@@ -1180,19 +1180,19 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
             }
 
             // Verify the encoding before writing anything
-            if (encoding != null && !encoding.equals("")) {
+            if (encoding != null && !encoding.isEmpty()) {
                 verifyEncoding(encoding);
             }
 
             fWriter.write("<?xml version=\"");
 
-            if ((version == null) || version.equals("")) {
+            if ((version == null) || version.isEmpty()) {
                 fWriter.write(DEFAULT_XML_VERSION);
             } else {
                 fWriter.write(version);
             }
 
-            if (encoding != null && !encoding.equals("")) {
+            if (encoding != null && !encoding.isEmpty()) {
                 fWriter.write("\" encoding=\"");
                 fWriter.write(encoding);
             }
@@ -1584,7 +1584,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
                     attr = fAttributeCache.get(j);
 
                     if ((attr.prefix != null) && (attr.uri != null)) {
-                        if (!attr.prefix.equals("") && !attr.uri.equals("") ) {
+                        if (!attr.prefix.isEmpty() && !attr.uri.isEmpty() ) {
                             String tmp = fInternalNamespaceContext.getPrefix(attr.uri);
 
                             if ((tmp == null) || (!tmp.equals(attr.prefix))) {
@@ -1765,7 +1765,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
 
         for(int i=0 ; i< fAttributeCache.size();i++){
             attr = fAttributeCache.get(i);
-            if((attr.prefix != null && !attr.prefix.equals("")) || (attr.uri != null && !attr.uri.equals(""))) {
+            if((attr.prefix != null && !attr.prefix.isEmpty()) || (attr.uri != null && !attr.uri.isEmpty())) {
                 correctPrefix(currentElement,attr);
             }
         }
@@ -1773,7 +1773,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
         if (!isDeclared(currentElement)) {
             if ((currentElement.prefix != null) &&
                     (currentElement.uri != null)) {
-                if ((!currentElement.prefix.equals("")) && (!currentElement.uri.equals(""))) {
+                if ((!currentElement.prefix.isEmpty()) && (!currentElement.uri.isEmpty())) {
                     fNamespaceDecls.add(currentElement);
                 }
             }
@@ -1798,7 +1798,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
             /* If 'attr' is an attribute and it is in no namespace(which means that prefix="", uri=""), attr's
                namespace should not be redinded. See [http://www.w3.org/TR/REC-xml-names/#defaulting].
              */
-            if (attr.prefix != null && attr.prefix.equals("") && attr.uri != null && attr.uri.equals("")){
+            if (attr.prefix != null && attr.prefix.isEmpty() && attr.uri != null && attr.uri.isEmpty()){
                 repairNamespaceDecl(attr);
             }
         }

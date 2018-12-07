@@ -138,7 +138,7 @@ public class ContextEnumerator implements NamingEnumeration<Binding> {
         // if the name is relative, we need to add it to the name of this
         // context to keep it relative w.r.t. the root context we are
         // enumerating
-        if(oldBinding.isRelative() && !contextName.equals("")) {
+        if(oldBinding.isRelative() && !contextName.isEmpty()) {
             NameParser parser = root.getNameParser("");
             Name newName = parser.parse(contextName);
             newName.add(oldBinding.getName());

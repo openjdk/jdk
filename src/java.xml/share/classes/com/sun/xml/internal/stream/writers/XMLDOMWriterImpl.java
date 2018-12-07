@@ -219,7 +219,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
             }
 
             String qualifiedName = null;
-            if(prefix.equals("")){
+            if(prefix.isEmpty()){
                 qualifiedName = localName;
             }else{
                 qualifiedName = getQName(prefix,localName);
@@ -254,7 +254,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
                 throw new XMLStreamException("prefix cannot be null");
             }
             String qualifiedName = null;
-            if(prefix.equals("")){
+            if(prefix.isEmpty()){
                 qualifiedName = localName;
             }else{
 
@@ -502,7 +502,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
 
         String qname = null;
 
-        if (prefix.equals("")) {
+        if (prefix.isEmpty()) {
             qname = XMLConstants.XMLNS_ATTRIBUTE;
         } else {
             qname = getQName(XMLConstants.XMLNS_ATTRIBUTE,prefix);
@@ -669,7 +669,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
                 throw new XMLStreamException("Prefix cannot be null");
             }
 
-            if(prefix.equals("")){
+            if(prefix.isEmpty()){
                 qname = localName;
             }else{
                 qname = getQName(prefix,localName);

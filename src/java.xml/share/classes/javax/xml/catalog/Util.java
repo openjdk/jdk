@@ -221,7 +221,7 @@ class Util {
      */
     static String[] getCatalogFiles(String sysPropertyName) {
         String value = SecuritySupport.getJAXPSystemProperty(sysPropertyName);
-        if (value != null && !value.equals("")) {
+        if (value != null && !value.isEmpty()) {
             return value.split(";");
         }
         return null;

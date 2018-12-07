@@ -383,13 +383,13 @@ public class JdkXmlFeatures {
     private boolean getSystemProperty(XmlFeature feature, String sysPropertyName) {
         try {
             String value = SecuritySupport.getSystemProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 setFeature(feature, State.SYSTEMPROPERTY, Boolean.parseBoolean(value));
                 return true;
             }
 
             value = SecuritySupport.readJAXPProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 setFeature(feature, State.JAXPDOTPROPERTIES, Boolean.parseBoolean(value));
                 return true;
             }

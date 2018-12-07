@@ -230,7 +230,7 @@ class ClassPath {
             int i = name.lastIndexOf(File.separatorChar);
             subdir = name.substring(0, i + 1);
             basename = name.substring(i + 1);
-        } else if (!subdir.equals("")
+        } else if (!subdir.isEmpty()
                    && !subdir.endsWith(fileSeparatorChar)) {
             // zip files are picky about "foo" vs. "foo/".
             // also, the getFiles caches are keyed with a trailing /

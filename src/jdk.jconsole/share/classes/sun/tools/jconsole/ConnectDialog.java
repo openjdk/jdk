@@ -313,9 +313,9 @@ public class ConnectDialog extends InternalDialog
                 if (remoteRadioButton.isSelected()) {
                     String txt = remoteTF.getText().trim();
                     String userName = userNameTF.getText().trim();
-                    userName = userName.equals("") ? null : userName;
+                    userName = userName.isEmpty() ? null : userName;
                     String password = passwordTF.getText();
-                    password = password.equals("") ? null : password;
+                    password = password.isEmpty() ? null : password;
                     try {
                         if (txt.startsWith(JConsole.ROOT_URL)) {
                             String url = txt;

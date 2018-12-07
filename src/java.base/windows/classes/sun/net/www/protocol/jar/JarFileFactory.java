@@ -76,7 +76,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();
-            if (host != null && !host.equals("") &&
+            if (host != null && !host.isEmpty() &&
                 !host.equalsIgnoreCase("localhost")) {
 
                 url = new URL("file", "", "//" + host + url.getPath());

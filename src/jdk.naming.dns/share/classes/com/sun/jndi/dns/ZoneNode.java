@@ -124,7 +124,7 @@ class ZoneNode extends NameNode {
      * name and its resource records.  Returns the zone's new contents.
      */
     NameNode populate(DnsName zone, ResourceRecords rrs) {
-        // assert zone.get(0).equals("");               // zone has root label
+        // assert zone.get(0).isEmpty();               // zone has root label
         // assert (zone.size() == (depth() + 1));       // +1 due to root label
 
         NameNode newContents = new NameNode(null);

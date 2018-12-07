@@ -241,7 +241,7 @@ class HostPortrange {
     int[] parsePort(String port)
     {
 
-        if (port == null || port.equals("")) {
+        if (port == null || port.isEmpty()) {
             return defaultPort();
         }
 
@@ -260,13 +260,13 @@ class HostPortrange {
                 String high = port.substring(dash+1);
                 int l,h;
 
-                if (low.equals("")) {
+                if (low.isEmpty()) {
                     l = PORT_MIN;
                 } else {
                     l = Integer.parseInt(low);
                 }
 
-                if (high.equals("")) {
+                if (high.isEmpty()) {
                     h = PORT_MAX;
                 } else {
                     h = Integer.parseInt(high);

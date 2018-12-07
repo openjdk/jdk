@@ -84,7 +84,7 @@ class ResponseContent {
         if (contentLength == -1) {
             String tc = headers.firstValue("Transfer-Encoding")
                                .orElse("");
-            if (!tc.equals("")) {
+            if (!tc.isEmpty()) {
                 if (tc.equalsIgnoreCase("chunked")) {
                     chunkedContent = true;
                 } else {

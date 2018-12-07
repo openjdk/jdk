@@ -852,7 +852,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
 
         if (name == null) {
             dataSource = null;
-        } else if (name.equals("")) {
+        } else if (name.isEmpty()) {
            throw new SQLException("DataSource name cannot be empty string");
         } else {
            dataSource = name;

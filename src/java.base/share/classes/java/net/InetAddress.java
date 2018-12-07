@@ -1009,7 +1009,7 @@ class InetAddress implements java.io.Serializable {
                         + " not found ");
             }
 
-            if ((host == null) || (host.equals("")) || (host.equals(" "))) {
+            if ((host == null) || (host.isEmpty()) || (host.equals(" "))) {
                 throw new UnknownHostException("Requested address "
                         + addrString
                         + " resolves to an invalid entry in hosts file "
@@ -1046,7 +1046,7 @@ class InetAddress implements java.io.Serializable {
                         hostEntry = removeComments(hostEntry);
                         if (hostEntry.contains(host)) {
                             addrStr = extractHostAddr(hostEntry, host);
-                            if ((addrStr != null) && (!addrStr.equals(""))) {
+                            if ((addrStr != null) && (!addrStr.isEmpty())) {
                                 addr = createAddressByteArray(addrStr);
                                 if (inetAddresses == null) {
                                     inetAddresses = new ArrayList<>(1);

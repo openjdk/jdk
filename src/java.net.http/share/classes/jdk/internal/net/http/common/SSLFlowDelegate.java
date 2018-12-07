@@ -97,7 +97,7 @@ public class SSLFlowDelegate {
     private static final ByteBuffer NOTHING = ByteBuffer.allocate(0);
     private static final String monProp = Utils.getProperty("jdk.internal.httpclient.monitorFlowDelegate");
     private static final boolean isMonitored =
-            monProp != null && (monProp.equals("") || monProp.equalsIgnoreCase("true"));
+            monProp != null && (monProp.isEmpty() || monProp.equalsIgnoreCase("true"));
 
     final Executor exec;
     final Reader reader;

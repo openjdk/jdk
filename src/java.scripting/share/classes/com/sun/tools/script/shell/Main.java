@@ -114,7 +114,7 @@ public class Main {
                     System.setProperty(value.substring(0, eq),
                             value.substring(eq + 1));
                 } else {
-                    if (!value.equals("")) {
+                    if (!value.isEmpty()) {
                         System.setProperty(value, "");
                     } else {
                         // do not allow empty property name

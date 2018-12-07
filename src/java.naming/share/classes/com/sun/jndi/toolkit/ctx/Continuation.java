@@ -203,7 +203,7 @@ public class Continuation extends ResolveResult {
     public void setErrorNNS(Object resObj, String remain) {
         CompositeName rname = new CompositeName();
         try {
-            if (remain != null && !remain.equals(""))
+            if (remain != null && !remain.isEmpty())
                 rname.add(remain);
 
             rname.add("");
@@ -247,7 +247,7 @@ public class Continuation extends ResolveResult {
      */
     public void setError(Object resObj, String remain) {
         CompositeName rname = new CompositeName();
-        if (remain != null && !remain.equals("")) {
+        if (remain != null && !remain.isEmpty()) {
             try {
                 rname.add(remain);
             } catch (InvalidNameException e) {
@@ -375,14 +375,14 @@ public class Continuation extends ResolveResult {
     public void setContinue(Object obj, String relResName,
         Context currCtx, String remain) {
         CompositeName relname = new CompositeName();
-        if (!relResName.equals("")) {
+        if (!relResName.isEmpty()) {
             try {
                 relname.add(relResName);
             } catch (NamingException e){}
         }
 
         CompositeName rname = new CompositeName();
-        if (!remain.equals("")) {
+        if (!remain.isEmpty()) {
             try {
                 rname.add(remain);
             } catch (NamingException e) {

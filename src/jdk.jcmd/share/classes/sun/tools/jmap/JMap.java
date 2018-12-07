@@ -149,7 +149,7 @@ public class JMap {
         throws AttachNotSupportedException, IOException,
                UnsupportedEncodingException {
         String liveopt = "-all";
-        if (options.equals("") || options.equals("all")) {
+        if (options.isEmpty() || options.equals("all")) {
             //  pass
         }
         else if (options.equals("live")) {

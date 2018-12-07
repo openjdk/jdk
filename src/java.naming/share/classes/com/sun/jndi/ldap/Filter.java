@@ -53,7 +53,7 @@ final class Filter {
     static void encodeFilterString(BerEncoder ber, String filterStr,
         boolean isLdapv3) throws IOException, NamingException {
 
-        if ((filterStr == null) || (filterStr.equals(""))) {
+        if ((filterStr == null) || (filterStr.isEmpty())) {
             throw new InvalidSearchFilterException("Empty filter");
         }
         byte[] filter;

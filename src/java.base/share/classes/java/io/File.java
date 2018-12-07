@@ -257,7 +257,7 @@ public class File
      */
     private File(String child, File parent) {
         assert parent.path != null;
-        assert (!parent.path.equals(""));
+        assert (!parent.path.isEmpty());
         this.path = fs.resolve(parent.path, child);
         this.prefixLength = parent.prefixLength;
     }
@@ -316,7 +316,7 @@ public class File
             throw new NullPointerException();
         }
         if (parent != null) {
-            if (parent.equals("")) {
+            if (parent.isEmpty()) {
                 this.path = fs.resolve(fs.getDefaultParent(),
                                        fs.normalize(child));
             } else {
@@ -359,7 +359,7 @@ public class File
             throw new NullPointerException();
         }
         if (parent != null) {
-            if (parent.path.equals("")) {
+            if (parent.path.isEmpty()) {
                 this.path = fs.resolve(fs.getDefaultParent(),
                                        fs.normalize(child));
             } else {
@@ -426,7 +426,7 @@ public class File
         if (uri.getRawQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
         String p = uri.getPath();
-        if (p.equals(""))
+        if (p.isEmpty())
             throw new IllegalArgumentException("URI path component is empty");
 
         // Okay, now initialize

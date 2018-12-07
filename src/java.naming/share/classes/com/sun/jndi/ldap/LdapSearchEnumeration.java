@@ -97,13 +97,13 @@ final class LdapSearchEnumeration
 
         // Name relative to search context
         CompositeName cn = new CompositeName();
-        if (!relStart.equals("")) {
+        if (!relStart.isEmpty()) {
             cn.add(relStart);
         }
 
         // Name relative to homeCtx
         CompositeName rcn = new CompositeName();
-        if (!relHome.equals("")) {
+        if (!relHome.isEmpty()) {
             rcn.add(relHome);
         }
         //System.err.println("relStart: " + cn);

@@ -200,7 +200,7 @@ public class ResourceRecord {
     }
 
     private static int nameToValue(String name, String[] names) {
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             return -1;                          // invalid name
         } else if (name.equals("*")) {
             return QTYPE_STAR;                  // QTYPE_STAR == QCLASS_STAR

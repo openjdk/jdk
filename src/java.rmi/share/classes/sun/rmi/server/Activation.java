@@ -1857,7 +1857,7 @@ public class Activation implements Serializable {
                         checkPermission(perms,
                             new ExecOptionPermission(option));
                     } catch (AccessControlException e) {
-                        if (value.equals("")) {
+                        if (value.isEmpty()) {
                             checkPermission(perms,
                                 new ExecOptionPermission("-D" + name));
                         } else {
@@ -2101,7 +2101,7 @@ public class Activation implements Serializable {
              * Initialize method for activation exec policy.
              */
             if (!execPolicyClassName.equals("none")) {
-                if (execPolicyClassName.equals("") ||
+                if (execPolicyClassName.isEmpty() ||
                     execPolicyClassName.equals("default"))
                 {
                     execPolicyClassName = DefaultExecPolicy.class.getName();

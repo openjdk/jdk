@@ -115,7 +115,7 @@ class Package {
     }
 
     private String makeName(String fileName) {
-        return pkg.equals("") ? fileName : pkg + File.separator + fileName;
+        return pkg.isEmpty() ? fileName : pkg + File.separator + fileName;
     }
 
     /**
@@ -153,7 +153,7 @@ class Package {
     }
 
     public String toString() {
-        if (pkg.equals("")) {
+        if (pkg.isEmpty()) {
             return "unnamed package";
         }
         return "package " + pkg;

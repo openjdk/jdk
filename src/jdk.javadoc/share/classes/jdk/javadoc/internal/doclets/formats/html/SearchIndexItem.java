@@ -114,18 +114,18 @@ public class SearchIndexItem {
                 item.append("\"m\":\"").append(containingModule).append("\",");
             }
             item.append("\"l\":\"").append(label).append("\"");
-            if (!url.equals("")) {
+            if (!url.isEmpty()) {
                 item.append(",\"url\":\"").append(url).append("\"");
             }
             item.append("}");
             break;
         case TYPES:
             item.append("{");
-            if (!containingPackage.equals("")) {
+            if (!containingPackage.isEmpty()) {
                 item.append("\"p\":\"").append(containingPackage).append("\",");
             }
             item.append("\"l\":\"").append(label).append("\"");
-            if (!url.equals("")) {
+            if (!url.isEmpty()) {
                 item.append(",\"url\":\"").append(url).append("\"");
             }
             item.append("}");
@@ -135,7 +135,7 @@ public class SearchIndexItem {
                     .append("\"p\":\"").append(containingPackage).append("\",")
                     .append("\"c\":\"").append(containingClass).append("\",")
                     .append("\"l\":\"").append(label).append("\"");
-            if (!url.equals("")) {
+            if (!url.isEmpty()) {
                 item.append(",\"url\":\"").append(url).append("\"");
             }
             item.append("}");
@@ -144,7 +144,7 @@ public class SearchIndexItem {
             item.append("{")
                     .append("\"l\":\"").append(label).append("\",")
                     .append("\"h\":\"").append(holder).append("\",");
-            if (!description.equals("")) {
+            if (!description.isEmpty()) {
                 item.append("\"d\":\"").append(description).append("\",");
             }
             item.append("\"u\":\"").append(url).append("\"")

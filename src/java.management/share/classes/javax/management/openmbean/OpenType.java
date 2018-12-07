@@ -268,7 +268,7 @@ public abstract class OpenType<T> implements Serializable {
     /* Return argValue.trim() provided argValue is neither null nor empty;
        otherwise throw IllegalArgumentException.  */
     private static String valid(String argName, String argValue) {
-        if (argValue == null || (argValue = argValue.trim()).equals(""))
+        if (argValue == null || (argValue = argValue.trim()).isEmpty())
             throw new IllegalArgumentException("Argument " + argName +
                                                " cannot be null or empty");
         return argValue;

@@ -265,7 +265,7 @@ public class Agent {
     // return empty property set
     private static Properties parseString(String args) {
         Properties argProps = new Properties();
-        if (args != null && !args.trim().equals("")) {
+        if (args != null && !args.trim().isEmpty()) {
             for (String option : args.split(",")) {
                 String s[] = option.split("=", 2);
                 String name = s[0].trim();

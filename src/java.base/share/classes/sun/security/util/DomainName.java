@@ -363,7 +363,7 @@ class DomainName {
             }
 
             private static int numLabels(String rule) {
-                if (rule.equals("")) {
+                if (rule.isEmpty()) {
                     return 0;
                 }
                 int len = rule.length();

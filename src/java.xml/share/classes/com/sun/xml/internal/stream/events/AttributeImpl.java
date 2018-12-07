@@ -85,7 +85,7 @@ public class AttributeImpl extends DummyEvent implements Attribute
         init();
         fQName = qname ;
         fValue = value ;
-        if(type != null && !type.equals(""))
+        if(type != null && !type.isEmpty())
             fAttributeType = type;
 
         fNonNormalizedvalue = nonNormalizedvalue;

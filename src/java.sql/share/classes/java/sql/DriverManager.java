@@ -622,7 +622,7 @@ public class DriverManager {
 
             println("DriverManager.initialize: jdbc.drivers = " + drivers);
 
-            if (drivers != null && !drivers.equals("")) {
+            if (drivers != null && !drivers.isEmpty()) {
                 String[] driversList = drivers.split(":");
                 println("number of Drivers:" + driversList.length);
                 for (String aDriver : driversList) {

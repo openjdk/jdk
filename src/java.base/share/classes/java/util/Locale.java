@@ -2226,10 +2226,10 @@ public final class Locale implements Cloneable, Serializable {
             default:
                 return Arrays.stream(stringList).reduce("",
                     (s1, s2) -> {
-                        if (s1.equals("")) {
+                        if (s1.isEmpty()) {
                             return s2;
                         }
-                        if (s2.equals("")) {
+                        if (s2.isEmpty()) {
                             return s1;
                         }
                         return MessageFormat.format(pattern, s1, s2);
@@ -3069,7 +3069,7 @@ public final class Locale implements Cloneable, Serializable {
 
         private static boolean isSubtagIllFormed(String subtag,
                                                  boolean isFirstSubtag) {
-            if (subtag.equals("") || subtag.length() > 8) {
+            if (subtag.isEmpty() || subtag.length() > 8) {
                 return true;
             } else if (subtag.equals("*")) {
                 return false;

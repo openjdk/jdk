@@ -199,7 +199,7 @@ public final class Naming {
         Registry registry = getRegistry(parsed);
 
         String prefix = "";
-        if (parsed.port > 0 || !parsed.host.equals(""))
+        if (parsed.port > 0 || !parsed.host.isEmpty())
             prefix += "//" + parsed.host;
         if (parsed.port > 0)
             prefix += ":" + parsed.port;
