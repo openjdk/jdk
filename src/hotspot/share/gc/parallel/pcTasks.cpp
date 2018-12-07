@@ -158,14 +158,15 @@ void RefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
          "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
          ergo_workers, active_gc_threads);
   OopTaskQueueSet* qset = ParCompactionManager::stack_array();
-  ParallelTaskTerminator terminator(active_gc_threads, qset);
+  TaskTerminator terminator(active_gc_threads, qset);
+
   GCTaskQueue* q = GCTaskQueue::create();
   for(uint i=0; i<active_gc_threads; i++) {
     q->enqueue(new RefProcTaskProxy(task, i));
   }
   if (task.marks_oops_alive() && (active_gc_threads>1)) {
     for (uint j=0; j<active_gc_threads; j++) {
-      q->enqueue(new StealMarkingTask(&terminator));
+      q->enqueue(new StealMarkingTask(terminator.terminator()));
     }
   }
   PSParallelCompact::gc_task_manager()->execute_and_wait(q);

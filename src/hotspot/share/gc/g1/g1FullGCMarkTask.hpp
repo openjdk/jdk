@@ -36,7 +36,7 @@
 
 class G1FullGCMarkTask : public G1FullGCTask {
   G1RootProcessor          _root_processor;
-  ParallelTaskTerminator   _terminator;
+  TaskTerminator           _terminator;
 
 public:
   G1FullGCMarkTask(G1FullCollector* collector);

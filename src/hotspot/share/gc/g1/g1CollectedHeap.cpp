@@ -3215,7 +3215,7 @@ protected:
   G1ParScanThreadStateSet* _pss;
   RefToScanQueueSet*       _queues;
   G1RootProcessor*         _root_processor;
-  ParallelTaskTerminator   _terminator;
+  TaskTerminator           _terminator;
   uint                     _n_workers;
 
 public:
@@ -3260,7 +3260,7 @@ public:
       size_t evac_term_attempts = 0;
       {
         double start = os::elapsedTime();
-        G1ParEvacuateFollowersClosure evac(_g1h, pss, _queues, &_terminator, G1GCPhaseTimes::ObjCopy);
+        G1ParEvacuateFollowersClosure evac(_g1h, pss, _queues, _terminator.terminator(), G1GCPhaseTimes::ObjCopy);
         evac.do_void();
 
         evac_term_attempts = evac.term_attempts();
@@ -3572,8 +3572,8 @@ void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers
   assert(_workers->active_workers() >= ergo_workers,
          "Ergonomically chosen workers (%u) should be less than or equal to active workers (%u)",
          ergo_workers, _workers->active_workers());
-  ParallelTaskTerminator terminator(ergo_workers, _queues);
-  G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
+  TaskTerminator terminator(ergo_workers, _queues);
+  G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, terminator.terminator());
 
   _workers->run_task(&proc_task_proxy, ergo_workers);
 }

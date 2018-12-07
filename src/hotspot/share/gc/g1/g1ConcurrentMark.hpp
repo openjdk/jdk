@@ -325,8 +325,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint                    _num_active_tasks; // Number of tasks currently active
   G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
 
-  G1CMTaskQueueSet*       _task_queues;      // Task queue set
-  ParallelTaskTerminator  _terminator;       // For termination
+  G1CMTaskQueueSet*       _task_queues; // Task queue set
+  TaskTerminator          _terminator;  // For termination
 
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
@@ -412,10 +412,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Prints all gathered CM-related statistics
   void print_stats();
 
-  HeapWord*               finger()          { return _finger;   }
-  bool                    concurrent()      { return _concurrent; }
-  uint                    active_tasks()    { return _num_active_tasks; }
-  ParallelTaskTerminator* terminator()      { return &_terminator; }
+  HeapWord*               finger()           { return _finger;   }
+  bool                    concurrent()       { return _concurrent; }
+  uint                    active_tasks()     { return _num_active_tasks; }
+  ParallelTaskTerminator* terminator() const { return _terminator.terminator(); }
 
   // Claims the next available region to be scanned by a marking
   // task/thread. It might return NULL if the next region is empty or

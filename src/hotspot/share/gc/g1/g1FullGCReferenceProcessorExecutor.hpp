@@ -32,6 +32,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "utilities/ticks.hpp"
 
 class G1FullGCTracer;
@@ -58,9 +59,9 @@ private:
 
   class G1RefProcTaskProxy : public AbstractGangTask {
     typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-    ProcessTask&             _proc_task;
-    G1FullCollector*         _collector;
-    ParallelTaskTerminator   _terminator;
+    ProcessTask&                  _proc_task;
+    G1FullCollector*              _collector;
+    TaskTerminator                _terminator;
 
   public:
     G1RefProcTaskProxy(ProcessTask& proc_task,
