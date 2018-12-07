@@ -1224,13 +1224,14 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
   assert((int)strlen(class_name) == class_name_len, "invariant");
 
   static const char class_suffix[] = ".class";
+  size_t class_suffix_len = sizeof(class_suffix);
 
   char* const file_name = NEW_RESOURCE_ARRAY(char,
                                              class_name_len +
-                                             sizeof(class_suffix)); // includes term NULL
+                                             class_suffix_len); // includes term NULL
 
   strncpy(file_name, class_name, class_name_len);
-  strncpy(&file_name[class_name_len], class_suffix, sizeof(class_suffix));
+  strncpy(&file_name[class_name_len], class_suffix, class_suffix_len);
 
   return file_name;
 }
