@@ -30,7 +30,6 @@
 
 class frame;
 class JavaThread;
-class JfrCheckpointSystem;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
 class Method;
@@ -55,7 +54,7 @@ class JfrStackFrame {
   JfrStackFrame(const traceid& id, int bci, int type, const Method* method) :
     _method(method), _methodid(id), _line(0), _bci(bci), _type(type) {}
   JfrStackFrame(const traceid& id, int bci, int type, int lineno) :
-    _method(NULL), _methodid(id), _line(0), _bci(bci), _type(type) {}
+    _method(NULL), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
   bool equals(const JfrStackFrame& rhs) const;
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
