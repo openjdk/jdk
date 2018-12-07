@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ public class WaitNotifyThreadTest {
     private Object monitor = new Object();
     private final String OBJECT = "a java.lang.Object";
     private final String OBJECT_WAIT = "java.lang.Object.wait";
+    private final String RUN_METHOD = "WaitNotifyThreadTest$WaitThread.run";
 
     interface Action {
-
         void doAction(Thread thread);
     }
 
@@ -51,10 +51,12 @@ public class WaitNotifyThreadTest {
 
         @Override
         public void doAction(Thread thread) {
-            //Notify the waiting thread, so it stops waiting and sleeps
+            // Notify the waiting thread, so it stops waiting and sleeps
             synchronized (monitor) {
                 monitor.notifyAll();
             }
+            // Wait until MyWaitingThread exits the monitor and sleeps
+            while (thread.getState() != Thread.State.TIMED_WAITING) {}
         }
     }
 
@@ -64,6 +66,8 @@ public class WaitNotifyThreadTest {
         public void doAction(Thread thread) {
             // Interrupt the thread
             thread.interrupt();
+            // Wait until MyWaitingThread exits the monitor and sleeps
+            while (thread.getState() != Thread.State.TIMED_WAITING) {}
         }
     }
 
@@ -99,10 +103,12 @@ public class WaitNotifyThreadTest {
 
         final String WAITING_THREAD_NAME = "MyWaitingThread";
 
-        // Start athread that just waits
+        // Start a thread that just waits
         WaitThread waitThread = new WaitThread();
         waitThread.setName(WAITING_THREAD_NAME);
         waitThread.start();
+        // Wait until MyWaitingThread enters the monitor
+        while (waitThread.getState() != Thread.State.WAITING) {}
 
         // Collect output from the jstack tool
         JstackTool jstackTool = new JstackTool(ProcessHandle.current().pid());
@@ -122,7 +128,6 @@ public class WaitNotifyThreadTest {
         JStack jstack2 = new DefaultFormat().parse(results.getStdoutString());
         ThreadStack ti2 = jstack2.getThreadStack(WAITING_THREAD_NAME);
         analyzeThreadStackNoWaiting(ti2);
-
     }
 
     private void analyzeThreadStackWaiting(ThreadStack ti1) {
@@ -134,45 +139,39 @@ public class WaitNotifyThreadTest {
             if (mi.getName().startsWith(OBJECT_WAIT) && mi.getCompilationUnit() == null /*native method*/) {
                 if (mi.getLocks().size() == 1) {
                     MonitorInfo monInfo = mi.getLocks().getFirst();
-                    if (monInfo.getType().equals("waiting on") && compareMonitorClass(monInfo)) {
-                        monitorAddress = monInfo.getMonitorAddress();
-                    } else {
-                        System.err.println("Error: incorrect monitor info: " + monInfo.getType() + ", " + monInfo.getMonitorClass());
-                        throw new RuntimeException("Incorrect lock record in "
-                                + OBJECT_WAIT + " method");
-                    }
-
+                    monitorAddress = monInfo.getMonitorAddress();
+                    assertMonitorInfo("waiting on", monInfo, monitorAddress, OBJECT_WAIT);
                 } else {
-                    throw new RuntimeException(OBJECT_WAIT
-                            + " method has to contain one lock record bu it contains " + mi.getLocks().size());
+                    throw new RuntimeException(OBJECT_WAIT + " method has to contain one lock record but it contains "
+                                               + mi.getLocks().size());
                 }
             }
 
-            if (mi.getName().startsWith("WaitThread.run")) {
+            if (mi.getName().startsWith(RUN_METHOD)) {
                 if (monitorAddress == null) {
                     throw new RuntimeException("Cannot found monitor info associated with " + OBJECT_WAIT + " method");
                 }
-
-                int numLocks = mi.getLocks().size();
-                for (int i = 0; i < numLocks - 1; ++i) {
-                    assertMonitorInfo("waiting to re-lock in wait()", mi.getLocks().get(i), monitorAddress);
+                if (mi.getLocks().size() == 1) {
+                    assertMonitorInfo("locked", mi.getLocks().getLast(), monitorAddress, RUN_METHOD);
                 }
-                assertMonitorInfo("locked", mi.getLocks().getLast(), monitorAddress);
+                else {
+                    throw new RuntimeException(RUN_METHOD + " method has to contain one lock record but it contains "
+                                               + mi.getLocks().size());
+                }
             }
         }
-
     }
 
-    private void assertMonitorInfo(String expectedMessage, MonitorInfo monInfo, String monitorAddress) {
+    private void assertMonitorInfo(String expectedMessage, MonitorInfo monInfo, String monitorAddress, String method) {
         if (monInfo.getType().equals(expectedMessage)
                 && compareMonitorClass(monInfo)
                 && monInfo.getMonitorAddress().equals(
                         monitorAddress)) {
-            System.out.println("Correct monitor info found");
+            System.out.println("Correct monitor info found in " + method + " method");
         } else {
             System.err.println("Error: incorrect monitor info: " + monInfo.getType() + ", " + monInfo.getMonitorClass() + ", " + monInfo.getMonitorAddress());
             System.err.println("Expected: " + expectedMessage + ", a java.lang.Object, " + monitorAddress);
-            throw new RuntimeException("Incorrect lock record in 'run' method");
+            throw new RuntimeException("Incorrect lock record in " + method + " method");
         }
     }
 
