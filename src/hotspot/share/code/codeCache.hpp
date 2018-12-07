@@ -286,9 +286,7 @@ class CodeCache : AllStatic {
   // Deoptimization
  private:
   static int  mark_for_deoptimization(KlassDepChange& changes);
-#ifdef HOTSWAP
   static int  mark_for_evol_deoptimization(InstanceKlass* dependee);
-#endif // HOTSWAP
 
  public:
   static void mark_all_nmethods_for_deoptimization();
@@ -297,10 +295,8 @@ class CodeCache : AllStatic {
 
   // Flushing and deoptimization
   static void flush_dependents_on(InstanceKlass* dependee);
-#ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
   static void flush_evol_dependents_on(InstanceKlass* dependee);
-#endif // HOTSWAP
   // Support for fullspeed debugging
   static void flush_dependents_on_method(const methodHandle& dependee);
 

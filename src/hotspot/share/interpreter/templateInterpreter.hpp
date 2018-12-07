@@ -111,9 +111,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address    _throw_StackOverflowError_entry;
 
   static address    _remove_activation_entry;                   // continuation address if an exception is not handled by current frame
-#ifdef HOTSWAP
   static address    _remove_activation_preserving_args_entry;   // continuation address when current frame is being popped
-#endif // HOTSWAP
 
 #ifndef PRODUCT
   static EntryPoint _trace_code;
@@ -146,9 +144,7 @@ class TemplateInterpreter: public AbstractInterpreter {
  public:
 
   static address    remove_activation_early_entry(TosState state) { return _earlyret_entry.entry(state); }
-#ifdef HOTSWAP
-  static address    remove_activation_preserving_args_entry()   { return _remove_activation_preserving_args_entry; }
-#endif // HOTSWAP
+  static address    remove_activation_preserving_args_entry()     { return _remove_activation_preserving_args_entry; }
 
   static address    remove_activation_entry()                   { return _remove_activation_entry; }
   static address    throw_exception_entry()                     { return _throw_exception_entry; }

@@ -1200,7 +1200,6 @@ bool CodeCache::is_far_target(address target) {
 #endif
 }
 
-#ifdef HOTSWAP
 int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
@@ -1234,8 +1233,6 @@ int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
 
   return number_of_marked_CodeBlobs;
 }
-#endif // HOTSWAP
-
 
 // Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
@@ -1297,8 +1294,8 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   }
 }
 
-#ifdef HOTSWAP
-// Flushes compiled methods dependent on dependee in the evolutionary sense
+// Flushes compiled methods dependent on dependee when the dependee is redefined
+// via RedefineClasses
 void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
@@ -1326,8 +1323,6 @@ void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
     make_marked_nmethods_not_entrant();
   }
 }
-#endif // HOTSWAP
-
 
 // Flushes compiled methods dependent on dependee
 void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
