@@ -39,7 +39,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -51,6 +50,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "include/jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -858,10 +858,10 @@ uint G1ConcurrentMark::calc_active_marking_workers() {
     result = _max_concurrent_workers;
   } else {
     result =
-      AdaptiveSizePolicy::calc_default_active_workers(_max_concurrent_workers,
-                                                      1, /* Minimum workers */
-                                                      _num_concurrent_workers,
-                                                      Threads::number_of_non_daemon_threads());
+      WorkerPolicy::calc_default_active_workers(_max_concurrent_workers,
+                                                1, /* Minimum workers */
+                                                _num_concurrent_workers,
+                                                Threads::number_of_non_daemon_threads());
     // Don't scale the result down by scale_concurrent_workers() because
     // that scaling has already gone into "_max_concurrent_workers".
   }

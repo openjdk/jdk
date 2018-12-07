@@ -61,6 +61,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -3488,9 +3489,9 @@ void CMSConcMarkingTask::coordinator_yield() {
 
 bool CMSCollector::do_marking_mt() {
   assert(ConcGCThreads > 0 && conc_workers() != NULL, "precondition");
-  uint num_workers = AdaptiveSizePolicy::calc_active_conc_workers(conc_workers()->total_workers(),
-                                                                  conc_workers()->active_workers(),
-                                                                  Threads::number_of_non_daemon_threads());
+  uint num_workers = WorkerPolicy::calc_active_conc_workers(conc_workers()->total_workers(),
+                                                            conc_workers()->active_workers(),
+                                                            Threads::number_of_non_daemon_threads());
   num_workers = conc_workers()->update_active_workers(num_workers);
   log_info(gc,task)("Using %u workers of %u for marking", num_workers, conc_workers()->total_workers());
 

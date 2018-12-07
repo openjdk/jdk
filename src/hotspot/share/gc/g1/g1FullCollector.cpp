@@ -37,11 +37,11 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
@@ -88,15 +88,15 @@ uint G1FullCollector::calc_active_workers() {
   uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
   uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
 
-  // Also consider HeapSizePerGCThread by calling AdaptiveSizePolicy to calculate
+  // Also consider HeapSizePerGCThread by calling WorkerPolicy to calculate
   // the number of workers.
   uint current_active_workers = heap->workers()->active_workers();
-  uint adaptive_worker_limit = AdaptiveSizePolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
+  uint active_worker_limit = WorkerPolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
 
   // Update active workers to the lower of the limits.
-  uint worker_count = MIN2(heap_waste_worker_limit, adaptive_worker_limit);
+  uint worker_count = MIN2(heap_waste_worker_limit, active_worker_limit);
   log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, adaptive workers: %u)",
-                      worker_count, heap_waste_worker_limit, adaptive_worker_limit);
+                      worker_count, heap_waste_worker_limit, active_worker_limit);
   worker_count = heap->workers()->update_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 

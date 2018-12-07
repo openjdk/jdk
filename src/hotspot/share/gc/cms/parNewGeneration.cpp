@@ -49,6 +49,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -866,9 +867,9 @@ void ParNewGeneration::collect(bool   full,
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
   uint active_workers =
-       AdaptiveSizePolicy::calc_active_workers(workers->total_workers(),
-                                               workers->active_workers(),
-                                               Threads::number_of_non_daemon_threads());
+      WorkerPolicy::calc_active_workers(workers->total_workers(),
+                                        workers->active_workers(),
+                                        Threads::number_of_non_daemon_threads());
   active_workers = workers->update_active_workers(active_workers);
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers->total_workers());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,16 +520,4 @@ void VM_Version::allow_all() {
 
 void VM_Version::revert() {
   _features = saved_features;
-}
-
-/* Determine a suitable number of threads on this particular machine.
- *
- * FIXME: Simply checking the processor family is insufficient.
- */
-unsigned int VM_Version::calc_parallel_worker_threads() {
-  const int num = 5;
-  const int den = is_post_niagara() ? 16 : 8;
-  const int threshold = 8;
-
-  return nof_parallel_worker_threads(num, den, threshold);
 }

@@ -61,7 +61,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -78,6 +77,7 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -2912,9 +2912,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
-    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                                                  workers()->active_workers(),
-                                                                  Threads::number_of_non_daemon_threads());
+    uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
+                                                            workers()->active_workers(),
+                                                            Threads::number_of_non_daemon_threads());
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
