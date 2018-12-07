@@ -556,6 +556,7 @@ bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
 
 void CompiledMethod::cleanup_inline_caches(bool clean_all) {
   for (;;) {
+    ICRefillVerifier ic_refill_verifier;
     { CompiledICLocker ic_locker(this);
       if (cleanup_inline_caches_impl(false, clean_all)) {
         return;

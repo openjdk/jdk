@@ -38,6 +38,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
 
 DEF_STUB_INTERFACE(ICStub);
 
@@ -45,7 +46,40 @@ StubQueue* InlineCacheBuffer::_buffer    = NULL;
 
 CompiledICHolder* InlineCacheBuffer::_pending_released = NULL;
 int InlineCacheBuffer::_pending_count = 0;
-DEBUG_ONLY(volatile int InlineCacheBuffer::_needs_refill = 0;)
+
+#ifdef ASSERT
+ICRefillVerifier::ICRefillVerifier()
+  : _refill_requested(false),
+    _refill_remembered(false)
+{
+  Thread* thread = Thread::current();
+  assert(thread->missed_ic_stub_refill_mark() == NULL, "nesting not supported");
+  thread->set_missed_ic_stub_refill_mark(this);
+}
+
+ICRefillVerifier::~ICRefillVerifier() {
+  assert(!_refill_requested || _refill_remembered,
+         "Forgot to refill IC stubs after failed IC transition");
+  Thread::current()->set_missed_ic_stub_refill_mark(NULL);
+}
+
+ICRefillVerifierMark::ICRefillVerifierMark(ICRefillVerifier* verifier) {
+  Thread* thread = Thread::current();
+  assert(thread->missed_ic_stub_refill_mark() == NULL, "nesting not supported");
+  thread->set_missed_ic_stub_refill_mark(this);
+}
+
+ICRefillVerifierMark::~ICRefillVerifierMark() {
+  Thread::current()->set_missed_ic_stub_refill_mark(NULL);
+}
+
+static ICRefillVerifier* current_ic_refill_verifier() {
+  Thread* current = Thread::current();
+  ICRefillVerifier* verifier = reinterpret_cast<ICRefillVerifier*>(current->missed_ic_stub_refill_mark());
+  assert(verifier != NULL, "need a verifier for safety");
+  return verifier;
+}
+#endif
 
 void ICStub::finalize() {
   if (!is_empty()) {
@@ -117,7 +151,10 @@ ICStub* InlineCacheBuffer::new_ic_stub() {
 
 
 void InlineCacheBuffer::refill_ic_stubs() {
-  DEBUG_ONLY(Atomic::store(0, &_needs_refill));
+#ifdef ASSERT
+  ICRefillVerifier* verifier = current_ic_refill_verifier();
+  verifier->request_remembered();
+#endif
   // we ran out of inline cache buffer space; must enter safepoint.
   // We do this by forcing a safepoint
   EXCEPTION_MARK;
@@ -135,8 +172,6 @@ void InlineCacheBuffer::refill_ic_stubs() {
 
 
 void InlineCacheBuffer::update_inline_caches() {
-  assert(_needs_refill == 0,
-         "Forgot to handle a failed IC transition requiring IC stubs");
   if (buffer()->number_of_stubs() > 0) {
     if (TraceICBuffer) {
       tty->print_cr("[updating inline caches with %d stubs]", buffer()->number_of_stubs());
@@ -161,7 +196,6 @@ void InlineCacheBuffer_init() {
   InlineCacheBuffer::initialize();
 }
 
-
 bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_value, address entry) {
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be called during a safepoint");
   assert(CompiledICLocker::is_safe(ic->instruction_address()), "mt unsafe call");
@@ -173,7 +207,10 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
   // allocate and initialize new "out-of-line" inline-cache
   ICStub* ic_stub = new_ic_stub();
   if (ic_stub == NULL) {
-    DEBUG_ONLY(Atomic::inc(&_needs_refill));
+#ifdef ASSERT
+    ICRefillVerifier* verifier = current_ic_refill_verifier();
+    verifier->request_refill();
+#endif
     return false;
   }
 

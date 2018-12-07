@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 //
@@ -93,6 +95,43 @@ inline ICStub* ICStub_from_destination_address(address destination_address) {
   return stub;
 }
 
+#ifdef ASSERT
+// The ICRefillVerifier class is a stack allocated RAII object used to
+// detect if a failed IC transition that required IC stub refilling has
+// been accidentally missed. It is up to the caller to in that case
+// refill IC stubs.
+class ICRefillVerifier: StackObj {
+  bool _refill_requested;
+  bool _refill_remembered;
+
+ public:
+  ICRefillVerifier();
+  ~ICRefillVerifier();
+
+  void request_refill() { _refill_requested = true; }
+  void request_remembered() { _refill_remembered = true; }
+};
+
+// The ICRefillVerifierMark is used to set the thread's current
+// ICRefillVerifier to a provided one. This is useful in particular
+// when transitioning IC stubs in parallel and refilling from the
+// master thread invoking the IC stub transitioning code.
+class ICRefillVerifierMark: StackObj {
+ public:
+  ICRefillVerifierMark(ICRefillVerifier* verifier);
+  ~ICRefillVerifierMark();
+};
+#else
+class ICRefillVerifier: StackObj {
+ public:
+  ICRefillVerifier() {}
+};
+class ICRefillVerifierMark: StackObj {
+ public:
+  ICRefillVerifierMark(ICRefillVerifier* verifier) {}
+};
+#endif
+
 class InlineCacheBuffer: public AllStatic {
  private:
   // friends
@@ -104,8 +143,6 @@ class InlineCacheBuffer: public AllStatic {
 
   static CompiledICHolder* _pending_released;
   static int _pending_count;
-
-  DEBUG_ONLY(static volatile int _needs_refill;)
 
   static StubQueue* buffer()                         { return _buffer;         }
 

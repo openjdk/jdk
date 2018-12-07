@@ -1395,6 +1395,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   // Patching IC caches may fail if we run out if transition stubs.
   // We refill the ic stubs then and try again.
   for (;;) {
+    ICRefillVerifier ic_refill_verifier;
     bool successful = resolve_sub_helper_internal(callee_method, caller_frame, caller_nm,
                                                   is_virtual, is_optimized, receiver,
                                                   call_info, invoke_code, CHECK_(methodHandle()));
@@ -1603,10 +1604,10 @@ bool SharedRuntime::handle_ic_miss_helper_internal(Handle receiver, CompiledMeth
     // Potential change to megamorphic
 
     bool successful = inline_cache->set_to_megamorphic(&call_info, bc, needs_ic_stub_refill, CHECK_false);
+    if (needs_ic_stub_refill) {
+      return false;
+    }
     if (!successful) {
-      if (!needs_ic_stub_refill) {
-        return false;
-      }
       if (!inline_cache->set_to_clean()) {
         needs_ic_stub_refill = true;
         return false;
@@ -1690,6 +1691,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
   CompiledMethod* caller_nm = cb->as_compiled_method();
 
   for (;;) {
+    ICRefillVerifier ic_refill_verifier;
     bool needs_ic_stub_refill = false;
     bool successful = handle_ic_miss_helper_internal(receiver, caller_nm, caller_frame, callee_method,
                                                      bc, call_info, needs_ic_stub_refill, CHECK_(methodHandle()));
@@ -1798,6 +1800,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
       // resolve is only done once.
 
       for (;;) {
+        ICRefillVerifier ic_refill_verifier;
         if (!clear_ic_at_addr(caller_nm, call_addr, is_static_call)) {
           InlineCacheBuffer::refill_ic_stubs();
         } else {
