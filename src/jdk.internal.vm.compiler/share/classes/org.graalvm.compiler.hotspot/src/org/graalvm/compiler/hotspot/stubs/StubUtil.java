@@ -271,11 +271,6 @@ public class StubUtil {
         return config.verifyOopBits;
     }
 
-    @Fold
-    static int hubOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.hubOffset;
-    }
-
     /**
      * Print {@code number} as decimal string to {@code buffer}.
      *

@@ -25,7 +25,6 @@
 package org.graalvm.compiler.hotspot.sparc.test;
 
 import static org.graalvm.compiler.core.common.GraalOptions.RegisterPressure;
-import static org.graalvm.compiler.core.common.GraalOptions.TraceRA;
 import static org.junit.Assume.assumeTrue;
 
 import org.graalvm.compiler.core.test.backend.AllocatorTest;
@@ -44,7 +43,6 @@ public class SPARCAllocatorTest extends AllocatorTest {
     public void checkSPARC() {
         assumeTrue("skipping SPARC specific test", getTarget().arch instanceof SPARC);
         assumeTrue("RegisterPressure is set -> skip", RegisterPressure.getValue(getInitialOptions()) == null);
-        assumeTrue("TraceRA is set -> skip", !TraceRA.getValue(getInitialOptions()));
     }
 
     @Test

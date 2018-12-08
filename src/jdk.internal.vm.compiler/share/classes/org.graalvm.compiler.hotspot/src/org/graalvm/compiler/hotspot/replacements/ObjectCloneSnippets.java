@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
+
 import java.lang.reflect.Method;
 import java.util.EnumMap;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyCallNode;
+import org.graalvm.compiler.replacements.arraycopy.ArrayCopyCallNode;
 import org.graalvm.compiler.nodes.java.DynamicNewArrayNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.replacements.Snippets;
@@ -64,56 +66,56 @@ public class ObjectCloneSnippets implements Snippets {
     @Snippet
     public static boolean[] booleanArrayClone(boolean[] src) {
         boolean[] result = (boolean[]) NewArrayNode.newUninitializedArray(Boolean.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Boolean);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Boolean, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static byte[] byteArrayClone(byte[] src) {
         byte[] result = (byte[]) NewArrayNode.newUninitializedArray(Byte.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Byte);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Byte, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static short[] shortArrayClone(short[] src) {
         short[] result = (short[]) NewArrayNode.newUninitializedArray(Short.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Short);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Short, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static char[] charArrayClone(char[] src) {
         char[] result = (char[]) NewArrayNode.newUninitializedArray(Character.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Char);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Char, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static int[] intArrayClone(int[] src) {
         int[] result = (int[]) NewArrayNode.newUninitializedArray(Integer.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Int);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Int, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static float[] floatArrayClone(float[] src) {
         float[] result = (float[]) NewArrayNode.newUninitializedArray(Float.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Float);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Float, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static long[] longArrayClone(long[] src) {
         long[] result = (long[]) NewArrayNode.newUninitializedArray(Long.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Long);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Long, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
     @Snippet
     public static double[] doubleArrayClone(double[] src) {
         double[] result = (double[]) NewArrayNode.newUninitializedArray(Double.TYPE, src.length);
-        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Double);
+        ArrayCopyCallNode.disjointArraycopy(src, 0, result, 0, src.length, JavaKind.Double, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 
@@ -121,7 +123,7 @@ public class ObjectCloneSnippets implements Snippets {
     public static Object[] objectArrayClone(Object[] src) {
         /* Since this snippet is lowered early the array must be initialized */
         Object[] result = (Object[]) DynamicNewArrayNode.newArray(GraalDirectives.guardingNonNull(src.getClass().getComponentType()), src.length, JavaKind.Object);
-        ArrayCopyCallNode.disjointUninitializedArraycopy(src, 0, result, 0, src.length, JavaKind.Object);
+        ArrayCopyCallNode.disjointUninitializedArraycopy(src, 0, result, 0, src.length, JavaKind.Object, HotSpotReplacementsUtil.getHeapWordSize(INJECTED_VMCONFIG));
         return result;
     }
 }

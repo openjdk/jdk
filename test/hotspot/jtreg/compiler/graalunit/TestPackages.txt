@@ -20,7 +20,6 @@ Options       org.graalvm.compiler.options.test
 PhasesCommon  org.graalvm.compiler.phases.common.test
 Replacements  org.graalvm.compiler.replacements.test
 Replacements9 org.graalvm.compiler.replacements.jdk9.test
-Replacements9_11 org.graalvm.compiler.replacements.jdk9_11.test
 Replacements12 org.graalvm.compiler.replacements.jdk12.test
 Util          org.graalvm.util.test
 JttBackend    org.graalvm.compiler.jtt.backend

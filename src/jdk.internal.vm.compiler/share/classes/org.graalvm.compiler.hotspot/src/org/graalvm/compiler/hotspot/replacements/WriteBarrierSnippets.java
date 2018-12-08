@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public class WriteBarrierSnippets implements Snippets {
         Word bufferAddress = thread.readWord(g1SATBQueueBufferOffset(INJECTED_VMCONFIG));
         Word indexAddress = thread.add(g1SATBQueueIndexOffset(INJECTED_VMCONFIG));
         long indexValue = indexAddress.readWord(0).rawValue();
-        final int scale = HotSpotReplacementsUtil.arrayIndexScale(INJECTED_METAACCESS, JavaKind.Object);
+        final int scale = ReplacementsUtil.arrayIndexScale(INJECTED_METAACCESS, JavaKind.Object);
         long start = getPointerToFirstArrayElement(address, length, elementStride);
 
         for (int i = 0; i < length; i++) {
@@ -435,13 +435,20 @@ public class WriteBarrierSnippets implements Snippets {
         private final CompressEncoding oopEncoding;
         private final Counters counters;
         private final boolean verifyBarrier;
+        private final long gcTotalCollectionsAddress;
 
         public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, Group.Factory factory, HotSpotProviders providers, TargetDescription target,
                         GraalHotSpotVMConfig config) {
             super(options, factories, providers, providers.getSnippetReflection(), target);
             this.oopEncoding = config.useCompressedOops ? config.getOopEncoding() : null;
             this.verifyBarrier = ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED || config.verifyBeforeGC || config.verifyAfterGC;
+            this.gcTotalCollectionsAddress = config.gcTotalCollectionsAddress();
             this.counters = new Counters(factory);
+        }
+
+        public boolean traceBarrier(StructuredGraph graph) {
+            long startCycle = GraalOptions.GCDebugStartCycle.getValue(graph.getOptions());
+            return startCycle > 0 && ((Pointer) WordFactory.pointer(gcTotalCollectionsAddress)).readLong(0) > startCycle;
         }
 
         public void lower(SerialWriteBarrier writeBarrier, LoweringTool tool) {
@@ -586,12 +593,6 @@ public class WriteBarrierSnippets implements Snippets {
         if (enabled) {
             Log.printf(format, value1, value2, value3);
         }
-    }
-
-    public static boolean traceBarrier(StructuredGraph graph) {
-        return GraalOptions.GCDebugStartCycle.getValue(graph.getOptions()) > 0 &&
-                        ((int) ((Pointer) WordFactory.pointer(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG))).readLong(0) > GraalOptions.GCDebugStartCycle.getValue(
-                                        graph.getOptions()));
     }
 
     /**

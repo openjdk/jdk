@@ -107,7 +107,11 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
 
     @Override
     protected void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-
+        /*
+         * Note: AArch64StringUTF16Substitutions.compareToLatin1 and
+         * AArch64StringUTF16Substitutions.compareToLatin1 swap input to array1=byte[] and
+         * array2=char[] but kind1==Char and kind2==Byte remains
+         */
         Register result = asRegister(resultValue);
         Register length1 = asRegister(length1Value);
         Register length2 = asRegister(length2Value);
@@ -127,18 +131,23 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         final Label COMPARE_SHORT_LABEL = new Label();
         // Checkstyle: resume
 
+        boolean isLL = (kind1 == kind2 && kind1 == JavaKind.Byte);
+        boolean isUU = (kind1 == kind2 && kind1 == JavaKind.Char);
+        boolean isLU = (kind1 != kind2 && kind1 == JavaKind.Byte);
+        boolean isUL = (kind1 != kind2 && kind1 == JavaKind.Char);
+
         // Checkstyle: stop
         int CHAR_SIZE_BYTES = 1;
         int VECTOR_SIZE_BYTES = 8;
         int VECTOR_COUNT_BYTES = 8;
         // Checkstyle: resume
 
-        // Byte is expanded to short if we compare strings with different encoding
-        if (kind1 != kind2 || kind1 == JavaKind.Char) {
+        // Byte is expanded to short if we compare non-LL strings.
+        if (!isLL) {
             CHAR_SIZE_BYTES = 2;
         }
 
-        if (kind1 != kind2) {
+        if (isLU || isUL) {
             VECTOR_COUNT_BYTES = 4;
         }
 
@@ -146,13 +155,13 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         masm.lea(array1, AArch64Address.createUnscaledImmediateAddress(asRegister(array1Value), array1BaseOffset));
         masm.lea(array2, AArch64Address.createUnscaledImmediateAddress(asRegister(array2Value), array2BaseOffset));
 
-        // Calculate minimal length in chars for different kind case
-        // Conditions could be squashed but lets keep it readable
-        if (kind1 != kind2) {
+        // Calculate minimal length in chars for different kind cases.
+        // Conditions could be squashed but let's keep it readable.
+        if (isLU || isUL) {
             masm.lshr(64, length2, length2, 1);
         }
 
-        if (kind1 == kind2 && kind1 == JavaKind.Char) {
+        if (isUU) {
             masm.lshr(64, length1, length1, 1);
             masm.lshr(64, length2, length2, 1);
         }
@@ -163,8 +172,9 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         // One of strings is empty
         masm.cbz(64, length, LENGTH_DIFFER_LABEL);
 
-        // Go back to bytes if necessary
-        if (kind1 != kind2 || kind1 == JavaKind.Char) {
+        // Go back to bytes for not LL cases, because following tail and length calculation is done
+        // in byte.
+        if (!isLL) {
             masm.shl(64, length, length, 1);
         }
 
@@ -172,13 +182,18 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         masm.and(64, tailCount, length, VECTOR_SIZE_BYTES - 1); // tail count (in bytes)
         masm.ands(64, length, length, ~(VECTOR_SIZE_BYTES - 1));  // vector count (in bytes)
 
-        // Length of string is less than VECTOR_SIZE, go to simple compare
+        // Length of string is less than VECTOR_SIZE, go to simple compare.
         masm.branchConditionally(ConditionFlag.EQ, COMPARE_SHORT_LABEL);
+
+        // Go back to char because vecCount in the following loop is increasing in char.
+        if (isLU || isUL) {
+            masm.lshr(64, length, length, 1);
+        }
 
         // MAIN_LOOP - read strings by 8 byte.
         masm.bind(MAIN_LOOP_LABEL);
-        if (kind1 != kind2) {
-            // Load 32 bits ad unpack it to entire 64bit register
+        if (isLU || isUL) {
+            // Load 32 bits and unpack it to entire 64bit register.
             masm.ldr(32, result, AArch64Address.createRegisterOffsetAddress(array1, vecCount, false));
             masm.ubfm(64, temp, result, 0, 7);
             masm.lshr(64, result, result, 8);
@@ -202,17 +217,23 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         masm.branchConditionally(ConditionFlag.LT, MAIN_LOOP_LABEL);
         // End of MAIN_LOOP
 
-        // Strings are equal and no TAIL go to END
+        // Strings are equal and no TAIL go to END.
         masm.cbz(64, tailCount, LENGTH_DIFFER_LABEL);
 
         // Compaire tail of long string ...
         masm.lea(array1, AArch64Address.createRegisterOffsetAddress(array1, length, false));
+
+        // Go back to bytes because the following array2's offset is caculated in byte.
+        if (isLU || isUL) {
+            masm.shl(64, length, length, 1);
+        }
+
         masm.lea(array2, AArch64Address.createRegisterOffsetAddress(array2, length, false));
 
-        // ... or string less than vector length
+        // ... or string less than vector length.
         masm.bind(COMPARE_SHORT_LABEL);
-        for (int i = 0; i < VECTOR_COUNT_BYTES; i += CHAR_SIZE_BYTES) {
-            if (kind1 != kind2) {
+        for (int i = 0; i < VECTOR_SIZE_BYTES; i += CHAR_SIZE_BYTES) {
+            if (isLU || isUL) {
                 masm.ldr(8, temp, AArch64Address.createUnscaledImmediateAddress(array1, i / 2));
             } else {
                 masm.ldr(8 * CHAR_SIZE_BYTES, temp, AArch64Address.createUnscaledImmediateAddress(array1, i));
@@ -220,8 +241,8 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
 
             masm.ldr(8 * CHAR_SIZE_BYTES, result, AArch64Address.createUnscaledImmediateAddress(array2, i));
 
-            if (kind1 != kind2 && kind1 == JavaKind.Char) {
-                // Weird swap of substraction order
+            if (isUL) {
+                // UL's input has been swapped in AArch64StringUTF16Substitutions.compareToLatin1.
                 masm.subs(64, result, result, temp);
             } else {
                 masm.subs(64, result, temp, result);
@@ -232,7 +253,7 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
             masm.branchConditionally(ConditionFlag.EQ, LENGTH_DIFFER_LABEL);
         }
 
-        // STRING_DIFFER extract exact value of a difference
+        // STRING_DIFFER extract exact value of a difference.
         masm.bind(STRING_DIFFER_LABEL);
         masm.rbit(64, tailCount, result);
         masm.clz(64, vecCount, tailCount);
@@ -245,21 +266,27 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         masm.and(64, result, result, 0xFFFF >>> (16 - (8 * CHAR_SIZE_BYTES))); // 0xFF or 0xFFFF
         masm.and(64, temp, temp, 0xFFFF >>> (16 - (8 * CHAR_SIZE_BYTES)));
 
-        masm.sub(64, result, temp, result);
+        if (isUL) {
+            // UL's input has been swapped in AArch64StringUTF16Substitutions.compareToLatin1.
+            masm.sub(64, result, result, temp);
+        } else {
+            masm.sub(64, result, temp, result);
+        }
+
         masm.branchConditionally(ConditionFlag.AL, BREAK_LABEL);
         // End of STRING_DIFFER
 
         // Strings are equials up to length,
-        // return length difference in chars
+        // Return length difference in chars.
         masm.bind(LENGTH_DIFFER_LABEL);
-        if (kind1 != kind2 && kind1 == JavaKind.Char) {
-            // Weird swap of substraction order
+        if (isUL) {
+            // UL's input has been swapped in AArch64StringUTF16Substitutions.compareToLatin1.
             masm.sub(64, result, length2, length1);
         } else {
             masm.sub(64, result, length1, length2);
         }
 
-        // We are done
+        // We are done.
         masm.bind(BREAK_LABEL);
     }
 

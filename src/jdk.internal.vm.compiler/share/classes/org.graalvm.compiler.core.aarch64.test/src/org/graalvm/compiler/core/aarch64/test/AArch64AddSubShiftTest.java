@@ -26,11 +26,15 @@
 
 package org.graalvm.compiler.core.aarch64.test;
 
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.function.Predicate;
+
 public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
+    private static final Predicate<LIRInstruction> predicate = op -> (op instanceof AArch64ArithmeticOp.BinaryShiftOp);
+
     /**
      * addSubShift match rule test for add operation with int type.
      */
@@ -55,7 +59,7 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
         return output;
     }
 
-    private static int addShiftInt(int input) {
+    public static int addShiftInt(int input) {
         return addLeftShiftInt(input) + addRightShiftInt(input) + addUnsignedRightShiftInt(input);
     }
 
@@ -65,13 +69,8 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
      */
     @Test
     public void testAddShiftInt() {
-        int expected = addShiftInt(123);
-
-        Result result = executeActual(getResolvedJavaMethod("addShiftInt"), null, 123);
-        int actual = (int) result.returnValue;
-        Assert.assertEquals(expected, actual);
-
-        checkLIR(AArch64ArithmeticOp.AddSubShiftOp.class, 6);
+        test("addShiftInt", 123);
+        checkLIR("addShiftInt", predicate, 6);
     }
 
     /**
@@ -98,7 +97,7 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
         return output;
     }
 
-    private static long addShiftLong(long input) {
+    public static long addShiftLong(long input) {
         return addLeftShiftLong(input) + addRightShiftLong(input) + addUnsignedRightShiftLong(input);
     }
 
@@ -108,13 +107,8 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
      */
     @Test
     public void testAddShiftLong() {
-        long expected = addShiftLong(1234567);
-
-        Result result = executeActual(getResolvedJavaMethod("addShiftLong"), null, (long) 1234567);
-        long actual = (long) result.returnValue;
-        Assert.assertEquals(expected, actual);
-
-        checkLIR(AArch64ArithmeticOp.AddSubShiftOp.class, 6);
+        test("addShiftLong", 1234567L);
+        checkLIR("addShiftLong", predicate, 6);
     }
 
     /**
@@ -132,7 +126,7 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
         return input0 - (input1 >>> 5);
     }
 
-    private static int subShiftInt(int input0, int input1) {
+    public static int subShiftInt(int input0, int input1) {
         return subLeftShiftInt(input0, input1) + subRightShiftInt(input0, input1) + subUnsignedRightShiftInt(input0, input1);
     }
 
@@ -142,13 +136,8 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
      */
     @Test
     public void testSubShiftInt() {
-        int expected = subShiftInt(123, 456);
-
-        Result result = executeActual(getResolvedJavaMethod("subShiftInt"), null, 123, 456);
-        int actual = (int) result.returnValue;
-        Assert.assertEquals(expected, actual);
-
-        checkLIR(AArch64ArithmeticOp.AddSubShiftOp.class, 3);
+        test("subShiftInt", 123, 456);
+        checkLIR("subShiftInt", predicate, 3);
     }
 
     /**
@@ -166,7 +155,7 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
         return input0 - (input1 >>> 5);
     }
 
-    private static long subShiftLong(long input0, long input1) {
+    public static long subShiftLong(long input0, long input1) {
         return subLeftShiftLong(input0, input1) + subRightShiftLong(input0, input1) + subUnsignedRightShiftLong(input0, input1);
     }
 
@@ -176,12 +165,7 @@ public class AArch64AddSubShiftTest extends AArch64MatchRuleTest {
      */
     @Test
     public void testSubShiftLong() {
-        long expected = subShiftLong(1234567, 123);
-
-        Result result = executeActual(getResolvedJavaMethod("subShiftLong"), null, (long) 1234567, (long) 123);
-        long actual = (long) result.returnValue;
-        Assert.assertEquals(expected, actual);
-
-        checkLIR(AArch64ArithmeticOp.AddSubShiftOp.class, 3);
+        test("subShiftLong", 1234567L, 123L);
+        checkLIR("subShiftLong", predicate, 3);
     }
 }

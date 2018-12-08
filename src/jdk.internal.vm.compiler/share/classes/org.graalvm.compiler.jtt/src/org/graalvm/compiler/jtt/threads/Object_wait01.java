@@ -55,8 +55,13 @@ public class Object_wait01 extends JTTTest {
     public static boolean test(int i) throws InterruptedException {
         count = 0;
         done = false;
-        new Thread(new TestClass()).start();
         synchronized (object) {
+            // Only start the other thread once we have the lock
+            // so that the other thread will rendezvous with this
+            // thread the first time it tries to acquire the lock.
+            // Otherwise, the other thread could terminate before
+            // this thread executes its first wait.
+            new Thread(new TestClass()).start();
             while (count < i) {
                 object.wait();
             }

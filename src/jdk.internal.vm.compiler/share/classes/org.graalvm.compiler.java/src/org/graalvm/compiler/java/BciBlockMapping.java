@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,9 @@ import static org.graalvm.compiler.bytecode.Bytecodes.JSR;
 import static org.graalvm.compiler.bytecode.Bytecodes.JSR_W;
 import static org.graalvm.compiler.bytecode.Bytecodes.LALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.LASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.LDC;
+import static org.graalvm.compiler.bytecode.Bytecodes.LDC2_W;
+import static org.graalvm.compiler.bytecode.Bytecodes.LDC_W;
 import static org.graalvm.compiler.bytecode.Bytecodes.LDIV;
 import static org.graalvm.compiler.bytecode.Bytecodes.LOOKUPSWITCH;
 import static org.graalvm.compiler.bytecode.Bytecodes.LREM;
@@ -688,7 +691,10 @@ public final class BciBlockMapping {
                 case PUTSTATIC:
                 case GETSTATIC:
                 case PUTFIELD:
-                case GETFIELD: {
+                case GETFIELD:
+                case LDC:
+                case LDC_W:
+                case LDC2_W: {
                     /*
                      * All bytecodes that can trigger lazy class initialization via a
                      * ClassInitializationPlugin (allocations, static field access) must be listed

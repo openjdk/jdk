@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,17 @@
 package org.graalvm.compiler.core.test.ea;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.junit.Test;
-
-import sun.misc.Unsafe;
-
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import org.junit.Test;
+
+import sun.misc.Unsafe;
 
 public class PEAReadEliminationTest extends GraalCompilerTest {
 
@@ -182,7 +180,7 @@ public class PEAReadEliminationTest extends GraalCompilerTest {
     protected StructuredGraph processMethod(final String snippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
-        new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+        createInliningPhase().apply(graph, context);
         new PartialEscapePhase(false, true, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
         return graph;
     }

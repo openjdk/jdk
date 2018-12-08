@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_METAACCESS;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.VERIFY_OOP;
 import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
 
@@ -40,7 +40,7 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
+import org.graalvm.compiler.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.CompressionNode;
@@ -70,7 +70,6 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 //JaCoCo Exclude
@@ -136,6 +135,11 @@ public class HotSpotReplacementsUtil {
 
     public static HotSpotJVMCIRuntime runtime() {
         return HotSpotJVMCIRuntime.runtime();
+    }
+
+    @Fold
+    public static int getHeapWordSize(@InjectedParameter GraalHotSpotVMConfig injectedVMConfig) {
+        return injectedVMConfig.heapWordSize;
     }
 
     @Fold
@@ -506,18 +510,8 @@ public class HotSpotReplacementsUtil {
         return config.arrayOopDescLengthOffset();
     }
 
-    @Fold
-    public static int getArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccessProvider, JavaKind elementKind) {
-        return metaAccessProvider.getArrayBaseOffset(elementKind);
-    }
-
-    @Fold
-    public static int arrayIndexScale(@InjectedParameter MetaAccessProvider metaAccessProvider, JavaKind elementKind) {
-        return metaAccessProvider.getArrayIndexScale(elementKind);
-    }
-
     public static Word arrayStart(int[] a) {
-        return WordFactory.unsigned(ComputeObjectAddressNode.get(a, getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Int)));
+        return WordFactory.unsigned(ComputeObjectAddressNode.get(a, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Int)));
     }
 
     /**
@@ -576,11 +570,6 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    public static long cardTableStart(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.cardtableStartAddress;
-    }
-
-    @Fold
     public static int g1CardQueueIndexOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.g1CardQueueIndexOffset;
     }
@@ -588,11 +577,6 @@ public class HotSpotReplacementsUtil {
     @Fold
     public static int g1CardQueueBufferOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.g1CardQueueBufferOffset;
-    }
-
-    @Fold
-    public static int logOfHeapRegionGrainBytes(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.logOfHRGrainBytes;
     }
 
     @Fold
@@ -649,16 +633,6 @@ public class HotSpotReplacementsUtil {
     @Fold
     public static boolean useBiasedLocking(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.useBiasedLocking;
-    }
-
-    @Fold
-    public static boolean useDeferredInitBarriers(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.useDeferredInitBarriers;
-    }
-
-    @Fold
-    public static boolean useCompressedOops(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.useCompressedOops;
     }
 
     @Fold
@@ -801,16 +775,6 @@ public class HotSpotReplacementsUtil {
     @Fold
     public static int layoutHelperLog2ElementSizeMask(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.layoutHelperLog2ElementSizeMask;
-    }
-
-    @Fold
-    public static int layoutHelperElementTypeShift(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.layoutHelperElementTypeShift;
-    }
-
-    @Fold
-    public static int layoutHelperElementTypeMask(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.layoutHelperElementTypeMask;
     }
 
     @NodeIntrinsic(ForeignCallNode.class)

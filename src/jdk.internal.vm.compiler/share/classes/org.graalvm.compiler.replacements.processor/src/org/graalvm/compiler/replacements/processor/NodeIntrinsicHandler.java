@@ -100,6 +100,8 @@ public final class NodeIntrinsicHandler extends AnnotationHandler {
             }
             if (enclosingElement != null) {
                 nodeClass = (TypeElement) enclosingElement;
+            } else {
+                messager.printMessage(Kind.ERROR, String.format("Cannot find a class enclosing @%s method.", getSimpleName(NODE_INTRINSIC_CLASS_NAME)), element, annotation);
             }
         }
 

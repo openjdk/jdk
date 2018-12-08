@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,5 +509,136 @@ public class EscapeAnalysisTest extends EATestBase {
         Object[] array = new TestInterface[1];
         array[0] = new Object();
         return array[0] == null;
+    }
+
+    static final class Complex {
+        private final double real;
+        private final double imag;
+
+        Complex(double real, double imag) {
+            this.real = real;
+            this.imag = imag;
+        }
+
+        public Complex mul(Complex other) {
+            return new Complex(real * other.real - imag * other.imag, imag * other.real + real * other.imag);
+        }
+
+        public Complex add(Complex other) {
+            return new Complex(real + other.real, imag + other.imag);
+        }
+
+        // equals is needed for result comparison
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            Complex other = (Complex) obj;
+            return this == other || Double.doubleToLongBits(imag) == Double.doubleToLongBits(other.imag) && Double.doubleToLongBits(real) == Double.doubleToLongBits(other.real);
+        }
+
+        @Override
+        public int hashCode() {
+            return Double.hashCode(real) ^ Double.hashCode(imag);
+        }
+    }
+
+    private static final Complex[][] inputValue = new Complex[100][100];
+    static {
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
+                inputValue[i][j] = new Complex(i, j);
+            }
+        }
+    }
+
+    public static Complex[][] testComplexMultiplySnippet1(Complex[][] input) {
+        int size = input.length;
+        Complex[][] result = new Complex[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                Complex s = new Complex(0, 0);
+                for (int k = 0; k < size; k++) {
+                    s = s.add(input[i][k].mul(input[k][j]));
+                }
+                result[i][j] = s;
+            }
+        }
+        return result;
+    }
+
+    @Test
+    public void testComplexMultiply1() {
+        test("testComplexMultiplySnippet1", (Object) inputValue);
+
+        // EA test: only one allocation remains (not counting the NewMultiArray), using iterative EA
+        testEscapeAnalysis("testComplexMultiplySnippet1", null, true, 1);
+    }
+
+    public static Complex[][] testComplexMultiplySnippet2(Complex[][] input) {
+        int size = input.length;
+        Complex[][] result = new Complex[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                Complex s = input[i][0].mul(input[0][j]);
+                for (int k = 1; k < size; k++) {
+                    s = s.add(input[i][k].mul(input[k][j]));
+                }
+                result[i][j] = s;
+            }
+        }
+        return result;
+    }
+
+    @Test
+    public void testComplexMultiply2() {
+        test("testComplexMultiplySnippet2", (Object) inputValue);
+
+        // EA test: only one allocation remains (not counting the NewMultiArray), using iterative EA
+        testEscapeAnalysis("testComplexMultiplySnippet2", null, true, 1);
+    }
+
+    public static Complex testComplexAddSnippet(Complex[][] input) {
+        int size = input.length;
+        Complex s = new Complex(0, 0);
+        for (int i = 0; i < size; i++) {
+            Complex s2 = new Complex(0, 0);
+            for (int j = 0; j < size; j++) {
+                s2 = s2.add(input[i][j]);
+            }
+            s.add(s2);
+        }
+        return s;
+    }
+
+    @Test
+    public void testComplexAdd() {
+        test("testComplexAddSnippet", (Object) inputValue);
+
+        // EA test: only one allocation remains (not counting the NewMultiArray), using iterative EA
+        testEscapeAnalysis("testComplexAddSnippet", null, true, 1);
+    }
+
+    public static Complex[] testComplexRowSumSnippet(Complex[][] input) {
+        int size = input.length;
+        Complex[] result = new Complex[size];
+        for (int i = 0; i < size; i++) {
+            Complex s = new Complex(0, 0);
+            for (int j = 0; j < size; j++) {
+                s = s.add(input[i][j]);
+            }
+            result[i] = s;
+        }
+        return result;
+    }
+
+    @Test
+    public void testComplexRowSum() {
+        test("testComplexRowSumSnippet", (Object) inputValue);
+
+        // EA test: only two allocations (new array and new instance) remain
+        testEscapeAnalysis("testComplexRowSumSnippet", null, true, 2);
     }
 }

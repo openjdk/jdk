@@ -375,7 +375,6 @@ public class OptionProcessor extends AbstractProcessor {
     private static Element topDeclaringType(Element element) {
         Element enclosing = element.getEnclosingElement();
         if (enclosing == null || enclosing.getKind() == ElementKind.PACKAGE) {
-            assert element.getKind() == ElementKind.CLASS || element.getKind() == ElementKind.INTERFACE;
             return element;
         }
         return topDeclaringType(enclosing);

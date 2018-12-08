@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,14 @@
 package org.graalvm.compiler.phases.common.inlining;
 
 import java.util.LinkedList;
-import java.util.Map;
 
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.phases.common.AbstractInliningPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.inlining.policy.GreedyInliningPolicy;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 import org.graalvm.compiler.phases.common.inlining.walker.InliningData;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -60,14 +58,6 @@ public class InliningPhase extends AbstractInliningPhase {
     private LinkedList<Invoke> rootInvokes = null;
 
     private int maxMethodPerInlining = Integer.MAX_VALUE;
-
-    public InliningPhase(CanonicalizerPhase canonicalizer) {
-        this(new GreedyInliningPolicy(null), canonicalizer);
-    }
-
-    public InliningPhase(Map<Invoke, Double> hints, CanonicalizerPhase canonicalizer) {
-        this(new GreedyInliningPolicy(hints), canonicalizer);
-    }
 
     public InliningPhase(InliningPolicy policy, CanonicalizerPhase canonicalizer) {
         this.inliningPolicy = policy;

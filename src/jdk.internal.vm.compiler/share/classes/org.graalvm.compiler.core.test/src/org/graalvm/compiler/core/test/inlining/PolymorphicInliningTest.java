@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.java;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import java.io.IOException;
+import java.util.List;
+
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
@@ -44,7 +46,6 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.junit.Assert;
@@ -52,8 +53,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.List;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class PolymorphicInliningTest extends GraalCompilerTest {
 
@@ -249,7 +249,7 @@ public class PolymorphicInliningTest extends GraalCompilerTest {
                 HighTierContext context = new HighTierContext(getProviders(), graphBuilderSuite, OptimisticOptimizations.ALL);
                 debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
-                new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+                createInliningPhase().apply(graph, context);
                 debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
                 new DeadCodeEliminationPhase().apply(graph);
