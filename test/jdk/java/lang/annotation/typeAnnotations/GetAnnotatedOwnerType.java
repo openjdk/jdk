@@ -42,6 +42,9 @@ public class GetAnnotatedOwnerType<Dummy> {
     public @TA("non-generic") GetAnnotatedOwnerTypeAuxilliary . @TB("non-generic") Inner nonGeneric;
     public @TA("non-generic") GetAnnotatedOwnerTypeAuxilliary . @TB("generic") InnerGeneric<String> innerGeneric;
     public @TA("non-generic") GetAnnotatedOwnerTypeAuxilliary . @TB("raw") InnerGeneric innerRaw;
+    public GetAnnotatedOwnerTypeAuxilliary . @TB("non-generic") Nested nestedNonGeneric;
+    public GetAnnotatedOwnerTypeAuxilliary . @TB("generic") NestedGeneric<String> nestedGeneric;
+    public GetAnnotatedOwnerTypeAuxilliary . @TB("raw") NestedGeneric nestedRaw;
     public Object anonymous = new Object() {};
     public @TA("array") Dummy[] dummy;
     public @TA("wildcard") GetAnnotatedOwnerType<?> wildcard;
@@ -58,6 +61,9 @@ public class GetAnnotatedOwnerType<Dummy> {
         testNonGeneric();
         testInnerGeneric();
         testInnerRaw();
+        testNestedNonGeneric();
+        testNestedGeneric();
+        testNestedRaw();
 
         testLocalClass();
         testAnonymousClass();
@@ -152,6 +158,54 @@ public class GetAnnotatedOwnerType<Dummy> {
         Asserts.assertEquals(outer.getType(), ((Class<?>)f.getGenericType()).getEnclosingClass());
         Asserts.assertEquals(outer.getAnnotation(TA.class).value(), "non-generic");
         Asserts.assertTrue(outer.getAnnotations().length == 1, "expecting one (1) annotation, got: "
+                + outer.getAnnotations().length);
+    }
+
+    public static void testNestedNonGeneric() throws Exception {
+        Field f = GetAnnotatedOwnerType.class.getField("nestedNonGeneric");
+
+        // make sure inner is correctly annotated
+        AnnotatedType inner = f.getAnnotatedType();
+        Asserts.assertEquals(inner.getAnnotation(TB.class).value(), "non-generic");
+        Asserts.assertTrue(inner.getAnnotations().length == 1, "expecting one (1) annotation, got: "
+                + inner.getAnnotations().length);
+
+        // make sure owner is correctly annotated, on the correct type
+        AnnotatedType outer = inner.getAnnotatedOwnerType();
+        Asserts.assertEquals(outer.getType(), ((Class<?>)f.getGenericType()).getEnclosingClass());
+        Asserts.assertTrue(outer.getAnnotations().length == 0, "expecting no annotations, got: "
+                + outer.getAnnotations().length);
+    }
+
+    public static void testNestedGeneric() throws Exception {
+        Field f = GetAnnotatedOwnerType.class.getField("nestedGeneric");
+
+        // make sure inner is correctly annotated
+        AnnotatedType inner = f.getAnnotatedType();
+        Asserts.assertEquals(inner.getAnnotation(TB.class).value(), "generic");
+        Asserts.assertTrue(inner.getAnnotations().length == 1, "expecting one (1) annotation, got: "
+                + inner.getAnnotations().length);
+
+        // make sure owner is correctly annotated, on the correct type
+        AnnotatedType outer = inner.getAnnotatedOwnerType();
+        Asserts.assertEquals(outer.getType(), ((ParameterizedType) f.getGenericType()).getOwnerType());
+        Asserts.assertTrue(outer.getAnnotations().length == 0, "expecting no annotations, got: "
+                + outer.getAnnotations().length);
+    }
+
+    public static void testNestedRaw() throws Exception {
+        Field f = GetAnnotatedOwnerType.class.getField("nestedRaw");
+
+        // make sure inner is correctly annotated
+        AnnotatedType inner = f.getAnnotatedType();
+        Asserts.assertEquals(inner.getAnnotation(TB.class).value(), "raw");
+        Asserts.assertTrue(inner.getAnnotations().length == 1, "expecting one (1) annotation, got: "
+                + inner.getAnnotations().length);
+
+        // make sure owner is correctly annotated, on the correct type
+        AnnotatedType outer = inner.getAnnotatedOwnerType();
+        Asserts.assertEquals(outer.getType(), ((Class<?>)f.getGenericType()).getEnclosingClass());
+        Asserts.assertTrue(outer.getAnnotations().length == 0, "expecting no annotations, got: "
                 + outer.getAnnotations().length);
     }
 
@@ -279,4 +333,8 @@ class GetAnnotatedOwnerTypeAuxilliary {
     class Inner {}
 
     class InnerGeneric<Dummy> {}
+
+    static class Nested {}
+
+    static class NestedGeneric<Dummy> {}
 }
