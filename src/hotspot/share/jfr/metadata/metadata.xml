@@ -613,7 +613,8 @@
     <Field type="string" name="jvmFlags" label="JVM Settings File Arguments" />
     <Field type="string" name="javaArguments" label="Java Application Arguments" />
     <Field type="long" contentType="epochmillis" name="jvmStartTime" label="JVM Start Time" />
-  </Event>
+    <Field type="long" name="pid" label="Process Identifier" />
+     </Event>
 
   <Event name="OSInformation" category="Operating System" label="OS Information" period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />

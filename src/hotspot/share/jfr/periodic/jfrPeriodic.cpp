@@ -79,6 +79,7 @@ TRACE_REQUEST_FUNC(JVMInformation) {
   event.set_jvmArguments(Arguments::jvm_args());
   event.set_jvmFlags(Arguments::jvm_flags());
   event.set_jvmStartTime(Management::vm_init_done_time());
+  event.set_pid(os::current_process_id());
   event.commit();
  }
 
