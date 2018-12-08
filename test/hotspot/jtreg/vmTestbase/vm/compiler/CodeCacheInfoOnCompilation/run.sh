@@ -27,7 +27,7 @@ TESTED_JAVA_HOME="$TESTJAVA"
 
 ver=$(${TESTED_JAVA_HOME}/bin/java ${JAVA_OPTS} -version 2>&1)
 isComp=$( echo ${ver} | grep -c "compiled mode")
-if [[ $isComp  != 1 ]]; then
+if [ "$isComp" -ne 1 ]; then
         echo "skipped. This test works only with -Xcomp"
         exit
 fi
@@ -40,7 +40,7 @@ pattern="(CodeCache|(CodeHeap.*)): size=${size_pattern} used=${size_pattern} max
 res=$(${TESTED_JAVA_HOME}/bin/java ${JAVA_OPTS} -XX:+PrintCodeCacheOnCompilation -XX:-Inline vm.compiler.CodeCacheInfoOnCompilation.PrintOnCall | egrep -ce "${pattern}")
 echo "res: " ${res}
 
-if (( "${res}" != "0" )); then
+if [ "$res" -ne 0 ]; then
         echo "passed"
         true
 else
