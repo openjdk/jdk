@@ -92,6 +92,21 @@ static void* g_assertion_context = NULL;
 #  endif
 #endif // PRODUCT
 
+#ifdef ASSERT
+// This is to test that error reporting works if we assert during dynamic
+// initialization of the hotspot. See JDK-8214975.
+struct Crasher {
+  Crasher() {
+    // Using getenv - no other mechanism would work yet.
+    const char* s = ::getenv("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION");
+    if (s != NULL && ::strcmp(s, "1") == 0) {
+      fatal("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION");
+    }
+  }
+};
+static Crasher g_crasher;
+#endif // ASSERT
+
 ATTRIBUTE_PRINTF(1, 2)
 void warning(const char* format, ...) {
   if (PrintWarnings) {
