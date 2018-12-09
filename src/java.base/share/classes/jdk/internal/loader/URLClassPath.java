@@ -805,7 +805,7 @@ public class URLClassPath {
         private JarFile getJarFile(URL url) throws IOException {
             // Optimize case where url refers to a local jar file
             if (isOptimizable(url)) {
-                FileURLMapper p = new FileURLMapper (url);
+                FileURLMapper p = new FileURLMapper(url);
                 if (!p.exists()) {
                     throw new FileNotFoundException(p.getPath());
                 }
