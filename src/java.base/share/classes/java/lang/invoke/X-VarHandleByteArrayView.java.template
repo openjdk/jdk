@@ -67,6 +67,17 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             super(form);
             this.be = be;
         }
+
+        @Override
+        final boolean internalEquals(VarHandle vh) {
+            ByteArrayViewVarHandle that = (ByteArrayViewVarHandle) vh;
+            return be == that.be;
+        }
+
+        @Override
+        final int internalHashCode() {
+            return Boolean.hashCode(be);
+        }
     }
 
     static final class ArrayHandle extends ByteArrayViewVarHandle {

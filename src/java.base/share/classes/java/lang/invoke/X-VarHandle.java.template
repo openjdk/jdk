@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package java.lang.invoke;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.invoke.VarHandle.VarHandleDesc;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
@@ -59,6 +61,30 @@ final class VarHandle$Type$s {
         @Override
         final MethodType accessModeTypeUncached(AccessMode accessMode) {
             return accessMode.at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
+        }
+
+        @Override
+        final boolean internalEquals(VarHandle vh) {
+            FieldInstanceReadOnly that = (FieldInstanceReadOnly) vh;
+            return fieldOffset == that.fieldOffset;
+        }
+
+        @Override
+        final int internalHashCode() {
+            return Long.hashCode(fieldOffset);
+        }
+
+        @Override
+        public Optional<VarHandleDesc> describeConstable() {
+            var receiverTypeRef = receiverType.describeConstable();
+            var fieldTypeRef = {#if[Object]?fieldType:$type$.class}.describeConstable();
+            if (!receiverTypeRef.isPresent() || !fieldTypeRef.isPresent())
+                return Optional.empty();
+
+            // Reflect on this VarHandle to extract the field name
+            String name = VarHandles.getFieldFromReceiverAndOffset(
+                receiverType, fieldOffset, {#if[Object]?fieldType:$type$.class}).getName();
+            return Optional.of(VarHandleDesc.ofField(receiverTypeRef.get(), name, fieldTypeRef.get()));
         }
 
         @ForceInline
@@ -324,6 +350,32 @@ final class VarHandle$Type$s {
         }
 
         @Override
+        final boolean internalEquals(VarHandle vh) {
+            FieldStaticReadOnly that = (FieldStaticReadOnly) vh;
+            return base == that.base && fieldOffset == that.fieldOffset;
+        }
+
+        @Override
+        final int internalHashCode() {
+            return 31 * Long.hashCode(fieldOffset) + base.hashCode();
+        }
+
+        @Override
+        public Optional<VarHandleDesc> describeConstable() {
+            var fieldTypeRef = {#if[Object]?fieldType:$type$.class}.describeConstable();
+            if (!fieldTypeRef.isPresent())
+                return Optional.empty();
+
+            // Reflect on this VarHandle to extract the field name
+            var staticField = VarHandles.getStaticFieldFromBaseAndOffset(
+                base, fieldOffset, {#if[Object]?fieldType:$type$.class});
+            var receiverTypeRef = staticField.getDeclaringClass().describeConstable();
+            if (!receiverTypeRef.isPresent())
+                return Optional.empty();
+            return Optional.of(VarHandleDesc.ofStaticField(receiverTypeRef.get(), staticField.getName(), fieldTypeRef.get()));
+        }
+
+        @Override
         final MethodType accessModeTypeUncached(AccessMode accessMode) {
             return accessMode.at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
         }
@@ -585,6 +637,29 @@ final class VarHandle$Type$s {
             this.arrayType = {#if[Object]?arrayType:$type$[].class};
             this.componentType = arrayType.getComponentType();
 #end[Object]
+        }
+
+        @Override
+        final boolean internalEquals(VarHandle vh) {
+            // Equality of access mode types of AccessMode.GET is sufficient for
+            // equality checks
+            return true;
+        }
+
+        @Override
+        final int internalHashCode() {
+            // The hash code of the access mode types of AccessMode.GET is
+            // sufficient for hash code generation
+            return 0;
+        }
+
+        @Override
+        public Optional<VarHandleDesc> describeConstable() {
+            var arrayTypeRef = {#if[Object]?arrayType:$type$[].class}.describeConstable();
+            if (!arrayTypeRef.isPresent())
+                return Optional.empty();
+
+            return Optional.of(VarHandleDesc.ofArray(arrayTypeRef.get()));
         }
 
         @Override

@@ -26,6 +26,8 @@
 package java.lang;
 
 import java.lang.annotation.Annotation;
+import java.lang.constant.ClassDesc;
+import java.lang.invoke.TypeDescriptor;
 import java.lang.module.ModuleReader;
 import java.lang.ref.SoftReference;
 import java.io.IOException;
@@ -46,6 +48,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -58,6 +61,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
@@ -72,6 +76,7 @@ import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.ForceInline;
+import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
@@ -154,7 +159,9 @@ import sun.reflect.misc.ReflectUtil;
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
                               Type,
-                              AnnotatedElement {
+                              AnnotatedElement,
+                              TypeDescriptor.OfField<Class<?>>,
+                              Constable {
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
@@ -4026,5 +4033,69 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
         return members;
+    }
+
+    /**
+     * Returns the type descriptor string for this class.
+     * <p>
+     * Note that this is not a strict inverse of {@link #forName};
+     * distinct classes which share a common name but have different class loaders
+     * will have identical descriptor strings.
+     *
+     * @return the type descriptor representation
+     * @jvms 4.3.2 Field Descriptors
+     * @since 12
+     */
+    @Override
+    public String descriptorString() {
+        if (isPrimitive())
+            return Wrapper.forPrimitiveType(this).basicTypeString();
+        else if (isArray()) {
+            return "[" + componentType.descriptorString();
+        }
+        else {
+            return "L" + getName().replace('.', '/') + ";";
+        }
+    }
+
+    /**
+     * Returns the component type of this {@code Class}, if it describes
+     * an array type, or {@code null} otherwise.
+     *
+     * @implSpec
+     * Equivalent to {@link Class#getComponentType()}.
+     *
+     * @return a {@code Class} describing the component type, or {@code null}
+     * if this {@code Class} does not describe an array type
+     * @since 12
+     */
+    @Override
+    public Class<?> componentType() {
+        return isArray() ? componentType : null;
+    }
+
+    /**
+     * Returns a {@code Class} for an array type whose component type
+     * is described by this {@linkplain Class}.
+     *
+     * @return a {@code Class} describing the array type
+     * @since 12
+     */
+    @Override
+    public Class<?> arrayType() {
+        return Array.newInstance(this, 0).getClass();
+    }
+
+    /**
+     * Returns a nominal descriptor for this instance, if one can be
+     * constructed, or an empty {@link Optional} if one cannot be.
+     *
+     * @return An {@link Optional} containing the resulting nominal descriptor,
+     * or an empty {@link Optional} if one cannot be constructed.
+     * @since 12
+     */
+    @Override
+    public Optional<ClassDesc> describeConstable() {
+        return Optional.of(ClassDesc.ofDescriptor(descriptorString()));
     }
 }

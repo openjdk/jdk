@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,6 @@ class NonDenotableTest {
         @InferredType(SEL_INT_ENUM_SEL)
         var c = s;
         for (@InferredType(SEL_INT_ENUM_SEL) var s2 = s ; ;) { break; }
-        for (@InferredType(SEL_INT_ENUM_SEL) var s2 : arrayOf(s)) { break; }
-        for (@InferredType(SEL_INT_ENUM_SEL) var s2 : listOf(s)) { break; }
     }
 
     List<? extends String> extString() { return null; }

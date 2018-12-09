@@ -25,19 +25,26 @@
 
 package java.lang.invoke;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
-import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
 /**
  * A VarHandle is a dynamically strongly typed reference to a variable, or to a
@@ -437,7 +444,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * @see MethodType
  * @since 9
  */
-public abstract class VarHandle {
+public abstract class VarHandle implements Constable {
     final VarForm vform;
 
     VarHandle(VarForm vform) {
@@ -1857,6 +1864,32 @@ public abstract class VarHandle {
         }
     }
 
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VarHandle that = (VarHandle) o;
+        return accessModeType(AccessMode.GET).equals(that.accessModeType(AccessMode.GET)) &&
+               internalEquals(that);
+    }
+
+    abstract boolean internalEquals(VarHandle vh);
+
+    @Override
+    public final int hashCode() {
+        return 31 * accessModeType(AccessMode.GET).hashCode() + internalHashCode();
+    }
+
+    abstract int internalHashCode();
+
+    @Override
+    public final String toString() {
+        return String.format("VarHandle[varType=%s, coord=%s]",
+                             varType().getName(),
+                             coordinateTypes());
+    }
+
     /**
      * Returns the variable type of variables referenced by this VarHandle.
      *
@@ -1949,6 +1982,20 @@ public abstract class VarHandle {
             return MethodHandles.varHandleInvoker(accessMode, accessModeType(accessMode)).
                     bindTo(this);
         }
+    }
+
+    /**
+     * Return a nominal descriptor for this instance, if one can be
+     * constructed, or an empty {@link Optional} if one cannot be.
+     *
+     * @return An {@link Optional} containing the resulting nominal descriptor,
+     * or an empty {@link Optional} if one cannot be constructed.
+     * @since 12
+     */
+    @Override
+    public Optional<VarHandleDesc> describeConstable() {
+        // partial function for field and array only
+        return Optional.empty();
     }
 
     @Stable
@@ -2082,4 +2129,163 @@ public abstract class VarHandle {
     public static void storeStoreFence() {
         UNSAFE.storeStoreFence();
     }
+
+    /**
+     * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
+     * {@link VarHandle} constant.
+     *
+     * @since 12
+     */
+    public static final class VarHandleDesc extends DynamicConstantDesc<VarHandle> {
+
+        /**
+         * Kinds of variable handle descs
+         */
+        private enum Kind {
+            FIELD(ConstantDescs.BSM_VARHANDLE_FIELD),
+            STATIC_FIELD(ConstantDescs.BSM_VARHANDLE_STATIC_FIELD),
+            ARRAY(ConstantDescs.BSM_VARHANDLE_ARRAY);
+
+            final DirectMethodHandleDesc bootstrapMethod;
+
+            Kind(DirectMethodHandleDesc bootstrapMethod) {
+                this.bootstrapMethod = bootstrapMethod;
+            }
+
+            ConstantDesc[] toBSMArgs(ClassDesc declaringClass, ClassDesc varType) {
+                switch (this) {
+                    case FIELD:
+                    case STATIC_FIELD:
+                        return new ConstantDesc[] {declaringClass, varType };
+                    case ARRAY:
+                        return new ConstantDesc[] {declaringClass };
+                    default:
+                        throw new InternalError("Cannot reach here");
+                }
+            }
+        }
+
+        private final Kind kind;
+        private final ClassDesc declaringClass;
+        private final ClassDesc varType;
+
+        /**
+         * Construct a {@linkplain VarHandleDesc} given a kind, name, and declaring
+         * class.
+         *
+         * @param kind the kind of of the var handle
+         * @param name the unqualified name of the field, for field var handles; otherwise ignored
+         * @param declaringClass a {@link ClassDesc} describing the declaring class,
+         *                       for field var handles
+         * @param varType a {@link ClassDesc} describing the type of the variable
+         * @throws NullPointerException if any required argument is null
+         * @jvms 4.2.2 Unqualified Names
+         */
+        private VarHandleDesc(Kind kind, String name, ClassDesc declaringClass, ClassDesc varType) {
+            super(kind.bootstrapMethod, name,
+                  ConstantDescs.CD_VarHandle,
+                  kind.toBSMArgs(declaringClass, varType));
+            this.kind = kind;
+            this.declaringClass = declaringClass;
+            this.varType = varType;
+        }
+
+        /**
+         * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
+         * for an instance field.
+         *
+         * @param name the unqualifed name of the field
+         * @param declaringClass a {@link ClassDesc} describing the declaring class,
+         *                       for field var handles
+         * @param fieldType a {@link ClassDesc} describing the type of the field
+         * @return the {@linkplain VarHandleDesc}
+         * @throws NullPointerException if any of the arguments are null
+         * @jvms 4.2.2 Unqualified Names
+         */
+        public static VarHandleDesc ofField(ClassDesc declaringClass, String name, ClassDesc fieldType) {
+            Objects.requireNonNull(declaringClass);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(fieldType);
+            return new VarHandleDesc(Kind.FIELD, name, declaringClass, fieldType);
+        }
+
+        /**
+         * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
+         * for a static field.
+         *
+         * @param name the unqualified name of the field
+         * @param declaringClass a {@link ClassDesc} describing the declaring class,
+         *                       for field var handles
+         * @param fieldType a {@link ClassDesc} describing the type of the field
+         * @return the {@linkplain VarHandleDesc}
+         * @throws NullPointerException if any of the arguments are null
+         * @jvms 4.2.2 Unqualified Names
+         */
+        public static VarHandleDesc ofStaticField(ClassDesc declaringClass, String name, ClassDesc fieldType) {
+            Objects.requireNonNull(declaringClass);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(fieldType);
+            return new VarHandleDesc(Kind.STATIC_FIELD, name, declaringClass, fieldType);
+        }
+
+        /**
+         * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
+         * for for an array type.
+         *
+         * @param arrayClass a {@link ClassDesc} describing the type of the array
+         * @return the {@linkplain VarHandleDesc}
+         * @throws NullPointerException if any of the arguments are null
+         */
+        public static VarHandleDesc ofArray(ClassDesc arrayClass) {
+            Objects.requireNonNull(arrayClass);
+            if (!arrayClass.isArray())
+                throw new IllegalArgumentException("Array class argument not an array: " + arrayClass);
+            return new VarHandleDesc(Kind.ARRAY, ConstantDescs.DEFAULT_NAME, arrayClass, arrayClass.componentType());
+        }
+
+        /**
+         * Returns a {@link ClassDesc} describing the type of the variable described
+         * by this descriptor.
+         *
+         * @return the variable type
+         */
+        public ClassDesc varType() {
+            return varType;
+        }
+
+        @Override
+        public VarHandle resolveConstantDesc(MethodHandles.Lookup lookup)
+                throws ReflectiveOperationException {
+            switch (kind) {
+                case FIELD:
+                    return lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                constantName(),
+                                                (Class<?>) varType.resolveConstantDesc(lookup));
+                case STATIC_FIELD:
+                    return lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                      constantName(),
+                                                      (Class<?>) varType.resolveConstantDesc(lookup));
+                case ARRAY:
+                    return MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
+                default:
+                    throw new InternalError("Cannot reach here");
+            }
+        }
+
+        @Override
+        public String toString() {
+            switch (kind) {
+                case FIELD:
+                case STATIC_FIELD:
+                    return String.format("VarHandleDesc[%s%s.%s:%s]",
+                                         (kind == Kind.STATIC_FIELD) ? "static " : "",
+                                         declaringClass.displayName(), constantName(), varType.displayName());
+                case ARRAY:
+                    return String.format("VarHandleDesc[%s[]]", declaringClass.displayName());
+                default:
+                    throw new InternalError("Cannot reach here");
+            }
+        }
+    }
+
 }

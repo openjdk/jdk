@@ -28,10 +28,19 @@ package java.lang.invoke;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 
+import static java.lang.invoke.MethodHandleInfo.*;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * A method handle is a typed, directly executable reference to an underlying method,
@@ -428,7 +437,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public abstract class MethodHandle {
+public abstract class MethodHandle implements Constable {
 
     /**
      * Internal marker interface which distinguishes (to the Java compiler)
@@ -1509,6 +1518,60 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     public MethodHandle bindTo(Object x) {
         x = type.leadingReferenceParameter().cast(x);  // throw CCE if needed
         return bindArgumentL(0, x);
+    }
+
+    /**
+     * Return a nominal descriptor for this instance, if one can be
+     * constructed, or an empty {@link Optional} if one cannot be.
+     *
+     * @return An {@link Optional} containing the resulting nominal descriptor,
+     * or an empty {@link Optional} if one cannot be constructed.
+     * @since 12
+     */
+    @Override
+    public Optional<MethodHandleDesc> describeConstable() {
+        MethodHandleInfo info;
+        ClassDesc owner;
+        String name;
+        MethodTypeDesc type;
+        boolean isInterface;
+        try {
+            info = IMPL_LOOKUP.revealDirect(this);
+            isInterface = info.getDeclaringClass().isInterface();
+            owner = info.getDeclaringClass().describeConstable().orElseThrow();
+            type = info.getMethodType().describeConstable().orElseThrow();
+            name = info.getName();
+        }
+        catch (Exception e) {
+            return Optional.empty();
+        }
+
+        switch (info.getReferenceKind()) {
+            case REF_getField:
+                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
+            case REF_putField:
+                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
+            case REF_getStatic:
+                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
+            case REF_putStatic:
+                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
+            case REF_invokeVirtual:
+                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
+            case REF_invokeStatic:
+                return isInterface ?
+                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
+                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
+            case REF_invokeSpecial:
+                return isInterface ?
+                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
+                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
+            case REF_invokeInterface:
+                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
+            case REF_newInvokeSpecial:
+                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
+            default:
+                return Optional.empty();
+        }
     }
 
     /**

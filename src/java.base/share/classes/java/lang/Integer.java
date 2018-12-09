@@ -26,7 +26,12 @@
 package java.lang;
 
 import java.lang.annotation.Native;
+import java.lang.invoke.MethodHandles;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
 import java.util.Objects;
+import java.util.Optional;
+
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.VM;
 
@@ -56,7 +61,8 @@ import static java.lang.String.UTF16;
  * @author  Joseph D. Darcy
  * @since 1.0
  */
-public final class Integer extends Number implements Comparable<Integer> {
+public final class Integer extends Number
+        implements Comparable<Integer>, Constable, ConstantDesc {
     /**
      * A constant holding the minimum value an {@code int} can
      * have, -2<sup>31</sup>.
@@ -1829,6 +1835,31 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static int min(int a, int b) {
         return Math.min(a, b);
+    }
+
+    /**
+     * Returns a nominal descriptor for this instance, which is the instance
+     * itself.
+     *
+     * @return an {@link Optional} describing the {@linkplain Integer} instance
+     * @since 12
+     */
+    @Override
+    public Optional<Integer> describeConstable() {
+        return Optional.of(this);
+    }
+
+    /**
+     * Resolves this instance as a {@link ConstantDesc}, the result of which is
+     * the instance itself.
+     *
+     * @param lookup ignored
+     * @return the {@linkplain Integer} instance
+     * @since 12
+     */
+    @Override
+    public Integer resolveConstantDesc(MethodHandles.Lookup lookup) {
+        return this;
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
