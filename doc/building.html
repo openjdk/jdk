@@ -396,9 +396,9 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <h3 id="x11">X11</h3>
 <p>Certain <a href="http://www.x.org/">X11</a> libraries and include files are required on Linux and Solaris.</p>
 <ul>
-<li>To install on an apt-based Linux, try running <code>sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev</code>.</li>
-<li>To install on an rpm-based Linux, try running <code>sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel</code>.</li>
-<li>To install on Solaris, try running <code>pkg install x11/header/x11-protocols x11/library/libice x11/library/libpthread-stubs x11/library/libsm x11/library/libx11 x11/library/libxau x11/library/libxcb x11/library/libxdmcp x11/library/libxevie x11/library/libxext x11/library/libxrender x11/library/libxscrnsaver x11/library/libxtst x11/library/toolkit/libxt</code>.</li>
+<li>To install on an apt-based Linux, try running <code>sudo apt-get install libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
+<li>To install on an rpm-based Linux, try running <code>sudo yum install libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel</code>.</li>
+<li>To install on Solaris, try running <code>pkg install x11/header/x11-protocols x11/library/libice x11/library/libpthread-stubs x11/library/libsm x11/library/libx11 x11/library/libxau x11/library/libxcb x11/library/libxdmcp x11/library/libxevie x11/library/libxext x11/library/libxrender x11/library/libxrandr x11/library/libxscrnsaver x11/library/libxtst x11/library/toolkit/libxt</code>.</li>
 </ul>
 <p>Use <code>--with-x=&lt;path&gt;</code> if <code>configure</code> does not properly locate your X11 files.</p>
 <h3 id="alsa">ALSA</h3>
@@ -662,6 +662,7 @@ dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
 <li>libice-dev</li>
 <li>libxrender</li>
 <li>libxrender-dev</li>
+<li>libxrandr-dev</li>
 <li>libsm-dev</li>
 <li>libxt-dev</li>
 <li>libx11</li>
@@ -693,7 +694,7 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 <pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre></li>
 <li><p>Create chroot on the <em>build</em> system, configuring it for <em>target</em> system:</p>
 <pre><code>sudo qemu-debootstrap --arch=arm64 --verbose \
-   --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
+   --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
    --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/</code></pre></li>
 <li><p>Configure and build with newly created chroot as sysroot/toolchain-path:</p>
 <pre><code>CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure --openjdk-target=aarch64-linux-gnu --with-sysroot=/chroots/arm64/ --with-toolchain-path=/chroots/arm64/
