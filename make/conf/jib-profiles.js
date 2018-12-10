@@ -248,6 +248,7 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat(["--enable-jtreg-failure-handler"],
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--with-jvm-features=-shenandoahgc",
             versionArgs(input, common))
     };
     // Extra settings for debug profiles
