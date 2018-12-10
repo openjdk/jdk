@@ -403,7 +403,7 @@ MethodLivenessResult ciMethod::raw_liveness_at_bci(int bci) {
 // information.
 MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
   MethodLivenessResult result = raw_liveness_at_bci(bci);
-  if (CURRENT_ENV->should_retain_local_variables() || DeoptimizeALot || CompileTheWorld) {
+  if (CURRENT_ENV->should_retain_local_variables() || DeoptimizeALot) {
     // Keep all locals live for the user's edification and amusement.
     result.at_put_range(0, result.size(), true);
   }
@@ -1210,7 +1210,7 @@ bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
 // ciMethod::check_call
 bool ciMethod::check_call(int refinfo_index, bool is_static) const {
   // This method is used only in C2 from InlineTree::ok_to_inline,
-  // and is only used under -Xcomp or -XX:CompileTheWorld.
+  // and is only used under -Xcomp.
   // It appears to fail when applied to an invokeinterface call site.
   // FIXME: Remove this method and resolve_method_statically; refactor to use the other LinkResolver entry points.
   VM_ENTRY_MARK;

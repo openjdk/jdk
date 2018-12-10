@@ -206,8 +206,6 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
   do_uintx_flag(CodeCacheSegmentSize)                                      \
   do_intx_flag(CodeEntryAlignment)                                         \
   do_bool_flag(CompactFields)                                              \
-  NOT_PRODUCT(do_intx_flag(CompileTheWorldStartAt))                        \
-  NOT_PRODUCT(do_intx_flag(CompileTheWorldStopAt))                         \
   do_intx_flag(ContendedPaddingWidth)                                      \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \

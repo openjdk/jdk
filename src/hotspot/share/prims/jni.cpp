@@ -437,8 +437,9 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   // If we were the first invocation of jni_FindClass, we enable compilation again
   // rather than just allowing invocation counter to overflow and decay.
   // Controlled by flag DelayCompilationDuringStartup.
-  if (first_time && !CompileTheWorld)
+  if (first_time) {
     CompilationPolicy::completed_vm_startup();
+  }
 
   return result;
 JNI_END
@@ -3969,8 +3970,6 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     post_thread_start_event(thread);
 
 #ifndef PRODUCT
-    // Check if we should compile all classes on bootclasspath
-    if (CompileTheWorld) ClassLoader::compile_the_world();
     if (ReplayCompiles) ciReplay::replay(thread);
 
     // Some platforms (like Win*) need a wrapper around these test

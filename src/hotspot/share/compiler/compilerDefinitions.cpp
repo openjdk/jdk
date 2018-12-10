@@ -314,9 +314,9 @@ bool CompilerConfig::check_args_consistency(bool status) {
   }
 #endif
 
-  if (BackgroundCompilation && (CompileTheWorld || ReplayCompiles)) {
+  if (BackgroundCompilation && ReplayCompiles) {
     if (!FLAG_IS_DEFAULT(BackgroundCompilation)) {
-      warning("BackgroundCompilation disabled due to CompileTheWorld or ReplayCompiles options.");
+      warning("BackgroundCompilation disabled due to ReplayCompiles option.");
     }
     FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
   }

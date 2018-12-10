@@ -291,7 +291,7 @@ Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
     return this;
   }
   // Toned down to rescue meeting at a Phi 3 different oops all implementing
-  // the same interface.  CompileTheWorld starting at 502, kd12rc1.zip.
+  // the same interface.
   return (phase->type(in(1)) == phase->type(this)) ? in(1) : this;
 }
 
