@@ -143,12 +143,6 @@ class Abstract_VM_Version: AllStatic {
   // that the O/S may support more sizes, but at most this many are used.
   static uint page_size_count() { return 2; }
 
-  // Returns the number of parallel threads to be used for VM
-  // work.  If that number has not been calculated, do so and
-  // save it.  Returns ParallelGCThreads if it is set on the
-  // command line.
-  static unsigned int parallel_worker_threads();
-
   // Denominator for computing default ParallelGCThreads for machines with
   // a large number of cores.
   static uint parallel_worker_threads_denominator() { return 8; }
