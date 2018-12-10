@@ -72,15 +72,15 @@ private:
   volatile size_t _uncleaned_items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
 
-  double get_load_factor();
-  double get_dead_factor();
+  double get_load_factor() const;
+  double get_dead_factor() const;
 
   void check_concurrent_work();
   void trigger_concurrent_work();
 
   static size_t item_added();
   static void item_removed();
-  size_t add_items_count_to_clean(size_t ndead);
+  size_t add_items_to_clean(size_t ndead);
 
   StringTable();
 
@@ -125,7 +125,7 @@ private:
   // If GC uses ParState directly it should add the number of cleared
   // strings to this method.
   static void inc_dead_counter(size_t ndead) {
-    the_table()->add_items_count_to_clean(ndead);
+    the_table()->add_items_to_clean(ndead);
   }
 
   //   Delete pointers to otherwise-unreachable objects.
