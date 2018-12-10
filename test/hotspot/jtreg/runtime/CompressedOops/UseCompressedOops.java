@@ -37,6 +37,7 @@ import java.util.Collections;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import sun.hotspot.gc.GC;
 
 import sun.hotspot.code.Compiler;
 
@@ -61,6 +62,9 @@ public class UseCompressedOops {
         testCompressedOopsModes(args, "-XX:+UseSerialGC");
         testCompressedOopsModes(args, "-XX:+UseParallelGC");
         testCompressedOopsModes(args, "-XX:+UseParallelOldGC");
+        if (GC.Shenandoah.isSupported()) {
+            testCompressedOopsModes(args, "-XX:+UseShenandoahGC");
+        }
     }
 
     public static void testCompressedOopsModes(ArrayList<String> flags1, String... flags2) throws Exception {

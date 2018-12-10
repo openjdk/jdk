@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,16 @@ import jdk.internal.vm.annotation.Contended;
  * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=2M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
  * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
  * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ */
+
+/*
+ * @test TestHumongousReferenceObjectShenandoah
+ * @summary Test that verifies that iteration over large, plain Java objects, that potentially cross region boundaries, with references in them works.
+ * @requires vm.gc.Shenandoah
+ * @bug 8151499 8153734
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify TestHumongousReferenceObject
  */
 public class TestHumongousReferenceObject {
 

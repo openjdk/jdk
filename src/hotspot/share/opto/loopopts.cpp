@@ -1024,6 +1024,11 @@ static bool merge_point_safe(Node* region) {
         Node* m = n->fast_out(j);
         if (m->is_FastLock())
           return false;
+#if INCLUDE_SHENANDOAHGC
+        if (m->is_ShenandoahBarrier() && m->has_out_with(Op_FastLock)) {
+          return false;
+        }
+#endif
 #ifdef _LP64
         if (m->Opcode() == Op_ConvI2L)
           return false;
@@ -1310,6 +1315,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n, bool last_round) {
         // control, then the cloning of n is a pointless exercise, because
         // GVN will ensure that we end up where we started.
         if (!n->is_Load() || late_load_ctrl != n_ctrl) {
+          BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
           for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
             Node *u = n->last_out(j); // Clone private computation per use
             _igvn.rehash_node_delayed(u);
@@ -1339,6 +1345,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n, bool last_round) {
             // Find control for 'x' next to use but not inside inner loops.
             // For inner loop uses get the preheader area.
             x_ctrl = place_near_use(x_ctrl);
+
+            if (bs->sink_node(this, n, x, x_ctrl, n_ctrl)) {
+              continue;
+            }
 
             if (n->is_Load()) {
               // For loads, add a control edge to a CFG node outside of the loop
@@ -3137,7 +3147,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
-          if ( n->in(0) == NULL && !n->is_Load() && !n->is_CMove() ) {
+          if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove() && n->Opcode() != Op_ShenandoahWBMemProj) {
             cloned_for_outside_use += clone_for_use_outside_loop( loop, n, worklist );
             sink_list.push(n);
             peel     >>= n->_idx; // delete n from peel set.

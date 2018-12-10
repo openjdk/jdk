@@ -274,6 +274,11 @@ public:
 
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
+
+#ifdef ASSERT
+  bool debug_final_field_at(int offset);
+  bool debug_stable_field_at(int offset);
+#endif
 };
 
 #endif // SHARE_VM_CI_CIINSTANCEKLASS_HPP

@@ -36,6 +36,11 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_assembler_x86.cpp_CXXFLAGS := -Wno-maybe-uninitialized
   BUILD_LIBJVM_cardTableBarrierSetAssembler_x86.cpp_CXXFLAGS := -Wno-maybe-uninitialized
   BUILD_LIBJVM_interp_masm_x86.cpp_CXXFLAGS := -Wno-uninitialized
+  ifeq ($(DEBUG_LEVEL), release)
+    # Need extra inlining to collapse all marking code into the hot marking loop
+    BUILD_LIBJVM_shenandoahConcurrentMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
+    BUILD_LIBJVM_shenandoahTraversalGC.cpp_CXXFLAGS := --param inline-unit-growth=1000
+  endif
 endif
 
 LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NONE)

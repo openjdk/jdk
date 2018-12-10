@@ -54,6 +54,7 @@ public enum VMOps {
   CMS_Final_Remark,
   G1CollectFull,
   ZOperation,
+  ShenandoahOperation,
   G1CollectForAllocation,
   G1IncCollectionPause,
   G1Concurrent,

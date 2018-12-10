@@ -3968,7 +3968,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
     }
     while(worklist.size() != 0 && LCA != early) {
       Node* s = worklist.pop();
-      if (s->is_Load() || s->Opcode() == Op_SafePoint ||
+      if (s->is_Load() || s->is_ShenandoahBarrier() || s->Opcode() == Op_SafePoint ||
           (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
         continue;
       } else if (s->is_MergeMem()) {
@@ -4185,7 +4185,17 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 //------------------------------build_loop_late_post---------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
-void PhaseIdealLoop::build_loop_late_post( Node *n ) {
+void PhaseIdealLoop::build_loop_late_post(Node *n) {
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+
+  if (bs->build_loop_late_post(this, n)) {
+    return;
+  }
+
+  build_loop_late_post_work(n, true);
+}
+
+void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
@@ -4206,7 +4216,6 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
     // _must_ be pinned (they have to observe their control edge of course).
     // Unlike Stores (which modify an unallocable resource, the memory
     // state), Mods/Loads can float around.  So free them up.
-    bool pinned = true;
     switch( n->Opcode() ) {
     case Op_DivI:
     case Op_DivF:
@@ -4503,6 +4512,7 @@ void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) 
     }
   }
 }
+#endif
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
@@ -4525,7 +4535,6 @@ void PhaseIdealLoop::rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node
     }
   }
 }
-#endif
 
 
 //=============================================================================

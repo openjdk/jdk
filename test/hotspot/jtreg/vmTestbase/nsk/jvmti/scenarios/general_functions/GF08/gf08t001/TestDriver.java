@@ -72,15 +72,16 @@ public class TestDriver {
         Boolean isUseG1GCon = wb.getBooleanVMFlag("UseG1GC");
         Boolean isUseConcMarkSweepGCon = wb.getBooleanVMFlag("UseConcMarkSweepGC");
         Boolean isUseZGCon = wb.getBooleanVMFlag("UseZGC");
+        Boolean isShenandoahGCon = wb.getBooleanVMFlag("UseShenandoahGC");
         Boolean isUseEpsilonGCon = wb.getBooleanVMFlag("UseEpsilonGC");
 
         if (Compiler.isGraalEnabled() &&
-            (isUseConcMarkSweepGCon || isUseZGCon || isUseEpsilonGCon)) {
+            (isUseConcMarkSweepGCon || isUseZGCon || isUseEpsilonGCon || isShenandoahGCon)) {
             return; // Graal does not support these GCs
         }
 
         String keyPhrase;
-        if ((isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) || isUseZGCon) {
+        if ((isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) || isUseZGCon || isShenandoahGCon) {
             keyPhrase = "GC";
         } else {
             keyPhrase = "Pause Full";

@@ -75,6 +75,7 @@
 class ExceptionCache;
 class KlassDepChange;
 class OopClosure;
+class ShenandoahParallelCodeHeapIterator;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
@@ -82,6 +83,7 @@ class CodeCache : AllStatic {
   template <class T, class Filter> friend class CodeBlobIterator;
   friend class WhiteBox;
   friend class CodeCacheLoader;
+  friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
   static GrowableArray<CodeHeap*>* _heaps;

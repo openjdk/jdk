@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1028,6 +1028,8 @@ public:
 
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
+  virtual const TypeOopPtr *cast_to_nonconst() const;
+
   // corresponding pointer to klass, for a given instance
   const TypeKlassPtr* as_klass_type() const;
 
@@ -1109,6 +1111,8 @@ class TypeInstPtr : public TypeOopPtr {
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
+
+  virtual const TypeOopPtr *cast_to_nonconst() const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
 
@@ -1192,6 +1196,8 @@ public:
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
+
+  virtual const TypeOopPtr *cast_to_nonconst() const;
 
   virtual const TypeAryPtr* cast_to_size(const TypeInt* size) const;
   virtual const TypeInt* narrow_size_type(const TypeInt* size) const;
@@ -1770,6 +1776,8 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 // UseOptoBiasInlining
 #define XorXNode     XorLNode
 #define StoreXConditionalNode StoreLConditionalNode
+#define LoadXNode    LoadLNode
+#define StoreXNode   StoreLNode
 // Opcodes
 #define Op_LShiftX   Op_LShiftL
 #define Op_AndX      Op_AndL
@@ -1815,6 +1823,8 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 // UseOptoBiasInlining
 #define XorXNode     XorINode
 #define StoreXConditionalNode StoreIConditionalNode
+#define LoadXNode    LoadINode
+#define StoreXNode   StoreINode
 // Opcodes
 #define Op_LShiftX   Op_LShiftI
 #define Op_AndX      Op_AndI

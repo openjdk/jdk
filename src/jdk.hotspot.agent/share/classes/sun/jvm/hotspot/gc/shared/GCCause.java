@@ -67,6 +67,12 @@ public enum GCCause {
   _z_allocation_stall ("Allocation Stall"),
   _z_proactive ("Proactive"),
 
+  _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
+  _shenandoah_stop_vm ("Stopping VM"),
+  _shenandoah_concurrent_gc ("Concurrent GC"),
+  _shenandoah_traversal_gc ("Traversal GC"),
+  _shenandoah_upgrade_to_full_gc ("Upgrade To Full GC"),
+
   _last_gc_cause ("ILLEGAL VALUE - last gc cause - ILLEGAL VALUE");
 
   private final String value;

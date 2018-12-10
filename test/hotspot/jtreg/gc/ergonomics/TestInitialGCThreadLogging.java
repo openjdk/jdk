@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,14 @@
  * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestInitialGCThreadLogging
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import sun.hotspot.gc.GC;
 
 public class TestInitialGCThreadLogging {
   public static void main(String[] args) throws Exception {
@@ -42,6 +46,10 @@ public class TestInitialGCThreadLogging {
     testInitialGCThreadLogging("UseG1GC", "GC Thread");
 
     testInitialGCThreadLogging("UseParallelGC", "ParGC Thread");
+
+    if (GC.Shenandoah.isSupported()) {
+        testInitialGCThreadLogging("UseShenandoahGC", "Shenandoah GC Thread");
+    }
   }
 
   private static void verifyDynamicNumberOfGCThreads(OutputAnalyzer output, String threadName) {
@@ -51,7 +59,7 @@ public class TestInitialGCThreadLogging {
 
   private static void testInitialGCThreadLogging(String gcFlag, String threadName) throws Exception {
     // UseDynamicNumberOfGCThreads and TraceDynamicGCThreads enabled
-    String[] baseArgs = {"-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", "-version"};
+    String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", "-version"};
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
     ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);

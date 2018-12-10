@@ -48,6 +48,16 @@
  * @run main/othervm -Xms71M -Xmx91M -XX:+UseConcMarkSweepGC -XX:-UseLargePages TestAlignmentToUseLargePages
  */
 
+/**
+ * @test TestAlignmentToUseLargePagesShenandoah
+ * @key gc
+ * @bug 8024396
+ * @comment Graal does not support Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-UseLargePages TestAlignmentToUseLargePages
+ */
+
 public class TestAlignmentToUseLargePages {
   public static void main(String args[]) throws Exception {
     // nothing to do

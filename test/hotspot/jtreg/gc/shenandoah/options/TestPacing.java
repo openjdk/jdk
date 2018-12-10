@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,32 +21,24 @@
  *
  */
 
-
 /*
- * @test CriticalNativeStress
+ * @test TestPacing
  * @key gc
- * @bug 8199868
- * @requires (os.arch =="x86_64" | os.arch == "amd64") & (vm.bits == "64") & vm.gc.Epsilon & !vm.graal.enabled
- * @summary test argument unpacking nmethod wrapper of critical native method
- * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx256M -XX:+CriticalJNINatives CriticalNativeArgs
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahPacing -Xmx128m TestPacing
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahPacing -Xmx128m TestPacing
  */
-public class CriticalNativeArgs {
-  static {
-    System.loadLibrary("CriticalNative");
-  }
 
-  static native boolean isNull(int[] a);
+public class TestPacing {
+    static final long TARGET_MB = Long.getLong("target", 1000); // 1 Gb allocation
 
-  public static void main(String[] args) {
-    int[] arr = new int[2];
+    static volatile Object sink;
 
-    if (isNull(arr)) {
-      throw new RuntimeException("Should not be null");
+    public static void main(String[] args) throws Exception {
+        long count = TARGET_MB * 1024 * 1024 / 16;
+        for (long c = 0; c < count; c++) {
+            sink = new Object();
+        }
     }
-
-    if (!isNull(null)) {
-      throw new RuntimeException("Should be null");
-    }
-  }
 }
-

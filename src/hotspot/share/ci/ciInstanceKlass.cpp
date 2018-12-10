@@ -742,3 +742,27 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
     ik->do_local_static_fields(&sffp);
   }
 }
+
+#ifdef ASSERT
+bool ciInstanceKlass::debug_final_field_at(int offset) {
+  GUARDED_VM_ENTRY(
+    InstanceKlass* ik = get_instanceKlass();
+    fieldDescriptor fd;
+    if (ik->find_field_from_offset(offset, false, &fd)) {
+      return fd.is_final();
+    }
+  );
+  return false;
+}
+
+bool ciInstanceKlass::debug_stable_field_at(int offset) {
+  GUARDED_VM_ENTRY(
+    InstanceKlass* ik = get_instanceKlass();
+    fieldDescriptor fd;
+    if (ik->find_field_from_offset(offset, false, &fd)) {
+      return fd.is_stable();
+    }
+  );
+  return false;
+}
+#endif

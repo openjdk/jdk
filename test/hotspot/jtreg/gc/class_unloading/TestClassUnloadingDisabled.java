@@ -64,6 +64,24 @@
  *                   -XX:-ClassUnloading -XX:+UseConcMarkSweepGC TestClassUnloadingDisabled
  */
 
+/*
+ * @test TestClassUnloadingDisabledShenandoah
+ * @key gc
+ * @bug 8114823
+ * @comment Graal does not support Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.opt.ClassUnloading != true
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:-ClassUnloading -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC TestClassUnloadingDisabled
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

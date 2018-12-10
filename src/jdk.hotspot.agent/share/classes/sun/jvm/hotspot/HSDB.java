@@ -36,6 +36,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.interpreter.*;
@@ -1112,6 +1113,10 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           }
                         } else if (collHeap instanceof EpsilonHeap) {
                           anno = "Epsilon ";
+                          bad = false;
+                        } else if (collHeap instanceof ShenandoahHeap) {
+                          ShenandoahHeap heap = (ShenandoahHeap) collHeap;
+                          anno = "ShenandoahHeap ";
                           bad = false;
                         } else if (collHeap instanceof ZCollectedHeap) {
                           ZCollectedHeap heap = (ZCollectedHeap) collHeap;

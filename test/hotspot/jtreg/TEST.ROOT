@@ -46,6 +46,7 @@ requires.properties= \
     vm.gc.Serial \
     vm.gc.Parallel \
     vm.gc.ConcMarkSweep \
+    vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
     vm.jvmci \
