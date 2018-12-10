@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug     6348760
  * @summary crash: java.lang.AssertionError at com.sun.tools.javac.comp.Lower.abstractLval(Lower.java:1853)
  * @author  Peter von der Ah\u00e9
- * @run main/othervm -Xfuture T6348760
+ * @run main/othervm T6348760
  */
 
 public class T6348760<T> {
