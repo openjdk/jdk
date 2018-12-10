@@ -518,10 +518,10 @@ final class HandshakeHash {
                     JsseJce.getMessageDigest(cipherSuite.hashAlg.name);
             if (md instanceof Cloneable) {
                 transcriptHash = new CloneableHash(md);
-                this.baos = null;
+                this.baos = new ByteArrayOutputStream();
             } else {
                 transcriptHash = new NonCloneableHash(md);
-                this.baos = new ByteArrayOutputStream();
+                this.baos = null;
             }
         }
 
@@ -550,26 +550,20 @@ final class HandshakeHash {
 
     static final class T13HandshakeHash implements TranscriptHash {
         private final TranscriptHash transcriptHash;
-        private final ByteArrayOutputStream baos;
 
         T13HandshakeHash(CipherSuite cipherSuite) {
             MessageDigest md =
                     JsseJce.getMessageDigest(cipherSuite.hashAlg.name);
             if (md instanceof Cloneable) {
                 transcriptHash = new CloneableHash(md);
-                this.baos = null;
             } else {
                 transcriptHash = new NonCloneableHash(md);
-                this.baos = new ByteArrayOutputStream();
             }
         }
 
         @Override
         public void update(byte[] input, int offset, int length) {
             transcriptHash.update(input, offset, length);
-            if (baos != null) {
-                baos.write(input, offset, length);
-            }
         }
 
         @Override
@@ -579,13 +573,9 @@ final class HandshakeHash {
 
         @Override
         public byte[] archived() {
-            if (baos != null) {
-                return baos.toByteArray();
-            } else {
-                return transcriptHash.archived();
-            }
-
-            // throw new UnsupportedOperationException("Not supported yet.");
+            // This method is not necessary in T13
+            throw new UnsupportedOperationException(
+                    "TLS 1.3 does not require archived.");
         }
     }
 
