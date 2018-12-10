@@ -152,7 +152,11 @@ public class WaitNotifyThreadTest {
                     throw new RuntimeException("Cannot found monitor info associated with " + OBJECT_WAIT + " method");
                 }
                 if (mi.getLocks().size() == 1) {
-                    assertMonitorInfo("locked", mi.getLocks().getLast(), monitorAddress, RUN_METHOD);
+                    MonitorInfo monInfo = mi.getLocks().getLast();
+                    if (monitorAddress.equals("no object reference available")) {
+                        monitorAddress = monInfo.getMonitorAddress();
+                    }
+                    assertMonitorInfo("locked", monInfo, monitorAddress, RUN_METHOD);
                 }
                 else {
                     throw new RuntimeException(RUN_METHOD + " method has to contain one lock record but it contains "
