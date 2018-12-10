@@ -1118,7 +1118,7 @@ public:
     Register Rn, enum operand_size sz, int op, bool ordered) {
     starti;
     f(sz, 31, 30), f(0b001000, 29, 24), f(op, 23, 21);
-    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), rf(Rn, 5), rf(Rt1, 0);
+    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), srf(Rn, 5), rf(Rt1, 0);
   }
 
   void load_exclusive(Register dst, Register addr,
@@ -1247,7 +1247,7 @@ public:
                   enum operand_size sz, int op1, int op2, bool a, bool r) {
     starti;
     f(sz, 31, 30), f(0b111000, 29, 24), f(a, 23), f(r, 22), f(1, 21);
-    rf(Rs, 16), f(op1, 15), f(op2, 14, 12), f(0, 11, 10), rf(Rn, 5), zrf(Rt, 0);
+    rf(Rs, 16), f(op1, 15), f(op2, 14, 12), f(0, 11, 10), srf(Rn, 5), zrf(Rt, 0);
   }
 
 #define INSN(NAME, NAME_A, NAME_L, NAME_AL, op1, op2)                   \
