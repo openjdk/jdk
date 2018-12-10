@@ -92,7 +92,6 @@ public final class SystemProps {
         putIfAbsent(props, "java.awt.headless", raw.propDefault(Raw._java_awt_headless_NDX));
         putIfAbsent(props, "java.awt.graphicsenv", raw.propDefault(Raw._java_awt_graphicsenv_NDX));
         putIfAbsent(props, "sun.desktop", raw.propDefault(Raw._sun_desktop_NDX));
-        putIfAbsent(props, "sun.java2d.fontpath", raw.propDefault(Raw._sun_java2d_fontpath_NDX));
         putIfAbsent(props, "sun.arch.abi", raw.propDefault(Raw._sun_arch_abi_NDX));
         putIfAbsent(props, "sun.arch.data.model", raw.propDefault(Raw._sun_arch_data_model_NDX));
         putIfAbsent(props, "sun.os.patch.level", raw.propDefault(Raw._sun_os_patch_level_NDX));
@@ -219,8 +218,7 @@ public final class SystemProps {
         @Native private static final int _sun_cpu_isalist_NDX = 1 + _sun_cpu_endian_NDX;
         @Native private static final int _sun_desktop_NDX = 1 + _sun_cpu_isalist_NDX;
         @Native private static final int _sun_io_unicode_encoding_NDX = 1 + _sun_desktop_NDX;
-        @Native private static final int _sun_java2d_fontpath_NDX = 1 + _sun_io_unicode_encoding_NDX;
-        @Native private static final int _sun_jnu_encoding_NDX = 1 + _sun_java2d_fontpath_NDX;
+        @Native private static final int _sun_jnu_encoding_NDX = 1 + _sun_io_unicode_encoding_NDX;
         @Native private static final int _sun_os_patch_level_NDX = 1 + _sun_jnu_encoding_NDX;
         @Native private static final int _sun_stderr_encoding_NDX = 1 + _sun_os_patch_level_NDX;
         @Native private static final int _sun_stdout_encoding_NDX = 1 + _sun_stderr_encoding_NDX;

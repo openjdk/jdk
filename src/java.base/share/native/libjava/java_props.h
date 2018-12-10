@@ -46,7 +46,6 @@ typedef struct {
 #endif
 
     nchar *tmp_dir;
-    nchar *font_dir;
     nchar *user_dir;
 
     char *file_separator;

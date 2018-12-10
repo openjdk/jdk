@@ -407,10 +407,6 @@ GetJavaProperties(JNIEnv *env)
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
 #endif
 
-    /* This is used only for debugging of font problems. */
-    v = getenv("JAVA2D_FONTPATH");
-    sprops.font_dir = v ? v : NULL;
-
 #ifdef SI_ISALIST
     /* supported instruction sets */
     {
