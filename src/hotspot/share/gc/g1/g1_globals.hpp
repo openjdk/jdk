@@ -305,7 +305,7 @@
           "Number of milliseconds after a previous GC to wait before "      \
           "triggering a periodic gc. A value of zero disables periodically "\
           "enforced gc cycles.")                                            \
-          range(0, max_jlong)                                               \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, G1PeriodicGCInvokesConcurrent, true,                        \
           "Determines the kind of periodic GC. Set to true to have G1 "     \
