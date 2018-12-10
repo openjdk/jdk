@@ -49,6 +49,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -763,6 +764,9 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class)) && f.getName().equals("classLoader")) {
             return true;
+        }
+        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Lookup.class))) {
+            return f.getName().equals("allowedModes") || f.getName().equals("lookupClass");
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ClassLoader.class)) ||
             f.getDeclaringClass().equals(metaAccess.lookupJavaType(AccessibleObject.class)) ||
