@@ -119,6 +119,7 @@
   LOG_TAG(patch) \
   LOG_TAG(path) \
   LOG_TAG(perf) \
+  LOG_TAG(periodic) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \

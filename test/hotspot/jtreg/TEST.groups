@@ -178,6 +178,7 @@ tier1_gc_1 = \
   gc/epsilon/ \
   gc/g1/ \
   -gc/g1/ihop/TestIHOPErgo.java
+  -gc/g1/TestTimelyCompaction.java
 
 tier1_gc_2 = \
   gc/ \

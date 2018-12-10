@@ -81,7 +81,6 @@ bool VM_GC_Operation::skip_operation() const {
 }
 
 bool VM_GC_Operation::doit_prologue() {
-  assert(Thread::current()->is_Java_thread(), "just checking");
   assert(((_gc_cause != GCCause::_no_gc) &&
           (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
 
@@ -110,7 +109,6 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  assert(Thread::current()->is_Java_thread(), "just checking");
   // Clean up old interpreter OopMap entries that were replaced
   // during the GC thread root traversal.
   OopMapCache::cleanup_old_entries();
