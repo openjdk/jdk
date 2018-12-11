@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,9 @@ class EndEntityChecker {
     }
 
     void check(X509Certificate cert, Object parameter,
-            boolean checkUnresolvedCritExts) throws CertificateException {
+            boolean checkUnresolvedCritExts, X509Certificate anchor)
+            throws CertificateException {
+
         if (variant.equals(Validator.VAR_GENERIC)) {
             return; // no checks
         }
@@ -158,6 +160,12 @@ class EndEntityChecker {
         // if neither VAR_GENERIC variant nor unknown variant
         if (checkUnresolvedCritExts) {
             checkRemainingExtensions(exts);
+        }
+
+        // check if certificate should be distrusted according to policies
+        // set in the jdk.security.caDistrustPolicies security property
+        for (CADistrustPolicy policy : CADistrustPolicy.POLICIES) {
+            policy.checkDistrust(variant, anchor, cert);
         }
     }
 

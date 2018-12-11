@@ -1088,3 +1088,26 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # the same name, with the same syntax and possible values.
 #
 #jdk.includeInExceptions=hostInfo,jar
+
+#
+# Policies for distrusting Certificate Authorities (CAs).
+#
+# This is a comma separated value of one or more case-sensitive strings, each
+# of which represents a policy for determining if a CA should be distrusted.
+# The supported values are:
+#
+# SYMANTEC_TLS : Distrust TLS Server certificates anchored by
+#                a Symantec root CA and issued after April 16, 2019.
+#
+# Leading and trailing whitespace surrounding each value are ignored.
+# Unknown values are ignored. If the property is commented out or set to the
+# empty String, no policies are enforced.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be supported by other SE implementations. Also, this
+# property does not override other security properties which can restrict
+# certificates such as jdk.tls.disabledAlgorithms or
+# jdk.certpath.disabledAlgorithms; those restrictions are still enforced even
+# if this property is not enabled.
+#
+jdk.security.caDistrustPolicies=SYMANTEC_TLS
