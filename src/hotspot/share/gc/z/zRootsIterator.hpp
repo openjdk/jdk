@@ -33,9 +33,7 @@
 
 class ZRootsIteratorClosure : public OopClosure, public ThreadClosure {
 public:
-  virtual void do_thread(Thread* thread) {
-    thread->oops_do(this, NULL);
-  }
+  virtual void do_thread(Thread* thread);
 };
 
 typedef OopStorage::ParState<true /* concurrent */, false /* is_const */> ZOopStorageIterator;

@@ -111,11 +111,12 @@ inline void ZBarrier::root_barrier(oop* p, oop o) {
   const uintptr_t good_addr = slow_path(addr);
 
   // Non-atomic healing helps speed up root scanning. This is safe to do
-  // since we are always healing roots in a safepoint, which means we are
-  // never racing with mutators modifying roots while we are healing them.
-  // It's also safe in case multiple GC threads try to heal the same root,
-  // since they would always heal the root in the same way and it does not
-  // matter in which order it happens.
+  // since we are always healing roots in a safepoint, or under a lock,
+  // which ensures we are never racing with mutators modifying roots while
+  // we are healing them. It's also safe in case multiple GC threads try
+  // to heal the same root if it is aligned, since they would always heal
+  // the root in the same way and it does not matter in which order it
+  // happens. For misaligned oops, there needs to be mutual exclusion.
   *p = ZOop::to_oop(good_addr);
 }
 
@@ -186,6 +187,11 @@ inline oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile oop* p
   }
 
   return load_barrier_on_oop_field_preloaded(p, o);
+}
+
+inline void ZBarrier::load_barrier_on_root_oop_field(oop* p) {
+  const oop o = *p;
+  root_barrier<is_good_or_null_fast_path, load_barrier_on_oop_slow_path>(p, o);
 }
 
 //
@@ -267,6 +273,13 @@ inline void ZBarrier::keep_alive_barrier_on_phantom_oop_field(volatile oop* p) {
   assert(ZResurrection::is_blocked(), "Invalid phase");
   const oop o = *p;
   barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
+}
+
+inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
+  // This operation is only valid when resurrection is blocked.
+  assert(ZResurrection::is_blocked(), "Invalid phase");
+  const oop o = *p;
+  root_barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
 }
 
 //
