@@ -53,13 +53,17 @@ import org.testng.annotations.Test;
 @Test
 public class ToolTabSnippetTest extends UITesting {
 
+    public ToolTabSnippetTest() {
+        super(true);
+    }
+
     public void testExpression() throws Exception {
         Path classes = prepareZip();
         doRunTest((inputSink, out) -> {
             inputSink.write("/env -class-path " + classes.toString() + "\n");
-            waitOutput(out, resource("jshell.msg.set.restore") + "\n\u0005");
+            waitOutput(out, resource("jshell.msg.set.restore") + "\n\\u001B\\[\\?2004h" + PROMPT);
             inputSink.write("import jshelltest.*;\n");
-            waitOutput(out, "\n\u0005");
+            waitOutput(out, "\n\\u001B\\[\\?2004l\\u001B\\[\\?2004h" + PROMPT);
 
             //-> <tab>
             inputSink.write(TAB);
@@ -70,7 +74,7 @@ public class ToolTabSnippetTest extends UITesting {
 
             //new JShellTes<tab>
             inputSink.write("new JShellTes" + TAB);
-            waitOutput(out, "t\nJShellTest\\(      JShellTestAux\\(   " +
+            waitOutput(out, "\nJShellTest\\(      JShellTestAux\\(   " +
                             REDRAW_PROMPT + "new JShellTest");
 
             //new JShellTest<tab>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@ package jdk.nashorn.tools.jjs;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.OutputStream;
@@ -38,12 +36,9 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import jdk.internal.jline.console.completer.Completer;
-import jdk.internal.jline.console.UserInterruptException;
-import jdk.nashorn.api.scripting.NashornException;
+
+import jdk.internal.org.jline.reader.UserInterruptException;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.runtime.Context;
@@ -178,7 +173,7 @@ public final class Main extends Shell {
             // redefine readLine to use jline Console's readLine!
             ScriptingFunctions.setReadLineHelper(str-> {
                 try {
-                    return in.readLine(str);
+                    return in.readUserLine(str);
                 } catch (final IOException ioExp) {
                     throw new UncheckedIOException(ioExp);
                 }
@@ -209,9 +204,9 @@ public final class Main extends Shell {
             }
 
             while (true) {
-                String source = "";
+                String source;
                 try {
-                    source = in.readLine(prompt);
+                    source = in.readLine(prompt, prompt2);
                 } catch (final IOException ioe) {
                     err.println(ioe.toString());
                     if (env._dump_on_error) {

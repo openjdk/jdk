@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import jdk.internal.jline.console.history.History;
+
+import jdk.internal.org.jline.reader.History;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.runtime.JSType;
@@ -88,11 +90,20 @@ final class HistoryObject extends AbstractJSObject {
 
             if (index >= 0 && index < (hist.size() - 1)) {
                 final CharSequence src = hist.get(index);
-                hist.replace(src);
+                var it = hist.iterator();
+                while (it.hasNext()) {
+                    it.next();
+                }
+                it.remove();
+                hist.add(src.toString());
                 err.println(src);
                 evaluator.accept(src.toString());
             } else {
-                hist.removeLast();
+                var it = hist.iterator();
+                while (it.hasNext()) {
+                    it.next();
+                }
+                it.remove();
                 err.println("no history entry @ " + (index + 1));
             }
         }
@@ -103,7 +114,13 @@ final class HistoryObject extends AbstractJSObject {
     public Object getMember(final String name) {
         switch (name) {
             case "clear":
-                return (Runnable)hist::clear;
+                return (Runnable) () -> {
+                    try {
+                    hist.purge();
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
+                };
             case "forEach":
                 return (Function<JSObject, Object>)this::iterate;
             case "load":
@@ -132,7 +149,7 @@ final class HistoryObject extends AbstractJSObject {
     public String toString() {
         final StringBuilder buf = new StringBuilder();
         for (History.Entry e : hist) {
-            buf.append(e.value()).append('\n');
+            buf.append(e.line()).append('\n');
         }
         return buf.toString();
     }
@@ -146,7 +163,7 @@ final class HistoryObject extends AbstractJSObject {
         final File file = getFile(obj);
         try (final PrintWriter pw = new PrintWriter(file)) {
             for (History.Entry e : hist) {
-                pw.println(e.value());
+                pw.println(e.line());
             }
         } catch (final IOException exp) {
             throw new RuntimeException(exp);
@@ -167,13 +184,13 @@ final class HistoryObject extends AbstractJSObject {
 
     private void print() {
         for (History.Entry e : hist) {
-            System.out.printf("%3d %s\n", e.index() + 1, e.value());
+            System.out.printf("%3d %s\n", e.index() + 1, e.line());
         }
     }
 
     private Object iterate(final JSObject func) {
         for (History.Entry e : hist) {
-            if (JSType.toBoolean(func.call(this, e.value().toString()))) {
+            if (JSType.toBoolean(func.call(this, e.line().toString()))) {
                 break; // return true from callback to skip iteration
             }
         }

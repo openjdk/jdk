@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,23 +29,35 @@
  * @since 9
  */
 module jdk.internal.le {
-    exports jdk.internal.jline to
+    exports jdk.internal.org.jline.keymap to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
-    exports jdk.internal.jline.console to
+    exports jdk.internal.org.jline.reader to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
-    exports jdk.internal.jline.console.completer to
+    exports jdk.internal.org.jline.reader.impl to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
-    exports jdk.internal.jline.console.history to
+    exports jdk.internal.org.jline.reader.impl.completer to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
-    exports jdk.internal.jline.extra to
+    exports jdk.internal.org.jline.reader.impl.history to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
-    exports jdk.internal.jline.internal to
+    exports jdk.internal.org.jline.terminal.impl to
         jdk.scripting.nashorn.shell,
         jdk.jshell;
+    exports jdk.internal.org.jline.terminal to
+        jdk.scripting.nashorn.shell,
+        jdk.jshell;
+    exports jdk.internal.org.jline.utils to
+        jdk.scripting.nashorn.shell,
+        jdk.jshell;
+    exports jdk.internal.org.jline.terminal.spi to
+        jdk.scripting.nashorn.shell,
+        jdk.jshell;
+
+    uses jdk.internal.org.jline.terminal.spi.JnaSupport;
+
 }
 

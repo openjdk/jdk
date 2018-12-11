@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,65 +31,89 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import jdk.internal.jline.NoInterruptUnixTerminal;
-import jdk.internal.jline.Terminal;
-import jdk.internal.jline.TerminalFactory;
-import jdk.internal.jline.TerminalFactory.Flavor;
-import jdk.internal.jline.WindowsTerminal;
-import jdk.internal.jline.console.ConsoleReader;
-import jdk.internal.jline.console.KeyMap;
-import jdk.internal.jline.console.completer.CandidateListCompletionHandler;
-import jdk.internal.jline.extra.EditingHistory;
-import jdk.internal.misc.Signal;
-import jdk.internal.misc.Signal.Handler;
+import java.util.stream.StreamSupport;
+
+import jdk.internal.org.jline.reader.Candidate;
+import jdk.internal.org.jline.reader.CompletingParsedLine;
+import jdk.internal.org.jline.reader.EOFError;
+import jdk.internal.org.jline.reader.History;
+import jdk.internal.org.jline.reader.LineReader;
+import jdk.internal.org.jline.reader.LineReader.Option;
+import jdk.internal.org.jline.reader.LineReaderBuilder;
+import jdk.internal.org.jline.reader.Parser;
+import jdk.internal.org.jline.reader.Parser.ParseContext;
+import jdk.internal.org.jline.reader.Widget;
+import jdk.internal.org.jline.reader.impl.LineReaderImpl;
+import jdk.internal.org.jline.reader.impl.completer.ArgumentCompleter.ArgumentLine;
+import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
+import jdk.internal.org.jline.terminal.Terminal;
 
 class Console implements AutoCloseable {
     private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
-    private final ConsoleReader in;
+    private final LineReader in;
     private final File historyFile;
 
     Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
             final NashornCompleter completer, final Function<String, String> docHelper) throws IOException {
         this.historyFile = historyFile;
 
-        TerminalFactory.registerFlavor(Flavor.WINDOWS, ttyDevice -> isCygwin() ? new JJSUnixTerminal() : new JJSWindowsTerminal());
-        TerminalFactory.registerFlavor(Flavor.UNIX, ttyDevice -> new JJSUnixTerminal());
-        in = new ConsoleReader(cmdin, cmdout);
-        in.setExpandEvents(false);
-        in.setHandleUserInterrupt(true);
-        in.setBellEnabled(true);
-        in.setCopyPasteDetection(true);
-        ((CandidateListCompletionHandler) in.getCompletionHandler()).setPrintSpaceAfterFullCompletion(false);
-        final Iterable<String> existingHistory = historyFile.exists() ? Files.readAllLines(historyFile.toPath()) : null;
-        in.setHistory(new EditingHistory(in, existingHistory) {
-            @Override protected boolean isComplete(CharSequence input) {
-                return completer.isComplete(input.toString());
+        Parser parser = (line, cursor, context) -> {
+            if (context == ParseContext.COMPLETE) {
+                List<Candidate> candidates = new ArrayList<>();
+                int anchor = completer.complete(line, cursor, candidates);
+                anchor = Math.min(anchor, line.length());
+                return new CompletionLine(line.substring(anchor), cursor, candidates);
+            } else if (!completer.isComplete(line)) {
+                throw new EOFError(cursor, cursor, line);
             }
-        });
-        in.addCompleter(completer);
-        Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
-        bind(DOCUMENTATION_SHORTCUT, (Runnable) ()->showDocumentation(docHelper));
-        try {
-            Signal.handle(new Signal("CONT"), new Handler() {
-                @Override public void handle(Signal sig) {
-                    try {
-                        in.getTerminal().reset();
-                        in.redrawLine();
-                        in.flush();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+            return new ArgumentLine(line, cursor);
+        };
+        in = LineReaderBuilder.builder()
+                              .option(Option.DISABLE_EVENT_EXPANSION, true)
+                              .completer((in, line, candidates) -> candidates.addAll(((CompletionLine) line).candidates))
+                              .parser(parser)
+                              .build();
+        if (historyFile.exists()) {
+            StringBuilder line = new StringBuilder();
+            for (String h : Files.readAllLines(historyFile.toPath())) {
+                if (line.length() > 0) {
+                    line.append("\n");
                 }
-            });
-        } catch (IllegalArgumentException ignored) {
-            //the CONT signal does not exist on this platform
+                line.append(h);
+                try {
+                    parser.parse(line.toString(), line.length());
+                    in.getHistory().add(line.toString());
+                    line.delete(0, line.length());
+                } catch (EOFError e) {
+                    //continue;
+                }
+            }
+            if (line.length() > 0) {
+                in.getHistory().add(line.toString());
+            }
         }
+        Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
+        bind(DOCUMENTATION_SHORTCUT, ()->showDocumentation(docHelper));
     }
 
-    String readLine(final String prompt) throws IOException {
+    String readLine(final String prompt, final String continuationPrompt) throws IOException {
+        in.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, continuationPrompt);
         return in.readLine(prompt);
+    }
+
+    String readUserLine(final String prompt) throws IOException {
+        Parser prevParser = in.getParser();
+
+        try {
+            ((LineReaderImpl) in).setParser((line, cursor, context) -> new ArgumentLine(line, cursor));
+            return in.readLine(prompt);
+        } finally {
+            ((LineReaderImpl) in).setParser(prevParser);
+        }
     }
 
     @Override
@@ -101,103 +125,62 @@ class Console implements AutoCloseable {
         try (Writer out = Files.newBufferedWriter(historyFile.toPath())) {
             String lineSeparator = System.getProperty("line.separator");
 
-            out.write(getHistory().save()
-                                  .stream()
-                                  .collect(Collectors.joining(lineSeparator)));
+            out.write(StreamSupport.stream(getHistory().spliterator(), false)
+                                   .map(e -> e.line())
+                                   .collect(Collectors.joining(lineSeparator)));
         } catch (final IOException exp) {}
     }
 
-    EditingHistory getHistory() {
-        return (EditingHistory) in.getHistory();
+    History getHistory() {
+        return in.getHistory();
     }
 
     boolean terminalEditorRunning() {
         Terminal terminal = in.getTerminal();
-        if (terminal instanceof JJSUnixTerminal) {
-            return ((JJSUnixTerminal) terminal).isRaw();
-        }
-        return false;
+        return !terminal.getAttributes().getLocalFlag(LocalFlag.ICANON);
     }
 
     void suspend() {
-        try {
-            in.getTerminal().restore();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
     void resume() {
-        try {
-            in.getTerminal().init();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
-    static final class JJSUnixTerminal extends NoInterruptUnixTerminal {
-        JJSUnixTerminal() throws Exception {
-        }
-
-        boolean isRaw() {
-            try {
-                return getSettings().get("-a").contains("-icanon");
-            } catch (IOException | InterruptedException ex) {
-                return false;
-            }
-        }
-
-        @Override
-        public void disableInterruptCharacter() {
-        }
-
-        @Override
-        public void enableInterruptCharacter() {
-        }
+    private void bind(String shortcut, Widget action) {
+        in.getKeyMaps().get(LineReader.MAIN).bind(action, shortcut);
     }
 
-    static final class JJSWindowsTerminal extends WindowsTerminal {
-        public JJSWindowsTerminal() throws Exception {
-        }
-
-        @Override
-        public void init() throws Exception {
-            super.init();
-            setAnsiSupported(false);
-        }
-    }
-
-    private static boolean isCygwin() {
-        return System.getenv("SHELL") != null;
-    }
-
-    private void bind(String shortcut, Object action) {
-        KeyMap km = in.getKeys();
-        for (int i = 0; i < shortcut.length(); i++) {
-            final Object value = km.getBound(Character.toString(shortcut.charAt(i)));
-            if (value instanceof KeyMap) {
-                km = (KeyMap) value;
-            } else {
-                km.bind(shortcut.substring(i), action);
-            }
-        }
-    }
-
-    private void showDocumentation(final Function<String, String> docHelper) {
-        final String buffer = in.getCursorBuffer().buffer.toString();
-        final int cursor = in.getCursorBuffer().cursor;
+    private boolean showDocumentation(final Function<String, String> docHelper) {
+        final String buffer = in.getBuffer().toString();
+        final int cursor = in.getBuffer().cursor();
         final String doc = docHelper.apply(buffer.substring(0, cursor));
-        try {
-            if (doc != null) {
-                in.println();
-                in.println(doc);
-                in.redrawLine();
-                in.flush();
-            } else {
-                in.beep();
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+        if (doc != null) {
+            in.getTerminal().writer().println();
+            in.printAbove(doc);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static final class CompletionLine extends ArgumentLine implements CompletingParsedLine {
+        public final List<Candidate> candidates;
+
+        public CompletionLine(String word, int cursor, List<Candidate> candidates) {
+            super(word, cursor);
+            this.candidates = candidates;
+        }
+
+        public CharSequence escape(CharSequence candidate, boolean complete) {
+            return candidate;
+        }
+
+        public int rawWordCursor() {
+            return word().length();
+        }
+
+        public int rawWordLength() {
+            return word().length();
         }
     }
 }
