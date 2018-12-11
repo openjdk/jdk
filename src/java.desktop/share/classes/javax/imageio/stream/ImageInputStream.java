@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,8 +414,8 @@ public interface ImageInputStream extends DataInput, Closeable {
 
     /**
      * Reads in a string that has been encoded using a
-     * <a href="../../../java/io/DataInput.html#modified-utf-8">modified
-     * UTF-8</a>
+     * <a href="../../../../java.base/java/io/DataInput.html#modified-utf-8">
+     * modified UTF-8</a>
      * format.  The general contract of {@code readUTF} is that
      * it reads a representation of a Unicode character string encoded
      * in modified UTF-8 format; this string of characters is
