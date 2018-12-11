@@ -25,4 +25,4 @@
 # Simple wrapper script to call Nashorn with the javascript pandoc filter
 
 @@BOOT_JDK@@/bin/jjs @@JJS_FLAGS@@ -scripting \
-    "@@TOPDIR@@/make/scripts/pandoc-manpage-filter.js" 2> /dev/null
+    "@@TOPDIR@@/make/scripts/pandoc-troff-manpage-filter.js" 2> /dev/null

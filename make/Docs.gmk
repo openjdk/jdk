@@ -27,10 +27,10 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
+include ModuleTools.gmk
 include ProcessMarkdown.gmk
+include ToolsJdk.gmk
 include ZipArchive.gmk
-include $(TOPDIR)/make/ToolsJdk.gmk
-include $(TOPDIR)/make/ModuleTools.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -556,6 +556,15 @@ ifeq ($(ENABLE_FULL_DOCS), true)
 
   # For all markdown files in $module/share/man directories, convert them to
   # html.
+
+  # Create dynamic man pages from markdown using pandoc. We need
+  # PANDOC_HTML_MANPAGE_FILTER, a wrapper around
+  # PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.
+
+  # We should also depend on the source javascript filter
+  PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT := \
+      $(TOPDIR)/make/scripts/pandoc-html-manpage-filter.js
+
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
     $(foreach d, $(MAN_$m), \
@@ -565,8 +574,11 @@ ifeq ($(ENABLE_FULL_DOCS), true)
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
             DEST := $(DOCS_OUTPUTDIR)/specs/man, \
+            FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
             REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
+            EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
+                $(PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT), \
         )) \
         $(eval JDK_SPECS_TARGETS += $($($m_$d_NAME))) \
       ) \
