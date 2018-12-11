@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,8 +38,8 @@
 #include <dlfcn.h>
 #endif
 
-typedef jboolean (JNICALL *ZipInflateFully_t)(void *inBuf, jlong inLen,
-                                              void *outBuf, jlong outLen, char **pmsg);
+typedef jboolean (*ZipInflateFully_t)(void *inBuf, jlong inLen,
+                                      void *outBuf, jlong outLen, char **pmsg);
 static ZipInflateFully_t ZipInflateFully        = NULL;
 
 #ifndef WIN32
