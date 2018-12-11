@@ -80,7 +80,7 @@ define ProcessMarkdown
 	$$(call LogInfo, Converting $2 to $$($1_FORMAT))
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$(dir $$($1_$2_PANDOC_OUTPUT)))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER), \
-	    $$(PANDOC) $$($1_OPTIONS) -f markdown -t $$($1_FORMAT) --standalone \
+	    $$(PANDOC) $$($1_OPTIONS) -f markdown-smart -t $$($1_FORMAT) --standalone \
 	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS) '$$($1_$2_PANDOC_INPUT)' \
 	    -o '$$($1_$2_PANDOC_OUTPUT)')
         ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
