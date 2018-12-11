@@ -234,7 +234,6 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
 
 class KlassInfoTable: public StackObj {
  private:
-  int _size;
   static const int _num_buckets = 20011;
   size_t _size_of_instances_in_words;
 
