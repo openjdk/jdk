@@ -90,6 +90,9 @@ class ClientHandshakeContext extends HandshakeContext {
 
     ClientHelloMessage initialClientHelloMsg = null;
 
+    // PSK identity is selected in first Hello and used again after HRR
+    byte[] pskIdentity;
+
     ClientHandshakeContext(SSLContextImpl sslContext,
             TransportContext conContext) throws IOException {
         super(sslContext, conContext);
