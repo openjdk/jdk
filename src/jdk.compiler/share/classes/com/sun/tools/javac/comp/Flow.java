@@ -1633,7 +1633,7 @@ public class Flow {
         protected boolean trackable(VarSymbol sym) {
             return
                 sym.pos >= startPos &&
-                ((sym.owner.kind == MTH ||
+                ((sym.owner.kind == MTH || sym.owner.kind == VAR ||
                 isFinalUninitializedField(sym)));
         }
 
@@ -2009,7 +2009,7 @@ public class Flow {
             lint = lint.augment(tree.sym);
             try{
                 boolean track = trackable(tree.sym);
-                if (track && tree.sym.owner.kind == MTH) {
+                if (track && (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR)) {
                     newVar(tree);
                 }
                 if (tree.init != null) {

@@ -1121,7 +1121,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitVarDef(JCVariableDecl tree) {
         // Local variables have not been entered yet, so we need to do it now:
-        if (env.info.scope.owner.kind == MTH) {
+        if (env.info.scope.owner.kind == MTH || env.info.scope.owner.kind == VAR) {
             if (tree.sym != null) {
                 // parameters have already been entered
                 env.info.scope.enter(tree.sym);
