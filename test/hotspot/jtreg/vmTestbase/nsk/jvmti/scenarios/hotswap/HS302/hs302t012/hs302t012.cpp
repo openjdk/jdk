@@ -46,7 +46,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
         nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL);
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
-        if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)  == NSK_TRUE) {
+        if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName) == NSK_TRUE) {
             nsk_printf("Redefine successful ..\n");
         } else {
             nsk_printf("# error :: Redefine failed..\n");
@@ -70,7 +70,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint rc ;
     nsk_printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (rc!= JNI_OK) {
+    if (rc != JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {

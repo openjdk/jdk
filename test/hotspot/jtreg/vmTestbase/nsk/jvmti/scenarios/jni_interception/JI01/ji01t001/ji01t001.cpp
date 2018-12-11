@@ -205,8 +205,8 @@ static void checkCall(JNIEnv *env
     if ((exFndCalls > 0 && fnd_calls >= exFndCalls) || (fnd_calls == exFndCalls)) {
             NSK_DISPLAY5("CHECK PASSED: %s: the %s JNI function FindClass() has been %s during %s phase\n\t%d intercepted call(s) as expected\n"
                         , callBackFunc
-                        , (step==1) ? "tested" : "original"
-                        , (step==1) ? "redirected" : "restored"
+                        , (step == 1) ? "tested" : "original"
+                        , (step == 1) ? "redirected" : "restored"
                         , msg
                         , fnd_calls
                         );
@@ -222,8 +222,8 @@ static void checkCall(JNIEnv *env
 
         NSK_COMPLAIN6("TEST FAILED: %s: the %s JNI function FindClass() has not been %s during %s phase\n\t%d intercepted call(s) instead of %d as expected\n"
                      , callBackFunc
-                     , (step==1) ? "tested" : "original"
-                     , (step==1) ? "redirected" : "restored"
+                     , (step == 1) ? "tested" : "original"
+                     , (step == 1) ? "redirected" : "restored"
                      , msg
                      , fnd_calls
                      , exFndCalls

@@ -150,7 +150,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass) {
     char *cls_sig;
     jint clsByteCount;
 
-    display((hotswap != HOTSWAP_OFF)?0:1,
+    display((hotswap != HOTSWAP_OFF) ? 0 : 1,
         "#### JVMTIagent: ClassLoad occurred ####\n");
 
     getVerdict(jni_env, "ClassLoad");
@@ -236,7 +236,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thr,
     jclass decl_clazz;
 
     display((hotswap == HOTSWAP_EVERY_EXCEPTION ||
-            hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS)?0:1,
+            hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) ? 0 : 1,
         "#### JVMTIagent: Exception occurred ####\n");
 
     getVerdict(jni_env, "Exception");
@@ -408,7 +408,7 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         jmethodID method, jlocation location) {
     jclass decl_clazz;
 
-    display((hotswap == HOTSWAP_EVERY_SINGLE_STEP)?0:1,
+    display((hotswap == HOTSWAP_EVERY_SINGLE_STEP) ? 0 : 1,
         "#### JVMTIagent: SingleStep occurred ####\n");
 
     getVerdict(jni_env, "SingleStep");
@@ -428,7 +428,7 @@ MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     jclass decl_clazz;
 
     display((hotswap == HOTSWAP_EVERY_METHOD_ENTRY ||
-            hotswap == HOTSWAP_EVERY_METHOD_ENTRY_FOR_EVERY_CLASS)?0:1,
+            hotswap == HOTSWAP_EVERY_METHOD_ENTRY_FOR_EVERY_CLASS) ? 0 : 1,
         "#### JVMTIagent: MethodEntry occurred ####\n");
 
     getVerdict(jni_env, "MethodEntry");
@@ -459,7 +459,7 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thr,
     jclass decl_clazz;
 
     display((hotswap == HOTSWAP_EVERY_EXCEPTION ||
-            hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS)?0:1,
+            hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) ? 0 : 1,
         "#### JVMTIagent: ExceptionCatch occurred ####\n");
 
     getVerdict(jni_env, "ExceptionCatch");
@@ -1153,7 +1153,7 @@ static void getVerdict(JNIEnv *jni_env, const char *evnt) {
         sprintf(error_msg, "JVMTIagent: getVerdict: %s event occured after VMDeath",
             evnt);
 
-        if (jni_env==NULL) { /* some event callbacks have no pointer to jni */
+        if (jni_env == NULL) { /* some event callbacks have no pointer to jni */
             printf("ERROR: %s\n", error_msg);
             exit(97);
         }

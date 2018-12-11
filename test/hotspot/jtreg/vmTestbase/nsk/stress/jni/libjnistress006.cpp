@@ -48,8 +48,9 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
 
     if (upper >= LIMIT) return JNI_TRUE;
 
-    if (upper==0)
-    globRefsArray=(jobject*)(malloc(LIMIT*sizeof(jobject)));
+    if (upper == 0) {
+        globRefsArray=(jobject*)(malloc(LIMIT*sizeof(jobject)));
+    }
 
     globRefsArray[upper]=env->NewGlobalRef(tobj); CE
     if (env->IsSameObject(tobj, globRefsArray[upper])) {
