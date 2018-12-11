@@ -970,7 +970,7 @@ public final class System {
         if (key == null) {
             throw new NullPointerException("key can't be null");
         }
-        if (key.equals("")) {
+        if (key.isEmpty()) {
             throw new IllegalArgumentException("key can't be empty");
         }
     }

@@ -488,15 +488,15 @@ Certain [X11](http://www.x.org/) libraries and include files are required on
 Linux and Solaris.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
-    libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev`.
+    libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
-    libXtst-devel libXt-devel libXrender-devel libXi-devel`.
+    libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel`.
   * To install on Solaris, try running `pkg install x11/header/x11-protocols
     x11/library/libice x11/library/libpthread-stubs x11/library/libsm
     x11/library/libx11 x11/library/libxau x11/library/libxcb
     x11/library/libxdmcp x11/library/libxevie x11/library/libxext
-    x11/library/libxrender x11/library/libxscrnsaver x11/library/libxtst
-    x11/library/toolkit/libxt`.
+    x11/library/libxrender x11/library/libxrandr x11/library/libxscrnsaver
+    x11/library/libxtst x11/library/toolkit/libxt`.
 
 Use `--with-x=<path>` if `configure` does not properly locate your X11 files.
 
@@ -1062,6 +1062,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
       * libice-dev
       * libxrender
       * libxrender-dev
+      * libxrandr-dev
       * libsm-dev
       * libxt-dev
       * libx11
@@ -1112,7 +1113,7 @@ apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
   * Create chroot on the *build* system, configuring it for *target* system:
 ```
 sudo qemu-debootstrap --arch=arm64 --verbose \
-       --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
+       --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
        --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/
 ```
 

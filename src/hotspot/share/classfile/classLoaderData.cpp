@@ -192,7 +192,7 @@ oop* ClassLoaderData::ChunkedHandleList::add(oop o) {
     OrderAccess::release_store(&_head, next);
   }
   oop* handle = &_head->_data[_head->_size];
-  *handle = o;
+  NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, o);
   OrderAccess::release_store(&_head->_size, _head->_size + 1);
   return handle;
 }
@@ -234,7 +234,7 @@ class VerifyContainsOopClosure : public OopClosure {
   VerifyContainsOopClosure(oop target) : _target(target), _found(false) {}
 
   void do_oop(oop* p) {
-    if (p != NULL && oopDesc::equals(RawAccess<>::oop_load(p), _target)) {
+    if (p != NULL && oopDesc::equals(NativeAccess<AS_NO_KEEPALIVE>::oop_load(p), _target)) {
       _found = true;
     }
   }

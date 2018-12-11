@@ -252,49 +252,6 @@ inline void HeapRegion::note_end_of_marking() {
   _next_marked_bytes = 0;
 }
 
-inline void HeapRegion::note_start_of_copying(bool during_initial_mark) {
-  if (is_survivor()) {
-    // This is how we always allocate survivors.
-    assert(_next_top_at_mark_start == bottom(), "invariant");
-  } else {
-    if (during_initial_mark) {
-      // During initial-mark we'll explicitly mark any objects on old
-      // regions that are pointed to by roots. Given that explicit
-      // marks only make sense under NTAMS it'd be nice if we could
-      // check that condition if we wanted to. Given that we don't
-      // know where the top of this region will end up, we simply set
-      // NTAMS to the end of the region so all marks will be below
-      // NTAMS. We'll set it to the actual top when we retire this region.
-      _next_top_at_mark_start = end();
-    } else {
-      // We could have re-used this old region as to-space over a
-      // couple of GCs since the start of the concurrent marking
-      // cycle. This means that [bottom,NTAMS) will contain objects
-      // copied up to and including initial-mark and [NTAMS, top)
-      // will contain objects copied during the concurrent marking cycle.
-      assert(top() >= _next_top_at_mark_start, "invariant");
-    }
-  }
-}
-
-inline void HeapRegion::note_end_of_copying(bool during_initial_mark) {
-  if (is_survivor()) {
-    // This is how we always allocate survivors.
-    assert(_next_top_at_mark_start == bottom(), "invariant");
-  } else {
-    if (during_initial_mark) {
-      // See the comment for note_start_of_copying() for the details
-      // on this.
-      assert(_next_top_at_mark_start == end(), "pre-condition");
-      _next_top_at_mark_start = top();
-    } else {
-      // See the comment for note_start_of_copying() for the details
-      // on this.
-      assert(top() >= _next_top_at_mark_start, "invariant");
-    }
-  }
-}
-
 inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }

@@ -64,6 +64,8 @@ public class TestVMInfoEvent {
 
             String jvmArgs = Events.assertField(event, "jvmArguments").notNull().getValue();
             String jvmFlags = Events.assertField(event, "jvmFlags").notNull().getValue();
+            Long pid = Events.assertField(event, "pid").atLeast(0L).getValue();
+            Asserts.assertEquals(pid, ProcessHandle.current().pid());
             String eventArgs = (jvmFlags.trim() + " " + jvmArgs).trim();
             String beanArgs = mbean.getInputArguments().stream().collect(Collectors.joining(" "));
             Asserts.assertEquals(eventArgs, beanArgs, "Wrong inputArgs");

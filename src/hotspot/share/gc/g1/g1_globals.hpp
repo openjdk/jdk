@@ -299,6 +299,22 @@
           "Verify the code root lists attached to each heap region.")       \
                                                                             \
   develop(bool, G1VerifyBitmaps, false,                                     \
-          "Verifies the consistency of the marking bitmaps")
+          "Verifies the consistency of the marking bitmaps")                \
+                                                                            \
+  manageable(uintx, G1PeriodicGCInterval, 0,                                \
+          "Number of milliseconds after a previous GC to wait before "      \
+          "triggering a periodic gc. A value of zero disables periodically "\
+          "enforced gc cycles.")                                            \
+                                                                            \
+  product(bool, G1PeriodicGCInvokesConcurrent, true,                        \
+          "Determines the kind of periodic GC. Set to true to have G1 "     \
+          "perform a concurrent GC as periodic GC, otherwise use a STW "    \
+          "Full GC.")                                                       \
+                                                                            \
+  manageable(uintx, G1PeriodicGCSystemLoadThreshold, 0,                     \
+          "Maximum recent system wide system load as returned by the 1m "   \
+          "value of getloadavg() at which G1 triggers a periodic GC. A "    \
+          "load above this value cancels a given periodic GC. A value of "  \
+          "zero disables this check.")                                      \
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP

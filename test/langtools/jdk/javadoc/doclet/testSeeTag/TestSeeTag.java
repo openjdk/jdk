@@ -95,7 +95,7 @@ public class TestSeeTag extends JavadocTester {
         checkOutput("badref/Test.html", true,
                 "<dl>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><code>Object[]</code>, \n"
+                + "<dd><code>Object</code>, \n"
                 + "<code>Foo<String></code></dd>\n"
                 + "</dl>");
     }

@@ -81,8 +81,6 @@ int Abstract_VM_Version::_vm_minor_version = VERSION_INTERIM;
 int Abstract_VM_Version::_vm_security_version = VERSION_UPDATE;
 int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
 int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
-unsigned int Abstract_VM_Version::_parallel_worker_threads = 0;
-bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 
 #if defined(_LP64)
   #define VMLP "64-Bit "
@@ -311,56 +309,4 @@ void VM_Version_init() {
     LogStream ls(Log(os, cpu)::info());
     os::print_cpu_info(&ls, buf, sizeof(buf));
   }
-}
-
-unsigned int Abstract_VM_Version::nof_parallel_worker_threads(
-                                                      unsigned int num,
-                                                      unsigned int den,
-                                                      unsigned int switch_pt) {
-  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    assert(ParallelGCThreads == 0, "Default ParallelGCThreads is not 0");
-    unsigned int threads;
-    // For very large machines, there are diminishing returns
-    // for large numbers of worker threads.  Instead of
-    // hogging the whole system, use a fraction of the workers for every
-    // processor after the first 8.  For example, on a 72 cpu machine
-    // and a chosen fraction of 5/8
-    // use 8 + (72 - 8) * (5/8) == 48 worker threads.
-    unsigned int ncpus = (unsigned int) os::initial_active_processor_count();
-    threads = (ncpus <= switch_pt) ?
-             ncpus :
-             (switch_pt + ((ncpus - switch_pt) * num) / den);
-#ifndef _LP64
-    // On 32-bit binaries the virtual address space available to the JVM
-    // is usually limited to 2-3 GB (depends on the platform).
-    // Do not use up address space with too many threads (stacks and per-thread
-    // data). Note that x86 apps running on Win64 have 2 stacks per thread.
-    // GC may more generally scale down threads by max heap size (etc), but the
-    // consequences of over-provisioning threads are higher on 32-bit JVMS,
-    // so add hard limit here:
-    threads = MIN2(threads, (2*switch_pt));
-#endif
-    return threads;
-  } else {
-    return ParallelGCThreads;
-  }
-}
-
-unsigned int Abstract_VM_Version::calc_parallel_worker_threads() {
-  return nof_parallel_worker_threads(5, 8, 8);
-}
-
-
-// Does not set the _initialized flag since it is
-// a global flag.
-unsigned int Abstract_VM_Version::parallel_worker_threads() {
-  if (!_parallel_worker_threads_initialized) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-      _parallel_worker_threads = VM_Version::calc_parallel_worker_threads();
-    } else {
-      _parallel_worker_threads = ParallelGCThreads;
-    }
-    _parallel_worker_threads_initialized = true;
-  }
-  return _parallel_worker_threads;
 }

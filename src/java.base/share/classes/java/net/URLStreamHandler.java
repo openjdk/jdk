@@ -437,7 +437,7 @@ public abstract class URLStreamHandler {
             return u.hostAddress;
 
         String host = u.getHost();
-        if (host == null || host.equals("")) {
+        if (host == null || host.isEmpty()) {
             return null;
         } else {
             try {

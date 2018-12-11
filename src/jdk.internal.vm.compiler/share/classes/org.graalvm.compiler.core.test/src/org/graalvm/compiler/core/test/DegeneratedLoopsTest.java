@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Test;
 
@@ -85,7 +84,7 @@ public class DegeneratedLoopsTest extends GraalCompilerTest {
         try (DebugContext.Scope s = debug.scope("DegeneratedLoopsTest", new DebugDumpScope(snippet))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             HighTierContext context = getDefaultHighTierContext();
-            new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+            createInliningPhase().apply(graph, context);
             new CanonicalizerPhase().apply(graph, context);
             debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
             StructuredGraph referenceGraph = parseEager(REFERENCE_SNIPPET, AllowAssumptions.YES);

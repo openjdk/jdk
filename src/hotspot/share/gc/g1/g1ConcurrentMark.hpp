@@ -224,34 +224,37 @@ private:
   template<typename Fn> void iterate(Fn fn) const PRODUCT_RETURN;
 };
 
-// Root Regions are regions that are not empty at the beginning of a
-// marking cycle and which we might collect during an evacuation pause
-// while the cycle is active. Given that, during evacuation pauses, we
-// do not copy objects that are explicitly marked, what we have to do
-// for the root regions is to scan them and mark all objects reachable
-// from them. According to the SATB assumptions, we only need to visit
-// each object once during marking. So, as long as we finish this scan
-// before the next evacuation pause, we can copy the objects from the
-// root regions without having to mark them or do anything else to them.
-//
-// Currently, we only support root region scanning once (at the start
-// of the marking cycle) and the root regions are all the survivor
-// regions populated during the initial-mark pause.
+// Root Regions are regions that contain objects from nTAMS to top. These are roots
+// for marking, i.e. their referenced objects must be kept alive to maintain the
+// SATB invariant.
+// We could scan and mark them through during the initial-mark pause, but for
+// pause time reasons we move this work to the concurrent phase.
+// We need to complete this procedure before the next GC because it might determine
+// that some of these "root objects" are dead, potentially dropping some required
+// references.
+// Root regions comprise of the complete contents of survivor regions, and any
+// objects copied into old gen during GC.
 class G1CMRootRegions {
-private:
-  const G1SurvivorRegions* _survivors;
-  G1ConcurrentMark*        _cm;
+  HeapRegion** _root_regions;
+  size_t const _max_regions;
 
-  volatile bool            _scan_in_progress;
-  volatile bool            _should_abort;
-  volatile int             _claimed_survivor_index;
+  volatile size_t _num_root_regions; // Actual number of root regions.
+
+  volatile size_t _claimed_root_regions; // Number of root regions currently claimed.
+
+  volatile bool _scan_in_progress;
+  volatile bool _should_abort;
 
   void notify_scan_done();
 
 public:
-  G1CMRootRegions();
-  // We actually do most of the initialization in this method.
-  void init(const G1SurvivorRegions* survivors, G1ConcurrentMark* cm);
+  G1CMRootRegions(uint const max_regions);
+  ~G1CMRootRegions();
+
+  // Reset the data structure to allow addition of new root regions.
+  void reset();
+
+  void add(HeapRegion* hr);
 
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();
@@ -322,8 +325,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint                    _num_active_tasks; // Number of tasks currently active
   G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
 
-  G1CMTaskQueueSet*       _task_queues;      // Task queue set
-  ParallelTaskTerminator  _terminator;       // For termination
+  G1CMTaskQueueSet*       _task_queues; // Task queue set
+  TaskTerminator          _terminator;  // For termination
 
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
@@ -409,10 +412,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Prints all gathered CM-related statistics
   void print_stats();
 
-  HeapWord*               finger()          { return _finger;   }
-  bool                    concurrent()      { return _concurrent; }
-  uint                    active_tasks()    { return _num_active_tasks; }
-  ParallelTaskTerminator* terminator()      { return &_terminator; }
+  HeapWord*               finger()           { return _finger;   }
+  bool                    concurrent()       { return _concurrent; }
+  uint                    active_tasks()     { return _num_active_tasks; }
+  ParallelTaskTerminator* terminator() const { return _terminator.terminator(); }
 
   // Claims the next available region to be scanned by a marking
   // task/thread. It might return NULL if the next region is empty or
@@ -553,7 +556,7 @@ public:
   // them.
   void scan_root_regions();
 
-  // Scan a single root region and mark everything reachable from it.
+  // Scan a single root region from nTAMS to top and mark everything reachable from it.
   void scan_root_region(HeapRegion* hr, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
@@ -593,10 +596,8 @@ public:
   void print_on_error(outputStream* st) const;
 
   // Mark the given object on the next bitmap if it is below nTAMS.
-  // If the passed obj_size is zero, it is recalculated from the given object if
-  // needed. This is to be as lazy as possible with accessing the object's size.
-  inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj, size_t const obj_size = 0);
-  inline bool mark_in_next_bitmap(uint worker_id, oop const obj, size_t const obj_size = 0);
+  inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj);
+  inline bool mark_in_next_bitmap(uint worker_id, oop const obj);
 
   inline bool is_marked_in_next_bitmap(oop p) const;
 

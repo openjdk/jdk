@@ -1704,7 +1704,9 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   _current_latency = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
 
   // Clear the arrays
-  memset(_node_bundling_base, 0, node_max * sizeof(Bundle));
+  for (uint i = 0; i < node_max; i++) {
+    ::new (&_node_bundling_base[i]) Bundle();
+  }
   memset(_node_latency,       0, node_max * sizeof(unsigned short));
   memset(_uses,               0, node_max * sizeof(short));
   memset(_current_latency,    0, node_max * sizeof(unsigned short));

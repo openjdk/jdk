@@ -27,6 +27,7 @@
 #include "gc/parallel/gcTaskThread.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/workerManager.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -494,9 +495,9 @@ GCTaskManager::~GCTaskManager() {
 
 void GCTaskManager::set_active_gang() {
   _active_workers =
-    AdaptiveSizePolicy::calc_active_workers(workers(),
-                                 active_workers(),
-                                 Threads::number_of_non_daemon_threads());
+    WorkerPolicy::calc_active_workers(workers(),
+                                      active_workers(),
+                                      Threads::number_of_non_daemon_threads());
 
   assert(!all_workers_active() || active_workers() == ParallelGCThreads,
          "all_workers_active() is  incorrect: "

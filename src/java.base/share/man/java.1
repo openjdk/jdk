@@ -1396,11 +1396,6 @@ Enables printing of collected native memory tracking data at JVM exit when nativ
 \fB\-XX:NativeMemoryTracking\fR)\&. By default, this option is disabled and native memory tracking data is not printed\&.
 .RE
 .PP
-\-XX:+RelaxAccessControlCheck
-.RS 4
-Decreases the amount of access control checks in the verifier\&. By default, this option is disabled, and it is ignored (that is, treated as disabled) for classes with a recent bytecode version\&. You can enable it for classes with older versions of the bytecode\&.
-.RE
-.PP
 \-XX:+ShowMessageBoxOnError
 .RS 4
 Enables displaying of a dialog box when the JVM experiences an irrecoverable error\&. This prevents the JVM from exiting and keeps the process active so that you can attach a debugger to it to investigate the cause of the error\&. By default, this option is disabled\&.

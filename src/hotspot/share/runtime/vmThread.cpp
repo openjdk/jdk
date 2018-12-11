@@ -39,7 +39,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"

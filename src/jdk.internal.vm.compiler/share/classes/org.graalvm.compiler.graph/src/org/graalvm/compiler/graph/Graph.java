@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 package org.graalvm.compiler.graph;
 
 import static org.graalvm.compiler.core.common.GraalOptions.TrackNodeInsertion;
-import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.Default;
-import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.Track;
-import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.UpdateOnly;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
@@ -75,13 +72,6 @@ public class Graph {
         DeepFreeze
     }
 
-    public enum SourcePositionTracking {
-        Default,
-        Ignore,
-        UpdateOnly,
-        Track
-    }
-
     public final String name;
 
     /**
@@ -97,7 +87,7 @@ public class Graph {
     /**
      * Records if updating of node source information is required when performing inlining.
      */
-    protected SourcePositionTracking trackNodeSourcePosition;
+    protected boolean trackNodeSourcePosition;
 
     /**
      * The number of valid entries in {@link #nodes}.
@@ -224,38 +214,26 @@ public class Graph {
         return new NodeSourcePositionScope(null);
     }
 
-    /**
-     * Determines if this graph might contain nodes with source information. This is mainly useful
-     * to short circuit logic for updating those positions after inlining since that requires
-     * visiting every node in the graph.
-     */
-    public boolean updateNodeSourcePosition() {
-        return trackNodeSourcePosition == Track || trackNodeSourcePosition == UpdateOnly;
-    }
-
     public boolean trackNodeSourcePosition() {
-        return trackNodeSourcePosition == Track;
+        return trackNodeSourcePosition;
     }
 
     public void setTrackNodeSourcePosition() {
-        if (trackNodeSourcePosition != Track) {
-            assert trackNodeSourcePosition == Default : trackNodeSourcePosition;
-            trackNodeSourcePosition = Track;
+        if (!trackNodeSourcePosition) {
+            assert getNodeCount() == 1 : "can't change the value after nodes have been added";
+            trackNodeSourcePosition = true;
         }
     }
 
-    public static SourcePositionTracking trackNodeSourcePositionDefault(OptionValues options, DebugContext debug) {
-        if (GraalOptions.TrackNodeSourcePosition.getValue(options) || debug.isDumpEnabledForMethod()) {
-            return Track;
-        }
-        return Default;
+    public static boolean trackNodeSourcePositionDefault(OptionValues options, DebugContext debug) {
+        return (GraalOptions.TrackNodeSourcePosition.getValue(options) || debug.isDumpEnabledForMethod());
     }
 
     /**
      * Creates an empty Graph with no name.
      */
     public Graph(OptionValues options, DebugContext debug) {
-        this(null, options, debug);
+        this(null, options, debug, false);
     }
 
     /**
@@ -276,13 +254,13 @@ public class Graph {
      *
      * @param name the name of the graph, used for debugging purposes
      */
-    public Graph(String name, OptionValues options, DebugContext debug) {
+    public Graph(String name, OptionValues options, DebugContext debug, boolean trackNodeSourcePosition) {
         nodes = new Node[INITIAL_NODES_SIZE];
         iterableNodesFirst = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         iterableNodesLast = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         this.name = name;
         this.options = options;
-        this.trackNodeSourcePosition = trackNodeSourcePositionDefault(options, debug);
+        this.trackNodeSourcePosition = trackNodeSourcePosition || trackNodeSourcePositionDefault(options, debug);
         assert debug != null;
         this.debug = debug;
 
@@ -385,10 +363,7 @@ public class Graph {
      *            accessed by multiple threads).
      */
     protected Graph copy(String newName, Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback, DebugContext debugForCopy) {
-        Graph copy = new Graph(newName, options, debugForCopy);
-        if (trackNodeSourcePosition()) {
-            copy.setTrackNodeSourcePosition();
-        }
+        Graph copy = new Graph(newName, options, debugForCopy, trackNodeSourcePosition());
         UnmodifiableEconomicMap<Node, Node> duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), (EconomicMap<Node, Node>) null);
         if (duplicationMapCallback != null) {
             duplicationMapCallback.accept(duplicates);
@@ -555,7 +530,7 @@ public class Graph {
         /**
          * A node was removed from the graph.
          */
-        NODE_REMOVED;
+        NODE_REMOVED
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,10 @@ public class Compilation implements LogEvent {
         } else {
             if (printID) {
                 stream.print(getId());
+                // Print the comp level next to the id as with +PrintCompilation
+                if (nmethod != null && nmethod.getLevel() != 0) {
+                    stream.print(" " + nmethod.getLevel());
+                }
             }
             int bc = isOsr() ? getBCI() : -1;
             stream.print(getMethod().decodeFlags(bc) + " " + compiler + " " + getMethod().format(bc));

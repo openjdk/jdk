@@ -368,7 +368,7 @@ public final class DnsName implements Name {
 
     boolean hasRootLabel() {
         return (!isEmpty() &&
-                get(0).equals(""));
+                get(0).isEmpty());
     }
 
     /*
@@ -442,7 +442,7 @@ public final class DnsName implements Name {
         // label of the name.  Those two are special cases in that for
         // all other domain names, the number of labels is one greater
         // than the number of dot separators.
-        if (!name.equals("") && !name.equals(".")) {
+        if (!name.isEmpty() && !name.equals(".")) {
             add(0, label.toString());
         }
 

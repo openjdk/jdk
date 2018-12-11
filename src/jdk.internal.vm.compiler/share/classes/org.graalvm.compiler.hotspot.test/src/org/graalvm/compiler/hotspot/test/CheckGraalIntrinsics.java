@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,8 +279,6 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.fma(DDD)D",
                             // HotSpot MacroAssembler-based intrinsic
                             "java/lang/Math.fma(FFF)F",
-                            // Emit pause instruction if os::is_MP()
-                            "java/lang/Thread.onSpinWait()V",
                             // Just check if the argument is a compile time constant
                             "java/lang/invoke/MethodHandleImpl.isCompileConstant(Ljava/lang/Object;)Z",
                             // Some logic and a runtime call
@@ -412,6 +410,7 @@ public class CheckGraalIntrinsics extends GraalTest {
                                     "java/lang/StringLatin1.compareToUTF16([B[B)I",
                                     "java/lang/StringUTF16.compareTo([B[B)I",
                                     "java/lang/StringUTF16.compareToLatin1([B[B)I",
+                                    "java/lang/Thread.onSpinWait()V",
                                     "jdk/internal/misc/Unsafe.getAndAddInt(Ljava/lang/Object;JI)I",
                                     "jdk/internal/misc/Unsafe.getAndAddLong(Ljava/lang/Object;JJ)J",
                                     "jdk/internal/misc/Unsafe.getAndSetInt(Ljava/lang/Object;JI)I",

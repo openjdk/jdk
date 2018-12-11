@@ -155,6 +155,10 @@ Metadata* AOTCompiledMethod::metadata_at(int index) const {
   ShouldNotReachHere(); return NULL;
 }
 
+void AOTCompiledMethod::do_unloading(bool unloading_occurred) {
+  unload_nmethod_caches(unloading_occurred);
+}
+
 bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
   // Make sure the method is not flushed in case of a safepoint in code below.
   methodHandle the_method(method());

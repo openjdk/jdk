@@ -248,6 +248,7 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat(["--enable-jtreg-failure-handler"],
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--with-jvm-features=-shenandoahgc",
             versionArgs(input, common))
     };
     // Extra settings for debug profiles
@@ -425,7 +426,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "graalunit_lib"],
+            dependencies: ["devkit", "pandoc", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit),
         },
 

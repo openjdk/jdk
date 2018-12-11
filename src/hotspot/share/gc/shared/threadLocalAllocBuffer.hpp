@@ -188,8 +188,6 @@ public:
   static ByteSize end_offset()                   { return byte_offset_of(ThreadLocalAllocBuffer, _end); }
   static ByteSize top_offset()                   { return byte_offset_of(ThreadLocalAllocBuffer, _top); }
   static ByteSize pf_top_offset()                { return byte_offset_of(ThreadLocalAllocBuffer, _pf_top); }
-
-  void verify();
 };
 
 class ThreadLocalAllocStats : public StackObj {

@@ -243,7 +243,7 @@ public abstract class AtomicContext extends ComponentContext {
 
 
     protected boolean isEmpty(String name) {
-        return name == null || name.equals("");
+        return name == null || name.isEmpty();
     }
 
 // ------ implementations of c_  and c_*_nns methods using
@@ -510,7 +510,7 @@ public abstract class AtomicContext extends ComponentContext {
       */
     protected void a_processJunction_nns(String name, Continuation cont)
         throws NamingException {
-            if (name.equals("")) {
+            if (name.isEmpty()) {
                 NameNotFoundException e = new NameNotFoundException();
                 cont.setErrorNNS(this, name);
                 throw cont.fillInException(e);

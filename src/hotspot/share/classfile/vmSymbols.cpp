@@ -473,15 +473,16 @@ bool vmIntrinsics::is_intrinsic_disabled(vmIntrinsics::ID id) {
   // Note, DirectiveSet may not be created at this point yet since this code
   // is called from initial stub geenration code.
   char* local_list = (char*)DirectiveSet::canonicalize_disableintrinsic(DisableIntrinsic);
-
+  char* save_ptr;
   bool found = false;
-  char* token = strtok(local_list, ",");
+
+  char* token = strtok_r(local_list, ",", &save_ptr);
   while (token != NULL) {
     if (strcmp(token, vmIntrinsics::name_at(id)) == 0) {
       found = true;
       break;
     } else {
-      token = strtok(NULL, ",");
+      token = strtok_r(NULL, ",", &save_ptr);
     }
   }
 

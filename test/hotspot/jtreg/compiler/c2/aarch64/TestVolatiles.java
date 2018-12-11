@@ -39,7 +39,9 @@
  *                    CMS,
  *                    CMSCondMark,
  *                    Serial,
- *                    Parallel}
+ *                    Parallel,
+ *                    Shenandoah,
+ *                    ShenandoahTraversal}
  */
 
 
@@ -99,6 +101,19 @@ public class TestVolatiles {
             procArgs = new String[argcount];
             procArgs[argcount - 3] = "-XX:+UseConcMarkSweepGC";
             procArgs[argcount - 2] = "-XX:+UseCondCardMark";
+            break;
+        case "Shenandoah":
+            argcount = 10;
+            procArgs = new String[argcount];
+            procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
+            procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
+            break;
+        case "ShenandoahTraversal":
+            argcount = 11;
+            procArgs = new String[argcount];
+            procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
+            procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
+            procArgs[argcount - 2] = "-XX:ShenandoahGCHeuristics=traversal";
             break;
         default:
             throw new RuntimeException("unexpected test type " + testType);
@@ -355,6 +370,17 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                 // Shenandoah generates normal object graphs for
+                 // volatile stores
+                matches = new String[] {
+                    "membar_release \\(elided\\)",
+                    useCompressedOops ? "stlrw?" : "stlr",
+                    "membar_volatile \\(elided\\)",
+                    "ret"
+                };
+                break;
             }
         } else {
             switch (testType) {
@@ -413,6 +439,20 @@ public class TestVolatiles {
                     "storestore",
                     "dmb ishst",
                     "strb",
+                    "membar_volatile",
+                    "dmb ish",
+                    "ret"
+                };
+                break;
+
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                 // Shenandoah generates normal object graphs for
+                 // volatile stores
+                matches = new String[] {
+                    "membar_release",
+                    "dmb ish",
+                    useCompressedOops ? "strw?" : "str",
                     "membar_volatile",
                     "dmb ish",
                     "ret"
@@ -520,6 +560,17 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                // For volatile CAS, Shenanodoah generates normal
+                // graphs with a shenandoah-specific cmpxchg
+                matches = new String[] {
+                    "membar_release \\(elided\\)",
+                    useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
+                    "membar_acquire \\(elided\\)",
+                    "ret"
+                };
+                break;
             }
         } else {
             switch (testType) {
@@ -578,6 +629,19 @@ public class TestVolatiles {
                     "storestore",
                     "dmb ishst",
                     "strb",
+                    "membar_acquire",
+                    "dmb ish",
+                    "ret"
+                };
+                break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                // For volatile CAS, Shenanodoah generates normal
+                // graphs with a shenandoah-specific cmpxchg
+                matches = new String[] {
+                    "membar_release",
+                    "dmb ish",
+                    useCompressedOops ? "cmpxchgw?_shenandoah" : "cmpxchg_shenandoah",
                     "membar_acquire",
                     "dmb ish",
                     "ret"
@@ -701,6 +765,17 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                // For volatile CAS, Shenanodoah generates normal
+                // graphs with a shenandoah-specific cmpxchg
+                matches = new String[] {
+                    "membar_release \\(elided\\)",
+                    useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
+                    "membar_acquire \\(elided\\)",
+                    "ret"
+                };
+                break;
             }
         } else {
             switch (testType) {
@@ -759,6 +834,19 @@ public class TestVolatiles {
                     "storestore",
                     "dmb ishst",
                     "strb",
+                    "membar_acquire",
+                    "dmb ish",
+                    "ret"
+                };
+                break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                // For volatile CAS, Shenanodoah generates normal
+                // graphs with a shenandoah-specific cmpxchg
+                matches = new String[] {
+                    "membar_release",
+                    "dmb ish",
+                    useCompressedOops ? "cmpxchgw?_shenandoah" : "cmpxchg_shenandoah",
                     "membar_acquire",
                     "dmb ish",
                     "ret"
@@ -862,6 +950,15 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                matches = new String[] {
+                    "membar_release \\(elided\\)",
+                    useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
+                    "membar_acquire \\(elided\\)",
+                    "ret"
+                };
+                break;
             }
         } else {
             switch (testType) {
@@ -920,6 +1017,17 @@ public class TestVolatiles {
                     "storestore",
                     "dmb ishst",
                     "strb",
+                    "membar_acquire",
+                    "dmb ish",
+                    "ret"
+                };
+                break;
+            case "Shenandoah":
+            case "ShenandoahTraversal":
+                matches = new String[] {
+                    "membar_release",
+                    "dmb ish",
+                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
                     "membar_acquire",
                     "dmb ish",
                     "ret"

@@ -1320,16 +1320,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Delay invoking the compiler until main application class is "    \
           "loaded")                                                         \
                                                                             \
-  develop(bool, CompileTheWorld, false,                                     \
-          "Compile all methods in all classes in bootstrap class path "     \
-            "(stress test)")                                                \
-                                                                            \
-  develop(bool, CompileTheWorldPreloadClasses, true,                        \
-          "Preload all classes used by a class before start loading")       \
-                                                                            \
-  notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
-          "Force a safepoint every n compiles so sweeper can keep up")      \
-                                                                            \
   develop(bool, FillDelaySlots, true,                                       \
           "Fill delay slots (on SPARC only)")                               \
                                                                             \
@@ -2110,13 +2100,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   experimental(bool, UseCriticalCMSThreadPriority, false,                   \
           "ConcurrentMarkSweep thread runs at critical scheduling priority")\
-                                                                            \
-  /* compiler debugging */                                                  \
-  notproduct(intx, CompileTheWorldStartAt,     1,                           \
-          "First class to consider when using +CompileTheWorld")            \
-                                                                            \
-  notproduct(intx, CompileTheWorldStopAt, max_jint,                         \
-          "Last class to consider when using +CompileTheWorld")             \
                                                                             \
   develop(intx, NewCodeParameter,      0,                                   \
           "Testing Only: Create a dedicated integer parameter before "      \

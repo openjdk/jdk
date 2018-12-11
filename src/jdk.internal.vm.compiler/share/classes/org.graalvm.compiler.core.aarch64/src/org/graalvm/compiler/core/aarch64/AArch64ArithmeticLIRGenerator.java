@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package org.graalvm.compiler.core.aarch64;
 
-import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64Kind.DWORD;
 import static jdk.vm.ci.aarch64.AArch64Kind.QWORD;
 import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
@@ -55,7 +54,6 @@ import org.graalvm.compiler.lir.aarch64.AArch64Unary;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
-import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
@@ -134,6 +132,11 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.UMULH, true, a, b);
     }
 
+    public Value emitMNeg(Value a, Value b) {
+        assert isNumericInteger(a.getPlatformKind()) && isNumericInteger(b.getPlatformKind());
+        return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.MNEG, true, a, b);
+    }
+
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
         return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.DIV, AArch64ArithmeticOp.FDIV), false, asAllocatable(a), asAllocatable(b));
@@ -201,13 +204,24 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         return result;
     }
 
-    public Value emitAddSubShift(AArch64ArithmeticOp op, Value a, Value b, AArch64MacroAssembler.ShiftType shiftType, int shiftAmount) {
+    public Value emitMAdd(Value a, Value b, Value c) {
+        return emitMultiplyAddSub(AArch64ArithmeticOp.ADD, a, b, c);
+    }
+
+    public Value emitMSub(Value a, Value b, Value c) {
+        return emitMultiplyAddSub(AArch64ArithmeticOp.SUB, a, b, c);
+    }
+
+    private Value emitMultiplyAddSub(AArch64ArithmeticOp op, Value a, Value b, Value c) {
         assert isNumericInteger(a.getPlatformKind());
         assert isNumericInteger(b.getPlatformKind());
-        Variable result = getLIRGen().newVariable(LIRKind.combine(a, b));
+        assert isNumericInteger(c.getPlatformKind());
+
+        Variable result = getLIRGen().newVariable(LIRKind.combine(a, b, c));
         AllocatableValue x = moveSp(asAllocatable(a));
         AllocatableValue y = moveSp(asAllocatable(b));
-        getLIRGen().append(new AArch64ArithmeticOp.AddSubShiftOp(op, result, x, y, shiftType, shiftAmount));
+        AllocatableValue z = moveSp(asAllocatable(c));
+        getLIRGen().append(new AArch64ArithmeticOp.MultiplyAddSubOp(op, result, x, y, z));
         return result;
     }
 
@@ -434,16 +448,8 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         return result;
     }
 
-    /**
-     * If val denotes the stackpointer, move it to another location. This is necessary since most
-     * ops cannot handle the stackpointer as input or output.
-     */
     private AllocatableValue moveSp(AllocatableValue val) {
-        if (val instanceof RegisterValue && ((RegisterValue) val).getRegister().equals(sp)) {
-            assert val.getPlatformKind() == AArch64Kind.QWORD : "Stackpointer must be long";
-            return getLIRGen().emitMove(val);
-        }
-        return val;
+        return getLIRGen().moveSp(val);
     }
 
     /**

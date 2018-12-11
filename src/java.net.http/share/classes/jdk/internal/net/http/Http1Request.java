@@ -201,13 +201,13 @@ class Http1Request {
     private String getPathAndQuery(URI uri) {
         String path = uri.getRawPath();
         String query = uri.getRawQuery();
-        if (path == null || path.equals("")) {
+        if (path == null || path.isEmpty()) {
             path = "/";
         }
         if (query == null) {
             query = "";
         }
-        if (query.equals("")) {
+        if (query.isEmpty()) {
             return Utils.encode(path);
         } else {
             return Utils.encode(path + "?" + query);

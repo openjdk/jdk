@@ -69,6 +69,7 @@
 #define UINT64_FORMAT_X        "%" PRIx64
 #define INT64_FORMAT_W(width)  "%" #width PRId64
 #define UINT64_FORMAT_W(width) "%" #width PRIu64
+#define UINT64_FORMAT_X_W(width) "%" #width PRIx64
 
 #define PTR64_FORMAT           "0x%016" PRIx64
 
@@ -421,14 +422,6 @@ const size_t minimumStringTableSize = 128;
 
 const size_t defaultSymbolTableSize = 32768; // 2^15
 const size_t minimumSymbolTableSize = 1024;
-
-
-//----------------------------------------------------------------------------------------------------
-// HotSwap - for JVMTI   aka Class File Replacement and PopFrame
-//
-// Determines whether on-the-fly class replacement and frame popping are enabled.
-
-#define HOTSWAP
 
 //----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.

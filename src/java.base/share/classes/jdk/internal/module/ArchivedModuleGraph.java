@@ -27,32 +27,40 @@ package jdk.internal.module;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+
 import jdk.internal.misc.VM;
 
 /**
  * Used by ModuleBootstrap to obtain the archived system modules and finder.
  */
 final class ArchivedModuleGraph {
-    private static String archivedMainModule;
-    private static SystemModules archivedSystemModules;
-    private static ModuleFinder archivedModuleFinder;
-    private static Configuration archivedConfiguration;
+    private static ArchivedModuleGraph archivedModuleGraph;
 
-    private final SystemModules systemModules;
+    private final String mainModule;
+    private final boolean hasSplitPackages;
+    private final boolean hasIncubatorModules;
     private final ModuleFinder finder;
     private final Configuration configuration;
+    private final Map<String, Set<String>> concealedPackagesToOpen;
+    private final Map<String, Set<String>> exportedPackagesToOpen;
 
-    private ArchivedModuleGraph(SystemModules modules,
+    private ArchivedModuleGraph(String mainModule,
+                                boolean hasSplitPackages,
+                                boolean hasIncubatorModules,
                                 ModuleFinder finder,
-                                Configuration configuration) {
-        this.systemModules = modules;
+                                Configuration configuration,
+                                Map<String, Set<String>> concealedPackagesToOpen,
+                                Map<String, Set<String>> exportedPackagesToOpen) {
+        this.mainModule = mainModule;
+        this.hasSplitPackages = hasSplitPackages;
+        this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
-    }
-
-    SystemModules systemModules() {
-        return systemModules;
+        this.concealedPackagesToOpen = concealedPackagesToOpen;
+        this.exportedPackagesToOpen = exportedPackagesToOpen;
     }
 
     ModuleFinder finder() {
@@ -63,32 +71,54 @@ final class ArchivedModuleGraph {
         return configuration;
     }
 
-    // A factory method that ModuleBootstrap can use to obtain the
-    // ArchivedModuleGraph.
+    Map<String, Set<String>> concealedPackagesToOpen() {
+        return concealedPackagesToOpen;
+    }
+
+    Map<String, Set<String>> exportedPackagesToOpen() {
+        return exportedPackagesToOpen;
+    }
+
+    boolean hasSplitPackages() {
+        return hasSplitPackages;
+    }
+
+    boolean hasIncubatorModules() {
+        return hasIncubatorModules;
+    }
+
+    /**
+     * Returns the ArchivedModuleGraph for the given initial module.
+     */
     static ArchivedModuleGraph get(String mainModule) {
-        if (Objects.equals(mainModule, archivedMainModule)
-                && archivedSystemModules != null
-                && archivedModuleFinder != null
-                && archivedConfiguration != null) {
-            return new ArchivedModuleGraph(archivedSystemModules,
-                                           archivedModuleFinder,
-                                           archivedConfiguration);
+        ArchivedModuleGraph graph = archivedModuleGraph;
+        if (graph != null && Objects.equals(mainModule, graph.mainModule)) {
+            return graph;
         } else {
             return null;
         }
     }
 
-    // Used at CDS dump time
+    /**
+     * Archive the module graph for the given initial module.
+     */
     static void archive(String mainModule,
-                        SystemModules systemModules,
+                        boolean hasSplitPackages,
+                        boolean hasIncubatorModules,
                         ModuleFinder finder,
-                        Configuration configuration) {
-        if (archivedMainModule != null)
+                        Configuration configuration,
+                        Map<String, Set<String>> concealedPackagesToOpen,
+                        Map<String, Set<String>> exportedPackagesToOpen) {
+        if (mainModule != null) {
             throw new UnsupportedOperationException();
-        archivedMainModule = mainModule;
-        archivedSystemModules = systemModules;
-        archivedModuleFinder = finder;
-        archivedConfiguration = configuration;
+        }
+        archivedModuleGraph = new ArchivedModuleGraph(mainModule,
+                                                      hasSplitPackages,
+                                                      hasIncubatorModules,
+                                                      finder,
+                                                      configuration,
+                                                      concealedPackagesToOpen,
+                                                      exportedPackagesToOpen);
     }
 
     static {

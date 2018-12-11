@@ -87,6 +87,8 @@ class Monitor : public CHeapObj<mtInternal> {
   // The rank 'access' is similar to 'special' and has the same restrictions on usage.
   // It is reserved for locks that may be required in order to perform memory accesses
   // that require special barriers, e.g. SATB GC barriers, that in turn uses locks.
+  // The rank 'tty' is also similar to 'special' and has the same restrictions.
+  // It is reserved for the tty_lock.
   // Since memory accesses should be able to be performed pretty much anywhere
   // in the code, that requires locks required for performing accesses being
   // inherently a bit more special than even locks of the 'special' rank.
@@ -104,7 +106,8 @@ class Monitor : public CHeapObj<mtInternal> {
   enum lock_types {
        event,
        access         = event          +   1,
-       special        = access         +   2,
+       tty            = access         +   2,
+       special        = tty            +   1,
        suspend_resume = special        +   1,
        vmweak         = suspend_resume +   2,
        leaf           = vmweak         +   2,
@@ -236,7 +239,7 @@ class Monitor : public CHeapObj<mtInternal> {
 
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { print_on(tty); }
+    void print() const                      { print_on(::tty); }
     DEBUG_ONLY(int    rank() const          { return _rank; })
     bool   allow_vm_block()                 { return _allow_vm_block; }
 

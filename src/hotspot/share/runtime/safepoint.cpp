@@ -732,6 +732,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   // Finish monitor deflation.
   ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
 
+  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 }
 
 

@@ -714,20 +714,34 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   }
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-  // IHOP control wants to know the expected young gen length if it were not
-  // restrained by the heap reserve. Using the actual length would make the
-  // prediction too small and the limit the young gen every time we get to the
-  // predicted target occupancy.
-  size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
+
   update_rs_lengths_prediction();
 
-  update_ihop_prediction(app_time_ms / 1000.0,
-                         _bytes_allocated_in_old_since_last_gc,
-                         last_unrestrained_young_length * HeapRegion::GrainBytes,
-                         this_pause_was_young_only);
-  _bytes_allocated_in_old_since_last_gc = 0;
+  // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
+  // that in this case we are not running in a "normal" operating mode.
+  if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
+    // IHOP control wants to know the expected young gen length if it were not
+    // restrained by the heap reserve. Using the actual length would make the
+    // prediction too small and the limit the young gen every time we get to the
+    // predicted target occupancy.
+    size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
 
-  _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
+    update_ihop_prediction(app_time_ms / 1000.0,
+                           _bytes_allocated_in_old_since_last_gc,
+                           last_unrestrained_young_length * HeapRegion::GrainBytes,
+                           this_pause_was_young_only);
+    _bytes_allocated_in_old_since_last_gc = 0;
+
+    _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
+  } else {
+    // Any garbage collection triggered as periodic collection resets the time-to-mixed
+    // measurement. Periodic collection typically means that the application is "inactive", i.e.
+    // the marking threads may have received an uncharacterisic amount of cpu time
+    // for completing the marking, i.e. are faster than expected.
+    // This skews the predicted marking length towards smaller values which might cause
+    // the mark start being too late.
+    _initial_mark_to_mixed.reset();
+  }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
@@ -1078,7 +1092,9 @@ void G1Policy::record_pause(PauseKind kind, double start, double end) {
       _initial_mark_to_mixed.add_pause(end - start);
       break;
     case InitialMarkGC:
-      _initial_mark_to_mixed.record_initial_mark_end(end);
+      if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
+        _initial_mark_to_mixed.record_initial_mark_end(end);
+      }
       break;
     case MixedGC:
       _initial_mark_to_mixed.record_mixed_gc_start(start);

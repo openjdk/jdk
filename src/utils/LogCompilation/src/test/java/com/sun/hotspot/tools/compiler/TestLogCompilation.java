@@ -53,7 +53,9 @@ public class TestLogCompilation {
             // no file (just prints the help)
             {"./src/test/resources/hotspot_pid23756.log"},
             // LogCompilation output of running on above file
-            {"./src/test/resources/hotspot_pid25109.log"}
+            {"./src/test/resources/hotspot_pid25109.log"},
+            {"./src/test/resources/no_tiered_short.log"},
+            {"./src/test/resources/tiered_short.log"}
 
         };
         return Arrays.asList(data);

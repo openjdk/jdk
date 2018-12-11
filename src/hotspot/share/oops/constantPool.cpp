@@ -2326,29 +2326,6 @@ void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) 
 #endif // ASSERT
 }
 
-#ifndef PRODUCT
-
-// CompileTheWorld support. Preload all classes loaded references in the passed in constantpool
-void ConstantPool::preload_and_initialize_all_classes(ConstantPool* obj, TRAPS) {
-  guarantee(obj->is_constantPool(), "object must be constant pool");
-  constantPoolHandle cp(THREAD, (ConstantPool*)obj);
-  guarantee(cp->pool_holder() != NULL, "must be fully loaded");
-
-  for (int i = 0; i< cp->length();  i++) {
-    if (cp->tag_at(i).is_unresolved_klass()) {
-      // This will force loading of the class
-      Klass* klass = cp->klass_at(i, CHECK);
-      if (klass->is_instance_klass()) {
-        // Force initialization of class
-        InstanceKlass::cast(klass)->initialize(CHECK);
-      }
-    }
-  }
-}
-
-#endif
-
-
 // Printing
 
 void ConstantPool::print_on(outputStream* st) const {

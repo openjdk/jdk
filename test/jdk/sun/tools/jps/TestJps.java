@@ -27,7 +27,7 @@
  * @modules jdk.jartool/sun.tools.jar
  * @build LingeredAppForJps
  * @build LingeredApp
- * @run main/othervm TestJps
+ * @run main/othervm/timeout=360 TestJps
  */
 
  /*

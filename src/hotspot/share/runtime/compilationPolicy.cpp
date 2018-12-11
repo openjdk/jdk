@@ -42,7 +42,7 @@
 #include "runtime/tieredThresholdPolicy.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -420,7 +420,7 @@ nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHand
       return NULL;
     }
   }
-  if (CompileTheWorld || ReplayCompiles) {
+  if (ReplayCompiles) {
     // Don't trigger other compiles in testing mode
     if (bci == InvocationEntryBci) {
       reset_counter_for_invocation_event(method);

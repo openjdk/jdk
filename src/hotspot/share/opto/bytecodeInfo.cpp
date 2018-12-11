@@ -288,8 +288,8 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     return false;
   }
 
-  // don't use counts with -Xcomp or CTW
-  if (UseInterpreter && !CompileTheWorld) {
+  // don't use counts with -Xcomp
+  if (UseInterpreter) {
 
     if (!callee_method->has_compiled_code() &&
         !callee_method->was_executed_more_than(0)) {
@@ -364,9 +364,9 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       }
     }
 
-    if ((!UseInterpreter || CompileTheWorld) &&
+    if (!UseInterpreter &&
         is_init_with_ea(callee_method, caller_method, C)) {
-      // Escape Analysis stress testing when running Xcomp or CTW:
+      // Escape Analysis stress testing when running Xcomp:
       // inline constructors even if they are not reached.
     } else if (forced_inline()) {
       // Inlining was forced by CompilerOracle, ciReplay or annotation
@@ -453,7 +453,7 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
   // Check if klass of callee_method is loaded
   if( !callee_holder->is_loaded() )      return false;
   if( !callee_holder->is_initialized() ) return false;
-  if( !UseInterpreter || CompileTheWorld /* running Xcomp or CTW */ ) {
+  if( !UseInterpreter ) /* running Xcomp */ {
     // Checks that constant pool's call site has been visited
     // stricter than callee_holder->is_initialized()
     ciBytecodeStream iter(caller_method);

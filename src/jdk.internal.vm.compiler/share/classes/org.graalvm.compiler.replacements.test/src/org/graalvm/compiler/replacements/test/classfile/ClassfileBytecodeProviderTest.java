@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,10 @@ public class ClassfileBytecodeProviderTest extends GraalCompilerTest {
                                  */
                                 continue;
                             }
+                            if (isGSON(className)) {
+                                /* uses old class format */
+                                continue;
+                            }
                             try {
                                 checkClass(metaAccess, getSnippetReflection(), className);
                             } catch (ClassNotFoundException e) {
@@ -184,6 +188,10 @@ public class ClassfileBytecodeProviderTest extends GraalCompilerTest {
 
     private static boolean isInNativeImage(String className) {
         return className.startsWith("org.graalvm.nativeimage");
+    }
+
+    private static boolean isGSON(String className) {
+        return className.contains("com.google.gson");
     }
 
     protected void checkClass(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, String className) throws ClassNotFoundException {

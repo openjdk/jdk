@@ -124,7 +124,7 @@ int VtableStubs::_itab_stub_size = 0;
 void VtableStubs::initialize() {
   VtableStub::_receiver_location = SharedRuntime::name_for_receiver();
   {
-    MutexLocker ml(VtableStubs_lock);
+    MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     assert(_number_of_vtable_stubs == 0, "potential performance bug: VtableStubs initialized more than once");
     assert(is_power_of_2(N), "N must be a power of 2");
     for (int i = 0; i < N; i++) {
@@ -247,7 +247,7 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
 
 
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
-  MutexLocker ml(VtableStubs_lock);
+  MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
   VtableStub* s = _table[hash];
   while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
@@ -256,7 +256,7 @@ VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
 
 
 void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
-  MutexLocker ml(VtableStubs_lock);
+  MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
   assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
   unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
   // enter s at the beginning of the corresponding list
@@ -266,7 +266,7 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
 }
 
 VtableStub* VtableStubs::entry_point(address pc) {
-  MutexLocker ml(VtableStubs_lock);
+  MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
   VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
   uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
   VtableStub* s;

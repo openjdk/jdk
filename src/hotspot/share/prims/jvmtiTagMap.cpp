@@ -58,7 +58,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ZGC
 #include "gc/z/zGlobals.hpp"

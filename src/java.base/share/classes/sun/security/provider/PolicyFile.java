@@ -1608,7 +1608,7 @@ public class PolicyFile extends java.security.Policy {
             if (u.getProtocol().equals("file")) {
                 boolean isLocalFile = false;
                 String host = u.getHost();
-                isLocalFile = (host == null || host.equals("") ||
+                isLocalFile = (host == null || host.isEmpty() ||
                     host.equals("~") || host.equalsIgnoreCase("localhost"));
 
                 if (isLocalFile) {

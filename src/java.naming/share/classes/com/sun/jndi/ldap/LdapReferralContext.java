@@ -182,7 +182,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
         if (urlString == null) {
             urlName = null;
         } else {
-            urlName = urlString.equals("") ? new CompositeName() :
+            urlName = urlString.isEmpty() ? new CompositeName() :
                 new CompositeName().add(urlString);
         }
     }
@@ -888,7 +888,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
     // ---------------------- Private methods  ---------------------
     private Name toName(String name) throws InvalidNameException {
-        return name.equals("") ? new CompositeName() :
+        return name.isEmpty() ? new CompositeName() :
             new CompositeName().add(name);
     }
 

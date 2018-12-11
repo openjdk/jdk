@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 /**
  * Macro nodes can be used to temporarily replace an invoke. They can, for example, be used to
@@ -88,18 +89,22 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
 
     protected final int bci;
     protected final ResolvedJavaMethod targetMethod;
-    protected final StampPair returnStamp;
     protected final InvokeKind invokeKind;
+    protected final StampPair returnStamp;
 
     protected MacroNode(NodeClass<? extends MacroNode> c, InvokeKind invokeKind, ResolvedJavaMethod targetMethod, int bci, StampPair returnStamp, ValueNode... arguments) {
-        super(c, returnStamp.getTrustedStamp());
-        assert targetMethod.getSignature().getParameterCount(!targetMethod.isStatic()) == arguments.length;
+        super(c, returnStamp != null ? returnStamp.getTrustedStamp() : null);
+        assertArgumentCount(targetMethod, arguments);
         this.arguments = new NodeInputList<>(this, arguments);
         this.bci = bci;
         this.targetMethod = targetMethod;
         this.returnStamp = returnStamp;
         this.invokeKind = invokeKind;
         assert !isPlaceholderBci(bci);
+    }
+
+    protected void assertArgumentCount(ResolvedJavaMethod method, ValueNode... args) {
+        assert method.getSignature().getParameterCount(!method.isStatic()) == args.length;
     }
 
     public ValueNode getArgument(int i) {
@@ -223,9 +228,13 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
         }
     }
 
+    public LocationIdentity getLocationIdentity() {
+        return LocationIdentity.any();
+    }
+
     protected InvokeNode createInvoke() {
         MethodCallTargetNode callTarget = graph().add(new MethodCallTargetNode(invokeKind, targetMethod, arguments.toArray(new ValueNode[arguments.size()]), returnStamp, null));
-        InvokeNode invoke = graph().add(new InvokeNode(callTarget, bci));
+        InvokeNode invoke = graph().add(new InvokeNode(callTarget, bci, getLocationIdentity()));
         if (stateAfter() != null) {
             invoke.setStateAfter(stateAfter().duplicate());
             if (getStackKind() != JavaKind.Void) {

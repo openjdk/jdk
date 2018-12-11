@@ -192,7 +192,9 @@ public class TypeNameTest extends KullaTesting {
         assertType("arrayOf(99)[0]", "Integer");
 
         assertEval("<Z> Z choose(Z z1, Z z2) { return z1; }");
-        assertType("choose(1, 1L);", "Number&Comparable<? extends Number&Comparable<?>>", "Object");
+        assertType("choose(1, 1L);",
+                  "Number&Comparable<? extends Number&Comparable<?>&java.lang.constant.Constable&java.lang.constant.ConstantDesc>&java.lang.constant.Constable&java.lang.constant.ConstantDesc",
+                "Object");
     }
 
     public void testVariableTypeName() {

@@ -126,7 +126,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_worker_id, obj);
+        _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
       }
       size_t obj_size = obj->size();
 

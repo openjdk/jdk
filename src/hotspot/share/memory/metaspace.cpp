@@ -865,6 +865,7 @@ void MetaspaceUtils::verify_metrics() {
 
 // Utils to check if a pointer or range is part of a committed metaspace region.
 metaspace::VirtualSpaceNode* MetaspaceUtils::find_enclosing_virtual_space(const void* p) {
+  MutexLockerEx cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   VirtualSpaceNode* vsn = Metaspace::space_list()->find_enclosing_space(p);
   if (Metaspace::using_class_space() && vsn == NULL) {
     vsn = Metaspace::class_space_list()->find_enclosing_space(p);

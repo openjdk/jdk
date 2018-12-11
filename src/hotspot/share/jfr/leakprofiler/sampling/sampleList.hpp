@@ -53,6 +53,7 @@ class SampleList : public JfrCHeapObj {
   void set_last_resolved(const ObjectSample* sample);
   ObjectSample* get();
   ObjectSample* last() const;
+  ObjectSample* first() const;
   void release(ObjectSample* sample);
   const ObjectSample* last_resolved() const;
   ObjectSample* reuse(ObjectSample* sample);

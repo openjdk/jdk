@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/owstTaskTerminator.hpp"
 #include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
@@ -247,3 +248,25 @@ void ParallelTaskTerminator::reset_for_reuse(uint n_threads) {
   reset_for_reuse();
   _n_threads = n_threads;
 }
+
+TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
+  _terminator(UseOWSTTaskTerminator ? new OWSTTaskTerminator(n_threads, queue_set)
+                                    : new ParallelTaskTerminator(n_threads, queue_set)) {
+}
+
+TaskTerminator::~TaskTerminator() {
+  if (_terminator != NULL) {
+    delete _terminator;
+  }
+}
+
+// Move assignment
+TaskTerminator& TaskTerminator::operator=(const TaskTerminator& o) {
+  if (_terminator != NULL) {
+    delete _terminator;
+  }
+  _terminator = o.terminator();
+  const_cast<TaskTerminator&>(o)._terminator = NULL;
+  return *this;
+}
+

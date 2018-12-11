@@ -370,7 +370,7 @@ public class ActivatableRef implements RemoteRef {
         ref = null;
         String className = in.readUTF();
 
-        if (className.equals("")) return;
+        if (className.isEmpty()) return;
 
         try {
             Class<?> refClass = Class.forName(RemoteRef.packagePrefix + "." +

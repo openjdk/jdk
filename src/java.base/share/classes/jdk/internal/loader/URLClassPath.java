@@ -97,10 +97,10 @@ public class URLClassPath {
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
-        DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
+        DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
 
         p = props.getProperty("jdk.net.URLClassPath.disableRestrictedPermissions");
-        DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
+        DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
 
         // This property will be removed in a later release
         p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck", "true");
@@ -805,7 +805,7 @@ public class URLClassPath {
         private JarFile getJarFile(URL url) throws IOException {
             // Optimize case where url refers to a local jar file
             if (isOptimizable(url)) {
-                FileURLMapper p = new FileURLMapper (url);
+                FileURLMapper p = new FileURLMapper(url);
                 if (!p.exists()) {
                     throw new FileNotFoundException(p.getPath());
                 }

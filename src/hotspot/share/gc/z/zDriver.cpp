@@ -24,8 +24,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/vmGCOperations.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -34,7 +34,7 @@
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
 static const ZStatPhaseCycle      ZPhaseCycle("Garbage Collection Cycle");

@@ -456,11 +456,11 @@ public class OpenMBeanAttributeInfoSupport
             throw new IllegalArgumentException("OpenType cannot be null");
 
         if (info.getName() == null ||
-                info.getName().trim().equals(""))
+                info.getName().trim().isEmpty())
             throw new IllegalArgumentException("Name cannot be null or empty");
 
         if (info.getDescription() == null ||
-                info.getDescription().trim().equals(""))
+                info.getDescription().trim().isEmpty())
             throw new IllegalArgumentException("Description cannot be null or empty");
 
         // Check and initialize defaultValue

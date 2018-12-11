@@ -43,14 +43,20 @@ class G1YoungRemSetSamplingThread: public ConcurrentGCThread {
 private:
   Monitor _monitor;
 
+  double _last_periodic_gc_attempt_s;
+
+  double _vtime_accum;  // Accumulated virtual time.
+
   void sample_young_list_rs_lengths();
 
   void run_service();
+  void check_for_periodic_gc();
+
   void stop_service();
 
   void sleep_before_next_cycle();
 
-  double _vtime_accum;  // Accumulated virtual time.
+  bool should_start_periodic_gc();
 
 public:
   G1YoungRemSetSamplingThread();

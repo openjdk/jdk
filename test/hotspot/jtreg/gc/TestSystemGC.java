@@ -45,6 +45,14 @@
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
  */
 
+/*
+ * @test TestSystemGCShenandoah
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Runs System.gc() with different flags.
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC TestSystemGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
+ */
 public class TestSystemGC {
   public static void main(String args[]) throws Exception {
     System.gc();

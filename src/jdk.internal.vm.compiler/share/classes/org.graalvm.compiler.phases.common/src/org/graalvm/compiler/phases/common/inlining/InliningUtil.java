@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
 import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
 import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +48,6 @@ import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
@@ -63,14 +61,12 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
-import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.DeoptimizingGuard;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.InliningLog;
 import org.graalvm.compiler.nodes.Invoke;
@@ -471,8 +467,7 @@ public class InliningUtil extends ValueMergeUtil {
             // the intrinsified method.
             Invoke dup = (Invoke) duplicates.get(exit.asNode());
             if (dup instanceof InvokeNode) {
-                InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
-                dup.intrinsify(repl.asNode());
+                ((InvokeNode) dup).replaceWithNewBci(invoke.bci());
             } else {
                 ((InvokeWithExceptionNode) dup).replaceWithNewBci(invoke.bci());
             }
@@ -915,9 +910,7 @@ public class InliningUtil extends ValueMergeUtil {
                         // replace the InvokeWithExceptionNode with a normal
                         // InvokeNode -- the deoptimization occurs when the invoke throws.
                         InvokeWithExceptionNode oldInvoke = (InvokeWithExceptionNode) fixedStateSplit.predecessor();
-                        FrameState oldFrameState = oldInvoke.stateAfter();
                         InvokeNode newInvoke = oldInvoke.replaceWithInvoke();
-                        newInvoke.setStateAfter(oldFrameState.duplicate());
                         if (replacements != null) {
                             replacements.put(oldInvoke, newInvoke);
                         }
@@ -1018,36 +1011,6 @@ public class InliningUtil extends ValueMergeUtil {
 
     public static StructuredGraph getIntrinsicGraph(Replacements replacements, ResolvedJavaMethod target, int invokeBci, boolean trackNodeSourcePosition, NodeSourcePosition replaceePosition) {
         return replacements.getSubstitution(target, invokeBci, trackNodeSourcePosition, replaceePosition);
-    }
-
-    public static FixedWithNextNode inlineMacroNode(Invoke invoke, ResolvedJavaMethod concrete, Class<? extends FixedWithNextNode> macroNodeClass) throws GraalError {
-        StructuredGraph graph = invoke.asNode().graph();
-        if (!concrete.equals(((MethodCallTargetNode) invoke.callTarget()).targetMethod())) {
-            assert ((MethodCallTargetNode) invoke.callTarget()).invokeKind().hasReceiver();
-            InliningUtil.replaceInvokeCallTarget(invoke, graph, InvokeKind.Special, concrete);
-        }
-
-        FixedWithNextNode macroNode = createMacroNodeInstance(macroNodeClass, invoke);
-
-        CallTargetNode callTarget = invoke.callTarget();
-        if (invoke instanceof InvokeNode) {
-            graph.replaceFixedWithFixed((InvokeNode) invoke, graph.add(macroNode));
-        } else {
-            InvokeWithExceptionNode invokeWithException = (InvokeWithExceptionNode) invoke;
-            invokeWithException.killExceptionEdge();
-            graph.replaceSplitWithFixed(invokeWithException, graph.add(macroNode), invokeWithException.next());
-        }
-        GraphUtil.killWithUnusedFloatingInputs(callTarget);
-        return macroNode;
-    }
-
-    private static FixedWithNextNode createMacroNodeInstance(Class<? extends FixedWithNextNode> macroNodeClass, Invoke invoke) throws GraalError {
-        try {
-            Constructor<?> cons = macroNodeClass.getDeclaredConstructor(Invoke.class);
-            return (FixedWithNextNode) cons.newInstance(invoke);
-        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
-            throw new GraalGraphError(e).addContext(invoke.asNode()).addContext("macroSubstitution", macroNodeClass);
-        }
     }
 
     /**

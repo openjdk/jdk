@@ -890,7 +890,7 @@ public class LogManager {
         // Gets a node in our tree of logger nodes.
         // If necessary, create it.
         LogNode getNode(String name) {
-            if (name == null || name.equals("")) {
+            if (name == null || name.isEmpty()) {
                 return root;
             }
             LogNode node = root;
@@ -1486,7 +1486,7 @@ public class LogManager {
 
         // Reset Logger level
         String name = logger.getName();
-        if (name != null && name.equals("")) {
+        if (name != null && name.isEmpty()) {
             // This is the root logger.
             logger.setLevel(defaultLevel);
         } else {

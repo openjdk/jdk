@@ -190,7 +190,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     @Override
     public HttpRequest.Builder method(String method, BodyPublisher body) {
         requireNonNull(method);
-        if (method.equals(""))
+        if (method.isEmpty())
             throw newIAE("illegal method <empty string>");
         if (method.equals("CONNECT"))
             throw newIAE("method CONNECT is not supported");
@@ -205,7 +205,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     private HttpRequest.Builder method0(String method, BodyPublisher body) {
         assert method != null;
-        assert !method.equals("");
+        assert !method.isEmpty();
         this.method = method;
         this.bodyPublisher = body;
         return this;

@@ -75,6 +75,7 @@
 class ExceptionCache;
 class KlassDepChange;
 class OopClosure;
+class ShenandoahParallelCodeHeapIterator;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
@@ -82,6 +83,7 @@ class CodeCache : AllStatic {
   template <class T, class Filter> friend class CodeBlobIterator;
   friend class WhiteBox;
   friend class CodeCacheLoader;
+  friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
   static GrowableArray<CodeHeap*>* _heaps;
@@ -111,7 +113,6 @@ class CodeCache : AllStatic {
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(int code_blob_type);
-  static size_t page_size(bool aligned = true);               // Returns the page size used by the CodeCache
   static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
@@ -133,6 +134,7 @@ class CodeCache : AllStatic {
  public:
   // Initialization
   static void initialize();
+  static size_t page_size(bool aligned = true, size_t min_pages = 1); // Returns the page size used by the CodeCache
 
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
@@ -286,9 +288,7 @@ class CodeCache : AllStatic {
   // Deoptimization
  private:
   static int  mark_for_deoptimization(KlassDepChange& changes);
-#ifdef HOTSWAP
   static int  mark_for_evol_deoptimization(InstanceKlass* dependee);
-#endif // HOTSWAP
 
  public:
   static void mark_all_nmethods_for_deoptimization();
@@ -297,10 +297,8 @@ class CodeCache : AllStatic {
 
   // Flushing and deoptimization
   static void flush_dependents_on(InstanceKlass* dependee);
-#ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
   static void flush_evol_dependents_on(InstanceKlass* dependee);
-#endif // HOTSWAP
   // Support for fullspeed debugging
   static void flush_dependents_on_method(const methodHandle& dependee);
 

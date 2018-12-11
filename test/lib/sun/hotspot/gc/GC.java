@@ -38,7 +38,8 @@ public enum GC {
     ConcMarkSweep(3),
     G1(4),
     Epsilon(5),
-    Z(6);
+    Z(6),
+    Shenandoah(7);
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 

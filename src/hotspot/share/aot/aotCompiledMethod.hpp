@@ -265,6 +265,7 @@ private:
 #endif
   }
 
+  virtual void do_unloading(bool unloading_occurred);
 
 protected:
   // AOT compiled methods are not flushed

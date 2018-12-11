@@ -38,6 +38,7 @@ public enum GCName {
   G1Old ("G1Old"),
   G1Full ("G1Full"),
   Z ("Z"),
+  Shenandoah ("Shenandoah"),
   NA ("N/A"),
   GCNameEndSentinel ("GCNameEndSentinel");
 

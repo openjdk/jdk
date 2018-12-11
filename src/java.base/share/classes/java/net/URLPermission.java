@@ -533,11 +533,11 @@ public final class URLPermission extends Permission {
             String thishost = this.p.hostname();
             String thathost = that.p.hostname();
 
-            if (p.wildcard() && thishost.equals("")) {
+            if (p.wildcard() && thishost.isEmpty()) {
                 // this "*" implies all others
                 return true;
             }
-            if (that.p.wildcard() && thathost.equals("")) {
+            if (that.p.wildcard() && thathost.isEmpty()) {
                 // that "*" can only be implied by this "*"
                 return false;
             }

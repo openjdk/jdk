@@ -30,10 +30,10 @@
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/shared/gcArguments.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 
 size_t CMSArguments::conservative_max_heap_alignment() {
@@ -46,7 +46,7 @@ void CMSArguments::set_parnew_gc_flags() {
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
 
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, VM_Version::parallel_worker_threads());
+    FLAG_SET_DEFAULT(ParallelGCThreads, WorkerPolicy::parallel_worker_threads());
     assert(ParallelGCThreads > 0, "We should always have at least one thread by default");
   } else if (ParallelGCThreads == 0) {
     jio_fprintf(defaultStream::error_stream(),

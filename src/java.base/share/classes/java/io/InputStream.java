@@ -64,8 +64,8 @@ public abstract class InputStream implements Closeable {
      * <p> While the stream is open, the {@code available()}, {@code read()},
      * {@code read(byte[])}, {@code read(byte[], int, int)},
      * {@code readAllBytes()}, {@code readNBytes(byte[], int, int)},
-     * {@code readNBytes(int)}, {@code skip(long)}, and
-     * {@code transferTo()} methods all behave as if end of stream has been
+     * {@code readNBytes(int)}, {@code skip(long)}, {@code skipNBytes(long)},
+     * and {@code transferTo()} methods all behave as if end of stream has been
      * reached.  After the stream has been closed, these methods all throw
      * {@code IOException}.
      *
@@ -136,6 +136,14 @@ public abstract class InputStream implements Closeable {
             public long skip(long n) throws IOException {
                 ensureOpen();
                 return 0L;
+            }
+
+            @Override
+            public void skipNBytes(long n) throws IOException {
+                ensureOpen();
+                if (n > 0) {
+                    throw new EOFException();
+                }
             }
 
             @Override
@@ -513,11 +521,11 @@ public abstract class InputStream implements Closeable {
      * For instance, the implementation may depend on the ability to seek.
      *
      * @param      n   the number of bytes to be skipped.
-     * @return     the actual number of bytes skipped.
+     * @return     the actual number of bytes skipped which might be zero.
      * @throws     IOException  if an I/O error occurs.
+     * @see        java.io.InputStream#skipNBytes(long)
      */
     public long skip(long n) throws IOException {
-
         long remaining = n;
         int nr;
 
@@ -536,6 +544,65 @@ public abstract class InputStream implements Closeable {
         }
 
         return n - remaining;
+    }
+
+    /**
+     * Skips over and discards exactly {@code n} bytes of data from this input
+     * stream.  If {@code n} is zero, then no bytes are skipped.
+     * If {@code n} is negative, then no bytes are skipped.
+     * Subclasses may handle the negative value differently.
+     *
+     * <p> This method blocks until the requested number of bytes have been
+     * skipped, end of file is reached, or an exception is thrown.
+     *
+     * <p> If end of stream is reached before the stream is at the desired
+     * position, then an {@code EOFException} is thrown.
+     *
+     * <p> If an I/O error occurs, then the input stream may be
+     * in an inconsistent state. It is strongly recommended that the
+     * stream be promptly closed if an I/O error occurs.
+     *
+     * @implNote
+     * Subclasses are encouraged to provide a more efficient implementation
+     * of this method.
+     *
+     * @implSpec
+     * If {@code n} is zero or negative, then no bytes are skipped.
+     * If {@code n} is positive, the default implementation of this method
+     * invokes {@link #skip(long) skip()} with parameter {@code n}.  If the
+     * return value of {@code skip(n)} is non-negative and less than {@code n},
+     * then {@link #read()} is invoked repeatedly until the stream is {@code n}
+     * bytes beyond its position when this method was invoked or end of stream
+     * is reached.  If the return value of {@code skip(n)} is negative or
+     * greater than {@code n}, then an {@code IOException} is thrown.  Any
+     * exception thrown by {@code skip()} or {@code read()} will be propagated.
+     *
+     * @param      n   the number of bytes to be skipped.
+     * @throws     EOFException if end of stream is encountered before the
+     *             stream can be positioned {@code n} bytes beyond its position
+     *             when this method was invoked.
+     * @throws     IOException  if the stream cannot be positioned properly or
+     *             if an I/O error occurs.
+     * @see        java.io.InputStream#skip(long)
+     */
+    public void skipNBytes(long n) throws IOException {
+        if (n > 0) {
+            long ns = skip(n);
+            if (ns >= 0 && ns < n) { // skipped too few bytes
+                // adjust number to skip
+                n -= ns;
+                // read until requested number skipped or EOS reached
+                while (n > 0 && read() != -1) {
+                    n--;
+                }
+                // if not enough skipped, then EOFE
+                if (n != 0) {
+                    throw new EOFException();
+                }
+            } else if (ns != n) { // skipped negative or too many bytes
+                throw new IOException("Unable to skip exactly");
+            }
+        }
     }
 
     /**

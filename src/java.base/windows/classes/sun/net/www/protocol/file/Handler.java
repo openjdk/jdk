@@ -83,7 +83,7 @@ public class Handler extends URLStreamHandler {
         path = path.replace('/', '\\');
         path = path.replace('|', ':');
 
-        if ((host == null) || host.equals("") ||
+        if ((host == null) || host.isEmpty() ||
                 host.equalsIgnoreCase("localhost") ||
                 host.equals("~")) {
            return createFileURLConnection(url, new File(path));

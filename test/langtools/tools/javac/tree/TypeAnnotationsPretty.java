@@ -60,26 +60,26 @@ public class TypeAnnotationsPretty {
     public static void main(String... args) throws Exception {
         TypeAnnotationsPretty tap = new TypeAnnotationsPretty();
 
-        tap.runField("@TA()\nObject cls = null");
-        tap.runField("@TA()\nObject cls = new @TA() Object()");
+        tap.runField("@TA\nObject cls = null");
+        tap.runField("@TA\nObject cls = new @TA Object()");
 
-        tap.runField("@TA()\nList<@TB() Object> cls = null");
-        tap.runField("@TA()\nList<@TB() Object> cls = new @TA() LinkedList<@TB() Object>()");
+        tap.runField("@TA\nList<@TB Object> cls = null");
+        tap.runField("@TA\nList<@TB Object> cls = new @TA LinkedList<@TB Object>()");
 
         tap.runField("Class[] cls = null");
-        tap.runField("@TA()\nClass[] cls = null");
-        tap.runField("Class @TA() [] cls = null");
-        tap.runField("@TA()\nClass @TB() [] cls = null");
+        tap.runField("@TA\nClass[] cls = null");
+        tap.runField("Class @TA [] cls = null");
+        tap.runField("@TA\nClass @TB [] cls = null");
 
         tap.runField("Class[] cls = new Class[]{Object.class}");
-        tap.runField("@TA()\nClass[] cls = new @TA() Class[]{Object.class}");
-        tap.runField("Class @TB() [] cls = new Class @TB() []{Object.class}");
-        tap.runField("@TA()\nClass @TB() [] cls = new @TA() Class @TB() []{Object.class}");
-        tap.runField("@TA()\nClass @TB() [] @TC() [] cls = new @TA() Class @TB() [10] @TC() []");
-        tap.runField("Class @TB() [] @TC() [] cls = new Class @TB() [10] @TC() []");
-        tap.runField("@TA()\nClass @TB() [] @TC() [] @TD() [] cls = new @TA() Class @TB() [10] @TC() [] @TD() []");
+        tap.runField("@TA\nClass[] cls = new @TA Class[]{Object.class}");
+        tap.runField("Class @TB [] cls = new Class @TB []{Object.class}");
+        tap.runField("@TA\nClass @TB [] cls = new @TA Class @TB []{Object.class}");
+        tap.runField("@TA\nClass @TB [] @TC [] cls = new @TA Class @TB [10] @TC []");
+        tap.runField("Class @TB [] @TC [] cls = new Class @TB [10] @TC []");
+        tap.runField("@TA\nClass @TB [] @TC [] @TD [] cls = new @TA Class @TB [10] @TC [] @TD []");
 
-        tap.runMethod("\n@TA()\nObject test(@TB()\nList<@TC() String> p) {\n" +
+        tap.runMethod("\n@TA\nObject test(@TB\nList<@TC String> p) {\n" +
                 "    return null;\n" +
                 "}");
 

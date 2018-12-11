@@ -289,7 +289,7 @@ void CodeCache::initialize_heaps() {
 
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(page_size(false), (size_t) os::vm_allocation_granularity());
+  const size_t alignment = MAX2(page_size(false, 8), (size_t) os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
 
@@ -314,10 +314,14 @@ void CodeCache::initialize_heaps() {
   add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
 }
 
-size_t CodeCache::page_size(bool aligned) {
+size_t CodeCache::page_size(bool aligned, size_t min_pages) {
   if (os::can_execute_large_page_memory()) {
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, 8) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8);
+    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
+      // Make sure that the page size allows for an incremental commit of the reserved space
+      min_pages = MAX2(min_pages, (size_t)8);
+    }
+    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
   } else {
     return os::vm_page_size();
   }
@@ -1196,7 +1200,6 @@ bool CodeCache::is_far_target(address target) {
 #endif
 }
 
-#ifdef HOTSWAP
 int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
@@ -1230,8 +1233,6 @@ int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
 
   return number_of_marked_CodeBlobs;
 }
-#endif // HOTSWAP
-
 
 // Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
@@ -1293,8 +1294,8 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   }
 }
 
-#ifdef HOTSWAP
-// Flushes compiled methods dependent on dependee in the evolutionary sense
+// Flushes compiled methods dependent on dependee when the dependee is redefined
+// via RedefineClasses
 void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
@@ -1322,8 +1323,6 @@ void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
     make_marked_nmethods_not_entrant();
   }
 }
-#endif // HOTSWAP
-
 
 // Flushes compiled methods dependent on dependee
 void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {

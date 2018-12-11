@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zErrno.hpp"
+#include "runtime/os.inline.hpp"
 
 #include <errno.h>
 #include <string.h>
@@ -46,5 +47,5 @@ bool ZErrno::operator!=(int error) const {
 }
 
 const char* ZErrno::to_string() const {
-  return strerror(_error);
+  return os::strerror(_error);
 }

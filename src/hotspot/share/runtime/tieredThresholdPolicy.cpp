@@ -386,7 +386,7 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
       thread->is_interp_only_mode()) {
     return NULL;
   }
-  if (CompileTheWorld || ReplayCompiles) {
+  if (ReplayCompiles) {
     // Don't trigger other compiles in testing mode
     return NULL;
   }

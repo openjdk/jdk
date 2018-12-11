@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,11 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
     /**
      * Find each {@link Invoke} that has a corresponding {@link InitializeKlassNode}. These
      * {@link InitializeKlassNode} are redundant and are removed.
-     *
      */
     private static void removeInitsAtStaticCalls(StructuredGraph graph) {
         for (Invoke invoke : graph.getInvokes()) {
-            if (invoke.classInit() != null) {
-                Node classInit = invoke.classInit();
+            Node classInit = invoke.classInit();
+            if (classInit != null) {
                 classInit.replaceAtUsages(null);
                 graph.removeFixed((FixedWithNextNode) classInit);
             }

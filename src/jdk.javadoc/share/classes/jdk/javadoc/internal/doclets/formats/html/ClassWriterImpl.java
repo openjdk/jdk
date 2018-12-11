@@ -71,6 +71,16 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWriter {
 
+    private static final Set<String> suppressSubtypesSet
+            = Set.of("java.lang.Object",
+                     "org.omg.CORBA.Object");
+
+    private static final Set<String> suppressImplementingSet
+            = Set.of( "java.lang.Cloneable",
+                    "java.lang.constant.Constable",
+                    "java.lang.constant.ConstantDesc",
+                    "java.io.Serializable");
+
     protected final TypeElement typeElement;
 
     protected final ClassTree classtree;
@@ -370,9 +380,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addSubClassInfo(Content classInfoTree) {
         if (utils.isClass(typeElement)) {
-            if (typeElement.getQualifiedName().contentEquals("java.lang.Object") ||
-                    typeElement.getQualifiedName().contentEquals("org.omg.CORBA.Object")) {
-                return;    // Don't generate the list, too huge
+            for (String s : suppressSubtypesSet) {
+                if (typeElement.getQualifiedName().contentEquals(s)) {
+                    return;    // Don't generate the list, too huge
+                }
             }
             Set<TypeElement> subclasses = classtree.directSubClasses(typeElement, false);
             if (!subclasses.isEmpty()) {
@@ -412,9 +423,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (!utils.isInterface(typeElement)) {
             return;
         }
-        if (typeElement.getQualifiedName().contentEquals("java.lang.Cloneable") ||
-                typeElement.getQualifiedName().contentEquals("java.io.Serializable")) {
-            return;   // Don't generate the list, too big
+        for (String s : suppressImplementingSet) {
+            if (typeElement.getQualifiedName().contentEquals(s)) {
+                return;    // Don't generate the list, too huge
+            }
         }
         Set<TypeElement> implcl = classtree.implementingClasses(typeElement);
         if (!implcl.isEmpty()) {

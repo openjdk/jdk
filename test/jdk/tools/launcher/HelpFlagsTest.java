@@ -140,6 +140,7 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("jdb",         1,   1,   1,   0,         1,    1,     0),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jdeprscan",   1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
         new ToolHelpSpec("jdeps",       1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jfr",         1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
         new ToolHelpSpec("jhsdb",       0,   0,   0,   0,         0,    0,     0),     // none, prints help message anyways.
         new ToolHelpSpec("jimage",      1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
         new ToolHelpSpec("jinfo",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
@@ -224,6 +225,7 @@ public class HelpFlagsTest extends TestHelper {
                     line.charAt(posAfter) != ',' &&
                     line.charAt(posAfter) != '[' && // jar
                     line.charAt(posAfter) != ']' && // jarsigner
+                    line.charAt(posAfter) != ')' && // jfr
                     line.charAt(posAfter) != '|' && // jstatd
                     line.charAt(posAfter) != ':' && // jps
                     line.charAt(posAfter) != '"') { // keytool

@@ -57,7 +57,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -168,11 +168,11 @@ void PSRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
   for(uint i=0; i < active_workers; i++) {
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
-  ParallelTaskTerminator terminator(active_workers,
-                                    (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
+  TaskTerminator terminator(active_workers,
+                            (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
   if (task.marks_oops_alive() && active_workers > 1) {
     for (uint j = 0; j < active_workers; j++) {
-      q->enqueue(new StealTask(&terminator));
+      q->enqueue(new StealTask(terminator.terminator()));
     }
   }
   manager->execute_and_wait(q);
@@ -380,16 +380,15 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
-      ParallelTaskTerminator terminator(
-        active_workers,
-                  (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
+      TaskTerminator terminator(active_workers,
+                                (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
         // If active_workers can exceed 1, add a StrealTask.
         // PSPromotionManager::drain_stacks_depth() does not fully drain its
         // stacks and expects a StealTask to complete the draining if
         // ParallelGCThreads is > 1.
         if (gc_task_manager()->workers() > 1) {
           for (uint j = 0; j < active_workers; j++) {
-            q->enqueue(new StealTask(&terminator));
+            q->enqueue(new StealTask(terminator.terminator()));
           }
         }
 

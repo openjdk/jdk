@@ -41,6 +41,9 @@ if [[ $TARGET_PLATFORM == linux_x64 ]] ; then
 elif [[ $TARGET_PLATFORM == macosx_x64 ]] ; then
   PANDOC_PLATFORM=macOS
   PANDOC_SUFFIX=zip
+elif [[ $TARGET_PLATFORM == windows_x64 ]] ; then
+  PANDOC_PLATFORM=windows-x86_64
+  PANDOC_SUFFIX=zip
 else
   echo "Unknown platform"
   exit 1
@@ -59,7 +62,12 @@ fi
 cd ..
 
 mkdir pandoc
-cp tmp/pandoc-$PANDOC_VERSION/bin/pandoc pandoc
+if [[ $TARGET_PLATFORM == windows_x64 ]] ; then
+  cp tmp/pandoc-$PANDOC_VERSION-$PANDOC_PLATFORM/pandoc.exe pandoc
+  chmod +x pandoc/pandoc.exe
+else
+  cp tmp/pandoc-$PANDOC_VERSION/bin/pandoc pandoc
+fi
 
 tar -cvzf ../$BUNDLE_NAME pandoc
 cp ../$BUNDLE_NAME "$ORIG_DIR"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,19 @@
 
 package org.graalvm.compiler.replacements.test;
 
-import org.graalvm.compiler.nodes.NodeView;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.replacements.nodes.BitScanReverseNode;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.amd64.AMD64;
@@ -307,7 +305,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         HighTierContext context = getDefaultHighTierContext();
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         canonicalizer.apply(graph, context);
-        new InliningPhase(canonicalizer).apply(graph, context);
+        createInliningPhase(canonicalizer).apply(graph, context);
         canonicalizer.apply(graph, context);
         Assert.assertEquals(1, graph.getNodes(ReturnNode.TYPE).count());
         if (expectedClass != null) {

@@ -82,9 +82,15 @@ final class ServerNameExtension {
                                                     // +2: Name length
         final List<SNIServerName> serverNames;
 
+        /*
+         * Note: For the unmodifiable collection we are creating new
+         * collections as inputs to avoid potential deep nesting of
+         * unmodifiable collections that can cause StackOverflowErrors
+         * (see JDK-6323374).
+         */
         private CHServerNamesSpec(List<SNIServerName> serverNames) {
-            this.serverNames =
-                    Collections.<SNIServerName>unmodifiableList(serverNames);
+            this.serverNames = Collections.<SNIServerName>unmodifiableList(
+                    new ArrayList<>(serverNames));
         }
 
         private CHServerNamesSpec(ByteBuffer buffer) throws IOException {

@@ -613,7 +613,8 @@
     <Field type="string" name="jvmFlags" label="JVM Settings File Arguments" />
     <Field type="string" name="javaArguments" label="Java Application Arguments" />
     <Field type="long" contentType="epochmillis" name="jvmStartTime" label="JVM Start Time" />
-  </Event>
+    <Field type="long" name="pid" label="Process Identifier" />
+     </Event>
 
   <Event name="OSInformation" category="Operating System" label="OS Information" period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />
@@ -899,7 +900,7 @@
     <Field type="uint" name="newRatio" label="New Ratio" description="The size of the young generation relative to the tenured generation" />
   </Event>
 
-  <Event name="ZPageAllocation" category="Java Application" label="ZPage Allocation" description="Allocation of a ZPage" thread="true" stackTrace="false">
+  <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZPage Allocation" description="Allocation of a ZPage" thread="true" stackTrace="false" experimental="true">
      <Field type="ulong" contentType="bytes" name="pageSize" label="Page Size" />
      <Field type="ulong" contentType="bytes" name="usedAfter" label="Used After" />
      <Field type="ulong" contentType="bytes" name="freeAfter" label="Free After" />
@@ -908,18 +909,18 @@
      <Field type="boolean" name="noReserve" label="No Reserve" />
   </Event>
 
-  <Event name="ZThreadPhase" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Phase" thread="true">
+  <Event name="ZThreadPhase" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Phase" thread="true" experimental="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
     <Field type="string" name="name" label="Name" />
   </Event>
 
-  <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Counter" thread="true">
+  <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Counter" thread="true" experimental="true" >
     <Field type="ZStatisticsCounterType" name="id" label="Id" />
     <Field type="ulong" name="increment" label="Increment" />
     <Field type="ulong" name="value" label="Value" />
   </Event>
 
-  <Event name="ZStatisticsSampler" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Sampler" thread="true">
+  <Event name="ZStatisticsSampler" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Sampler" thread="true" experimental="true">
     <Field type="ZStatisticsSamplerType" name="id" label="Id" />
     <Field type="ulong" name="value" label="Value" />
   </Event>

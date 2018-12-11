@@ -43,6 +43,7 @@ package sun.util.locale.provider;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -88,6 +89,7 @@ public class LocaleResources {
     private static final String ZONE_IDS_CACHEKEY = "ZID";
     private static final String CALENDAR_NAMES = "CALN.";
     private static final String NUMBER_PATTERNS_CACHEKEY = "NP";
+    private static final String COMPACT_NUMBER_PATTERNS_CACHEKEY = "CNP";
     private static final String DATE_TIME_PATTERN = "DTP.";
 
     // TimeZoneNamesBundle exemplar city prefix
@@ -477,6 +479,32 @@ public class LocaleResources {
 
         return numberPatterns;
     }
+
+    /**
+     * Returns the compact number format patterns.
+     * @param formatStyle the style for formatting a number
+     * @return an array of compact number patterns
+     */
+    @SuppressWarnings("unchecked")
+    public String[] getCNPatterns(NumberFormat.Style formatStyle) {
+
+        Objects.requireNonNull(formatStyle);
+        String[] compactNumberPatterns = null;
+        removeEmptyReferences();
+        String width = (formatStyle == NumberFormat.Style.LONG) ? "long" : "short";
+        String cacheKey = width + "." + COMPACT_NUMBER_PATTERNS_CACHEKEY;
+        ResourceReference data = cache.get(cacheKey);
+        if (data == null || ((compactNumberPatterns
+                = (String[]) data.get()) == null)) {
+            ResourceBundle resource = localeData.getNumberFormatData(locale);
+            compactNumberPatterns = (String[]) resource
+                    .getObject(width + ".CompactNumberPatterns");
+            cache.put(cacheKey, new ResourceReference(cacheKey,
+                    (Object) compactNumberPatterns, referenceQueue));
+        }
+        return compactNumberPatterns;
+    }
+
 
     /**
      * Returns the FormatData resource bundle of this LocaleResources.

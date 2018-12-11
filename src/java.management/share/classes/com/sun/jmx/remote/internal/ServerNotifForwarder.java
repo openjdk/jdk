@@ -114,7 +114,7 @@ public class ServerNotifForwarder {
 
         // 6238731: set the default domain if no domain is set.
         ObjectName nn = name;
-        if (name.getDomain() == null || name.getDomain().equals("")) {
+        if (name.getDomain() == null || name.getDomain().isEmpty()) {
             try {
                 nn = ObjectName.getInstance(mbeanServer.getDefaultDomain(),
                                             name.getKeyPropertyList());

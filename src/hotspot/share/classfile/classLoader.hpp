@@ -60,8 +60,6 @@ public:
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
   virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
-  // Debugging
-  NOT_PRODUCT(virtual void compile_the_world(Handle loader, TRAPS) = 0;)
 };
 
 class ClassPathDirEntry: public ClassPathEntry {
@@ -75,8 +73,6 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassPathDirEntry(const char* dir);
   virtual ~ClassPathDirEntry() {}
   ClassFileStream* open_stream(const char* name, TRAPS);
-  // Debugging
-  NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
 };
 
 
@@ -107,8 +103,6 @@ class ClassPathZipEntry: public ClassPathEntry {
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
   ClassFileStream* open_stream(const char* name, TRAPS);
   void contents_do(void f(const char* name, void* context), void* context);
-  // Debugging
-  NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
 };
 
 
@@ -126,9 +120,6 @@ public:
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
   ClassFileStream* open_stream(const char* name, TRAPS);
-
-  // Debugging
-  NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
 };
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
@@ -447,17 +438,6 @@ class ClassLoader: AllStatic {
 
   // Debugging
   static void verify()              PRODUCT_RETURN;
-
-  // Force compilation of all methods in all classes in bootstrap class path (stress test)
-#ifndef PRODUCT
- protected:
-  static int _compile_the_world_class_counter;
-  static int _compile_the_world_method_counter;
- public:
-  static void compile_the_world();
-  static void compile_the_world_in(char* name, Handle loader, TRAPS);
-  static int  compile_the_world_counter() { return _compile_the_world_class_counter; }
-#endif //PRODUCT
 };
 
 // PerfClassTraceTime is used to measure time for class loading related events.

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import jdk.jfr.Event;
+import jdk.jfr.EventType;
 
 public final class RequestEngine {
 
@@ -60,7 +62,11 @@ public final class RequestEngine {
         private void execute() {
             try {
                 if (accessControllerContext == null) { // native
-                    jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
+                    if (type.isJDK()) {
+                        hook.run();
+                    } else {
+                        jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
+                    }
                     Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.DEBUG, ()-> "Executed periodic hook for " + type.getLogName());
                 } else {
                     executeSecure();
@@ -91,11 +97,12 @@ public final class RequestEngine {
     private final static List<RequestHook> entries = new CopyOnWriteArrayList<>();
     private static long lastTimeMillis;
 
-    // Insertion takes O(2*n), could be O(1) with HashMap, but
-    // thinking is that CopyOnWriteArrayList is faster
-    // to iterate over, which will happen more over time.
     public static void addHook(AccessControlContext acc, PlatformEventType type, Runnable hook) {
         Objects.requireNonNull(acc);
+        addHookInternal(acc, type, hook);
+    }
+
+    private static void addHookInternal(AccessControlContext acc, PlatformEventType type, Runnable hook) {
         RequestHook he = new RequestHook(acc, type, hook);
         for (RequestHook e : entries) {
             if (e.hook == hook) {
@@ -103,10 +110,24 @@ public final class RequestEngine {
             }
         }
         he.type.setEventHook(true);
+        // Insertion takes O(2*n), could be O(1) with HashMap, but
+        // thinking is that CopyOnWriteArrayList is faster
+        // to iterate over, which will happen more over time.
         entries.add(he);
         logHook("Added", type);
     }
 
+    public static void addTrustedJDKHook(Class<? extends Event> eventClass, Runnable runnable) {
+        if (eventClass.getClassLoader() != null) {
+            throw new SecurityException("Hook can only be registered for event classes that are loaded by the bootstrap class loader");
+        }
+        if (runnable.getClass().getClassLoader() != null) {
+            throw new SecurityException("Runnable hook class must be loaded by the bootstrap class loader");
+        }
+        EventType eType = MetadataRepository.getInstance().getEventType(eventClass);
+        PlatformEventType pType = PrivateAccess.getInstance().getPlatformEventType(eType);
+        addHookInternal(null, pType, runnable);
+    }
 
     private static void logHook(String action, PlatformEventType type) {
         if (type.isJDK() || type.isJVM()) {

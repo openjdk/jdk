@@ -39,8 +39,8 @@ public class Primitives {
         Class[] value() default { void.class };
     }
 
-    @A()
-    @B()
+    @A
+    @B
     static class T1 {}
 
     @A(int.class)

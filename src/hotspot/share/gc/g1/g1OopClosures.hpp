@@ -83,6 +83,16 @@ public:
   virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
 };
 
+// Used during Optional RS scanning to make sure we trim the queues in a timely manner.
+class G1ScanRSForOptionalClosure : public OopClosure {
+  G1ScanObjsDuringScanRSClosure* _scan_cl;
+public:
+  G1ScanRSForOptionalClosure(G1ScanObjsDuringScanRSClosure* cl) : _scan_cl(cl) { }
+
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)          { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
+};
 
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
@@ -140,11 +150,6 @@ protected:
   // objects pointed to by roots that are guaranteed not to move
   // during the GC (i.e., non-CSet objects). It is MT-safe.
   inline void mark_object(oop obj);
-
-  // Mark the object if it's not already marked. This is used to mark
-  // objects pointed to by roots that have been forwarded during a
-  // GC. It is MT-safe.
-  inline void mark_forwarded_object(oop from_obj, oop to_obj);
 
   G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* par_scan_state);
   ~G1ParCopyHelper() { }

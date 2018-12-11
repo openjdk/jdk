@@ -72,7 +72,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   // by the GC but need to be strong roots if reachable from a current compilation.
   // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
   // alive covers the cases where there are weak roots without performance cost.
-  oop holder = ik->holder_phantom();
+  oop holder = ik->klass_holder();
   if (ik->is_unsafe_anonymous()) {
     // Though ciInstanceKlass records class loader oop, it's not enough to keep
     // VM unsafe anonymous classes alive (loader == NULL). Klass holder should
@@ -742,3 +742,27 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
     ik->do_local_static_fields(&sffp);
   }
 }
+
+#ifdef ASSERT
+bool ciInstanceKlass::debug_final_field_at(int offset) {
+  GUARDED_VM_ENTRY(
+    InstanceKlass* ik = get_instanceKlass();
+    fieldDescriptor fd;
+    if (ik->find_field_from_offset(offset, false, &fd)) {
+      return fd.is_final();
+    }
+  );
+  return false;
+}
+
+bool ciInstanceKlass::debug_stable_field_at(int offset) {
+  GUARDED_VM_ENTRY(
+    InstanceKlass* ik = get_instanceKlass();
+    fieldDescriptor fd;
+    if (ik->find_field_from_offset(offset, false, &fd)) {
+      return fd.is_stable();
+    }
+  );
+  return false;
+}
+#endif

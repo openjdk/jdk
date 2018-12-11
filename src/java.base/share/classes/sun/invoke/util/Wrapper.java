@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public enum Wrapper {
     private final Class<?> wrapperType;
     private final Class<?> primitiveType;
     private final char     basicTypeChar;
+    private final String   basicTypeString;
     private final Object   emptyArray;
     private final int      format;
     private final String   wrapperSimpleName;
@@ -56,6 +57,7 @@ public enum Wrapper {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
+        this.basicTypeString = new String(new char[] {this.basicTypeChar});
         this.emptyArray = emptyArray;
         this.format = format;
         this.wrapperSimpleName = wtypeName;
@@ -459,6 +461,11 @@ public enum Wrapper {
      */
     public char basicTypeChar() { return basicTypeChar; }
 
+    /** What is the bytecode signature string for this wrapper's
+     *  primitive type?
+     */
+    public String basicTypeString() { return basicTypeString; }
+
     /** What is the simple name of the wrapper type?
      */
     public String wrapperSimpleName() { return wrapperSimpleName; }
@@ -581,9 +588,8 @@ public enum Wrapper {
      * Returns null for {@code VOID}.
      */
     public Object wrap(int x) {
-        if (basicTypeChar == 'L')  return (Integer)x;
         switch (basicTypeChar) {
-            case 'L': throw newIllegalArgumentException("cannot wrap to object type");
+            case 'L': return (Integer)x;
             case 'V': return null;
             case 'I': return Integer.valueOf(x);
             case 'J': return Long.valueOf(x);

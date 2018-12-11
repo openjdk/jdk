@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -428,7 +428,7 @@ bool ImageFileReader::open() {
 void ImageFileReader::close() {
     // Deallocate the index.
     if (_index_data) {
-        osSupport::unmap_memory((char*)_index_data, _index_size);
+        osSupport::unmap_memory((char*)_index_data, (size_t)map_size());
         _index_data = NULL;
     }
     // Close file.

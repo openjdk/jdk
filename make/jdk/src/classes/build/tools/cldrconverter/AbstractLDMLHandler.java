@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,19 @@ abstract class AbstractLDMLHandler<V> extends DefaultHandler {
             currentContainer = new StringArrayElement(qName, currentContainer, index);
         }
     }
+
+    void pushStringListEntry(String qName, Attributes attributes, String key) {
+        if (!pushIfIgnored(qName, attributes)) {
+            currentContainer = new StringListEntry(qName, currentContainer, key);
+        }
+    }
+
+    void pushStringListElement(String qName, Attributes attributes, int index) {
+        if (!pushIfIgnored(qName, attributes)) {
+            currentContainer = new StringListElement(qName, currentContainer, index);
+        }
+    }
+
 
     private boolean pushIfIgnored(String qName, Attributes attributes) {
         if (isIgnored(attributes) || currentContainer instanceof IgnoredContainer) {

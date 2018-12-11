@@ -128,12 +128,12 @@ class WindowsUriSupport {
         if (uri.getRawQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
         String path = uri.getPath();
-        if (path.equals(""))
+        if (path.isEmpty())
             throw new IllegalArgumentException("URI path component is empty");
 
         // UNC
         String auth = uri.getRawAuthority();
-        if (auth != null && !auth.equals("")) {
+        if (auth != null && !auth.isEmpty()) {
             String host = uri.getHost();
             if (host == null)
                 throw new IllegalArgumentException("URI authority component has undefined host");

@@ -463,7 +463,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
 
     /**
      * Returns a
-     * <a href="../../serialized-form.html#java.util.EnumSet.SerializationProxy">
+     * <a href="{@docRoot}/serialized-form.html#java.util.EnumSet.SerializationProxy">
      * SerializationProxy</a>
      * representing the state of this instance.
      *

@@ -884,8 +884,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         String sig = tree.getSignature();
         if (sig.contains("<") || sig.contains(">")) {
             env.messages.error(REFERENCE, tree, "dc.type.arg.not.allowed");
-        } else if (isArrayType(sig)) {
-            env.messages.error(REFERENCE, tree, "dc.array.type.not.allowed");
         } else {
             Element e = env.trees.getElement(getCurrentPath());
             if (e == null)
@@ -973,12 +971,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         warnIfEmpty(tree, tree.getDescription());
         return scan(tree.getDescription(), ignore);
-    }
-
-    private boolean isArrayType(String signature) {
-        int brackets = signature.indexOf('[');
-        int parens = signature.indexOf('(');
-        return brackets >= 0 && (parens < 0 || brackets < parens);
     }
 
     private boolean isThrowable(TypeMirror tm) {

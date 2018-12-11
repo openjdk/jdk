@@ -1076,9 +1076,9 @@ bool Monitor::wait(bool no_safepoint_check, long timeout,
   Monitor * least = get_least_ranked_lock_besides_this(Self->owned_locks());
   assert(least != this, "Specification of get_least_... call above");
   if (least != NULL && least->rank() <= special) {
-    tty->print("Attempting to wait on monitor %s/%d while holding"
-               " lock %s/%d -- possible deadlock",
-               name(), rank(), least->name(), least->rank());
+    ::tty->print("Attempting to wait on monitor %s/%d while holding"
+                 " lock %s/%d -- possible deadlock",
+                 name(), rank(), least->name(), least->rank());
     assert(false, "Shouldn't block(wait) while holding a lock of rank special");
   }
   #endif // ASSERT

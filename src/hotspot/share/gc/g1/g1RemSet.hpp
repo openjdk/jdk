@@ -28,6 +28,7 @@
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
@@ -138,6 +139,8 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
 
   G1RemSetScanState* _scan_state;
 
+  G1GCPhaseTimes::GCParPhases _phase;
+
   uint   _worker_i;
 
   size_t _cards_scanned;
@@ -159,6 +162,7 @@ public:
   G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
                            G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
                            G1ParScanThreadState* pss,
+                           G1GCPhaseTimes::GCParPhases phase,
                            uint worker_i);
 
   bool do_heap_region(HeapRegion* r);

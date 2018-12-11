@@ -1290,7 +1290,7 @@ public final class Pattern
         // Construct result
         int resultSize = matchList.size();
         if (limit == 0)
-            while (resultSize > 0 && matchList.get(resultSize-1).equals(""))
+            while (resultSize > 0 && matchList.get(resultSize-1).isEmpty())
                 resultSize--;
         String[] result = new String[resultSize];
         return matchList.subList(0, resultSize).toArray(result);

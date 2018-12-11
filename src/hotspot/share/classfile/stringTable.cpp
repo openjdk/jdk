@@ -54,13 +54,13 @@
 #include "utilities/macros.hpp"
 
 // We prefer short chains of avg 2
-#define PREF_AVG_LIST_LEN   2
+const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size
-#define END_SIZE           24
+const size_t END_SIZE = 24;
 // If a chain gets to 32 something might be wrong
-#define REHASH_LEN         32
+const size_t REHASH_LEN = 32;
 // If we have as many dead items as 50% of the number of bucket
-#define CLEAN_DEAD_HIGH_WATER_MARK 0.5
+const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
@@ -216,7 +216,7 @@ size_t StringTable::item_added() {
   return Atomic::add((size_t)1, &(the_table()->_items_count));
 }
 
-size_t StringTable::add_items_count_to_clean(size_t ndead) {
+size_t StringTable::add_items_to_clean(size_t ndead) {
   size_t total = Atomic::add((size_t)ndead, &(the_table()->_uncleaned_items_count));
   log_trace(stringtable)(
      "Uncleaned items:" SIZE_FORMAT " added: " SIZE_FORMAT " total:" SIZE_FORMAT,
@@ -228,11 +228,11 @@ void StringTable::item_removed() {
   Atomic::add((size_t)-1, &(the_table()->_items_count));
 }
 
-double StringTable::get_load_factor() {
+double StringTable::get_load_factor() const {
   return (double)_items_count/_current_size;
 }
 
-double StringTable::get_dead_factor() {
+double StringTable::get_dead_factor() const {
   return (double)_uncleaned_items_count/_current_size;
 }
 
@@ -432,7 +432,7 @@ void StringTable::possibly_parallel_unlink(
   _par_state_string->weak_oops_do(&stiac, &dnc);
 
   // Accumulate the dead strings.
-  the_table()->add_items_count_to_clean(stiac._count);
+  the_table()->add_items_to_clean(stiac._count);
 
   *processed = stiac._count_total;
   *removed = stiac._count;

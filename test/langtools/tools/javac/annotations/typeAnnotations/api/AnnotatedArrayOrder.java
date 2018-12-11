@@ -107,30 +107,30 @@ public class AnnotatedArrayOrder {
     // visited code
     @A String @C [] @B [] field;
     static {
-        // Shouldn't find @A(), as it is field annotation
-        expectedLocations.put("@B()", 1);
-        expectedLocations.put("@C()", 2);
+        // Shouldn't find @A, as it is field annotation
+        expectedLocations.put("@B", 1);
+        expectedLocations.put("@C", 2);
     }
 
     List<@D String @F [] @E []> typearg;
     static {
-        expectedLocations.put("@D()", 0);
-        expectedLocations.put("@E()", 1);
-        expectedLocations.put("@F()", 2);
+        expectedLocations.put("@D", 0);
+        expectedLocations.put("@E", 1);
+        expectedLocations.put("@F", 2);
     }
 
     void varargSimple(@G String @H ... vararg1) { }
     static {
-        // Shouldn't find @G(), as it is a parameter annotation
-        expectedLocations.put("@H()", 1);
+        // Shouldn't find @G, as it is a parameter annotation
+        expectedLocations.put("@H", 1);
     }
 
     void varargLong(@I String @L [] @K [] @J ... vararg2) { }
     static {
-        // Shouldn't find @I(), as it is a parameter annotation
-        expectedLocations.put("@J()", 1);
-        expectedLocations.put("@K()", 2);
-        expectedLocations.put("@L()", 3);
+        // Shouldn't find @I, as it is a parameter annotation
+        expectedLocations.put("@J", 1);
+        expectedLocations.put("@K", 2);
+        expectedLocations.put("@L", 3);
     }
 
     @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})

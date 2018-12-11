@@ -32,8 +32,8 @@
 #include "gc/g1/g1HeapRegionEventSender.hpp"
 #include "gc/shared/gcConfiguration.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shared/vmGCOperations.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -79,6 +79,7 @@ TRACE_REQUEST_FUNC(JVMInformation) {
   event.set_jvmArguments(Arguments::jvm_args());
   event.set_jvmFlags(Arguments::jvm_flags());
   event.set_jvmStartTime(Management::vm_init_done_time());
+  event.set_pid(os::current_process_id());
   event.commit();
  }
 

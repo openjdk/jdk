@@ -420,7 +420,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         } else {
             String n = "";
             for ( ; c != null; c = c.owner.enclClass()) {
-                n = c.name + (n.equals("") ? "" : ".") + n;
+                n = c.name + (n.isEmpty() ? "" : ".") + n;
             }
             return n;
         }

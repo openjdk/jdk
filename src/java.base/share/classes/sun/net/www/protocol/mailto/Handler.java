@@ -127,7 +127,7 @@ public class Handler extends URLStreamHandler {
          * Let's just make sure we DO have an Email address in the URL.
          */
         boolean nogood = false;
-        if (file == null || file.equals(""))
+        if (file == null || file.isEmpty())
             nogood = true;
         else {
             boolean allwhites = true;

@@ -172,6 +172,8 @@ public final class ModuleBootstrap {
         boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
         boolean needResolution = true;
         boolean canArchive = false;
+        boolean hasSplitPackages;
+        boolean hasIncubatorModules;
 
         // If the java heap was archived at CDS dump time and the environment
         // at dump time matches the current environment then use the archived
@@ -182,8 +184,9 @@ public final class ModuleBootstrap {
                 && addModules.isEmpty()
                 && limitModules.isEmpty()
                 && !isPatched) {
-            systemModules = archivedModuleGraph.systemModules();
             systemModuleFinder = archivedModuleGraph.finder();
+            hasSplitPackages = archivedModuleGraph.hasSplitPackages();
+            hasIncubatorModules = archivedModuleGraph.hasIncubatorModules();
             needResolution = (traceOutput != null);
         } else {
             if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
@@ -205,6 +208,11 @@ public final class ModuleBootstrap {
                 systemModules = new ExplodedSystemModules();
                 systemModuleFinder = SystemModuleFinders.ofSystem();
             }
+
+            hasSplitPackages = systemModules.hasSplitPackages();
+            hasIncubatorModules = systemModules.hasIncubatorModules();
+            // not using the archived module graph - avoid accidental use
+            archivedModuleGraph = null;
         }
 
         Counters.add("jdk.module.boot.1.systemModulesTime", t1);
@@ -395,7 +403,7 @@ public final class ModuleBootstrap {
         }
 
         // check for split packages in the modules mapped to the built-in loaders
-        if (systemModules.hasSplitPackages() || isPatched || haveModulePath) {
+        if (hasSplitPackages || isPatched || haveModulePath) {
             checkSplitPackages(cf, clf);
         }
 
@@ -415,7 +423,7 @@ public final class ModuleBootstrap {
         // Step 7: Miscellaneous
 
         // check incubating status
-        if (systemModules.hasIncubatorModules() || haveModulePath) {
+        if (hasIncubatorModules || haveModulePath) {
             checkIncubatingStatus(cf);
         }
 
@@ -423,7 +431,21 @@ public final class ModuleBootstrap {
         long t7 = System.nanoTime();
         addExtraReads(bootLayer);
         boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
-        addIllegalAccess(upgradeModulePath, systemModules, bootLayer, extraExportsOrOpens);
+
+        Map<String, Set<String>> concealedPackagesToOpen;
+        Map<String, Set<String>> exportedPackagesToOpen;
+        if (archivedModuleGraph != null) {
+            concealedPackagesToOpen = archivedModuleGraph.concealedPackagesToOpen();
+            exportedPackagesToOpen = archivedModuleGraph.exportedPackagesToOpen();
+        } else {
+            concealedPackagesToOpen = systemModules.concealedPackagesToOpen();
+            exportedPackagesToOpen = systemModules.exportedPackagesToOpen();
+        }
+        addIllegalAccess(upgradeModulePath,
+                         concealedPackagesToOpen,
+                         exportedPackagesToOpen,
+                         bootLayer,
+                         extraExportsOrOpens);
         Counters.add("jdk.module.boot.7.adjustModulesTime", t7);
 
         // save module finders for later use
@@ -436,8 +458,13 @@ public final class ModuleBootstrap {
         // Module graph can be archived at CDS dump time. Only allow the
         // unnamed module case for now.
         if (canArchive && (mainModule == null)) {
-            ArchivedModuleGraph.archive(mainModule, systemModules,
-                                        systemModuleFinder, cf);
+            ArchivedModuleGraph.archive(mainModule,
+                                        hasSplitPackages,
+                                        hasIncubatorModules,
+                                        systemModuleFinder,
+                                        cf,
+                                        concealedPackagesToOpen,
+                                        exportedPackagesToOpen);
         }
 
         // total time to initialize
@@ -738,7 +765,8 @@ public final class ModuleBootstrap {
      * of system modules in the boot layer to code in unnamed modules.
      */
     private static void addIllegalAccess(ModuleFinder upgradeModulePath,
-                                         SystemModules systemModules,
+                                         Map<String, Set<String>> concealedPackagesToOpen,
+                                         Map<String, Set<String>> exportedPackagesToOpen,
                                          ModuleLayer bootLayer,
                                          boolean extraExportsOrOpens) {
         String value = getAndRemoveProperty("jdk.module.illegalAccess");
@@ -764,13 +792,11 @@ public final class ModuleBootstrap {
         IllegalAccessLogger.Builder builder
             = new IllegalAccessLogger.Builder(mode, System.err);
 
-        Map<String, Set<String>> map1 = systemModules.concealedPackagesToOpen();
-        Map<String, Set<String>> map2 = systemModules.exportedPackagesToOpen();
-        if (map1.isEmpty() && map2.isEmpty()) {
+        if (concealedPackagesToOpen.isEmpty() && exportedPackagesToOpen.isEmpty()) {
             // need to generate (exploded build)
             IllegalAccessMaps maps = IllegalAccessMaps.generate(limitedFinder());
-            map1 = maps.concealedPackagesToOpen();
-            map2 = maps.exportedPackagesToOpen();
+            concealedPackagesToOpen = maps.concealedPackagesToOpen();
+            exportedPackagesToOpen = maps.exportedPackagesToOpen();
         }
 
         // open specific packages in the system modules
@@ -789,8 +815,8 @@ public final class ModuleBootstrap {
                 continue;
             }
 
-            Set<String> concealedPackages = map1.getOrDefault(name, Set.of());
-            Set<String> exportedPackages = map2.getOrDefault(name, Set.of());
+            Set<String> concealedPackages = concealedPackagesToOpen.getOrDefault(name, Set.of());
+            Set<String> exportedPackages = exportedPackagesToOpen.getOrDefault(name, Set.of());
 
             // refresh the set of concealed and exported packages if needed
             if (extraExportsOrOpens) {

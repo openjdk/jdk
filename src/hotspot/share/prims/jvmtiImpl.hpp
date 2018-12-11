@@ -33,7 +33,7 @@
 #include "prims/jvmtiTrace.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/stackValueCollection.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
 //

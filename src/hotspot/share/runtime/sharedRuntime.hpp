@@ -48,6 +48,9 @@ class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
+  static bool resolve_sub_helper_internal(methodHandle callee_method, const frame& caller_frame,
+                                          CompiledMethod* caller_nm, bool is_virtual, bool is_optimized,
+                                          Handle receiver, CallInfo& call_info, Bytecodes::Code invoke_code, TRAPS);
   static methodHandle resolve_sub_helper(JavaThread *thread,
                                          bool is_virtual,
                                          bool is_optimized, TRAPS);
@@ -323,6 +326,10 @@ class SharedRuntime: AllStatic {
  private:
   // deopt blob
   static void generate_deopt_blob(void);
+
+  static bool handle_ic_miss_helper_internal(Handle receiver, CompiledMethod* caller_nm, const frame& caller_frame,
+                                             methodHandle callee_method, Bytecodes::Code bc, CallInfo& call_info,
+                                             bool& needs_ic_stub_refill, TRAPS);
 
  public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }

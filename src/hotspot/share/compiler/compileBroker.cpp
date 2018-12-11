@@ -1306,7 +1306,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       CompilationPolicy::policy()->delay_compilation(method());
       return NULL;
     }
-    bool is_blocking = !directive->BackgroundCompilationOption || CompileTheWorld || ReplayCompiles;
+    bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
     compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
   }
 
@@ -2247,11 +2247,11 @@ void CompileBroker::handle_full_code_cache(int code_blob_type) {
     }
 
 #ifndef PRODUCT
-    if (CompileTheWorld || ExitOnFullCodeCache) {
+    if (ExitOnFullCodeCache) {
       codecache_print(/* detailed= */ true);
       before_exit(JavaThread::current());
       exit_globals(); // will delete tty
-      vm_direct_exit(CompileTheWorld ? 0 : 1);
+      vm_direct_exit(1);
     }
 #endif
     if (UseCodeCacheFlushing) {

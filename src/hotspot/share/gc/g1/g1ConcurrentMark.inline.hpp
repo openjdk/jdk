@@ -55,12 +55,12 @@ inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
   return _g1h->heap_region_containing(obj)->is_old_or_humongous_or_archive();
 }
 
-inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, oop const obj, size_t const obj_size) {
+inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, oop const obj) {
   HeapRegion* const hr = _g1h->heap_region_containing(obj);
-  return mark_in_next_bitmap(worker_id, hr, obj, obj_size);
+  return mark_in_next_bitmap(worker_id, hr, obj);
 }
 
-inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, HeapRegion* const hr, oop const obj, size_t const obj_size) {
+inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, HeapRegion* const hr, oop const obj) {
   assert(hr != NULL, "just checking");
   assert(hr->is_in_reserved(obj), "Attempting to mark object at " PTR_FORMAT " that is not contained in the given region %u", p2i(obj), hr->hrm_index());
 
@@ -76,7 +76,7 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, HeapRegi
 
   bool success = _next_mark_bitmap->par_mark(obj_addr);
   if (success) {
-    add_to_liveness(worker_id, obj, obj_size == 0 ? obj->size() : obj_size);
+    add_to_liveness(worker_id, obj, obj->size());
   }
   return success;
 }

@@ -106,14 +106,6 @@ class JrtFileSystem extends FileSystem {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        try {
-            cleanup();
-        } catch (IOException ignored) {}
-    }
-
-    @Override
     public FileSystemProvider provider() {
         return provider;
     }

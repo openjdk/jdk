@@ -171,7 +171,7 @@ public class CompositeType extends OpenType<CompositeData> {
 
     private static void checkForEmptyString(String[] arg, String argName) {
         for (int i=0; i<arg.length; i++) {
-            if (arg[i].trim().equals("")) {
+            if (arg[i].trim().isEmpty()) {
                 throw new IllegalArgumentException("Argument's element "+ argName +"["+ i +"] cannot be an empty string.");
             }
         }

@@ -28,7 +28,7 @@
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "unittest.hpp"
 
 class VM_StopSafepoint : public VM_Operation {

@@ -103,7 +103,7 @@ class UnixFileSystem extends FileSystem {
     }
 
     public String resolve(String parent, String child) {
-        if (child.equals("")) return parent;
+        if (child.isEmpty()) return parent;
         if (child.charAt(0) == '/') {
             if (parent.equals("/")) return child;
             return parent + child;

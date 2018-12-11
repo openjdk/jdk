@@ -2795,7 +2795,13 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapN )))
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN )))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);

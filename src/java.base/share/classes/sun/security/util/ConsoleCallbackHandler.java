@@ -103,7 +103,7 @@ public class ConsoleCallbackHandler implements CallbackHandler {
                 System.err.flush();
 
                 String result = readLine();
-                if (result.equals("")) {
+                if (result.isEmpty()) {
                     result = nc.getDefaultName();
                 }
 
@@ -212,7 +212,7 @@ public class ConsoleCallbackHandler implements CallbackHandler {
             prompt = "";
         }
         prompt = prefix + prompt;
-        if (!prompt.equals("")) {
+        if (!prompt.isEmpty()) {
             System.err.println(prompt);
         }
 

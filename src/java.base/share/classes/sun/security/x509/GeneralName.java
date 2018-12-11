@@ -112,7 +112,7 @@ public class GeneralName {
                 encName.resetTag(DerValue.tag_IA5String);
                 name = new DNSName(encName);
             } else {
-                throw new IOException("Invalid encoding of DNS name");
+                throw new IOException("Invalid encoding of DNSName");
             }
             break;
 

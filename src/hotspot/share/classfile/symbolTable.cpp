@@ -42,19 +42,19 @@
 // We used to not resize at all, so let's be conservative
 // and not set it too short before we decide to resize,
 // to match previous startup behavior
-#define PREF_AVG_LIST_LEN           8
+const double PREF_AVG_LIST_LEN = 8.0;
 // 2^17 (131,072) is max size, which is about 6.5 times as large
 // as the previous table size (used to be 20,011),
 // which never resized
-#define END_SIZE                    17
+const size_t END_SIZE = 17;
 // If a chain gets to 100 something might be wrong
-#define REHASH_LEN                  100
+const size_t REHASH_LEN = 100;
 // We only get a chance to check whether we need
 // to clean infrequently (on class unloading),
 // so if we have even one dead entry then mark table for cleaning
-#define CLEAN_DEAD_HIGH_WATER_MARK  0.0
+const double CLEAN_DEAD_HIGH_WATER_MARK = 0.0;
 
-#define ON_STACK_BUFFER_LENGTH 128
+const size_t ON_STACK_BUFFER_LENGTH = 128;
 
 // --------------------------------------------------------------------------
 
@@ -171,8 +171,9 @@ void SymbolTable::set_item_clean_count(size_t ncl) {
   log_trace(symboltable)("Set uncleaned items:" SIZE_FORMAT, SymbolTable::the_table()->_uncleaned_items_count);
 }
 
+// Mark one item as needing to be cleaned, but only if no other items are marked yet
 void SymbolTable::mark_item_clean_count() {
-  if (Atomic::cmpxchg((size_t)1, &(SymbolTable::the_table()->_uncleaned_items_count), (size_t)0) == 0) { // only mark if unset
+  if (Atomic::cmpxchg((size_t)1, &(SymbolTable::the_table()->_uncleaned_items_count), (size_t)0) == 0) {
     log_trace(symboltable)("Marked uncleaned items:" SIZE_FORMAT, SymbolTable::the_table()->_uncleaned_items_count);
   }
 }
@@ -182,11 +183,11 @@ void SymbolTable::item_removed() {
   Atomic::dec(&(SymbolTable::the_table()->_items_count));
 }
 
-double SymbolTable::get_load_factor() {
+double SymbolTable::get_load_factor() const {
   return (double)_items_count/_current_size;
 }
 
-double SymbolTable::get_dead_factor() {
+double SymbolTable::get_dead_factor() const {
   return (double)_uncleaned_items_count/_current_size;
 }
 
@@ -386,7 +387,7 @@ public:
     assert(*value != NULL, "value should point to a symbol");
     _return = *value;
   }
-  Symbol* get_res_sym() {
+  Symbol* get_res_sym() const {
     return _return;
   }
 };
@@ -694,7 +695,7 @@ void SymbolTable::grow(JavaThread* jt) {
 }
 
 struct SymbolTableDoDelete : StackObj {
-  int _deleted;
+  size_t _deleted;
   SymbolTableDoDelete() : _deleted(0) {}
   void operator()(Symbol** value) {
     assert(value != NULL, "expected valid value");
@@ -706,7 +707,7 @@ struct SymbolTableDoDelete : StackObj {
 };
 
 struct SymbolTableDeleteCheck : StackObj {
-  int _processed;
+  size_t _processed;
   SymbolTableDeleteCheck() : _processed(0) {}
   bool operator()(Symbol** value) {
     assert(value != NULL, "expected valid value");
@@ -738,9 +739,9 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
 
-  Atomic::add((size_t)stdc._processed, &_symbols_counted);
+  Atomic::add(stdc._processed, &_symbols_counted);
 
-  log_debug(symboltable)("Cleaned " INT32_FORMAT " of " INT32_FORMAT,
+  log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
                          stdd._deleted, stdc._processed);
 }
 
@@ -775,7 +776,7 @@ void SymbolTable::concurrent_work(JavaThread* jt) {
 }
 
 class CountDead : StackObj {
-  int _count;
+  size_t _count;
 public:
   CountDead() : _count(0) {}
   bool operator()(Symbol** value) {
@@ -787,7 +788,7 @@ public:
     }
     return true;
   };
-  int get_dead_count() {
+  size_t get_dead_count() const {
     return _count;
   }
 };

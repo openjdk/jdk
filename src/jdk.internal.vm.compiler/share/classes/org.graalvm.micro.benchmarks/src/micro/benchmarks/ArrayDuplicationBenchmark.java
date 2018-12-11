@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,17 @@ public class ArrayDuplicationBenchmark extends BenchmarkBase {
 
     private Object[][] testObjectArray;
 
+    private Object[][] testStringArray;
+
     private Object[] dummy;
 
     @Setup
     public void setup() {
         testObjectArray = new Object[TESTSIZE][];
+        testStringArray = new Object[TESTSIZE][];
         for (int i = 0; i < TESTSIZE; i++) {
             testObjectArray[i] = new Object[20];
+            testStringArray[i] = new String[200];
         }
     }
 
@@ -90,6 +94,20 @@ public class ArrayDuplicationBenchmark extends BenchmarkBase {
 
     public Object[] arraysCopyOf(Object[] cache) {
         return Arrays.copyOf(cache, cache.length);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public Object[] arraysCopyOfToString() {
+        int j = 0;
+        for (int i = 0; i < TESTSIZE; i++) {
+            dummy[j++] = arraysCopyOfToString(testStringArray[i]);
+        }
+        return dummy;
+    }
+
+    public Object[] arraysCopyOfToString(Object[] cache) {
+        return Arrays.copyOf(cache, cache.length, String[].class);
     }
 
     @Benchmark

@@ -158,12 +158,14 @@ int EmitEventOperation::write_events(EdgeStore* edge_store) {
   const jlong last_sweep = _emit_all ? max_jlong : _object_sampler->last_sweep().value();
   int count = 0;
 
-  for (int i = 0; i < _object_sampler->item_count(); ++i) {
-    const ObjectSample* sample = _object_sampler->item_at(i);
-    if (sample->is_alive_and_older_than(last_sweep)) {
-      write_event(sample, edge_store);
+  const ObjectSample* current = _object_sampler->first();
+  while (current != NULL) {
+    ObjectSample* prev = current->prev();
+    if (current->is_alive_and_older_than(last_sweep)) {
+      write_event(current, edge_store);
       ++count;
     }
+    current = prev;
   }
 
   // restore thread local stack trace and thread id

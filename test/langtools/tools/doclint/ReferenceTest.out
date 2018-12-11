@@ -43,24 +43,12 @@ ReferenceTest.java:64: error: type arguments not allowed here
 ReferenceTest.java:65: error: type arguments not allowed here
      * @see not.Found<String>
             ^
-ReferenceTest.java:70: error: array type not allowed here
-     * {@link java.lang.String[]}
-              ^
-ReferenceTest.java:71: error: array type not allowed here
-     * {@link java.lang.String[]#equals}
-              ^
-ReferenceTest.java:72: error: array type not allowed here
+ReferenceTest.java:72: error: reference not found
      * {@link not.Found[]}
               ^
-ReferenceTest.java:73: error: array type not allowed here
-     * @see java.lang.String[]
-            ^
-ReferenceTest.java:74: error: array type not allowed here
-     * @see java.lang.String[]#equals
-            ^
-ReferenceTest.java:75: error: array type not allowed here
+ReferenceTest.java:75: error: reference not found
      * @see not.Found[]
             ^
-20 errors
+16 errors
 1 warning
 

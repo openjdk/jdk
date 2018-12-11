@@ -49,7 +49,7 @@ public final class OldObjectSample {
     private static final String OLD_OBJECT_CUTOFF = EVENT_NAME + "#" + Cutoff.NAME;
     private static final String OLD_OBJECT_ENABLED = EVENT_NAME + "#" + Enabled.NAME;
 
-    // Emit if old object is enabled in recoding with cutoff for that recording
+    // Emit if old object is enabled in recording with cutoff for that recording
     public static void emit(PlatformRecording recording) {
         if (isEnabled(recording)) {
             long nanos = CutoffSetting.parseValueSafe(recording.getSettings().get(OLD_OBJECT_CUTOFF));
@@ -59,7 +59,7 @@ public final class OldObjectSample {
     }
 
     // Emit if old object is enabled for at least one recording, and use the largest
-    // cutoff for an enabled recoding
+    // cutoff for an enabled recording
     public static void emit(List<PlatformRecording> recordings, Boolean pathToGcRoots) {
         boolean enabled = false;
         long cutoffNanos = Boolean.TRUE.equals(pathToGcRoots) ? Long.MAX_VALUE : 0L;

@@ -477,9 +477,9 @@ public abstract class PartialCompositeContext implements Context, Resolver {
         int len = prefix.size();
 
         if (!allEmpty(prefix) && !allEmpty(name)) {
-            if (res.get(len - 1).equals("")) {
+            if (res.get(len - 1).isEmpty()) {
                 res.remove(len - 1);
-            } else if (res.get(len).equals("")) {
+            } else if (res.get(len).isEmpty()) {
                 res.remove(len);
             }
         }

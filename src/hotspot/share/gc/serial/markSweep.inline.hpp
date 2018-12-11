@@ -57,7 +57,7 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
 }
 
 inline void MarkSweep::follow_klass(Klass* klass) {
-  oop op = klass->klass_holder();
+  oop op = klass->class_loader_data()->holder_no_keepalive();
   MarkSweep::mark_and_push(&op);
 }
 

@@ -208,7 +208,7 @@ class Driver {
             }
         }
 
-        if (logFile != null && !logFile.equals("")) {
+        if (logFile != null && !logFile.isEmpty()) {
             if (logFile.equals("-")) {
                 System.setErr(System.out);
             } else {
@@ -246,7 +246,7 @@ class Driver {
             }
             newfile = packfile;
             // The optional second argument is the source JAR file.
-            if (jarfile.equals("")) {
+            if (jarfile.isEmpty()) {
                 // If only one file is given, it is the only JAR.
                 // It serves as both input and output.
                 jarfile = newfile;
@@ -352,7 +352,7 @@ class Driver {
                 if (Utils.isGZIPMagic(Utils.readMagic(inBuf))) {
                     in = new GZIPInputStream(in);
                 }
-                String outfile = newfile.equals("")? jarfile: newfile;
+                String outfile = newfile.isEmpty()? jarfile: newfile;
                 OutputStream fileOut;
                 if (outfile.equals("-"))
                     fileOut = System.out;
@@ -366,7 +366,7 @@ class Driver {
                 // At this point, we have a good jarfile (or newfile, if -r)
             }
 
-            if (!bakfile.equals("")) {
+            if (!bakfile.isEmpty()) {
                         // On success, abort jarfile recovery bracket.
                         new File(bakfile).delete();
                         bakfile = "";
@@ -374,13 +374,13 @@ class Driver {
 
         } finally {
             // Close jarfile recovery bracket.
-            if (!bakfile.equals("")) {
+            if (!bakfile.isEmpty()) {
                 File jarFile = new File(jarfile);
                 jarFile.delete(); // Win32 requires this, see above
                 new File(bakfile).renameTo(jarFile);
             }
             // In all cases, delete temporary *.pack.
-            if (!tmpfile.equals(""))
+            if (!tmpfile.isEmpty())
                 new File(tmpfile).delete();
         }
     }

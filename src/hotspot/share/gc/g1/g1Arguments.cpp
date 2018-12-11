@@ -30,9 +30,9 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/vm_version.hpp"
 
 size_t G1Arguments::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
@@ -44,10 +44,12 @@ void G1Arguments::initialize_verification_types() {
     size_t length = strlen(VerifyGCType);
     char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
     strncpy(type_list, VerifyGCType, length + 1);
-    char* token = strtok(type_list, delimiter);
+    char* save_ptr;
+
+    char* token = strtok_r(type_list, delimiter, &save_ptr);
     while (token != NULL) {
       parse_verification_type(token);
-      token = strtok(NULL, delimiter);
+      token = strtok_r(NULL, delimiter, &save_ptr);
     }
     FREE_C_HEAP_ARRAY(char, type_list);
   }
@@ -75,7 +77,7 @@ void G1Arguments::parse_verification_type(const char* type) {
 void G1Arguments::initialize() {
   GCArguments::initialize();
   assert(UseG1GC, "Error");
-  FLAG_SET_DEFAULT(ParallelGCThreads, VM_Version::parallel_worker_threads());
+  FLAG_SET_DEFAULT(ParallelGCThreads, WorkerPolicy::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
     vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);

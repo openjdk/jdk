@@ -45,7 +45,7 @@ SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
 LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
-    -depth 1 -name '*.java')
+    -maxdepth 1 -name '*.java')
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
@@ -69,7 +69,7 @@ $(DST_DIR):
 	@mkdir -p $@
 
 $(DST_DIR)/ctw.sh: $(DST_DIR)
-	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -XX:-UseCounterDecay -Xbatch "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*" -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
 	chmod a+x $@
 
 $(DST_DIR)/ctw.jar: filelist $(DST_DIR)/wb.jar

@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -37,7 +39,8 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
     _monitor(Mutex::nonleaf,
              "G1YoungRemSetSamplingThread monitor",
              true,
-             Monitor::_safepoint_check_never) {
+             Monitor::_safepoint_check_never),
+    _last_periodic_gc_attempt_s(os::elapsedTime()) {
   set_name("G1 Young RemSet Sampling");
   create_and_start();
 }
@@ -45,8 +48,46 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
   MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
   if (!should_terminate()) {
-    uintx waitms = G1ConcRefinementServiceIntervalMillis; // 300, really should be?
+    uintx waitms = G1ConcRefinementServiceIntervalMillis;
     _monitor.wait(Mutex::_no_safepoint_check_flag, waitms);
+  }
+}
+
+bool G1YoungRemSetSamplingThread::should_start_periodic_gc() {
+  // If we are currently in a concurrent mark we are going to uncommit memory soon.
+  if (G1CollectedHeap::heap()->concurrent_mark()->cm_thread()->during_cycle()) {
+    log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
+    return false;
+  }
+
+  // Check if enough time has passed since the last GC.
+  uintx time_since_last_gc;
+  if ((G1PeriodicGCInterval == 0) ||
+      ((time_since_last_gc = (uintx)Universe::heap()->millis_since_last_gc()) < G1PeriodicGCInterval)) {
+    log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
+                            time_since_last_gc, G1PeriodicGCInterval);
+    return false;
+  }
+
+  // Check if load is lower than max.
+  double recent_load;
+  if ((G1PeriodicGCSystemLoadThreshold > 0) &&
+      (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
+    log_debug(gc, periodic)("Load %1.2f is higher than threshold " UINTX_FORMAT ". Skipping.",
+                            recent_load, G1PeriodicGCSystemLoadThreshold);
+    return false;
+  }
+
+  return true;
+}
+
+void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
+  if ((os::elapsedTime() - _last_periodic_gc_attempt_s) > (G1PeriodicGCInterval / 1000.0)) {
+    log_debug(gc, periodic)("Checking for periodic GC.");
+    if (should_start_periodic_gc()) {
+      Universe::heap()->collect(GCCause::_g1_periodic_collection);
+    }
+    _last_periodic_gc_attempt_s = os::elapsedTime();
   }
 }
 
@@ -61,6 +102,8 @@ void G1YoungRemSetSamplingThread::run_service() {
     } else {
       _vtime_accum = 0.0;
     }
+
+    check_for_periodic_gc();
 
     sleep_before_next_cycle();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
 #ifndef SHARE_VM_GC_SHARED_WORKERMANAGER_HPP
 #define SHARE_VM_GC_SHARED_WORKERMANAGER_HPP
 
-#include "gc/shared/adaptiveSizePolicy.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/os.inline.hpp"
+#include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class WorkerManager : public AllStatic {
  public:
@@ -51,35 +55,7 @@ class WorkerManager : public AllStatic {
                            uint total_workers,
                            uint created_workers,
                            os::ThreadType worker_type,
-                           bool initializing) {
-    uint start = created_workers;
-    uint end = MIN2(active_workers, total_workers);
-    for (uint worker_id = start; worker_id < end; worker_id += 1) {
-      WorkerThread* new_worker = NULL;
-      if (initializing || !InjectGCWorkerCreationFailure) {
-        new_worker = holder->install_worker(worker_id);
-      }
-      if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
-        log_trace(gc, task)("WorkerManager::add_workers() : "
-                            "creation failed due to failed allocation of native %s",
-                            new_worker == NULL ?  "memory" : "thread");
-        if (new_worker != NULL) {
-           delete new_worker;
-        }
-        if (initializing) {
-          vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create worker GC thread. Out of system resources.");
-        }
-        break;
-      }
-      created_workers++;
-      os::start_thread(new_worker);
-    }
-
-    log_trace(gc, task)("WorkerManager::add_workers() : "
-                        "created_workers: %u", created_workers);
-
-    return created_workers;
-  }
+                           bool initializing);
 
   // Log (at trace level) a change in the number of created workers.
   template <class WorkerType>
@@ -87,12 +63,56 @@ class WorkerManager : public AllStatic {
                                   uint previous_created_workers,
                                   uint active_workers,
                                   uint created_workers,
-                                  bool initializing) {
-    if (previous_created_workers < created_workers) {
-      const char* initializing_msg =  initializing ? "Adding initial" : "Creating additional";
-      log_trace(gc, task)("%s %s(s) previously created workers %u active workers %u total created workers %u",
-                          initializing_msg, holder->group_name(), previous_created_workers, active_workers, created_workers);
-    }
-  }
+                                  bool initializing);
 };
+
+template <class WorkerType>
+uint WorkerManager::add_workers(WorkerType* holder,
+                                uint active_workers,
+                                uint total_workers,
+                                uint created_workers,
+                                os::ThreadType worker_type,
+                                bool initializing) {
+  uint start = created_workers;
+  uint end = MIN2(active_workers, total_workers);
+  for (uint worker_id = start; worker_id < end; worker_id += 1) {
+    WorkerThread* new_worker = NULL;
+    if (initializing || !InjectGCWorkerCreationFailure) {
+      new_worker = holder->install_worker(worker_id);
+    }
+    if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
+      log_trace(gc, task)("WorkerManager::add_workers() : "
+                          "creation failed due to failed allocation of native %s",
+                          new_worker == NULL ? "memory" : "thread");
+      if (new_worker != NULL) {
+        delete new_worker;
+      }
+      if (initializing) {
+        vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create worker GC thread. Out of system resources.");
+      }
+      break;
+    }
+    created_workers++;
+    os::start_thread(new_worker);
+  }
+
+  log_trace(gc, task)("WorkerManager::add_workers() : "
+                      "created_workers: %u", created_workers);
+
+  return created_workers;
+}
+
+template <class WorkerType>
+void WorkerManager::log_worker_creation(WorkerType* holder,
+                                        uint previous_created_workers,
+                                        uint active_workers,
+                                        uint created_workers,
+                                        bool initializing) {
+  if (previous_created_workers < created_workers) {
+    const char* initializing_msg = initializing ? "Adding initial" : "Creating additional";
+    log_trace(gc, task)("%s %s(s) previously created workers %u active workers %u total created workers %u",
+                        initializing_msg, holder->group_name(), previous_created_workers, active_workers, created_workers);
+  }
+}
+
 #endif // SHARE_VM_GC_SHARED_WORKERMANAGER_HPP

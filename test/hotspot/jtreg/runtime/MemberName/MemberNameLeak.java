@@ -37,6 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.Compiler;
+import sun.hotspot.gc.GC;
 
 public class MemberNameLeak {
     static class Leak {
@@ -76,6 +77,7 @@ public class MemberNameLeak {
         // Run this Leak class with logging
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                       "-Xlog:membername+table=trace",
+                                      "-XX:+UnlockExperimentalVMOptions",
                                       "-XX:+UnlockDiagnosticVMOptions",
                                       "-XX:+WhiteBoxAPI",
                                       "-Xbootclasspath/a:.",
@@ -99,6 +101,10 @@ public class MemberNameLeak {
         if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
             test("-XX:+UseConcMarkSweepGC", false);
             test("-XX:+UseConcMarkSweepGC", true);
+            if (GC.Shenandoah.isSupported()) {
+                test("-XX:+UseShenandoahGC", true);
+                test("-XX:+UseShenandoahGC", false);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import utils.*;
  *          test several times provokes garbage collection in the debuggee application and after each garbage
  *          collection runs jstat. jstat should show that after garbage collection number of GC events and garbage
  *          collection time increase.
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share

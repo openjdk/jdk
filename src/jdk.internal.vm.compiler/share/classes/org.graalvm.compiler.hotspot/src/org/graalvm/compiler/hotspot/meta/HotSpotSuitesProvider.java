@@ -30,8 +30,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.VerifyPhases;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 
 import java.util.ListIterator;
-import org.graalvm.compiler.debug.Assertions;
 
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
@@ -140,13 +140,10 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
             protected void run(StructuredGraph graph, HighTierContext context) {
                 EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graph, runtime.getTarget().arch);
 
-                StructuredGraph targetGraph = new StructuredGraph.Builder(graph.getOptions(), graph.getDebug(), AllowAssumptions.YES).method(graph.method()).build();
+                StructuredGraph targetGraph = new StructuredGraph.Builder(graph.getOptions(), graph.getDebug(), AllowAssumptions.YES).method(graph.method()).trackNodeSourcePosition(
+                                graph.trackNodeSourcePosition()).build();
                 SimplifyingGraphDecoder graphDecoder = new SimplifyingGraphDecoder(runtime.getTarget().arch, targetGraph, context.getMetaAccess(), context.getConstantReflection(),
                                 context.getConstantFieldProvider(), context.getStampProvider(), !ImmutableCode.getValue(graph.getOptions()));
-
-                if (graph.trackNodeSourcePosition()) {
-                    targetGraph.setTrackNodeSourcePosition();
-                }
                 graphDecoder.decode(encodedGraph);
             }
 

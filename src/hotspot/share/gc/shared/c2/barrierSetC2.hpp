@@ -314,6 +314,8 @@ public:
   virtual void ccp_analyze(PhaseCCP* ccp, Unique_Node_List& worklist, Node* use) const {}
 
   virtual Node* split_if_pre(PhaseIdealLoop* phase, Node* n) const { return NULL; }
+  virtual bool build_loop_late_post(PhaseIdealLoop* phase, Node* n) const { return false; }
+  virtual bool sink_node(PhaseIdealLoop* phase, Node* n, Node* x, Node* x_ctrl, Node* n_ctrl) const { return false; }
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

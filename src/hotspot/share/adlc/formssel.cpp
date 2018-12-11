@@ -775,7 +775,10 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN")))  return true;
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN") ||
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahReadBarrier")))  return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
 
@@ -3498,10 +3501,12 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "CompareAndSwapB", "CompareAndSwapS", "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "WeakCompareAndSwapB", "WeakCompareAndSwapS", "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
     "CompareAndExchangeB", "CompareAndExchangeS", "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
+    "ShenandoahCompareAndSwapN", "ShenandoahCompareAndSwapP", "ShenandoahWeakCompareAndSwapP", "ShenandoahWeakCompareAndSwapN", "ShenandoahCompareAndExchangeP", "ShenandoahCompareAndExchangeN",
     "StoreCM",
     "ClearArray",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
+    "ShenandoahReadBarrier",
     "LoadBarrierSlowReg", "LoadBarrierWeakSlowReg"
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);

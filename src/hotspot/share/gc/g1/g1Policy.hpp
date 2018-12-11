@@ -401,6 +401,14 @@ private:
 
   size_t desired_survivor_size() const;
 public:
+  // Fraction used when predicting how many optional regions to include in
+  // the CSet. This fraction of the available time is used for optional regions,
+  // the rest is used to add old regions to the normal CSet.
+  double optional_prediction_fraction() { return 0.2; }
+  // Fraction used when evacuating the optional regions. This fraction of the
+  // remaining time is used to choose what regions to include in the evacuation.
+  double optional_evacuation_fraction() { return 0.75; }
+
   uint tenuring_threshold() const { return _tenuring_threshold; }
 
   uint max_survivor_regions() {

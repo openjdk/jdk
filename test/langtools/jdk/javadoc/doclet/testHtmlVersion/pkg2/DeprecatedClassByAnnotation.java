@@ -23,15 +23,15 @@
 
 package pkg2;
 
-@Deprecated()
+@Deprecated
 public class DeprecatedClassByAnnotation {
 
-    @Deprecated()
+    @Deprecated
     public int field;
 
-    @Deprecated()
+    @Deprecated
     public DeprecatedClassByAnnotation() {}
 
-    @Deprecated()
+    @Deprecated
     public void method() {}
 }

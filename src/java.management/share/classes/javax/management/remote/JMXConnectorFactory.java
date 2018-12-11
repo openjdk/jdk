@@ -405,7 +405,7 @@ public class JMXConnectorFactory {
         }
 
         final String pkgs = (String) pkgsObject;
-        if (pkgs.trim().equals(""))
+        if (pkgs.trim().isEmpty())
             return null;
 
         // pkgs may not contain an empty element

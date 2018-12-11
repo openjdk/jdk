@@ -197,7 +197,7 @@ final public class LdapURL extends Uri {
 
         // path begins with a '/' or is empty
 
-        if (path.equals("")) {
+        if (path.isEmpty()) {
             return;
         }
 

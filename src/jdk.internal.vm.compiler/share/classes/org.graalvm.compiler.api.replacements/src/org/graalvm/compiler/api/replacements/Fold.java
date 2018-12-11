@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ public @interface Fold {
 
     /**
      * Annotates a parameter to an {@link Fold}-annotated method. This parameter will be
-     * automatically injected by the compiler. The caller should always pass {@code null}.
+     * automatically injected by the compiler. A call from non-generated code must always pass
+     * {@code null} for an injected parameter.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)

@@ -28,7 +28,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"

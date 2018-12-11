@@ -1213,7 +1213,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      */
 
     /*
-     * OID for "DC=" domain component attributes, used with DNS names in DN
+     * OID for "DC=" domain component attributes, used with DNSNames in DN
      * format
      */
         DOMAIN_COMPONENT_OID =

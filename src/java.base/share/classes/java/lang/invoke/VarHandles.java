@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package java.lang.invoke;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
@@ -142,6 +145,38 @@ final class VarHandles {
                 throw new UnsupportedOperationException();
             }
         }
+    }
+
+    // Required by instance field handles
+    static Field getFieldFromReceiverAndOffset(Class<?> receiverType,
+                                               long offset,
+                                               Class<?> fieldType) {
+        for (Field f : receiverType.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers())) continue;
+
+            if (offset == UNSAFE.objectFieldOffset(f)) {
+                assert f.getType() == fieldType;
+                return f;
+            }
+        }
+        throw new InternalError("Field not found at offset");
+    }
+
+    // Required by instance static field handles
+    static Field getStaticFieldFromBaseAndOffset(Object base,
+                                                 long offset,
+                                                 Class<?> fieldType) {
+        // @@@ This is a little fragile assuming the base is the class
+        Class<?> receiverType = (Class<?>) base;
+        for (Field f : receiverType.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) continue;
+
+            if (offset == UNSAFE.staticFieldOffset(f)) {
+                assert f.getType() == fieldType;
+                return f;
+            }
+        }
+        throw new InternalError("Static field not found at offset");
     }
 
     static VarHandle makeArrayElementHandle(Class<?> arrayClass) {

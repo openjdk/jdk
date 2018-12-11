@@ -2430,7 +2430,7 @@ public abstract class ClassLoader {
             if (!load0(name, isBuiltin)) return false;
 
             // register the class loader for cleanup when unloaded
-            // built class loaders are never unloaded
+            // builtin class loaders are never unloaded
             ClassLoader loader = fromClass.getClassLoader();
             if (loader != null &&
                 loader != getBuiltinPlatformClassLoader() &&

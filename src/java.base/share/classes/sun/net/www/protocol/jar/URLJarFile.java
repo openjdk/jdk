@@ -111,7 +111,7 @@ public class URLJarFile extends JarFile {
              * 'file:' URLs can be accessible through ftp.
              */
             String host = url.getHost();
-            if (host == null || host.equals("") || host.equals("~") ||
+            if (host == null || host.isEmpty() || host.equals("~") ||
                 host.equalsIgnoreCase("localhost"))
                 return true;
         }

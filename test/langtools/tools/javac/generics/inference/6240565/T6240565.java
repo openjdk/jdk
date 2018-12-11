@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug     6240565
  * @summary Unboxing, arrays, and type variables doesn't work
  * @compile T6240565.java
- * @run main/othervm -Xfuture T6240565
+ * @run main/othervm T6240565
  */
 
 public class T6240565 {

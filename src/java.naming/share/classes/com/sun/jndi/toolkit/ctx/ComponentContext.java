@@ -105,7 +105,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
         throws NamingException {
         int separator;
         // if no name to parse, or if we're already at boundary
-        if (name.isEmpty() ||  name.get(0).equals("")) {
+        if (name.isEmpty() ||  name.get(0).isEmpty()) {
             separator = 0;
         } else {
             separator = 1;
@@ -379,7 +379,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
         if (tail == null || tail.isEmpty()) {
 //System.out.println("terminal : " + head);
             ret = TERMINAL_COMPONENT;
-        } else if (!tail.get(0).equals("")) {
+        } else if (!tail.get(0).isEmpty()) {
             // tail does not begin with "/"
 /*
             if (head.isEmpty()) {
@@ -468,7 +468,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
     void checkAndAdjustRemainingName(Name rname) throws InvalidNameException {
         int count;
         if (rname != null && (count=rname.size()) > 1 &&
-            rname.get(count-1).equals("")) {
+            rname.get(count-1).isEmpty()) {
             rname.remove(count-1);
         }
     }
@@ -477,7 +477,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
     protected boolean isAllEmpty(Name n) {
         int count = n.size();
         for (int i =0; i < count; i++ ) {
-            if (!n.get(i).equals("")) {
+            if (!n.get(i).isEmpty()) {
                 return false;
             }
         }

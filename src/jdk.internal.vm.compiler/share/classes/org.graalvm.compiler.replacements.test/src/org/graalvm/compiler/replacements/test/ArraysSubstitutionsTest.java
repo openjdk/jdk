@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,20 @@
 
 package org.graalvm.compiler.replacements.test;
 
+import static org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+
+import java.util.Arrays;
+
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
-
-import static org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 
 public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
 
@@ -133,7 +132,7 @@ public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
     public void testCanonicalLength() {
         StructuredGraph graph = parseEager("testCanonicalLengthSnippet", AllowAssumptions.NO);
         HighTierContext context = new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL);
-        new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+        createInliningPhase().apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
 
         Assert.assertTrue(graph.getNodes(ReturnNode.TYPE).first().result().asJavaConstant().asLong() == 0);
@@ -149,7 +148,7 @@ public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
     public void testCanonicalEqual() {
         StructuredGraph graph = parseEager("testCanonicalEqualSnippet", AllowAssumptions.NO);
         HighTierContext context = new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL);
-        new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+        createInliningPhase().apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
 
         Assert.assertTrue(graph.getNodes(ReturnNode.TYPE).first().result().asJavaConstant().asLong() == 1);
@@ -163,7 +162,7 @@ public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
     public void testVirtualEqual() {
         StructuredGraph graph = parseEager("testVirtualEqualSnippet", AllowAssumptions.NO);
         HighTierContext context = new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL);
-        new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+        createInliningPhase().apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
@@ -181,7 +180,7 @@ public class ArraysSubstitutionsTest extends ArraysSubstitutionsTestBase {
     public void testVirtualNotEqual() {
         StructuredGraph graph = parseEager("testVirtualNotEqualSnippet", AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
-        new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
+        createInliningPhase().apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));

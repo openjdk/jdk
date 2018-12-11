@@ -126,7 +126,6 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
 
   {
     CodeBlob* cb = CodeCache::find_blob_unsafe(_call->instruction_address());
-    MutexLockerEx pl(CompiledICLocker::is_safe(cb->as_compiled_method()) ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
     assert(cb != NULL && cb->is_compiled(), "must be compiled");
     _call->set_destination_mt_safe(entry_point);
   }
@@ -237,7 +236,13 @@ CompiledIC::CompiledIC(RelocIterator* iter)
   initialize_from_iter(iter);
 }
 
-bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
+// This function may fail for two reasons: either due to running out of vtable
+// stubs, or due to running out of IC stubs in an attempted transition to a
+// transitional state. The needs_ic_stub_refill value will be set if the failure
+// was due to running out of IC stubs, in which case the caller will refill IC
+// stubs and retry.
+bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode,
+                                    bool& needs_ic_stub_refill, TRAPS) {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
   assert(!is_optimized(), "cannot set an optimized virtual call to megamorphic");
   assert(is_call_to_compiled() || is_call_to_interpreted(), "going directly to megamorphic?");
@@ -259,7 +264,11 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     CompiledICHolder* holder = new CompiledICHolder(call_info->resolved_method()->method_holder(),
                                                     call_info->resolved_klass(), false);
     holder->claim();
-    InlineCacheBuffer::create_transition_stub(this, holder, entry);
+    if (!InlineCacheBuffer::create_transition_stub(this, holder, entry)) {
+      delete holder;
+      needs_ic_stub_refill = true;
+      return false;
+    }
   } else {
     assert(call_info->call_kind() == CallInfo::vtable_call, "either itable or vtable");
     // Can be different than selected_method->vtable_index(), due to package-private etc.
@@ -269,7 +278,10 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     if (entry == NULL) {
       return false;
     }
-    InlineCacheBuffer::create_transition_stub(this, NULL, entry);
+    if (!InlineCacheBuffer::create_transition_stub(this, NULL, entry)) {
+      needs_ic_stub_refill = true;
+      return false;
+    }
   }
 
   if (TraceICs) {
@@ -350,7 +362,7 @@ bool CompiledIC::is_call_to_interpreted() const {
   return is_call_to_interpreted;
 }
 
-void CompiledIC::set_to_clean(bool in_use) {
+bool CompiledIC::set_to_clean(bool in_use) {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
   if (TraceInlineCacheClearing || TraceICs) {
     tty->print_cr("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
@@ -361,7 +373,7 @@ void CompiledIC::set_to_clean(bool in_use) {
 
   // A zombie transition will always be safe, since the metadata has already been set to NULL, so
   // we only need to patch the destination
-  bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || CompiledICLocker::is_safe(_method);
+  bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
     // Kill any leftover stub we might have too
@@ -373,7 +385,9 @@ void CompiledIC::set_to_clean(bool in_use) {
     }
   } else {
     // Unsafe transition - create stub.
-    InlineCacheBuffer::create_transition_stub(this, NULL, entry);
+    if (!InlineCacheBuffer::create_transition_stub(this, NULL, entry)) {
+      return false;
+    }
   }
   // We can't check this anymore. With lazy deopt we could have already
   // cleaned this IC entry before we even return. This is possible if
@@ -382,6 +396,7 @@ void CompiledIC::set_to_clean(bool in_use) {
   // race because the IC entry was complete when we safepointed so
   // cleaning it immediately is harmless.
   // assert(is_clean(), "sanity check");
+  return true;
 }
 
 bool CompiledIC::is_clean() const {
@@ -393,7 +408,7 @@ bool CompiledIC::is_clean() const {
   return is_clean;
 }
 
-void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
+bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
   // Updating a cache to the wrong entry can cause bugs that are very hard
   // to track down - if cache entry gets invalid - we just clean it. In
@@ -411,8 +426,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   if (info.to_interpreter() || info.to_aot()) {
     // Call to interpreter
     if (info.is_optimized() && is_optimized()) {
-       assert(is_clean(), "unsafe IC path");
-       MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+      assert(is_clean(), "unsafe IC path");
       // the call analysis (callee structure) specifies that the call is optimized
       // (either because of CHA or the static target is final)
       // At code generation time, this call has been emitted as static call
@@ -430,7 +444,11 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       }
     } else {
       // Call via method-klass-holder
-      InlineCacheBuffer::create_transition_stub(this, info.claim_cached_icholder(), info.entry());
+      CompiledICHolder* holder = info.claim_cached_icholder();
+      if (!InlineCacheBuffer::create_transition_stub(this, holder, info.entry())) {
+        delete holder;
+        return false;
+      }
       if (TraceICs) {
          ResourceMark rm(thread);
          tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter via icholder ", p2i(instruction_address()));
@@ -450,7 +468,9 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
                 (!is_in_transition_state() && (info.is_optimized() || static_bound || is_clean()));
 
     if (!safe) {
-      InlineCacheBuffer::create_transition_stub(this, info.cached_metadata(), info.entry());
+      if (!InlineCacheBuffer::create_transition_stub(this, info.cached_metadata(), info.entry())) {
+        return false;
+      }
     } else {
       if (is_optimized()) {
         set_ic_destination(info.entry());
@@ -475,6 +495,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   // race because the IC entry was complete when we safepointed so
   // cleaning it immediately is harmless.
   // assert(is_call_to_compiled() || is_call_to_interpreted(), "sanity check");
+  return true;
 }
 
 
@@ -575,16 +596,16 @@ void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site, const Com
 
 // ----------------------------------------------------------------------------
 
-void CompiledStaticCall::set_to_clean(bool in_use) {
+bool CompiledStaticCall::set_to_clean(bool in_use) {
   // in_use is unused but needed to match template function in CompiledMethod
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
   // Reset call site
-  MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
   set_destination_mt_safe(resolve_call_stub());
 
   // Do not reset stub here:  It is too expensive to call find_stub.
   // Instead, rely on caller (nmethod::clear_inline_caches) to clear
   // both the call and its stub.
+  return true;
 }
 
 bool CompiledStaticCall::is_clean() const {
@@ -624,7 +645,6 @@ void CompiledStaticCall::set_to_compiled(address entry) {
 
 void CompiledStaticCall::set(const StaticCallInfo& info) {
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
   // Updating a cache to the wrong entry can cause bugs that are very hard
   // to track down - if cache entry gets invalid - we just clean it. In
   // this way it is always the same code path that is responsible for

@@ -246,7 +246,7 @@ public class RFC822Name implements GeneralNameInterface
             subtree=subtree.substring(atNdx+1);
         }
 
-        /* count dots in dnsname, adding one if dnsname preceded by @ */
+        /* count dots in DNSName, adding one if DNSName preceded by @ */
         for (; subtree.lastIndexOf('.') >= 0; i++) {
             subtree=subtree.substring(0,subtree.lastIndexOf('.'));
         }

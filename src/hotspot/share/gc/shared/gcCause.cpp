@@ -105,8 +105,26 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _g1_humongous_allocation:
       return "G1 Humongous Allocation";
 
+    case _g1_periodic_collection:
+      return "G1 Periodic Collection";
+
     case _dcmd_gc_run:
       return "Diagnostic Command";
+
+    case _shenandoah_allocation_failure_evac:
+      return "Allocation Failure During Evacuation";
+
+    case _shenandoah_stop_vm:
+      return "Stopping VM";
+
+    case _shenandoah_concurrent_gc:
+      return "Concurrent GC";
+
+    case _shenandoah_traversal_gc:
+      return "Traversal GC";
+
+    case _shenandoah_upgrade_to_full_gc:
+      return "Upgrade To Full GC";
 
     case _z_timer:
       return "Timer";

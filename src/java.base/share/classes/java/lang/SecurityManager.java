@@ -1201,7 +1201,7 @@ public class SecurityManager {
 
     private static String[] getPackages(String p) {
         String packages[] = null;
-        if (p != null && !p.equals("")) {
+        if (p != null && !p.isEmpty()) {
             java.util.StringTokenizer tok =
                 new java.util.StringTokenizer(p, ",");
             int n = tok.countTokens();

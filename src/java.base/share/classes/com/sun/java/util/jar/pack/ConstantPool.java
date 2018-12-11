@@ -1366,7 +1366,7 @@ class ConstantPool {
             }
             if (tag == CONSTANT_Utf8) {
                 // Special case:  First Utf8 must always be empty string.
-                assert(cpMap.length == 0 || cpMap[0].stringValue().equals(""));
+                assert(cpMap.length == 0 || cpMap[0].stringValue().isEmpty());
             }
             indexByTag[tag] = ix;
             // decache indexes derived from this one:

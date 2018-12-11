@@ -938,11 +938,6 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
-
-#ifndef PRODUCT
-  // Compile the world support
-  static void preload_and_initialize_all_classes(ConstantPool* constant_pool, TRAPS);
-#endif
 };
 
 class SymbolHashMapEntry : public CHeapObj<mtSymbol> {

@@ -237,7 +237,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
         final long segmentLimit;
         {
             long limit;
-            if (props.getProperty(Pack200.Packer.SEGMENT_LIMIT, "").equals(""))
+            if (props.getProperty(Pack200.Packer.SEGMENT_LIMIT, "").isEmpty())
                 limit = -1;
             else
                 limit = props.getLong(Pack200.Packer.SEGMENT_LIMIT);

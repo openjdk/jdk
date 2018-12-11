@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot.test;
 
+import static org.graalvm.compiler.hotspot.test.HotSpotGraalCompilerTest.assumeGraalIsNotJIT;
 import static org.graalvm.compiler.hotspot.test.HotSpotGraalManagementTest.JunitShield.findAttributeInfo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -72,6 +73,7 @@ public class HotSpotGraalManagementTest {
     private static final boolean DEBUG = Boolean.getBoolean(HotSpotGraalManagementTest.class.getSimpleName() + ".debug");
 
     public HotSpotGraalManagementTest() {
+        assumeGraalIsNotJIT("random flipping of Graal options can cause havoc if Graal is being used as a JIT");
         try {
             /* Trigger loading of the management library using the bootstrap class loader. */
             ManagementFactory.getThreadMXBean();

@@ -27,7 +27,7 @@
  * @summary Verify that option TargetSurvivorRatio affects survivor space occupancy after minor GC.
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.UseJVMCICompiler != true
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

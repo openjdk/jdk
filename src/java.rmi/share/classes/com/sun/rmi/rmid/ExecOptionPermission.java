@@ -189,7 +189,7 @@ public final class ExecOptionPermission extends Permission
         if (name == null)
             throw new NullPointerException("name can't be null");
 
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("name can't be empty");
         }
 

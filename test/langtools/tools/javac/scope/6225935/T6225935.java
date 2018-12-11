@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary "import static" accessibility rules for symbols different for no reason
  * @author  Peter von der Ah\u00e9
  * @compile a/Private.java a/Named.java a/Star.java T6225935.java
- * @run main/othervm -Xfuture T6225935
+ * @run main/othervm T6225935
  */
 
 import static a.Named.x;

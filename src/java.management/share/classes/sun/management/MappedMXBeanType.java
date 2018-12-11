@@ -663,7 +663,7 @@ public abstract class MappedMXBeanType {
                         continue;
                     }
 
-                    if (rest.equals("") ||
+                    if (rest.isEmpty() ||
                         method.getParameterTypes().length > 0 ||
                         type == void.class ||
                         rest.equals("Class")) {

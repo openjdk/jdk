@@ -668,7 +668,7 @@ public class SSLParameters {
         String[] tempProtocols = protocols.clone();
 
         for (String p : tempProtocols) {
-            if (p == null || p.equals("")) {
+            if (p == null || p.isEmpty()) {
                 throw new IllegalArgumentException(
                     "An element of protocols was null/empty");
             }

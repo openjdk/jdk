@@ -619,13 +619,13 @@ public class CatalogFeatures {
     private boolean getSystemProperty(Feature cf, String sysPropertyName) {
         if (cf.hasSystemProperty()) {
             String value = SecuritySupport.getSystemProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 setProperty(cf, State.SYSTEMPROPERTY, value);
                 return true;
             }
 
             value = SecuritySupport.readJAXPProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 setProperty(cf, State.JAXPDOTPROPERTIES, value);
                 return true;
             }

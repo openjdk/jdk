@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,25 @@ public class AArch64ControlFlow {
             } else {
                 masm.fcmov(size, asRegister(result), asRegister(trueValue), asRegister(falseValue), condition);
             }
+        }
+    }
+
+    public static class CondSetOp extends AArch64LIRInstruction {
+        public static final LIRInstructionClass<CondSetOp> TYPE = LIRInstructionClass.create(CondSetOp.class);
+
+        @Def protected Value result;
+        private final AArch64Assembler.ConditionFlag condition;
+
+        public CondSetOp(Variable result, AArch64Assembler.ConditionFlag condition) {
+            super(TYPE);
+            this.result = result;
+            this.condition = condition;
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+            int size = result.getPlatformKind().getSizeInBytes() * Byte.SIZE;
+            masm.cset(size, asRegister(result), condition);
         }
     }
 

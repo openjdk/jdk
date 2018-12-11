@@ -33,7 +33,7 @@
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 

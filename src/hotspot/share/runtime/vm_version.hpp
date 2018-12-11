@@ -56,12 +56,7 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_security_version;
   static int          _vm_patch_version;
   static int          _vm_build_number;
-  static unsigned int _parallel_worker_threads;
-  static bool         _parallel_worker_threads_initialized;
 
-  static unsigned int nof_parallel_worker_threads(unsigned int num,
-                                                  unsigned int dem,
-                                                  unsigned int switch_pt);
  public:
   // Called as part of the runtime services initialization which is
   // called from the management module initialization (via init_globals())
@@ -148,14 +143,9 @@ class Abstract_VM_Version: AllStatic {
   // that the O/S may support more sizes, but at most this many are used.
   static uint page_size_count() { return 2; }
 
-  // Returns the number of parallel threads to be used for VM
-  // work.  If that number has not been calculated, do so and
-  // save it.  Returns ParallelGCThreads if it is set on the
-  // command line.
-  static unsigned int parallel_worker_threads();
-  // Calculates and returns the number of parallel threads.  May
-  // be VM version specific.
-  static unsigned int calc_parallel_worker_threads();
+  // Denominator for computing default ParallelGCThreads for machines with
+  // a large number of cores.
+  static uint parallel_worker_threads_denominator() { return 8; }
 
   // Does this CPU support spin wait instruction?
   static bool supports_on_spin_wait() { return false; }

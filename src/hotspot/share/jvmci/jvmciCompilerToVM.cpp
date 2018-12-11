@@ -49,14 +49,14 @@ JVMCIKlassHandle::JVMCIKlassHandle(Thread* thread, Klass* klass) {
   _thread = thread;
   _klass = klass;
   if (klass != NULL) {
-    _holder = Handle(_thread, klass->holder_phantom());
+    _holder = Handle(_thread, klass->klass_holder());
   }
 }
 
 JVMCIKlassHandle& JVMCIKlassHandle::operator=(Klass* klass) {
   _klass = klass;
   if (klass != NULL) {
-    _holder = Handle(_thread, klass->holder_phantom());
+    _holder = Handle(_thread, klass->klass_holder());
   }
   return *this;
 }

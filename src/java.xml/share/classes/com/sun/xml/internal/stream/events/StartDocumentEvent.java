@@ -73,7 +73,7 @@ implements StartDocument {
         this.fEncodingScheam = encoding;
         this.fVersion = version;
         this.fStandalone = standalone;
-        if (encoding != null && !encoding.equals(""))
+        if (encoding != null && !encoding.isEmpty())
             this.fEncodingSchemeSet = true;
         else {
             this.fEncodingSchemeSet = false;

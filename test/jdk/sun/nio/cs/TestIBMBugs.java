@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466
+ * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466 8212794
  * @summary Check if the problems reported in above bugs have been fixed
  * @modules jdk.charsets
  */
@@ -234,6 +234,22 @@ public class TestIBMBugs {
         }
     }
 
+    private static void bug8212794 () throws Exception {
+        Charset cs = Charset.forName("x-IBM964");
+        byte[] ba = new byte[] {(byte)0x5c, (byte)0x90, (byte)0xa1, (byte)0xa1};
+        char[] ca = new char[] {'\\', '\u0090', '\u3000'};
+        ByteBuffer bb = ByteBuffer.wrap(ba);
+        CharBuffer cb = cs.decode(bb);
+        if(!Arrays.equals(ca, Arrays.copyOf(cb.array(), cb.limit()))) {
+            throw new Exception("IBM964 failed to decode");
+        }
+        cb = CharBuffer.wrap(ca);
+        bb = cs.encode(cb);
+        if(!Arrays.equals(ba, Arrays.copyOf(bb.array(), bb.limit()))) {
+            throw new Exception("IBM964 failed to encode");
+        }
+    }
+
     public static void main (String[] args) throws Exception {
         bug6577466();
         // need to be tested before any other IBM949C test case
@@ -245,6 +261,7 @@ public class TestIBMBugs {
         bug6371431();
         bug6569191();
         bug8202329();
+        bug8212794();
         bug8213618();
     }
 }

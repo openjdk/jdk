@@ -537,7 +537,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     private void writeStringData(String s) throws java.io.IOException {
         if (s == null) {
             writeNull();
-        } else if (s.equals("")) {
+        } else if (s.isEmpty()) {
             writeEmptyString();
         } else {
 

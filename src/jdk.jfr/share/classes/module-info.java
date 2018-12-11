@@ -25,6 +25,12 @@
 
 /**
  * Defines the API for JDK Flight Recorder.
+ * <p>
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jfr_tool_reference jfr}
+ * </dl>
  *
  * @moduleGraph
  * @since 9

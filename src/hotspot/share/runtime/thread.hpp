@@ -328,6 +328,21 @@ class Thread: public ThreadShadow {
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
  private:
 
+#ifdef ASSERT
+  void* _missed_ic_stub_refill_mark;
+
+ public:
+  void* missed_ic_stub_refill_mark() {
+    return _missed_ic_stub_refill_mark;
+  }
+
+  void set_missed_ic_stub_refill_mark(void* mark) {
+    _missed_ic_stub_refill_mark = mark;
+  }
+#endif
+
+ private:
+
   // debug support for checking if code does allow safepoints or not
   // GC points in the VM can happen because of allocation, invoking a VM operation, or blocking on
   // mutex, or blocking on an object synchronizer (Java locking).

@@ -1575,14 +1575,44 @@ bool nmethod::is_unloading() {
   if (state_is_unloading) {
     return true;
   }
-  if (state_unloading_cycle == CodeCache::unloading_cycle()) {
+  uint8_t current_cycle = CodeCache::unloading_cycle();
+  if (state_unloading_cycle == current_cycle) {
     return false;
   }
 
   // The IsUnloadingBehaviour is responsible for checking if there are any dead
   // oops in the CompiledMethod, by calling oops_do on it.
-  state_unloading_cycle = CodeCache::unloading_cycle();
-  state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
+  state_unloading_cycle = current_cycle;
+
+  if (is_zombie()) {
+    // Zombies without calculated unloading epoch are never unloading due to GC.
+
+    // There are no races where a previously observed is_unloading() nmethod
+    // suddenly becomes not is_unloading() due to here being observed as zombie.
+
+    // With STW unloading, all is_alive() && is_unloading() nmethods are unlinked
+    // and unloaded in the safepoint. That makes races where an nmethod is first
+    // observed as is_alive() && is_unloading() and subsequently observed as
+    // is_zombie() impossible.
+
+    // With concurrent unloading, all references to is_unloading() nmethods are
+    // first unlinked (e.g. IC caches and dependency contexts). Then a global
+    // handshake operation is performed with all JavaThreads before finally
+    // unloading the nmethods. The sweeper never converts is_alive() && is_unloading()
+    // nmethods to zombies; it waits for them to become is_unloaded(). So before
+    // the global handshake, it is impossible for is_unloading() nmethods to
+    // racingly become is_zombie(). And is_unloading() is calculated for all is_alive()
+    // nmethods before taking that global handshake, meaning that it will never
+    // be recalculated after the handshake.
+
+    // After that global handshake, is_unloading() nmethods are only observable
+    // to the iterators, and they will never trigger recomputation of the cached
+    // is_unloading_state, and hence may not suffer from such races.
+
+    state_is_unloading = false;
+  } else {
+    state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
+  }
 
   state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
 
@@ -1620,7 +1650,8 @@ void nmethod::do_unloading(bool unloading_occurred) {
     }
 #endif
 
-    unload_nmethod_caches(unloading_occurred);
+    guarantee(unload_nmethod_caches(unloading_occurred),
+              "Should not need transition stubs");
   }
 }
 

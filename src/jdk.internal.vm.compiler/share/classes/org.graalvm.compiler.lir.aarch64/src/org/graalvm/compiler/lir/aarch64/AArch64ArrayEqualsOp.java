@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public final class AArch64ArrayEqualsOp extends AArch64LIRInstruction {
             // Return: rscratch1 is non-zero iff the arrays differ
             masm.bind(breakLabel);
             masm.cmp(64, rscratch1, zr);
-            masm.cset(result, ConditionFlag.EQ);
+            masm.cset(resultValue.getPlatformKind().getSizeInBytes() * Byte.SIZE, result, ConditionFlag.EQ);
         }
     }
 

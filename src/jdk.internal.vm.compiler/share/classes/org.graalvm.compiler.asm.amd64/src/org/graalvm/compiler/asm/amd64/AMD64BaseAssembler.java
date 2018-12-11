@@ -721,6 +721,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
 
         @Override
         public void simdPrefix(Register xreg, Register nds, AMD64Address adr, int sizePrefix, int opcodeEscapePrefix, boolean isRexW) {
+            assert (!nds.isValid()) || nds.equals(xreg);
             if (sizePrefix > 0) {
                 emitByte(sizePrefix);
             }
@@ -738,6 +739,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
 
         @Override
         public void simdPrefix(Register dst, Register nds, Register src, int sizePrefix, int opcodeEscapePrefix, boolean isRexW) {
+            assert (!nds.isValid()) || nds.equals(dst) || nds.equals(src);
             if (sizePrefix > 0) {
                 emitByte(sizePrefix);
             }

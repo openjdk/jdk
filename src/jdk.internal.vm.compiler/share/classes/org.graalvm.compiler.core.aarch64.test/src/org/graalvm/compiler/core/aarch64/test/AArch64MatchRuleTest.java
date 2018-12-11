@@ -27,51 +27,15 @@
 package org.graalvm.compiler.core.aarch64.test;
 
 import jdk.vm.ci.aarch64.AArch64;
-import jdk.vm.ci.code.TargetDescription;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.aarch64.AArch64LIRInstruction;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.LIRPhase;
-import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
-import org.graalvm.compiler.options.OptionValues;
-import org.junit.Assert;
+import org.graalvm.compiler.core.test.MatchRuleTest;
 import org.junit.Before;
 
 import static org.junit.Assume.assumeTrue;
 
-public abstract class AArch64MatchRuleTest extends GraalCompilerTest {
-    private LIR lir;
-
+public abstract class AArch64MatchRuleTest extends MatchRuleTest {
     @Before
     public void checkAArch64() {
         assumeTrue("skipping AArch64 specific test", getTarget().arch instanceof AArch64);
     }
 
-    @Override
-    protected LIRSuites createLIRSuites(OptionValues options) {
-        LIRSuites suites = super.createLIRSuites(options);
-        suites.getPreAllocationOptimizationStage().appendPhase(new CheckPhase());
-        return suites;
-    }
-
-    private class CheckPhase extends LIRPhase<PreAllocationOptimizationPhase.PreAllocationOptimizationContext> {
-        @Override
-        protected void run(TargetDescription target, LIRGenerationResult lirGenRes,
-                        PreAllocationOptimizationPhase.PreAllocationOptimizationContext context) {
-            lir = lirGenRes.getLIR();
-        }
-    }
-
-    protected void checkLIR(Class<? extends AArch64LIRInstruction> op, int expected) {
-        int actualOpNum = 0;
-        for (LIRInstruction ins : lir.getLIRforBlock(lir.codeEmittingOrder()[0])) {
-            if (ins.getClass() == op) {
-                actualOpNum++;
-            }
-        }
-        Assert.assertEquals(expected, actualOpNum);
-    }
 }

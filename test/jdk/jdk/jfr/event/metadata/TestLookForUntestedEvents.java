@@ -24,7 +24,6 @@
  */
 package jdk.jfr.event.metadata;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -40,8 +39,8 @@ import java.util.stream.Stream;
 import jdk.jfr.EventType;
 import jdk.jfr.Experimental;
 import jdk.jfr.FlightRecorder;
-import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.Utils;
+import jdk.test.lib.jfr.EventNames;
 
 /**
  * @test Check for JFR events not covered by tests
@@ -54,14 +53,6 @@ public class TestLookForUntestedEvents {
     private static final Path jfrTestRoot = Paths.get(Utils.TEST_SRC).getParent().getParent();
     private static final String MSG_SEPARATOR = "==========================";
     private static Set<String> jfrEventTypes = new HashSet<>();
-
-    private static final Set<String> knownEventsMissingFromEventNames = new HashSet<>(
-        Arrays.asList(
-            // The Z* events below should be marked as experimental; see: JDK-8213966
-            "ZStatisticsSampler", "ZStatisticsCounter",
-            "ZPageAllocation", "ZThreadPhase"
-        )
-    );
 
     private static final Set<String> hardToTestEvents = new HashSet<>(
         Arrays.asList(
@@ -146,9 +137,6 @@ public class TestLookForUntestedEvents {
                 eventsFromEventNamesClass.add(eventName);
             }
         }
-
-        // Account for the events that are known to be missing from the EventNames.java
-        eventsFromEventNamesClass.addAll(knownEventsMissingFromEventNames);
 
         if (!jfrEventTypes.equals(eventsFromEventNamesClass)) {
             String exceptionMsg = "Events declared in jdk.test.lib.jfr.EventNames differ " +

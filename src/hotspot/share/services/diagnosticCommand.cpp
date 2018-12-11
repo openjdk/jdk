@@ -28,7 +28,7 @@
 #include "classfile/classLoaderStats.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
-#include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"

@@ -1436,6 +1436,7 @@ public class KeyToolTest {
         testOK("", pre+"san3 -ext san=dns:me.org");
         testOK("", pre+"san4 -ext san=ip:192.168.0.1");
         testOK("", pre+"san5 -ext san=oid:1.2.3.4");
+        testOK("", pre+"san6 -ext san=dns:1abc.com"); //begin with digit
         testOK("", pre+"san235 -ext san=uri:http://me.org,dns:me.org,oid:1.2.3.4");
 
         ks = loadStore("x.jks", "changeit", "JKS");
