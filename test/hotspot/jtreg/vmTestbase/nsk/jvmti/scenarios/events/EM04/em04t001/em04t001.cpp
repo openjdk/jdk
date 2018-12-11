@@ -96,7 +96,7 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
             rec->sign = 1;
             NSK_DISPLAY3("checked: 0x%p %7d %s\n", rec->address, rec->length,
                                 rec->name);
-            if (strncmp(rec->name, name, compLength)!=0) {
+            if (strncmp(rec->name, name, compLength) != 0) {
                 NSK_DISPLAY2("\t<%s> was renamed to <%s>\n", rec->name, name);
             }
             return;

@@ -98,17 +98,17 @@ static int checkSig(JNIEnv *jni_env, jmethodID testedMeth,
             meth_sig[clsIdx][methIdx][0]);
 
         if (strcmp(meth_sig[clsIdx][methIdx][2], sign) != 0 ||
-                strcmp(meth_sig[clsIdx][methIdx][3], (gen_sign==NULL)?"NULL":gen_sign) != 0) {
+                strcmp(meth_sig[clsIdx][methIdx][3], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
             NSK_COMPLAIN5("TEST FAILED: class: \"%s\" \
 has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\t\"%s\"\n\n",
                 meth_sig[clsIdx][methIdx][0],
-                sign, (gen_sign==NULL)?"NULL":gen_sign,
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
                 meth_sig[clsIdx][methIdx][2], meth_sig[clsIdx][methIdx][3]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign==NULL)?"NULL":gen_sign);
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name))) {
@@ -117,7 +117,7 @@ has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign))) {
             totRes = STATUS_FAILED;
         }
-        if (gen_sign!=NULL)
+        if (gen_sign != NULL)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign))) {
                 totRes = STATUS_FAILED;
             }
@@ -137,9 +137,9 @@ Java_nsk_jvmti_GetMethodName_methname003_check(
         instance = strcmp(meth_sig[clsIdx][i][1], "instance");
 
         NSK_DISPLAY2(">>> Finding %s method: %s ...\n",
-            (instance==0)?"instance":"static",
+            (instance == 0) ? "instance" : "static",
              meth_sig[clsIdx][i][0]);
-        if (instance==0) {
+        if (instance == 0) {
             if (!NSK_JNI_VERIFY(jni, (testedMeth = jni->GetMethodID(objCls, meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2])) != NULL)) {
                 NSK_COMPLAIN2("TEST FAILERE: unable to get method ID for \"%s\" \"%s\"\n\n",
                     meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2]);

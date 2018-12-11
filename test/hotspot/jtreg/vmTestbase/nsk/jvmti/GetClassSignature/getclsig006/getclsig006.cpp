@@ -67,7 +67,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
             class_sig[idx][0]);
 
         if (strcmp(class_sig[idx][1], sign) != 0 ||
-                strcmp(class_sig[idx][2], (gen_sign==NULL)?"NULL":gen_sign) != 0) {
+                strcmp(class_sig[idx][2], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
             NSK_COMPLAIN5(
                 "TEST FAILED: class: \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
@@ -75,19 +75,19 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
                 "\tExpected: \"%s\"\n"
                 "\t\"%s\"\n\n",
                 class_sig[idx][0],
-                sign, (gen_sign==NULL)?"NULL":gen_sign,
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
                 class_sig[idx][1], class_sig[idx][2]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign==NULL)?"NULL":gen_sign);
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
 
         NSK_DISPLAY0("Deallocating the signature array\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign))) {
             totRes = STATUS_FAILED;
         }
-        if (gen_sign!=NULL)
+        if (gen_sign != NULL)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign))) {
                 totRes = STATUS_FAILED;
             }

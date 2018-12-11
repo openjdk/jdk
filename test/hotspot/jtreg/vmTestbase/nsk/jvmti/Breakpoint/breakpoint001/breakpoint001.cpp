@@ -118,17 +118,17 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     }
     if (thr_info.name == NULL ||
             strcmp(thr_info.name,THREAD_NAME) != 0 ||
-            thr_info.is_daemon==JNI_TRUE) {
+            thr_info.is_daemon == JNI_TRUE) {
         result = checkStatus = STATUS_FAILED;
         NSK_COMPLAIN2(
             "TEST FAILED: Breakpoint event with unexpected thread info:\n"
             "\tname: \"%s\"\ttype: %s thread\n\n",
-            (thr_info.name == NULL)?"NULL":thr_info.name,
-            (thr_info.is_daemon==JNI_TRUE)?"deamon":"user");
+            (thr_info.name == NULL) ? "NULL" : thr_info.name,
+            (thr_info.is_daemon == JNI_TRUE) ? "deamon" : "user");
     }
     else
         NSK_DISPLAY2("CHECK PASSED: thread name: \"%s\"\ttype: %s thread\n",
-            thr_info.name, (thr_info.is_daemon==JNI_TRUE)?"deamon":"user");
+            thr_info.name, (thr_info.is_daemon == JNI_TRUE) ? "deamon" : "user");
 
     /* checking location */
     if (location != 0) {

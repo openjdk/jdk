@@ -47,7 +47,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
             nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL);
             nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                     sizeof(fileName)/sizeof(char));
-            if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)  == NSK_TRUE) {
+            if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName) == NSK_TRUE) {
                 nsk_printf("Agent:: Redefine successful.\n");
             } else {
                 nsk_printf("Agent:: Redefine failed.\n");

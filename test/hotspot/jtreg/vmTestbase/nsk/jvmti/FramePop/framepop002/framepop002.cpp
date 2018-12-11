@@ -200,7 +200,7 @@ void push(JNIEnv *env, jthread thr, jmethodID method, int depth) {
     new_item->depth = depth;
     threads[i].tos = new_item;
     push_count++;
-    max_depth = (max_depth < depth) ? depth: max_depth;
+    max_depth = (max_depth < depth) ? depth : max_depth;
 }
 
 void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,

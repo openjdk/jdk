@@ -154,7 +154,8 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
         }
         if (methodsInfo[i].mid == NULL) {
             printf("%s: Failed to get the method ID for the%s%s method \"%s\", signature \"%s\"\n",
-                __FILE__, (vrb==2)?" original ":" ", methodsInfo[i].inst?"instance":"static",
+                __FILE__, (vrb == 2) ? " original " : " ",
+                methodsInfo[i].inst ? "instance" : "static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
             return STATUS_FAILED;
         }
@@ -165,15 +166,16 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
             printf("%s: Failed to call GetLineNumberTable(): error=%d: %s\n",
                 __FILE__, err, TranslateError(err));
             printf("\tfor the%s%s method \"%s\", signature \"%s\"\n\n",
-                (vrb==2)?" original ":" ", methodsInfo[i].inst?"instance":"static",
+                (vrb == 2) ? " original " : " ",
+                methodsInfo[i].inst ? "instance" : "static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
             return STATUS_FAILED;
         } else {
             if (count != methodsInfo[i].lcount) {
                 printf(
                     "TEST %s %s method \"%s\", signature \"%s\": found %d lines in the LineNumberTable, expected %d\n",
-                    (vrb==2)?"BUG: original ":"FAILED:",
-                    methodsInfo[i].inst?"instance":"static",
+                    (vrb == 2) ? "BUG: original " : "FAILED:",
+                    methodsInfo[i].inst ? "instance" : "static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign,
                     count, methodsInfo[i].lcount);
                 totRes = STATUS_FAILED;
@@ -183,7 +185,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
                 printf(
                     "\nChecking line numbers in the LineNumberTable of the %s method \"%s\", signature \"%s\" ...\n"
                     "\toverall number of lines: %d as expected\n",
-                    methodsInfo[i].inst?"instance":"static",
+                    methodsInfo[i].inst ? "instance" : "static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign, count);
 
             for (j=0; j<count; j++) {
@@ -196,8 +198,8 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
                     printf(
                         "TEST %s %s method \"%s\", signature \"%s\": "
                         "entry #%d has value %d in the LineNumberTable, expected %d\n",
-                        (vrb==2)?"BUG: original":"FAILED:",
-                        methodsInfo[i].inst?"instance":"static",
+                        (vrb == 2) ? "BUG: original" : "FAILED:",
+                        methodsInfo[i].inst ? "instance" : "static",
                         methodsInfo[i].m_name, methodsInfo[i].m_sign,
                         j, ln_table[j].line_number, chkval);
                     totRes = STATUS_FAILED;

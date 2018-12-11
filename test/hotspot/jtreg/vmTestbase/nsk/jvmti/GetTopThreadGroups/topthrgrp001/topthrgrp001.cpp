@@ -102,7 +102,7 @@ Java_nsk_jvmti_GetTopThreadGroups_topthrgrp001_check(JNIEnv *env, jclass cls) {
                 printf(">>>         parent: 0x%p\n", inf.parent);
                 printf(">>>   max priority: %d\n", inf.max_priority);
                 printf(">>>      is daemon: %s\n",
-                       (inf.is_daemon==JNI_TRUE) ? "true" : "false");
+                       (inf.is_daemon == JNI_TRUE) ? "true" : "false");
             }
             if (inf.parent != NULL) {
                 printf("ERROR: thread group is not parentless!\n");

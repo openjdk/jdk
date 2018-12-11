@@ -101,29 +101,29 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
             name);
 
         if (strcmp(fld_sig[idx][2], sign) != 0 ||
-                strcmp(fld_sig[idx][3], (gen_sign==NULL)?"NULL":gen_sign) != 0) {
+                strcmp(fld_sig[idx][3], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
             NSK_COMPLAIN6(
                 "TEST FAILED: %s field \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
                 "\tgeneric signature: \"%s\"\n\n"
                 "\tExpected: \"%s\"\n"
                 "\t\t\"%s\"\n\n",
-               (instance==0)?"instance":"static",
+               (instance == 0) ? "instance" : "static",
                 fld_sig[idx][0],
-                sign, (gen_sign==NULL)?"NULL":gen_sign,
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
                 fld_sig[idx][2], fld_sig[idx][3]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign==NULL)?"NULL":gen_sign);
+                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name)))
             totRes = STATUS_FAILED;
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign)))
             totRes = STATUS_FAILED;
-        if (gen_sign!=NULL)
+        if (gen_sign != NULL)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign)))
                 totRes = STATUS_FAILED;
     }
@@ -142,9 +142,9 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
         instance = strcmp(fld_sig[i][1], "instance");
 
         NSK_DISPLAY2(">>> Finding %s field: %s ...\n",
-            (instance==0)?"instance":"static",
+            (instance == 0) ? "instance" : "static",
              fld_sig[i][0]);
-        if (instance==0) {
+        if (instance == 0) {
             if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != NULL)) {
                 NSK_COMPLAIN1("TEST FAILERE: unable to get field ID for \"%s\"\n\n",
                     fld_sig[i][0]);

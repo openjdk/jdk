@@ -281,9 +281,9 @@ void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
             }
             if (watch.is_static != watches[i].is_static) {
                 printf("(watch#%" PRIuPTR ") wrong field type: %s", i,
-                    (watch.is_static==JNI_TRUE)?"static":"instance");
+                    (watch.is_static == JNI_TRUE) ? "static" : "instance");
                 printf(", expected: %s\n",
-                    (watches[i].is_static==JNI_TRUE)?"static":"instance");
+                    (watches[i].is_static == JNI_TRUE) ? "static" : "instance");
                 result = STATUS_FAILED;
             }
             if (!isEqual((JNIEnv *)env, watch.f_sig, watch.val, watches[i].val)) {
