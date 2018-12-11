@@ -532,9 +532,9 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
-ifeq ($(ENABLE_FULL_DOCS), true)
+ifneq ($(PANDOC), )
   # For all markdown files in $module/share/specs directories, convert them to
-  # html.
+  # html, if we have pandoc (otherwise we'll just skip this).
 
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
 
