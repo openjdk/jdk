@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /*
-    (this test doesn't have an at-test tag because it's run by a shell
-    script instead of directly by the test harness)
+    (this test doesn't have an at-test tag because it's run by Bug4170614TestRun.java
+     instead of directly by the test harness)
 */
 
 /*
@@ -72,8 +72,7 @@ import sun.text.IntHashtable;
  * actually causing anyone problems yet.  But if these classes are
  * ever exposed in the API, their hashCode() methods need to work right.
  * PatternEntry will never be exposed in the API, but IntHashtable
- * might be.  This is a shell test to allow us to access classes that
- * are declared package private.
+ * might be.
  * @author Richard Gillam
  */
 public class Bug4170614Test {
