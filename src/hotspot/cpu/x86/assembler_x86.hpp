@@ -1668,6 +1668,12 @@ private:
 
   void evpmovdb(Address dst, XMMRegister src, int vector_len);
 
+  // Multiply add
+  void pmaddwd(XMMRegister dst, XMMRegister src);
+  void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  // Multiply add accumulate
+  void evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
 #ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);
 #endif

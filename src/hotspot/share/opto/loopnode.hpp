@@ -1249,6 +1249,9 @@ public:
   // important (common) to do address expressions.
   Node *remix_address_expressions( Node *n );
 
+  // Convert add to muladd to generate MuladdS2I under certain criteria
+  Node * convert_add_to_muladd(Node * n);
+
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 

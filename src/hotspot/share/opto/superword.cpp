@@ -645,6 +645,10 @@ void SuperWord::find_adjacent_refs() {
           // with a different alignment were created before.
           for (uint i = 0; i < align_to_refs.size(); i++) {
             MemNode* mr = align_to_refs.at(i)->as_Mem();
+            if (mr == mem_ref) {
+              // Skip when we are looking at same memory operation.
+              continue;
+            }
             if (same_velt_type(mr, mem_ref) &&
                 memory_alignment(mr, iv_adjustment) != 0)
               create_pack = false;
@@ -846,6 +850,27 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
   return NULL;
 }
 
+//------------------span_works_for_memory_size-----------------------------
+static bool span_works_for_memory_size(MemNode* mem, int span, int mem_size, int offset) {
+  bool span_matches_memory = false;
+  if ((mem_size == type2aelembytes(T_BYTE) || mem_size == type2aelembytes(T_SHORT))
+    && ABS(span) == type2aelembytes(T_INT)) {
+    // There is a mismatch on span size compared to memory.
+    for (DUIterator_Fast jmax, j = mem->fast_outs(jmax); j < jmax; j++) {
+      Node* use = mem->fast_out(j);
+      if (!VectorNode::is_type_transition_to_int(use)) {
+        return false;
+      }
+    }
+    // If all uses transition to integer, it means that we can successfully align even on mismatch.
+    return true;
+  }
+  else {
+    span_matches_memory = ABS(span) == mem_size;
+  }
+  return span_matches_memory && (ABS(offset) % mem_size) == 0;
+}
+
 //------------------------------ref_is_alignable---------------------------
 // Can the preloop align the reference to position zero in the vector?
 bool SuperWord::ref_is_alignable(SWPointer& p) {
@@ -862,7 +887,7 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   int offset   = p.offset_in_bytes();
   // Stride one accesses are alignable if offset is aligned to memory operation size.
   // Offset can be unaligned when UseUnalignedAccesses is used.
-  if (ABS(span) == mem_size && (ABS(offset) % mem_size) == 0) {
+  if (span_works_for_memory_size(p.mem(), span, mem_size, offset)) {
     return true;
   }
   // If the initial offset from start of the object is computable,
@@ -915,6 +940,28 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   }
   return false;
 }
+//---------------------------get_vw_bytes_special------------------------
+int SuperWord::get_vw_bytes_special(MemNode* s) {
+  // Get the vector width in bytes.
+  int vw = vector_width_in_bytes(s);
+
+  // Check for special case where there is an MulAddS2I usage where short vectors are going to need combined.
+  BasicType btype = velt_basic_type(s);
+  if (type2aelembytes(btype) == 2) {
+    bool should_combine_adjacent = true;
+    for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+      Node* user = s->fast_out(i);
+      if (!VectorNode::is_muladds2i(user)) {
+        should_combine_adjacent = false;
+      }
+    }
+    if (should_combine_adjacent) {
+      vw = MIN2(Matcher::max_vector_size(btype)*type2aelembytes(btype), vw * 2);
+    }
+  }
+
+  return vw;
+}
 
 //---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
@@ -923,7 +970,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
-  int vw       = vector_width_in_bytes(mem_ref);
+  int vw       = get_vw_bytes_special(mem_ref);
   assert(vw > 1, "sanity");
   int iv_adjustment;
   if (scale != 0) {
@@ -2303,6 +2350,12 @@ void SuperWord::output() {
         const TypePtr* atyp = n->adr_type();
         vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
+      } else if (VectorNode::is_muladds2i(n)) {
+        assert(n->req() == 5u, "MulAddS2I should have 4 operands.");
+        Node* in1 = vector_opd(p, 1);
+        Node* in2 = vector_opd(p, 2);
+        vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = NULL;
@@ -2615,6 +2668,16 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     }
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
     pk->add_opd(in);
+    if (VectorNode::is_muladds2i(pi)) {
+      Node* in2 = pi->in(opd_idx + 2);
+      assert(my_pack(in2) == NULL, "Should already have been unpacked");
+      if (my_pack(in2) != NULL) {
+        NOT_PRODUCT(if (is_trace_loop_reverse() || TraceLoopOpts) { tty->print_cr("Should already have been unpacked"); })
+          return NULL;
+      }
+      assert(opd_bt == in2->bottom_type()->basic_type(), "all same type");
+      pk->add_opd(in2);
+    }
   }
   _igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
@@ -2689,6 +2752,21 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     Node* n = u_pk->at(0)->in(u_idx);
     for (uint i = 1; i < u_pk->size(); i++) {
       if (u_pk->at(i)->in(u_idx) != n) return false;
+    }
+    return true;
+  }
+  if (VectorNode::is_muladds2i(use)) {
+    // MulAddS2I takes shorts and produces ints - hence the special checks
+    // on alignment and size.
+    if (u_pk->size() * 2 != d_pk->size()) {
+      return false;
+    }
+    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
+      Node* ui = u_pk->at(i);
+      Node* di = d_pk->at(i);
+      if (alignment(ui) != alignment(di) * 2) {
+        return false;
+      }
     }
     return true;
   }
@@ -3017,7 +3095,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
     NOT_PRODUCT(if(is_trace_alignment()) tty->print("SWPointer::memory_alignment: SWPointer p invalid, return bottom_align");)
     return bottom_align;
   }
-  int vw = vector_width_in_bytes(s);
+  int vw = get_vw_bytes_special(s);
   if (vw < 2) {
     NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SWPointer::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
     return bottom_align; // No vectors for this type
