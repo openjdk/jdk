@@ -56,7 +56,7 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
     CHECK_EXCEPTION
     if (!env->Throw(tobj)) {
     if (env->ExceptionOccurred())
-        if (Exceptcalls%1000==0)
+        if (Exceptcalls % 1000 == 0)
         fprintf(stderr, "NATIVE: Throw has been catched in native\n");
     env->ExceptionClear();
     ++Exceptcalls;
@@ -65,7 +65,7 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
     env->MonitorExit(jobj);
     CHECK_EXCEPTION
 
-    switch (Exceptcalls%23) {
+    switch (Exceptcalls % 23) {
       case 0: name="java/lang/ArithmeticException"; break;
       case 1: name="java/lang/ArrayIndexOutOfBoundsException"; break;
       case 2: name="java/lang/ArrayStoreException"; break;

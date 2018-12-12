@@ -556,7 +556,7 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
         return NSK_FALSE;
 
     for (i = 0; i < count; i++) {
-        if (strcmp(local_variable_table[i].name, "o") ==0) {
+        if (strcmp(local_variable_table[i].name, "o") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalObject\n");
             if (!NSK_JVMTI_VERIFY(
                     jvmti->GetLocalObject(thread, 1, local_variable_table[i].slot, &object_value)))
@@ -566,7 +566,7 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetLocalObject(thread, 1, local_variable_table[i].slot, object_value)))
                 return NSK_FALSE;
-        } else if (strcmp(local_variable_table[i].name, "i") ==0) {
+        } else if (strcmp(local_variable_table[i].name, "i") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalInt\n");
             if (!NSK_JVMTI_VERIFY(
                     jvmti->GetLocalInt(thread, 1, local_variable_table[i].slot, &int_value)))
@@ -576,7 +576,7 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetLocalInt(thread, 1, local_variable_table[i].slot, int_value)))
                 return NSK_FALSE;
-        } else if (strcmp(local_variable_table[i].name, "l") ==0) {
+        } else if (strcmp(local_variable_table[i].name, "l") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalLong\n");
             if (!NSK_JVMTI_VERIFY(
                     jvmti->GetLocalLong(thread, 1, local_variable_table[i].slot, &long_value)))
@@ -586,7 +586,7 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetLocalLong(thread, 1, local_variable_table[i].slot, long_value)))
                 return NSK_FALSE;
-        } else if (strcmp(local_variable_table[i].name, "f") ==0) {
+        } else if (strcmp(local_variable_table[i].name, "f") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalFloat\n");
             if (!NSK_JVMTI_VERIFY(
                     jvmti->GetLocalFloat(thread, 1, local_variable_table[i].slot, &float_value)))
@@ -596,7 +596,7 @@ static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetLocalFloat(thread, 1, local_variable_table[i].slot, float_value)))
                 return NSK_FALSE;
-        } else if (strcmp(local_variable_table[i].name, "d") ==0) {
+        } else if (strcmp(local_variable_table[i].name, "d") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalDouble\n");
             if (!NSK_JVMTI_VERIFY(
                     jvmti->GetLocalDouble(thread, 1, local_variable_table[i].slot, &double_value)))

@@ -92,6 +92,7 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
             Iterable<DebugHandlersFactory> factories = Collections.singletonList(new GraalDebugHandlersFactory(providers.getSnippetReflection()));
             lowerer.initialize(options, factories, providers, config);
         }
+        providers.getReplacements().closeSnippetRegistration();
     }
 
     protected CallingConvention makeCallingConvention(StructuredGraph graph, Stub stub) {

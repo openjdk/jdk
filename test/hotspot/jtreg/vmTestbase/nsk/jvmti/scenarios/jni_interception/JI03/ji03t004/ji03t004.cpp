@@ -173,15 +173,15 @@ void checkCall(int step, int exAllObjCalls, int exNewObjCalls) {
     if (allobj_calls == exAllObjCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function AllocObject() has been %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored",
                 allobj_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function AllocObject() has not been %s:\t%d intercepted call(s) instead of %d as expected\n\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored",
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored",
             allobj_calls, exAllObjCalls);
     }
     allobj_calls = 0; /* zeroing an interception counter */
@@ -189,15 +189,15 @@ void checkCall(int step, int exAllObjCalls, int exNewObjCalls) {
     if (newobj_calls == exNewObjCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function NewObjectV() has been %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored",
                 newobj_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function NewObjectV() has not been %s:\n\t%d intercepted call(s) instead of %d as expected\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored",
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored",
             newobj_calls, exNewObjCalls);
     }
     newobj_calls = 0; /* zeroing an interception counter */

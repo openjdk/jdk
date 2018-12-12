@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,15 @@ public class ToolMultilineSnippetHistoryTest extends UITesting {
     public void testUpArrow() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("int x=\n44\n");
-            waitOutput(out, "x ==> 44\n\u0005");
+            waitOutput(out, "\u001B\\[\\?2004lx ==> 44\n\u001B\\[\\?2004h" + PROMPT);
             inputSink.write("/!\n");
-            waitOutput(out, "int x=\n44;\nx ==> 44\n\u0005");
-            inputSink.write("\020");
-            waitOutput(out,   "44;");
-            inputSink.write("\020");
-            waitOutput(out,  "int x=");
+            waitOutput(out, "\u001B\\[\\?2004lint x=\n44;\nx ==> 44\n\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write(UP);
+            waitOutput(out,  "int x=\n" +
+                            CONTINUATION_PROMPT + "44;");
+            inputSink.write(UP);
+            inputSink.write(UP);
+            waitOutput(out,  "\u001B\\[A\n\u001B\\[2C\u001B\\[K");
         });
     }
 

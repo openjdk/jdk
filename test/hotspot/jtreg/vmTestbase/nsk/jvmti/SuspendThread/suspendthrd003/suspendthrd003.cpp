@@ -121,7 +121,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         printf("INFO: made %d late calls to JVM/TI SuspendThread()\n",
                late_count);
-        printf("INFO: N_LATE_CALLS==%d value is %slarge enough to cause a "
+        printf("INFO: N_LATE_CALLS == %d value is %slarge enough to cause a "
                "SuspendThread() call after thread exit.\n", N_LATE_CALLS,
                (late_count == N_LATE_CALLS) ? "NOT " : "");
 

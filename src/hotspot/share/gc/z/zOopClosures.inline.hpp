@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZOOPCLOSURES_INLINE_HPP
 #define SHARE_GC_Z_ZOOPCLOSURES_INLINE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
@@ -40,9 +41,21 @@ inline void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
 
+inline void ZNMethodOopClosure::do_oop(oop* p) {
+  if (ZResurrection::is_blocked()) {
+    ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(p);
+  } else {
+    ZBarrier::load_barrier_on_root_oop_field(p);
+  }
+}
+
+inline void ZNMethodOopClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
+}
+
 template <bool finalizable>
 inline ZMarkBarrierOopClosure<finalizable>::ZMarkBarrierOopClosure() :
-    BasicOopIterateClosure(finalizable ? NULL : ZHeap::heap()->reference_discoverer()) {}
+    MetadataVisitingOopIterateClosure(finalizable ? NULL : ZHeap::heap()->reference_discoverer()) {}
 
 template <bool finalizable>
 inline void ZMarkBarrierOopClosure<finalizable>::do_oop(oop* p) {
@@ -52,6 +65,18 @@ inline void ZMarkBarrierOopClosure<finalizable>::do_oop(oop* p) {
 template <bool finalizable>
 inline void ZMarkBarrierOopClosure<finalizable>::do_oop(narrowOop* p) {
   ShouldNotReachHere();
+}
+
+template <bool finalizable>
+inline void ZMarkBarrierOopClosure<finalizable>::do_klass(Klass* k) {
+  ClassLoaderData* const cld = k->class_loader_data();
+  ZMarkBarrierOopClosure<finalizable>::do_cld(cld);
+}
+
+template <bool finalizable>
+inline void ZMarkBarrierOopClosure<finalizable>::do_cld(ClassLoaderData* cld) {
+  const int claim = finalizable ? ClassLoaderData::_claim_finalizable : ClassLoaderData::_claim_strong;
+  cld->oops_do(this, claim);
 }
 
 inline bool ZPhantomIsAliveObjectClosure::do_object_b(oop o) {

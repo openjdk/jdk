@@ -140,14 +140,14 @@ static void checkRedir(JNIEnv *env, int exCalls) {
     if (redir_calls == exCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function table is returned by GetJNIFunctionTable():\n\t%d interception of GetVersion() calls as expected\n",
-                (exCalls==0)?"original":"modified",
+                (exCalls == 0) ? "original" : "modified",
                 redir_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function table is returned by GetJNIFunctionTable() instead of the %s one:\n\t%d interception of GetVersion() calls instead of %d as expected\n",
-            (exCalls==0)?"modified":"original",
-            (exCalls==0)?"original":"modified",
+            (exCalls == 0) ? "modified" : "original",
+            (exCalls == 0) ? "original" : "modified",
             redir_calls, exCalls);
     }
 }

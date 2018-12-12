@@ -150,6 +150,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
             providers = new HotSpotProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, suites, registers,
                             snippetReflection, wordTypes,
                             plugins);
+            replacements.setProviders(providers);
         }
         try (InitTimer rt = timer("instantiate backend")) {
             return createBackend(config, graalRuntime, providers);

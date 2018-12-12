@@ -25,6 +25,7 @@
 
 package java.net;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -36,6 +37,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
+import java.nio.file.Path;
 import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
@@ -458,6 +460,27 @@ import java.lang.NullPointerException;  // for javadoc
  * resolution as well as the network I/O operations of looking up the host and
  * opening a connection to the specified resource.
  *
+ * @apiNote
+ *
+ * Applications working with file paths and file URIs should take great
+ * care to use the appropriate methods to convert between the two.
+ * The {@link Path#of(URI)} factory method and the {@link File#File(URI)}
+ * constructor can be used to create {@link Path} or {@link File}
+ * objects from a file URI. {@link Path#toUri()} and {@link File#toURI()}
+ * can be used to create a {@link URI} from a file path.
+ * Applications should never try to {@linkplain
+ * #URI(String, String, String, int, String, String, String)
+ * construct}, {@linkplain #URI(String) parse}, or
+ * {@linkplain #resolve(String) resolve} a {@code URI}
+ * from the direct string representation of a {@code File} or {@code Path}
+ * instance.
+ * <p>
+ * Some components of a URL or URI, such as <i>userinfo</i>, may
+ * be abused to construct misleading URLs or URIs. Applications
+ * that deal with URLs or URIs should take into account
+ * the recommendations advised in <a
+ * href="https://tools.ietf.org/html/rfc3986#section-7">RFC3986,
+ * Section 7, Security Considerations</a>.
  *
  * @author Mark Reinhold
  * @since 1.4

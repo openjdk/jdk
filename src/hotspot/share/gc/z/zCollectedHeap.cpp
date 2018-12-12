@@ -259,12 +259,10 @@ bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
   ZNMethodTable::register_nmethod(nm);
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
   ZNMethodTable::unregister_nmethod(nm);
 }
 

@@ -29,6 +29,8 @@ import java.lang.reflect.Modifier;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
+import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
@@ -71,6 +73,8 @@ public abstract class GraalHotSpotVMConfigBase extends HotSpotVMConfigAccess {
      */
     public static final GraalHotSpotVMConfig INJECTED_VMCONFIG = null;
     public static final MetaAccessProvider INJECTED_METAACCESS = null;
+    public static final OptionValues INJECTED_OPTIONVALUES = null;
+    public static final IntrinsicContext INJECTED_INTRINSIC_CONTEXT = null;
 
     public final String osName = getHostOSName();
     public final String osArch = getHostArchitectureName();

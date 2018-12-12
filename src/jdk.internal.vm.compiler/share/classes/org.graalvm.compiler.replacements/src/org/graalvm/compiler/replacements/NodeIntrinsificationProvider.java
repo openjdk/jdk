@@ -76,6 +76,8 @@ public class NodeIntrinsificationProvider implements InjectionProvider {
             return type.cast(foreignCalls);
         } else if (type.equals(SnippetReflectionProvider.class)) {
             return type.cast(snippetReflection);
+        } else if (type.equals(WordTypes.class)) {
+            return type.cast(wordTypes);
         } else {
             throw new GraalError("Cannot handle injected argument of type %s.", type.getName());
         }

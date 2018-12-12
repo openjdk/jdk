@@ -127,7 +127,7 @@ jboolean is_primitive_type(const char *signature) {
 int get_tag_type(const char *signature) {
   if (is_primitive_type(signature)) {
     return TAG_TYPE_PRIMITIVE;
-  } else if (signature[0]=='[' && is_primitive_type(signature+1)) {
+  } else if (signature[0] == '[' && is_primitive_type(signature+1)) {
     return TAG_TYPE_ARRAY;
   } else if (!strcmp(signature, "Ljava/lang/String;")) {
     return TAG_TYPE_STRING;
@@ -143,21 +143,21 @@ int get_tag_type(const char *signature) {
 jboolean verify_value(jvalue value, jvmtiPrimitiveType type) {
   switch (type) {
   case JVMTI_PRIMITIVE_TYPE_BOOLEAN:
-    return value.z==BOOLEAN;
+    return value.z == BOOLEAN;
   case JVMTI_PRIMITIVE_TYPE_BYTE:
-    return value.b==BYTE;
+    return value.b == BYTE;
   case JVMTI_PRIMITIVE_TYPE_CHAR:
-    return value.c==CHAR;
+    return value.c == CHAR;
   case JVMTI_PRIMITIVE_TYPE_SHORT:
-    return value.s==SHORT;
+    return value.s == SHORT;
   case JVMTI_PRIMITIVE_TYPE_INT:
-    return value.i==INT;
+    return value.i == INT;
   case JVMTI_PRIMITIVE_TYPE_LONG:
-    return value.j==LONG;
+    return value.j == LONG;
   case JVMTI_PRIMITIVE_TYPE_FLOAT:
-    return value.f==FLOAT;
+    return value.f == FLOAT;
   case JVMTI_PRIMITIVE_TYPE_DOUBLE:
-    return value.d==DOUBLE;
+    return value.d == DOUBLE;
   default:
     NSK_COMPLAIN1("Unknown type: %X.",type);
     return JNI_FALSE;
@@ -245,7 +245,7 @@ jint JNICALL string_callback(jlong class_tag,
   int i;
 
   //skip all untegged strings
-  if (*tag_ptr==0) {
+  if (*tag_ptr == 0) {
     return 0;
   } else if (DECODE_TYPE(*tag_ptr) != TAG_TYPE_STRING) {
     NSK_COMPLAIN2("jvmtiStringPrimitiveValueCallback was invoked for an object "
@@ -341,7 +341,7 @@ jint JNICALL heap_callback(jlong class_tag,
 
 JNIEXPORT void JNICALL
 object_free_callback(jvmtiEnv* jvmti, jlong tag) {
-  if (DECODE_TYPE(tag)==TAG_TYPE_PRIMITIVE) {
+  if (DECODE_TYPE(tag) == TAG_TYPE_PRIMITIVE) {
     int object = DECODE_OBJECT(tag);
     objects_info[object].collected = 1;
     NSK_DISPLAY1("Object %s collected.\n",
@@ -523,7 +523,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   }
 
   NSK_DISPLAY0("Tagging fields.\n");
-  if (!NSK_VERIFY(JNI_OK==tag_objects(jvmti, jni))) {
+  if (!NSK_VERIFY(JNI_OK == tag_objects(jvmti, jni))) {
     return;
   }
 

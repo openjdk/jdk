@@ -43,6 +43,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
@@ -79,10 +80,10 @@ public class ResolveConstantStubCall extends DeoptimizingStubCall implements Can
     public static native Object resolveObject(Object value, Object symbol);
 
     @NodeIntrinsic
-    public static native KlassPointer resolveKlass(KlassPointer value, Object symbol);
+    public static native KlassPointer resolveKlass(KlassPointer value, Word symbol);
 
     @NodeIntrinsic
-    public static native KlassPointer resolveKlass(KlassPointer value, Object symbol, @ConstantNodeParameter HotSpotConstantLoadAction action);
+    public static native KlassPointer resolveKlass(KlassPointer value, Word symbol, @ConstantNodeParameter HotSpotConstantLoadAction action);
 
     @Override
     public Node canonical(CanonicalizerTool tool) {

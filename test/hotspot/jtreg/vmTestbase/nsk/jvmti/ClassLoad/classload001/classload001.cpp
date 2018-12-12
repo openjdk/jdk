@@ -89,9 +89,9 @@ static void initCounters() {
 static int findSig(char *sig, int expected) {
     unsigned int i;
 
-    for (i=0; i<((expected==1)?EXP_SIG_NUM:UNEXP_SIG_NUM); i++)
+    for (i=0; i<((expected == 1) ? EXP_SIG_NUM : UNEXP_SIG_NUM); i++)
         if (sig != NULL &&
-                strcmp(((expected==1)?expSigs[i]:unexpSigs[i]), sig) == 0)
+                strcmp(((expected == 1) ? expSigs[i] : unexpSigs[i]), sig) == 0)
             return i; /* the signature found, return index */
 
     return -1; /* the signature not found */

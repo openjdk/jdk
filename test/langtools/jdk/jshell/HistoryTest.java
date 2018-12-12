@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,24 @@
  * @test
  * @bug 8166744
  * @summary Test Completion
- * @modules jdk.internal.le/jdk.internal.jline.extra
+ * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open
  * @build HistoryTest
  * @run testng HistoryTest
  */
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jdk.internal.jline.extra.EditingHistory;
+
 import org.testng.annotations.Test;
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.internal.jshell.tool.JShellToolBuilder;
+import jdk.internal.org.jline.reader.History;
 import static org.testng.Assert.*;
+import org.testng.annotations.BeforeMethod;
 
 public class HistoryTest extends ReplToolTesting {
 
@@ -68,8 +71,10 @@ public class HistoryTest extends ReplToolTesting {
              a -> {
                  if (!a) {
                      try {
-                         previousAndAssert(getHistory(), "} //test");
-                         previousSnippetAndAssert(getHistory(), "void test() {");
+                         previousAndAssert(getHistory(), "void test() {\n" +
+                                                         "    System.err.println(1);\n" +
+                                                         "    System.err.println(1);\n" +
+                                                         "} //test");
                      } catch (Exception ex) {
                          throw new IllegalStateException(ex);
                      }
@@ -82,12 +87,15 @@ public class HistoryTest extends ReplToolTesting {
              a -> {
                  if (!a) {
                      try {
-                         previousAndAssert(getHistory(), "} //test2");
-                         previousSnippetAndAssert(getHistory(), "void test2() {");
-                         previousSnippetAndAssert(getHistory(), "/debug 0"); //added by test framework
-                         previousSnippetAndAssert(getHistory(), "/exit");
-                         previousSnippetAndAssert(getHistory(), "int dummy;");
-                         previousSnippetAndAssert(getHistory(), "void test() {");
+                         previousAndAssert(getHistory(), "void test2() {\n" +
+                                                         "} //test2");
+                         previousAndAssert(getHistory(), "/debug 0"); //added by test framework
+                         previousAndAssert(getHistory(), "/exit");
+                         previousAndAssert(getHistory(), "int dummy;");
+                         previousAndAssert(getHistory(), "void test() {\n" +
+                                                         "    System.err.println(1);\n" +
+                                                         "    System.err.println(1);\n" +
+                                                         "} //test");
                      } catch (Exception ex) {
                          throw new IllegalStateException(ex);
                      }
@@ -106,11 +114,14 @@ public class HistoryTest extends ReplToolTesting {
              a -> {
                  if (!a) {
                      try {
-                         previousAndAssert(getHistory(), "}");
-                         previousAndAssert(getHistory(), "}");
-                         previousAndAssert(getHistory(), "void f() {");
-                         previousAndAssert(getHistory(), "class C {");
-                         getHistory().add("class C{");
+                         previousAndAssert(getHistory(), "class C {\n" +
+                                                         "void f() {\n" +
+                                                         "}\n" +
+                                                         "}");
+                         getHistory().add("class C {\n" +
+                                          "void f() {\n" +
+                                          "}\n" +
+                                          "}");
                      } catch (Exception ex) {
                          throw new IllegalStateException(ex);
                      }
@@ -125,8 +136,14 @@ public class HistoryTest extends ReplToolTesting {
              a -> {
                  if (!a) {
                      try {
-                         previousSnippetAndAssert(getHistory(), "class C {");
-                         getHistory().add("class C{");
+                         previousAndAssert(getHistory(), "class C {\n" +
+                                                         "void f() {\n" +
+                                                         "}\n" +
+                                                         "}");
+                         getHistory().add("class C {\n" +
+                                          "void f() {\n" +
+                                          "}\n" +
+                                          "}");
                      } catch (Exception ex) {
                          throw new IllegalStateException(ex);
                      }
@@ -135,23 +152,65 @@ public class HistoryTest extends ReplToolTesting {
              });
     }
 
-    private EditingHistory getHistory() throws Exception {
+    @Test
+    public void testReadExistingHistory() {
+        prefsMap.put("HISTORY_LINE_0", "/debug 0");
+        prefsMap.put("HISTORY_LINE_1", "void test() {\\");
+        prefsMap.put("HISTORY_LINE_2", "    System.err.println(1);\\");
+        prefsMap.put("HISTORY_LINE_3", "    System.err.println(`\\\\\\\\\\");
+        prefsMap.put("HISTORY_LINE_4", "    \\\\\\");
+        prefsMap.put("HISTORY_LINE_5", "`);\\");
+        prefsMap.put("HISTORY_LINE_6", "} //test");
+        test(
+             a -> {assertCommand(a, "int i", "i ==> 0");},
+             a -> {
+                 if (!a) {
+                     try {
+                         previousAndAssert(getHistory(), "int i");
+                         previousAndAssert(getHistory(), "/debug 0"); //added by test framework
+                         previousAndAssert(getHistory(), "void test() {\n" +
+                                                         "    System.err.println(1);\n" +
+                                                         "    System.err.println(`\\\\\n" +
+                                                         "    \\\n" +
+                                                         "`);\n" +
+                                                         "} //test");
+                     } catch (Exception ex) {
+                         throw new IllegalStateException(ex);
+                     }
+                 }
+                  assertCommand(a, "/exit", "");
+             });
+        assertEquals(prefsMap.get("HISTORY_LINE_00"), "/debug 0");
+        assertEquals(prefsMap.get("HISTORY_LINE_01"), "void test() {\\");
+        assertEquals(prefsMap.get("HISTORY_LINE_02"), "    System.err.println(1);\\");
+        assertEquals(prefsMap.get("HISTORY_LINE_03"), "    System.err.println(`\\\\\\\\\\");
+        assertEquals(prefsMap.get("HISTORY_LINE_04"), "    \\\\\\");
+        assertEquals(prefsMap.get("HISTORY_LINE_05"), "`);\\");
+        assertEquals(prefsMap.get("HISTORY_LINE_06"), "} //test");
+        assertEquals(prefsMap.get("HISTORY_LINE_07"), "/debug 0");
+        assertEquals(prefsMap.get("HISTORY_LINE_08"), "int i");
+        assertEquals(prefsMap.get("HISTORY_LINE_09"), "/exit");
+        System.err.println("prefsMap: " + prefsMap);
+    }
+
+    private History getHistory() throws Exception {
         Field input = repl.getClass().getDeclaredField("input");
         input.setAccessible(true);
         Object console = input.get(repl);
-        Field history = console.getClass().getDeclaredField("history");
-        history.setAccessible(true);
-        return (EditingHistory) history.get(console);
+        Method getHistory = console.getClass().getDeclaredMethod("getHistory");
+        getHistory.setAccessible(true);
+        return (History) getHistory.invoke(console);
     }
 
-    private void previousAndAssert(EditingHistory history, String expected) {
+    private void previousAndAssert(History history, String expected) {
         assertTrue(history.previous());
         assertEquals(history.current().toString(), expected);
     }
 
-    private void previousSnippetAndAssert(EditingHistory history, String expected) {
-        assertTrue(history.previousSnippet());
-        assertEquals(history.current().toString(), expected);
+    @BeforeMethod
+    public void setUp() {
+        super.setUp();
+        System.setProperty("jshell.test.allow.incomplete.inputs", "false");
     }
 
 }

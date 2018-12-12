@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
+#include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -39,11 +40,20 @@
 class ZBarrierSetC1;
 class ZBarrierSetC2;
 
+static BarrierSetNMethod* make_barrier_set_nmethod() {
+  // NMethod barriers are only used when class unloading is enabled
+  if (!ClassUnloading) {
+    return NULL;
+  }
+
+  return new ZBarrierSetNMethod();
+}
+
 ZBarrierSet::ZBarrierSet() :
     BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
                make_barrier_set_c1<ZBarrierSetC1>(),
                make_barrier_set_c2<ZBarrierSetC2>(),
-               NULL /* barrier_set_nmethod */,
+               make_barrier_set_nmethod(),
                BarrierSet::FakeRtti(BarrierSet::ZBarrierSet)) {}
 
 ZBarrierSetAssembler* ZBarrierSet::assembler() {

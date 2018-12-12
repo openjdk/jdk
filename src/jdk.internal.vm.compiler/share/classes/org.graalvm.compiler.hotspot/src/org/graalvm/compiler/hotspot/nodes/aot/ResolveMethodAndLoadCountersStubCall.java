@@ -43,6 +43,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
@@ -67,7 +68,7 @@ public class ResolveMethodAndLoadCountersStubCall extends DeoptimizingStubCall i
     }
 
     @NodeIntrinsic
-    public static native MethodCountersPointer resolveMethodAndLoadCounters(MethodPointer method, KlassPointer klassHint, Object methodDescription);
+    public static native MethodCountersPointer resolveMethodAndLoadCounters(MethodPointer method, KlassPointer klassHint, Word methodDescription);
 
     @Override
     public Node canonical(CanonicalizerTool tool) {

@@ -69,7 +69,7 @@ public class PreviewVersion {
         pb = ProcessTools.createJavaProcessBuilder("--enable-preview", "-Xlog:class+preview",
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
-        oa.shouldContain("[info][class,preview] Loading preview feature type PVTest");
+        oa.shouldContain("[info][class,preview] Loading class PVTest that depends on preview features");
 
         // Subtract 1 from class's major version.  The class should fail to load
         // because its major_version does not match the JVM current version.

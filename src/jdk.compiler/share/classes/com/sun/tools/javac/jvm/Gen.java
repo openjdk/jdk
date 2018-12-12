@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.jvm;
 
-import java.util.function.BiConsumer;
-
 import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -166,6 +164,7 @@ public class Gen extends JCTree.Visitor {
     boolean inCondSwitchExpression;
     Chain switchExpressionTrueChain;
     Chain switchExpressionFalseChain;
+    List<LocalItem> stackBeforeSwitchExpression;
 
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
@@ -1178,13 +1177,59 @@ public class Gen extends JCTree.Visitor {
     }
 
     private void doHandleSwitchExpression(JCSwitchExpression tree) {
-        int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
+        List<LocalItem> prevStackBeforeSwitchExpression = stackBeforeSwitchExpression;
+        int limit = code.nextreg;
         try {
-            handleSwitch(tree, tree.selector, tree.cases);
+            stackBeforeSwitchExpression = List.nil();
+            if (hasTry(tree)) {
+                //if the switch expression contains try-catch, the catch handlers need to have
+                //an empty stack. So stash whole stack to local variables, and restore it before
+                //breaks:
+                while (code.state.stacksize > 0) {
+                    Type type = code.state.peek();
+                    Name varName = names.fromString(target.syntheticNameChar() +
+                                                    "stack" +
+                                                    target.syntheticNameChar() +
+                                                    tree.pos +
+                                                    target.syntheticNameChar() +
+                                                    code.state.stacksize);
+                    VarSymbol var = new VarSymbol(Flags.SYNTHETIC, varName, type,
+                                                  this.env.enclMethod.sym);
+                    LocalItem item = items.new LocalItem(type, code.newLocal(var));
+                    stackBeforeSwitchExpression = stackBeforeSwitchExpression.prepend(item);
+                    item.store();
+                }
+            }
+            int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
+            try {
+                handleSwitch(tree, tree.selector, tree.cases);
+            } finally {
+                code.setLetExprStackPos(prevLetExprStart);
+            }
         } finally {
-            code.setLetExprStackPos(prevLetExprStart);
+            stackBeforeSwitchExpression = prevStackBeforeSwitchExpression;
+            code.endScopes(limit);
         }
     }
+    //where:
+        private boolean hasTry(JCSwitchExpression tree) {
+            boolean[] hasTry = new boolean[1];
+            new TreeScanner() {
+                @Override
+                public void visitTry(JCTry tree) {
+                    hasTry[0] = true;
+                }
+
+                @Override
+                public void visitClassDef(JCClassDecl tree) {
+                }
+
+                @Override
+                public void visitLambda(JCLambda tree) {
+                }
+            }.scan(tree);
+            return hasTry[0];
+        }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases) {
         int limit = code.nextreg;
@@ -1659,14 +1704,17 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
-        int tmpPos = code.pendingStatPos;
         Assert.check(code.isStatementStart());
-        Env<GenContext> targetEnv = unwind(tree.target, env);
-        code.pendingStatPos = tmpPos;
+        final Env<GenContext> targetEnv;
         if (tree.isValueBreak()) {
+            //restore stack as it was before the switch expression:
+            for (LocalItem li : stackBeforeSwitchExpression) {
+                li.load();
+            }
             if (inCondSwitchExpression) {
                 CondItem value = genCond(tree.value, CRT_FLOW_TARGET);
                 Chain falseJumps = value.jumpFalse();
+                targetEnv = unwindBreak(tree);
                 code.resolve(value.trueJumps);
                 Chain trueJumps = code.branch(goto_);
                 if (switchExpressionTrueChain == null) {
@@ -1684,13 +1732,22 @@ public class Gen extends JCTree.Visitor {
             } else {
                 genExpr(tree.value, pt).load();
                 code.state.forceStackTop(tree.target.type);
+                targetEnv = unwindBreak(tree);
                 targetEnv.info.addExit(code.branch(goto_));
             }
         } else {
+            targetEnv = unwindBreak(tree);
             targetEnv.info.addExit(code.branch(goto_));
         }
         endFinalizerGaps(env, targetEnv);
     }
+    //where:
+        private Env<GenContext> unwindBreak(JCBreak tree) {
+            int tmpPos = code.pendingStatPos;
+            Env<GenContext> targetEnv = unwind(tree.target, env);
+            code.pendingStatPos = tmpPos;
+            return targetEnv;
+        }
 
     public void visitContinue(JCContinue tree) {
         int tmpPos = code.pendingStatPos;
@@ -2138,7 +2195,7 @@ public class Gen extends JCTree.Visitor {
                 res = items.makeMemberItem(sym, true);
             }
             result = res;
-        } else if (sym.kind == VAR && sym.owner.kind == MTH) {
+        } else if (sym.kind == VAR && (sym.owner.kind == MTH || sym.owner.kind == VAR)) {
             result = items.makeLocalItem((VarSymbol)sym);
         } else if (isInvokeDynamic(sym)) {
             result = items.makeDynamicItem(sym);

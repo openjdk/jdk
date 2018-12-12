@@ -38,7 +38,7 @@ public abstract class ReplacementsTest extends GraalCompilerTest {
      */
     protected final ClassfileBytecodeProvider getSystemClassLoaderBytecodeProvider() {
         ReplacementsImpl d = (ReplacementsImpl) getReplacements();
-        MetaAccessProvider metaAccess = d.providers.getMetaAccess();
+        MetaAccessProvider metaAccess = d.getProviders().getMetaAccess();
         ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, d.snippetReflection, ClassLoader.getSystemClassLoader());
         return bytecodeProvider;
     }

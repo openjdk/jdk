@@ -48,7 +48,7 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
     private static final int RIGHT_BIT_OFFSET = BITS_PER_LIMB - BIT_OFFSET;
 
     public IntegerPolynomial25519() {
-        super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
+        super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
     @Override
@@ -57,6 +57,26 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
         long reducedValue = limbs[numLimbs - 1] >> RIGHT_BIT_OFFSET;
         limbs[numLimbs - 1] -= reducedValue << RIGHT_BIT_OFFSET;
         limbs[0] += reducedValue * SUBTRAHEND;
+    }
+
+    @Override
+    protected void reduce(long[] a) {
+
+        // carry(8, 2)
+        long carry8 = carryValue(a[8]);
+        a[8] -= (carry8 << BITS_PER_LIMB);
+        a[9] += carry8;
+
+        long carry9 = carryValue(a[9]);
+        a[9] -= (carry9 << BITS_PER_LIMB);
+
+        // reduce(0, 1)
+        long reducedValue10 = (carry9 * SUBTRAHEND);
+        a[0] += ((reducedValue10 << BIT_OFFSET) & LIMB_MASK);
+        a[1] += reducedValue10 >> RIGHT_BIT_OFFSET;
+
+        // carry(0, 9)
+        carry(a, 0, 9);
     }
 
     @Override
@@ -150,28 +170,6 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
         r[7] = c7 + (reducedValue16 >> RIGHT_BIT_OFFSET);
 
         // carry(0,9)
-        carry(r, 0, 9);
-    }
-
-    protected void multByInt(long[] a, long b, long[] r) {
-        for (int i = 0; i < a.length; i++) {
-            r[i] = a[i] * b;
-        }
-
-        // carry(8, 2)
-        long carry8 = carryValue(r[8]);
-        r[8] -= (carry8 << BITS_PER_LIMB);
-        r[9] += carry8;
-
-        long carry9 = carryValue(r[9]);
-        r[9] -= (carry9 << BITS_PER_LIMB);
-
-        // reduce(0, 1)
-        long reducedValue10 = (carry9 * SUBTRAHEND);
-        r[0] += ((reducedValue10 << BIT_OFFSET) & LIMB_MASK);
-        r[1] += reducedValue10 >> RIGHT_BIT_OFFSET;
-
-        // carry(0, 9)
         carry(r, 0, 9);
     }
 

@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8174994
- * @summary Test the clhsdb commands 'printmdo', 'printall' on a CDS enabled corefile.
+ * @bug 8174994 8200613
+ * @summary Test the clhsdb commands 'printmdo', 'printall', 'jstack' on a CDS enabled corefile.
  * @requires vm.cds
  * @requires vm.hasSA
  * @requires os.family != "windows"
@@ -156,7 +156,7 @@ public class ClhsdbCDSCore {
                 throw new SkippedException("The CDS archive is not mapped");
             }
 
-            cmds = List.of("printmdo -a", "printall");
+            cmds = List.of("printmdo -a", "printall", "jstack -v");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             Map<String, List<String>> unExpStrMap = new HashMap<>();
@@ -182,6 +182,11 @@ public class ClhsdbCDSCore {
                 "illegal code",
                 "Failure occurred at bci",
                 "No suitable match for type of address"));
+            expStrMap.put("jstack -v", List.of(
+                "Common-Cleaner",
+                "Method*"));
+            unExpStrMap.put("jstack -v", List.of(
+                "sun.jvm.hotspot.debugger.UnmappedAddressException"));
             test.runOnCore(TEST_CDS_CORE_FILE_NAME, cmds, expStrMap, unExpStrMap);
         } catch (SkippedException e) {
             throw e;

@@ -97,6 +97,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
     _renderMenu: function(ul, items) {
         var rMenu = this,
                 currentCategory = "";
+        rMenu.menu.bindings = $();
         $.each(items, function(index, item) {
             var li;
             if (item.l !== noResult.l && item.category !== currentCategory) {
@@ -133,15 +134,16 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
             label = item.l;
         }
         var li = $("<li/>").appendTo(ul);
+        var div = $("<div/>").appendTo(li);
         if (item.category === catSearchTags) {
             if (item.d) {
-                li.html(label + "<span class=\"searchTagHolderResult\"> (" + item.h + ")</span><br><span class=\"searchTagDescResult\">"
+                div.html(label + "<span class=\"searchTagHolderResult\"> (" + item.h + ")</span><br><span class=\"searchTagDescResult\">"
                                 + item.d + "</span><br>");
             } else {
-                li.html(label + "<span class=\"searchTagHolderResult\"> (" + item.h + ")</span>");
+                div.html(label + "<span class=\"searchTagHolderResult\"> (" + item.h + ")</span>");
             }
         } else {
-            li.html(label);
+            div.html(label);
         }
         return li;
     }

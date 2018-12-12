@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.hotspot.phases;
 
-import static jdk.vm.ci.meta.SpeculationLog.SpeculationReason;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.core.common.PermanentBailoutException;
@@ -77,6 +76,7 @@ import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.SpeculationLog;
+import jdk.vm.ci.meta.SpeculationLog.SpeculationReason;
 import jdk.vm.ci.runtime.JVMCICompiler;
 
 public class OnStackReplacementPhase extends Phase {

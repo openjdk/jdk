@@ -41,6 +41,18 @@ import java.nio.ByteBuffer;
 public interface MutableIntegerModuloP extends IntegerModuloP {
 
     /**
+     * Set this value to the value of b when set has the value 1.
+     * No change is made to this element when set has the value 0. The
+     * result is undefined when set has a value other than 0 or 1. The set
+     * parameter is an int (rather than boolean) to allow the implementation
+     * to perform the assignment using branch-free integer arithmetic.
+     *
+     * @param b the element to conditionally swap with
+     * @param set an int that determines whether to set
+     */
+    void conditionalSet(IntegerModuloP b, int set);
+
+    /**
      * Swap the value of this with the value of b when swap has the value 1.
      * No change is made to either element when swap has the value 0. The
      * result is undefined when swap has a value other than 0 or 1. The swap
@@ -131,5 +143,20 @@ public interface MutableIntegerModuloP extends IntegerModuloP {
      * @return this
      */
     MutableIntegerModuloP setProduct(SmallValue v);
+
+    /**
+     * Set the value of this element equal to 0 - this.
+     *
+     * @return this
+     */
+    MutableIntegerModuloP setAdditiveInverse();
+
+    /**
+     * Some implementations required reduction operations to be requested
+     * by the client at certain times. This method reduces the representation.
+     *
+     * @return this
+     */
+    MutableIntegerModuloP setReduced();
 }
 

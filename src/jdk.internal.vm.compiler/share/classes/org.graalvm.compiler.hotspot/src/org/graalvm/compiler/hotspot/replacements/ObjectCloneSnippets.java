@@ -26,40 +26,40 @@ package org.graalvm.compiler.hotspot.replacements;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 
-import java.lang.reflect.Method;
 import java.util.EnumMap;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.replacements.arraycopy.ArrayCopyCallNode;
 import org.graalvm.compiler.nodes.java.DynamicNewArrayNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
+import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 
+import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 
 public class ObjectCloneSnippets implements Snippets {
 
-    public static final EnumMap<JavaKind, Method> arrayCloneMethods = new EnumMap<>(JavaKind.class);
+    public static class Templates extends AbstractTemplates {
 
-    static {
-        arrayCloneMethods.put(JavaKind.Boolean, getCloneMethod("booleanArrayClone", boolean[].class));
-        arrayCloneMethods.put(JavaKind.Byte, getCloneMethod("byteArrayClone", byte[].class));
-        arrayCloneMethods.put(JavaKind.Char, getCloneMethod("charArrayClone", char[].class));
-        arrayCloneMethods.put(JavaKind.Short, getCloneMethod("shortArrayClone", short[].class));
-        arrayCloneMethods.put(JavaKind.Int, getCloneMethod("intArrayClone", int[].class));
-        arrayCloneMethods.put(JavaKind.Float, getCloneMethod("floatArrayClone", float[].class));
-        arrayCloneMethods.put(JavaKind.Long, getCloneMethod("longArrayClone", long[].class));
-        arrayCloneMethods.put(JavaKind.Double, getCloneMethod("doubleArrayClone", double[].class));
-        arrayCloneMethods.put(JavaKind.Object, getCloneMethod("objectArrayClone", Object[].class));
-    }
+        final EnumMap<JavaKind, SnippetInfo> arrayCloneMethods = new EnumMap<>(JavaKind.class);
 
-    private static Method getCloneMethod(String name, Class<?> param) {
-        try {
-            return ObjectCloneSnippets.class.getDeclaredMethod(name, param);
-        } catch (SecurityException | NoSuchMethodException e) {
-            throw new GraalError(e);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
+            arrayCloneMethods.put(JavaKind.Boolean, snippet(ObjectCloneSnippets.class, "booleanArrayClone"));
+            arrayCloneMethods.put(JavaKind.Byte, snippet(ObjectCloneSnippets.class, "byteArrayClone"));
+            arrayCloneMethods.put(JavaKind.Char, snippet(ObjectCloneSnippets.class, "charArrayClone"));
+            arrayCloneMethods.put(JavaKind.Short, snippet(ObjectCloneSnippets.class, "shortArrayClone"));
+            arrayCloneMethods.put(JavaKind.Int, snippet(ObjectCloneSnippets.class, "intArrayClone"));
+            arrayCloneMethods.put(JavaKind.Float, snippet(ObjectCloneSnippets.class, "floatArrayClone"));
+            arrayCloneMethods.put(JavaKind.Long, snippet(ObjectCloneSnippets.class, "longArrayClone"));
+            arrayCloneMethods.put(JavaKind.Double, snippet(ObjectCloneSnippets.class, "doubleArrayClone"));
+            arrayCloneMethods.put(JavaKind.Object, snippet(ObjectCloneSnippets.class, "objectArrayClone"));
         }
     }
 

@@ -27,6 +27,8 @@ import sun.security.util.math.*;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Arithmetic in the field of integers modulo a prime value implemented using
@@ -171,6 +173,13 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
         }
 
         @Override
+        public void conditionalSet(IntegerModuloP b, int set) {
+            if (set == 1) {
+                v = b.asBigInteger();
+            }
+        }
+
+        @Override
         public void conditionalSwapWith(MutableIntegerModuloP b, int swap) {
             if (swap == 1) {
                 BigInteger temp = v;
@@ -241,6 +250,18 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
         public MutableElement setDifference(IntegerModuloP b) {
             Element other = (Element) b;
             v = v.subtract(other.v).mod(getSize());
+            return this;
+        }
+
+        @Override
+        public MutableElement setAdditiveInverse() {
+            v = BigInteger.ZERO.subtract(v);
+            return this;
+        }
+
+        @Override
+        public MutableElement setReduced() {
+            // do nothing
             return this;
         }
 

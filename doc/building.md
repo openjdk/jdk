@@ -918,7 +918,7 @@ targets are given, a native toolchain for the current platform will be
 created. Currently, at least the following targets are known to work:
 
  Supported devkit targets
- ------------------------
+ -------------------------
  x86_64-linux-gnu
  aarch64-linux-gnu
  arm-linux-gnueabihf
@@ -1129,13 +1129,13 @@ without additional cleanup.
 
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        `CC`                      `CXX`                       `--arch=...` `--openjdk-target=...`
-  ------------  ------------------------- --------------------------- ------------ ----------------------
-  x86           default                   default                     i386         i386-linux-gnu
-  armhf         gcc-arm-linux-gnueabihf   g++-arm-linux-gnueabihf     armhf        arm-linux-gnueabihf
-  aarch64       gcc-aarch64-linux-gnu     g++-aarch64-linux-gnu       arm64        aarch64-linux-gnu
-  ppc64el       gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu   ppc64el      powerpc64le-linux-gnu
-  s390x         gcc-s390x-linux-gnu       g++-s390x-linux-gnu         s390x        s390x-linux-gnu
+  Target        `CC`                      `CXX`                       `--arch=...`  `--openjdk-target=...`
+  ------------  ------------------------- --------------------------- ------------- -----------------------
+  x86           default                   default                     i386          i386-linux-gnu
+  armhf         gcc-arm-linux-gnueabihf   g++-arm-linux-gnueabihf     armhf         arm-linux-gnueabihf
+  aarch64       gcc-aarch64-linux-gnu     g++-aarch64-linux-gnu       arm64         aarch64-linux-gnu
+  ppc64el       gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu   ppc64el       powerpc64le-linux-gnu
+  s390x         gcc-s390x-linux-gnu       g++-s390x-linux-gnu         s390x         s390x-linux-gnu
 
 Additional architectures might be supported by Debian/Ubuntu Ports.
 

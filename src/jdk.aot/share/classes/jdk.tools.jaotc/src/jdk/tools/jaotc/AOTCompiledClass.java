@@ -333,8 +333,7 @@ final class AOTCompiledClass {
         AOTKlassData data = klassData.get(name);
         if (data != null) {
             HotSpotResolvedObjectType oldType = data.getType();
-            assert oldType == type : "duplicate classes for name " + type.getName() + ", fingerprints old: " + oldType.getFingerprint() + ", new: " + type.getFingerprint() +
-                            ", klass pointers old: " + oldType.klass() + ", new: " + type.klass();
+            assert oldType.equals(type) : "duplicate classes for name " + type.getName();
         }
         return data;
     }

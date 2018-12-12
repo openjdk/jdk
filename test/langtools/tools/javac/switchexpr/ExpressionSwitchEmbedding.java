@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8214031
+ * @bug 8214031 8214114
  * @summary Verify switch expressions embedded in various statements work properly.
  * @compile --enable-preview -source 12 ExpressionSwitchEmbedding.java
  * @run main/othervm --enable-preview ExpressionSwitchEmbedding
@@ -66,6 +66,50 @@ public class ExpressionSwitchEmbedding {
         {
             int i = 6;
             int o = 0;
+            while (switch (i) {
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 3, 4:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        if (i == 2 || i == 4) {
+                            try {
+                                break switch (i) {
+                                    case 2 -> throw new ResultException(true);
+                                    case 4 -> false;
+                                    default -> throw new IllegalStateException();
+                                };
+                            } catch (ResultException ex) {
+                                break ex.result;
+                            }
+                        } else {
+                            break true;
+                        }
+                    }
+                default:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        break switch (i) {
+                            case -1 -> false;
+                            case 3 -> true;
+                            default -> true;
+                        };
+                    }
+                    throw new AssertionError();
+            }) {
+                o++;
+            }
+            if (o != 6 && i >= 0) {
+                throw new IllegalStateException();
+            }
+        }
+        {
+            int i = 6;
+            int o = 0;
             if (switch (i) {
                 case 1: i = 0; break true;
                 case 2: i = 1; break true;
@@ -84,6 +128,50 @@ public class ExpressionSwitchEmbedding {
                     case 3 -> true;
                     default -> true;
                 };
+            }) {
+                o++;
+            }
+            if (o != 1 && i != 5) {
+                throw new IllegalStateException();
+            }
+        }
+        {
+            int i = 6;
+            int o = 0;
+            if (switch (i) {
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 3, 4:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        if (i == 2 || i == 4) {
+                            try {
+                                break switch (i) {
+                                    case 2 -> throw new ResultException(true);
+                                    case 4 -> false;
+                                    default -> throw new IllegalStateException();
+                                };
+                            } catch (ResultException ex) {
+                                break ex.result;
+                            }
+                        } else {
+                            break true;
+                        }
+                    }
+                default:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        break switch (i) {
+                            case -1 -> false;
+                            case 3 -> true;
+                            default -> true;
+                        };
+                    }
+                    throw new AssertionError();
             }) {
                 o++;
             }
@@ -119,6 +207,49 @@ public class ExpressionSwitchEmbedding {
             }
         }
         {
+            int o = 0;
+            for (int i = 6; (switch (i) {
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 3, 4:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        if (i == 2 || i == 4) {
+                            try {
+                                break switch (i) {
+                                    case 2 -> throw new ResultException(true);
+                                    case 4 -> false;
+                                    default -> throw new IllegalStateException();
+                                };
+                            } catch (ResultException ex) {
+                                break ex.result;
+                            }
+                        } else {
+                            break true;
+                        }
+                    }
+                default:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        break switch (i) {
+                            case -1 -> false;
+                            case 3 -> true;
+                            default -> true;
+                        };
+                    }
+                    throw new AssertionError();
+            }); ) {
+                o++;
+            }
+            if (o != 6) {
+                throw new IllegalStateException();
+            }
+        }
+        {
             int i = 6;
             int o = 0;
             do {
@@ -146,6 +277,60 @@ public class ExpressionSwitchEmbedding {
                 throw new IllegalStateException();
             }
         }
+        {
+            int i = 6;
+            int o = 0;
+            do {
+                o++;
+            } while (switch (i) {
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 3, 4:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        if (i == 2 || i == 4) {
+                            try {
+                                break switch (i) {
+                                    case 2 -> throw new ResultException(true);
+                                    case 4 -> false;
+                                    default -> throw new IllegalStateException();
+                                };
+                            } catch (ResultException ex) {
+                                break ex.result;
+                            }
+                        } else {
+                            break true;
+                        }
+                    }
+                default:
+                    try {
+                        new ExpressionSwitchEmbedding().throwException();
+                    } catch (Throwable t) {
+                        i--;
+                        break switch (i) {
+                            case -1 -> false;
+                            case 3 -> true;
+                            default -> true;
+                        };
+                    }
+                    throw new AssertionError();
+            });
+            if (o != 6 && i >= 0) {
+                throw new IllegalStateException();
+            }
+        }
     }
 
+    private void throwException() {
+        throw new RuntimeException();
+    }
+
+    private static final class ResultException extends RuntimeException {
+        public final boolean result;
+        public ResultException(boolean result) {
+            this.result = result;
+        }
+    }
 }

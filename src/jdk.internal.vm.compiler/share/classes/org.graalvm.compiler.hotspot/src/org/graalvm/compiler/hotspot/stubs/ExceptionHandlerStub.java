@@ -87,17 +87,17 @@ public class ExceptionHandlerStub extends SnippetStub {
             return providers.getRegisters().getThreadRegister();
         }
         assert index == 3;
-        return options;
+        return StubOptions.TraceExceptionHandlerStub.getValue(options);
     }
 
     @Snippet
-    private static void exceptionHandler(Object exception, Word exceptionPc, @ConstantParameter Register threadRegister, @ConstantParameter OptionValues options) {
+    private static void exceptionHandler(Object exception, Word exceptionPc, @ConstantParameter Register threadRegister, @ConstantParameter boolean logging) {
         Word thread = registerAsWord(threadRegister);
         checkNoExceptionInThread(thread, assertionsEnabled(INJECTED_VMCONFIG));
         checkExceptionNotNull(assertionsEnabled(INJECTED_VMCONFIG), exception);
         writeExceptionOop(thread, exception);
         writeExceptionPc(thread, exceptionPc);
-        if (logging(options)) {
+        if (logging) {
             printf("handling exception %p (", Word.objectToTrackedPointer(exception).rawValue());
             decipher(Word.objectToTrackedPointer(exception).rawValue());
             printf(") at %p (", exceptionPc.rawValue());
@@ -110,7 +110,7 @@ public class ExceptionHandlerStub extends SnippetStub {
 
         Word handlerPc = exceptionHandlerForPc(EXCEPTION_HANDLER_FOR_PC, thread);
 
-        if (logging(options)) {
+        if (logging) {
             printf("handler for exception %p at %p is at %p (", Word.objectToTrackedPointer(exception).rawValue(), exceptionPc.rawValue(), handlerPc.rawValue());
             decipher(handlerPc.rawValue());
             printf(")\n");
@@ -141,11 +141,6 @@ public class ExceptionHandlerStub extends SnippetStub {
         if (enabled && exception == null) {
             fatal("exception must not be null");
         }
-    }
-
-    @Fold
-    static boolean logging(OptionValues options) {
-        return StubOptions.TraceExceptionHandlerStub.getValue(options);
     }
 
     /**

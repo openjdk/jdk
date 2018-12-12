@@ -23,16 +23,23 @@
 
 /*
  * @test
- * @bug 8181594
+ * @bug 8181594 8208648
  * @summary Test proper operation of integer field arithmetic
  * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial25519 32 0
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial448 56 1
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial1305 16 2
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP256 32 5
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP384 48 6
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP521 66 7
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P256OrderField 32 8
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P384OrderField 48 9
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P521OrderField 66 10
  */
 
 import sun.security.util.math.*;
+import sun.security.util.math.intpoly.*;
 import java.util.function.*;
 
 import java.util.*;
@@ -124,10 +131,8 @@ public class TestIntegerModuloP {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-
         System.out.println("All tests passed");
     }
-
 
     static void assertEqual(IntegerModuloP e1, IntegerModuloP e2) {
 
@@ -301,6 +306,17 @@ public class TestIntegerModuloP {
                 ADD_FUNCTIONS.get(random.nextInt(ADD_FUNCTIONS.size()));
             TestPair<IntegerModuloP> result2 =
                 applyAndCheck(addFunc2, left, right);
+
+            if (elem.test.getField() instanceof IntegerPolynomial) {
+                IntegerPolynomial field =
+                    (IntegerPolynomial) elem.test.getField();
+                int numAdds = field.getMaxAdds();
+                for (int j = 1; j < numAdds; j++) {
+                    ElemFunction addFunc3 = ADD_FUNCTIONS.
+                        get(random.nextInt(ADD_FUNCTIONS.size()));
+                    result2 = applyAndCheck(addFunc3, left, right);
+                }
+            }
 
             ElemFunction multFunc2 =
                 MULT_FUNCTIONS.get(random.nextInt(MULT_FUNCTIONS.size()));

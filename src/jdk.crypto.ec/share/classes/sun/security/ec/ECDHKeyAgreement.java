@@ -25,14 +25,19 @@
 
 package sun.security.ec;
 
+import java.math.*;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Optional;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import sun.security.util.ArrayUtil;
 import sun.security.util.ECUtil;
+import sun.security.util.math.*;
+import sun.security.ec.point.*;
 
 /**
  * KeyAgreement implementation for ECDH.
@@ -44,8 +49,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     // private key, if initialized
     private ECPrivateKey privateKey;
 
-    // encoded public point, non-null between doPhase() & generateSecret() only
-    private byte[] publicValue;
+    // public key, non-null between doPhase() & generateSecret() only
+    private ECPublicKey publicKey;
 
     // length of the secret to be derived
     private int secretLen;
@@ -65,7 +70,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
                         ("Key must be instance of PrivateKey");
         }
         privateKey = (ECPrivateKey) ECKeyFactory.toECKey(key);
-        publicValue = null;
+        publicKey = null;
     }
 
     // see JCE spec
@@ -87,7 +92,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if (privateKey == null) {
             throw new IllegalStateException("Not initialized");
         }
-        if (publicValue != null) {
+        if (publicKey != null) {
             throw new IllegalStateException("Phase already executed");
         }
         if (!lastPhase) {
@@ -99,42 +104,74 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
                 ("Key must be a PublicKey with algorithm EC");
         }
 
-        ECPublicKey ecKey = (ECPublicKey)key;
-        ECParameterSpec params = ecKey.getParams();
+        this.publicKey = (ECPublicKey) key;
 
-        if (ecKey instanceof ECPublicKeyImpl) {
-            publicValue = ((ECPublicKeyImpl)ecKey).getEncodedPublicValue();
-        } else { // instanceof ECPublicKey
-            publicValue =
-                ECUtil.encodePoint(ecKey.getW(), params.getCurve());
-        }
+        ECParameterSpec params = publicKey.getParams();
         int keyLenBits = params.getCurve().getField().getFieldSize();
         secretLen = (keyLenBits + 7) >> 3;
 
         return null;
     }
 
+    private static void validateCoordinate(BigInteger c, BigInteger mod) {
+        if (c.compareTo(BigInteger.ZERO) < 0) {
+            throw new ProviderException("invalid coordinate");
+        }
+
+        if (c.compareTo(mod) >= 0) {
+            throw new ProviderException("invalid coordinate");
+        }
+    }
+
+    /*
+     * Check whether a public key is valid. Throw ProviderException
+     * if it is not valid or could not be validated.
+     */
+    private static void validate(ECOperations ops, ECPublicKey key) {
+
+        // ensure that integers are in proper range
+        BigInteger x = key.getW().getAffineX();
+        BigInteger y = key.getW().getAffineY();
+
+        BigInteger p = ops.getField().getSize();
+        validateCoordinate(x, p);
+        validateCoordinate(y, p);
+
+        // ensure the point is on the curve
+        EllipticCurve curve = key.getParams().getCurve();
+        BigInteger rhs = x.modPow(BigInteger.valueOf(3), p).add(curve.getA()
+            .multiply(x)).add(curve.getB()).mod(p);
+        BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
+        if (!rhs.equals(lhs)) {
+            throw new ProviderException("point is not on curve");
+        }
+
+        // check the order of the point
+        ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
+        ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
+        AffinePoint affP = new AffinePoint(xElem, yElem);
+        byte[] order = key.getParams().getOrder().toByteArray();
+        ArrayUtil.reverse(order);
+        Point product = ops.multiply(affP, order);
+        if (!ops.isNeutral(product)) {
+            throw new ProviderException("point has incorrect order");
+        }
+
+    }
+
     // see JCE spec
     @Override
     protected byte[] engineGenerateSecret() throws IllegalStateException {
-        if ((privateKey == null) || (publicValue == null)) {
+        if ((privateKey == null) || (publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
 
-        byte[] s = privateKey.getS().toByteArray();
-        byte[] encodedParams =                   // DER OID
-            ECUtil.encodeECParameterSpec(null, privateKey.getParams());
-
-        try {
-
-            byte[] result = deriveKey(s, publicValue, encodedParams);
-            publicValue = null;
-            return result;
-
-        } catch (GeneralSecurityException e) {
-            throw new ProviderException("Could not derive key", e);
-        }
-
+        Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
+        byte[] result = resultOpt.orElseGet(
+            () -> deriveKeyNative(privateKey, publicKey)
+        );
+        publicKey = null;
+        return result;
     }
 
     // see JCE spec
@@ -143,7 +180,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             offset) throws IllegalStateException, ShortBufferException {
         if (offset + secretLen > sharedSecret.length) {
             throw new ShortBufferException("Need " + secretLen
-                + " bytes, only " + (sharedSecret.length - offset) + " available");
+                + " bytes, only " + (sharedSecret.length - offset)
+                + " available");
         }
         byte[] secret = engineGenerateSecret();
         System.arraycopy(secret, 0, sharedSecret, offset, secret.length);
@@ -164,6 +202,78 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         }
         return new SecretKeySpec(engineGenerateSecret(), "TlsPremasterSecret");
     }
+
+    private static
+    Optional<byte[]> deriveKeyImpl(ECPrivateKey priv, ECPublicKey pubKey) {
+
+        ECParameterSpec ecSpec = priv.getParams();
+        EllipticCurve curve = ecSpec.getCurve();
+        Optional<ECOperations> opsOpt = ECOperations.forParameters(ecSpec);
+        if (opsOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        ECOperations ops = opsOpt.get();
+        if (! (priv instanceof ECPrivateKeyImpl)) {
+            return Optional.empty();
+        }
+        ECPrivateKeyImpl privImpl = (ECPrivateKeyImpl) priv;
+        byte[] sArr = privImpl.getArrayS();
+
+        // to match the native implementation, validate the public key here
+        // and throw ProviderException if it is invalid
+        validate(ops, pubKey);
+
+        IntegerFieldModuloP field = ops.getField();
+        // convert s array into field element and multiply by the cofactor
+        MutableIntegerModuloP scalar = field.getElement(sArr).mutable();
+        SmallValue cofactor =
+            field.getSmallValue(priv.getParams().getCofactor());
+        scalar.setProduct(cofactor);
+        int keySize = (curve.getField().getFieldSize() + 7) / 8;
+        byte[] privArr = scalar.asByteArray(keySize);
+
+        ImmutableIntegerModuloP x =
+            field.getElement(pubKey.getW().getAffineX());
+        ImmutableIntegerModuloP y =
+            field.getElement(pubKey.getW().getAffineY());
+        AffinePoint affPub = new AffinePoint(x, y);
+        Point product = ops.multiply(affPub, privArr);
+        if (ops.isNeutral(product)) {
+            throw new ProviderException("Product is zero");
+        }
+        AffinePoint affProduct = product.asAffine();
+
+        byte[] result = affProduct.getX().asByteArray(keySize);
+        ArrayUtil.reverse(result);
+
+        return Optional.of(result);
+    }
+
+    private static
+    byte[] deriveKeyNative(ECPrivateKey privateKey, ECPublicKey publicKey) {
+
+        ECParameterSpec params = privateKey.getParams();
+        byte[] s = privateKey.getS().toByteArray();
+        byte[] encodedParams =                   // DER OID
+            ECUtil.encodeECParameterSpec(null, params);
+
+        byte[] publicValue;
+        if (publicKey instanceof ECPublicKeyImpl) {
+            ECPublicKeyImpl ecPub = (ECPublicKeyImpl) publicKey;
+            publicValue = ecPub.getEncodedPublicValue();
+        } else { // instanceof ECPublicKey
+            publicValue =
+                ECUtil.encodePoint(publicKey.getW(), params.getCurve());
+        }
+
+        try {
+            return deriveKey(s, publicValue, encodedParams);
+
+        } catch (GeneralSecurityException e) {
+            throw new ProviderException("Could not derive key", e);
+        }
+    }
+
 
     /**
      * Generates a secret key using the public and private keys.

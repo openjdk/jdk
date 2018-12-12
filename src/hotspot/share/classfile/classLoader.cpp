@@ -363,6 +363,13 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   }
 }
 
+void ClassPathImageEntry::close_jimage() {
+  if (_jimage != NULL) {
+    (*JImageClose)(_jimage);
+    _jimage = NULL;
+  }
+}
+
 ClassPathImageEntry::ClassPathImageEntry(JImageFile* jimage, const char* name) :
   ClassPathEntry(),
   _jimage(jimage) {
@@ -614,6 +621,12 @@ void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
 void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
   update_module_path_entry_list(path, THREAD);
 }
+
+void ClassLoader::close_jrt_image() {
+  assert(ClassLoader::has_jrt_entry(), "Not applicable for exploded builds");
+  _jrt_entry->close_jimage();
+}
+
 #endif // INCLUDE_CDS
 
 // Construct the array of module/path pairs as specified to --patch-module

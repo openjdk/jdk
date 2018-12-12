@@ -81,6 +81,7 @@ public:
   static void load_barrier_on_oop_fields(oop o);
   static  oop load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o);
   static  oop load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o);
+  static void load_barrier_on_root_oop_field(oop* p);
 
   // Weak load barrier
   static oop weak_load_barrier_on_oop_field(volatile oop* p);
@@ -99,6 +100,7 @@ public:
   // Keep alive barrier
   static void keep_alive_barrier_on_weak_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_oop_field(volatile oop* p);
+  static void keep_alive_barrier_on_phantom_root_oop_field(oop* p);
 
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
