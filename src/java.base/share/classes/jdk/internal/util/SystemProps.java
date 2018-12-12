@@ -26,7 +26,8 @@ package jdk.internal.util;
 
 
 import java.lang.annotation.Native;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * System Property initialization for internal use only
@@ -47,12 +48,13 @@ public final class SystemProps {
      *
      * @return a Properties instance initialized with all of the properties
      */
-    public static Properties initProperties() {
+    public static Map<String, String> initProperties() {
+
         // Initially, cmdProperties only includes -D and props from the VM
         Raw raw = new Raw();
-        Properties props = raw.cmdProperties();
+        HashMap<String, String> props = raw.cmdProperties();
 
-        String javaHome = props.getProperty("java.home");
+        String javaHome = props.get("java.home");
         assert javaHome != null : "java.home not set";
 
         putIfAbsent(props, "user.home", raw.propDefault(Raw._user_home_NDX));
@@ -120,7 +122,7 @@ public final class SystemProps {
      * @param key the key
      * @param value the value
      */
-    private static void put(Properties props, String key, String value) {
+    private static void put(HashMap<String, String> props, String key, String value) {
         if (value != null) {
             props.put(key, value);
         }
@@ -132,7 +134,7 @@ public final class SystemProps {
      * @param key the key
      * @param value the value
      */
-    private static void putIfAbsent(Properties props, String key, String value) {
+    private static void putIfAbsent(HashMap<String, String> props, String key, String value) {
         if (value != null) {
             props.putIfAbsent(key, value);
         }
@@ -147,10 +149,12 @@ public final class SystemProps {
      * @param display the display value for the base
      * @param format the format value for the base
      */
-    private static void fillI18nProps(Properties cmdProps, String base, String display,
+    private static void fillI18nProps(HashMap<String, String> cmdProps,
+                                      String base,
+                                      String display,
                                       String format) {
         // Do not override command line setting
-        String baseValue = cmdProps.getProperty(base);
+        String baseValue = cmdProps.get(base);
         if (baseValue != null) {
             return;     // Do not override value from the command line
         }
@@ -163,7 +167,7 @@ public final class SystemProps {
 
         /* user.xxx.display property */
         String disp = base.concat(".display");
-        String dispValue = cmdProps.getProperty(disp);
+        String dispValue = cmdProps.get(disp);
         if (dispValue == null && display != null && !display.equals(baseValue)) {
             // Create the property only if different from the base property
             cmdProps.put(disp, display);
@@ -171,7 +175,7 @@ public final class SystemProps {
 
         /* user.xxx.format property */
         String fmt = base.concat(".format");
-        String fmtValue = cmdProps.getProperty(fmt);
+        String fmtValue = cmdProps.get(fmt);
         if (fmtValue == null && format != null && !format.equals(baseValue)) {
             // Create the property only if different than the base property
             cmdProps.put(fmt, format);
@@ -253,15 +257,17 @@ public final class SystemProps {
          *
          * @return return a Properties instance of the command line and VM options
          */
-        private Properties cmdProperties() {
+        private HashMap<String, String> cmdProperties() {
             String[] vmProps = vmProperties();
-            int nProps = vmProps.length / 2;
-            var cmdProps = new Properties(nProps + Raw.FIXED_LENGTH);
-            for (int i = 0; i < nProps; i++) {
-                String k = vmProps[i * 2];
+            // While optimal initialCapacity here would be the exact number of properties
+            // divided by LOAD_FACTOR, a large portion of the properties in Raw are
+            // usually not set, so for typical cases the chosen capacity avoids resizing
+            var cmdProps = new HashMap<String, String>((vmProps.length / 2) + Raw.FIXED_LENGTH);
+            for (int i = 0; i < vmProps.length;) {
+                String k = vmProps[i++];
                 if (k != null) {
-                    String v = vmProps[i * 2 + 1];
-                    cmdProps.setProperty(k, v != null ? v : "");
+                    String v = vmProps[i++];
+                    cmdProps.put(k, v != null ? v : "");
                 } else {
                     // no more key/value pairs
                     break;

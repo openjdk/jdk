@@ -28,8 +28,8 @@ package java.lang;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 class VersionProps {
 
@@ -88,25 +88,25 @@ class VersionProps {
     /**
      * Initialize system properties using build provided values.
      *
-     * @param props Properties instance in which to insert the properties
+     * @param props Map instance in which to insert the properties
      */
-    public static void init(Properties props) {
-        props.setProperty("java.version", java_version);
-        props.setProperty("java.version.date", java_version_date);
-        props.setProperty("java.runtime.version", java_runtime_version);
-        props.setProperty("java.runtime.name", java_runtime_name);
+    public static void init(Map<String, String> props) {
+        props.put("java.version", java_version);
+        props.put("java.version.date", java_version_date);
+        props.put("java.runtime.version", java_runtime_version);
+        props.put("java.runtime.name", java_runtime_name);
         if (VENDOR_VERSION_STRING.length() > 0)
-            props.setProperty("java.vendor.version", VENDOR_VERSION_STRING);
+            props.put("java.vendor.version", VENDOR_VERSION_STRING);
 
-        props.setProperty("java.class.version", CLASSFILE_MAJOR_MINOR);
+        props.put("java.class.version", CLASSFILE_MAJOR_MINOR);
 
-        props.setProperty("java.specification.version", VERSION_SPECIFICATION);
-        props.setProperty("java.specification.name", "Java Platform API Specification");
-        props.setProperty("java.specification.vendor", "Oracle Corporation");
+        props.put("java.specification.version", VERSION_SPECIFICATION);
+        props.put("java.specification.name", "Java Platform API Specification");
+        props.put("java.specification.vendor", "Oracle Corporation");
 
-        props.setProperty("java.vendor", VENDOR);
-        props.setProperty("java.vendor.url", VENDOR_URL);
-        props.setProperty("java.vendor.url.bug", VENDOR_URL_BUG);
+        props.put("java.vendor", VENDOR);
+        props.put("java.vendor.url", VENDOR_URL);
+        props.put("java.vendor.url.bug", VENDOR_URL_BUG);
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {
