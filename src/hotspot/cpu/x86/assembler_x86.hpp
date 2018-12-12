@@ -2055,6 +2055,7 @@ private:
   void vpsllw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpslld(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsllq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpslldq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
 
   // Logical shift right packed integers
   void psrlw(XMMRegister dst, int shift);
@@ -2069,6 +2070,7 @@ private:
   void vpsrlw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsrld(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsrlq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpsrldq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
   void evpsrlvw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpsllvw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 

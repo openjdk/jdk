@@ -124,10 +124,10 @@ final class GHASH {
 
     }
 
-    /* subkeyH and state are stored in long[] for GHASH intrinsic use */
+    /* subkeyHtbl and state are stored in long[] for GHASH intrinsic use */
 
-    // hash subkey H; should not change after the object has been constructed
-    private final long[] subkeyH;
+    // hashtable subkeyHtbl; holds 2*9 powers of subkeyH computed using carry-less multiplication
+    private long[] subkeyHtbl;
 
     // buffer for storing hash
     private final long[] state;
@@ -149,9 +149,9 @@ final class GHASH {
             throw new ProviderException("Internal error");
         }
         state = new long[2];
-        this.subkeyH = new long[2];
-        this.subkeyH[0] = getLong(subkeyH, 0);
-        this.subkeyH[1] = getLong(subkeyH, 8);
+        subkeyHtbl = new long[2*9];
+        subkeyHtbl[0] = getLong(subkeyH, 0);
+        subkeyHtbl[1] = getLong(subkeyH, 8);
     }
 
     /**
@@ -194,8 +194,8 @@ final class GHASH {
         if (inLen == 0) {
             return;
         }
-        ghashRangeCheck(in, inOfs, inLen, state, subkeyH);
-        processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyH);
+        ghashRangeCheck(in, inOfs, inLen, state, subkeyHtbl);
+        processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyHtbl);
     }
 
     private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {
@@ -219,8 +219,8 @@ final class GHASH {
             throw new RuntimeException("internal state has invalid length: " +
                                        st.length);
         }
-        if (subH.length != 2) {
-            throw new RuntimeException("internal subkeyH has invalid length: " +
+        if (subH.length != 18) {
+            throw new RuntimeException("internal subkeyHtbl has invalid length: " +
                                        subH.length);
         }
     }

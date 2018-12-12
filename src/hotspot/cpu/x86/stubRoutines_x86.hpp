@@ -128,6 +128,8 @@ class x86 {
   // swap mask for ghash
   static address _ghash_long_swap_mask_addr;
   static address _ghash_byte_swap_mask_addr;
+  static address _ghash_poly_addr;
+  static address _ghash_shuffmask_addr;
 
   // upper word mask for sha1
   static address _upper_word_mask_addr;
@@ -205,6 +207,8 @@ class x86 {
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
+  static address ghash_shufflemask_addr() { return _ghash_shuffmask_addr; }
+  static address ghash_polynomial_addr() { return _ghash_poly_addr; }
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }
