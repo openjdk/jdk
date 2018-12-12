@@ -51,6 +51,7 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
 
 void* VtableStub::operator new(size_t size, int code_size) throw() {
+  assert_lock_strong(VtableStubs_lock);
   assert(size == sizeof(VtableStub), "mismatched size");
   // compute real VtableStub size (rounded to nearest word)
   const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
@@ -208,31 +209,35 @@ void VtableStubs::bookkeeping(MacroAssembler* masm, outputStream* out, VtableStu
 address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
   assert(vtable_index >= 0, "must be positive");
 
-  VtableStub* s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;
-  if (s == NULL) {
-    if (is_vtable_stub) {
-      s = create_vtable_stub(vtable_index);
-    } else {
-      s = create_itable_stub(vtable_index);
-    }
-
-    // Creation of vtable or itable can fail if there is not enough free space in the code cache.
+  VtableStub* s;
+  {
+    MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
+    s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;
     if (s == NULL) {
-      return NULL;
-    }
+      if (is_vtable_stub) {
+        s = create_vtable_stub(vtable_index);
+      } else {
+        s = create_itable_stub(vtable_index);
+      }
 
-    enter(is_vtable_stub, vtable_index, s);
-    if (PrintAdapterHandlers) {
-      tty->print_cr("Decoding VtableStub %s[%d]@" INTX_FORMAT,
-                    is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()));
-      Disassembler::decode(s->code_begin(), s->code_end());
-    }
-    // Notify JVMTI about this stub. The event will be recorded by the enclosing
-    // JvmtiDynamicCodeEventCollector and posted when this thread has released
-    // all locks.
-    if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
-                                                                   s->code_begin(), s->code_end());
+      // Creation of vtable or itable can fail if there is not enough free space in the code cache.
+      if (s == NULL) {
+        return NULL;
+      }
+
+      enter(is_vtable_stub, vtable_index, s);
+      if (PrintAdapterHandlers) {
+        tty->print_cr("Decoding VtableStub %s[%d]@" INTX_FORMAT,
+                      is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()));
+        Disassembler::decode(s->code_begin(), s->code_end());
+      }
+      // Notify JVMTI about this stub. The event will be recorded by the enclosing
+      // JvmtiDynamicCodeEventCollector and posted when this thread has released
+      // all locks.
+      if (JvmtiExport::should_post_dynamic_code_generated()) {
+        JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
+                                                                     s->code_begin(), s->code_end());
+      }
     }
   }
   return s->entry_point();
@@ -247,7 +252,7 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
 
 
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
-  MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
+  assert_lock_strong(VtableStubs_lock);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
   VtableStub* s = _table[hash];
   while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
@@ -256,7 +261,7 @@ VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
 
 
 void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
-  MutexLockerEx ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
+  assert_lock_strong(VtableStubs_lock);
   assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
   unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
   // enter s at the beginning of the corresponding list
