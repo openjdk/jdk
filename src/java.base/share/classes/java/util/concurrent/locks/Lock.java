@@ -122,7 +122,7 @@ import java.util.concurrent.TimeUnit;
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
  * lock, as described in
- * <a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4">
+ * <a href="https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.4">
  * Chapter 17 of
  * <cite>The Java&trade; Language Specification</cite></a>:
  * <ul>
