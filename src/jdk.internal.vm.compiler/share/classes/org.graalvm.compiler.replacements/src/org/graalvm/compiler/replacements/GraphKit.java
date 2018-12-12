@@ -83,6 +83,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
 
 /**
@@ -218,11 +219,12 @@ public class GraphKit implements GraphBuilderTool {
     }
 
     public ResolvedJavaMethod findMethod(Class<?> declaringClass, String name, boolean isStatic) {
+        ResolvedJavaType type = providers.getMetaAccess().lookupJavaType(declaringClass);
         ResolvedJavaMethod method = null;
-        for (Method m : declaringClass.getDeclaredMethods()) {
+        for (ResolvedJavaMethod m : type.getDeclaredMethods()) {
             if (Modifier.isStatic(m.getModifiers()) == isStatic && m.getName().equals(name)) {
                 assert method == null : "found more than one method in " + declaringClass + " named " + name;
-                method = providers.getMetaAccess().lookupJavaMethod(m);
+                method = m;
             }
         }
         GraalError.guarantee(method != null, "Could not find %s.%s (%s)", declaringClass, name, isStatic ? "static" : "non-static");
@@ -356,7 +358,8 @@ public class GraphKit implements GraphBuilderTool {
         Plugins plugins = new Plugins(graphBuilderPlugins);
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
 
-        StructuredGraph calleeGraph = new StructuredGraph.Builder(invoke.getOptions(), invoke.getDebug()).method(method).trackNodeSourcePosition(invoke.graph().trackNodeSourcePosition()).build();
+        StructuredGraph calleeGraph = new StructuredGraph.Builder(invoke.getOptions(), invoke.getDebug()).method(method).trackNodeSourcePosition(
+                        invoke.graph().trackNodeSourcePosition()).setIsSubstitution(true).build();
         IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getDefaultReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
         GraphBuilderPhase.Instance instance = createGraphBuilderInstance(metaAccess, providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
                         OptimisticOptimizations.NONE,

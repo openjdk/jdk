@@ -24,11 +24,14 @@
 
 package org.graalvm.compiler.hotspot.stubs;
 
+import static jdk.vm.ci.code.BytecodeFrame.UNKNOWN_BCI;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCallee;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
+import static org.graalvm.compiler.nodes.CallTargetNode.InvokeKind.Static;
+import static org.graalvm.compiler.nodes.ConstantNode.forBoolean;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -43,10 +46,10 @@ import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkageImpl;
+import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
-import org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil;
-import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.hotspot.stubs.ForeignCallSnippets.Templates;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -76,8 +79,8 @@ import jdk.vm.ci.meta.Signature;
  * deoptimization while the call is in progress. And since these are foreign/runtime calls on slow
  * paths, we don't want to force the register allocator to spill around the call. As such, this stub
  * saves and restores all allocatable registers. It also
- * {@linkplain StubUtil#handlePendingException(Word, boolean, boolean) handles} any exceptions
- * raised during the foreign call.
+ * {@linkplain ForeignCallSnippets#handlePendingException handles} any exceptions raised during the
+ * foreign call.
  */
 public class ForeignCallStub extends Stub {
 
@@ -112,9 +115,10 @@ public class ForeignCallStub extends Stub {
                         PRESERVES_REGISTERS, JavaCall, JavaCallee, transition, reexecutability, killedLocations));
         this.jvmciRuntime = runtime;
         this.prependThread = prependThread;
+        MetaAccessProvider metaAccess = providers.getMetaAccess();
         Class<?>[] targetParameterTypes = createTargetParameters(descriptor);
         ForeignCallDescriptor targetSig = new ForeignCallDescriptor(descriptor.getName() + ":C", descriptor.getResultType(), targetParameterTypes);
-        target = HotSpotForeignCallLinkageImpl.create(providers.getMetaAccess(), providers.getCodeCache(), providers.getWordTypes(), providers.getForeignCalls(), targetSig, address,
+        target = HotSpotForeignCallLinkageImpl.create(metaAccess, providers.getCodeCache(), providers.getWordTypes(), providers.getForeignCalls(), targetSig, address,
                         DESTROYS_REGISTERS, NativeCall, NativeCall, transition, reexecutability, killedLocations);
     }
 
@@ -234,16 +238,21 @@ public class ForeignCallStub extends Stub {
         // Do we want to clear the pending exception?
         boolean shouldClearException = linkage.isReexecutable() || linkage.isReexecutableOnlyAfterException();
         try {
-            ResolvedJavaMethod thisMethod = providers.getMetaAccess().lookupJavaMethod(ForeignCallStub.class.getDeclaredMethod("getGraph", DebugContext.class, CompilationIdentifier.class));
+            HotSpotLoweringProvider lowerer = (HotSpotLoweringProvider) providers.getLowerer();
+            Templates foreignCallSnippets = lowerer.getForeignCallSnippets();
+            ResolvedJavaMethod handlePendingException = foreignCallSnippets.handlePendingException.getMethod();
+            ResolvedJavaMethod getAndClearObjectResult = foreignCallSnippets.getAndClearObjectResult.getMethod();
+            ResolvedJavaMethod verifyObject = foreignCallSnippets.verifyObject.getMethod();
+            ResolvedJavaMethod thisMethod = getGraphMethod();
             GraphKit kit = new GraphKit(debug, thisMethod, providers, wordTypes, providers.getGraphBuilderPlugins(), compilationId, toString());
             StructuredGraph graph = kit.getGraph();
             ParameterNode[] params = createParameters(kit, args);
             ReadRegisterNode thread = kit.append(new ReadRegisterNode(providers.getRegisters().getThreadRegister(), wordTypes.getWordKind(), true, false));
             ValueNode result = createTargetCall(kit, params, thread);
-            kit.createInvoke(StubUtil.class, "handlePendingException", thread, ConstantNode.forBoolean(shouldClearException, graph), ConstantNode.forBoolean(isObjectResult, graph));
+            createStaticInvoke(kit, handlePendingException, thread, forBoolean(shouldClearException, graph), forBoolean(isObjectResult, graph));
             if (isObjectResult) {
-                InvokeNode object = kit.createInvoke(HotSpotReplacementsUtil.class, "getAndClearObjectResult", thread);
-                result = kit.createInvoke(StubUtil.class, "verifyObject", object);
+                InvokeNode object = createStaticInvoke(kit, getAndClearObjectResult, thread);
+                result = createStaticInvoke(kit, verifyObject, object);
             }
             kit.append(new ReturnNode(linkage.getDescriptor().getResultType() == void.class ? null : result));
             debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Initial stub graph");
@@ -256,6 +265,27 @@ public class ForeignCallStub extends Stub {
         } catch (Exception e) {
             throw GraalError.shouldNotReachHere(e);
         }
+    }
+
+    private static InvokeNode createStaticInvoke(GraphKit kit, ResolvedJavaMethod method, ValueNode... args) {
+        return kit.createInvoke(method, Static, null, UNKNOWN_BCI, args);
+    }
+
+    private ResolvedJavaMethod getGraphMethod() {
+        ResolvedJavaMethod thisMethod = null;
+        for (ResolvedJavaMethod method : providers.getMetaAccess().lookupJavaType(ForeignCallStub.class).getDeclaredMethods()) {
+            if (method.getName().equals("getGraph")) {
+                if (thisMethod == null) {
+                    thisMethod = method;
+                } else {
+                    throw new InternalError("getGraph is ambiguous");
+                }
+            }
+        }
+        if (thisMethod == null) {
+            throw new InternalError("Can't find getGraph");
+        }
+        return thisMethod;
     }
 
     private ParameterNode[] createParameters(GraphKit kit, Class<?>[] args) {

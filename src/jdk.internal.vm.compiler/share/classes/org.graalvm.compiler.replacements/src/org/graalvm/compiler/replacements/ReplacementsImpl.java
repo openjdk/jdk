@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.replacements;
 
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.UseSnippetGraphCache;
 import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
@@ -72,6 +73,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedInvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -98,7 +100,16 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
     protected final OptionValues options;
-    public final Providers providers;
+
+    public Providers getProviders() {
+        return providers;
+    }
+
+    public void setProviders(Providers providers) {
+        this.providers = providers.copyWith(this);
+    }
+
+    protected Providers providers;
     public final SnippetReflectionProvider snippetReflection;
     public final TargetDescription target;
     private GraphBuilderConfiguration.Plugins graphBuilderPlugins;
@@ -130,12 +141,15 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
         return graphBuilderPlugins;
     }
 
-    protected boolean hasGeneratedInvocationPluginAnnotation(ResolvedJavaMethod method) {
-        return method.getAnnotation(Node.NodeIntrinsic.class) != null || method.getAnnotation(Fold.class) != null;
-    }
-
-    protected boolean hasGenericInvocationPluginAnnotation(ResolvedJavaMethod method) {
-        return method.getAnnotation(Word.Operation.class) != null;
+    @Override
+    public Class<? extends GraphBuilderPlugin> getIntrinsifyingPlugin(ResolvedJavaMethod method) {
+        if (method.getAnnotation(Node.NodeIntrinsic.class) != null || method.getAnnotation(Fold.class) != null) {
+            return GeneratedInvocationPlugin.class;
+        }
+        if (method.getAnnotation(Word.Operation.class) != null) {
+            return WordOperationPlugin.class;
+        }
+        return null;
     }
 
     private static final int MAX_GRAPH_INLINING_DEPTH = 100; // more than enough
@@ -163,7 +177,8 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
             // Force inlining when parsing replacements
             return createIntrinsicInlineInfo(method, null, defaultBytecodeProvider);
         } else {
-            assert method.getAnnotation(NodeIntrinsic.class) == null : String.format("@%s method %s must only be called from within a replacement%n%s", NodeIntrinsic.class.getSimpleName(),
+            assert IS_BUILDING_NATIVE_IMAGE || method.getAnnotation(NodeIntrinsic.class) == null : String.format("@%s method %s must only be called from within a replacement%n%s",
+                            NodeIntrinsic.class.getSimpleName(),
                             method.format("%h.%n"), b);
         }
         return null;
@@ -174,13 +189,15 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
         if (b.parsingIntrinsic()) {
             IntrinsicContext intrinsic = b.getIntrinsic();
             if (!intrinsic.isCallToOriginal(method)) {
-                if (hasGeneratedInvocationPluginAnnotation(method)) {
-                    throw new GraalError("%s should have been handled by a %s", method.format("%H.%n(%p)"), GeneratedInvocationPlugin.class.getSimpleName());
+                Class<? extends GraphBuilderPlugin> pluginClass = getIntrinsifyingPlugin(method);
+                if (pluginClass != null) {
+                    String methodDesc = method.format("%H.%n(%p)");
+                    throw new GraalError("Call to %s should have been intrinsified by a %s. " +
+                                    "This is typically caused by Eclipse failing to run an annotation " +
+                                    "processor. This can usually be fixed by forcing Eclipse to rebuild " +
+                                    "the source file in which %s is declared",
+                                    methodDesc, pluginClass.getSimpleName(), methodDesc);
                 }
-                if (hasGenericInvocationPluginAnnotation(method)) {
-                    throw new GraalError("%s should have been handled by %s", method.format("%H.%n(%p)"), WordOperationPlugin.class.getSimpleName());
-                }
-
                 throw new GraalError("All non-recursive calls in the intrinsic %s must be inlined or intrinsified: found call to %s",
                                 intrinsic.getIntrinsicMethod().format("%H.%n(%p)"), method.format("%h.%n(%p)"));
             }
@@ -213,7 +230,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
     private static final AtomicInteger nextDebugContextId = new AtomicInteger();
 
-    protected DebugContext openDebugContext(String idPrefix, ResolvedJavaMethod method) {
+    public DebugContext openDebugContext(String idPrefix, ResolvedJavaMethod method) {
         DebugContext outer = DebugContext.forCurrentThread();
         Description description = new Description(method, idPrefix + nextDebugContextId.incrementAndGet());
         List<DebugHandlersFactory> factories = debugHandlersFactory == null ? Collections.emptyList() : Collections.singletonList(debugHandlersFactory);
@@ -249,7 +266,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
     }
 
     @Override
-    public void registerSnippet(ResolvedJavaMethod method, boolean trackNodeSourcePosition) {
+    public void registerSnippet(ResolvedJavaMethod method, ResolvedJavaMethod original, Object receiver, boolean trackNodeSourcePosition) {
         // No initialization needed as snippet graphs are created on demand in getSnippet
     }
 
@@ -386,7 +403,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
          */
         protected final ResolvedJavaMethod substitutedMethod;
 
-        protected GraphMaker(ReplacementsImpl replacements, ResolvedJavaMethod substitute, ResolvedJavaMethod substitutedMethod) {
+        public GraphMaker(ReplacementsImpl replacements, ResolvedJavaMethod substitute, ResolvedJavaMethod substitutedMethod) {
             this.replacements = replacements;
             this.method = substitute;
             this.substitutedMethod = substitutedMethod;
@@ -488,13 +505,15 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
                 IntrinsicContext initialIntrinsicContext = null;
                 Snippet snippetAnnotation = method.getAnnotation(Snippet.class);
-                if (snippetAnnotation == null) {
+                MethodSubstitution methodAnnotation = method.getAnnotation(MethodSubstitution.class);
+                if (methodAnnotation == null && snippetAnnotation == null) {
                     // Post-parse inlined intrinsic
                     initialIntrinsicContext = new IntrinsicContext(substitutedMethod, method, bytecodeProvider, INLINE_AFTER_PARSING);
                 } else {
                     // Snippet
                     ResolvedJavaMethod original = substitutedMethod != null ? substitutedMethod : method;
-                    initialIntrinsicContext = new IntrinsicContext(original, method, bytecodeProvider, INLINE_AFTER_PARSING, snippetAnnotation.allowPartialIntrinsicArgumentMismatch());
+                    initialIntrinsicContext = new IntrinsicContext(original, method, bytecodeProvider, INLINE_AFTER_PARSING,
+                                    snippetAnnotation != null ? snippetAnnotation.allowPartialIntrinsicArgumentMismatch() : true);
                 }
 
                 createGraphBuilder(metaAccess, replacements.providers.getStampProvider(), replacements.providers.getConstantReflection(), replacements.providers.getConstantFieldProvider(), config,

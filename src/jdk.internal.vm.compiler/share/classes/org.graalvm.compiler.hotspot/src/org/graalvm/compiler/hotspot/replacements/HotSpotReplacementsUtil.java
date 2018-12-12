@@ -27,7 +27,8 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.VERIFY_OOP;
-import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
+
+import java.lang.ref.Reference;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -40,10 +41,10 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.CompressionNode;
+import org.graalvm.compiler.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
@@ -52,6 +53,7 @@ import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.extended.StoreHubNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
 import org.graalvm.compiler.nodes.memory.Access;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
@@ -70,7 +72,10 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 //JaCoCo Exclude
 
@@ -133,6 +138,28 @@ public class HotSpotReplacementsUtil {
         }
     }
 
+    public static ResolvedJavaType methodHolderClass(@Fold.InjectedParameter IntrinsicContext context) {
+        return context.getOriginalMethod().getDeclaringClass();
+    }
+
+    static ResolvedJavaType getType(@Fold.InjectedParameter IntrinsicContext context, String typeName) {
+        try {
+            UnresolvedJavaType unresolved = UnresolvedJavaType.create(typeName);
+            return unresolved.resolve(methodHolderClass(context));
+        } catch (LinkageError e) {
+            throw new GraalError(e);
+        }
+    }
+
+    static int getFieldOffset(ResolvedJavaType type, String fieldName) {
+        for (ResolvedJavaField field : type.getInstanceFields(true)) {
+            if (field.getName().equals(fieldName)) {
+                return field.getOffset();
+            }
+        }
+        throw new GraalError("missing field " + fieldName);
+    }
+
     public static HotSpotJVMCIRuntime runtime() {
         return HotSpotJVMCIRuntime.runtime();
     }
@@ -143,9 +170,8 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    public static GraalHotSpotVMConfig config(@InjectedParameter GraalHotSpotVMConfig config) {
-        assert config != null;
-        return config;
+    public static int klassLayoutHelperNeutralValue(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.klassLayoutHelperNeutralValue;
     }
 
     @Fold
@@ -197,13 +223,6 @@ public class HotSpotReplacementsUtil {
     @Fold
     static int threadPendingExceptionOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.pendingExceptionOffset;
-    }
-
-    public static final LocationIdentity OBJECT_RESULT_LOCATION = NamedLocationIdentity.mutable("ObjectResult");
-
-    @Fold
-    static int objectResultOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.threadObjectResultOffset;
     }
 
     /**
@@ -262,17 +281,6 @@ public class HotSpotReplacementsUtil {
         return thread.readObject(threadPendingExceptionOffset(INJECTED_VMCONFIG), PENDING_EXCEPTION_LOCATION);
     }
 
-    /**
-     * Gets and clears the object result from a runtime call stored in a thread local.
-     *
-     * @return the object that was in the thread local
-     */
-    public static Object getAndClearObjectResult(Word thread) {
-        Object result = thread.readObject(objectResultOffset(INJECTED_VMCONFIG), OBJECT_RESULT_LOCATION);
-        thread.writeObject(objectResultOffset(INJECTED_VMCONFIG), null, OBJECT_RESULT_LOCATION);
-        return result;
-    }
-
     /*
      * As far as Java code is concerned this can be considered immutable: it is set just after the
      * JavaThread is created, before it is published. After that, it is never changed.
@@ -307,8 +315,8 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    public static int pageSize() {
-        return UNSAFE.pageSize();
+    public static int pageSize(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.vmPageSize;
     }
 
     public static final LocationIdentity PROTOTYPE_MARK_WORD_LOCATION = NamedLocationIdentity.mutable("PrototypeMarkWord");
@@ -348,6 +356,56 @@ public class HotSpotReplacementsUtil {
         }
     };
 
+    @Fold
+    public static int allocatePrefetchStyle(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.allocatePrefetchStyle;
+    }
+
+    @Fold
+    public static int allocatePrefetchLines(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.allocatePrefetchLines;
+    }
+
+    @Fold
+    public static int allocatePrefetchDistance(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.allocatePrefetchDistance;
+    }
+
+    @Fold
+    public static int allocateInstancePrefetchLines(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.allocateInstancePrefetchLines;
+    }
+
+    @Fold
+    public static int allocatePrefetchStepSize(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.allocatePrefetchStepSize;
+    }
+
+    @Fold
+    public static int invocationCounterIncrement(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.invocationCounterIncrement;
+    }
+
+    @Fold
+    public static int invocationCounterOffset(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.invocationCounterOffset;
+    }
+
+    @Fold
+    public static int backedgeCounterOffset(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.backedgeCounterOffset;
+    }
+
+    @Fold
+    public static int invocationCounterShift(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.invocationCounterShift;
+    }
+
+    @Fold
+    public static int stackBias(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.stackBias;
+    }
+
     @NodeIntrinsic(value = KlassLayoutHelperNode.class)
     public static native int readLayoutHelper(KlassPointer object);
 
@@ -365,7 +423,7 @@ public class HotSpotReplacementsUtil {
          * sure these are still ints and haven't changed.
          */
         final int layoutHelper = readLayoutHelper(klassNonNull);
-        final int layoutHelperNeutralValue = config(INJECTED_VMCONFIG).klassLayoutHelperNeutralValue;
+        final int layoutHelperNeutralValue = klassLayoutHelperNeutralValue(INJECTED_VMCONFIG);
         return (layoutHelper < layoutHelperNeutralValue);
     }
 
@@ -518,16 +576,16 @@ public class HotSpotReplacementsUtil {
      * Idiom for making {@link GraalHotSpotVMConfig} a constant.
      */
     @Fold
-    public static GraalHotSpotVMConfig getConfig(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config;
+    public static int objectAlignment(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.objectAlignment;
     }
 
     /**
-     * Calls {@link #arrayAllocationSize(int, int, int, GraalHotSpotVMConfig)} using an injected VM
-     * configuration object.
+     * Calls {@link #arrayAllocationSize(int, int, int, int)} using an injected VM configuration
+     * object.
      */
     public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize) {
-        return arrayAllocationSize(length, headerSize, log2ElementSize, getConfig(INJECTED_VMCONFIG));
+        return arrayAllocationSize(length, headerSize, log2ElementSize, objectAlignment(INJECTED_VMCONFIG));
     }
 
     /**
@@ -538,12 +596,11 @@ public class HotSpotReplacementsUtil {
      * @param length the number of elements in the array
      * @param headerSize the size of the array header
      * @param log2ElementSize log2 of the size of an element in the array
-     * @param config the VM configuration providing the
-     *            {@linkplain GraalHotSpotVMConfig#objectAlignment object alignment requirement}
+     * @param alignment the {@linkplain GraalHotSpotVMConfig#objectAlignment object alignment
+     *            requirement}
      * @return the size of the memory chunk
      */
-    public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize, GraalHotSpotVMConfig config) {
-        int alignment = config.objectAlignment;
+    public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize, int alignment) {
         int size = (length << log2ElementSize) + headerSize + (alignment - 1);
         int mask = ~(alignment - 1);
         return size & mask;
@@ -786,12 +843,8 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    public static long referentOffset() {
-        try {
-            return UNSAFE.objectFieldOffset(java.lang.ref.Reference.class.getDeclaredField("referent"));
-        } catch (Exception e) {
-            throw new GraalError(e);
-        }
+    public static long referentOffset(@InjectedParameter MetaAccessProvider metaAccessProvider) {
+        return getFieldOffset(metaAccessProvider.lookupJavaType(Reference.class), "referent");
     }
 
     public static final LocationIdentity OBJ_ARRAY_KLASS_ELEMENT_KLASS_LOCATION = new HotSpotOptimizingLocationIdentity("ObjArrayKlass::_element_klass") {

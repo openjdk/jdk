@@ -24,13 +24,6 @@
 
 package org.graalvm.compiler.hotspot.stubs;
 
-import static jdk.vm.ci.meta.DeoptimizationReason.RuntimeConstraint;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getPendingException;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHubIntrinsic;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.verifyOops;
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 
 import java.lang.reflect.Method;
@@ -44,19 +37,11 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.nodes.DeoptimizeCallerNode;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.hotspot.nodes.VMErrorNode;
-import org.graalvm.compiler.hotspot.word.KlassPointer;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.SnippetAnchorNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.word.Word;
-import jdk.internal.vm.compiler.word.Pointer;
 import jdk.internal.vm.compiler.word.WordFactory;
-
-import jdk.vm.ci.meta.DeoptimizationAction;
 
 //JaCoCo Exclude
 
@@ -94,15 +79,6 @@ public class StubUtil {
         List<Class<?>> paramList = Arrays.asList(found.getParameterTypes());
         Class<?>[] cCallTypes = paramList.subList(1, paramList.size()).toArray(new Class<?>[paramList.size() - 1]);
         return new ForeignCallDescriptor(name, found.getReturnType(), cCallTypes);
-    }
-
-    public static void handlePendingException(Word thread, boolean shouldClearException, boolean isObjectResult) {
-        if ((shouldClearException && clearPendingException(thread) != null) || (!shouldClearException && getPendingException(thread) != null)) {
-            if (isObjectResult) {
-                getAndClearObjectResult(thread);
-            }
-            DeoptimizeCallerNode.deopt(DeoptimizationAction.None, RuntimeConstraint);
-        }
     }
 
     /**
@@ -229,46 +205,6 @@ public class StubUtil {
      */
     public static void fatal(String format, long v1, long v2, long v3) {
         vmMessageC(VM_MESSAGE_C, true, cstring(format), v1, v2, v3);
-    }
-
-    /**
-     * Verifies that a given object value is well formed if {@code -XX:+VerifyOops} is enabled.
-     */
-    public static Object verifyObject(Object object) {
-        if (verifyOops(INJECTED_VMCONFIG)) {
-            Word verifyOopCounter = WordFactory.unsigned(verifyOopCounterAddress(INJECTED_VMCONFIG));
-            verifyOopCounter.writeInt(0, verifyOopCounter.readInt(0) + 1);
-
-            Pointer oop = Word.objectToTrackedPointer(object);
-            if (object != null) {
-                GuardingNode anchorNode = SnippetAnchorNode.anchor();
-                // make sure object is 'reasonable'
-                if (!oop.and(WordFactory.unsigned(verifyOopMask(INJECTED_VMCONFIG))).equal(WordFactory.unsigned(verifyOopBits(INJECTED_VMCONFIG)))) {
-                    fatal("oop not in heap: %p", oop.rawValue());
-                }
-
-                KlassPointer klass = loadHubIntrinsic(PiNode.piCastNonNull(object, anchorNode));
-                if (klass.isNull()) {
-                    fatal("klass for oop %p is null", oop.rawValue());
-                }
-            }
-        }
-        return object;
-    }
-
-    @Fold
-    static long verifyOopCounterAddress(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.verifyOopCounterAddress;
-    }
-
-    @Fold
-    static long verifyOopMask(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.verifyOopMask;
-    }
-
-    @Fold
-    static long verifyOopBits(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.verifyOopBits;
     }
 
     /**

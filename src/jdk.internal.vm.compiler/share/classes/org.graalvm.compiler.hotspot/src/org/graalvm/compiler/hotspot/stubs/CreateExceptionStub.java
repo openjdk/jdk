@@ -45,6 +45,7 @@ import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.nodes.CStringConstant;
 import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
 
@@ -67,7 +68,7 @@ public class CreateExceptionStub extends SnippetStub {
     }
 
     protected static Object createException(Register threadRegister, Class<? extends Throwable> exception) {
-        Word message = null;
+        Word message = WordFactory.zero();
         return createException(threadRegister, exception, message);
     }
 

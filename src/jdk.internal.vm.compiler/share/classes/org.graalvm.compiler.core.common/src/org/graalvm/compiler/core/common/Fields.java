@@ -326,7 +326,7 @@ public class Fields {
 
     public void appendFields(StringBuilder sb) {
         for (int i = 0; i < offsets.length; i++) {
-            sb.append(i == 0 ? "" : ", ").append(getName(i)).append('@').append(offsets[i]);
+            sb.append(i == 0 ? "" : ", ").append(getDeclaringClass(i).getSimpleName()).append('.').append(getName(i)).append('@').append(offsets[i]);
         }
     }
 
