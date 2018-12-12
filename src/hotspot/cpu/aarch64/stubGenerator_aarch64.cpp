@@ -725,8 +725,11 @@ class StubGenerator: public StubCodeGenerator {
       stub_name = "forward_copy_longs";
     else
       stub_name = "backward_copy_longs";
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+
     __ bind(start);
 
     Label unaligned_copy_long;
@@ -1976,9 +1979,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos    = c_rarg3;  // destination position
     const Register length     = c_rarg4;
 
+    __ align(CodeEntryAlignment);
+
     StubCodeMark mark(this, "StubRoutines", name);
 
-    __ align(CodeEntryAlignment);
     address start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -3653,7 +3657,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_has_negatives(address &has_negatives_long) {
-    StubCodeMark mark(this, "StubRoutines", "has_negatives");
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -3661,6 +3664,9 @@ class StubGenerator: public StubCodeGenerator {
     Register ary1 = r1, len = r2, result = r0;
 
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+
     address entry = __ pc();
 
     __ enter();
@@ -3900,7 +3906,6 @@ class StubGenerator: public StubCodeGenerator {
   // cnt1 = r10 - amount of elements left to check, reduced by wordSize
   // r3-r5 are reserved temporary registers
   address generate_large_array_equals() {
-    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
     Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
         tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
         tmp7 = r12, tmp8 = r13;
@@ -3915,6 +3920,9 @@ class StubGenerator: public StubCodeGenerator {
         tmp5, tmp6, tmp7, tmp8);
 
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
+
     address entry = __ pc();
     __ enter();
     __ sub(cnt1, cnt1, wordSize);  // first 8 bytes were loaded outside of stub
