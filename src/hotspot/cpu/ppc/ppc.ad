@@ -2257,6 +2257,9 @@ const bool Matcher::match_rule_supported(int opcode) {
     return SuperwordUseVSX;
   case Op_PopCountVI:
     return (SuperwordUseVSX && UsePopCountInstruction);
+  case Op_FmaVF:
+  case Op_FmaVD:
+    return (SuperwordUseVSX && UseFMA);
   case Op_Digit:
   case Op_LowerCase:
   case Op_UpperCase:
@@ -14475,6 +14478,92 @@ instruct vpopcnt4I_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
+// --------------------------------- FMA --------------------------------------
+// dst + src1 * src2
+instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+
+  format %{ "XVMADDASP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvmaddasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// dst - src1 * src2
+instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary (NegVF src1) src2)));
+  match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
+  predicate(n->as_Vector()->length() == 4);
+
+  format %{ "XVNMSUBASP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvnmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// - dst + src1 * src2
+instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+
+  format %{ "XVMSUBASP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// dst + src1 * src2
+instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD  dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+
+  format %{ "XVMADDADP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvmaddadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// dst - src1 * src2
+instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
+  match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
+  predicate(n->as_Vector()->length() == 2);
+
+  format %{ "XVNMSUBADP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvnmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// - dst + src1 * src2
+instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+
+  format %{ "XVMSUBADP   $dst, $src1, $src2" %}
+
+  size(4);
+  ins_encode %{
+    __ xvmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 //----------Overflow Math Instructions-----------------------------------------
 

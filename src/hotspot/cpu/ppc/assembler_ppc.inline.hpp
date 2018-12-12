@@ -790,6 +790,12 @@ inline void Assembler::xvadddp( VectorSRegister d, VectorSRegister a, VectorSReg
 inline void Assembler::xvsubdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVSUBDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmulsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmuldp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaddasp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMADDASP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaddadp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMADDADP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmsubasp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMSUBASP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmsubadp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMSUBADP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBASP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBADP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::mtvrd(   VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
