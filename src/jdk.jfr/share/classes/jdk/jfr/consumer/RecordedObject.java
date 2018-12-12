@@ -726,6 +726,9 @@ public class RecordedObject {
 
     private Duration getDuration(long timespan, String name) throws InternalError {
         ValueDescriptor v = getValueDescriptor(descriptors, name, null);
+        if (timespan == Long.MIN_VALUE) {
+            return Duration.ofSeconds(Long.MIN_VALUE, 0);
+        }
         Timespan ts = v.getAnnotation(Timespan.class);
         if (ts != null) {
             switch (ts.value()) {
@@ -797,13 +800,16 @@ public class RecordedObject {
                 return getInstant(Short.toUnsignedLong((Byte) u), name);
             }
         }
-        throw newIllegalArgumentException(name, "java,time.Instant");
+        throw newIllegalArgumentException(name, "java.time.Instant");
     }
 
     private Instant getInstant(long timestamp, String name) {
         ValueDescriptor v = getValueDescriptor(descriptors, name, null);
         Timestamp ts = v.getAnnotation(Timestamp.class);
         if (ts != null) {
+            if (timestamp == Long.MIN_VALUE) {
+                return Instant.MIN;
+            }
             switch (ts.value()) {
             case Timestamp.MILLISECONDS_SINCE_EPOCH:
                 return Instant.ofEpochMilli(timestamp);
@@ -884,6 +890,10 @@ public class RecordedObject {
 
     // package private for now. Used by EventWriter
     OffsetDateTime getOffsetDateTime(String name) {
+        Instant instant = getInstant(name);
+        if (instant.equals(Instant.MIN)) {
+            return OffsetDateTime.MIN;
+        }
         return OffsetDateTime.ofInstant(getInstant(name), timeConverter.getZoneOffset());
     }
 
