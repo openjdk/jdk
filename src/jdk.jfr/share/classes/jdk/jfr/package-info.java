@@ -105,7 +105,6 @@
  * {@link jdk.jfr.ValueDescriptor#getName()}.
  * <p>
  * <b>Predefined settings</b>
- * <p>
  * <table class="striped">
  * <caption>Event setting names and their purpose.</caption> <thead>
  * <tr>

@@ -517,7 +517,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * event type is obtained by invoking
      * {@link jdk.jfr.EventType#getSettingDescriptors()} and
      * {@link jdk.jfr.ValueDescriptor#getName()}.
-     * <p>
      *
      * @param recordingId ID of the recording
      *
