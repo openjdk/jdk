@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -552,6 +554,21 @@ public class ModuleSummary {
                 return sb.toString();
             }
 
+            private String providesEntry(Provides p) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("provides %s<br>\n", p.service()));
+                List<String> pvs = new ArrayList<>(p.providers());
+                pvs.sort(Comparator.naturalOrder());
+                for (int i = 0; i < pvs.size(); i++) {      // My kingdom for Stream::zip ...
+                    String fmt = ((i == 0)
+                                  ? "&nbsp;&nbsp;&nbsp;&nbsp;with %s"
+                                  : ",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; %s");
+                    sb.append(String.format(fmt, pvs.get(i)));
+                }
+                sb.append("\n");
+                return sb.toString();
+            }
+
             public String servicesColumn() {
                 StringBuilder sb = new StringBuilder();
                 sb.append(String.format("  <td class=\"%s\">", CODE));
@@ -560,8 +577,7 @@ public class ModuleSummary {
                         .forEach(s -> sb.append("uses ").append(s).append("<br>").append("\n"));
                 ms.descriptor().provides().stream()
                         .sorted(Comparator.comparing(Provides::service))
-                        .map(p -> String.format("provides %s<br>&nbsp;&nbsp;&nbsp;&nbsp;with %s",
-                                                p.service(), p.providers()))
+                        .map(this::providesEntry)
                         .forEach(p -> sb.append(p).append("<br>").append("\n"));
                 sb.append("</td>");
                 return sb.toString();
