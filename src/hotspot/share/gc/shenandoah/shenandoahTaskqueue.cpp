@@ -49,28 +49,8 @@ bool ShenandoahObjToScanQueueSet::is_empty() {
   return true;
 }
 
-class ShenandoahOWSTTerminator: public OWSTTaskTerminator {
-public:
-  ShenandoahOWSTTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
-    OWSTTaskTerminator(n_threads, queue_set){ }
-
-protected:
-  bool exit_termination(size_t tasks, TerminatorTerminator* terminator);
-};
-
-bool ShenandoahOWSTTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
-  ShenandoahTerminatorTerminator* t = (ShenandoahTerminatorTerminator*)terminator;
-  bool force = (t != NULL) && t->should_force_termination();
-  if (force) {
-    // Force termination : continue termination, even there are remaining tasks.
-    return false;
-  } else {
-    return OWSTTaskTerminator::exit_termination(tasks, terminator);
-  }
-}
-
 ShenandoahTaskTerminator::ShenandoahTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
-  _terminator(new ShenandoahOWSTTerminator(n_threads, queue_set)) { }
+  _terminator(new OWSTTaskTerminator(n_threads, queue_set)) { }
 
 ShenandoahTaskTerminator::~ShenandoahTaskTerminator() {
   assert(_terminator != NULL, "Invariant");

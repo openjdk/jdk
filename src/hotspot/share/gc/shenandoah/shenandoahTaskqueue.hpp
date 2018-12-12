@@ -306,18 +306,12 @@ public:
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
+private:
+  ShenandoahHeap* _heap;
 public:
+  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
   // return true, terminates immediately, even if there's remaining work left
-  virtual bool should_force_termination() { return false; }
-};
-
-class ShenandoahCancelledTerminatorTerminator : public ShenandoahTerminatorTerminator {
-  virtual bool should_exit_termination() {
-    return false;
-  }
-  virtual bool should_force_termination() {
-    return true;
-  }
+  virtual bool should_exit_termination() { return _heap->cancelled_gc(); }
 };
 
 class ShenandoahTaskTerminator : public StackObj {

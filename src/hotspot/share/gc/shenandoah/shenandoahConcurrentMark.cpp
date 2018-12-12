@@ -939,9 +939,6 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint wo
   q = queues->claim_next();
   while (q != NULL) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-      ShenandoahCancelledTerminatorTerminator tt;
-      ShenandoahSuspendibleThreadSetLeaver stsl(ShenandoahSuspendibleWorkers);
-      while (!terminator->offer_termination(&tt));
       return;
     }
 
@@ -965,9 +962,6 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint wo
    */
   while (true) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-      ShenandoahCancelledTerminatorTerminator tt;
-      ShenandoahSuspendibleThreadSetLeaver stsl(ShenandoahSuspendibleWorkers);
-      while (!terminator->offer_termination(&tt));
       return;
     }
 
@@ -991,7 +985,8 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint wo
       // Need to leave the STS here otherwise it might block safepoints.
       ShenandoahSuspendibleThreadSetLeaver stsl(CANCELLABLE && ShenandoahSuspendibleWorkers);
       ShenandoahTerminationTimingsTracker term_tracker(worker_id);
-      if (terminator->offer_termination()) return;
+      ShenandoahTerminatorTerminator tt(heap);
+      if (terminator->offer_termination(&tt)) return;
     }
   }
 }
