@@ -37,6 +37,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -122,6 +123,11 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags, true,false));
+
+  // Debug on cmd (only makes sense with JVMTI since the agentlib needs it).
+#if INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
 
 }
 
@@ -1054,3 +1060,43 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
 int TouchedMethodsDCmd::num_arguments() {
   return 0;
 }
+
+#if INCLUDE_JVMTI
+extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,
+                                                                                char const** address, jboolean* first_start);
+static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = NULL;
+
+DebugOnCmdStartDCmd::DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap) {
+}
+
+void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
+  char const* transport = NULL;
+  char const* addr = NULL;
+  jboolean is_first_start = JNI_FALSE;
+  JavaThread* thread = (JavaThread*) THREAD;
+  jthread jt = JNIHandles::make_local(thread->threadObj());
+  ThreadToNativeFromVM ttn(thread);
+  const char *error = "Could not find jdwp agent.";
+
+  if (!dvc_start_ptr) {
+    for (AgentLibrary* agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
+      if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == NULL)) {
+        char const* func = "debugInit_startDebuggingViaCommand";
+        dvc_start_ptr = (debugInit_startDebuggingViaCommandPtr) os::find_agent_function(agent, false, &func, 1);
+      }
+    }
+  }
+
+  if (dvc_start_ptr) {
+    error = dvc_start_ptr(thread->jni_environment(), jt, &transport, &addr, &is_first_start);
+  }
+
+  if (error != NULL) {
+    output()->print_cr("Debugging has not been started: %s", error);
+  } else {
+    output()->print_cr(is_first_start ? "Debugging has been started." : "Debugging is already active.");
+    output()->print_cr("Transport : %s", transport ? transport : "#unknown");
+    output()->print_cr("Address : %s", addr ? addr : "#unknown");
+  }
+}
+#endif // INCLUDE_JVMTI
