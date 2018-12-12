@@ -171,6 +171,8 @@ inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16) 
 inline void Assembler::cmp(   ConditionRegister f, int l, Register a, Register b) { emit_int32( CMP_OPCODE   | bf(f) | l10(l) | ra(a) | rb(b)); }
 inline void Assembler::cmpli( ConditionRegister f, int l, Register a, int ui16)   { emit_int32( CMPLI_OPCODE | bf(f) | l10(l) | ra(a) | uimm(ui16,16)); }
 inline void Assembler::cmpl(  ConditionRegister f, int l, Register a, Register b) { emit_int32( CMPL_OPCODE  | bf(f) | l10(l) | ra(a) | rb(b)); }
+inline void Assembler::cmprb( ConditionRegister f, int l, Register a, Register b) { emit_int32( CMPRB_OPCODE | bf(f) | l10(l) | ra(a) | rb(b)); }
+inline void Assembler::cmpeqb(ConditionRegister f, Register a, Register b)        { emit_int32( CMPEQB_OPCODE| bf(f) | ra(a)  | rb(b)); }
 
 // extended mnemonics of Compare Instructions
 inline void Assembler::cmpwi( ConditionRegister crx, Register a, int si16)   { Assembler::cmpi( crx, 0, a, si16); }
@@ -371,6 +373,8 @@ inline void Assembler::mfcr( Register d )         { emit_int32(MFCR_OPCODE  | rt
 inline void Assembler::mcrf( ConditionRegister crd, ConditionRegister cra)
                                                       { emit_int32(MCRF_OPCODE | bf(crd) | bfa(cra)); }
 inline void Assembler::mtcr( Register s)          { Assembler::mtcrf(0xff, s); }
+inline void Assembler::setb(Register d, ConditionRegister cra)
+                                                  { emit_int32(SETB_OPCODE | rt(d) | bfa(cra)); }
 
 // Special purpose registers
 // Exception Register

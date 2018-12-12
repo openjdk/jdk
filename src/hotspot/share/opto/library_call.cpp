@@ -324,6 +324,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_montgomerySquare();
   bool inline_vectorizedMismatch();
   bool inline_fma(vmIntrinsics::ID id);
+  bool inline_character_compare(vmIntrinsics::ID id);
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -866,6 +867,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
+
+  case vmIntrinsics::_isDigit:
+  case vmIntrinsics::_isLowerCase:
+  case vmIntrinsics::_isUpperCase:
+  case vmIntrinsics::_isWhitespace:
+    return inline_character_compare(intrinsic_id());
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -6552,6 +6559,32 @@ bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
     fatal_unexpected_iid(id);  break;
   }
   set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_character_compare(vmIntrinsics::ID id) {
+  // argument(0) is receiver
+  Node* codePoint = argument(1);
+  Node* n = NULL;
+
+  switch (id) {
+    case vmIntrinsics::_isDigit :
+      n = new DigitNode(control(), codePoint);
+      break;
+    case vmIntrinsics::_isLowerCase :
+      n = new LowerCaseNode(control(), codePoint);
+      break;
+    case vmIntrinsics::_isUpperCase :
+      n = new UpperCaseNode(control(), codePoint);
+      break;
+    case vmIntrinsics::_isWhitespace :
+      n = new WhitespaceNode(control(), codePoint);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+  }
+
+  set_result(_gvn.transform(n));
   return true;
 }
 
