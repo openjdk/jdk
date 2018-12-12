@@ -36,7 +36,7 @@ JRE_TARGETS :=
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, Images-pre.gmk))
 
-############################################################################
+################################################################################
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
@@ -57,7 +57,7 @@ BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
 JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 
 # Use this file inside the image as target for make rule
-JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
+JIMAGE_TARGET_FILE := release
 
 JLINK_ORDER_RESOURCES := **module-info.class
 JLINK_JLI_CLASSES :=
