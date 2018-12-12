@@ -122,7 +122,7 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv* jni,
         waitedEventsCount++;
         NSK_DISPLAY0("MonitorWaited event:\n");
         NSK_DISPLAY3("\tthread: %p, object: %p, timed_out: %s\n",
-            thr, obj, (timed_out==JNI_TRUE) ? "true" : "false");
+            thr, obj, (timed_out == JNI_TRUE) ? "true" : "false");
         NSK_DISPLAY1("\tGetTime: %s\n",
             jlong_to_string(waitedTime, buffer));
         NSK_DISPLAY1("\tthread CPU time: %s\n",

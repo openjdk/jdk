@@ -74,7 +74,7 @@ void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
                 nsk_printf(" Agent:: redefine class success ..\n");
                 nsk_printf("Agent::SUSPENDING>> \n");
                 err=jvmti_env->SuspendThread(thread);
-                if (err ==  JVMTI_ERROR_NONE) {
+                if (err == JVMTI_ERROR_NONE) {
                     thread_suspend_status = suspended;
                     nsk_printf("Agent:: Thread successfully suspended..\n");
                 } else if (err == JVMTI_ERROR_THREAD_SUSPENDED) {
@@ -102,7 +102,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     nsk_printf("Agent:: VM.. Started..\n");
     redefineNumber=0;
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (rc!= JNI_OK) {
+    if (rc != JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {

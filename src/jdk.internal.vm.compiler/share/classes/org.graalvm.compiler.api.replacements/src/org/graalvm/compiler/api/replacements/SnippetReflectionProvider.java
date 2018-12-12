@@ -61,20 +61,6 @@ public interface SnippetReflectionProvider {
     <T> T asObject(Class<T> type, JavaConstant constant);
 
     /**
-     * Gets the object reference a given constant represents if it is of a given type. The constant
-     * must have kind {@link JavaKind#Object}.
-     *
-     * @param type the expected type of the object represented by {@code constant}. If the object is
-     *            required to be of this type, then wrap the call to this method in
-     *            {@link Objects#requireNonNull(Object)}.
-     * @param constant an object constant
-     * @return the object value represented by {@code constant} if it is an
-     *         {@link ResolvedJavaType#isInstance(JavaConstant) instance of} {@code type} otherwise
-     *         {@code null}
-     */
-    Object asObject(ResolvedJavaType type, JavaConstant constant);
-
-    /**
      * Creates a boxed constant for the given kind from an Object. The object needs to be of the
      * Java boxed type corresponding to the kind.
      *
@@ -82,7 +68,13 @@ public interface SnippetReflectionProvider {
      * @param value the Java boxed value: a {@link Byte} instance for {@link JavaKind#Byte}, etc.
      * @return the boxed copy of {@code value}
      */
-    JavaConstant forBoxed(JavaKind kind, Object value);
+    default JavaConstant forBoxed(JavaKind kind, Object value) {
+        if (kind == JavaKind.Object) {
+            return forObject(value);
+        } else {
+            return JavaConstant.forBoxedPrimitive(value);
+        }
+    }
 
     /**
      * Gets the value to bind to an injected parameter in a node intrinsic.
@@ -97,7 +89,8 @@ public interface SnippetReflectionProvider {
      * Get the original Java class corresponding to a {@link ResolvedJavaType}.
      *
      * @param type the type for which the original Java class is requested
-     * @return the original Java class corresponding to the {@code type} parameter
+     * @return the original Java class corresponding to {@code type} or {@code null} if this object
+     *         cannot map {@link ResolvedJavaType} instances to {@link Class} instances
      */
     Class<?> originalClass(ResolvedJavaType type);
 }

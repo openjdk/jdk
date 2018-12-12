@@ -55,6 +55,11 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
         public int hashCode() {
             return clazz.hashCode();
         }
+
+        @Override
+        public String toString() {
+            return "Wrapper-" + clazz;
+        }
     }
 
     @Override

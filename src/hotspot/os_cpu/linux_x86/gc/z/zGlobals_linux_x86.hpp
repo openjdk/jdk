@@ -74,15 +74,17 @@
 //  * 63-47 Fixed (17-bits, always zero)
 //
 
-const size_t    ZPlatformPageSizeSmallShift   = 21; // 2M
+const size_t    ZPlatformPageSizeSmallShift    = 21; // 2M
 
-const size_t    ZPlatformAddressOffsetBits    = 42; // 4TB
+const size_t    ZPlatformAddressOffsetBits     = 42; // 4TB
 
-const uintptr_t ZPlatformAddressMetadataShift = ZPlatformAddressOffsetBits;
+const uintptr_t ZPlatformAddressMetadataShift  = ZPlatformAddressOffsetBits;
 
-const uintptr_t ZPlatformAddressSpaceStart    = (uintptr_t)1 << ZPlatformAddressOffsetBits;
-const uintptr_t ZPlatformAddressSpaceSize     = ((uintptr_t)1 << ZPlatformAddressOffsetBits) * 4;
+const uintptr_t ZPlatformAddressSpaceStart     = (uintptr_t)1 << ZPlatformAddressOffsetBits;
+const uintptr_t ZPlatformAddressSpaceSize      = ((uintptr_t)1 << ZPlatformAddressOffsetBits) * 4;
 
-const size_t    ZPlatformCacheLineSize        = 64;
+const size_t    ZPlatformNMethodDisarmedOffset = 4;
+
+const size_t    ZPlatformCacheLineSize         = 64;
 
 #endif // OS_CPU_LINUX_X86_ZGLOBALS_LINUX_X86_HPP

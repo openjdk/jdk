@@ -1531,10 +1531,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _is_subject_to_discovery_cm(this),
   _in_cset_fast_test() {
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                          true /* are_GC_task_threads */,
-                          false /* are_ConcurrentGC_threads */);
-  _workers->initialize_workers();
   _verifier = new G1HeapVerifier(this);
 
   _allocator = new G1Allocator(this);
@@ -1766,6 +1762,14 @@ jint G1CollectedHeap::initialize() {
     _in_cset_fast_test.initialize(start, end, granularity);
     _humongous_reclaim_candidates.initialize(start, end, granularity);
   }
+
+  _workers = new WorkGang("GC Thread", ParallelGCThreads,
+                          true /* are_GC_task_threads */,
+                          false /* are_ConcurrentGC_threads */);
+  if (_workers == NULL) {
+    return JNI_ENOMEM;
+  }
+  _workers->initialize_workers();
 
   // Create the G1ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)

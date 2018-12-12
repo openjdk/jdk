@@ -226,7 +226,7 @@
  *
  * <h2 id="MemoryVisibility">Memory Consistency Properties</h2>
  *
- * <a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4.5">
+ * <a href="https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.4.5">
  * Chapter 17 of
  * <cite>The Java&trade; Language Specification</cite></a> defines the
  * <i>happens-before</i> relation on memory operations such as reads and

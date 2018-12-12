@@ -202,15 +202,15 @@ void checkCall(int step, int exThrCalls, int exThrNewCalls, int exExcOccCalls) {
     if (throw_calls == exThrCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function Throw() has been %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored",
                 throw_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function Throw() has not been %s:\n\t%d intercepted call(s) instead of %d as expected\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored",
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored",
             throw_calls, exThrCalls);
     }
     throw_calls = 0; /* zeroing an interception counter */
@@ -218,15 +218,15 @@ void checkCall(int step, int exThrCalls, int exThrNewCalls, int exExcOccCalls) {
     if (thrownew_calls == exThrNewCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function ThrowNew() has been %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored",
                 thrownew_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function ThrowNew() has not been %s:\n\t%d intercepted call(s) instead of %d as expected\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored",
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored",
             thrownew_calls, exThrNewCalls);
     }
     thrownew_calls = 0; /* zeroing an interception counter */
@@ -234,15 +234,15 @@ void checkCall(int step, int exThrCalls, int exThrNewCalls, int exExcOccCalls) {
     if (excoccur_calls == exExcOccCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function ExceptionOccurred() has been %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored",
                 excoccur_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function ExceptionOccurred() has not been %s:\n\t%d intercepted call(s) instead of %d as expected\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored",
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored",
             excoccur_calls, exExcOccCalls);
     }
     excoccur_calls = 0; /* zeroing an interception counter */

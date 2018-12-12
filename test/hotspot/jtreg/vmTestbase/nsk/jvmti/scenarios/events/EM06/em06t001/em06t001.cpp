@@ -75,7 +75,7 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
 
     className = jni_env->GetStringUTFChars(jclassName, 0);
 
-    if (className != NULL && (strcmp(className, EXPECTED_CLASS_NAME)==0)) {
+    if (className != NULL && (strcmp(className, EXPECTED_CLASS_NAME) == 0)) {
 
         if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
             nsk_jvmti_setFailStatus();

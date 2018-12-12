@@ -30,7 +30,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream
- * @run testng ToolSimpleTest
+ * @run testng/othervm ToolSimpleTest
  */
 
 import java.util.ArrayList;

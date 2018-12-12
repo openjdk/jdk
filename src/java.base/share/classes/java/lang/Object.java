@@ -94,12 +94,10 @@ public class Object {
      *     programmer should be aware that producing distinct integer results
      *     for unequal objects may improve the performance of hash tables.
      * </ul>
-     * <p>
-     * As much as is reasonably practical, the hashCode method defined
-     * by class {@code Object} does return distinct integers for
-     * distinct objects. (The hashCode may or may not be implemented
-     * as some function of an object's memory address at some point
-     * in time.)
+     *
+     * @implSpec
+     * As far as is reasonably practical, the {@code hashCode} method defined
+     * by class {@code Object} returns distinct integers for distinct objects.
      *
      * @return  a hash code value for this object.
      * @see     java.lang.Object#equals(java.lang.Object)

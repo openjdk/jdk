@@ -41,6 +41,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zUnload.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "memory/allocation.hpp"
 
@@ -59,6 +60,7 @@ private:
   ZWeakRootsProcessor _weak_roots_processor;
   ZRelocate           _relocate;
   ZRelocationSet      _relocation_set;
+  ZUnload             _unload;
   ZServiceability     _serviceability;
 
   size_t heap_min_size() const;

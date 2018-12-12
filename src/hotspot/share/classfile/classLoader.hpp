@@ -55,6 +55,7 @@ public:
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const = 0;
+  virtual void close_jimage() = 0;
   // Constructor
   ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
@@ -70,6 +71,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   bool is_jar_file() const { return false;  }
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
+  void close_jimage() {}
   ClassPathDirEntry(const char* dir);
   virtual ~ClassPathDirEntry() {}
   ClassFileStream* open_stream(const char* name, TRAPS);
@@ -98,6 +100,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   bool is_jar_file() const { return true;  }
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
+  void close_jimage() {}
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append);
   virtual ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
@@ -117,6 +120,7 @@ public:
   bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const { return _jimage; }
+  void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
   ClassFileStream* open_stream(const char* name, TRAPS);
@@ -333,6 +337,7 @@ class ClassLoader: AllStatic {
   // Modular java runtime image is present vs. a build with exploded modules
   static bool has_jrt_entry() { return (_jrt_entry != NULL); }
   static ClassPathEntry* get_jrt_entry() { return _jrt_entry; }
+  static void close_jrt_image();
 
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(Symbol* module_name, TRAPS);

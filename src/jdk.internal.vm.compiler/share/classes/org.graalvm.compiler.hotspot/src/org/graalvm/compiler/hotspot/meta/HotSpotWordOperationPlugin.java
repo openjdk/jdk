@@ -66,7 +66,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Extends {@link WordOperationPlugin} to handle {@linkplain HotSpotOperation HotSpot word
  * operations}.
  */
-class HotSpotWordOperationPlugin extends WordOperationPlugin {
+public class HotSpotWordOperationPlugin extends WordOperationPlugin {
     HotSpotWordOperationPlugin(SnippetReflectionProvider snippetReflection, WordTypes wordTypes) {
         super(snippetReflection, wordTypes);
     }

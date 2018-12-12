@@ -104,7 +104,7 @@ void JNICALL callbackBreakpoint(jvmtiEnv *jvmti_env,
     }
     nsk_printf(" End of REDEFINE CLASS LOADER \n");
     err=jvmti->SuspendThread(thread);
-    if (err ==  JVMTI_ERROR_NONE) {
+    if (err == JVMTI_ERROR_NONE) {
         nsk_printf("Agent:: Succeded in suspending..\n");
     } else if (err == JVMTI_ERROR_THREAD_SUSPENDED) {
         nsk_printf("Agent:: JVMTI_ERROR_THREAD_SUSPENDED \n");
@@ -133,7 +133,7 @@ jint   Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
       jint rc ;
       nsk_printf("Agent:: VM.. Started..\n");
       rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-      if (rc!= JNI_OK) {
+      if (rc != JNI_OK) {
           nsk_printf("Agent:: Could not load JVMTI interface \n");
           return JNI_ERR;
       } else {

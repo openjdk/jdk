@@ -321,7 +321,7 @@ jdk.jshell_COPY += .jsh .properties
 
 ################################################################################
 
-jdk.internal.le_COPY += .properties
+jdk.internal.le_COPY += .properties .caps .txt
 
 ################################################################################
 

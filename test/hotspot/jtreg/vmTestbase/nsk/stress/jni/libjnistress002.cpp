@@ -69,13 +69,13 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   clazz=env->FindClass(classname); CE
   obj=env->NewObjectArray((jsize)3,clazz,
                  env->AllocObject(clazz)); CE
-  if (obj==NULL) {
+  if (obj == NULL) {
     fprintf(stderr,"Can not construct the object Array for  %s\n", classname);
     return(NULL);
   }
 
   methodID=env->GetMethodID(clazz,name,sig); CE
-  if (methodID==NULL) {
+  if (methodID == NULL) {
     fprintf(stderr,"Can not get the ID of <init> for %s\n", classname);
     return(NULL);
   }

@@ -441,7 +441,7 @@ extern "C" {
         // while (!threadsGroupLocks.runnableCanExit.get()) {
         //        Thread.yield();
         //    }
-        while (flag==JNI_FALSE)
+        while (flag == JNI_FALSE)
         {
             GET_BOOL_FIELD(flag, threadsGroupLocks, ThreadsGroupLocks, "runnableCanExit");
             CALL_STATIC_VOID_NOPARAM(Thread, "yield");

@@ -30,7 +30,6 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQ
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
-import java.lang.reflect.Method;
 import java.util.EnumMap;
 
 import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
@@ -290,7 +289,7 @@ public abstract class ArrayCopySnippets implements Snippets {
                 DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         } else {
-            ReplacementsUtil.staticAssert(false, "unknown array type check");
+            ReplacementsUtil.staticAssert(false, "unknown array type check ", arrayTypeCheck);
         }
     }
 
@@ -384,8 +383,7 @@ public abstract class ArrayCopySnippets implements Snippets {
         }
 
         protected SnippetInfo snippet(ArrayCopySnippets receiver, String methodName) {
-            SnippetInfo info = snippet(ArrayCopySnippets.class, methodName, receiver, LocationIdentity.any());
-            info.setOriginalMethod(originalArraycopy());
+            SnippetInfo info = snippet(ArrayCopySnippets.class, methodName, originalArraycopy(), receiver, LocationIdentity.any());
             return info;
         }
 
@@ -577,13 +575,11 @@ public abstract class ArrayCopySnippets implements Snippets {
 
         private ResolvedJavaMethod originalArraycopy() throws GraalError {
             if (originalArraycopy == null) {
-                Method method;
                 try {
-                    method = System.class.getDeclaredMethod("arraycopy", Object.class, int.class, Object.class, int.class, int.class);
-                } catch (NoSuchMethodException | SecurityException e) {
+                    originalArraycopy = findMethod(providers.getMetaAccess(), System.class, "arraycopy");
+                } catch (SecurityException e) {
                     throw new GraalError(e);
                 }
-                originalArraycopy = providers.getMetaAccess().lookupJavaMethod(method);
             }
             return originalArraycopy;
         }

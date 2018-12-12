@@ -38,11 +38,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  * {@link GraphEncoder} for a description of the encoding format. Use {@link GraphDecoder} for
  * decoding.
  */
-public final class EncodedGraph {
+public class EncodedGraph {
 
     private final byte[] encoding;
     private final int startOffset;
-    private final Object[] objects;
+    protected final Object[] objects;
     private final NodeClass<?>[] types;
     private final Assumptions assumptions;
     private final List<ResolvedJavaMethod> inlinedMethods;
@@ -82,8 +82,16 @@ public final class EncodedGraph {
         return startOffset;
     }
 
-    public Object[] getObjects() {
+    protected Object[] getObjects() {
         return objects;
+    }
+
+    public int getNumObjects() {
+        return objects.length;
+    }
+
+    public Object getObject(int i) {
+        return objects[i];
     }
 
     public NodeClass<?>[] getNodeClasses() {
@@ -108,5 +116,10 @@ public final class EncodedGraph {
 
     public boolean hasUnsafeAccess() {
         return hasUnsafeAccess;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isCallToOriginal(ResolvedJavaMethod callTarget) {
+        return false;
     }
 }

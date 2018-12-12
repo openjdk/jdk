@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.hotspot.stubs;
 
-import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
+import static org.graalvm.compiler.hotspot.stubs.ForeignCallSnippets.verifyObject;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;

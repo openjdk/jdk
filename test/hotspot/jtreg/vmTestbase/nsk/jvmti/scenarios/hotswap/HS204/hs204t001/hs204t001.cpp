@@ -64,7 +64,7 @@ callbackClassLoad(jvmtiEnv *jvmti_env,
         jclass klass) {
     char * name;
     name = getClassName(jvmti_env,klass);
-    if ((strcmp(name,CLASS_NAME) == 0) && (redefineNumber== 1)) {
+    if ((strcmp(name,CLASS_NAME) == 0) && (redefineNumber == 1)) {
        char fileName[512];
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
@@ -89,7 +89,7 @@ callbackClassPrepare(jvmtiEnv *jvmti_env,
         jclass klass) {
     char *  name;
     name = getClassName(jvmti_env, klass);
-    if ((strcmp(name, CLASS_NAME) ==0) && (redefineNumber == 0)) {
+    if ((strcmp(name, CLASS_NAME) == 0) && (redefineNumber == 0)) {
         char fileName[512];
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
@@ -118,7 +118,7 @@ callbackClassFileLoadHock(jvmtiEnv *jvmti_env,
         const unsigned char* class_data,
         jint* new_class_data_len,
         unsigned char** new_class_data) {
-    if (name != NULL && strcmp(name, NAME)==0 && (redefineNumber == 1)) {
+    if (name != NULL && strcmp(name, NAME) == 0 && (redefineNumber == 1)) {
         NSK_DISPLAY1(">>>>>>callbackClassFileLoadHock ... Name=%s...  >>\n",name);
         /*redefineClass(jvmti_env, myTestClass);*/
     }
@@ -175,7 +175,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint rc ;
     NSK_DISPLAY0(" VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (rc!= JNI_OK) {
+    if (rc != JNI_OK) {
         NSK_COMPLAIN0(" Could not load JVMTI interface \n");
     } else {
         /* Open simple block for better memor usage. */

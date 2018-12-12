@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,13 +170,15 @@ public class CommandCompletionTest extends ReplToolTesting {
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "id ", "intro ", "rerun ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ",
+                "id ", "intro ", "keys ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/? |", false,
                 "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "id ", "intro ", "rerun ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ",
+                "id ", "intro ", "keys ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,

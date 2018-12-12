@@ -116,14 +116,17 @@ public:
     return SymbolTableHash::BaseConfig::allocate_node(size, value);
   }
   static void free_node(void* memory, Symbol* const& value) {
-    // We get here either because #1 some threads lost a race
-    // to insert a newly created Symbol, or #2 we are freeing
-    // a symbol during normal cleanup deletion.
-    // If #1, then the symbol can be a permanent (refcount==PERM_REFCOUNT),
-    // or regular newly created one but with refcount==0 (see SymbolTableCreateEntry)
-    // If #2, then the symbol must have refcount==0
-    assert((value->refcount() == PERM_REFCOUNT) || (value->refcount() == 0),
+    // We get here because #1 some threads lost a race to insert a newly created Symbol
+    // or #2 we're cleaning up unused symbol.
+    // If #1, then the symbol can be either permanent (refcount==PERM_REFCOUNT),
+    // or regular newly created one (refcount==1)
+    // If #2, then the symbol is dead (refcount==0)
+    assert((value->refcount() == PERM_REFCOUNT) || (value->refcount() == 1) || (value->refcount() == 0),
            "refcount %d", value->refcount());
+    if (value->refcount() == 1) {
+      value->decrement_refcount();
+      assert(value->refcount() == 0, "expected dead symbol");
+    }
     SymbolTable::delete_symbol(value);
     SymbolTableHash::BaseConfig::free_node(memory, value);
     SymbolTable::item_removed();
@@ -159,6 +162,12 @@ void SymbolTable::delete_symbol(Symbol* sym) {
     }
   } else {
     delete sym;
+  }
+}
+
+void SymbolTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
   }
 }
 
@@ -398,9 +407,7 @@ Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   SymbolTableGet stg;
   bool rehash_warning = false;
   _local_table->get(thread, lookup, stg, &rehash_warning);
-  if (rehash_warning) {
-    _needs_rehashing = true;
-  }
+  update_needs_rehash(rehash_warning);
   Symbol* sym = stg.get_res_sym();
   assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
   return sym;
@@ -462,71 +469,26 @@ void SymbolTable::add(ClassLoaderData* loader_data, const constantPoolHandle& cp
   }
 }
 
-class SymbolTableCreateEntry : public StackObj {
-private:
-  Thread*     _thread;
-  const char* _name;
-  int         _len;
-  bool        _heap;
-  Symbol*     _return;
-  Symbol*     _created;
-
-  void assert_for_name(Symbol* sym, const char* where) const {
-#ifdef ASSERT
-    assert(sym->utf8_length() == _len, "%s [%d,%d]", where, sym->utf8_length(), _len);
-    for (int i = 0; i < _len; i++) {
-      assert(sym->char_at(i) == _name[i],
-             "%s [%d,%d,%d]", where, i, sym->char_at(i), _name[i]);
-    }
-#endif
-  }
-
-public:
-  SymbolTableCreateEntry(Thread* thread, const char* name, int len, bool heap)
-  : _thread(thread), _name(name) , _len(len), _heap(heap), _return(NULL) , _created(NULL) {
-    assert(_name != NULL, "expected valid name");
-  }
-  Symbol* operator()() {
-    _created = SymbolTable::the_table()->allocate_symbol(_name, _len, _heap, _thread);
-    assert(_created != NULL, "expected created symbol");
-    assert_for_name(_created, "operator()()");
-    assert(_created->equals(_name, _len),
-           "symbol must be properly initialized [%p,%d,%d]", _name, _len, (int)_heap);
-    return _created;
-  }
-  void operator()(bool inserted, Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
-    if (!inserted && (_created != NULL)) {
-      // We created our symbol, but someone else inserted
-      // theirs first, so ours will be destroyed.
-      // Since symbols are created with refcount of 1,
-      // we must decrement it here to 0 to delete,
-      // unless it's a permanent one.
-      if (_created->refcount() != PERM_REFCOUNT) {
-        assert(_created->refcount() == 1, "expected newly created symbol");
-        _created->decrement_refcount();
-        assert(_created->refcount() == 0, "expected dead symbol");
-      }
-    }
-    _return = *value;
-    assert_for_name(_return, "operator()");
-  }
-  Symbol* get_new_sym() const {
-    assert_for_name(_return, "get_new_sym");
-    return _return;
-  }
-};
-
 Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool heap, TRAPS) {
   SymbolTableLookup lookup(THREAD, name, len, hash);
-  SymbolTableCreateEntry stce(THREAD, name, len, heap);
-  bool rehash_warning = false;
+  SymbolTableGet stg;
   bool clean_hint = false;
-  _local_table->get_insert_lazy(THREAD, lookup, stce, stce, &rehash_warning, &clean_hint);
-  if (rehash_warning) {
-    _needs_rehashing = true;
-  }
+  bool rehash_warning = false;
+  Symbol* sym = NULL;
+
+  do {
+    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+      sym = stg.get_res_sym();
+      break;
+    }
+    sym = SymbolTable::the_table()->allocate_symbol(name, len, heap, THREAD);
+    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+      break;
+    }
+  } while(true);
+
+  update_needs_rehash(rehash_warning);
+
   if (clean_hint) {
     // we just found out that there is a dead item,
     // which we were unable to clean right now,
@@ -536,8 +498,8 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
     mark_item_clean_count();
     check_concurrent_work();
   }
-  Symbol* sym = stce.get_new_sym();
-  assert(sym->refcount() != 0, "zero is invalid");
+
+  assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
   return sym;
 }
 

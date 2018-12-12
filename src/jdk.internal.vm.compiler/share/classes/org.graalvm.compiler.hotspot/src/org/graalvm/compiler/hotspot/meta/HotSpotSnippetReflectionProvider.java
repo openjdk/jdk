@@ -55,21 +55,15 @@ public class HotSpotSnippetReflectionProvider implements SnippetReflectionProvid
     }
 
     @Override
-    public Object asObject(ResolvedJavaType type, JavaConstant constant) {
-        if (constant.isNull()) {
-            return null;
-        }
-        HotSpotObjectConstant hsConstant = (HotSpotObjectConstant) constant;
-        return hsConstant.asObject(type);
-    }
-
-    @Override
     public <T> T asObject(Class<T> type, JavaConstant constant) {
         if (constant.isNull()) {
             return null;
         }
-        HotSpotObjectConstant hsConstant = (HotSpotObjectConstant) constant;
-        return hsConstant.asObject(type);
+        if (constant instanceof HotSpotObjectConstant) {
+            HotSpotObjectConstant hsConstant = (HotSpotObjectConstant) constant;
+            return hsConstant.asObject(type);
+        }
+        return null;
     }
 
     @Override

@@ -82,10 +82,10 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         NSK_DISPLAY2("NativeMethodBind received for \"%s %s\"\n",
             methNam, methSig);
 
-    if (!(methNam==NULL))
+    if (methNam != NULL)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) methNam)))
             NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to method name\n\n");
-    if (!(methSig==NULL))
+    if (methSig != NULL)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) methSig)))
             NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to method signature\n\n");
 

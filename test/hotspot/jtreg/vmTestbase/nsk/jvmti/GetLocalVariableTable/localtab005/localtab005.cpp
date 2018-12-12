@@ -112,7 +112,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
             methInfo[i].mid = jni_env->GetStaticMethodID(testedCls, methInfo[i].m_name, methInfo[i].m_sign);
         if (methInfo[i].mid == NULL) {
             NSK_COMPLAIN3("TEST FAILURE: unable to get the method ID for the %s method \"%s\", signature \"%s\"\n\n",
-                methInfo[i].inst?"instance":"static",
+                methInfo[i].inst ? "instance" : "static",
                 methInfo[i].m_name, methInfo[i].m_sign);
             return STATUS_FAILED;
         }
@@ -120,24 +120,24 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
 /* get the LocalVariableTable attribute */
         if (!NSK_JVMTI_VERIFY(jvmti->GetLocalVariableTable(methInfo[i].mid, &count, &lv_table))) {
             NSK_COMPLAIN3("TEST FAILED: unable to get local variable table\n\tfor the %s method \"%s\", signature \"%s\"\n\n",
-                methInfo[i].inst?"instance":"static",
+                methInfo[i].inst ? "instance" : "static",
                 methInfo[i].m_name, methInfo[i].m_sign);
             return STATUS_FAILED;
         } else {
             if (count != methInfo[i].vcount) {
                 totRes = STATUS_FAILED;
                 NSK_COMPLAIN5(
-                    "TEST FAILED: %s method \"%s\", signature \"%s\":"
+                    "TEST FAILED: %s method \"%s\", signature \"%s\" : "
                     "found %d vars in the LocalVariableTable, expected %d\n"
                     "\tHere are the found vars:\n",
-                    methInfo[i].inst?"instance":"static",
+                    methInfo[i].inst ? "instance" : "static",
                     methInfo[i].m_name, methInfo[i].m_sign,
                     count, methInfo[i].vcount);
                 for (j=0; j<count; j++)
                     NSK_COMPLAIN4("\t%d) name: \"%s\"\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n",
                         j+1, lv_table[j].name,
                         lv_table[j].signature,
-                       (lv_table[j].generic_signature==NULL)?"NULL":lv_table[j].generic_signature);
+                       (lv_table[j].generic_signature == NULL) ? "NULL" : lv_table[j].generic_signature);
                 NSK_COMPLAIN0("\n");
 
                 continue;
@@ -147,7 +147,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
                     ">>> Checking vars in the LocalVariableTable of the %s method \"%s\","
                     "signature \"%s\" ...\n"
                     "\t%d local vars as expected\n",
-                    methInfo[i].inst?"instance":"static",
+                    methInfo[i].inst ? "instance" : "static",
                     methInfo[i].m_name, methInfo[i].m_sign, count);
             }
 
@@ -155,19 +155,19 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
                 for (k=0; k<count; k++) {
                     if (strcmp(lv_table[j].name, methInfo[i].vars[k].v_name) == 0) {
                         if ((strcmp(lv_table[j].signature, methInfo[i].vars[k].v_sign) != 0) ||
-                            (strcmp((lv_table[j].generic_signature==NULL)?"NULL":lv_table[j].generic_signature,
+                            (strcmp((lv_table[j].generic_signature == NULL) ? "NULL" : lv_table[j].generic_signature,
                                 methInfo[i].vars[k].v_gen_sign) != 0)) {
                             NSK_COMPLAIN8(
                                 "TEST FAILED: %s method: \"%s\" \"%s\":\n"
                                 "\tvar \"%s\" has signature \"%s\",\n"
                                 "\tgeneric signature \"%s\"\n\n"
                                 "\tExpected: \"%s\"\n\t\t\"%s\"\n\n",
-                                methInfo[i].inst?"instance":"static",
+                                methInfo[i].inst ? "instance" : "static",
                                 methInfo[i].m_name, methInfo[i].m_sign,
                                 lv_table[j].name, lv_table[j].signature,
-                               (lv_table[j].generic_signature==NULL)?"NULL":lv_table[j].generic_signature,
+                               (lv_table[j].generic_signature == NULL) ? "NULL" : lv_table[j].generic_signature,
                                 methInfo[i].vars[k].v_sign,
-                               (methInfo[i].vars[k].v_gen_sign==NULL)?"NULL":methInfo[i].vars[k].v_gen_sign);
+                               (methInfo[i].vars[k].v_gen_sign == NULL) ? "NULL" : methInfo[i].vars[k].v_gen_sign);
                             totRes = STATUS_FAILED;
                             break;
                         }
@@ -175,7 +175,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
                             NSK_DISPLAY3("CHECK PASSED: var: \"%s\",\n\tsignature: \"%s\",\n\tgeneric signature: \"%s\"\n",
                                 lv_table[j].name,
                                 lv_table[j].signature,
-                               (lv_table[j].generic_signature==NULL)?"NULL":lv_table[j].generic_signature);
+                               (lv_table[j].generic_signature == NULL) ? "NULL" : lv_table[j].generic_signature);
                     }
                 }
             }

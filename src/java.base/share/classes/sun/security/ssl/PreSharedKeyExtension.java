@@ -656,7 +656,11 @@ final class PreSharedKeyExtension {
                 return null;
             }
             SecretKey psk = pskOpt.get();
-            Optional<byte[]> pskIdOpt = chc.resumingSession.consumePskIdentity();
+            // The PSK ID can only be used in one connections, but this method
+            // may be called twice in a connection if the server sends HRR.
+            // ID is saved in the context so it can be used in the second call.
+            Optional<byte[]> pskIdOpt = Optional.ofNullable(chc.pskIdentity)
+                .or(chc.resumingSession::consumePskIdentity);
             if (!pskIdOpt.isPresent()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -664,7 +668,7 @@ final class PreSharedKeyExtension {
                 }
                 return null;
             }
-            byte[] pskId = pskIdOpt.get();
+            chc.pskIdentity = pskIdOpt.get();
 
             //The session cannot be used again. Remove it from the cache.
             SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
@@ -681,7 +685,7 @@ final class PreSharedKeyExtension {
                     chc.resumingSession.getTicketCreationTime());
             int obfuscatedAge =
                     ageMillis + chc.resumingSession.getTicketAgeAdd();
-            identities.add(new PskIdentity(pskId, obfuscatedAge));
+            identities.add(new PskIdentity(chc.pskIdentity, obfuscatedAge));
 
             SecretKey binderKey = deriveBinderKey(psk, chc.resumingSession);
             ClientHelloMessage clientHello = (ClientHelloMessage)message;

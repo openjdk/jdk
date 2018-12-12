@@ -236,17 +236,17 @@ void checkCall(int step, int exJniCalls, int exJavaCalls) {
         if (meth_info[i].jni_calls == exJniCalls) {
             if (verbose)
                 printf("\nCHECK PASSED: the %s JNI function for calling method \"%s %s\" has been %s\n\t%d intercepted call(s) as expected\n",
-                    (step==1)?"tested":"original",
+                    (step == 1) ? "tested" : "original",
                     meth_info[i].m_name, meth_info[i].m_sign,
-                    (step==1)?"redirected":"restored",
+                    (step == 1) ? "redirected" : "restored",
                     meth_info[i].jni_calls);
         }
         else {
             result = STATUS_FAILED;
             printf("\nTEST FAILED: the %s JNI function for calling method \"%s %s\" has not been %s\n\t%d intercepted call(s) instead of %d as expected\n",
-                (step==1)?"tested":"original",
+                (step == 1) ? "tested" : "original",
                 meth_info[i].m_name, meth_info[i].m_sign,
-                (step==1)?"redirected":"restored",
+                (step == 1) ? "redirected" : "restored",
                 meth_info[i].jni_calls, exJniCalls);
         }
         meth_info[i].jni_calls = 0; /* zeroing interception counter */
@@ -255,13 +255,13 @@ void checkCall(int step, int exJniCalls, int exJavaCalls) {
             if (verbose)
                 printf("CHECK PASSED: the java method \"%s %s\" has been really invoked by the %s JNI function\n",
                     meth_info[i].m_name, meth_info[i].m_sign,
-                    (step==1)?"redirected":"restored");
+                    (step == 1) ? "redirected" : "restored");
         }
         else {
             result = STATUS_FAILED;
             printf("TEST FAILED: the tested java method \"%s %s\" has not been really invoked by the %s JNI function\n",
                 meth_info[i].m_name, meth_info[i].m_sign,
-                (step==1)?"redirected":"restored");
+                (step == 1) ? "redirected" : "restored");
         }
     }
 }

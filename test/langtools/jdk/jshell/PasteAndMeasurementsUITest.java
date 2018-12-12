@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@ import org.testng.annotations.Test;
 @Test
 public class PasteAndMeasurementsUITest extends UITesting {
 
+    public PasteAndMeasurementsUITest() {
+        super(true);
+    }
+
     public void testPrevNextSnippet() throws Exception {
         Field cons = System.class.getDeclaredField("cons");
         cons.setAccessible(true);
@@ -55,17 +59,17 @@ public class PasteAndMeasurementsUITest extends UITesting {
         console.setAccessible(true);
         cons.set(null, console.newInstance());
         doRunTest((inputSink, out) -> {
-            inputSink.write("void test1() {\nSystem.err.println(1);\n}\n" + LOC +
-                            "void test2() {\nSystem.err.println(1);\n}\n" + LOC + LOC + LOC + LOC + LOC);
-            waitOutput(out,       "\u001b\\[6nvoid test1\\(\\) \\{\n" +
-                            "\u0006\u001b\\[6nSystem.err.println\\(1\\);\n" +
-                            "\u0006\u001b\\[6n\\}\n" +
-                            "\\|  created method test1\\(\\)\n" +
-                            PROMPT + "\u001b\\[6nvoid test2\\(\\) \\{\n" +
-                            "\u0006\u001b\\[6nSystem.err.println\\(1\\);\n" +
-                            "\u0006\u001b\\[6n\\}\n" +
-                            "\\|  created method test2\\(\\)\n" +
-                            PROMPT + "\u001b\\[6n");
+            inputSink.write("void test1() {\nSystem.err.println(1);\n}\n" + //LOC +
+                            "void test2() {\nSystem.err.println(1);\n}\n"/* + LOC + LOC + LOC + LOC + LOC*/);
+            waitOutput(out,       "void test1\\(\\)\u001B\\[2D\u001B\\[2C \\{\n" +
+                            CONTINUATION_PROMPT + "System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
+                            CONTINUATION_PROMPT + "\\}\u001B\\[2A\u001B\\[12C\n\n\u001B\\[C\n" +
+                            "\u001B\\[\\?2004l\\|  created method test1\\(\\)\n" +
+                            "\u001B\\[\\?2004h" + PROMPT + "void test2\\(\\)\u001B\\[2D\u001B\\[2C \\{\n" +
+                            CONTINUATION_PROMPT + "System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
+                            CONTINUATION_PROMPT + "\\}\u001B\\[2A\u001B\\[12C\n\n\u001B\\[C\n" +
+                            "\u001B\\[\\?2004l\\|  created method test2\\(\\)\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
         });
     }
         private static final String LOC = "\033[12;1R";

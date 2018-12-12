@@ -318,7 +318,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             NSK_DISPLAY1("SingleStepEventsCount: %d\n", SingleStepEventsCount);
             if (vm_mode == VM_MODE_MIXED) {
                 if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-                        (((i % 2)==0) ? JVMTI_DISABLE : JVMTI_ENABLE),
+                        (((i % 2) == 0) ? JVMTI_DISABLE : JVMTI_ENABLE),
                         JVMTI_EVENT_SINGLE_STEP, NULL)))
                     nsk_jvmti_setFailStatus();
             }

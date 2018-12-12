@@ -69,6 +69,7 @@ import org.graalvm.compiler.hotspot.nodes.VMErrorNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.SnippetAnchorNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.FixedValueAnchorNode;
@@ -313,7 +314,7 @@ public class WriteBarrierSnippets implements Snippets {
     private static void verifyNotArray(Object object) {
         if (object != null) {
             // Manually build the null check and cast because we're in snippet that's lowered late.
-            AssertionNode.assertion(false, !PiNode.piCastNonNull(object, Object.class).getClass().isArray(), "imprecise card mark used with array");
+            AssertionNode.assertion(false, !PiNode.piCastNonNull(object, SnippetAnchorNode.anchor()).getClass().isArray(), "imprecise card mark used with array");
         }
     }
 
@@ -427,7 +428,7 @@ public class WriteBarrierSnippets implements Snippets {
         private final SnippetInfo serialPreciseWriteBarrier = snippet(WriteBarrierSnippets.class, "serialPreciseWriteBarrier", GC_CARD_LOCATION);
         private final SnippetInfo serialArrayRangeWriteBarrier = snippet(WriteBarrierSnippets.class, "serialArrayRangeWriteBarrier");
         private final SnippetInfo g1PreWriteBarrier = snippet(WriteBarrierSnippets.class, "g1PreWriteBarrier", GC_INDEX_LOCATION, GC_LOG_LOCATION);
-        private final SnippetInfo g1ReferentReadBarrier = snippet(WriteBarrierSnippets.class, "g1PreWriteBarrier", GC_INDEX_LOCATION, GC_LOG_LOCATION);
+        private final SnippetInfo g1ReferentReadBarrier = g1PreWriteBarrier;
         private final SnippetInfo g1PostWriteBarrier = snippet(WriteBarrierSnippets.class, "g1PostWriteBarrier", GC_CARD_LOCATION, GC_INDEX_LOCATION, GC_LOG_LOCATION);
         private final SnippetInfo g1ArrayRangePreWriteBarrier = snippet(WriteBarrierSnippets.class, "g1ArrayRangePreWriteBarrier", GC_INDEX_LOCATION, GC_LOG_LOCATION);
         private final SnippetInfo g1ArrayRangePostWriteBarrier = snippet(WriteBarrierSnippets.class, "g1ArrayRangePostWriteBarrier", GC_CARD_LOCATION, GC_INDEX_LOCATION, GC_LOG_LOCATION);

@@ -91,6 +91,9 @@ const uintptr_t   ZAddressSpaceStart            = ZPlatformAddressSpaceStart;
 const uintptr_t   ZAddressSpaceSize             = ZPlatformAddressSpaceSize;
 const uintptr_t   ZAddressSpaceEnd              = ZAddressSpaceStart + ZAddressSpaceSize;
 
+// NMethod entry barrier
+const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset;
+
 // Cache line size
 const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
 

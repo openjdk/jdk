@@ -515,7 +515,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/ProcessBuilder/PipelineTest.java                      8211844 aix-ppc64
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 
 ############################################################################

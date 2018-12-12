@@ -39,13 +39,22 @@ public:
 #endif
 };
 
+class ZNMethodOopClosure : public OopClosure {
+public:
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+};
+
 template <bool finalizable>
-class ZMarkBarrierOopClosure : public BasicOopIterateClosure {
+class ZMarkBarrierOopClosure : public MetadataVisitingOopIterateClosure {
 public:
   ZMarkBarrierOopClosure();
 
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
+
+  virtual void do_klass(Klass* k);
+  virtual void do_cld(ClassLoaderData* cld);
 
 #ifdef ASSERT
   virtual bool should_verify_oops() {

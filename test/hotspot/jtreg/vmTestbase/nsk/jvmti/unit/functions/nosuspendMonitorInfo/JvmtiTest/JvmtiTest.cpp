@@ -170,7 +170,7 @@ Java_nsk_jvmti_unit_functions_nosuspendMonitorInfo_JvmtiTest_CheckMonitorInfo(JN
         iGlobalStatus = 2;
     }
 
-    if (expected_count !=0) {
+    if (expected_count != 0) {
 
         ret = jvmti->GetCurrentContendedMonitor(thr, owned_monitor);
         if (ret != JVMTI_ERROR_NONE) {
