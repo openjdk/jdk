@@ -427,6 +427,10 @@ public class TypeAnnotations {
             if (annotations.isEmpty()) {
                 return type;
             }
+            // All annotations share the same position
+            for (TypeCompound tc : annotations) {
+                Assert.check(tc.position == pos);
+            }
 
             if (type.hasTag(TypeTag.ARRAY))
                 return rewriteArrayType((ArrayType)type, annotations, pos);
@@ -522,10 +526,7 @@ public class TypeAnnotations {
                 if (depth.nonEmpty()) {
                     // Only need to change the annotation positions
                     // if they are on an enclosed type.
-                    // All annotations share the same position; modify the first one.
-                    Attribute.TypeCompound a = annotations.get(0);
-                    TypeAnnotationPosition p = a.position;
-                    p.location = p.location.appendList(depth.toList());
+                    pos.location = pos.location.appendList(depth.toList());
                 }
 
                 Type ret = typeWithAnnotations(type, enclTy, annotations);
@@ -583,11 +584,7 @@ public class TypeAnnotations {
             tomodify.elemtype = elemType;
 
             // Update positions
-            for (TypeCompound tc : annotations) {
-                if (tc.position == null)
-                    tc.position = pos;
-                tc.position.location = loc;
-            }
+            pos.location = loc;
 
             return res;
         }
@@ -1394,16 +1391,6 @@ public class TypeAnnotations {
                 }
             }
             scan(tree.elems);
-        }
-
-
-        private void findTypeCompoundPosition(JCTree tree, JCTree frame, List<Attribute.TypeCompound> annotations) {
-            if (!annotations.isEmpty()) {
-                final TypeAnnotationPosition p =
-                        resolveFrame(tree, frame, frames, currentLambda, 0, new ListBuffer<>());
-                for (TypeCompound tc : annotations)
-                    tc.position = p;
-            }
         }
 
         private void findPosition(JCTree tree, JCTree frame, List<JCAnnotation> annotations) {
