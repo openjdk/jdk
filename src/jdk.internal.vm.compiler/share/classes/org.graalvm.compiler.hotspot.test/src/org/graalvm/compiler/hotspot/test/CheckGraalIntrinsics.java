@@ -374,6 +374,14 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "jdk/jfr/internal/JVM.getEventWriter()Ljava/lang/Object;");
         }
 
+        if (isJDK12OrHigher()) {
+            add(toBeInvestigated,
+                            "java/lang/CharacterDataLatin1.isDigit(I)Z",
+                            "java/lang/CharacterDataLatin1.isLowerCase(I)Z",
+                            "java/lang/CharacterDataLatin1.isUpperCase(I)Z",
+                            "java/lang/CharacterDataLatin1.isWhitespace(I)Z");
+        }
+
         if (!config.inlineNotify()) {
             add(ignore, "java/lang/Object.notify()V");
         }
