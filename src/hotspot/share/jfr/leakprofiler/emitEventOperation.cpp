@@ -185,7 +185,7 @@ static int array_size(const oop object) {
   if (object->is_array()) {
     return arrayOop(object)->length();
   }
-  return -1;
+  return min_jint;
 }
 
 void EmitEventOperation::write_event(const ObjectSample* sample, EdgeStore* edge_store) {

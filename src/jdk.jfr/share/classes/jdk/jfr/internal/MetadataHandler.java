@@ -100,7 +100,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
 
     final Map<String, TypeElement> types = new LinkedHashMap<>(200);
     final Map<String, XmlType> xmlTypes = new HashMap<>(20);
-    final Map<String, AnnotationElement> xmlContentTypes = new HashMap<>(20);
+    final Map<String, List<AnnotationElement>> xmlContentTypes = new HashMap<>(20);
     final List<String> relations = new ArrayList<>();
     long eventTypeId = 255;
     long structTypeId = 33;
@@ -148,17 +148,35 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
             break;
         case "XmlContentType":
             String name = attributes.getValue("name");
-            String type = attributes.getValue("annotationType");
-            String value = attributes.getValue("annotationValue");
-            Class<? extends Annotation> annotationType = createAnnotationClass(type);
-            AnnotationElement ae = value == null ? new AnnotationElement(annotationType) : new AnnotationElement(annotationType, value);
-            xmlContentTypes.put(name, ae);
+            String annotation = attributes.getValue("annotation");
+            xmlContentTypes.put(name, createAnnotationElements(annotation));
             break;
         case "Relation":
             String n = attributes.getValue("name");
             relations.add(n);
             break;
         }
+    }
+
+    private List<AnnotationElement> createAnnotationElements(String annotation) throws InternalError {
+        String[] annotations = annotation.split(",");
+        List<AnnotationElement> annotationElements = new ArrayList<>();
+        for (String a : annotations) {
+            a = a.trim();
+            int leftParenthesis = a.indexOf("(");
+            if (leftParenthesis == -1) {
+                annotationElements.add(new AnnotationElement(createAnnotationClass(a)));
+            } else {
+                int rightParenthesis = a.lastIndexOf(")");
+                if (rightParenthesis == -1) {
+                    throw new InternalError("Expected closing parenthesis for 'XMLContentType'");
+                }
+                String value = a.substring(leftParenthesis + 1, rightParenthesis);
+                String type = a.substring(0, leftParenthesis);
+                annotationElements.add(new AnnotationElement(createAnnotationClass(type), value));
+            }
+        }
+        return annotationElements;
     }
 
     @SuppressWarnings("unchecked")
@@ -255,7 +273,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
                     aes.add(new AnnotationElement(Unsigned.class));
                 }
                 if (f.contentType != null) {
-                    aes.add(Objects.requireNonNull(xmlContentTypes.get(f.contentType)));
+                    aes.addAll(Objects.requireNonNull(xmlContentTypes.get(f.contentType)));
                 }
                 if (f.relation != null) {
                     aes.add(Objects.requireNonNull(relationMap.get(f.relation)));

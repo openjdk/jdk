@@ -107,8 +107,7 @@
           <xs:element name="XmlContentType">
             <xs:complexType>
               <xs:attribute name="name" type="xs:NMTOKEN" use="required" />
-              <xs:attribute name="annotationType" type="xs:NMTOKEN" use="required" />
-              <xs:attribute name="annotationValue" type="xs:string" use="optional" />
+              <xs:attribute name="annotation" type="xs:string" use="required" />
             </xs:complexType>
           </xs:element>
           <xs:element name="Relation">
