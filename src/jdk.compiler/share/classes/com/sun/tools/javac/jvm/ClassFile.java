@@ -116,7 +116,8 @@ public class ClassFile {
         V53(53, 0),   // JDK 1.9: modules, indy string concat
         V54(54, 0),   // JDK 10
         V55(55, 0),   // JDK 11: constant dynamic, nest mates
-        V56(56, 0);   // JDK 12
+        V56(56, 0),   // JDK 12
+        V57(57, 0);   // JDK 13
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

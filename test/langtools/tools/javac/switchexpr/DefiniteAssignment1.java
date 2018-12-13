@@ -25,7 +25,7 @@
  * @test
  * @bug 8214031
  * @summary Verify that definite assignment when true works (legal code)
- * @compile --enable-preview --source 12 DefiniteAssignment1.java
+ * @compile --enable-preview --source 13 DefiniteAssignment1.java
  * @run main/othervm --enable-preview DefiniteAssignment1
  */
 public class DefiniteAssignment1 {

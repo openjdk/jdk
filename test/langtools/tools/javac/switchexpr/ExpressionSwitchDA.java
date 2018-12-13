@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986
  * @summary Check definite (un)assignment for in switch expressions.
- * @compile --enable-preview -source 12 ExpressionSwitchDA.java
+ * @compile --enable-preview -source 13 ExpressionSwitchDA.java
  * @run main/othervm --enable-preview ExpressionSwitchDA
  */
 

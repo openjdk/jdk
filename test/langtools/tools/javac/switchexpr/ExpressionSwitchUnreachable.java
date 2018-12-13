@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify reachability in switch expressions.
- * @compile/fail/ref=ExpressionSwitchUnreachable.out -XDrawDiagnostics --enable-preview -source 12 ExpressionSwitchUnreachable.java
+ * @compile/fail/ref=ExpressionSwitchUnreachable.out -XDrawDiagnostics --enable-preview -source 13 ExpressionSwitchUnreachable.java
  */
 
 public class ExpressionSwitchUnreachable {

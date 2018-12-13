@@ -25,7 +25,7 @@
  * @test
  * @bug 8214031 8214114
  * @summary Verify switch expressions embedded in various statements work properly.
- * @compile --enable-preview -source 12 ExpressionSwitchEmbedding.java
+ * @compile --enable-preview -source 13 ExpressionSwitchEmbedding.java
  * @run main/othervm --enable-preview ExpressionSwitchEmbedding
  */
 

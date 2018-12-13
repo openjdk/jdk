@@ -32,7 +32,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 /**
  * A skeletal visitor for annotation values with default behavior
  * appropriate for source versions {@link SourceVersion#RELEASE_9
- * RELEASE_9} through {@link SourceVersion#RELEASE_12 RELEASE_12}.
+ * RELEASE_9} through {@link SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * <p> <b>WARNING:</b> The {@code AnnotationValueVisitor} interface
  * implemented by this class may have methods added to it in the
@@ -59,7 +59,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see AbstractAnnotationValueVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public abstract class AbstractAnnotationValueVisitor9<R, P> extends AbstractAnnotationValueVisitor8<R, P> {
 
     /**

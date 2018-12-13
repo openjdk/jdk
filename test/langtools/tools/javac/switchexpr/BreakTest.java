@@ -66,7 +66,7 @@ public class BreakTest {
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("-XDdev", "--enable-preview", "-source", "12"), null,
+            List.of("-XDdev", "--enable-preview", "-source", "13"), null,
             Arrays.asList(new MyFileObject(CODE)));
         List<String> labels = new ArrayList<>();
         new TreePathScanner<Void, Void>() {

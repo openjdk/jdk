@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A scanning visitor of program elements with default behavior
  * appropriate for source versions {@link SourceVersion#RELEASE_9
- * RELEASE_9} through {@link SourceVersion#RELEASE_12 RELEASE_12}.
+ * RELEASE_9} through {@link SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * The <code>visit<i>Xyz</i></code> methods in this
  * class scan their component elements by calling {@code scan} on
@@ -92,7 +92,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 9
  * @spec JPMS
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public class ElementScanner9<R, P> extends ElementScanner8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

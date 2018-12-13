@@ -24,7 +24,7 @@
 // key: compiler.err.switch.expression.completes.normally
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// options: --enable-preview -source 12
+// options: --enable-preview -source 13
 
 class SwitchExpressionCompletesNormally {
     public String convert(int i) {

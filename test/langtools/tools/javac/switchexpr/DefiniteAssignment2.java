@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8214031
  * @summary Verify that definite assignment when true works (illegal code)
- * @compile/fail/ref=DefiniteAssignment2.out --enable-preview --source 12 -XDrawDiagnostics DefiniteAssignment2.java
+ * @compile/fail/ref=DefiniteAssignment2.out --enable-preview --source 13 -XDrawDiagnostics DefiniteAssignment2.java
  */
 public class DefiniteAssignment2 {
 

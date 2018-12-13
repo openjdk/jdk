@@ -130,7 +130,7 @@ public class RawStringLiteralLangAPI {
             new JavacTask(TOOLBOX)
                     .sources(code)
                     .classpath(".")
-                    .options("--enable-preview", "-source", "12")
+                    .options("--enable-preview", "-source", "13")
                     .run();
             String output = new JavaTask(TOOLBOX)
                     .vmOptions("--enable-preview")
@@ -153,7 +153,7 @@ public class RawStringLiteralLangAPI {
         String output = new JavacTask(TOOLBOX)
                 .sources(source)
                 .classpath(".")
-                .options("--enable-preview", "-source", "12", "-encoding", "utf8")
+                .options("--enable-preview", "-source", "13", "-encoding", "utf8")
                 .run()
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -170,7 +170,7 @@ public class RawStringLiteralLangAPI {
         String errors = new JavacTask(TOOLBOX)
                 .sources(source)
                 .classpath(".")
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", "12", "-encoding", "utf8")
+                .options("-XDrawDiagnostics", "--enable-preview", "-source", "13", "-encoding", "utf8")
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);

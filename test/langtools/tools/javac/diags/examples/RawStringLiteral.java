@@ -24,7 +24,7 @@
 // key: compiler.err.unicode.backtick
 // key: compiler.misc.feature.raw.string.literals
 // key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source 12 -Xlint:preview
+// options: --enable-preview -source 13 -Xlint:preview
 
 class RawStringLiteral {
     String m() {

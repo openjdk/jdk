@@ -59,6 +59,7 @@ public enum SourceVersion {
      *  10: local-variable type inference (var)
      *  11: local-variable syntax for lambda parameters
      *  12: TBD
+     *  13: TBD
      */
 
     /**
@@ -183,7 +184,15 @@ public enum SourceVersion {
      *
      * @since 12
      */
-     RELEASE_12;
+     RELEASE_12,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 13.
+     *
+     * @since 13
+     */
+     RELEASE_13;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -194,7 +203,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_12;
+        return RELEASE_13;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -204,6 +213,8 @@ public enum SourceVersion {
             String specVersion = System.getProperty("java.specification.version");
 
             switch (specVersion) {
+                case "13":
+                    return RELEASE_13;
                 case "12":
                     return RELEASE_12;
                 case "11":

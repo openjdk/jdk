@@ -3,7 +3,7 @@
  * @bug 8206986
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
- * @compile --enable-preview -source 12 ExpressionSwitch.java
+ * @compile --enable-preview -source 13 ExpressionSwitch.java
  * @run main/othervm --enable-preview ExpressionSwitch
  */
 

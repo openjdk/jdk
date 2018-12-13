@@ -24,7 +24,7 @@
 // key: compiler.err.break.ambiguous.target
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// options: --enable-preview -source 12
+// options: --enable-preview -source 13
 
 class BreakAmbiguousTarget {
     void m(int i, int j) {

@@ -32,7 +32,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A simple visitor for annotation values with default behavior
  * appropriate for source versions {@link SourceVersion#RELEASE_9
- * RELEASE_9} through {@link SourceVersion#RELEASE_12 RELEASE_12}.
+ * RELEASE_9} through {@link SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * Visit methods call {@link #defaultAction
  * defaultAction} passing their arguments to {@code defaultAction}'s
@@ -68,7 +68,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public class SimpleAnnotationValueVisitor9<R, P> extends SimpleAnnotationValueVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

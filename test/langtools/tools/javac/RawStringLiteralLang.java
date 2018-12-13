@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Unit tests for Raw String Literal language changes
- * @compile --enable-preview -source 12 -encoding utf8 RawStringLiteralLang.java
+ * @compile --enable-preview -source 13 -encoding utf8 RawStringLiteralLang.java
  * @run main/othervm --enable-preview RawStringLiteralLang
  */
 

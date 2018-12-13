@@ -3,7 +3,7 @@
  * @bug 8206986
  * @summary Verify cases with multiple labels work properly.
  * @compile/fail/ref=MultipleLabelsStatement-old.out -source 9 -Xlint:-options -XDrawDiagnostics MultipleLabelsStatement.java
- * @compile --enable-preview -source 12 MultipleLabelsStatement.java
+ * @compile --enable-preview -source 13 MultipleLabelsStatement.java
  * @run main/othervm --enable-preview MultipleLabelsStatement
  */
 
