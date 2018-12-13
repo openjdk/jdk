@@ -427,19 +427,13 @@ public final class PlatformRecorder {
     }
 
     private void periodicTask() {
+        if (!jvm.hasNativeJFR()) {
+            return;
+        }
         while (true) {
             synchronized (this) {
-                if (!jvm.hasNativeJFR()) {
-                    return;
-                }
-                if (currentChunk != null) {
-                    try {
-                        if (SecuritySupport.getFileSize(currentChunk.getUnfishedFile()) > Options.getMaxChunkSize()) {
-                            rotateDisk();
-                        }
-                    } catch (IOException e) {
-                        Logger.log(JFR_SYSTEM, WARN, "Could not check file size to determine chunk rotation");
-                    }
+                if (jvm.shouldRotateDisk()) {
+                    rotateDisk();
                 }
             }
             long minDelta = RequestEngine.doPeriodic();

@@ -24,29 +24,15 @@
 
 #include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
-#include "jfr/recorder/repository/jfrChunkSizeNotifier.hpp"
 
-size_t JfrChunkSizeNotifier::_chunk_size_threshold = 0;
+static jobject chunk_monitor = NULL;
+static intptr_t threshold = 0;
+static bool rotate = false;
 
-void JfrChunkSizeNotifier::set_chunk_size_threshold(size_t bytes) {
-  _chunk_size_threshold = bytes;
-}
-
-size_t JfrChunkSizeNotifier::chunk_size_threshold() {
-  return _chunk_size_threshold;
-}
-
-static jobject new_chunk_monitor = NULL;
-
-// lazy install
-static jobject get_new_chunk_monitor(Thread* thread) {
-  static bool initialized = false;
-  if (initialized) {
-    assert(new_chunk_monitor != NULL, "invariant");
-    return new_chunk_monitor;
-  }
-  assert(new_chunk_monitor == NULL, "invariant");
+static jobject install_chunk_monitor(Thread* thread) {
+  assert(chunk_monitor == NULL, "invariant");
   // read static field
   HandleMark hm(thread);
   static const char klass[] = "jdk/jfr/internal/JVM";
@@ -55,19 +41,41 @@ static jobject get_new_chunk_monitor(Thread* thread) {
   JavaValue result(T_OBJECT);
   JfrJavaArguments field_args(&result, klass, field, signature, thread);
   JfrJavaSupport::get_field_global_ref(&field_args, thread);
-  new_chunk_monitor = result.get_jobject();
-  initialized = new_chunk_monitor != NULL;
-  return new_chunk_monitor;
+  chunk_monitor = result.get_jobject();
+  return chunk_monitor;
 }
 
-void JfrChunkSizeNotifier::notify() {
+// lazy install
+static jobject get_chunk_monitor(Thread* thread) {
+  return chunk_monitor != NULL ? chunk_monitor : install_chunk_monitor(thread);
+}
+
+static void notify() {
   Thread* const thread = Thread::current();
-  JfrJavaSupport::notify_all(get_new_chunk_monitor(thread), thread);
+  JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
 }
 
-void JfrChunkSizeNotifier::release_monitor() {
-  if (new_chunk_monitor != NULL) {
-    JfrJavaSupport::destroy_global_jni_handle(new_chunk_monitor);
-    new_chunk_monitor = NULL;
+void JfrChunkRotation::evaluate(const JfrChunkWriter& writer) {
+  assert(threshold > 0, "invariant");
+  if (rotate) {
+    // already in progress
+    return;
   }
+  assert(!rotate, "invariant");
+  if (writer.size_written() > threshold) {
+    rotate = true;
+    notify();
+  }
+}
+
+bool JfrChunkRotation::should_rotate() {
+  return rotate;
+}
+
+void JfrChunkRotation::on_rotation() {
+  rotate = false;
+}
+
+void JfrChunkRotation::set_threshold(intptr_t bytes) {
+  threshold = bytes;
 }
