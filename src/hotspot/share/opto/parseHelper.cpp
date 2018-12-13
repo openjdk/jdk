@@ -471,15 +471,15 @@ void Parse::profile_taken_branch(int target_bci, bool force_update) {
     if (osr_site) {
       ciProfileData* data = md->bci_to_data(cur_bci);
       assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
-      int limit = (CompileThreshold
-                   * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100;
+      int limit = (int)((int64_t)CompileThreshold
+                   * (OnStackReplacePercentage - InterpreterProfilePercentage) / 100);
       test_for_osr_md_counter_at(md, data, JumpData::taken_offset(), limit);
     }
   } else {
     // With method data update off, use the invocation counter to trigger an
     // OSR compilation, as done in the interpreter.
     if (osr_site) {
-      int limit = (CompileThreshold * OnStackReplacePercentage) / 100;
+      int limit = (int)((int64_t)CompileThreshold * OnStackReplacePercentage / 100);
       increment_and_test_invocation_counter(limit);
     }
   }
