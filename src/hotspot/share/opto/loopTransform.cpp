@@ -354,6 +354,10 @@ bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
   // check for vectorized loops, any peeling done was already applied
   if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) return false;
 
+  if (_head->is_CountedLoop() && _head->as_CountedLoop()->trip_count() == 1) {
+    return false;
+  }
+
   while( test != _head ) {      // Scan till run off top of loop
     if( test->is_If() ) {       // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
