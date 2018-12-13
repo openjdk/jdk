@@ -429,7 +429,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         // Verify the signature ...
         Signature sigVerf = null;
-        if (sigProvider.length() == 0) {
+        if (sigProvider.isEmpty()) {
             sigVerf = Signature.getInstance(algId.getName());
         } else {
             sigVerf = Signature.getInstance(algId.getName(), sigProvider);
@@ -598,7 +598,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 throw new CertificateEncodingException(
                               "cannot over-write existing certificate");
             Signature sigEngine = null;
-            if ((provider == null) || (provider.length() == 0))
+            if (provider == null || provider.isEmpty())
                 sigEngine = Signature.getInstance(algorithm);
             else
                 sigEngine = Signature.getInstance(algorithm, provider);

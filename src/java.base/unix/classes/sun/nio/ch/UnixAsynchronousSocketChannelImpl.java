@@ -49,8 +49,8 @@ class UnixAsynchronousSocketChannelImpl
     static {
         String propValue = GetPropertyAction.privilegedGetProperty(
             "sun.nio.ch.disableSynchronousRead", "false");
-        disableSynchronousRead = (propValue.length() == 0) ?
-            true : Boolean.valueOf(propValue);
+        disableSynchronousRead = propValue.isEmpty() ?
+            true : Boolean.parseBoolean(propValue);
     }
 
     private final Port port;

@@ -151,10 +151,10 @@ abstract class UnsafeFieldAccessorImpl extends FieldAccessorImpl {
         if (isFinal)
             err += " final";
         err += " " + field.getType().getName() + " field " + getQualifiedFieldName() + " to ";
-        if (attemptedValue.length() > 0) {
+        if (!attemptedValue.isEmpty()) {
             err += "(" + attemptedType + ")" + attemptedValue;
         } else {
-            if (attemptedType.length() > 0)
+            if (!attemptedType.isEmpty())
                 err += attemptedType;
             else
                 err += "null value";

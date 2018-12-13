@@ -162,7 +162,7 @@ class MimeLauncher extends Thread {
        location the application.  If a valid path is not found, it
        returns false else true.  */
     private boolean findExecutablePath(String str) {
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return false;
         }
 

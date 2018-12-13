@@ -1314,7 +1314,7 @@ public class CheckMethodAdapter extends MethodVisitor {
       * @param message the message to use in case of error.
       */
     static void checkMethodIdentifier(final int version, final String name, final String message) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(INVALID + message + MUST_NOT_BE_NULL_OR_EMPTY);
         }
         if ((version & 0xFFFF) >= Opcodes.V1_5) {
@@ -1347,7 +1347,7 @@ public class CheckMethodAdapter extends MethodVisitor {
       * @param message the message to use in case of error.
       */
     static void checkInternalName(final int version, final String name, final String message) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(INVALID + message + MUST_NOT_BE_NULL_OR_EMPTY);
         }
         if (name.charAt(0) == '[') {
@@ -1457,7 +1457,7 @@ public class CheckMethodAdapter extends MethodVisitor {
       * @param descriptor the string to be checked.
       */
     static void checkMethodDescriptor(final int version, final String descriptor) {
-        if (descriptor == null || descriptor.length() == 0) {
+        if (descriptor == null || descriptor.isEmpty()) {
             throw new IllegalArgumentException("Invalid method descriptor (must not be null or empty)");
         }
         if (descriptor.charAt(0) != '(' || descriptor.length() < 3) {

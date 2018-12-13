@@ -1591,7 +1591,7 @@ public abstract class Parser {
                             str = name(false);
                             //          PI target name may not be empty string [#2.6]
                             //          PI target name 'XML' is reserved [#2.6]
-                            if ((str.length() == 0)
+                            if ((str.isEmpty())
                                     || (mXml.name.equals(str.toLowerCase()) == true)) {
                                 panic(FAULT);
                             }

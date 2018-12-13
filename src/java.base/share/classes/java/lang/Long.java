@@ -1248,7 +1248,7 @@ public final class Long extends Number
         boolean negative = false;
         Long result;
 
-        if (nm.length() == 0)
+        if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
         char firstChar = nm.charAt(0);
         // Handle sign, if present

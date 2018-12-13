@@ -85,7 +85,7 @@ public class AttributedString {
 
             text = buffer.toString();
 
-            if (text.length() > 0) {
+            if (!text.isEmpty()) {
                 // Determine the runs, creating a new run when the attributes
                 // differ.
                 int offset = 0;
@@ -144,7 +144,7 @@ public class AttributedString {
         }
         this.text = text;
 
-        if (text.length() == 0) {
+        if (text.isEmpty()) {
             if (attributes.isEmpty())
                 return;
             throw new IllegalArgumentException("Can't add attribute to 0-length text");

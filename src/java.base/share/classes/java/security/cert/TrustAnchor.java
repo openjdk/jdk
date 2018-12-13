@@ -210,7 +210,7 @@ public class TrustAnchor {
         if (caName == null)
             throw new NullPointerException("the caName parameter must be " +
                 "non-null");
-        if (caName.length() == 0)
+        if (caName.isEmpty())
             throw new IllegalArgumentException("the caName " +
                 "parameter must be a non-empty String");
         // check if caName is formatted correctly

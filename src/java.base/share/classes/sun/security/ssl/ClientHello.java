@@ -491,7 +491,7 @@ final class ClientHello {
                     // It is fine to move on with abbreviate handshake if
                     // endpoint identification is enabled.
                     String identityAlg = chc.sslConfig.identificationProtocol;
-                    if ((identityAlg == null || identityAlg.length() == 0)) {
+                    if (identityAlg == null || identityAlg.isEmpty()) {
                         if (isEmsAvailable) {
                             if (!session.useExtendedMasterSecret) {
                                 // perform full handshake instead

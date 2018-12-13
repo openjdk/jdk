@@ -247,7 +247,7 @@ public final class Console implements Flushable
         String line = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                if (fmt.length() != 0)
+                if (!fmt.isEmpty())
                     pw.format(fmt, args);
                 try {
                     char[] ca = readline(false);
@@ -319,7 +319,7 @@ public final class Console implements Flushable
                 }
                 IOError ioe = null;
                 try {
-                    if (fmt.length() != 0)
+                    if (!fmt.isEmpty())
                         pw.format(fmt, args);
                     passwd = readline(true);
                 } catch (IOException x) {

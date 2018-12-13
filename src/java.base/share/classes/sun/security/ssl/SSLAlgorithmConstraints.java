@@ -237,7 +237,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         public boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, AlgorithmParameters parameters) {
 
-            if (algorithm == null || algorithm.length() == 0) {
+            if (algorithm == null || algorithm.isEmpty()) {
                 throw new IllegalArgumentException(
                         "No algorithm name specified");
             }
@@ -276,7 +276,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         public final boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters) {
 
-            if (algorithm == null || algorithm.length() == 0) {
+            if (algorithm == null || algorithm.isEmpty()) {
                 throw new IllegalArgumentException(
                         "No algorithm name specified");
             }

@@ -341,7 +341,7 @@ public class FtpURLConnection extends URLConnection {
                 path.charAt(0) == '/') {
             path = path.substring(1);
         }
-        if (path == null || path.length() == 0) {
+        if (path == null || path.isEmpty()) {
             path = "./";
         }
         if (!path.endsWith("/")) {
@@ -555,7 +555,7 @@ public class FtpURLConnection extends URLConnection {
         }
 
         decodePath(url.getPath());
-        if (filename == null || filename.length() == 0) {
+        if (filename == null || filename.isEmpty()) {
             throw new IOException("illegal filename for a PUT");
         }
         try {

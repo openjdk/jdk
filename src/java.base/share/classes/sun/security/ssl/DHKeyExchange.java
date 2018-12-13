@@ -253,7 +253,7 @@ final class DHKeyExchange {
         static {
             String property = GetPropertyAction.privilegedGetProperty(
                     "jdk.tls.ephemeralDHKeySize");
-            if (property == null || property.length() == 0) {
+            if (property == null || property.isEmpty()) {
                 useLegacyEphemeralDHKeys = false;
                 useSmartEphemeralDHKeys = false;
                 customizedDHKeySize = -1;

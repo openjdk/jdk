@@ -116,8 +116,7 @@ class WindowsFileAttributes
     static {
         String propValue = GetPropertyAction.privilegedGetProperty(
             "sun.nio.fs.ensureAccurateMetadata", "false");
-        ensureAccurateMetadata = (propValue.length() == 0) ?
-            true : Boolean.valueOf(propValue);
+        ensureAccurateMetadata = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
     }
 
     // attributes

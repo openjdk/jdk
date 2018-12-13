@@ -133,7 +133,7 @@ public class URLDecoder {
      * @since 1.4
      */
     public static String decode(String s, String enc) throws UnsupportedEncodingException {
-        if (enc.length() == 0) {
+        if (enc.isEmpty()) {
             throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
         }
 

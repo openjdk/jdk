@@ -372,7 +372,7 @@ public abstract class ZoneId implements Serializable {
     public static ZoneId ofOffset(String prefix, ZoneOffset offset) {
         Objects.requireNonNull(prefix, "prefix");
         Objects.requireNonNull(offset, "offset");
-        if (prefix.length() == 0) {
+        if (prefix.isEmpty()) {
             return offset;
         }
 

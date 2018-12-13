@@ -75,7 +75,7 @@ public class AppConfigurationEntry {
                                 LoginModuleControlFlag controlFlag,
                                 Map<String,?> options)
     {
-        if (loginModuleName == null || loginModuleName.length() == 0 ||
+        if (loginModuleName == null || loginModuleName.isEmpty() ||
             (controlFlag != LoginModuleControlFlag.REQUIRED &&
                 controlFlag != LoginModuleControlFlag.REQUISITE &&
                 controlFlag != LoginModuleControlFlag.SUFFICIENT &&

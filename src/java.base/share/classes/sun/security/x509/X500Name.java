@@ -865,7 +865,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      */
     private void parseDN(String input, Map<String, String> keywordMap)
         throws IOException {
-        if (input == null || input.length() == 0) {
+        if (input == null || input.isEmpty()) {
             names = new RDN[0];
             return;
         }
@@ -937,7 +937,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     }
 
     private void parseRFC2253DN(String dnString) throws IOException {
-        if (dnString.length() == 0) {
+        if (dnString.isEmpty()) {
             names = new RDN[0];
             return;
          }

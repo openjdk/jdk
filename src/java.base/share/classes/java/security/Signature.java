@@ -360,7 +360,7 @@ public abstract class Signature extends SignatureSpi {
         Objects.requireNonNull(algorithm, "null algorithm name");
         if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
             // exception compatibility with existing code
-            if ((provider == null) || (provider.length() == 0)) {
+            if (provider == null || provider.isEmpty()) {
                 throw new IllegalArgumentException("missing provider");
             }
             Provider p = Security.getProvider(provider);

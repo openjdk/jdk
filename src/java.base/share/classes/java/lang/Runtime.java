@@ -403,7 +403,7 @@ public class Runtime {
      */
     public Process exec(String command, String[] envp, File dir)
         throws IOException {
-        if (command.length() == 0)
+        if (command.isEmpty())
             throw new IllegalArgumentException("Empty command");
 
         StringTokenizer st = new StringTokenizer(command);

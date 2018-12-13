@@ -771,8 +771,8 @@ public abstract class ResourceBundle {
         @Override
         public String toString() {
             String l = locale.toString();
-            if (l.length() == 0) {
-                if (locale.getVariant().length() != 0) {
+            if (l.isEmpty()) {
+                if (!locale.getVariant().isEmpty()) {
                     l = "__" + locale.getVariant();
                 } else {
                     l = "\"\"";
@@ -2903,7 +2903,7 @@ public abstract class ResourceBundle {
                     List<Locale> bokmalList = new LinkedList<>();
                     for (Locale l : tmpList) {
                         bokmalList.add(l);
-                        if (l.getLanguage().length() == 0) {
+                        if (l.getLanguage().isEmpty()) {
                             break;
                         }
                         bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
@@ -2921,7 +2921,7 @@ public abstract class ResourceBundle {
                 }
                 // Special handling for Chinese
                 else if (language.equals("zh")) {
-                    if (script.length() == 0 && region.length() > 0) {
+                    if (script.isEmpty() && !region.isEmpty()) {
                         // Supply script for users who want to use zh_Hans/zh_Hant
                         // as bundle names (recommended for Java7+)
                         switch (region) {
@@ -2944,7 +2944,7 @@ public abstract class ResourceBundle {
             private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
                 List<String> variants = null;
 
-                if (variant.length() > 0) {
+                if (!variant.isEmpty()) {
                     variants = new LinkedList<>();
                     int idx = variant.length();
                     while (idx != -1) {
@@ -2960,14 +2960,14 @@ public abstract class ResourceBundle {
                         list.add(Locale.getInstance(language, script, region, v, null));
                     }
                 }
-                if (region.length() > 0) {
+                if (!region.isEmpty()) {
                     list.add(Locale.getInstance(language, script, region, "", null));
                 }
-                if (script.length() > 0) {
+                if (!script.isEmpty()) {
                     list.add(Locale.getInstance(language, script, "", "", null));
                     // Special handling for Chinese
                     if (language.equals("zh")) {
-                        if (region.length() == 0) {
+                        if (region.isEmpty()) {
                             // Supply region(country) for users who still package Chinese
                             // bundles using old convension.
                             switch (script) {
@@ -2988,11 +2988,11 @@ public abstract class ResourceBundle {
                             list.add(Locale.getInstance(language, "", region, v, null));
                         }
                     }
-                    if (region.length() > 0) {
+                    if (!region.isEmpty()) {
                         list.add(Locale.getInstance(language, "", region, "", null));
                     }
                 }
-                if (language.length() > 0) {
+                if (!language.isEmpty()) {
                     list.add(Locale.getInstance(language, "", "", "", null));
                 }
                 // Add root locale at the end

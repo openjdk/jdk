@@ -226,7 +226,7 @@ public class HeaderParser {
         for (int i=0; k.hasNext(); i++) {
             String key = k.next();
             String val = findValue (i);
-            if (val != null && "".equals (val)) {
+            if (val != null && val.isEmpty()) {
                 val = null;
             }
             sb.append(" {").append(key).append(val == null ? "" : "," + val)

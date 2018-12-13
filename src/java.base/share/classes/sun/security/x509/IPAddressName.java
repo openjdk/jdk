@@ -125,7 +125,7 @@ public class IPAddressName implements GeneralNameInterface {
      */
     public IPAddressName(String name) throws IOException {
 
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IOException("IPAddress cannot be null or empty");
         }
         if (name.charAt(name.length() - 1) == '/') {

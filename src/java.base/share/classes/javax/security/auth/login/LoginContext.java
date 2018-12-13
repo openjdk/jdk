@@ -300,7 +300,7 @@ public class LoginContext {
                 public CallbackHandler run() throws Exception {
                     String defaultHandler = java.security.Security.getProperty
                         (DEFAULT_HANDLER);
-                    if (defaultHandler == null || defaultHandler.length() == 0)
+                    if (defaultHandler == null || defaultHandler.isEmpty())
                         return null;
                     Class<? extends CallbackHandler> c = Class.forName(
                             defaultHandler, true,

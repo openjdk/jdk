@@ -76,7 +76,7 @@ public class TransferProtocolClient extends NetworkClient {
                 System.out.print(response);
             }
 
-            if (response.length() == 0) {
+            if (response.isEmpty()) {
                 code = -1;
             } else {
                 try {

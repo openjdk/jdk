@@ -125,7 +125,7 @@ public final class CollationElementIterator
     CollationElementIterator(String sourceText, RuleBasedCollator owner) {
         this.owner = owner;
         ordering = owner.getTables();
-        if ( sourceText.length() != 0 ) {
+        if (!sourceText.isEmpty()) {
             NormalizerBase.Mode mode =
                 CollatorUtilities.toNormalizerMode(owner.getDecomposition());
             text = new NormalizerBase(sourceText, mode);

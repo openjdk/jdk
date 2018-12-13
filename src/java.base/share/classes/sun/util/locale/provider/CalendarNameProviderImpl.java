@@ -117,7 +117,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 }
                 name = strings[value];
                 // If name is empty in standalone, try its `format' style.
-                if (name.length() == 0
+                if (name.isEmpty()
                         && (style == SHORT_STANDALONE || style == LONG_STANDALONE
                             || style == NARROW_STANDALONE)) {
                     name = getDisplayName(calendarType, field, value,
@@ -183,7 +183,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                             String name = strings[i];
                             // Ignore any empty string (some standalone month names
                             // are not defined)
-                            if (name.length() == 0) {
+                            if (name.isEmpty()) {
                                 continue;
                             }
                             map.put(name, base + i);

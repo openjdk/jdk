@@ -68,14 +68,14 @@ public class ResolverConfigurationImpl
             String line;
             while ((line = in.readLine()) != null) {
                 int maxvalues = maxperkeyword;
-                if (line.length() == 0)
+                if (line.isEmpty())
                    continue;
                 if (line.charAt(0) == '#' || line.charAt(0) == ';')
                     continue;
                 if (!line.startsWith(keyword))
                     continue;
                 String value = line.substring(keyword.length());
-                if (value.length() == 0)
+                if (value.isEmpty())
                     continue;
                 if (value.charAt(0) != ' ' && value.charAt(0) != '\t')
                     continue;
@@ -181,7 +181,7 @@ public class ResolverConfigurationImpl
         // LOCALDOMAIN has absolute priority on Solaris
 
         String localDomain = localDomain0();
-        if (localDomain != null && localDomain.length() > 0) {
+        if (localDomain != null && !localDomain.isEmpty()) {
             sl = new LinkedList<>();
             sl.add(localDomain);
             return sl;
@@ -211,7 +211,7 @@ public class ResolverConfigurationImpl
 
         sl = new LinkedList<>();
         String domain = fallbackDomain0();
-        if (domain != null && domain.length() > 0) {
+        if (domain != null && !domain.isEmpty()) {
             sl.add(domain);
         }
 

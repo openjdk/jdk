@@ -365,7 +365,7 @@ public class CheckSignatureAdapter extends SignatureVisitor {
     }
 
     private void checkClassName(final String name, final String message) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(INVALID + message + " (must not be null or empty)");
         }
         for (int i = 0; i < name.length(); ++i) {
@@ -377,7 +377,7 @@ public class CheckSignatureAdapter extends SignatureVisitor {
     }
 
     private void checkIdentifier(final String name, final String message) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(INVALID + message + " (must not be null or empty)");
         }
         for (int i = 0; i < name.length(); ++i) {

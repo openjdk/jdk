@@ -114,7 +114,7 @@ final class ProviderConfig {
     }
 
     private boolean hasArgument() {
-        return argument.length() != 0;
+        return !argument.isEmpty();
     }
 
     // should we try to load this provider?

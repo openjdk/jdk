@@ -423,7 +423,7 @@ public class SignatureFileVerifier {
 
         // This means we have an error in finding weak algorithms, run in
         // debug mode to see permittedAlgs map's values.
-        if (w.length() == 0) {
+        if (w.isEmpty()) {
             return "Unknown Algorithm(s)";
         }
 

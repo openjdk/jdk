@@ -52,7 +52,7 @@ class WindowsFileStore
 
         // file store "display name" is the volume name if available
         String vol = volInfo.volumeName();
-        if (vol.length() > 0) {
+        if (!vol.isEmpty()) {
             this.displayName = vol;
         } else {
             // TBD - should we map all types? Does this need to be localized?

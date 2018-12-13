@@ -59,9 +59,9 @@ public class FileURLMapper {
             return path;
         }
         String host = url.getHost();
-        if (host == null || "".equals(host) || "localhost".equalsIgnoreCase (host)) {
+        if (host == null || host.isEmpty() || "localhost".equalsIgnoreCase(host)) {
             path = url.getFile();
-            path = ParseUtil.decode (path);
+            path = ParseUtil.decode(path);
         }
         return path;
     }

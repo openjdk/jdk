@@ -370,7 +370,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             throw new CRLException("Uninitialized CRL");
         }
         Signature   sigVerf = null;
-        if (sigProvider.length() == 0) {
+        if (sigProvider.isEmpty()) {
             sigVerf = Signature.getInstance(sigAlgId.getName());
         } else {
             sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
@@ -495,7 +495,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             if (readOnly)
                 throw new CRLException("cannot over-write existing CRL");
             Signature sigEngine = null;
-            if ((provider == null) || (provider.length() == 0))
+            if (provider == null || provider.isEmpty())
                 sigEngine = Signature.getInstance(algorithm);
             else
                 sigEngine = Signature.getInstance(algorithm, provider);

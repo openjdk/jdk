@@ -60,7 +60,7 @@ public class SignatureParser {
             switch (c) {
                 case 'L': {
                     String pkg = arguments.get(arg_index);
-                    if(pkg.length() > 0) {
+                    if(!pkg.isEmpty()) {
                         out.append(pkg).append("/");
                     }
                     arg_index+=1;

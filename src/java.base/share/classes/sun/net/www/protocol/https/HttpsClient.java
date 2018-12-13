@@ -143,7 +143,7 @@ final class HttpsClient extends HttpClient
         String cipherString =
                 GetPropertyAction.privilegedGetProperty("https.cipherSuites");
 
-        if (cipherString == null || "".equals(cipherString)) {
+        if (cipherString == null || cipherString.isEmpty()) {
             ciphers = null;
         } else {
             StringTokenizer     tokenizer;
@@ -167,7 +167,7 @@ final class HttpsClient extends HttpClient
         String protocolString =
                 GetPropertyAction.privilegedGetProperty("https.protocols");
 
-        if (protocolString == null || "".equals(protocolString)) {
+        if (protocolString == null || protocolString.isEmpty()) {
             protocols = null;
         } else {
             StringTokenizer     tokenizer;
@@ -187,7 +187,7 @@ final class HttpsClient extends HttpClient
     private String getUserAgent() {
         String userAgent =
                 GetPropertyAction.privilegedGetProperty("https.agent");
-        if (userAgent == null || userAgent.length() == 0) {
+        if (userAgent == null || userAgent.isEmpty()) {
             userAgent = "JSSE";
         }
         return userAgent;

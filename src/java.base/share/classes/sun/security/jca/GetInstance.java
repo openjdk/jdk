@@ -75,7 +75,7 @@ public class GetInstance {
     public static Service getService(String type, String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
-        if ((provider == null) || (provider.length() == 0)) {
+        if (provider == null || provider.isEmpty()) {
             throw new IllegalArgumentException("missing provider");
         }
         Provider p = Providers.getProviderList().getProvider(provider);

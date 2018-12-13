@@ -1187,7 +1187,7 @@ class InetAddress implements java.io.Serializable {
      */
     public static InetAddress getByAddress(String host, byte[] addr)
         throws UnknownHostException {
-        if (host != null && host.length() > 0 && host.charAt(0) == '[') {
+        if (host != null && !host.isEmpty() && host.charAt(0) == '[') {
             if (host.charAt(host.length()-1) == ']') {
                 host = host.substring(1, host.length() -1);
             }
@@ -1301,7 +1301,7 @@ class InetAddress implements java.io.Serializable {
     private static InetAddress[] getAllByName(String host, InetAddress reqAddr)
         throws UnknownHostException {
 
-        if (host == null || host.length() == 0) {
+        if (host == null || host.isEmpty()) {
             InetAddress[] ret = new InetAddress[1];
             ret[0] = impl.loopbackAddress();
             return ret;

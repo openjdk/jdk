@@ -64,7 +64,7 @@ class WinNTFileSystem extends FileSystem {
     }
 
     private String slashify(String p) {
-        if ((p.length() > 0) && (p.charAt(0) != slash)) return slash + p;
+        if (!p.isEmpty() && p.charAt(0) != slash) return slash + p;
         else return p;
     }
 
