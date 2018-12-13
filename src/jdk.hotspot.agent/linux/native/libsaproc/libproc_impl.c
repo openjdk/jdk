@@ -274,6 +274,26 @@ thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwp
    return newthr;
 }
 
+void delete_thread_info(struct ps_prochandle* ph, thread_info* thr_to_be_removed) {
+    thread_info* current_thr = ph->threads;
+
+    if (thr_to_be_removed == ph->threads) {
+      ph->threads = ph->threads->next;
+    } else {
+      thread_info* previous_thr;
+      while (current_thr && current_thr != thr_to_be_removed) {
+        previous_thr = current_thr;
+        current_thr = current_thr->next;
+      }
+      if (current_thr == NULL) {
+        print_error("Could not find the thread to be removed");
+        return;
+      }
+      previous_thr->next = current_thr->next;
+    }
+    ph->num_threads--;
+    free(current_thr);
+}
 
 // struct used for client data from thread_db callback
 struct thread_db_client_data {
@@ -295,6 +315,11 @@ static int thread_db_callback(const td_thrhandle_t *th_p, void *data) {
   }
 
   print_debug("thread_db : pthread %d (lwp %d)\n", ti.ti_tid, ti.ti_lid);
+
+  if (ti.ti_state == TD_THR_UNKNOWN || ti.ti_state == TD_THR_ZOMBIE) {
+    print_debug("Skipping pthread %d (lwp %d)\n", ti.ti_tid, ti.ti_lid);
+    return TD_OK;
+  }
 
   if (ptr->callback(ptr->ph, ti.ti_tid, ti.ti_lid) != true)
     return TD_ERR;
