@@ -1967,8 +1967,8 @@ public final class Long extends Number
     }
 
     /**
-     * Returns a nominal descriptor for this instance, which is the instance
-     * itself.
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * instance, which is the instance itself.
      *
      * @return an {@link Optional} describing the {@linkplain Long} instance
      * @since 12

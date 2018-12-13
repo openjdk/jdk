@@ -3545,8 +3545,8 @@ public final class String
     }
 
     /**
-     * Returns a nominal descriptor for this instance, which is the instance
-     * itself.
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * instance, which is the instance itself.
      *
      * @return an {@link Optional} describing the {@linkplain String} instance
      * @since 12

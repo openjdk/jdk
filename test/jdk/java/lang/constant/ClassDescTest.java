@@ -244,6 +244,29 @@ public class ClassDescTest extends SymbolicDescTest {
             testBadNestedClasses(ClassDesc.ofDescriptor(p.descriptor), "any");
             testBadNestedClasses(ClassDesc.ofDescriptor(p.descriptor), "any", "other");
         }
+
+        ClassDesc stringDesc = ClassDesc.ofDescriptor("Ljava/lang/String;");
+        ClassDesc stringArrDesc = stringDesc.arrayType(255);
+        try {
+            ClassDesc arrGreaterThan255 = stringArrDesc.arrayType();
+            fail("can't create an array type descriptor with more than 255 dimensions");
+        } catch (IllegalStateException e) {
+            // good
+        }
+        String descWith255ArrayDims = new String(new char[255]).replace('\0', '[');
+        try {
+            ClassDesc arrGreaterThan255 = ClassDesc.ofDescriptor(descWith255ArrayDims + "[Ljava/lang/String;");
+            fail("can't create an array type descriptor with more than 255 dimensions");
+        } catch (IllegalArgumentException e) {
+            // good
+        }
+        try {
+            ClassDesc arrWith255Dims = ClassDesc.ofDescriptor(descWith255ArrayDims + "Ljava/lang/String;");
+            arrWith255Dims.arrayType(1);
+            fail("can't create an array type descriptor with more than 255 dimensions");
+        } catch (IllegalArgumentException e) {
+            // good
+        }
     }
 
     private void testBadNestedClasses(ClassDesc cr, String firstNestedName, String... moreNestedNames) {
