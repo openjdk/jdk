@@ -27,6 +27,7 @@ package sun.security.mscapi;
 
 import java.nio.ByteBuffer;
 import java.security.*;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.math.BigInteger;
 import java.security.spec.MGF1ParameterSpec;
@@ -36,7 +37,8 @@ import java.util.Locale;
 import sun.security.rsa.RSAKeyFactory;
 
 /**
- * RSA signature implementation. Supports RSA signing using PKCS#1 v1.5 padding.
+ * Signature implementation. Supports RSA signing using PKCS#1 v1.5 padding
+ * and RSASSA-PSS signing.
  *
  * Objects should be instantiated by calling Signature.getInstance() using the
  * following algorithm names:
@@ -60,50 +62,185 @@ import sun.security.rsa.RSAKeyFactory;
  * @since   1.6
  * @author  Stanley Man-Kit Ho
  */
-abstract class RSASignature extends java.security.SignatureSpi
-{
+abstract class CSignature extends SignatureSpi {
+    // private key algorithm name
+    protected String keyAlgorithm;
+
     // message digest implementation we use
     protected MessageDigest messageDigest;
 
     // message digest name
-    private String messageDigestAlgorithm;
+    protected String messageDigestAlgorithm;
 
     // flag indicating whether the digest has been reset
     protected boolean needsReset;
 
     // the signing key
-    protected Key privateKey = null;
+    protected CPrivateKey privateKey = null;
 
     // the verification key
-    protected Key publicKey = null;
+    protected CPublicKey publicKey = null;
 
     /**
-     * Constructs a new RSASignature. Used by Raw subclass.
+     * Constructs a new CSignature. Used by subclasses.
      */
-    RSASignature() {
-        messageDigest = null;
-        messageDigestAlgorithm = null;
-    }
+    CSignature(String keyName, String digestName) {
 
-    /**
-     * Constructs a new RSASignature. Used by subclasses.
-     */
-    RSASignature(String digestName) {
-
-        try {
-            messageDigest = MessageDigest.getInstance(digestName);
-            // Get the digest's canonical name
-            messageDigestAlgorithm = messageDigest.getAlgorithm();
-
-        } catch (NoSuchAlgorithmException e) {
-           throw new ProviderException(e);
+        this.keyAlgorithm = keyName;
+        if (digestName != null) {
+            try {
+                messageDigest = MessageDigest.getInstance(digestName);
+                // Get the digest's canonical name
+                messageDigestAlgorithm = messageDigest.getAlgorithm();
+            } catch (NoSuchAlgorithmException e) {
+                throw new ProviderException(e);
+            }
+        } else {
+            messageDigest = null;
+            messageDigestAlgorithm = null;
         }
-
         needsReset = false;
     }
 
+    static class RSA extends CSignature {
+
+        public RSA(String digestAlgorithm) {
+            super("RSA", digestAlgorithm);
+        }
+
+        // initialize for signing. See JCA doc
+        @Override
+        protected void engineInitSign(PrivateKey key) throws InvalidKeyException {
+
+            if ((key instanceof CPrivateKey) == false) {
+                throw new InvalidKeyException("Key type not supported");
+            }
+            privateKey = (CPrivateKey) key;
+
+            // Check against the local and global values to make sure
+            // the sizes are ok.  Round up to nearest byte.
+            RSAKeyFactory.checkKeyLengths(((privateKey.length() + 7) & ~7),
+                    null, CKeyPairGenerator.RSA.KEY_SIZE_MIN,
+                    CKeyPairGenerator.RSA.KEY_SIZE_MAX);
+
+            this.publicKey = null;
+            resetDigest();
+        }
+
+        // initialize for signing. See JCA doc
+        @Override
+        protected void engineInitVerify(PublicKey key) throws InvalidKeyException {
+            // This signature accepts only RSAPublicKey
+            if ((key instanceof RSAPublicKey) == false) {
+                throw new InvalidKeyException("Key type not supported");
+            }
+
+
+            if ((key instanceof CPublicKey) == false) {
+
+                // convert key to MSCAPI format
+                java.security.interfaces.RSAPublicKey rsaKey =
+                        (java.security.interfaces.RSAPublicKey) key;
+
+                BigInteger modulus = rsaKey.getModulus();
+                BigInteger exponent =  rsaKey.getPublicExponent();
+
+                // Check against the local and global values to make sure
+                // the sizes are ok.  Round up to the nearest byte.
+                RSAKeyFactory.checkKeyLengths(((modulus.bitLength() + 7) & ~7),
+                        exponent, -1, CKeyPairGenerator.RSA.KEY_SIZE_MAX);
+
+                byte[] modulusBytes = modulus.toByteArray();
+                byte[] exponentBytes = exponent.toByteArray();
+
+                // Adjust key length due to sign bit
+                int keyBitLength = (modulusBytes[0] == 0)
+                        ? (modulusBytes.length - 1) * 8
+                        : modulusBytes.length * 8;
+
+                byte[] keyBlob = generatePublicKeyBlob(
+                        keyBitLength, modulusBytes, exponentBytes);
+
+                try {
+                    publicKey = importPublicKey("RSA", keyBlob, keyBitLength);
+
+                } catch (KeyStoreException e) {
+                    throw new InvalidKeyException(e);
+                }
+
+            } else {
+                publicKey = (CPublicKey) key;
+            }
+
+            this.privateKey = null;
+            resetDigest();
+        }
+
+        /**
+         * Returns the signature bytes of all the data
+         * updated so far.
+         * The format of the signature depends on the underlying
+         * signature scheme.
+         *
+         * @return the signature bytes of the signing operation's result.
+         *
+         * @exception SignatureException if the engine is not
+         * initialized properly or if this signature algorithm is unable to
+         * process the input data provided.
+         */
+        @Override
+        protected byte[] engineSign() throws SignatureException {
+
+            byte[] hash = getDigestValue();
+
+            // Omit the hash OID when generating a NONEwithRSA signature
+            boolean noHashOID = this instanceof NONEwithRSA;
+
+            // Sign hash using MS Crypto APIs
+
+            byte[] result = signHash(noHashOID, hash, hash.length,
+                        messageDigestAlgorithm, privateKey.getHCryptProvider(),
+                        privateKey.getHCryptKey());
+
+            // Convert signature array from little endian to big endian
+            return convertEndianArray(result);
+        }
+
+        /**
+         * Verifies the passed-in signature.
+         *
+         * @param sigBytes the signature bytes to be verified.
+         *
+         * @return true if the signature was verified, false if not.
+         *
+         * @exception SignatureException if the engine is not
+         * initialized properly, the passed-in signature is improperly
+         * encoded or of the wrong type, if this signature algorithm is unable to
+         * process the input data provided, etc.
+         */
+        @Override
+        protected boolean engineVerify(byte[] sigBytes)
+                throws SignatureException {
+            byte[] hash = getDigestValue();
+
+            return verifySignedHash(hash, hash.length,
+                    messageDigestAlgorithm, convertEndianArray(sigBytes),
+                    sigBytes.length, publicKey.getHCryptProvider(),
+                    publicKey.getHCryptKey());
+        }
+
+        /**
+         * Generates a public-key BLOB from a key's components.
+         */
+        // used by CRSACipher
+        static native byte[] generatePublicKeyBlob(
+                int keyBitLength, byte[] modulus, byte[] publicExponent)
+                throws InvalidKeyException;
+
+    }
+
     // Nested class for NONEwithRSA signatures
-    public static final class Raw extends RSASignature {
+    public static final class NONEwithRSA extends RSA {
 
         // the longest supported digest is 512 bits (SHA-512)
         private static final int RAW_RSA_MAX = 64;
@@ -111,7 +248,8 @@ abstract class RSASignature extends java.security.SignatureSpi
         private final byte[] precomputedDigest;
         private int offset = 0;
 
-        public Raw() {
+        public NONEwithRSA() {
+            super(null);
             precomputedDigest = new byte[RAW_RSA_MAX];
         }
 
@@ -190,49 +328,53 @@ abstract class RSASignature extends java.security.SignatureSpi
         }
     }
 
-    public static final class SHA1 extends RSASignature {
-        public SHA1() {
+    public static final class SHA1withRSA extends RSA {
+        public SHA1withRSA() {
             super("SHA1");
         }
     }
 
-    public static final class SHA256 extends RSASignature {
-        public SHA256() {
+    public static final class SHA256withRSA extends RSA {
+        public SHA256withRSA() {
             super("SHA-256");
         }
     }
 
-    public static final class SHA384 extends RSASignature {
-        public SHA384() {
+    public static final class SHA384withRSA extends RSA {
+        public SHA384withRSA() {
             super("SHA-384");
         }
     }
 
-    public static final class SHA512 extends RSASignature {
-        public SHA512() {
+    public static final class SHA512withRSA extends RSA {
+        public SHA512withRSA() {
             super("SHA-512");
         }
     }
 
-    public static final class MD5 extends RSASignature {
-        public MD5() {
+    public static final class MD5withRSA extends RSA {
+        public MD5withRSA() {
             super("MD5");
         }
     }
 
-    public static final class MD2 extends RSASignature {
-        public MD2() {
+    public static final class MD2withRSA extends RSA {
+        public MD2withRSA() {
             super("MD2");
         }
     }
 
-    public static final class PSS extends RSASignature {
+    public static final class PSS extends RSA {
 
         private PSSParameterSpec pssParams = null;
 
         // Workaround: Cannot import raw public key to CNG. This signature
         // will be used for verification if key is not from MSCAPI.
         private Signature fallbackSignature;
+
+        public PSS() {
+            super(null);
+        }
 
         @Override
         protected void engineInitSign(PrivateKey key) throws InvalidKeyException {
@@ -249,9 +391,9 @@ abstract class RSASignature extends java.security.SignatureSpi
 
             this.privateKey = null;
 
-            if (key instanceof sun.security.mscapi.RSAPublicKey) {
+            if (key instanceof CPublicKey) {
                 fallbackSignature = null;
-                publicKey = (sun.security.mscapi.RSAPublicKey) key;
+                publicKey = (CPublicKey) key;
             } else {
                 if (fallbackSignature == null) {
                     try {
@@ -321,7 +463,7 @@ abstract class RSASignature extends java.security.SignatureSpi
         protected byte[] engineSign() throws SignatureException {
             ensureInit();
             byte[] hash = getDigestValue();
-            return signPssHash(hash, hash.length,
+            return signCngHash(hash, hash.length,
                     pssParams.getSaltLength(),
                     ((MGF1ParameterSpec)
                             pssParams.getMGFParameters()).getDigestAlgorithm(),
@@ -336,7 +478,7 @@ abstract class RSASignature extends java.security.SignatureSpi
                 return fallbackSignature.verify(sigBytes);
             } else {
                 byte[] hash = getDigestValue();
-                return verifyPssSignedHash(
+                return verifyCngSignedHash(
                         hash, hash.length,
                         sigBytes, sigBytes.length,
                         pssParams.getSaltLength(),
@@ -454,95 +596,24 @@ abstract class RSASignature extends java.security.SignatureSpi
 
             return params;
         }
-
-        /**
-         * Sign hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
-         */
-        private native static byte[] signPssHash(byte[] hash,
-                int hashSize, int saltLength, String hashAlgorithm,
-                long hCryptProv, long nCryptKey)
-                throws SignatureException;
-
-        /**
-         * Verify a signed hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
-         * This method is not used now. See {@link #fallbackSignature}.
-         */
-        private native static boolean verifyPssSignedHash(byte[] hash, int hashSize,
-                byte[] signature, int signatureSize,
-                int saltLength, String hashAlgorithm,
-                long hCryptProv, long hKey) throws SignatureException;
     }
 
-    // initialize for signing. See JCA doc
-    @Override
-    protected void engineInitVerify(PublicKey key)
-        throws InvalidKeyException
-    {
-        // This signature accepts only RSAPublicKey
-        if ((key instanceof java.security.interfaces.RSAPublicKey) == false) {
-            throw new InvalidKeyException("Key type not supported");
-        }
+    /**
+     * Sign hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
+     */
+    native static byte[] signCngHash(
+            byte[] hash, int hashSize, int saltLength, String hashAlgorithm,
+            long hCryptProv, long nCryptKey)
+            throws SignatureException;
 
-        java.security.interfaces.RSAPublicKey rsaKey =
-            (java.security.interfaces.RSAPublicKey) key;
-
-        if ((key instanceof sun.security.mscapi.RSAPublicKey) == false) {
-
-            // convert key to MSCAPI format
-
-            BigInteger modulus = rsaKey.getModulus();
-            BigInteger exponent =  rsaKey.getPublicExponent();
-
-            // Check against the local and global values to make sure
-            // the sizes are ok.  Round up to the nearest byte.
-            RSAKeyFactory.checkKeyLengths(((modulus.bitLength() + 7) & ~7),
-                exponent, -1, RSAKeyPairGenerator.KEY_SIZE_MAX);
-
-            byte[] modulusBytes = modulus.toByteArray();
-            byte[] exponentBytes = exponent.toByteArray();
-
-            // Adjust key length due to sign bit
-            int keyBitLength = (modulusBytes[0] == 0)
-                ? (modulusBytes.length - 1) * 8
-                : modulusBytes.length * 8;
-
-            byte[] keyBlob = generatePublicKeyBlob(
-                keyBitLength, modulusBytes, exponentBytes);
-
-            try {
-                publicKey = importPublicKey(keyBlob, keyBitLength);
-
-            } catch (KeyStoreException e) {
-                throw new InvalidKeyException(e);
-            }
-
-        } else {
-            publicKey = (sun.security.mscapi.RSAPublicKey) key;
-        }
-
-        this.privateKey = null;
-        resetDigest();
-    }
-
-    // initialize for signing. See JCA doc
-    @Override
-    protected void engineInitSign(PrivateKey key) throws InvalidKeyException
-    {
-        // This signature accepts only RSAPrivateKey
-        if ((key instanceof sun.security.mscapi.RSAPrivateKey) == false) {
-            throw new InvalidKeyException("Key type not supported");
-        }
-        privateKey = (sun.security.mscapi.RSAPrivateKey) key;
-
-        // Check against the local and global values to make sure
-        // the sizes are ok.  Round up to nearest byte.
-        RSAKeyFactory.checkKeyLengths(((privateKey.length() + 7) & ~7),
-            null, RSAKeyPairGenerator.KEY_SIZE_MIN,
-            RSAKeyPairGenerator.KEY_SIZE_MAX);
-
-        this.publicKey = null;
-        resetDigest();
-    }
+    /**
+     * Verify a signed hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
+     * This method is not used now. See {@link PSS#fallbackSignature}.
+     */
+    private native static boolean verifyCngSignedHash(
+            byte[] hash, int hashSize, byte[] signature, int signatureSize,
+            int saltLength, String hashAlgorithm,
+            long hCryptProv, long hKey) throws SignatureException;
 
     /**
      * Resets the message digest if needed.
@@ -575,8 +646,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * properly.
      */
     @Override
-    protected void engineUpdate(byte b) throws SignatureException
-    {
+    protected void engineUpdate(byte b) throws SignatureException {
         messageDigest.update(b);
         needsReset = true;
     }
@@ -594,8 +664,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      */
     @Override
     protected void engineUpdate(byte[] b, int off, int len)
-        throws SignatureException
-    {
+            throws SignatureException {
         messageDigest.update(b, off, len);
         needsReset = true;
     }
@@ -607,47 +676,15 @@ abstract class RSASignature extends java.security.SignatureSpi
      * @param input the ByteBuffer
      */
     @Override
-    protected void engineUpdate(ByteBuffer input)
-    {
+    protected void engineUpdate(ByteBuffer input) {
         messageDigest.update(input);
         needsReset = true;
     }
 
     /**
-     * Returns the signature bytes of all the data
-     * updated so far.
-     * The format of the signature depends on the underlying
-     * signature scheme.
-     *
-     * @return the signature bytes of the signing operation's result.
-     *
-     * @exception SignatureException if the engine is not
-     * initialized properly or if this signature algorithm is unable to
-     * process the input data provided.
-     */
-    @Override
-    protected byte[] engineSign() throws SignatureException {
-
-        byte[] hash = getDigestValue();
-
-        // Omit the hash OID when generating a Raw signature
-        boolean noHashOID = this instanceof Raw;
-
-        // Sign hash using MS Crypto APIs
-
-        byte[] result = signHash(noHashOID, hash, hash.length,
-            messageDigestAlgorithm, privateKey.getHCryptProvider(),
-            privateKey.getHCryptKey());
-
-        // Convert signature array from little endian to big endian
-        return convertEndianArray(result);
-    }
-
-    /**
      * Convert array from big endian to little endian, or vice versa.
      */
-    private byte[] convertEndianArray(byte[] byteArray)
-    {
+    private static byte[] convertEndianArray(byte[] byteArray) {
         if (byteArray == null || byteArray.length == 0)
             return byteArray;
 
@@ -676,30 +713,6 @@ abstract class RSASignature extends java.security.SignatureSpi
         long hCryptProv, long hCryptKey) throws SignatureException;
 
     /**
-     * Verifies the passed-in signature.
-     *
-     * @param sigBytes the signature bytes to be verified.
-     *
-     * @return true if the signature was verified, false if not.
-     *
-     * @exception SignatureException if the engine is not
-     * initialized properly, the passed-in signature is improperly
-     * encoded or of the wrong type, if this signature algorithm is unable to
-     * process the input data provided, etc.
-     */
-    @Override
-    protected boolean engineVerify(byte[] sigBytes)
-        throws SignatureException
-    {
-        byte[] hash = getDigestValue();
-
-        return verifySignedHash(hash, hash.length,
-            messageDigestAlgorithm, convertEndianArray(sigBytes),
-            sigBytes.length, publicKey.getHCryptProvider(),
-            publicKey.getHCryptKey());
-    }
-
-    /**
      * Sets the specified algorithm parameter to the specified
      * value. This method supplies a general-purpose mechanism through
      * which it is possible to set the various parameters of this object.
@@ -726,8 +739,7 @@ abstract class RSASignature extends java.security.SignatureSpi
     @Override
     @Deprecated
     protected void engineSetParameter(String param, Object value)
-        throws InvalidParameterException
-    {
+            throws InvalidParameterException {
         throw new InvalidParameterException("Parameter not supported");
     }
 
@@ -741,8 +753,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      */
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
-        throws InvalidAlgorithmParameterException
-    {
+            throws InvalidAlgorithmParameterException {
         if (params != null) {
             throw new InvalidAlgorithmParameterException("No parameter accepted");
         }
@@ -773,8 +784,7 @@ abstract class RSASignature extends java.security.SignatureSpi
     @Override
     @Deprecated
     protected Object engineGetParameter(String param)
-        throws InvalidParameterException
-    {
+           throws InvalidParameterException {
         throw new InvalidParameterException("Parameter not supported");
     }
 
@@ -789,17 +799,9 @@ abstract class RSASignature extends java.security.SignatureSpi
     }
 
     /**
-     * Generates a public-key BLOB from a key's components.
-     */
-    // used by RSACipher
-    static native byte[] generatePublicKeyBlob(
-        int keyBitLength, byte[] modulus, byte[] publicExponent)
-            throws InvalidKeyException;
-
-    /**
      * Imports a public-key BLOB.
      */
-    // used by RSACipher
-    static native RSAPublicKey importPublicKey(byte[] keyBlob, int keySize)
-        throws KeyStoreException;
+    // used by CRSACipher
+    static native CPublicKey importPublicKey(
+            String alg, byte[] keyBlob, int keySize) throws KeyStoreException;
 }

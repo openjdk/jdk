@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,57 +28,42 @@ package sun.security.mscapi;
 import java.security.PrivateKey;
 
 /**
- * The handle for an RSA private key using the Microsoft Crypto API.
+ * The handle for a private key using the Microsoft Crypto API.
  *
  * @author Stanley Man-Kit Ho
  * @since 1.6
  */
-class RSAPrivateKey extends Key implements PrivateKey
-{
+class CPrivateKey extends CKey implements PrivateKey {
+
     private static final long serialVersionUID = 8113152807912338063L;
 
-    /**
-     * Construct an RSAPrivateKey object.
-     */
-    RSAPrivateKey(long hCryptProv, long hCryptKey, int keyLength)
-    {
-        super(new NativeHandles(hCryptProv, hCryptKey), keyLength);
+    private CPrivateKey(String alg, long hCryptProv, long hCryptKey, int keyLength) {
+        super(alg, hCryptProv, hCryptKey, keyLength);
     }
 
-    /**
-     * Construct an RSAPrivateKey object.
-     */
-    RSAPrivateKey(NativeHandles handles, int keyLength)
-    {
-        super(handles, keyLength);
+    public static CPrivateKey of(String alg, long hCryptProv, long hCryptKey, int keyLength) {
+        return new CPrivateKey(alg, hCryptProv, hCryptKey, keyLength);
     }
 
-    /**
-     * Returns the standard algorithm name for this key. For
-     * example, "RSA" would indicate that this key is a RSA key.
-     * See Appendix A in the <a href=
-     * "../../../guide/security/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
-     * for information about standard algorithm names.
-     *
-     * @return the name of the algorithm associated with this key.
-     */
-    public String getAlgorithm()
-    {
-        return "RSA";
+    // this key does not support encoding
+    public String getFormat()     {
+        return null;
     }
 
-    public String toString()
-    {
-        return "RSAPrivateKey [size=" + keyLength + " bits, type=" +
+    // this key does not support encoding
+    public byte[] getEncoded() {
+        return null;
+    }
+
+    public String toString() {
+        return algorithm + "PrivateKey [size=" + keyLength + " bits, type=" +
             getKeyType(handles.hCryptKey) + ", container=" +
             getContainerName(handles.hCryptProv) + "]";
     }
 
     // This class is not serializable
     private void writeObject(java.io.ObjectOutputStream out)
-        throws java.io.IOException {
-
+            throws java.io.IOException {
         throw new java.io.NotSerializableException();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,27 +30,22 @@ package sun.security.mscapi;
  *
  * @since 1.6
  */
-class RSAKeyPair {
+class CKeyPair {
 
-    private final RSAPrivateKey privateKey;
+    private final CPrivateKey privateKey;
 
-    private final RSAPublicKey publicKey;
+    private final CPublicKey publicKey;
 
-    /**
-     * Construct an RSAKeyPair object.
-     */
-    RSAKeyPair(long hCryptProv, long hCryptKey, int keyLength)
-    {
-        Key.NativeHandles handles = new Key.NativeHandles(hCryptProv, hCryptKey);
-        privateKey = new RSAPrivateKey(handles, keyLength);
-        publicKey = new RSAPublicKey(handles, keyLength);
+    CKeyPair(String alg, long hCryptProv, long hCryptKey, int keyLength) {
+        privateKey = CPrivateKey.of(alg, hCryptProv, hCryptKey, keyLength);
+        publicKey = CPublicKey.of(alg, hCryptProv, hCryptKey, keyLength);
     }
 
-    public RSAPrivateKey getPrivate() {
+    public CPrivateKey getPrivate() {
         return privateKey;
     }
 
-    public RSAPublicKey getPublic() {
+    public CPublicKey getPublic() {
         return publicKey;
     }
 }

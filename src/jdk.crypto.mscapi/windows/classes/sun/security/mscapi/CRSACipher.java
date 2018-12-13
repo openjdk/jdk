@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 import sun.security.util.KeyUtil;
 
 /**
- * RSA cipher implementation using the Microsoft Crypto API.
+ * Cipher implementation using the Microsoft Crypto API.
  * Supports RSA en/decryption and signing/verifying using PKCS#1 v1.5 padding.
  *
  * Objects should be instantiated by calling Cipher.getInstance() using the
@@ -59,7 +59,7 @@ import sun.security.util.KeyUtil;
  * @author  Andreas Sterbenz
  * @author  Vincent Ryan
  */
-public final class RSACipher extends CipherSpi {
+public final class CRSACipher extends CipherSpi {
 
     // constant for an empty byte array
     private final static byte[] B0 = new byte[0];
@@ -93,10 +93,10 @@ public final class RSACipher extends CipherSpi {
     private int outputSize;
 
     // the public key, if we were initialized using a public key
-    private sun.security.mscapi.Key publicKey;
+    private CKey publicKey;
 
     // the private key, if we were initialized using a private key
-    private sun.security.mscapi.Key privateKey;
+    private CKey privateKey;
 
     // cipher parameter for TLS RSA premaster secret
     private AlgorithmParameterSpec spec = null;
@@ -104,7 +104,7 @@ public final class RSACipher extends CipherSpi {
     // the source of randomness
     private SecureRandom random;
 
-    public RSACipher() {
+    public CRSACipher() {
         paddingType = PAD_PKCS1;
     }
 
@@ -207,7 +207,7 @@ public final class RSACipher extends CipherSpi {
             throw new InvalidKeyException("Unknown mode: " + opmode);
         }
 
-        if (!(key instanceof sun.security.mscapi.Key)) {
+        if (!(key instanceof CKey)) {
             if (key instanceof java.security.interfaces.RSAPublicKey) {
                 java.security.interfaces.RSAPublicKey rsaKey =
                     (java.security.interfaces.RSAPublicKey) key;
@@ -220,7 +220,7 @@ public final class RSACipher extends CipherSpi {
                 // Check against the local and global values to make sure
                 // the sizes are ok.  Round up to the nearest byte.
                 RSAKeyFactory.checkKeyLengths(((modulus.bitLength() + 7) & ~7),
-                    exponent, -1, RSAKeyPairGenerator.KEY_SIZE_MAX);
+                    exponent, -1, CKeyPairGenerator.RSA.KEY_SIZE_MAX);
 
                 byte[] modulusBytes = modulus.toByteArray();
                 byte[] exponentBytes = exponent.toByteArray();
@@ -230,11 +230,11 @@ public final class RSACipher extends CipherSpi {
                     ? (modulusBytes.length - 1) * 8
                     : modulusBytes.length * 8;
 
-                byte[] keyBlob = RSASignature.generatePublicKeyBlob(
+                byte[] keyBlob = CSignature.RSA.generatePublicKeyBlob(
                     keyBitLength, modulusBytes, exponentBytes);
 
                 try {
-                    key = RSASignature.importPublicKey(keyBlob, keyBitLength);
+                    key = CSignature.importPublicKey("RSA", keyBlob, keyBitLength);
 
                 } catch (KeyStoreException e) {
                     throw new InvalidKeyException(e);
@@ -247,12 +247,12 @@ public final class RSACipher extends CipherSpi {
 
         if (key instanceof PublicKey) {
             mode = encrypt ? MODE_ENCRYPT : MODE_VERIFY;
-            publicKey = (sun.security.mscapi.Key)key;
+            publicKey = (CKey)key;
             privateKey = null;
             outputSize = publicKey.length() / 8;
         } else if (key instanceof PrivateKey) {
             mode = encrypt ? MODE_SIGN : MODE_DECRYPT;
-            privateKey = (sun.security.mscapi.Key)key;
+            privateKey = (CKey)key;
             publicKey = null;
             outputSize = privateKey.length() / 8;
         } else {
@@ -417,8 +417,8 @@ public final class RSACipher extends CipherSpi {
     // see JCE spec
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
 
-        if (key instanceof sun.security.mscapi.Key) {
-            return ((sun.security.mscapi.Key) key).length();
+        if (key instanceof CKey) {
+            return ((CKey) key).length();
 
         } else if (key instanceof RSAKey) {
             return ((RSAKey) key).getModulus().bitLength();
