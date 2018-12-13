@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,11 @@
 package sun.security.util;
 
 import java.io.IOException;
-
 import java.math.BigInteger;
-
 import java.security.*;
-
 import java.security.interfaces.*;
-
 import java.security.spec.*;
-
 import java.util.Arrays;
-
 import sun.security.x509.X509Key;
 
 public class ECUtil {
@@ -225,6 +219,65 @@ public class ECUtil {
         }
 
         return nameSpec.getName();
+    }
+
+    // Convert the concatenation R and S in into their DER encoding
+    public static byte[] encodeSignature(byte[] signature) throws SignatureException {
+
+        try {
+
+            int n = signature.length >> 1;
+            byte[] bytes = new byte[n];
+            System.arraycopy(signature, 0, bytes, 0, n);
+            BigInteger r = new BigInteger(1, bytes);
+            System.arraycopy(signature, n, bytes, 0, n);
+            BigInteger s = new BigInteger(1, bytes);
+
+            DerOutputStream out = new DerOutputStream(signature.length + 10);
+            out.putInteger(r);
+            out.putInteger(s);
+            DerValue result =
+                    new DerValue(DerValue.tag_Sequence, out.toByteArray());
+
+            return result.toByteArray();
+
+        } catch (Exception e) {
+            throw new SignatureException("Could not encode signature", e);
+        }
+    }
+
+    // Convert the DER encoding of R and S into a concatenation of R and S
+    public static byte[] decodeSignature(byte[] sig) throws SignatureException {
+
+        try {
+            // Enforce strict DER checking for signatures
+            DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
+            DerValue[] values = in.getSequence(2);
+
+            // check number of components in the read sequence
+            // and trailing data
+            if ((values.length != 2) || (in.available() != 0)) {
+                throw new IOException("Invalid encoding for signature");
+            }
+
+            BigInteger r = values[0].getPositiveBigInteger();
+            BigInteger s = values[1].getPositiveBigInteger();
+
+            // trim leading zeroes
+            byte[] rBytes = trimZeroes(r.toByteArray());
+            byte[] sBytes = trimZeroes(s.toByteArray());
+            int k = Math.max(rBytes.length, sBytes.length);
+            // r and s each occupy half the array
+            byte[] result = new byte[k << 1];
+            System.arraycopy(rBytes, 0, result, k - rBytes.length,
+                    rBytes.length);
+            System.arraycopy(sBytes, 0, result, result.length - sBytes.length,
+                    sBytes.length);
+            return result;
+
+        } catch (Exception e) {
+            throw new SignatureException("Invalid encoding for signature", e);
+        }
     }
 
     private ECUtil() {}

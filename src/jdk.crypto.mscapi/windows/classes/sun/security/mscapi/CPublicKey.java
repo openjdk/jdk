@@ -26,14 +26,22 @@
 package sun.security.mscapi;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.KeyException;
+import java.security.KeyFactory;
 import java.security.KeyRep;
 import java.security.ProviderException;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.util.Arrays;
 
 import sun.security.rsa.RSAUtil.KeyType;
 import sun.security.rsa.RSAPublicKeyImpl;
+import sun.security.util.ECKeySizeParameterSpec;
 
 /**
  * The handle for an RSA public key using the Microsoft Crypto API.
@@ -44,8 +52,68 @@ public abstract class CPublicKey extends CKey implements PublicKey {
 
     private static final long serialVersionUID = -2289561342425825391L;
 
-    protected byte[] publicKeyBlob = null;
     protected byte[] encoding = null;
+
+    public static class CECPublicKey extends CPublicKey implements ECPublicKey {
+
+        private ECPoint w = null;
+        private static final long serialVersionUID = 12L;
+
+        CECPublicKey(long hCryptProv, int keyLength) {
+            super("EC", hCryptProv, 0, keyLength);
+        }
+
+        @Override
+        public ECPoint getW() {
+            if (w == null) {
+                // See CKey::generateECBlob.
+                try {
+                    byte[] blob = getPublicKeyBlob(
+                            handles.hCryptProv, handles.hCryptKey);
+                    int len = blob[8] & 0xff;
+                    byte[] x = Arrays.copyOfRange(blob, 8, 8 + len);
+                    byte[] y = Arrays.copyOfRange(blob, 8 + len, 8 + len + len);
+                    w = new ECPoint(new BigInteger(1, x), new BigInteger(1, y));
+                } catch (KeyException e) {
+                    throw new ProviderException(e);
+                }
+            }
+            return w;
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            if (encoding == null) {
+                try {
+                    encoding = KeyFactory.getInstance("EC").generatePublic(
+                                new ECPublicKeySpec(getW(), getParams()))
+                            .getEncoded();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+            return encoding;
+        }
+
+        @Override
+        public ECParameterSpec getParams() {
+            try {
+                AlgorithmParameters ap = AlgorithmParameters.getInstance("EC");
+                ap.init(new ECKeySizeParameterSpec(keyLength));
+                return ap.getParameterSpec(ECParameterSpec.class);
+            } catch (Exception e) {
+                throw new ProviderException(e);
+            }
+        }
+
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append(algorithm + "PublicKey [size=").append(keyLength)
+                    .append("]\n  ECPoint: ").append(getW())
+                    .append("\n  params: ").append(getParams());
+            return sb.toString();
+        }
+    }
 
     public static class CRSAPublicKey extends CPublicKey implements RSAPublicKey {
 
@@ -71,7 +139,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         public BigInteger getPublicExponent() {
             if (exponent == null) {
                 try {
-                    publicKeyBlob = getPublicKeyBlob(handles.hCryptKey);
+                    byte[] publicKeyBlob = getPublicKeyBlob(
+                            handles.hCryptProv, handles.hCryptKey);
                     exponent = new BigInteger(1, getExponent(publicKeyBlob));
                 } catch (KeyException e) {
                     throw new ProviderException(e);
@@ -84,7 +153,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         public BigInteger getModulus() {
             if (modulus == null) {
                 try {
-                    publicKeyBlob = getPublicKeyBlob(handles.hCryptKey);
+                    byte[] publicKeyBlob = getPublicKeyBlob(
+                            handles.hCryptProv, handles.hCryptKey);
                     modulus = new BigInteger(1, getModulus(publicKeyBlob));
                 } catch (KeyException e) {
                     throw new ProviderException(e);
@@ -111,16 +181,20 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         private native byte[] getModulus(byte[] keyBlob) throws KeyException;
     }
 
-    public static CPublicKey of(String alg, long hCryptProv, long hCryptKey, int keyLength) {
+    public static CPublicKey of(
+            String alg, long hCryptProv, long hCryptKey, int keyLength) {
         switch (alg) {
             case "RSA":
                 return new CRSAPublicKey(hCryptProv, hCryptKey, keyLength);
+            case "EC":
+                return new CECPublicKey(hCryptProv, keyLength);
             default:
                 throw new AssertionError("Unsupported algorithm: " + alg);
         }
     }
 
-    protected CPublicKey(String alg, long hCryptProv, long hCryptKey, int keyLength) {
+    protected CPublicKey(
+            String alg, long hCryptProv, long hCryptKey, int keyLength) {
         super(alg, hCryptProv, hCryptKey, keyLength);
     }
 
@@ -136,7 +210,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                         getEncoded());
     }
 
-    // Returns the Microsoft CryptoAPI representation of the key.
-    native byte[] getPublicKeyBlob(long hCryptKey) throws KeyException;
-
+    // Returns the CAPI or CNG representation of the key.
+    native byte[] getPublicKeyBlob(long hCryptProv, long hCryptKey)
+            throws KeyException;
 }

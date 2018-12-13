@@ -759,12 +759,12 @@ abstract class CKeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Generates RSA key and certificate chain from the private key handle,
+     * Generates key and certificate chain from the private key handle,
      * collection of certificates and stores the result into key entries.
      * <p>
      * This method is called by native codes in security.cpp.
      */
-    private void generateRSAKeyAndCertificateChain(String alias,
+    private void generateKeyAndCertificateChain(boolean isRSA, String alias,
             long hCryptProv, long hCryptKey, int keyLength,
             Collection<? extends Certificate> certCollection) {
         try {
@@ -777,7 +777,7 @@ abstract class CKeyStore extends KeyStoreSpi {
                 certChain[i] = (X509Certificate) iter.next();
             }
             storeWithUniqueAlias(alias, new KeyEntry(alias,
-                    CPrivateKey.of("RSA", hCryptProv, hCryptKey, keyLength),
+                    CPrivateKey.of(isRSA ? "RSA" : "EC", hCryptProv, hCryptKey, keyLength),
                     certChain));
         } catch (Throwable e) {
             // Ignore the exception and skip this entry

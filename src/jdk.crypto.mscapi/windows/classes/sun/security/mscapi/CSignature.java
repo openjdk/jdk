@@ -27,6 +27,7 @@ package sun.security.mscapi;
 
 import java.nio.ByteBuffer;
 import java.security.*;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.math.BigInteger;
@@ -35,10 +36,11 @@ import java.security.spec.PSSParameterSpec;
 import java.util.Locale;
 
 import sun.security.rsa.RSAKeyFactory;
+import sun.security.util.ECUtil;
+import sun.security.util.KeyUtil;
 
 /**
- * Signature implementation. Supports RSA signing using PKCS#1 v1.5 padding
- * and RSASSA-PSS signing.
+ * Signature implementation.
  *
  * Objects should be instantiated by calling Signature.getInstance() using the
  * following algorithm names:
@@ -51,6 +53,11 @@ import sun.security.rsa.RSAKeyFactory;
  *  . "MD5withRSA"
  *  . "MD2withRSA"
  *  . "RSASSA-PSS"
+ *  . "SHA1withECDSA"
+ *  . "SHA224withECDSA"
+ *  . "SHA256withECDSA"
+ *  . "SHA384withECDSA"
+ *  . "SHA512withECDSA"
  *
  * NOTE: RSA keys must be at least 512 bits long.
  *
@@ -112,7 +119,8 @@ abstract class CSignature extends SignatureSpi {
         @Override
         protected void engineInitSign(PrivateKey key) throws InvalidKeyException {
 
-            if ((key instanceof CPrivateKey) == false) {
+            if ((key instanceof CPrivateKey) == false
+                    || !key.getAlgorithm().equalsIgnoreCase("RSA")) {
                 throw new InvalidKeyException("Key type not supported");
             }
             privateKey = (CPrivateKey) key;
@@ -197,7 +205,6 @@ abstract class CSignature extends SignatureSpi {
             boolean noHashOID = this instanceof NONEwithRSA;
 
             // Sign hash using MS Crypto APIs
-
             byte[] result = signHash(noHashOID, hash, hash.length,
                         messageDigestAlgorithm, privateKey.getHCryptProvider(),
                         privateKey.getHCryptKey());
@@ -364,6 +371,106 @@ abstract class CSignature extends SignatureSpi {
         }
     }
 
+    public static final class SHA1withECDSA extends ECDSA {
+        public SHA1withECDSA() {
+            super("SHA-1");
+        }
+    }
+
+    public static final class SHA224withECDSA extends ECDSA {
+        public SHA224withECDSA() {
+            super("SHA-224");
+        }
+    }
+
+    public static final class SHA256withECDSA extends ECDSA {
+        public SHA256withECDSA() {
+            super("SHA-256");
+        }
+    }
+
+    public static final class SHA384withECDSA extends ECDSA {
+        public SHA384withECDSA() {
+            super("SHA-384");
+        }
+    }
+
+    public static final class SHA512withECDSA extends ECDSA {
+        public SHA512withECDSA() {
+            super("SHA-512");
+        }
+    }
+
+    static class ECDSA extends CSignature {
+
+        public ECDSA(String messageDigestAlgorithm) {
+            super("EC", messageDigestAlgorithm);
+        }
+
+        // initialize for signing. See JCA doc
+        @Override
+        protected void engineInitSign(PrivateKey key) throws InvalidKeyException {
+            if ((key instanceof CPrivateKey) == false
+                    || !key.getAlgorithm().equalsIgnoreCase("EC")) {
+                throw new InvalidKeyException("Key type not supported");
+            }
+            privateKey = (CPrivateKey) key;
+
+            this.publicKey = null;
+            resetDigest();
+        }
+
+        // initialize for signing. See JCA doc
+        @Override
+        protected void engineInitVerify(PublicKey key) throws InvalidKeyException {
+            // This signature accepts only ECPublicKey
+            if ((key instanceof ECPublicKey) == false) {
+                throw new InvalidKeyException("Key type not supported");
+            }
+
+
+            if ((key instanceof CPublicKey) == false) {
+                try {
+                    publicKey = importECPublicKey("EC",
+                            CKey.generateECBlob(key),
+                            KeyUtil.getKeySize(key));
+                } catch (KeyStoreException e) {
+                    throw new InvalidKeyException(e);
+                }
+            } else {
+                publicKey = (CPublicKey) key;
+            }
+
+            this.privateKey = null;
+            resetDigest();
+        }
+
+        @Override
+        protected byte[] engineSign() throws SignatureException {
+            byte[] hash = getDigestValue();
+            byte[] raw = signCngHash(0, hash, hash.length,
+                    0,
+                    null,
+                    privateKey.getHCryptProvider(), 0);
+            return ECUtil.encodeSignature(raw);
+        }
+
+        @Override
+        protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
+            byte[] hash = getDigestValue();
+            sigBytes = ECUtil.decodeSignature(sigBytes);
+            return verifyCngSignedHash(
+                    0,
+                    hash, hash.length,
+                    sigBytes, sigBytes.length,
+                    0,
+                    null,
+                    publicKey.getHCryptProvider(),
+                    0
+            );
+        }
+    }
+
     public static final class PSS extends RSA {
 
         private PSSParameterSpec pssParams = null;
@@ -463,7 +570,7 @@ abstract class CSignature extends SignatureSpi {
         protected byte[] engineSign() throws SignatureException {
             ensureInit();
             byte[] hash = getDigestValue();
-            return signCngHash(hash, hash.length,
+            return signCngHash(2, hash, hash.length,
                     pssParams.getSaltLength(),
                     ((MGF1ParameterSpec)
                             pssParams.getMGFParameters()).getDigestAlgorithm(),
@@ -479,7 +586,7 @@ abstract class CSignature extends SignatureSpi {
             } else {
                 byte[] hash = getDigestValue();
                 return verifyCngSignedHash(
-                        hash, hash.length,
+                        2, hash, hash.length,
                         sigBytes, sigBytes.length,
                         pssParams.getSaltLength(),
                         ((MGF1ParameterSpec)
@@ -599,19 +706,22 @@ abstract class CSignature extends SignatureSpi {
     }
 
     /**
-     * Sign hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
+     * Sign hash using CNG API with HCRYPTKEY.
+     * @param type 0 no padding, 1, pkcs1, 2, pss
      */
     native static byte[] signCngHash(
-            byte[] hash, int hashSize, int saltLength, String hashAlgorithm,
+            int type, byte[] hash,
+            int hashSize, int saltLength, String hashAlgorithm,
             long hCryptProv, long nCryptKey)
             throws SignatureException;
 
     /**
-     * Verify a signed hash using CNG API with HCRYPTKEY. Used by RSASSA-PSS.
-     * This method is not used now. See {@link PSS#fallbackSignature}.
+     * Verify a signed hash using CNG API with HCRYPTKEY.
+     * @param type 0 no padding, 1, pkcs1, 2, pss
      */
     private native static boolean verifyCngSignedHash(
-            byte[] hash, int hashSize, byte[] signature, int signatureSize,
+            int type, byte[] hash, int hashSize,
+            byte[] signature, int signatureSize,
             int saltLength, String hashAlgorithm,
             long hCryptProv, long hKey) throws SignatureException;
 
@@ -803,5 +913,8 @@ abstract class CSignature extends SignatureSpi {
      */
     // used by CRSACipher
     static native CPublicKey importPublicKey(
+            String alg, byte[] keyBlob, int keySize) throws KeyStoreException;
+
+    static native CPublicKey importECPublicKey(
             String alg, byte[] keyBlob, int keySize) throws KeyStoreException;
 }

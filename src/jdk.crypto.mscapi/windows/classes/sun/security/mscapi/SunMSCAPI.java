@@ -106,6 +106,16 @@ public final class SunMSCAPI extends Provider {
                         return new CSignature.MD2withRSA();
                     } else if (algo.equals("RSASSA-PSS")) {
                         return new CSignature.PSS();
+                    } else if (algo.equals("SHA1withECDSA")) {
+                        return new CSignature.SHA1withECDSA();
+                    } else if (algo.equals("SHA224withECDSA")) {
+                        return new CSignature.SHA224withECDSA();
+                    } else if (algo.equals("SHA256withECDSA")) {
+                        return new CSignature.SHA256withECDSA();
+                    } else if (algo.equals("SHA384withECDSA")) {
+                        return new CSignature.SHA384withECDSA();
+                    } else if (algo.equals("SHA512withECDSA")) {
+                        return new CSignature.SHA512withECDSA();
                     }
                 } else if (type.equals("KeyPairGenerator")) {
                     if (algo.equals("RSA")) {
@@ -188,7 +198,26 @@ public final class SunMSCAPI extends Provider {
                 putService(new ProviderService(p, "Signature",
                            "MD2withRSA", "sun.security.mscapi.CSignature$MD2withRSA",
                            null, attrs));
-
+                putService(new ProviderService(p, "Signature",
+                        "SHA1withECDSA", "sun.security.mscapi.CSignature$SHA1withECDSA",
+                        new String[] { "1.2.840.10045.4.1", "OID.1.2.840.10045.4.1" },
+                        attrs));
+                putService(new ProviderService(p, "Signature",
+                        "SHA224withECDSA", "sun.security.mscapi.CSignature$SHA224withECDSA",
+                        new String[] { "1.2.840.10045.4.3.1", "OID.1.2.840.10045.4.3.1"},
+                        attrs));
+                putService(new ProviderService(p, "Signature",
+                        "SHA256withECDSA", "sun.security.mscapi.CSignature$SHA256withECDSA",
+                        new String[] { "1.2.840.10045.4.3.2", "OID.1.2.840.10045.4.3.2"},
+                        attrs));
+                putService(new ProviderService(p, "Signature",
+                        "SHA384withECDSA", "sun.security.mscapi.CSignature$SHA384withECDSA",
+                        new String[] { "1.2.840.10045.4.3.3", "OID.1.2.840.10045.4.3.3"},
+                        attrs));
+                putService(new ProviderService(p, "Signature",
+                        "SHA512withECDSA", "sun.security.mscapi.CSignature$SHA512withECDSA",
+                        new String[] { "1.2.840.10045.4.3.4", "OID.1.2.840.10045.4.3.4"},
+                        attrs));
                 /*
                  * Key Pair Generator engines
                  */

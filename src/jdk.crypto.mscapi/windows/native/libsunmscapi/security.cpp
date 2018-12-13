@@ -65,44 +65,53 @@
             __leave; \
         }
 
-//#define PP(fmt, ...) \
-//        fprintf(stdout, "MSCAPI (%ld): ", __LINE__); \
-//        fprintf(stdout, fmt, ##__VA_ARGS__); \
-//        fprintf(stdout, "\n"); \
-//        fflush(stdout)
+#define PP(fmt, ...) \
+        if (trace) { \
+            fprintf(stdout, "MSCAPI (%ld): ", __LINE__); \
+            fprintf(stdout, fmt, ##__VA_ARGS__); \
+            fprintf(stdout, "\n"); \
+            fflush(stdout); \
+        }
 
 extern "C" {
+
+char* trace = getenv("CAPI_TRACE");
 
 /*
  * Declare library specific JNI_Onload entry if static build
  */
 DEF_STATIC_JNI_OnLoad
 
-//void dump(LPSTR title, PBYTE data, DWORD len)
-//{
-//    printf("==== %s ====\n", title);
-//    for (DWORD i = 0; i < len; i+=16) {
-//        printf("%04x: ", i);
-//        for (int j = 0; j < 16; j++) {
-//            if (j == 8) {
-//                printf("  ");
-//            }
-//            if (i + j < len) {
-//                printf("%02X ", *(data + i + j) & 0xff);
-//            } else {
-//                printf("   ");
-//            }
-//        }
-//        for (int j = 0; j < 16; j++) {
-//            if (i + j < len) {
-//                int k = *(data + i + j) & 0xff;
-//                if (k < 32 || k > 127) printf(".");
-//                else printf("%c", (char)k);
-//            }
-//        }
-//        printf("\n");
-//    }
-//}
+void showProperty(NCRYPT_HANDLE hKey);
+
+void dump(LPSTR title, PBYTE data, DWORD len)
+{
+    if (trace) {
+        printf("==== %s ====\n", title);
+        for (DWORD i = 0; i < len; i+=16) {
+            printf("%04x: ", i);
+            for (int j = 0; j < 16; j++) {
+                if (j == 8) {
+                    printf("  ");
+                }
+                if (i + j < len) {
+                    printf("%02X ", *(data + i + j) & 0xff);
+                } else {
+                    printf("   ");
+                }
+            }
+            for (int j = 0; j < 16; j++) {
+                if (i + j < len) {
+                    int k = *(data + i + j) & 0xff;
+                    if (k < 32 || k > 127) printf(".");
+                    else printf("%c", (char)k);
+                }
+            }
+            printf("\n");
+        }
+        fflush(stdout);
+    }
+}
 
 /*
  * Throws an arbitrary Java exception with the given message.
@@ -445,10 +454,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
         }
 
         // Determine method ID to generate RSA certificate chain
-        jmethodID mGenRSAKeyAndCertChain = env->GetMethodID(clazzOfThis,
-                                                   "generateRSAKeyAndCertificateChain",
-                                                   "(Ljava/lang/String;JJILjava/util/Collection;)V");
-        if (mGenRSAKeyAndCertChain == NULL) {
+        jmethodID mGenKeyAndCertChain = env->GetMethodID(clazzOfThis,
+                                                   "generateKeyAndCertificateChain",
+                                                   "(ZLjava/lang/String;JJILjava/util/Collection;)V");
+        if (mGenKeyAndCertChain == NULL) {
             __leave;
         }
 
@@ -457,6 +466,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
         // NULL to retrieve the first certificate in the store.
         while (pCertContext = ::CertEnumCertificatesInStore(hCertStore, pCertContext))
         {
+            PP("--------------------------");
             // Check if private key available - client authentication certificate
             // must have private key available.
             HCRYPTPROV hCryptProv = NULL;
@@ -467,10 +477,12 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             DWORD dwPublicKeyLength = 0;
 
             // First, probe it silently
-            if (::CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_SILENT_FLAG, NULL,
+            if (::CryptAcquireCertificatePrivateKey(pCertContext,
+                    CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG | CRYPT_ACQUIRE_SILENT_FLAG, NULL,
                     &hCryptProv, &dwKeySpec, &bCallerFreeProv) == FALSE
                 && GetLastError() != NTE_SILENT_CONTEXT)
             {
+                PP("bHasNoPrivateKey = TRUE!");
                 bHasNoPrivateKey = TRUE;
             }
             else
@@ -481,27 +493,32 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                 }
 
                 // Second, acquire the key normally (not silently)
-                if (::CryptAcquireCertificatePrivateKey(pCertContext, 0, NULL,
+                if (::CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG, NULL,
                         &hCryptProv, &dwKeySpec, &bCallerFreeProv) == FALSE)
                 {
+                    PP("bHasNoPrivateKey = TRUE!!");
                     bHasNoPrivateKey = TRUE;
                 }
                 else
                 {
-                    // Private key is available
-                    BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey); //deprecated
+                    if ((dwKeySpec & CERT_NCRYPT_KEY_SPEC) == CERT_NCRYPT_KEY_SPEC) {
+                        PP("CNG %I64d", hCryptProv);
+                    } else {
+                        // Private key is available
+                        BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey); //deprecated
 
-                    // Skip certificate if cannot find private key
-                    if (bGetUserKey == FALSE) {
-                        if (bCallerFreeProv)
-                            ::CryptReleaseContext(hCryptProv, NULL); // deprecated
-                        continue;
+                        // Skip certificate if cannot find private key
+                        if (bGetUserKey == FALSE) {
+                            if (bCallerFreeProv)
+                                ::CryptReleaseContext(hCryptProv, NULL); // deprecated
+                            continue;
+                        }
+
+                        // Set cipher mode to ECB
+                        DWORD dwCipherMode = CRYPT_MODE_ECB;
+                        ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL); //deprecated
+                        PP("CAPI %I64d %I64d", hCryptProv, hUserKey);
                     }
-
-                    // Set cipher mode to ECB
-                    DWORD dwCipherMode = CRYPT_MODE_ECB;
-                    ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL); //deprecated
-
                     // If the private key is present in smart card, we may not be able to
                     // determine the key length by using the private key handle. However,
                     // since public/private key pairs must have the same length, we could
@@ -573,6 +590,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         env->CallVoidMethod(obj, mGenCert, byteArray, jArrayList);
                     }
 
+                    PP("%s: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
                     if (bHasNoPrivateKey)
                     {
                         // Generate certificate chain and store into cert chain
@@ -583,19 +601,40 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                     }
                     else
                     {
-                        // Determine key type: RSA or DSA
-                        DWORD dwData = CALG_RSA_KEYX;
-                        DWORD dwSize = sizeof(DWORD);
-                        ::CryptGetKeyParam(hUserKey, KP_ALGID, (BYTE*)&dwData, //deprecated
-                                &dwSize, NULL);
-                        if ((dwData & ALG_TYPE_RSA) == ALG_TYPE_RSA)
-                        {
-                            // Generate RSA certificate chain and store into cert
-                            // chain collection
-                            env->CallVoidMethod(obj, mGenRSAKeyAndCertChain,
-                                    env->NewStringUTF(pszNameString),
-                                    (jlong) hCryptProv, (jlong) hUserKey,
-                                    dwPublicKeyLength, jArrayList);
+                        if (hUserKey) {
+                            // Only accept RSA for CAPI
+                            DWORD dwData = CALG_RSA_KEYX;
+                            DWORD dwSize = sizeof(DWORD);
+                            ::CryptGetKeyParam(hUserKey, KP_ALGID, (BYTE*)&dwData, //deprecated
+                                    &dwSize, NULL);
+                            if ((dwData & ALG_TYPE_RSA) == ALG_TYPE_RSA)
+                            {
+                                // Generate RSA certificate chain and store into cert
+                                // chain collection
+                                env->CallVoidMethod(obj, mGenKeyAndCertChain,
+                                        1,
+                                        env->NewStringUTF(pszNameString),
+                                        (jlong) hCryptProv, (jlong) hUserKey,
+                                        dwPublicKeyLength, jArrayList);
+                            }
+                        } else {
+                            // Only accept EC for CNG
+                            BYTE buffer[32];
+                            DWORD len = 0;
+                            if (::NCryptGetProperty(
+                                    hCryptProv, NCRYPT_ALGORITHM_PROPERTY,
+                                    (PBYTE)buffer, 32, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
+                                if (buffer[0] == 'E' && buffer[2] == 'C'
+                                        && (dwPublicKeyLength == 256
+                                                || dwPublicKeyLength == 384
+                                                || dwPublicKeyLength == 521)) {
+                                    env->CallVoidMethod(obj, mGenKeyAndCertChain,
+                                        0,
+                                        env->NewStringUTF(pszNameString),
+                                        (jlong) hCryptProv, 0,
+                                        dwPublicKeyLength, jArrayList);
+                                }
+                            }
                         }
                     }
                 }
@@ -603,6 +642,8 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                 // Free cert chain
                 if (pCertChainContext)
                     ::CertFreeCertificateChain(pCertChainContext);
+            } else {
+                PP("GetCertificateChain failed %d", GetLastError());
             }
         }
     }
@@ -768,10 +809,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signHash
 /*
  * Class:     sun_security_mscapi_CSignature
  * Method:    signCngHash
- * Signature: ([BIILjava/lang/String;JJ)[B
+ * Signature: (I[BIILjava/lang/String;JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
-  (JNIEnv *env, jclass clazz, jbyteArray jHash,
+  (JNIEnv *env, jclass clazz, jint type, jbyteArray jHash,
         jint jHashSize, jint saltLen, jstring jHashAlgorithm, jlong hCryptProv,
         jlong hCryptKey)
 {
@@ -783,13 +824,17 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
 
     __try
     {
-        SS_CHECK(::NCryptTranslateHandle(
+        if (hCryptKey == 0) {
+            hk = (NCRYPT_KEY_HANDLE)hCryptProv;
+        } else {
+            SS_CHECK(::NCryptTranslateHandle(
                 NULL,
                 &hk,
                 hCryptProv,
                 hCryptKey,
                 NULL,
                 0));
+        }
 
         // Copy hash from Java to native buffer
         pHashBuffer = new (env) jbyte[jHashSize];
@@ -798,43 +843,66 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
         }
         env->GetByteArrayRegion(jHash, 0, jHashSize, pHashBuffer);
 
-        BCRYPT_PSS_PADDING_INFO pssInfo;
-        pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
-        pssInfo.cbSalt = saltLen;
+        VOID* param;
+        DWORD dwFlags;
 
-        if (pssInfo.pszAlgId == NULL) {
-            ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
-                    "Unrecognised hash algorithm");
-            __leave;
+        switch (type) {
+        case 0:
+            param = NULL;
+            dwFlags = 0;
+            break;
+        case 1:
+            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+            pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
+            if (pkcs1Info.pszAlgId == NULL) {
+                ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
+                        "Unrecognised hash algorithm");
+                __leave;
+            }
+            param = &pkcs1Info;
+            dwFlags = BCRYPT_PAD_PKCS1;
+            break;
+        case 2:
+            BCRYPT_PSS_PADDING_INFO pssInfo;
+            pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
+            pssInfo.cbSalt = saltLen;
+            if (pssInfo.pszAlgId == NULL) {
+                ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
+                        "Unrecognised hash algorithm");
+                __leave;
+            }
+            param = &pssInfo;
+            dwFlags = BCRYPT_PAD_PSS;
+            break;
         }
 
-        DWORD dwBufLen = 0;
+        DWORD jSignedHashSize = 0;
         SS_CHECK(::NCryptSignHash(
                 hk,
-                &pssInfo,
+                param,
                 (BYTE*)pHashBuffer, jHashSize,
-                NULL, 0, &dwBufLen,
-                BCRYPT_PAD_PSS
+                NULL, 0, &jSignedHashSize,
+                dwFlags
                 ));
 
-        pSignedHashBuffer = new (env) jbyte[dwBufLen];
+        pSignedHashBuffer = new (env) jbyte[jSignedHashSize];
         if (pSignedHashBuffer == NULL) {
             __leave;
         }
 
         SS_CHECK(::NCryptSignHash(
                 hk,
-                &pssInfo,
+                param,
                 (BYTE*)pHashBuffer, jHashSize,
-                (BYTE*)pSignedHashBuffer, dwBufLen, &dwBufLen,
-                BCRYPT_PAD_PSS
+                (BYTE*)pSignedHashBuffer, jSignedHashSize, &jSignedHashSize,
+                dwFlags
                 ));
 
         // Create new byte array
-        jbyteArray temp = env->NewByteArray(dwBufLen);
+        jbyteArray temp = env->NewByteArray(jSignedHashSize);
 
         // Copy data from native buffer
-        env->SetByteArrayRegion(temp, 0, dwBufLen, pSignedHashBuffer);
+        env->SetByteArrayRegion(temp, 0, jSignedHashSize, pSignedHashBuffer);
 
         jSignedHash = temp;
     }
@@ -846,7 +914,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
         if (pHashBuffer)
             delete [] pHashBuffer;
 
-        if (hk != NULL)
+        if (hCryptKey != 0 && hk != NULL)
             ::NCryptFreeObject(hk);
     }
 
@@ -961,10 +1029,10 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifySignedHash
 /*
  * Class:     sun_security_mscapi_CSignature
  * Method:    verifyCngSignedHash
- * Signature: ([BI[BIILjava/lang/String;JJ)Z
+ * Signature: (I[BI[BIILjava/lang/String;JJ)Z
  */
 JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHash
-  (JNIEnv *env, jclass clazz,
+  (JNIEnv *env, jclass clazz, jint type,
         jbyteArray jHash, jint jHashSize,
         jbyteArray jSignedHash, jint jSignedHashSize,
         jint saltLen, jstring jHashAlgorithm,
@@ -977,13 +1045,17 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
 
     __try
     {
-        SS_CHECK(::NCryptTranslateHandle(
+        if (hCryptKey == 0) {
+            hk = (NCRYPT_KEY_HANDLE)hCryptProv;
+        } else {
+            SS_CHECK(::NCryptTranslateHandle(
                 NULL,
                 &hk,
                 hCryptProv,
                 hCryptKey,
                 NULL,
                 0));
+        }
 
         // Copy hash and signedHash from Java to native buffer
         pHashBuffer = new (env) jbyte[jHashSize];
@@ -999,19 +1071,43 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
         env->GetByteArrayRegion(jSignedHash, 0, jSignedHashSize,
             pSignedHashBuffer);
 
-        BCRYPT_PSS_PADDING_INFO pssInfo;
-        pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
-        pssInfo.cbSalt = saltLen;
-        if (pssInfo.pszAlgId == NULL) {
-            ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
-                    "Unrecognised hash algorithm");
-            __leave;
+        VOID* param;
+        DWORD dwFlags;
+
+        switch (type) {
+        case 0:
+            param = NULL;
+            dwFlags = 0;
+            break;
+        case 1:
+            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+            pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
+            if (pkcs1Info.pszAlgId == NULL) {
+                ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
+                        "Unrecognised hash algorithm");
+                __leave;
+            }
+            param = &pkcs1Info;
+            dwFlags = NCRYPT_PAD_PKCS1_FLAG;
+            break;
+        case 2:
+            BCRYPT_PSS_PADDING_INFO pssInfo;
+            pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
+            pssInfo.cbSalt = saltLen;
+            if (pssInfo.pszAlgId == NULL) {
+                ThrowExceptionWithMessage(env, SIGNATURE_EXCEPTION,
+                        "Unrecognised hash algorithm");
+                __leave;
+            }
+            param = &pssInfo;
+            dwFlags = NCRYPT_PAD_PSS_FLAG;
+            break;
         }
 
-        if (::NCryptVerifySignature(hk, &pssInfo,
+        if (::NCryptVerifySignature(hk, param,
                 (BYTE *) pHashBuffer, jHashSize,
                 (BYTE *) pSignedHashBuffer, jSignedHashSize,
-                NCRYPT_PAD_PSS_FLAG) == ERROR_SUCCESS)
+                dwFlags) == ERROR_SUCCESS)
         {
             result = JNI_TRUE;
         }
@@ -1025,11 +1121,106 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
         if (pHashBuffer)
             delete [] pHashBuffer;
 
-        if (hk != NULL)
+        if (hCryptKey != 0 && hk != NULL)
             ::NCryptFreeObject(hk);
     }
 
     return result;
+}
+
+#define DUMP_PROP(p) \
+    if (::NCryptGetProperty(hKey, p, (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) { \
+        sprintf(header, "%s %ls", #p, p); \
+        dump(header, buffer, len); \
+    }
+
+#define EXPORT_BLOB(p) \
+    desc.cBuffers = 0; \
+    if (::NCryptExportKey(hKey, NULL, p, &desc, (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) { \
+        sprintf(header, "%s %ls (%ld)", #p, p, desc.cBuffers); \
+        dump(header, buffer, len); \
+        for (int i = 0; i < (int)desc.cBuffers; i++) { \
+            sprintf(header, "desc %ld", desc.pBuffers[i].BufferType); \
+            dump(header, (PBYTE)desc.pBuffers[i].pvBuffer, desc.pBuffers[i].cbBuffer); \
+        } \
+    }
+
+void showProperty(NCRYPT_HANDLE hKey) {
+    char header[100];
+    BYTE buffer[8192];
+    DWORD len = 9;
+    NCryptBufferDesc desc;
+    DUMP_PROP(NCRYPT_ALGORITHM_GROUP_PROPERTY);
+    DUMP_PROP(NCRYPT_ALGORITHM_PROPERTY);
+    DUMP_PROP(NCRYPT_ASSOCIATED_ECDH_KEY);
+    DUMP_PROP(NCRYPT_BLOCK_LENGTH_PROPERTY);
+    DUMP_PROP(NCRYPT_CERTIFICATE_PROPERTY);
+    DUMP_PROP(NCRYPT_DH_PARAMETERS_PROPERTY);
+    DUMP_PROP(NCRYPT_EXPORT_POLICY_PROPERTY);
+    DUMP_PROP(NCRYPT_IMPL_TYPE_PROPERTY);
+    DUMP_PROP(NCRYPT_KEY_TYPE_PROPERTY);
+    DUMP_PROP(NCRYPT_KEY_USAGE_PROPERTY);
+    DUMP_PROP(NCRYPT_LAST_MODIFIED_PROPERTY);
+    DUMP_PROP(NCRYPT_LENGTH_PROPERTY);
+    DUMP_PROP(NCRYPT_LENGTHS_PROPERTY);
+    DUMP_PROP(NCRYPT_MAX_NAME_LENGTH_PROPERTY);
+    DUMP_PROP(NCRYPT_NAME_PROPERTY);
+    DUMP_PROP(NCRYPT_PIN_PROMPT_PROPERTY);
+    DUMP_PROP(NCRYPT_PIN_PROPERTY);
+    DUMP_PROP(NCRYPT_PROVIDER_HANDLE_PROPERTY);
+    DUMP_PROP(NCRYPT_READER_PROPERTY);
+    DUMP_PROP(NCRYPT_ROOT_CERTSTORE_PROPERTY);
+    DUMP_PROP(NCRYPT_SCARD_PIN_ID);
+    DUMP_PROP(NCRYPT_SCARD_PIN_INFO);
+    DUMP_PROP(NCRYPT_SECURE_PIN_PROPERTY);
+    DUMP_PROP(NCRYPT_SECURITY_DESCR_PROPERTY);
+    DUMP_PROP(NCRYPT_SECURITY_DESCR_SUPPORT_PROPERTY);
+    DUMP_PROP(NCRYPT_SMARTCARD_GUID_PROPERTY);
+    DUMP_PROP(NCRYPT_UI_POLICY_PROPERTY);
+    DUMP_PROP(NCRYPT_UNIQUE_NAME_PROPERTY);
+    DUMP_PROP(NCRYPT_USE_CONTEXT_PROPERTY);
+    DUMP_PROP(NCRYPT_USE_COUNT_ENABLED_PROPERTY);
+    DUMP_PROP(NCRYPT_USE_COUNT_PROPERTY);
+    DUMP_PROP(NCRYPT_USER_CERTSTORE_PROPERTY);
+    DUMP_PROP(NCRYPT_VERSION_PROPERTY);
+    DUMP_PROP(NCRYPT_WINDOW_HANDLE_PROPERTY);
+
+    EXPORT_BLOB(BCRYPT_DH_PRIVATE_BLOB);
+    EXPORT_BLOB(BCRYPT_DH_PUBLIC_BLOB);
+    EXPORT_BLOB(BCRYPT_DSA_PRIVATE_BLOB);
+    EXPORT_BLOB(BCRYPT_DSA_PUBLIC_BLOB);
+    EXPORT_BLOB(BCRYPT_ECCPRIVATE_BLOB);
+    EXPORT_BLOB(BCRYPT_ECCPUBLIC_BLOB);
+    EXPORT_BLOB(BCRYPT_PUBLIC_KEY_BLOB);
+    EXPORT_BLOB(BCRYPT_PRIVATE_KEY_BLOB);
+    EXPORT_BLOB(BCRYPT_RSAFULLPRIVATE_BLOB);
+    EXPORT_BLOB(BCRYPT_RSAPRIVATE_BLOB);
+    EXPORT_BLOB(BCRYPT_RSAPUBLIC_BLOB);
+    EXPORT_BLOB(LEGACY_DH_PRIVATE_BLOB);
+    EXPORT_BLOB(LEGACY_DH_PUBLIC_BLOB);
+    EXPORT_BLOB(LEGACY_DSA_PRIVATE_BLOB);
+    EXPORT_BLOB(LEGACY_DSA_PUBLIC_BLOB);
+    EXPORT_BLOB(LEGACY_RSAPRIVATE_BLOB);
+    EXPORT_BLOB(LEGACY_RSAPUBLIC_BLOB);
+    EXPORT_BLOB(NCRYPT_CIPHER_KEY_BLOB);
+    EXPORT_BLOB(NCRYPT_OPAQUETRANSPORT_BLOB);
+    EXPORT_BLOB(NCRYPT_PKCS7_ENVELOPE_BLOB);
+    //EXPORT_BLOB(NCRYPTBUFFER_CERT_BLOB);
+    //EXPORT_BLOB(NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+    BCryptBuffer bb;
+    bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
+    bb.cbBuffer = 18;
+    bb.pvBuffer = L"changeit";
+    BCryptBufferDesc bbd;
+    bbd.ulVersion = 0;
+    bbd.cBuffers = 1;
+    bbd.pBuffers = &bb;
+    if(::NCryptExportKey(hKey, NULL, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, NULL,
+            (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
+        sprintf(header, "NCRYPT_PKCS8_PRIVATE_KEY_BLOB %ls", NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+        dump(header, buffer, len);
+    }
+    EXPORT_BLOB(NCRYPT_PROTECTED_KEY_BLOB);
 }
 
 /*
@@ -1673,10 +1864,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
 /*
  * Class:     sun_security_mscapi_CPublicKey
  * Method:    getPublicKeyBlob
- * Signature: (J)[B
+ * Signature: (JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CPublicKey_getPublicKeyBlob
-    (JNIEnv *env, jobject clazz, jlong hCryptKey) {
+    (JNIEnv *env, jobject clazz, jlong hCryptProv, jlong hCryptKey) {
 
     jbyteArray blob = NULL;
     DWORD dwBlobLen;
@@ -1686,11 +1877,17 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CPublicKey_getPublicKeyBlo
     {
 
         // Determine the size of the blob
-        if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, NULL, //deprecated
-            &dwBlobLen)) {
+        if (hCryptKey == 0) {
+            SS_CHECK(::NCryptExportKey(
+                hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
+                NULL, NULL, 0, &dwBlobLen, NCRYPT_SILENT_FLAG));
+        } else {
+            if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, NULL, //deprecated
+                &dwBlobLen)) {
 
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
-            __leave;
+                ThrowException(env, KEY_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         pbKeyBlob = new (env) BYTE[dwBlobLen];
@@ -1699,11 +1896,17 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CPublicKey_getPublicKeyBlo
         }
 
         // Generate key blob
-        if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, //deprecated
-            pbKeyBlob, &dwBlobLen)) {
+        if (hCryptKey == 0) {
+            SS_CHECK(::NCryptExportKey(
+                hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
+                NULL, pbKeyBlob, dwBlobLen, &dwBlobLen, NCRYPT_SILENT_FLAG));
+        } else {
+            if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, //deprecated
+                pbKeyBlob, &dwBlobLen)) {
 
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
-            __leave;
+                ThrowException(env, KEY_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         // Create new byte array
@@ -2173,6 +2376,66 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
     }
 
     return privateKey;
+}
+
+/*
+ * Class:     sun_security_mscapi_CSignature
+ * Method:    importECPublicKey
+ * Signature: (Ljava/lang/String;[BI)Lsun/security/mscapi/CPublicKey;
+ */
+JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CSignature_importECPublicKey
+    (JNIEnv *env, jclass clazz, jstring alg, jbyteArray keyBlob, jint keySize)
+{
+    BCRYPT_ALG_HANDLE hSignAlg = NULL;
+    NCRYPT_KEY_HANDLE       hTmpKey         = NULL;
+    DWORD dwBlobLen;
+    BYTE * pbKeyBlob = NULL;
+    jobject publicKey = NULL;
+
+    __try
+    {
+        dwBlobLen = env->GetArrayLength(keyBlob);
+        if ((pbKeyBlob = (BYTE *) env->GetByteArrayElements(keyBlob, 0))
+            == NULL) {
+            __leave;
+        }
+        dump("NCryptImportKey", pbKeyBlob, dwBlobLen);
+        NCRYPT_PROV_HANDLE hProv;
+        SS_CHECK(NCryptOpenStorageProvider(
+                &hProv, L"Microsoft Software Key Storage Provider", 0 ));
+        SS_CHECK(NCryptImportKey(
+                                                    hProv,
+                                                    NULL,
+                                                    BCRYPT_ECCPUBLIC_BLOB,
+                                                    NULL,
+                                                    &hTmpKey,
+                                                    pbKeyBlob,
+                                                    dwBlobLen,
+                                                    0));
+        NCryptFreeObject( hProv );
+        // Get the method ID for the CPublicKey constructor
+        jclass clazzCPublicKey =
+            env->FindClass("sun/security/mscapi/CPublicKey");
+        if (clazzCPublicKey == NULL) {
+            __leave;
+        }
+
+        jmethodID mNewCPublicKey =
+            env->GetStaticMethodID(clazzCPublicKey, "of",
+            "(Ljava/lang/String;JJI)Lsun/security/mscapi/CPublicKey;");
+        if (mNewCPublicKey == NULL) {
+            __leave;
+        }
+
+        // Create a new public key
+        publicKey = env->CallStaticObjectMethod(clazzCPublicKey, mNewCPublicKey,
+            alg, (jlong) hTmpKey, (jlong) 0, keySize);
+    }
+    __finally
+    {
+    }
+
+    return publicKey;
 }
 
 /*
