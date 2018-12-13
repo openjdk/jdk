@@ -684,8 +684,29 @@ public final class SunJCE extends Provider {
         ps("Mac", "HmacSHA512/256",
                 "com.sun.crypto.provider.HmacCore$HmacSHA512_256",
                 null, attrs);
-        ps("Mac", "HmacPBESHA1", "com.sun.crypto.provider.HmacPKCS12PBESHA1",
+        ps("Mac", "HmacPBESHA1",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA1",
                 null, attrs);
+        ps("Mac", "HmacPBESHA224",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA224",
+                null, attrs);
+        ps("Mac", "HmacPBESHA256",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA256",
+                null, attrs);
+        ps("Mac", "HmacPBESHA384",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA384",
+                null, attrs);
+        ps("Mac", "HmacPBESHA512",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA512",
+                null, attrs);
+        ps("Mac", "HmacPBESHA512/224",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA512_224",
+                null, attrs);
+        ps("Mac", "HmacPBESHA512/256",
+                "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA512_256",
+                null, attrs);
+
+
         // PBMAC1
         ps("Mac", "PBEWithHmacSHA1",
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA1", null, attrs);

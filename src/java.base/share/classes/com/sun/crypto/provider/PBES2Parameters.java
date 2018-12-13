@@ -314,41 +314,48 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
                 + "not an ASN.1 OCTET STRING tag");
         }
         iCount = pBKDF2_params.data.getInteger();
+
+        DerValue prf = null;
         // keyLength INTEGER (1..MAX) OPTIONAL,
         if (pBKDF2_params.data.available() > 0) {
             DerValue keyLength = pBKDF2_params.data.getDerValue();
             if (keyLength.tag == DerValue.tag_Integer) {
                 keysize = keyLength.getInteger() * 8; // keysize (in bits)
+            } else {
+                // Should be the prf
+                prf = keyLength;
             }
         }
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
         String kdfAlgo = "HmacSHA1";
-        if (pBKDF2_params.data.available() > 0) {
-            if (pBKDF2_params.tag == DerValue.tag_Sequence) {
-                DerValue prf = pBKDF2_params.data.getDerValue();
-                kdfAlgo_OID = prf.data.getOID();
-                if (hmacWithSHA1_OID.equals(kdfAlgo_OID)) {
-                    kdfAlgo = "HmacSHA1";
-                } else if (hmacWithSHA224_OID.equals(kdfAlgo_OID)) {
-                    kdfAlgo = "HmacSHA224";
-                } else if (hmacWithSHA256_OID.equals(kdfAlgo_OID)) {
-                    kdfAlgo = "HmacSHA256";
-                } else if (hmacWithSHA384_OID.equals(kdfAlgo_OID)) {
-                    kdfAlgo = "HmacSHA384";
-                } else if (hmacWithSHA512_OID.equals(kdfAlgo_OID)) {
-                    kdfAlgo = "HmacSHA512";
-                } else {
+        if (prf == null) {
+            if (pBKDF2_params.data.available() > 0) {
+                prf = pBKDF2_params.data.getDerValue();
+            }
+        }
+        if (prf != null) {
+            kdfAlgo_OID = prf.data.getOID();
+            if (hmacWithSHA1_OID.equals(kdfAlgo_OID)) {
+                kdfAlgo = "HmacSHA1";
+            } else if (hmacWithSHA224_OID.equals(kdfAlgo_OID)) {
+                kdfAlgo = "HmacSHA224";
+            } else if (hmacWithSHA256_OID.equals(kdfAlgo_OID)) {
+                kdfAlgo = "HmacSHA256";
+            } else if (hmacWithSHA384_OID.equals(kdfAlgo_OID)) {
+                kdfAlgo = "HmacSHA384";
+            } else if (hmacWithSHA512_OID.equals(kdfAlgo_OID)) {
+                kdfAlgo = "HmacSHA512";
+            } else {
+                throw new IOException("PBE parameter parsing error: "
+                        + "expecting the object identifier for a HmacSHA key "
+                        + "derivation function");
+            }
+            if (prf.data.available() != 0) {
+                // parameter is 'NULL' for all HmacSHA KDFs
+                DerValue parameter = prf.data.getDerValue();
+                if (parameter.tag != DerValue.tag_Null) {
                     throw new IOException("PBE parameter parsing error: "
-                            + "expecting the object identifier for a HmacSHA key "
-                            + "derivation function");
-                }
-                if (prf.data.available() != 0) {
-                    // parameter is 'NULL' for all HmacSHA KDFs
-                    DerValue parameter = prf.data.getDerValue();
-                    if (parameter.tag != DerValue.tag_Null) {
-                        throw new IOException("PBE parameter parsing error: "
-                                + "not an ASN.1 NULL tag");
-                    }
+                            + "not an ASN.1 NULL tag");
                 }
             }
         }
