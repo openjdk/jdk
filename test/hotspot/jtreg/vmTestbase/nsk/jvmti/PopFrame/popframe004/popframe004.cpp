@@ -287,7 +287,7 @@ void nativeMeth2(JNIEnv *env, jobject obj, jint vrb,
         tot_result = STATUS_FAILED;
         return;
     }
-    if (vrb ==1) {
+    if (vrb == 1) {
         printf("nativeMeth2(): calling the Java activeMethod()\n");
         fflush(stdout);
     }
@@ -297,7 +297,7 @@ void nativeMeth2(JNIEnv *env, jobject obj, jint vrb,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_PopFrame_popframe004_nativeMeth(JNIEnv *env, jobject obj, jint vrb,
         jobject frameThr) {
-    if (vrb ==1) {
+    if (vrb == 1) {
         printf("nativeMeth(): calling the native nativeMeth2()\n");
         fflush(stdout);
     }

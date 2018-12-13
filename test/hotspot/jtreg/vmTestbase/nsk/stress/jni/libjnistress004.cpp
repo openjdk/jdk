@@ -50,7 +50,7 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
 /*     const char *threadName=env->GetStringUTFChars(jstr, 0); */
 
     env->MonitorEnter(jobj); CE
-    if (upper==0) tmp=(jchar *)malloc(DIGESTLENGTH*sizeof(char));
+    if (upper == 0) tmp = (jchar *) malloc(DIGESTLENGTH*sizeof(char));
     if (env->ExceptionOccurred()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
@@ -140,7 +140,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
 
     printf("Comparing: ");
     for (i=0;i<len;i++)
-    if (ch[i]!=tmp[i]) {
+    if (ch[i] != tmp[i]) {
         printf("Error in %d\n",i);
         printf("ch[%d]=%02x tmp[%d]=%02x\n",i,ch[i],i,tmp[i]);
         ret=JNI_FALSE;
@@ -153,7 +153,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     ++upper;
     if (!(upper % 500))
     fprintf(stderr,"There are %d elements now.\n", upper);
-    if (upper==limit) {
+    if (upper == limit) {
     jclass clazz;
     jmethodID methodID;
     char *name = (char*) "halt";

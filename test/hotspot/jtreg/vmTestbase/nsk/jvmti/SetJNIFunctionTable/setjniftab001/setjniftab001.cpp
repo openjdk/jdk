@@ -199,15 +199,15 @@ void checkCall(int step, int exMonEntCalls, const char *msg) {
     if (monent_calls == exMonEntCalls) {
         if (verbose)
             printf("\nCHECK PASSED: the %s JNI function MonitorEnter() has been %s inside %s:\n\t%d intercepted call(s) as expected\n",
-                (step==1)?"tested":"original",
-                (step==1)?"redirected":"restored", msg,
+                (step == 1) ? "tested" : "original",
+                (step == 1) ? "redirected" : "restored", msg,
                 monent_calls);
     }
     else {
         result = STATUS_FAILED;
         printf("\nTEST FAILED: the %s JNI function MonitorEnter() has not been %s inside %s:\n\t%d intercepted call(s) instead of %d as expected\n",
-            (step==1)?"tested":"original",
-            (step==1)?"redirected":"restored", msg,
+            (step == 1) ? "tested" : "original",
+            (step == 1) ? "redirected" : "restored", msg,
             monent_calls, exMonEntCalls);
     }
 }
@@ -382,10 +382,10 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
        and check the assertion with current thread and new threads */
     if (verbose)
         printf("\nc) Checking the restored JNI function table ...\n");
-    doRestore((nextEnv==NULL)? env:nextEnv);
+    doRestore((nextEnv == NULL) ? env : nextEnv);
 
     zeroCounter();
-    doExec((nextEnv==NULL)? env:nextEnv, 0);
+    doExec((nextEnv == NULL) ? env : nextEnv, 0);
     checkCall(2, 0, "main thread");
 
     zeroCounter();

@@ -61,6 +61,8 @@ public class Filtering {
             { Lookup.class, "allowedModes" },
             { Method.class, "clazz" },
             { Method.class, "modifiers" },
+            { Module.class, "name" },
+            { Module.class, "loader" },
             { System.class, "security" },
         };
     }

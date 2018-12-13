@@ -176,7 +176,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
         }
         if (methodsInfo[i].mid == NULL) {
             printf("%s: Failed to get the method ID for the%s%s method \"%s\", signature \"%s\"\n",
-                __FILE__, full?" ":" original ", methodsInfo[i].inst?"instance":"static",
+                __FILE__, full ? " " : " original ", methodsInfo[i].inst ? "instance":"static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
             return STATUS_FAILED;
         }
@@ -187,7 +187,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
             printf("%s: Failed to call GetLocalVariableTable(): error=%d: %s\n",
                 __FILE__, err, TranslateError(err));
             printf("\tfor the%s%s method \"%s\", signature \"%s\"\n\n",
-                full?" ":" original ", methodsInfo[i].inst?"instance":"static",
+                full ? " " : " original ", methodsInfo[i].inst ? "instance":"static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
             return STATUS_FAILED;
         } else {
@@ -195,7 +195,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
                 printf(
                     "TEST FAILED: %s%s method \"%s\", signature \"%s\": "
                     "found %d vars in the LocalVariableTable, expected %d\n",
-                    full?" ":" original ", methodsInfo[i].inst?"instance":"static",
+                    full ? " " : " original ", methodsInfo[i].inst ? "instance":"static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign,
                     count, methodsInfo[i].vcount);
                 totRes = STATUS_FAILED;
@@ -206,7 +206,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
                     "\nChecking vars in the LocalVariableTable of the %s method \"%s\", "
                     "signature \"%s\" ...\n"
                     "\tfound %d local vars as expected\n",
-                    methodsInfo[i].inst?"instance":"static",
+                    methodsInfo[i].inst ? "instance" : "static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign, count);
 
             if (full) {
@@ -217,7 +217,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
                                 printf(
                                     "TEST FAILED: %s method \"%s\", signature \"%s\": var \"%s\" "
                                     "has signature \"%s\" in the LocalVariableTable, expected \"%s\"\n",
-                                    methodsInfo[i].inst?"instance":"static",
+                                    methodsInfo[i].inst ? "instance" : "static",
                                     methodsInfo[i].m_name, methodsInfo[i].m_sign,
                                     lv_table[j].name, lv_table[j].signature,
                                     methodsInfo[i].vars[k].v_sign);

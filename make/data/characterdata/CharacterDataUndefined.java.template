@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,59 +35,71 @@ class CharacterDataUndefined extends CharacterData {
     }
 
     int getType(int ch) {
-	return Character.UNASSIGNED;
+        return Character.UNASSIGNED;
     }
 
     boolean isJavaIdentifierStart(int ch) {
-		return false;
+        return false;
     }
 
     boolean isJavaIdentifierPart(int ch) {
-		return false;
+        return false;
     }
 
     boolean isUnicodeIdentifierStart(int ch) {
-		return false;
+        return false;
     }
 
     boolean isUnicodeIdentifierPart(int ch) {
-		return false;
+        return false;
     }
 
     boolean isIdentifierIgnorable(int ch) {
-		return false;
+        return false;
     }
 
     int toLowerCase(int ch) {
-		return ch;
+        return ch;
     }
 
     int toUpperCase(int ch) {
-		return ch;
+        return ch;
     }
 
     int toTitleCase(int ch) {
-		return ch;
+        return ch;
     }
 
     int digit(int ch, int radix) {
-		return -1;
+        return -1;
     }
 
     int getNumericValue(int ch) {
-		return -1;
+        return -1;
+    }
+
+    boolean isDigit(int ch) {
+        return false;
+    }
+
+    boolean isLowerCase(int ch) {
+        return false;
+    }
+
+    boolean isUpperCase(int ch) {
+        return false;
     }
 
     boolean isWhitespace(int ch) {
-		return false;
+        return false;
     }
 
     byte getDirectionality(int ch) {
-		return Character.DIRECTIONALITY_UNDEFINED;
+        return Character.DIRECTIONALITY_UNDEFINED;
     }
 
     boolean isMirrored(int ch) {
-		return false;
+        return false;
     }
 
     static final CharacterData instance = new CharacterDataUndefined();

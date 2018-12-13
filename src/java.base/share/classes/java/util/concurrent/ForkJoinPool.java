@@ -136,17 +136,17 @@ import java.util.concurrent.locks.LockSupport;
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
  * <ul>
- * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
+ * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.parallelism}
  * - the parallelism level, a non-negative integer
- * <li>{@code java.util.concurrent.ForkJoinPool.common.threadFactory}
+ * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.threadFactory}
  * - the class name of a {@link ForkJoinWorkerThreadFactory}.
  * The {@linkplain ClassLoader#getSystemClassLoader() system class loader}
  * is used to load this class.
- * <li>{@code java.util.concurrent.ForkJoinPool.common.exceptionHandler}
+ * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.exceptionHandler}
  * - the class name of a {@link UncaughtExceptionHandler}.
  * The {@linkplain ClassLoader#getSystemClassLoader() system class loader}
  * is used to load this class.
- * <li>{@code java.util.concurrent.ForkJoinPool.common.maximumSpares}
+ * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.maximumSpares}
  * - the maximum number of allowed extra threads to maintain target
  * parallelism (default 256).
  * </ul>

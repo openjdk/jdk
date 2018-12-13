@@ -26,7 +26,8 @@ package jdk.internal.util;
 
 
 import java.lang.annotation.Native;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * System Property initialization for internal use only
@@ -47,12 +48,13 @@ public final class SystemProps {
      *
      * @return a Properties instance initialized with all of the properties
      */
-    public static Properties initProperties() {
+    public static Map<String, String> initProperties() {
+
         // Initially, cmdProperties only includes -D and props from the VM
         Raw raw = new Raw();
-        Properties props = raw.cmdProperties();
+        HashMap<String, String> props = raw.cmdProperties();
 
-        String javaHome = props.getProperty("java.home");
+        String javaHome = props.get("java.home");
         assert javaHome != null : "java.home not set";
 
         putIfAbsent(props, "user.home", raw.propDefault(Raw._user_home_NDX));
@@ -92,7 +94,6 @@ public final class SystemProps {
         putIfAbsent(props, "java.awt.headless", raw.propDefault(Raw._java_awt_headless_NDX));
         putIfAbsent(props, "java.awt.graphicsenv", raw.propDefault(Raw._java_awt_graphicsenv_NDX));
         putIfAbsent(props, "sun.desktop", raw.propDefault(Raw._sun_desktop_NDX));
-        putIfAbsent(props, "sun.java2d.fontpath", raw.propDefault(Raw._sun_java2d_fontpath_NDX));
         putIfAbsent(props, "sun.arch.abi", raw.propDefault(Raw._sun_arch_abi_NDX));
         putIfAbsent(props, "sun.arch.data.model", raw.propDefault(Raw._sun_arch_data_model_NDX));
         putIfAbsent(props, "sun.os.patch.level", raw.propDefault(Raw._sun_os_patch_level_NDX));
@@ -121,7 +122,7 @@ public final class SystemProps {
      * @param key the key
      * @param value the value
      */
-    private static void put(Properties props, String key, String value) {
+    private static void put(HashMap<String, String> props, String key, String value) {
         if (value != null) {
             props.put(key, value);
         }
@@ -133,7 +134,7 @@ public final class SystemProps {
      * @param key the key
      * @param value the value
      */
-    private static void putIfAbsent(Properties props, String key, String value) {
+    private static void putIfAbsent(HashMap<String, String> props, String key, String value) {
         if (value != null) {
             props.putIfAbsent(key, value);
         }
@@ -148,10 +149,12 @@ public final class SystemProps {
      * @param display the display value for the base
      * @param format the format value for the base
      */
-    private static void fillI18nProps(Properties cmdProps, String base, String display,
+    private static void fillI18nProps(HashMap<String, String> cmdProps,
+                                      String base,
+                                      String display,
                                       String format) {
         // Do not override command line setting
-        String baseValue = cmdProps.getProperty(base);
+        String baseValue = cmdProps.get(base);
         if (baseValue != null) {
             return;     // Do not override value from the command line
         }
@@ -164,7 +167,7 @@ public final class SystemProps {
 
         /* user.xxx.display property */
         String disp = base.concat(".display");
-        String dispValue = cmdProps.getProperty(disp);
+        String dispValue = cmdProps.get(disp);
         if (dispValue == null && display != null && !display.equals(baseValue)) {
             // Create the property only if different from the base property
             cmdProps.put(disp, display);
@@ -172,7 +175,7 @@ public final class SystemProps {
 
         /* user.xxx.format property */
         String fmt = base.concat(".format");
-        String fmtValue = cmdProps.getProperty(fmt);
+        String fmtValue = cmdProps.get(fmt);
         if (fmtValue == null && format != null && !format.equals(baseValue)) {
             // Create the property only if different than the base property
             cmdProps.put(fmt, format);
@@ -221,8 +224,7 @@ public final class SystemProps {
         @Native private static final int _sun_cpu_isalist_NDX = 1 + _sun_cpu_endian_NDX;
         @Native private static final int _sun_desktop_NDX = 1 + _sun_cpu_isalist_NDX;
         @Native private static final int _sun_io_unicode_encoding_NDX = 1 + _sun_desktop_NDX;
-        @Native private static final int _sun_java2d_fontpath_NDX = 1 + _sun_io_unicode_encoding_NDX;
-        @Native private static final int _sun_jnu_encoding_NDX = 1 + _sun_java2d_fontpath_NDX;
+        @Native private static final int _sun_jnu_encoding_NDX = 1 + _sun_io_unicode_encoding_NDX;
         @Native private static final int _sun_os_patch_level_NDX = 1 + _sun_jnu_encoding_NDX;
         @Native private static final int _sun_stderr_encoding_NDX = 1 + _sun_os_patch_level_NDX;
         @Native private static final int _sun_stdout_encoding_NDX = 1 + _sun_stderr_encoding_NDX;
@@ -255,15 +257,17 @@ public final class SystemProps {
          *
          * @return return a Properties instance of the command line and VM options
          */
-        private Properties cmdProperties() {
+        private HashMap<String, String> cmdProperties() {
             String[] vmProps = vmProperties();
-            int nProps = vmProps.length / 2;
-            var cmdProps = new Properties(nProps + Raw.FIXED_LENGTH);
-            for (int i = 0; i < nProps; i++) {
-                String k = vmProps[i * 2];
+            // While optimal initialCapacity here would be the exact number of properties
+            // divided by LOAD_FACTOR, a large portion of the properties in Raw are
+            // usually not set, so for typical cases the chosen capacity avoids resizing
+            var cmdProps = new HashMap<String, String>((vmProps.length / 2) + Raw.FIXED_LENGTH);
+            for (int i = 0; i < vmProps.length;) {
+                String k = vmProps[i++];
                 if (k != null) {
-                    String v = vmProps[i * 2 + 1];
-                    cmdProps.setProperty(k, v != null ? v : "");
+                    String v = vmProps[i++];
+                    cmdProps.put(k, v != null ? v : "");
                 } else {
                     // no more key/value pairs
                     break;

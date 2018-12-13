@@ -123,7 +123,7 @@ Java_nsk_jvmti_GetLineNumberTable_linetab003_check(JNIEnv *env, jclass cls) {
         printf("Error expected: JVMTI_ERROR_ABSENT_INFORMATION,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
         printf("  meth() line number table (%d entries):%s\n",
-               entryCount, (entryCount==0 ? " empty" : ""));
+               entryCount, (entryCount == 0 ? " empty" : ""));
         for (i = 0; i < entryCount; i++) {
             printf("    start_location = 0x%x%08x,",
                    (jint)(table[i].start_location >> 32),

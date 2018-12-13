@@ -515,7 +515,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/ProcessBuilder/PipelineTest.java                      8211844 aix-ppc64
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 
 ############################################################################
@@ -777,8 +776,6 @@ javax/swing/UITest/UITest.java 8198392 generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
 javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
 javax/swing/text/DevanagariEditor.java 8198397 generic-all
-javax/swing/JColorChooser/Test6199676.java 8198398 generic-all
-javax/swing/JTable/6735286/bug6735286.java 8198398 generic-all
 javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
 javax/swing/SwingUtilities/6797139/bug6797139.java 8198400 generic-all
 javax/swing/text/html/parser/Parser/6836089/bug6836089.java 8198401 generic-all

@@ -7755,6 +7755,16 @@ instruct mulI(rRegI dst, memory src, eFlagsReg cr) %{
   ins_pipe( ialu_reg_mem_alu0 );
 %}
 
+instruct mulAddS2I_rReg(rRegI dst, rRegI src1, rRegI src2, rRegI src3, eFlagsReg cr)
+%{
+  match(Set dst (MulAddS2I (Binary dst src1) (Binary src2 src3)));
+  effect(KILL cr, KILL src2);
+
+  expand %{ mulI_rReg(dst, src1, cr);
+           mulI_rReg(src2, src3, cr);
+           addI_rReg(dst, src2, cr); %}
+%}
+
 // Multiply Register Int to Long
 instruct mulI2L(eADXRegL dst, eAXRegI src, nadxRegI src1, eFlagsReg flags) %{
   // Basic Idea: long = (long)int * (long)int

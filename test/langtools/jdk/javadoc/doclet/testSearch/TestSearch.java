@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205
+ *      8184205 8214468
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -646,19 +646,17 @@ public class TestSearch extends JavadocTester {
                 "jquery/jszip-utils/dist/jszip-utils.min.js",
                 "jquery/jszip-utils/dist/jszip-utils-ie.js",
                 "jquery/jszip-utils/dist/jszip-utils-ie.min.js",
-                "jquery/images/ui-bg_flat_0_aaaaaa_40x100.png",
+                "jquery/images/ui-bg_glass_65_dadada_1x400.png",
                 "jquery/images/ui-icons_454545_256x240.png",
                 "jquery/images/ui-bg_glass_95_fef1ec_1x400.png",
                 "jquery/images/ui-bg_glass_75_dadada_1x400.png",
                 "jquery/images/ui-bg_highlight-soft_75_cccccc_1x100.png",
                 "jquery/images/ui-icons_888888_256x240.png",
                 "jquery/images/ui-icons_2e83ff_256x240.png",
-                "jquery/images/ui-bg_glass_65_ffffff_1x400.png",
                 "jquery/images/ui-icons_cd0a0a_256x240.png",
                 "jquery/images/ui-bg_glass_55_fbf9ee_1x400.png",
                 "jquery/images/ui-icons_222222_256x240.png",
                 "jquery/images/ui-bg_glass_75_e6e6e6_1x400.png",
-                "jquery/images/ui-bg_flat_75_ffffff_40x100.png",
                 "resources/x.png",
                 "resources/glass.png");
     }

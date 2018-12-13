@@ -51,6 +51,18 @@ public final class ReplacementsUtil {
         }
     }
 
+    public static void staticAssert(boolean condition, String message, Object arg1) {
+        if (REPLACEMENTS_ASSERTIONS_ENABLED) {
+            AssertionNode.assertion(true, condition, message, arg1, "");
+        }
+    }
+
+    public static void staticAssert(boolean condition, String message, Object arg1, Object arg2) {
+        if (REPLACEMENTS_ASSERTIONS_ENABLED) {
+            AssertionNode.assertion(true, condition, message, arg1, arg2);
+        }
+    }
+
     /**
      * Asserts that condition evaluates to true at runtime. This is intended to be used within
      * snippets or stubs, and will lead to a VM error if it fails.

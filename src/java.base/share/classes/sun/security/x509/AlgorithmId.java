@@ -771,8 +771,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 5, 10});
     public static final ObjectIdentifier pbeWithSHA1AndRC2_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 5, 11});
+    public static ObjectIdentifier pbeWithSHA1AndRC4_128_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 1});
+    public static ObjectIdentifier pbeWithSHA1AndRC4_40_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 2});
     public static ObjectIdentifier pbeWithSHA1AndDESede_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 3});
+    public static ObjectIdentifier pbeWithSHA1AndRC2_128_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 5});
     public static ObjectIdentifier pbeWithSHA1AndRC2_40_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 6});
 
@@ -961,7 +967,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(pbeWithMD5AndRC2_oid, "PBEWithMD5AndRC2");
         nameTable.put(pbeWithSHA1AndDES_oid, "PBEWithSHA1AndDES");
         nameTable.put(pbeWithSHA1AndRC2_oid, "PBEWithSHA1AndRC2");
+        nameTable.put(pbeWithSHA1AndRC4_128_oid, "PBEWithSHA1AndRC4_128");
+        nameTable.put(pbeWithSHA1AndRC4_40_oid, "PBEWithSHA1AndRC4_40");
         nameTable.put(pbeWithSHA1AndDESede_oid, "PBEWithSHA1AndDESede");
+        nameTable.put(pbeWithSHA1AndRC2_128_oid, "PBEWithSHA1AndRC2_128");
         nameTable.put(pbeWithSHA1AndRC2_40_oid, "PBEWithSHA1AndRC2_40");
     }
 

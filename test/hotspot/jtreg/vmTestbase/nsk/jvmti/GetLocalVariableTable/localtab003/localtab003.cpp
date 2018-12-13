@@ -121,7 +121,7 @@ Java_nsk_jvmti_GetLocalVariableTable_localtab003_check(JNIEnv *env, jclass cls) 
         printf("Error expected: JVMTI_ERROR_ABSENT_INFORMATION,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
         printf("  meth() local variable table (%d entries):%s\n",
-               entryCount, (entryCount==0 ? " empty" : ""));
+               entryCount, (entryCount == 0 ? " empty" : ""));
         for (i = 0; i < entryCount; i++) {
             printf("    name=\"%s\", sig=\"%s\"",
                 table[i].name, table[i].signature);

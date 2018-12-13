@@ -281,7 +281,7 @@ public final class PrettyWriter extends EventPrintWriter {
 
     private void printValue(Object value, ValueDescriptor field, String postFix) {
         if (value == null) {
-            println("null" + postFix);
+            println("N/A" + postFix);
             return;
         }
         if (value instanceof RecordedObject) {
@@ -320,6 +320,35 @@ public final class PrettyWriter extends EventPrintWriter {
                 return;
             }
         }
+        if (value instanceof Double) {
+            Double d = (Double) value;
+            if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY) {
+                println("N/A");
+                return;
+            }
+        }
+        if (value instanceof Float) {
+            Float f = (Float) value;
+            if (Float.isNaN(f) || f == Float.NEGATIVE_INFINITY) {
+                println("N/A");
+                return;
+            }
+        }
+        if (value instanceof Long) {
+            Long l = (Long) value;
+            if (l == Long.MIN_VALUE) {
+                println("N/A");
+                return;
+            }
+        }
+        if (value instanceof Integer) {
+            Integer i = (Integer) value;
+            if (i == Integer.MIN_VALUE) {
+                println("N/A");
+                return;
+            }
+        }
+
         String text = String.valueOf(value);
         if (value instanceof String) {
             text = "\"" + text + "\"";
@@ -443,6 +472,10 @@ public final class PrettyWriter extends EventPrintWriter {
     private boolean printFormatted(ValueDescriptor field, Object value) {
         if (value instanceof Duration) {
             Duration d = (Duration) value;
+            if (d.getSeconds() == Long.MIN_VALUE)  {
+                println("N/A");
+                return true;
+            }
             double s = d.toNanosPart() / 1000_000_000.0 + d.toSecondsPart();
             if (s < 1.0) {
                 if (s < 0.001) {
@@ -460,8 +493,12 @@ public final class PrettyWriter extends EventPrintWriter {
             return true;
         }
         if (value instanceof OffsetDateTime) {
-            OffsetDateTime zdt = (OffsetDateTime) value;
-            println(TIME_FORMAT.format(zdt));
+            OffsetDateTime odt = (OffsetDateTime) value;
+            if (odt.equals(OffsetDateTime.MIN))  {
+                println("N/A");
+                return true;
+            }
+            println(TIME_FORMAT.format(odt));
             return true;
         }
         Percentage percentage = field.getAnnotation(Percentage.class);

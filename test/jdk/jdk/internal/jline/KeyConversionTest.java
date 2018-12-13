@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,16 @@
  * @test
  * @bug 8080679
  * @summary Verify the conversion from key events to escape sequences works properly.
- * @modules jdk.internal.le/jdk.internal.jline
- * @requires os.family == "windows"
+ * @modules jdk.internal.le/jdk.internal.org.jline.terminal
+ *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
  */
 
-import jdk.internal.jline.WindowsTerminal;
-import jdk.internal.jline.WindowsTerminal.KEY_EVENT_RECORD;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+
+import jdk.internal.org.jline.terminal.Size;
+import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
 
 public class KeyConversionTest {
     public static void main(String... args) throws Exception {
@@ -38,23 +42,72 @@ public class KeyConversionTest {
     }
 
     void run() throws Exception {
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 256, 37, 1), "\033[D"); //LEFT
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 264, 37, 1), "\033[1;5D"); //Ctrl-LEFT
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 258, 37, 1), "\033[1;3D"); //Alt-LEFT
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 256, 46, 1), "\033[3~"); //delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 264, 46, 1), "\033[3;5~"); //Ctrl-delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 258, 46, 1), "\033[3;3~"); //Alt-delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 272, 46, 1), "\033[3;2~"); //Shift-delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 280, 46, 1), "\033[3;6~"); //Ctrl-Shift-delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 274, 46, 1), "\033[3;4~"); //Alt-Shift-delete
-        checkKeyConversion(new KEY_EVENT_RECORD(true, '\0', 282, 46, 1), "\033[3;8~"); //Ctrl-Alt-Shift-delete
+        checkKeyConversion(new KeyEvent(true, (short) 37, '\0', 256), "\033OD"); //LEFT
+        checkKeyConversion(new KeyEvent(true, (short) 37, '\0', 264), "\033[1;5D"); //Ctrl-LEFT
+        checkKeyConversion(new KeyEvent(true, (short) 37, '\0', 258), "\033[1;3D"); //Alt-LEFT
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 256), "\033OP"); //F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 264), "\033[1;5P"); //Ctrl-F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 258), "\033[1;3P"); //Alt-F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 272), "\033[1;2P"); //Shift-F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 280), "\033[1;6P"); //Ctrl-Shift-F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 274), "\033[1;4P"); //Alt-Shift-F1
+        checkKeyConversion(new KeyEvent(true, (short) 112, '\0', 282), "\033[1;8P"); //Ctrl-Alt-Shift-F1
+        checkKeyConversion(new KeyEvent(true, (short) 67, '\003', 8), "\003"); //Ctrl-C
     }
 
-    void checkKeyConversion(KEY_EVENT_RECORD event, String expected) {
-        String actual = WindowsTerminal.convertKeys(event);
+    void checkKeyConversion(KeyEvent event, String expected) throws IOException {
+        StringBuilder result = new StringBuilder();
+        new AbstractWindowsTerminal(new StringWriter(), "", "windows", Charset.forName("UTF-8"),
+                                    0, true, null, in -> in) {
+            @Override
+            protected int getConsoleOutputCP() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            protected int getConsoleMode() {
+                return 0;
+            }
+            @Override
+            protected void setConsoleMode(int mode) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            protected boolean processConsoleInput() throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public Size getSize() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public void processInputChar(char c) throws IOException {
+                result.append(c);
+            }
+            @Override
+            public void processKeyEvent(boolean isKeyDown, short virtualKeyCode,
+                                        char ch, int controlKeyState) throws IOException {
+                super.processKeyEvent(isKeyDown, virtualKeyCode, ch, controlKeyState);
+            }
+        }.processKeyEvent(event.isKeyDown, event.virtualKeyCode, event.ch, event.controlKeyState);
+        String actual = result.toString();
 
         if (!expected.equals(actual)) {
             throw new AssertionError("Expected: " + expected + "; actual: " + actual);
         }
+    }
+
+    public static class KeyEvent {
+        public final boolean isKeyDown;
+        public final short virtualKeyCode;
+        public final char ch;
+        public final int controlKeyState;
+
+        public KeyEvent(boolean isKeyDown, short virtualKeyCode, char ch, int controlKeyState) {
+            this.isKeyDown = isKeyDown;
+            this.virtualKeyCode = virtualKeyCode;
+            this.ch = ch;
+            this.controlKeyState = controlKeyState;
+        }
+
     }
 }

@@ -37,7 +37,7 @@ import jdk.test.lib.Platform;
  * @requires (os.family == "mac")
  * @summary We should support NSTexturedBackgroundWindowMask style on OSX.
  * @library /test/lib
- *          /test/jdk/lib/testlibrary/
+ *          /lib/client
  * @build ExtendedRobot jdk.test.lib.Platform
  * @run main NSTexturedJFrame
  */

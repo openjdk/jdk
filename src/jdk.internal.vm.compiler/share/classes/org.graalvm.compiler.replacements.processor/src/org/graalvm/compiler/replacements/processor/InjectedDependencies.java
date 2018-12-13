@@ -82,9 +82,12 @@ public class InjectedDependencies implements Iterable<Dependency> {
     public enum WellKnownDependency {
         CONSTANT_REFLECTION("b.getConstantReflection()", "jdk.vm.ci.meta.ConstantReflectionProvider"),
         META_ACCESS("b.getMetaAccess()", "jdk.vm.ci.meta.MetaAccessProvider"),
+        ASSUMPTIONS("b.getAssumptions()", "jdk.vm.ci.meta.Assumptions"),
+        OPTIONVALUES("b.getOptions()", "org.graalvm.compiler.options.OptionValues"),
         INJECTED_STAMP(new InjectedStampDependency()),
         SNIPPET_REFLECTION(new InjectedDependency("snippetReflection", "org.graalvm.compiler.api.replacements.SnippetReflectionProvider")),
         STAMP_PROVIDER("b.getStampProvider()", "org.graalvm.compiler.nodes.spi.StampProvider"),
+        INTRINSIC_CONTEXT("b.getIntrinsic()", "org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext"),
         STRUCTURED_GRAPH("b.getGraph()", "org.graalvm.compiler.nodes.StructuredGraph");
 
         private final String expr;

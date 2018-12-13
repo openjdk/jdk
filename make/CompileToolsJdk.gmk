@@ -91,15 +91,17 @@ TARGETS += $(COMPILE_DEPEND) $(DEPEND_SERVICE_PROVIDER)
 # To be able to call the javascript filter when generating man pages using
 # pandoc, we need to create this executable wrapper script.
 ifneq ($(PANDOC), )
-  # PANDOC_FILTER is duplicated for export in ToolsJdk.gmk.
-  PANDOC_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-manpage-filter
-  PANDOC_FILTER_SETUP := $(BUILDTOOLS_OUTPUTDIR)/manpages/_pandoc_filter_setup.marker
+  # PANDOC_TROFF_MANPAGE_FILTER is duplicated for export in ToolsJdk.gmk.
+  PANDOC_TROFF_MANPAGE_FILTER := \
+      $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-troff-manpage-filter
+  PANDOC_TROFF_MANPAGE_FILTER_SETUP := \
+      $(BUILDTOOLS_OUTPUTDIR)/manpages/_pandoc_troff_manpage_filter_setup.marker
 
   # Create a usable instance of the wrapper script that calls the pandoc filter
   # (which is written in javascript).
-  $(eval $(call SetupTextFileProcessing, CREATE_PANDOC_FILTER, \
-      SOURCE_FILES := $(TOPDIR)/make/scripts/pandoc-manpage-filter.sh.template, \
-      OUTPUT_FILE := $(PANDOC_FILTER), \
+  $(eval $(call SetupTextFileProcessing, CREATE_PANDOC_TROFF_MANPAGE_FILTER, \
+      SOURCE_FILES := $(TOPDIR)/make/scripts/pandoc-troff-manpage-filter.sh.template, \
+      OUTPUT_FILE := $(PANDOC_TROFF_MANPAGE_FILTER), \
       REPLACEMENTS := \
           @@BOOT_JDK@@ => $(BOOT_JDK) ; \
           @@TOPDIR@@ => $(TOPDIR) ; \
@@ -107,11 +109,35 @@ ifneq ($(PANDOC), )
   ))
 
   # Created script must be made executable
-  $(PANDOC_FILTER_SETUP): $(CREATE_PANDOC_FILTER)
-	$(CHMOD) a+rx $(PANDOC_FILTER)
+  $(PANDOC_TROFF_MANPAGE_FILTER_SETUP): $(CREATE_PANDOC_TROFF_MANPAGE_FILTER)
+	$(CHMOD) a+rx $(PANDOC_TROFF_MANPAGE_FILTER)
 	$(TOUCH) $@
 
-  TARGETS += $(PANDOC_FILTER_SETUP)
+  TARGETS += $(PANDOC_TROFF_MANPAGE_FILTER_SETUP)
+
+  # PANDOC_HTML_MANPAGE_FILTER is duplicated for export in ToolsJdk.gmk.
+  PANDOC_HTML_MANPAGE_FILTER := \
+      $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-html-manpage-filter
+  PANDOC_HTML_MANPAGE_FILTER_SETUP := \
+      $(BUILDTOOLS_OUTPUTDIR)/manpages/_pandoc_html_manpage_filter_setup.marker
+
+  # Create a usable instance of the wrapper script that calls the pandoc filter
+  # (which is written in javascript).
+  $(eval $(call SetupTextFileProcessing, CREATE_PANDOC_HTML_MANPAGE_FILTER, \
+      SOURCE_FILES := $(TOPDIR)/make/scripts/pandoc-html-manpage-filter.sh.template, \
+      OUTPUT_FILE := $(PANDOC_HTML_MANPAGE_FILTER), \
+      REPLACEMENTS := \
+          @@BOOT_JDK@@ => $(BOOT_JDK) ; \
+          @@TOPDIR@@ => $(TOPDIR) ; \
+          @@JJS_FLAGS@@ => $(addprefix -J, $(JAVA_FLAGS_SMALL)), \
+  ))
+
+  # Created script must be made executable
+  $(PANDOC_HTML_MANPAGE_FILTER_SETUP): $(CREATE_PANDOC_HTML_MANPAGE_FILTER)
+	$(CHMOD) a+rx $(PANDOC_HTML_MANPAGE_FILTER)
+	$(TOUCH) $@
+
+  TARGETS += $(PANDOC_HTML_MANPAGE_FILTER_SETUP)
 endif
 
 all: $(TARGETS)

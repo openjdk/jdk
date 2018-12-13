@@ -85,7 +85,7 @@ public class TestEnoughPermission {
         System.out.println("E");
         bean.stopRecording(recId);
 
-        final Path path = Paths.get(".", String.format("rec%d.jfr", recId));
+        final Path path = Paths.get(".", "rec" + recId + ".jfr");
         bean.copyTo(recId, path.toString());
         //EventSet events = EventSet.fromFile(path);
         return recId;

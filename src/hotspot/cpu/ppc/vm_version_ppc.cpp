@@ -134,10 +134,17 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
       FLAG_SET_ERGO(bool, UseCountTrailingZerosInstructionsPPC64, true);
     }
+    if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
+      FLAG_SET_ERGO(bool, UseCharacterCompareIntrinsics, true);
+    }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {
       warning("UseCountTrailingZerosInstructionsPPC64 specified, but needs at least Power9.");
       FLAG_SET_DEFAULT(UseCountTrailingZerosInstructionsPPC64, false);
+    }
+    if (UseCharacterCompareIntrinsics) {
+      warning("UseCharacterCompareIntrinsics specified, but needs at least Power9.");
+      FLAG_SET_DEFAULT(UseCharacterCompareIntrinsics, false);
     }
   }
 #endif

@@ -460,6 +460,21 @@ class CharacterData01 extends CharacterData {
         return retval;
     }
 
+    boolean isDigit(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.DECIMAL_DIGIT_NUMBER;
+    }
+
+    boolean isLowerCase(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.LOWERCASE_LETTER;
+    }
+
+    boolean isUpperCase(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.UPPERCASE_LETTER;
+    }
+
     boolean isWhitespace(int ch) {
         int props = getProperties(ch);
         return ((props & $$maskIdentifierInfo) == $$valueJavaWhitespace);

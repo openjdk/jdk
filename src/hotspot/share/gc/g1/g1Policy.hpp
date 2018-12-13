@@ -399,7 +399,7 @@ private:
 
   AgeTable _survivors_age_table;
 
-  size_t desired_survivor_size() const;
+  size_t desired_survivor_size(uint max_regions) const;
 public:
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,

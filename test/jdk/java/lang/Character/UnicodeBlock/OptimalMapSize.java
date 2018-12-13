@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8080535 8191410
+ * @bug 8080535 8191410 8215194
  * @summary Expected size of Character.UnicodeBlock.map is not optimal
  * @library /test/lib
  * @modules java.base/java.lang:open
@@ -32,6 +32,7 @@
  * @run main OptimalMapSize
  */
 
+import java.lang.reflect.Field;
 import jdk.test.lib.util.OptimalCapacity;
 
 // What will be the number of the Unicode blocks in the future.
@@ -44,14 +45,24 @@ import jdk.test.lib.util.OptimalCapacity;
 // After implementing support of Unicode 9 and 10 in Java, there will
 // be 638 entries in Character.UnicodeBlock.map.
 //
+// As of Unicode 11, 667 entries are expected.
+//
 // Initialization of the map and this test will have to be adjusted
 // accordingly then.
+//
+// Note that HashMap's implementation aligns the initial capacity to
+// a power of two size, so it will end up 1024 (and thus succeed) in
+// cases, such as 638 and 667.
 
 public class OptimalMapSize {
     public static void main(String[] args) throws Throwable {
         // The initial size of Character.UnicodeBlock.map.
         // See src/java.base/share/classes/java/lang/Character.java
-        int initialCapacity = (int)(638 / 0.75f + 1.0f);
+        Field f = Character.UnicodeBlock.class.getDeclaredField("NUM_ENTITIES");
+        f.setAccessible(true);
+        int num_entities = f.getInt(null);
+        assert num_entities == 667;
+        int initialCapacity = (int)(num_entities / 0.75f + 1.0f);
 
         OptimalCapacity.ofHashMap(Character.UnicodeBlock.class,
                 "map", initialCapacity);

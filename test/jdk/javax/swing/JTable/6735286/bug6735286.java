@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 /* @test
    @bug 6735286
    @summary javax.swing.DefaultTableCellRender.getTableCellRendererComponent() doesn't allow passing null Tables
-   @author Pavel Porvatov
 */
 
-import javax.swing.*;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 
 public class bug6735286 {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 new JTable().getDefaultRenderer(Object.class).getTableCellRendererComponent(null, "a value",
                         true, true, 0, 0);

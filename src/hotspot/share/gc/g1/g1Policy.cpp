@@ -470,6 +470,10 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
+         "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
+
   assert(_g1h->used() == _g1h->recalculate_used(),
          "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
          _g1h->used(), _g1h->recalculate_used());
@@ -899,8 +903,8 @@ bool G1Policy::adaptive_young_list_length() const {
   return _young_gen_sizer.adaptive_young_list_length();
 }
 
-size_t G1Policy::desired_survivor_size() const {
-  size_t const survivor_capacity = HeapRegion::GrainWords * _max_survivor_regions;
+size_t G1Policy::desired_survivor_size(uint max_regions) const {
+  size_t const survivor_capacity = HeapRegion::GrainWords * max_regions;
   return (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
 }
 
@@ -927,15 +931,22 @@ void G1Policy::update_max_gc_locker_expansion() {
 void G1Policy::update_survivors_policy() {
   double max_survivor_regions_d =
                  (double) _young_list_target_length / (double) SurvivorRatio;
-  // We use ceiling so that if max_survivor_regions_d is > 0.0 (but
-  // smaller than 1.0) we'll get 1.
-  _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
-  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(desired_survivor_size());
+  // Calculate desired survivor size based on desired max survivor regions (unconstrained
+  // by remaining heap). Otherwise we may cause undesired promotions as we are
+  // already getting close to end of the heap, impacting performance even more.
+  uint const desired_max_survivor_regions = ceil(max_survivor_regions_d);
+  size_t const survivor_size = desired_survivor_size(desired_max_survivor_regions);
+
+  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(survivor_size);
   if (UsePerfData) {
     _policy_counters->tenuring_threshold()->set_value(_tenuring_threshold);
-    _policy_counters->desired_survivor_size()->set_value(desired_survivor_size() * oopSize);
+    _policy_counters->desired_survivor_size()->set_value(survivor_size * oopSize);
   }
+  // The real maximum survivor size is bounded by the number of regions that can
+  // be allocated into.
+  _max_survivor_regions = MIN2(desired_max_survivor_regions,
+                               _g1h->num_free_or_available_regions());
 }
 
 bool G1Policy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause) {

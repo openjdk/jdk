@@ -169,14 +169,14 @@ static void doChecks(jvmtiEnv *jvmti_env,
             (methBytesCount != redefMethBytesCount && isObsolete == JNI_FALSE)) {
         NSK_DISPLAY3("[%s] CHECK PASSED: IsMethodObsolete = %d(%s) as expected\n",
             event, (int)isObsolete,
-            (isObsolete==JNI_TRUE)?"TRUE":"FALSE");
+            (isObsolete == JNI_TRUE) ? "TRUE" : "FALSE");
     }
     else {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN4("[%s] TEST FAILED: IsMethodObsolete = %d(%s), expected: %s\n",
             event, (int)isObsolete,
-            (isObsolete == JNI_TRUE)?"TRUE":"FALSE",
-            (methBytesCount == redefMethBytesCount)?"TRUE":"FALSE");
+            (isObsolete == JNI_TRUE) ? "TRUE" : "FALSE",
+            (methBytesCount == redefMethBytesCount) ? "TRUE" : "FALSE");
     }
 }
 
@@ -185,7 +185,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method) {
 
     if (expectedMeth(jvmti_env, "MethodEntry",
-            method, expHSMethod, expHSSignature)==1) {
+            method, expHSMethod, expHSSignature) == 1) {
         if (!NSK_JVMTI_VERIFY(jvmti_env->GetBytecodes(method, &redefMethBytesCount, &redefMethBytes)))
             nsk_jvmti_setFailStatus();
         else {
@@ -207,7 +207,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
         jmethodID catch_method, jlocation catch_location) {
 
     if (expectedMeth(jvmti_env, "Exception",
-            method, expHSMethod, expHSSignature)==1) {
+            method, expHSMethod, expHSSignature) == 1) {
         NSK_DISPLAY1("[Exception] thread=0x%p\n", thr);
 
         doHotSwap(jvmti_env, method, "Exception");
@@ -221,7 +221,7 @@ MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
         jboolean was_poped_by_exc, jvalue return_value) {
 
     if (expectedMeth(jvmti_env, "MethodExit",
-            method, expHSMethod, expHSSignature)==1) {
+            method, expHSMethod, expHSSignature) == 1) {
         NSK_DISPLAY1("[MethodExit] thread=0x%p\n", thr);
 
         doHotSwap(jvmti_env, method, "MethodExit");
@@ -233,7 +233,7 @@ void JNICALL
 FramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method, jboolean wasPopedByException) {
     if (expectedMeth(jvmti_env, "FramePop",
-            method, expHSMethod, expHSSignature)==1) {
+            method, expHSMethod, expHSSignature) == 1) {
         NSK_DISPLAY1("[FramePop] thread=0x%p\n", thr);
 
         doHotSwap(jvmti_env, method, "FramePop");

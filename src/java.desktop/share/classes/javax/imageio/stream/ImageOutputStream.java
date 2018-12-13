@@ -367,8 +367,8 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
     /**
      * Writes two bytes of length information to the output stream in
      * network byte order, followed by the
-     * <a href="../../../java/io/DataInput.html#modified-utf-8">modified
-     * UTF-8</a>
+     * <a href="../../../../java.base/java/io/DataInput.html#modified-utf-8">
+     * modified UTF-8</a>
      * representation of every character in the string {@code s}.
      * If {@code s} is {@code null}, a
      * {@code NullPointerException} is thrown.  Each character in

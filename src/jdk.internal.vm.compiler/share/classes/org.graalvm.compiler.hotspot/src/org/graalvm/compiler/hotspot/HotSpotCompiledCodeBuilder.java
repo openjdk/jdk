@@ -36,8 +36,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.stream.Stream;
-import java.util.stream.Stream.Builder;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.Snippet;
@@ -113,13 +111,13 @@ public class HotSpotCompiledCodeBuilder {
         byte[] dataSection = new byte[data.getSectionSize()];
 
         ByteBuffer buffer = ByteBuffer.wrap(dataSection).order(ByteOrder.nativeOrder());
-        Builder<DataPatch> patchBuilder = Stream.builder();
+        List<DataPatch> patches = new ArrayList<>();
         data.buildDataSection(buffer, (position, vmConstant) -> {
-            patchBuilder.accept(new DataPatch(position, new ConstantReference(vmConstant)));
+            patches.add(new DataPatch(position, new ConstantReference(vmConstant)));
         });
 
         int dataSectionAlignment = data.getSectionAlignment();
-        DataPatch[] dataSectionPatches = patchBuilder.build().toArray(len -> new DataPatch[len]);
+        DataPatch[] dataSectionPatches = patches.toArray(new DataPatch[patches.size()]);
 
         int totalFrameSize = compResult.getTotalFrameSize();
         StackSlot customStackArea = compResult.getCustomStackArea();

@@ -150,12 +150,12 @@ public abstract class JSObject {
      * @throws JSException when an error is reported from the browser or
      * JavaScript engine or if applet is {@code null}
      *
-     * @deprecated  The Applet API is deprecated. See the
+     * @deprecated The Applet API is deprecated, no replacement. See the
      * <a href="{@docRoot}/java.desktop/java/applet/package-summary.html">
      * java.applet package documentation</a> for further information.
      */
 
-    @Deprecated(since = "9")
+    @Deprecated(since="9", forRemoval=true)
     @SuppressWarnings("exports")
     public static JSObject getWindow(Applet applet) throws JSException {
         return ProviderLoader.callGetWindow(applet);

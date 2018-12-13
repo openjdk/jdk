@@ -27,10 +27,10 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
+include ModuleTools.gmk
 include ProcessMarkdown.gmk
+include ToolsJdk.gmk
 include ZipArchive.gmk
-include $(TOPDIR)/make/ToolsJdk.gmk
-include $(TOPDIR)/make/ModuleTools.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -167,14 +167,6 @@ JAVADOC_TOP := \
     <div style="padding: 6px; text-align: center; font-size: 80%; \
     font-family: DejaVu Sans, Arial, Helvetica, sans-serif; \
     font-weight: normal;">$(DRAFT_TEXT)</div>
-
-JDK_INDEX_CONTENT := \
-    <!DOCTYPE html> \
-    <html lang="en"> \
-    <head> \
-    <meta http-equiv="refresh" content="0;url=api/index.html"> \
-    </head> \
-    </html>
 
 ################################################################################
 # JDK javadoc titles/text snippets
@@ -485,14 +477,7 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 
 ################################################################################
 
-JDK_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
-
-$(JDK_INDEX_HTML):
-	$(ECHO) '$(JDK_INDEX_CONTENT)' > $@
-
-JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
-
-# Copy the global resources
+# Copy the global resources, including the top-level redirect index.html
 GLOBAL_SPECS_RESOURCES_DIR := $(TOPDIR)/make/data/docs-resources/
 $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
@@ -532,9 +517,9 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
-ifeq ($(ENABLE_FULL_DOCS), true)
+ifneq ($(PANDOC), )
   # For all markdown files in $module/share/specs directories, convert them to
-  # html.
+  # html, if we have pandoc (otherwise we'll just skip this).
 
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
 
@@ -556,6 +541,15 @@ ifeq ($(ENABLE_FULL_DOCS), true)
 
   # For all markdown files in $module/share/man directories, convert them to
   # html.
+
+  # Create dynamic man pages from markdown using pandoc. We need
+  # PANDOC_HTML_MANPAGE_FILTER, a wrapper around
+  # PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.
+
+  # We should also depend on the source javascript filter
+  PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT := \
+      $(TOPDIR)/make/scripts/pandoc-html-manpage-filter.js
+
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
     $(foreach d, $(MAN_$m), \
@@ -565,8 +559,11 @@ ifeq ($(ENABLE_FULL_DOCS), true)
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
             DEST := $(DOCS_OUTPUTDIR)/specs/man, \
+            FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
             REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
+            EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
+                $(PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT), \
         )) \
         $(eval JDK_SPECS_TARGETS += $($($m_$d_NAME))) \
       ) \

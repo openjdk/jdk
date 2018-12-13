@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,10 @@ public class LinuxAMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     }
     if (guesser.getPC() == null) {
       return new X86Frame(guesser.getSP(), guesser.getFP());
+    } else if (VM.getVM().getInterpreter().contains(guesser.getPC())) {
+      // pass the value of R13 which contains the bcp for the top level frame
+      Address bcp = context.getRegisterAsAddress(AMD64ThreadContext.R13);
+      return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC(), null, bcp);
     } else {
       return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
     }

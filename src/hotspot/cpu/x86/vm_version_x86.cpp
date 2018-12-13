@@ -1289,7 +1289,7 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
-      if (supports_sse4_2() && supports_ht()) { // Newest Intel cpus
+      if ((supports_sse4_2() && supports_ht()) || supports_avx()) { // Newest Intel cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }

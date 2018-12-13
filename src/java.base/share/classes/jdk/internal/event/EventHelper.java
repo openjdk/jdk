@@ -101,6 +101,9 @@ public final class EventHelper {
      */
     private static String getDurationString(Instant start) {
         if (start != null) {
+            if (start.equals(Instant.MIN)) {
+                return "N/A";
+            }
             Duration duration = Duration.between(start, Instant.now());
             long micros = duration.toNanos() / 1_000;
             if (micros < 1_000_000) {

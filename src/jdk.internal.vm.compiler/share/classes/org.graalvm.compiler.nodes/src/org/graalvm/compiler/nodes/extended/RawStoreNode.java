@@ -83,6 +83,9 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
     @NodeIntrinsic
     public static native Object storeChar(Object object, long offset, char value, @ConstantNodeParameter JavaKind kind, @ConstantNodeParameter LocationIdentity locationIdentity);
 
+    @NodeIntrinsic
+    public static native Object storeByte(Object object, long offset, byte value, @ConstantNodeParameter JavaKind kind, @ConstantNodeParameter LocationIdentity locationIdentity);
+
     public boolean needsBarrier() {
         return needsBarrier;
     }

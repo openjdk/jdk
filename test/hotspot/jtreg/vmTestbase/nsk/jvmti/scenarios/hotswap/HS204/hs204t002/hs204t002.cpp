@@ -77,7 +77,7 @@ callbackClassPrepare(jvmtiEnv *jvmti,
                     err= jvmti->SetBreakpoint(method, start+1);
                     if (err == JVMTI_ERROR_DUPLICATE) {
                         printf("Agent::JVMTI_ERROR_DUPLICATE");
-                    } else if (err ==JVMTI_ERROR_INVALID_METHODID) {
+                    } else if (err == JVMTI_ERROR_INVALID_METHODID) {
                         printf("Agent::JVMTI_ERROR_INVALID_METHODID ");
                     } else if (err == JVMTI_ERROR_INVALID_LOCATION) {
                         printf("Agent::JVMTI_ERROR_INVALID_LOCATION ");
@@ -128,7 +128,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint rc ;
     printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (rc!= JNI_OK) {
+    if (rc != JNI_OK) {
         printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {

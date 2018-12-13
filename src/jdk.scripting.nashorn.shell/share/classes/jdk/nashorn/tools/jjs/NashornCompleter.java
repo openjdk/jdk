@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
-import jdk.internal.jline.console.completer.Completer;
-import jdk.internal.jline.console.UserInterruptException;
+
+import jdk.internal.org.jline.reader.Candidate;
+import jdk.internal.org.jline.reader.Completer;
+import jdk.internal.org.jline.reader.LineReader;
+import jdk.internal.org.jline.reader.ParsedLine;
+import jdk.internal.org.jline.reader.UserInterruptException;
 import jdk.nashorn.api.tree.AssignmentTree;
 import jdk.nashorn.api.tree.BinaryTree;
 import jdk.nashorn.api.tree.CompilationUnitTree;
@@ -63,7 +67,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * A simple source completer for nashorn. Handles code completion for
  * expressions as well as handles incomplete single line code.
  */
-final class NashornCompleter implements Completer {
+final class NashornCompleter {
     private final Context context;
     private final Global global;
     private final ScriptEnvironment env;
@@ -145,7 +149,7 @@ final class NashornCompleter implements Completer {
             buf.append('\n');
             String curLine = null;
             try {
-                curLine = in.readLine(prompt);
+                curLine = in.readLine(prompt, prompt);
                 buf.append(curLine);
                 line++;
             } catch (final Throwable th) {
@@ -208,8 +212,7 @@ final class NashornCompleter implements Completer {
     // Pattern to match load call
     private static final Pattern LOAD_CALL = Pattern.compile("\\s*load\\s*\\(\\s*");
 
-    @Override
-    public int complete(final String test, final int cursor, final List<CharSequence> result) {
+    public int complete(String test, int cursor, List<Candidate> candidates) {
         // check that cursor is at the end of test string. Do not complete in the middle!
         if (cursor != test.length()) {
             return cursor;
@@ -245,7 +248,7 @@ final class NashornCompleter implements Completer {
                     if (BACKSLASH_FILE_SEPARATOR) {
                         name = name.replace("\\", "\\\\");
                     }
-                    result.add("\"" + name + "\")");
+                    candidates.add(createCandidate("\"" + name + "\")"));
                     return cursor + name.length() + 3;
                 }
             }
@@ -258,9 +261,9 @@ final class NashornCompleter implements Completer {
         // Find 'right most' expression of the top level expression
         final Tree rightMostExpr = getRightMostExpression(topExpr);
         if (rightMostExpr instanceof MemberSelectTree) {
-            return completeMemberSelect(exprStr, cursor, result, (MemberSelectTree)rightMostExpr, endsWithDot);
+            return completeMemberSelect(exprStr, cursor, candidates, (MemberSelectTree)rightMostExpr, endsWithDot);
         } else if (rightMostExpr instanceof IdentifierTree) {
-            return completeIdentifier(exprStr, cursor, result, (IdentifierTree)rightMostExpr);
+            return completeIdentifier(exprStr, cursor, candidates, (IdentifierTree)rightMostExpr);
         } else {
             // expression that we cannot handle for completion
             return cursor;
@@ -284,7 +287,7 @@ final class NashornCompleter implements Completer {
     }
 
     // fill properties of the incomplete member expression
-    private int completeMemberSelect(final String exprStr, final int cursor, final List<CharSequence> result,
+    private int completeMemberSelect(final String exprStr, final int cursor, final List<Candidate> candidates,
                 final MemberSelectTree select, final boolean endsWithDot) {
         final ExpressionTree objExpr = select.getExpression();
         final String objExprCode = exprStr.substring((int)objExpr.getStartPosition(), (int)objExpr.getEndPosition());
@@ -303,12 +306,12 @@ final class NashornCompleter implements Completer {
         if (obj != null && obj != ScriptRuntime.UNDEFINED) {
             if (endsWithDot) {
                 // no user specified "prefix". List all properties of the object
-                result.addAll(propsHelper.getProperties(obj));
+                propsHelper.getProperties(obj).stream().map(this::createCandidate).forEach(candidates::add);
                 return cursor;
             } else {
                 // list of properties matching the user specified prefix
                 final String prefix = select.getIdentifier();
-                result.addAll(propsHelper.getProperties(obj, prefix));
+                propsHelper.getProperties(obj, prefix).stream().map(this::createCandidate).forEach(candidates::add);
                 return cursor - prefix.length();
             }
         }
@@ -317,10 +320,10 @@ final class NashornCompleter implements Completer {
     }
 
     // fill properties for the given (partial) identifer
-    private int completeIdentifier(final String test, final int cursor, final List<CharSequence> result,
+    private int completeIdentifier(final String test, final int cursor, final List<Candidate> candidates,
                 final IdentifierTree ident) {
         final String name = ident.getName();
-        result.addAll(propsHelper.getProperties(global, name));
+        propsHelper.getProperties(global, name).stream().map(this::createCandidate).forEach(candidates::add);
         return cursor - name.length();
     }
 
@@ -430,5 +433,9 @@ final class NashornCompleter implements Completer {
         }
 
         return Parser.create(args.toArray(new String[0]));
+    }
+
+    private Candidate createCandidate(String value) {
+        return new Candidate(value, value, null, null, null, null, false);
     }
 }

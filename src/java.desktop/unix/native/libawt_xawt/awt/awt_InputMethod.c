@@ -1277,9 +1277,14 @@ static void DestroyXIMCallback(XIM im, XPointer client_data, XPointer call_data)
     /* mark that XIM server was destroyed */
     X11im = NULL;
     JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    AWT_LOCK();
     /* free the old pX11IMData and set it to null. this also avoids crashing
      * the jvm if the XIM server reappears */
-    X11InputMethodData *pX11IMData = getX11InputMethodData(env, currentX11InputMethodInstance);
+    while (x11InputMethodGRefListHead != NULL) {
+        getX11InputMethodData(env, x11InputMethodGRefListHead->inputMethodGRef);
+    }
+    AWT_UNLOCK();
 }
 
 JNIEXPORT jboolean JNICALL

@@ -2273,7 +2273,7 @@ void MacroAssembler::tlab_allocate(
 ) {
   // make sure arguments make sense
   assert_different_registers(obj, var_size_in_bytes, t1);
-  assert(0 <= con_size_in_bytes && is_simm13(con_size_in_bytes), "illegal object size");
+  assert(0 <= con_size_in_bytes && is_simm16(con_size_in_bytes), "illegal object size");
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0, "object size is not multiple of alignment");
 
   const Register new_top = t1;

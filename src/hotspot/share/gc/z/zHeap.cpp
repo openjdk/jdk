@@ -69,6 +69,7 @@ ZHeap::ZHeap() :
     _weak_roots_processor(&_workers),
     _relocate(&_workers),
     _relocation_set(),
+    _unload(&_workers),
     _serviceability(heap_min_size(), heap_max_size()) {
   // Install global heap instance
   assert(_heap == NULL, "Already initialized");
@@ -353,9 +354,6 @@ bool ZHeap::mark_end() {
   // Enter mark completed phase
   ZGlobalPhase = ZPhaseMarkCompleted;
 
-  // Resize metaspace
-  MetaspaceGC::compute_new_size();
-
   // Update statistics
   ZStatSample(ZSamplerHeapUsedAfterMark, used());
   ZStatHeap::set_at_mark_end(capacity(), allocated(), used());
@@ -365,6 +363,9 @@ bool ZHeap::mark_end() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  // Prepare to unload unused classes and code
+  _unload.prepare();
 
   return true;
 }
@@ -379,6 +380,9 @@ void ZHeap::process_non_strong_references() {
 
   // Process concurrent weak roots
   _weak_roots_processor.process_concurrent_weak_roots();
+
+  // Unload unused classes and code
+  _unload.unload();
 
   // Unblock resurrection of weak/phantom references
   ZResurrection::unblock();
@@ -463,8 +467,8 @@ void ZHeap::reset_relocation_set() {
 void ZHeap::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Update statistics
-  ZStatSample(ZSamplerHeapUsedBeforeRelocation, used());
+  // Finish unloading of classes and code
+  _unload.finish();
 
   // Flip address view
   ZAddressMasks::flip_to_remapped();
@@ -474,6 +478,7 @@ void ZHeap::relocate_start() {
   ZGlobalPhase = ZPhaseRelocate;
 
   // Update statistics
+  ZStatSample(ZSamplerHeapUsedBeforeRelocation, used());
   ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
 
   // Remap/Relocate roots

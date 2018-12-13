@@ -347,6 +347,7 @@ class SuperWord : public ResourceObj {
     BasicType bt = velt_basic_type(n);
     return vector_width(n)*type2aelembytes(bt);
   }
+  int get_vw_bytes_special(MemNode* s);
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 

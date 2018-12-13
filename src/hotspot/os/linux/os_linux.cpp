@@ -128,8 +128,12 @@
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
-#define LARGEPAGES_BIT (1 << 6)
-#define DAX_SHARED_BIT (1 << 8)
+enum CoredumpFilterBit {
+  FILE_BACKED_PVT_BIT = 1 << 2,
+  LARGEPAGES_BIT = 1 << 6,
+  DAX_SHARED_BIT = 1 << 8
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;
@@ -1350,6 +1354,9 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
+    if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+      ClassLoader::close_jrt_image();
+    }
 #ifndef PRODUCT
     fdStream out(defaultStream::output_fd());
     out.print_raw("Current thread is ");
@@ -3401,10 +3408,9 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
 // - (bit 7) dax private memory
 // - (bit 8) dax shared memory
 //
-static void set_coredump_filter(bool largepages, bool dax_shared) {
+static void set_coredump_filter(CoredumpFilterBit bit) {
   FILE *f;
   long cdm;
-  bool filter_changed = false;
 
   if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
     return;
@@ -3415,17 +3421,11 @@ static void set_coredump_filter(bool largepages, bool dax_shared) {
     return;
   }
 
+  long saved_cdm = cdm;
   rewind(f);
+  cdm |= bit;
 
-  if (largepages && (cdm & LARGEPAGES_BIT) == 0) {
-    cdm |= LARGEPAGES_BIT;
-    filter_changed = true;
-  }
-  if (dax_shared && (cdm & DAX_SHARED_BIT) == 0) {
-    cdm |= DAX_SHARED_BIT;
-    filter_changed = true;
-  }
-  if (filter_changed) {
+  if (cdm != saved_cdm) {
     fprintf(f, "%#lx", cdm);
   }
 
@@ -3564,7 +3564,7 @@ void os::large_page_init() {
   size_t large_page_size = Linux::setup_large_page_size();
   UseLargePages          = Linux::setup_large_page_type(large_page_size);
 
-  set_coredump_filter(true /*largepages*/, false /*dax_shared*/);
+  set_coredump_filter(LARGEPAGES_BIT);
 }
 
 #ifndef SHM_HUGETLB
@@ -5072,8 +5072,13 @@ jint os::init_2(void) {
   prio_init();
 
   if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
-    set_coredump_filter(false /*largepages*/, true /*dax_shared*/);
+    set_coredump_filter(DAX_SHARED_BIT);
   }
+
+  if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+    set_coredump_filter(FILE_BACKED_PVT_BIT);
+  }
+
   return JNI_OK;
 }
 

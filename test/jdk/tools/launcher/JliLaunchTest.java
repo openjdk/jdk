@@ -49,10 +49,12 @@ public class JliLaunchTest {
         Map<String, String> env = pb.environment();
         if (Platform.isWindows()) {
             // The DLL should be in JDK/bin
+            String libdir = Paths.get(Utils.TEST_JDK).resolve("bin").toAbsolutePath().toString();
+            env.compute("PATH", (k, v) -> (v == null) ? libdir : libdir + ";" + v);
         } else {
             String libdir = Paths.get(Utils.TEST_JDK).resolve("lib").toAbsolutePath().toString();
             String LD_LIBRARY_PATH = Platform.isOSX() ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH";
-            env.compute(LD_LIBRARY_PATH, (k, v) -> (k == null) ? libdir : v + ":" + libdir);
+            env.compute(LD_LIBRARY_PATH, (k, v) -> (v == null) ? libdir : libdir + ":" + v);
         }
 
         OutputAnalyzer outputf = new OutputAnalyzer(pb.start());

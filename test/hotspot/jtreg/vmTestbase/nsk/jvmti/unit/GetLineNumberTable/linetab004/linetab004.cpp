@@ -104,7 +104,7 @@ void checkGetLineNumberTable(jmethodID mid, const char *methName,
     err = jvmti->GetLineNumberTable(mid, &entryCount, &table);
     if (printdump == JNI_TRUE) {
         printf("\n Method: %s%s\n", methName,
-            (abstract==0) ? "" : " (abstract)");
+            (abstract == 0) ? "" : " (abstract)");
     }
     if (err != exp) {
         result = STATUS_FAILED;
@@ -112,8 +112,8 @@ void checkGetLineNumberTable(jmethodID mid, const char *methName,
         printf(" actual: %s (%d)\n", TranslateError(err), err);
         if (err == JVMTI_ERROR_NONE) {
             printf("  %s%s line number table (%d entries):%s\n",
-                   methName, (abstract==0) ? "" : " (abstract)",
-                   entryCount, (entryCount==0 ? " empty" : ""));
+                   methName, (abstract == 0) ? "" : " (abstract)",
+                   entryCount, (entryCount == 0 ? " empty" : ""));
             for (i = 0; i < entryCount; i++) {
                 printf("    start_location = 0x%x%08x,",
                        (jint)(table[i].start_location >> 32),

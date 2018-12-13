@@ -1026,6 +1026,9 @@ public:
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
 
+  // The number of regions that can be allocated into.
+  uint num_free_or_available_regions() const { return num_free_regions() + _hrm.available(); }
+
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
   }

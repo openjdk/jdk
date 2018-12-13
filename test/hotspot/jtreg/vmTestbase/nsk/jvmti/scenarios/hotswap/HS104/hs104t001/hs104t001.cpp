@@ -75,7 +75,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jvmtiEnv * jvmti;
     nsk_printf("Agent:: VM.. Started..\n");
     rc=vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (rc!= JNI_OK) {
+    if (rc != JNI_OK) {
         nsk_printf("Agent:: Could not load JVMTI interface \n");
         return JNI_ERR;
     } else {

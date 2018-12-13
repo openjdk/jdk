@@ -45,7 +45,7 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
         = TWO.pow(POWER).subtract(BigInteger.valueOf(SUBTRAHEND));
 
     public IntegerPolynomial1305() {
-        super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
+        super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
     protected void mult(long[] a, long[] b, long[] r) {
@@ -94,15 +94,6 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
 
         // carry(0, 4)
         carry(r);
-    }
-
-    protected void multByInt(long[] a, long b, long[] r) {
-
-        for (int i = 0; i < a.length; i++) {
-            r[i] = a[i] * b;
-        }
-
-        reduce(r);
     }
 
     @Override
@@ -199,7 +190,12 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
         return x >> BITS_PER_LIMB;
     }
 
+    @Override
+    protected void postEncodeCarry(long[] v) {
+        // not needed because carry is unsigned
+    }
 
+    @Override
     protected void reduce(long[] limbs) {
         long carry3 = carryOut(limbs, 3);
         long new4 = carry3 + limbs[4];

@@ -71,6 +71,7 @@
   template(java_lang_Boolean,                         "java/lang/Boolean")                        \
   template(java_lang_Character,                       "java/lang/Character")                      \
   template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
+  template(java_lang_CharacterDataLatin1,             "java/lang/CharacterDataLatin1")            \
   template(java_lang_Float,                           "java/lang/Float")                          \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
@@ -932,6 +933,15 @@
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
   do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
+                                                                                                                        \
+  do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \
+   do_name(     isDigit_name,                                           "isDigit")                                      \
+  do_intrinsic(_isLowerCase,              java_lang_CharacterDataLatin1, isLowerCase_name,  int_bool_signature,  F_R)   \
+   do_name(     isLowerCase_name,                                       "isLowerCase")                                  \
+  do_intrinsic(_isUpperCase,              java_lang_CharacterDataLatin1, isUpperCase_name,  int_bool_signature,  F_R)   \
+   do_name(     isUpperCase_name,                                       "isUpperCase")                                  \
+  do_intrinsic(_isWhitespace,             java_lang_CharacterDataLatin1, isWhitespace_name, int_bool_signature,  F_R)   \
+   do_name(     isWhitespace_name,                                      "isWhitespace")                                 \
                                                                                                                         \
   do_intrinsic(_Preconditions_checkIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkIndex_signature, F_S)   \
    do_signature(Preconditions_checkIndex_signature,              "(IILjava/util/function/BiFunction;)I")                \

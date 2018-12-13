@@ -44,6 +44,8 @@ import java.util.function.Consumer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -90,6 +92,8 @@ public class StartOptionTest {
         byte[] bytes = str.toByteArray();
         str.reset();
         String out = new String(bytes, StandardCharsets.UTF_8);
+        out = stripAnsi(out);
+        out = out.replaceAll("[\r\n]+", "\n");
         if (checkOut != null) {
             checkOut.accept(out);
         } else {
@@ -363,4 +367,11 @@ public class StartOptionTest {
         usererr = null;
         cmdInStream = null;
     }
+
+    private static String stripAnsi(String str) {
+        if (str == null) return "";
+        return ANSI_CODE_PATTERN.matcher(str).replaceAll("");
+    }
+
+    public static final Pattern ANSI_CODE_PATTERN = Pattern.compile("\033\\[[\060-\077]*[\040-\057]*[\100-\176]");
 }

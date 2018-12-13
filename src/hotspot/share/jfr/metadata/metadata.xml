@@ -40,7 +40,8 @@
 
   <Event name="ThreadPark" category="Java Application" label="Java Thread Park" thread="true" stackTrace="true">
     <Field type="Class" name="parkedClass" label="Class Parked On" />
-    <Field type="long" contentType="millis" name="timeout" label="Park Timeout" />
+    <Field type="long" contentType="nanos" name="timeout" label="Park Timeout" />
+    <Field type="long" contentType="epochmillis" name="until" label="Park Until" />
     <Field type="ulong" contentType="address" name="address" label="Address of Object Parked" relation="JavaMonitorAddress" />
   </Event>
 
@@ -1140,5 +1141,6 @@
   <XmlContentType name="address" annotationType="jdk.jfr.MemoryAddress" />
   <XmlContentType name="percentage" annotationType="jdk.jfr.Percentage" />
   <XmlContentType name="millis" annotationType="jdk.jfr.Timespan" annotationValue="MILLISECONDS" />
-
+  <XmlContentType name="nanos" annotationType="jdk.jfr.Timespan" annotationValue="NANOSECONDS" />
+  
 </Metadata>

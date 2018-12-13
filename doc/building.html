@@ -1,19 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Building the JDK</title>
-  <style type="text/css">code{white-space: pre;}</style>
-  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css">
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
 </head>
 <body>
-<header>
+<header id="title-block-header">
 <h1 class="title">Building the JDK</h1>
 </header>
 <nav id="TOC">
@@ -640,11 +645,13 @@ x86_64-linux-gnu-to-ppc64le-linux-gnu</code></pre>
 <p>Note that alsa is needed even if you only want to build a headless JDK.</p>
 <ul>
 <li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian Package Search</a> and search for the <code>libasound2</code> and <code>libasound2-dev</code> packages for your <em>target</em> system. Download them to /tmp.</p></li>
-<li><p>Install the libraries into the cross-compilation toolchain. For instance:</p>
+<li>Install the libraries into the cross-compilation toolchain. For instance:</li>
+</ul>
 <pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
 dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
-dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
-<li><p>If alsa is not properly detected by <code>configure</code>, you can point it out by <code>--with-alsa</code>.</p></li>
+dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre>
+<ul>
+<li>If alsa is not properly detected by <code>configure</code>, you can point it out by <code>--with-alsa</code>.</li>
 </ul>
 <h4 id="x11-1">X11</h4>
 <p>You will need X11 libraries suitable for your <em>target</em> system. For most cases, using Debian's pre-built libraries work fine.</p>
@@ -690,17 +697,21 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 <p>Fortunately, you can create sysroots for foreign architectures with tools provided by your OS. On Debian/Ubuntu systems, one could use <code>qemu-deboostrap</code> to create the <em>target</em> system chroot, which would have the native libraries and headers specific to that <em>target</em> system. After that, we can use the cross-compiler on the <em>build</em> system, pointing into chroot to get the build dependencies right. This allows building for foreign architectures with native compilation speed.</p>
 <p>For example, cross-compiling to AArch64 from x86_64 could be done like this:</p>
 <ul>
-<li><p>Install cross-compiler on the <em>build</em> system:</p>
-<pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre></li>
-<li><p>Create chroot on the <em>build</em> system, configuring it for <em>target</em> system:</p>
+<li>Install cross-compiler on the <em>build</em> system:</li>
+</ul>
+<pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre>
+<ul>
+<li>Create chroot on the <em>build</em> system, configuring it for <em>target</em> system:</li>
+</ul>
 <pre><code>sudo qemu-debootstrap --arch=arm64 --verbose \
-   --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
-   --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/</code></pre></li>
-<li><p>Configure and build with newly created chroot as sysroot/toolchain-path:</p>
+       --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
+       --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/</code></pre>
+<ul>
+<li>Configure and build with newly created chroot as sysroot/toolchain-path:</li>
+</ul>
 <pre><code>CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure --openjdk-target=aarch64-linux-gnu --with-sysroot=/chroots/arm64/ --with-toolchain-path=/chroots/arm64/
 make images
-ls build/linux-aarch64-normal-server-release/</code></pre></li>
-</ul>
+ls build/linux-aarch64-normal-server-release/</code></pre>
 <p>The build does not create new files in that chroot, so it can be reused for multiple builds without additional cleanup.</p>
 <p>Architectures that are known to successfully cross-compile like this are:</p>
 <table>
@@ -860,12 +871,7 @@ cannot create ... Permission denied
 spawn failed</code></pre>
 <p>This can be a sign of a Cygwin problem. See the information about solving problems in the <a href="#cygwin">Cygwin</a> section. Rebooting the computer might help temporarily.</p>
 <h3 id="getting-help">Getting Help</h3>
-<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <script type="text/javascript">
-<!--
-h='&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#46;&#106;&#x61;&#118;&#x61;&#46;&#110;&#x65;&#116;';a='&#64;';n='&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;';e=n+a+h;
-document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
-// -->
-</script><noscript>&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;&#32;&#x61;&#116;&#32;&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#32;&#100;&#x6f;&#116;&#32;&#106;&#x61;&#118;&#x61;&#32;&#100;&#x6f;&#116;&#32;&#110;&#x65;&#116;</noscript>. Please include the relevant parts of the configure and/or build log.</p>
+<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</h3>

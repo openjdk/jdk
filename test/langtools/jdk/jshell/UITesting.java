@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,11 @@ public class UITesting {
     protected static final String TAB = "\011";
     protected static final String INTERRUPT = "\u0003";
     protected static final String BELL = "\u0007";
-    protected static final String PROMPT = "\u0005";
-    protected static final String REDRAW_PROMPT = "\n\r" + PROMPT;
+    protected static final String PROMPT = " \u0005";
+    protected static final String CONTINUATION_PROMPT = " \u0006";
+    protected static final String REDRAW_PROMPT = "\n\r?" + PROMPT;
+    protected static final String UP = "\033[A";
+    protected static final String DOWN = "\033[B";
     private final boolean laxLineEndings;
 
     public UITesting() {
@@ -141,11 +144,11 @@ public class UITesting {
     // Return true if expected is found, false if secondary is found,
     // otherwise, time out with an IllegalStateException
     protected boolean waitOutput(StringBuilder out, String expected, String secondary) {
-        expected = expected.replaceAll("\n", laxLineEndings ? "\r?\n" : System.getProperty("line.separator"));
+        expected = expected.replaceAll("\n", laxLineEndings ? "\r*\n" : System.getProperty("line.separator"));
         Pattern expectedPattern = Pattern.compile(expected, Pattern.DOTALL);
         Pattern secondaryPattern = null;
         if (secondary != null) {
-            secondary = secondary.replaceAll("\n", laxLineEndings ? "\r?\n" : System.getProperty("line.separator"));
+            secondary = secondary.replaceAll("\n", laxLineEndings ? "\r*\n" : System.getProperty("line.separator"));
             secondaryPattern = Pattern.compile(secondary, Pattern.DOTALL);
         }
         synchronized (out) {
@@ -222,7 +225,12 @@ public class UITesting {
     }
 
     protected String resource(String key) {
-        return Pattern.quote(getResource(key));
+        return patternQuote(getResource(key));
+    }
+
+    protected String patternQuote(String str) {
+        //from JDK-6507804:
+        return str.replaceAll("([\\\\\\[\\].^$?*+{}()|])", "\\\\$1");
     }
 
     protected String getMessage(String key, Object... args) {

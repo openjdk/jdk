@@ -142,7 +142,7 @@ void* THREAD_start(void* t) {
 
 /**
  * Return 1 if the thread has been started, or 0 if not,
- * or -1 if thread==NULL.
+ * or -1 if thread == NULL.
  */
 int THREAD_isStarted(void* t) {
     THREAD* thread = (THREAD*)t;
@@ -154,7 +154,7 @@ int THREAD_isStarted(void* t) {
 /**
  * Return 1 if the thread has been started and already has finished,
  * or 0 if the thread hasn't finish (or even hasn't been started),
- * or -1 if thread==NULL.
+ * or -1 if thread == NULL.
  */
 int THREAD_hasFinished(void* t) {
     THREAD* thread = (THREAD*)t;
@@ -166,7 +166,7 @@ int THREAD_hasFinished(void* t) {
 /**
  * Return thread->status if thread has finished,
  * or return 0 if thread hasn't finished,
- * or retuen -1 if thread==NULL.
+ * or retuen -1 if thread == NULL.
  */
 int THREAD_status(void* t) {
     THREAD* thread = (THREAD*)t;
@@ -179,7 +179,7 @@ int THREAD_status(void* t) {
 
 /**
  * Cycle with 1 second sleeps until the thread has finished;
- * or return immediately, if thread==NULL.
+ * or return immediately, if thread == NULL.
  */
 void THREAD_waitFor(void* t) {
     THREAD* thread = (THREAD*)t;

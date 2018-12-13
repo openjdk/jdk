@@ -428,6 +428,18 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_fmaF:
     if (!UseFMA || !Matcher::match_rule_supported(Op_FmaF)) return false;
     break;
+  case vmIntrinsics::_isDigit:
+    if (!Matcher::match_rule_supported(Op_Digit)) return false;
+    break;
+  case vmIntrinsics::_isLowerCase:
+    if (!Matcher::match_rule_supported(Op_LowerCase)) return false;
+    break;
+  case vmIntrinsics::_isUpperCase:
+    if (!Matcher::match_rule_supported(Op_UpperCase)) return false;
+    break;
+  case vmIntrinsics::_isWhitespace:
+    if (!Matcher::match_rule_supported(Op_Whitespace)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:

@@ -26,6 +26,8 @@
 package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
+
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
@@ -175,7 +177,7 @@ public class VM {
         if (savedProps == null)
             throw new IllegalStateException("Not yet initialized");
 
-        return savedProps;
+        return Collections.unmodifiableMap(savedProps);
     }
 
     private static Map<String, String> savedProps;
@@ -184,16 +186,15 @@ public class VM {
     // the system properties that are not intended for public access.
     //
     // This method can only be invoked during system initialization.
-    public static void saveAndRemoveProperties(Properties props) {
+    public static void saveProperties(Map<String, String> props) {
         if (initLevel() != 0)
             throw new IllegalStateException("Wrong init level");
 
-        @SuppressWarnings({"rawtypes", "unchecked"})
-        Map<String, String> sp =
-            Map.ofEntries(props.entrySet().toArray(new Map.Entry[0]));
         // only main thread is running at this time, so savedProps and
         // its content will be correctly published to threads started later
-        savedProps = sp;
+        if (savedProps == null) {
+            savedProps = props;
+        }
 
         // Set the maximum amount of direct memory.  This value is controlled
         // by the vm option -XX:MaxDirectMemorySize=<size>.
@@ -201,7 +202,7 @@ public class VM {
         // from the system property sun.nio.MaxDirectMemorySize set by the VM.
         // If not set or set to -1, the max memory will be used
         // The system property will be removed.
-        String s = (String)props.remove("sun.nio.MaxDirectMemorySize");
+        String s = props.get("sun.nio.MaxDirectMemorySize");
         if (s == null || s.isEmpty() || s.equals("-1")) {
             // -XX:MaxDirectMemorySize not given, take default
             directMemory = Runtime.getRuntime().maxMemory();
@@ -212,19 +213,9 @@ public class VM {
         }
 
         // Check if direct buffers should be page aligned
-        s = (String)props.remove("sun.nio.PageAlignDirectMemory");
+        s = props.get("sun.nio.PageAlignDirectMemory");
         if ("true".equals(s))
             pageAlignDirectMemory = true;
-
-        // Remove other private system properties
-        // used by java.lang.Integer.IntegerCache
-        props.remove("java.lang.Integer.IntegerCache.high");
-
-        // used by sun.launcher.LauncherHelper
-        props.remove("sun.java.launcher.diag");
-
-        // used by jdk.internal.loader.ClassLoaders
-        props.remove("jdk.boot.class.path.append");
     }
 
     // Initialize any miscellaneous operating system settings that need to be

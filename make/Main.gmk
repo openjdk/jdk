@@ -862,8 +862,6 @@ else
   docs-jdk-specs: $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
       docs-jdk-index
 
-  docs-jdk-index: exploded-image buildtools-modules
-
   docs-zip: docs-jdk
 
   # Tests

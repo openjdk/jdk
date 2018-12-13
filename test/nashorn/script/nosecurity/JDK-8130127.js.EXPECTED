@@ -2,6 +2,5 @@
 
 
 
-jjs> print('hello')
-hello
+jjs> print('hello')hello
 jjs> 

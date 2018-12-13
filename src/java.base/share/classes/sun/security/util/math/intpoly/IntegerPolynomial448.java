@@ -42,7 +42,7 @@ public class IntegerPolynomial448 extends IntegerPolynomial {
             .subtract(BigInteger.valueOf(1));
 
     public IntegerPolynomial448() {
-        super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
+        super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
     private void modReduceIn(long[] limbs, int index, long x) {
@@ -55,6 +55,25 @@ public class IntegerPolynomial448 extends IntegerPolynomial {
         long carry = limbs[numLimbs - 1] >> bitsPerLimb;
         limbs[numLimbs - 1] -= carry << bitsPerLimb;
         modReduceIn(limbs, numLimbs, carry);
+    }
+
+    @Override
+    protected void reduce(long[] a) {
+
+        // carry(14, 2)
+        long carry14 = carryValue(a[14]);
+        a[14] -= (carry14 << BITS_PER_LIMB);
+        a[15] += carry14;
+
+        long carry15 = carryValue(a[15]);
+        a[15] -= (carry15 << BITS_PER_LIMB);
+
+        // reduce(0, 1)
+        a[0] += carry15;
+        a[8] += carry15;
+
+        // carry(0, 15)
+        carry(a, 0, 15);
     }
 
     @Override
@@ -171,27 +190,6 @@ public class IntegerPolynomial448 extends IntegerPolynomial {
 
         r[3] = c3 + c19;
         r[11] = c11 + c19;
-
-        // carry(0, 15)
-        carry(r, 0, 15);
-    }
-
-    protected void multByInt(long[] a, long b, long[] r) {
-        for (int i = 0; i < a.length; i++) {
-            r[i] = a[i] * b;
-        }
-
-        // carry(14, 2)
-        long carry14 = carryValue(r[14]);
-        r[14] -= (carry14 << BITS_PER_LIMB);
-        r[15] += carry14;
-
-        long carry15 = carryValue(r[15]);
-        r[15] -= (carry15 << BITS_PER_LIMB);
-
-        // reduce(0, 1)
-        r[0] += carry15;
-        r[8] += carry15;
 
         // carry(0, 15)
         carry(r, 0, 15);

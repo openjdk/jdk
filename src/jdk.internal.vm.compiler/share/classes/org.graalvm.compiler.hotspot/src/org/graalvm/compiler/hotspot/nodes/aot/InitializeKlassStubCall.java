@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
@@ -70,7 +71,7 @@ public class InitializeKlassStubCall extends AbstractMemoryCheckpoint implements
     }
 
     @NodeIntrinsic
-    public static native KlassPointer initializeKlass(KlassPointer value, Object string);
+    public static native KlassPointer initializeKlass(KlassPointer value, Word string);
 
     @Override
     public Node canonical(CanonicalizerTool tool) {

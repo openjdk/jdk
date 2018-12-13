@@ -8175,6 +8175,16 @@ instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
+instruct mulAddS2I_rReg(rRegI dst, rRegI src1, rRegI src2, rRegI src3, rFlagsReg cr)
+%{
+  match(Set dst (MulAddS2I (Binary dst src1) (Binary src2 src3)));
+  effect(KILL cr, KILL src2);
+
+  expand %{ mulI_rReg(dst, src1, cr);
+           mulI_rReg(src2, src3, cr);
+           addI_rReg(dst, src2, cr); %}
+%}
+
 instruct mulL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %{
   match(Set dst (MulL dst src));

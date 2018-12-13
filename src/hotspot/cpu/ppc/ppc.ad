@@ -2257,6 +2257,11 @@ const bool Matcher::match_rule_supported(int opcode) {
     return SuperwordUseVSX;
   case Op_PopCountVI:
     return (SuperwordUseVSX && UsePopCountInstruction);
+  case Op_Digit:
+  case Op_LowerCase:
+  case Op_UpperCase:
+  case Op_Whitespace:
+    return UseCharacterCompareIntrinsics;
   }
 
   return true;  // Per default match rules are supported.
@@ -12398,6 +12403,132 @@ instruct cmpD3_reg_reg_ExEx(iRegIdst dst, regD src1, regD src2) %{
     cmpDUnordered_reg_reg(tmp1, src1, src2);
     cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
   %}
+%}
+
+// Compare char
+instruct cmprb_Digit_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (Digit src1));
+  effect(TEMP src2, TEMP crx);
+  ins_cost(3 * DEFAULT_COST);
+
+  format %{ "LI      $src2, 0x3930\n\t"
+            "CMPRB   $crx, 0, $src1, $src2\n\t"
+            "SETB    $dst, $crx" %}
+  size(12);
+  ins_encode %{
+    // 0x30: 0, 0x39: 9
+    __ li($src2$$Register, 0x3930);
+    // compare src1 with ranges 0x30 to 0x39
+    __ cmprb($crx$$CondRegister, 0, $src1$$Register, $src2$$Register);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmprb_LowerCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (LowerCase src1));
+  effect(TEMP src2, TEMP crx);
+  ins_cost(12 * DEFAULT_COST);
+
+  format %{ "LI      $src2, 0x7A61\n\t"
+            "CMPRB   $crx, 0, $src1, $src2\n\t"
+            "BGT     $crx, done\n\t"
+            "LIS     $src2, (signed short)0xF6DF\n\t"
+            "ORI     $src2, $src2, 0xFFF8\n\t"
+            "CMPRB   $crx, 1, $src1, $src2\n\t"
+            "BGT     $crx, done\n\t"
+            "LIS     $src2, (signed short)0xAAB5\n\t"
+            "ORI     $src2, $src2, 0xBABA\n\t"
+            "INSRDI  $src2, $src2, 32, 0\n\t"
+            "CMPEQB  $crx, 1, $src1, $src2\n"
+            "done:\n\t"
+            "SETB    $dst, $crx" %}
+
+  size(48);
+  ins_encode %{
+    Label done;
+    // 0x61: a, 0x7A: z
+    __ li($src2$$Register, 0x7A61);
+    // compare src1 with ranges 0x61 to 0x7A
+    __ cmprb($crx$$CondRegister, 0, $src1$$Register, $src2$$Register);
+    __ bgt($crx$$CondRegister, done);
+
+    // 0xDF: sharp s, 0xFF: y with diaeresis, 0xF7 is not the lower case
+    __ lis($src2$$Register, (signed short)0xF6DF);
+    __ ori($src2$$Register, $src2$$Register, 0xFFF8);
+    // compare src1 with ranges 0xDF to 0xF6 and 0xF8 to 0xFF
+    __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
+    __ bgt($crx$$CondRegister, done);
+
+    // 0xAA: feminine ordinal indicator
+    // 0xB5: micro sign
+    // 0xBA: masculine ordinal indicator
+    __ lis($src2$$Register, (signed short)0xAAB5);
+    __ ori($src2$$Register, $src2$$Register, 0xBABA);
+    __ insrdi($src2$$Register, $src2$$Register, 32, 0);
+    // compare src1 with 0xAA, 0xB5, and 0xBA
+    __ cmpeqb($crx$$CondRegister, $src1$$Register, $src2$$Register);
+
+    __ bind(done);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (UpperCase src1));
+  effect(TEMP src2, TEMP crx);
+  ins_cost(7 * DEFAULT_COST);
+
+  format %{ "LI      $src2, 0x5A41\n\t"
+            "CMPRB   $crx, 0, $src1, $src2\n\t"
+            "BGT     $crx, done\n\t"
+            "LIS     $src2, (signed short)0xD6C0\n\t"
+            "ORI     $src2, $src2, 0xDED8\n\t"
+            "CMPRB   $crx, 1, $src1, $src2\n"
+            "done:\n\t"
+            "SETB    $dst, $crx" %}
+
+  size(28);
+  ins_encode %{
+    Label done;
+    // 0x41: A, 0x5A: Z
+    __ li($src2$$Register, 0x5A41);
+    // compare src1 with a range 0x41 to 0x5A
+    __ cmprb($crx$$CondRegister, 0, $src1$$Register, $src2$$Register);
+    __ bgt($crx$$CondRegister, done);
+
+    // 0xC0: a with grave, 0xDE: thorn, 0xD7 is not the upper case
+    __ lis($src2$$Register, (signed short)0xD6C0);
+    __ ori($src2$$Register, $src2$$Register, 0xDED8);
+    // compare src1 with ranges 0xC0 to 0xD6 and 0xD8 to 0xDE
+    __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
+
+    __ bind(done);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (Whitespace src1));
+  effect(TEMP src2, TEMP crx);
+  ins_cost(4 * DEFAULT_COST);
+
+  format %{ "LI      $src2, 0x0D09\n\t"
+            "ADDIS   $src2, 0x201C\n\t"
+            "CMPRB   $crx, 1, $src1, $src2\n\t"
+            "SETB    $dst, $crx" %}
+  size(16);
+  ins_encode %{
+    // 0x09 to 0x0D, 0x1C to 0x20
+    __ li($src2$$Register, 0x0D09);
+    __ addis($src2$$Register, $src2$$Register, 0x0201C);
+    // compare src with ranges 0x09 to 0x0D and 0x1C to 0x20
+    __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //----------Branches---------------------------------------------------------

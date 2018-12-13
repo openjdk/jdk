@@ -1446,6 +1446,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (VM_Version::supports_on_spin_wait() == false)
         ret_value = false;
       break;
+    case Op_MulAddVS2VI:
+      if (UseSSE < 2)
+        ret_value = false;
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -9851,6 +9855,118 @@ instruct vfma16F_mem(vecZ a, memory b, vecZ c) %{
   ins_encode %{
     int vector_len = 2;
     __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Vector Multiply Add --------------------------------------
+
+instruct smuladd4S2I_reg(vecD dst, vecD src1) %{
+  predicate(UseSSE >= 2 && UseAVX == 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulAddVS2VI dst src1));
+  format %{ "pmaddwd $dst,$dst,$src1\t! muladd packed4Sto2I" %}
+  ins_encode %{
+    __ pmaddwd($dst$$XMMRegister, $src1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladd4S2I_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulAddVS2VI src1 src2));
+  format %{ "vpmaddwd $dst,$src1,$src2\t! muladd packed4Sto2I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmaddwd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct smuladd8S4I_reg(vecX dst, vecX src1) %{
+  predicate(UseSSE >= 2 && UseAVX == 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulAddVS2VI dst src1));
+  format %{ "pmaddwd $dst,$dst,$src1\t! muladd packed8Sto4I" %}
+  ins_encode %{
+    __ pmaddwd($dst$$XMMRegister, $src1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladd8S4I_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulAddVS2VI src1 src2));
+  format %{ "vpmaddwd $dst,$src1,$src2\t! muladd packed8Sto4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmaddwd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladd16S8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (MulAddVS2VI src1 src2));
+  format %{ "vpmaddwd $dst,$src1,$src2\t! muladd packed16Sto8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpmaddwd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladd32S16I_reg(vecZ dst, vecZ src1, vecZ src2) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (MulAddVS2VI src1 src2));
+  format %{ "vpmaddwd $dst,$src1,$src2\t! muladd packed32Sto16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vpmaddwd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Vector Multiply Add Add ----------------------------------
+
+instruct vmuladdadd4S2I_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(VM_Version::supports_vnni() && UseAVX > 2 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVI (MulAddVS2VI src1 src2) dst));
+  format %{ "evpdpwssd $dst,$src1,$src2\t! muladdadd packed4Sto2I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpdpwssd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladdadd8S4I_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(VM_Version::supports_vnni() && UseAVX > 2 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVI (MulAddVS2VI src1 src2) dst));
+  format %{ "evpdpwssd $dst,$src1,$src2\t! muladdadd packed8Sto4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpdpwssd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladdadd16S8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(VM_Version::supports_vnni() && UseAVX > 2 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVI (MulAddVS2VI src1 src2) dst));
+  format %{ "evpdpwssd $dst,$src1,$src2\t! muladdadd packed16Sto8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpdpwssd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuladdadd32S16I_reg(vecZ dst, vecZ src1, vecZ src2) %{
+  predicate(VM_Version::supports_vnni() && UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (AddVI (MulAddVS2VI src1 src2) dst));
+  format %{ "evpdpwssd $dst,$src1,$src2\t! muladdadd packed32Sto16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpdpwssd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

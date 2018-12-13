@@ -493,6 +493,54 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
   return NULL;
 }
 
+// Optimize ((in1[2*i] * in2[2*i]) + (in1[2*i+1] * in2[2*i+1]))
+Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
+  assert(n->Opcode() == Op_AddI, "sanity");
+  Node * nn = NULL;
+  Node * in1 = n->in(1);
+  Node * in2 = n->in(2);
+  if (in1->Opcode() == Op_MulI && in2->Opcode() == Op_MulI) {
+    IdealLoopTree* loop_n = get_loop(get_ctrl(n));
+    if (loop_n->_head->as_Loop()->is_valid_counted_loop() &&
+        Matcher::match_rule_supported(Op_MulAddS2I) &&
+        Matcher::match_rule_supported(Op_MulAddVS2VI)) {
+      Node* mul_in1 = in1->in(1);
+      Node* mul_in2 = in1->in(2);
+      Node* mul_in3 = in2->in(1);
+      Node* mul_in4 = in2->in(2);
+      if (mul_in1->Opcode() == Op_LoadS &&
+          mul_in2->Opcode() == Op_LoadS &&
+          mul_in3->Opcode() == Op_LoadS &&
+          mul_in4->Opcode() == Op_LoadS) {
+        IdealLoopTree* loop1 = get_loop(get_ctrl(mul_in1));
+        IdealLoopTree* loop2 = get_loop(get_ctrl(mul_in2));
+        IdealLoopTree* loop3 = get_loop(get_ctrl(mul_in3));
+        IdealLoopTree* loop4 = get_loop(get_ctrl(mul_in4));
+        IdealLoopTree* loop5 = get_loop(get_ctrl(in1));
+        IdealLoopTree* loop6 = get_loop(get_ctrl(in2));
+        // All nodes should be in the same counted loop.
+        if (loop_n == loop1 && loop_n == loop2 && loop_n == loop3 &&
+            loop_n == loop4 && loop_n == loop5 && loop_n == loop6) {
+          Node* adr1 = mul_in1->in(MemNode::Address);
+          Node* adr2 = mul_in2->in(MemNode::Address);
+          Node* adr3 = mul_in3->in(MemNode::Address);
+          Node* adr4 = mul_in4->in(MemNode::Address);
+          if (adr1->is_AddP() && adr2->is_AddP() && adr3->is_AddP() && adr4->is_AddP()) {
+            if ((adr1->in(AddPNode::Base) == adr3->in(AddPNode::Base)) &&
+                (adr2->in(AddPNode::Base) == adr4->in(AddPNode::Base))) {
+              nn = new MulAddS2INode(mul_in1, mul_in2, mul_in3, mul_in4);
+              register_new_node(nn, get_ctrl(n));
+              _igvn.replace_node(n, nn);
+              return nn;
+            }
+          }
+        }
+      }
+    }
+  }
+  return nn;
+}
+
 //------------------------------conditional_move-------------------------------
 // Attempt to replace a Phi with a conditional move.  We have some pretty
 // strict profitability requirements.  All Phis at the merge point must
@@ -926,6 +974,11 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Attempt to remix address expressions for loop invariants
   Node *m = remix_address_expressions( n );
   if( m ) return m;
+
+  if (n_op == Op_AddI) {
+    Node *nn = convert_add_to_muladd( n );
+    if ( nn ) return nn;
+  }
 
   if (n->is_ConstraintCast()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);

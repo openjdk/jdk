@@ -24,16 +24,17 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.getArrayBaseOffset;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
-import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.debug.StringToBytesNode;
+import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
@@ -56,11 +57,6 @@ public class StringToBytesSnippets implements Snippets {
 
     public static final LocationIdentity CSTRING_LOCATION = NamedLocationIdentity.immutable("CString location");
 
-    @Fold
-    static long arrayBaseOffset() {
-        return UNSAFE.arrayBaseOffset(char[].class);
-    }
-
     @Snippet
     public static byte[] transform(@ConstantParameter String compilationTimeString) {
         int i = compilationTimeString.length();
@@ -68,7 +64,8 @@ public class StringToBytesSnippets implements Snippets {
         Word cArray = CStringConstant.cstring(compilationTimeString);
         while (i-- > 0) {
             // array[i] = cArray.readByte(i);
-            UNSAFE.putByte(array, arrayBaseOffset() + i, cArray.readByte(i, CSTRING_LOCATION));
+            RawStoreNode.storeByte(array, getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte) + i, cArray.readByte(i, CSTRING_LOCATION), JavaKind.Byte,
+                            NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
         }
         return array;
     }

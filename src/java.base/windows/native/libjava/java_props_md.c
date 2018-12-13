@@ -379,11 +379,6 @@ GetJavaProperties(JNIEnv* env)
     /* Java2D properties */
     sprops.graphics_env = "sun.awt.Win32GraphicsEnvironment";
 
-    {    /* This is used only for debugging of font problems. */
-        WCHAR *path = _wgetenv(L"JAVA2D_FONTPATH");
-        sprops.font_dir = (path != NULL) ? _wcsdup(path) : NULL;
-    }
-
     /* OS properties */
     {
         char buf[100];

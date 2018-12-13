@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.core.common.spi;
 
+import java.util.Arrays;
+
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -46,9 +48,26 @@ public abstract class JavaConstantFieldProvider implements ConstantFieldProvider
 
     protected JavaConstantFieldProvider(MetaAccessProvider metaAccess) {
         try {
-            this.stringValueField = metaAccess.lookupJavaField(String.class.getDeclaredField("value"));
-            this.stringHashField = metaAccess.lookupJavaField(String.class.getDeclaredField("hash"));
-        } catch (NoSuchFieldException | SecurityException e) {
+            ResolvedJavaType stringType = metaAccess.lookupJavaType(String.class);
+            ResolvedJavaField[] stringFields = stringType.getInstanceFields(false);
+            ResolvedJavaField valueField = null;
+            ResolvedJavaField hashField = null;
+            for (ResolvedJavaField field : stringFields) {
+                if (field.getName().equals("value")) {
+                    valueField = field;
+                } else if (field.getName().equals("hash")) {
+                    hashField = field;
+                }
+            }
+            if (valueField == null) {
+                throw new GraalError("missing field value " + Arrays.toString(stringFields));
+            }
+            if (hashField == null) {
+                throw new GraalError("missing field hash " + Arrays.toString(stringFields));
+            }
+            stringValueField = valueField;
+            stringHashField = hashField;
+        } catch (SecurityException e) {
             throw new GraalError(e);
         }
     }

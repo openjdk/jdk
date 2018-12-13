@@ -43,15 +43,20 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.AnchoringNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaTypeProfile;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.TriState;
 
 /**
@@ -216,6 +221,17 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
 
     public ObjectStamp getCheckedStamp() {
         return checkedStamp;
+    }
+
+    @NodeIntrinsic
+    public static native boolean doInstanceof(@ConstantNodeParameter ResolvedJavaType type, Object object);
+
+    @SuppressWarnings("unused")
+    static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, ResolvedJavaType type, ValueNode object) {
+        InstanceOfNode node = new InstanceOfNode(StampFactory.objectNonNull(TypeReference.create(b.getAssumptions(), type)), object, null, null);
+        node = b.add(node);
+        b.addPush(JavaKind.Int, ConditionalNode.create(node, NodeView.DEFAULT));
+        return true;
     }
 
     @Override

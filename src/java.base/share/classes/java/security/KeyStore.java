@@ -314,14 +314,7 @@ public class KeyStore {
         /**
          * Gets the name of the protection algorithm.
          * If none was set then the keystore provider will use its default
-         * protection algorithm. The name of the default protection algorithm
-         * for a given keystore type is set using the
-         * {@code 'keystore.<type>.keyProtectionAlgorithm'} security property.
-         * For example, the
-         * {@code keystore.PKCS12.keyProtectionAlgorithm} property stores the
-         * name of the default key protection algorithm used for PKCS12
-         * keystores. If the security property is not set, an
-         * implementation-specific algorithm will be used.
+         * protection algorithm.
          *
          * @return the algorithm name, or {@code null} if none was set
          *
@@ -1813,8 +1806,8 @@ public class KeyStore {
             }
         }
 
-        throw new KeyStoreException("This keystore does not support probing "
-                + "and must be loaded with a specified type");
+        throw new KeyStoreException("Unrecognized keystore format. "
+                + "Please load it with a specified type");
     }
 
     /**

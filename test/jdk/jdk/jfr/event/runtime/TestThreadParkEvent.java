@@ -25,21 +25,24 @@
 
 package jdk.jfr.event.runtime;
 
-import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.management.ThreadMXBeanTool;
 import jdk.test.lib.thread.TestThread;
-
 
 /**
  * @test
@@ -58,12 +61,39 @@ public class TestThreadParkEvent {
     }
 
     public static void main(String[] args) throws Throwable {
+        testParkNoTimeout();
+        testParkTimeout();
+        testParkUntil();
+    }
+
+    private static void testParkNoTimeout() throws Exception {
+        RecordedEvent event = testPark(x -> LockSupport.park(x), Thread.State.WAITING);
+        Events.assertMissingValue(event, "timeout");
+        Events.assertMissingValue(event, "until");
+    }
+
+    private static void testParkTimeout() throws Exception {
+        Duration expected = Duration.ofNanos(1_234_567_890_123L);
+        RecordedEvent event = testPark(x -> LockSupport.parkNanos(x, expected.toNanos()), Thread.State.TIMED_WAITING);
+        Events.assertDuration(event, "timeout", expected);
+        Events.assertMissingValue(event, "until");
+    }
+
+    private static void testParkUntil() throws Exception {
+        long epochMillis =  Instant.now().plusSeconds(1000000).toEpochMilli();
+        RecordedEvent event = testPark(x -> LockSupport.parkUntil(x, epochMillis), Thread.State.TIMED_WAITING);
+        Events.assertMissingValue(event, "timeout");
+        Events.assertInstant(event, "until", Instant.ofEpochMilli(epochMillis));
+    }
+
+    static RecordedEvent testPark(Consumer<Blocker> parkOperation, Thread.State threadState) throws Exception {
+
         final CountDownLatch stop = new CountDownLatch(1);
         final Blocker blocker = new Blocker();
         TestThread parkThread = new TestThread(new Runnable() {
             public void run() {
                 while (stop.getCount() > 0) {
-                    LockSupport.park(blocker);
+                    parkOperation.accept(blocker);
                 }
             }
         });
@@ -73,7 +103,7 @@ public class TestThreadParkEvent {
         try {
             recording.start();
             parkThread.start();
-            ThreadMXBeanTool.waitUntilBlockingOnObject(parkThread, Thread.State.WAITING, blocker);
+            ThreadMXBeanTool.waitUntilBlockingOnObject(parkThread, threadState, blocker);
             // sleep so we know the event is recorded
             Thread.sleep(2 * THRESHOLD_MILLIS);
         } finally {
@@ -82,22 +112,21 @@ public class TestThreadParkEvent {
             parkThread.join();
             recording.stop();
         }
-
         List<RecordedEvent> events = Events.fromRecording(recording);
         Events.hasEvents(events);
-        boolean isAnyFound = false;
+        RecordedEvent foundEvent = null;
         for (RecordedEvent event : events) {
             System.out.println("Event:" + event);
             String klassName = Events.assertField(event, "parkedClass.name").notNull().getValue();
             if (klassName.equals(blocker.getClass().getName().replace('.', '/'))) {
-                assertFalse(isAnyFound, "Found more than 1 event");
-                isAnyFound = true;
-                Events.assertField(event, "timeout").equal(0L);
+                Asserts.assertNull(foundEvent , "Found more than 1 event");
                 Events.assertField(event, "address").notEqual(0L);
                 Events.assertEventThread(event, parkThread);
+                foundEvent = event;
             }
         }
-        assertTrue(isAnyFound, "Correct event not found");
+        Asserts.assertNotNull(foundEvent, "Correct event not found");
+        return foundEvent;
     }
 
 }

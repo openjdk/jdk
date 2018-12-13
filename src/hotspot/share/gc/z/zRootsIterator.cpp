@@ -27,8 +27,11 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
@@ -132,6 +135,30 @@ void ZParallelWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRoots
   }
 }
 
+class ZCodeBlobClosure : public CodeBlobToOopClosure {
+private:
+  BarrierSetNMethod* _bs;
+
+public:
+  ZCodeBlobClosure(OopClosure* cl) :
+    CodeBlobToOopClosure(cl, true /* fix_relocations */),
+    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
+
+  virtual void do_code_blob(CodeBlob* cb) {
+    nmethod* const nm = cb->as_nmethod_or_null();
+    if (nm == NULL || nm->test_set_oops_do_mark()) {
+      return;
+    }
+    CodeBlobToOopClosure::do_code_blob(cb);
+    _bs->disarm(nm);
+  }
+};
+
+void ZRootsIteratorClosure::do_thread(Thread* thread) {
+  ZCodeBlobClosure code_cl(this);
+  thread->oops_do(this, ClassUnloading ? &code_cl : NULL);
+}
+
 ZRootsIterator::ZRootsIterator() :
     _universe(this),
     _object_synchronizer(this),
@@ -145,16 +172,23 @@ ZRootsIterator::ZRootsIterator() :
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
   Threads::change_thread_claim_parity();
   COMPILER2_PRESENT(DerivedPointerTable::clear());
-  CodeCache::gc_prologue();
-  ZNMethodTable::gc_prologue();
+  if (ClassUnloading) {
+    nmethod::oops_do_marking_prologue();
+  } else {
+    ZNMethodTable::nmethod_entries_do_begin();
+  }
 }
 
 ZRootsIterator::~ZRootsIterator() {
   ZStatTimer timer(ZSubPhasePauseRootsTeardown);
   ResourceMark rm;
-  ZNMethodTable::gc_epilogue();
-  CodeCache::gc_epilogue();
+  if (ClassUnloading) {
+    nmethod::oops_do_marking_epilogue();
+  } else {
+    ZNMethodTable::nmethod_entries_do_end();
+  }
   JvmtiExport::gc_epilogue();
+
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
   Threads::assert_all_threads_claimed();
 }
@@ -209,7 +243,9 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_ex
   _jvmti_export.oops_do(cl);
   _system_dictionary.oops_do(cl);
   _threads.oops_do(cl);
-  _code_cache.oops_do(cl);
+  if (!ClassUnloading) {
+    _code_cache.oops_do(cl);
+  }
   if (visit_jvmti_weak_export) {
     _jvmti_weak_export.oops_do(cl);
   }
@@ -242,8 +278,13 @@ void ZConcurrentRootsIterator::do_jni_handles(ZRootsIteratorClosure* cl) {
 
 void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
-  CLDToOopClosure cld_cl(cl, _marking ? ClassLoaderData::_claim_strong : ClassLoaderData::_claim_none);
-  ClassLoaderDataGraph::cld_do(&cld_cl);
+  if (_marking) {
+    CLDToOopClosure cld_cl(cl, ClassLoaderData::_claim_strong);
+    ClassLoaderDataGraph::always_strong_cld_do(&cld_cl);
+  } else {
+    CLDToOopClosure cld_cl(cl, ClassLoaderData::_claim_none);
+    ClassLoaderDataGraph::cld_do(&cld_cl);
+  }
 }
 
 void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {

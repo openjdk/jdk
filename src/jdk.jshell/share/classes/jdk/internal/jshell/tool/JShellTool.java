@@ -1220,45 +1220,22 @@ public class JShellTool implements MessageHandler {
     private String getInput(String initial) throws IOException{
         String src = initial;
         while (live) { // loop while incomplete (and live)
-            if (!src.isEmpty()) {
-                // We have some source, see if it is complete, if so, use it
-                String check;
-
-                if (isCommand(src)) {
-                    // A command can only be incomplete if it is a /exit with
-                    // an argument
-                    int sp = src.indexOf(" ");
-                    if (sp < 0) return src;
-                    check = src.substring(sp).trim();
-                    if (check.isEmpty()) return src;
-                    String cmd = src.substring(0, sp);
-                    Command[] match = findCommand(cmd, c -> c.kind.isRealCommand);
-                    if (match.length != 1 || !match[0].command.equals("/exit")) {
-                        // A command with no snippet arg, so no multi-line input
-                        return src;
-                    }
-                } else {
-                    // For a snippet check the whole source
-                    check = src;
-                }
-                Completeness comp = analysis.analyzeCompletion(check).completeness();
-                if (comp.isComplete() || comp == Completeness.EMPTY) {
-                    return src;
-                }
+            if (!src.isEmpty() && isComplete(src)) {
+                return src;
             }
-            String prompt = interactive()
-                    ? testPrompt
-                            ? src.isEmpty()
-                                    ? "\u0005" //ENQ -- test prompt
-                                    : "\u0006" //ACK -- test continuation prompt
-                            : src.isEmpty()
-                                    ? feedback.getPrompt(currentNameSpace.tidNext())
-                                    : feedback.getContinuationPrompt(currentNameSpace.tidNext())
+            String firstLinePrompt = interactive()
+                    ? testPrompt ? " \005"
+                                 : feedback.getPrompt(currentNameSpace.tidNext())
+                    : "" // Non-interactive -- no prompt
+                    ;
+            String continuationPrompt = interactive()
+                    ? testPrompt ? " \006"
+                                 : feedback.getContinuationPrompt(currentNameSpace.tidNext())
                     : "" // Non-interactive -- no prompt
                     ;
             String line;
             try {
-                line = input.readLine(prompt, src);
+                line = input.readLine(firstLinePrompt, continuationPrompt, src.isEmpty(), src);
             } catch (InputInterruptedException ex) {
                 //input interrupted - clearing current state
                 src = "";
@@ -1277,6 +1254,33 @@ public class JShellTool implements MessageHandler {
                     : src + "\n" + line;
         }
         throw new EOFException(); // not longer live
+    }
+
+    public boolean isComplete(String src) {
+        String check;
+
+        if (isCommand(src)) {
+            // A command can only be incomplete if it is a /exit with
+            // an argument
+            int sp = src.indexOf(" ");
+            if (sp < 0) return true;
+            check = src.substring(sp).trim();
+            if (check.isEmpty()) return true;
+            String cmd = src.substring(0, sp);
+            Command[] match = findCommand(cmd, c -> c.kind.isRealCommand);
+            if (match.length != 1 || !match[0].command.equals("/exit")) {
+                // A command with no snippet arg, so no multi-line input
+                return true;
+            }
+        } else {
+            // For a snippet check the whole source
+            check = src;
+        }
+        Completeness comp = analysis.analyzeCompletion(check).completeness();
+        if (comp.isComplete() || comp == Completeness.EMPTY) {
+            return true;
+        }
+        return false;
     }
 
     private boolean isCommand(String line) {
@@ -1852,6 +1856,9 @@ public class JShellTool implements MessageHandler {
                 CommandKind.HELP_ONLY));
         registerCommand(new Command("intro",
                 "help.intro",
+                CommandKind.HELP_SUBJECT));
+        registerCommand(new Command("keys",
+                "help.keys",
                 CommandKind.HELP_SUBJECT));
         registerCommand(new Command("id",
                 "help.id",
@@ -4001,7 +4008,7 @@ class ScannerIOContext extends NonInteractiveIOContext {
     }
 
     @Override
-    public String readLine(String prompt, String prefix) {
+    public String readLine(String firstLinePrompt, String continuationPrompt, boolean firstLine, String prefix) {
         if (scannerIn.hasNextLine()) {
             return scannerIn.nextLine();
         } else {
@@ -4030,7 +4037,7 @@ class ReloadIOContext extends NonInteractiveIOContext {
     }
 
     @Override
-    public String readLine(String prompt, String prefix) {
+    public String readLine(String firstLinePrompt, String continuationPrompt, boolean firstLine, String prefix) {
         String s = it.hasNext()
                 ? it.next()
                 : null;

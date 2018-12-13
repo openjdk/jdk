@@ -212,7 +212,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   }
 
   NSK_DISPLAY0("Tagging fields.\n");
-  if (!NSK_VERIFY(JNI_OK==tag_objects(jvmti, jni))) {
+  if (!NSK_VERIFY(JNI_OK == tag_objects(jvmti, jni))) {
     return;
   }
 

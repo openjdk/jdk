@@ -1,12 +1,12 @@
-## JLine v2.14.6
+## JLine v3.9.0
 
 ### JLine License
 <pre>
 
-Copyright (c) 2002-2016, the original author or authors.
+Copyright (c) 2002-2018, the original author or authors.
 All rights reserved.
 
-http://www.opensource.org/licenses/bsd-license.php
+https://opensource.org/licenses/BSD-3-Clause
 
 Redistribution and use in source and binary forms, with or
 without modification, are permitted provided that the following
