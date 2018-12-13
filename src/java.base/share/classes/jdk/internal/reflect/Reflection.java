@@ -56,6 +56,7 @@ public class Reflection {
             Constructor.class, ALL_MEMBERS,
             Field.class, ALL_MEMBERS,
             Method.class, ALL_MEMBERS,
+            Module.class, ALL_MEMBERS,
             System.class, Set.of("security")
         );
         methodFilterMap = Map.of();

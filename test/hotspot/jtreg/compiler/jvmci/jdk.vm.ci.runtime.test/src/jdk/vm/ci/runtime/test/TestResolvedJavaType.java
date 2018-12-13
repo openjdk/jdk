@@ -772,7 +772,8 @@ public class TestResolvedJavaType extends TypeUniverse {
             f.getDeclaringClass().equals(metaAccess.lookupJavaType(AccessibleObject.class)) ||
             f.getDeclaringClass().equals(metaAccess.lookupJavaType(Constructor.class)) ||
             f.getDeclaringClass().equals(metaAccess.lookupJavaType(Field.class)) ||
-            f.getDeclaringClass().equals(metaAccess.lookupJavaType(Method.class))) {
+            f.getDeclaringClass().equals(metaAccess.lookupJavaType(Method.class)) ||
+            f.getDeclaringClass().equals(metaAccess.lookupJavaType(Module.class))) {
             return true;
         }
         return false;
