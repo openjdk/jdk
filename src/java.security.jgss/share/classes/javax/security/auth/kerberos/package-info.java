@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,10 @@
  *
  * You can provide the name of your default realm and Key Distribution
  * Center (KDC) host for that realm using the system properties
- * {@code java.security.krb5.realm} and {@code java.security.krb5.kdc}.
- * Both properties must be set.
- * Alternatively, the {@code java.security.krb5.conf} system property can
- * be set to the location of an MIT style {@code krb5.conf} configuration
+ * {@systemProperty java.security.krb5.realm} and
+ * {@systemProperty java.security.krb5.kdc}. Both properties must be set.
+ * Alternatively, the {@systemProperty java.security.krb5.conf} system property
+ * can be set to the location of an MIT style {@code krb5.conf} configuration
  * file. If none of these system properties are set, the {@code krb5.conf}
  * file is searched for in an implementation-specific manner. Typically,
  * an implementation will first look for a {@code krb5.conf} file in
