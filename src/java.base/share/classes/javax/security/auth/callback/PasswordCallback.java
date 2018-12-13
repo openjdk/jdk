@@ -67,7 +67,7 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      *                  if {@code prompt} has a length of 0.
      */
     public PasswordCallback(String prompt, boolean echoOn) {
-        if (prompt == null || prompt.length() == 0)
+        if (prompt == null || prompt.isEmpty())
             throw new IllegalArgumentException();
 
         this.prompt = prompt;

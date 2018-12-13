@@ -22,24 +22,23 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSIZENOTIFIER_HPP
-#define SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSIZENOTIFIER_HPP
+#ifndef SHARE_VM_JFR_RECORDER_REPOSITORY_JFRCHUNKROTATION_HPP
+#define SHARE_VM_JFR_RECORDER_REPOSITORY_JFRCHUNKROTATION_HPP
 
 #include "memory/allocation.hpp"
 
+class JfrChunkWriter;
+
 //
 // Responsible for notifications about current chunk size now exceeding threshold.
-// This is a means to initiate a chunk rotation on the basis of size written.
+// This is a means to initiate a chunk rotation on the basis of the size written.
 //
-class JfrChunkSizeNotifier : AllStatic {
-  friend class JfrRecorder;
- private:
-  static size_t _chunk_size_threshold;
-  static void release_monitor();
+class JfrChunkRotation : AllStatic {
  public:
-  static void set_chunk_size_threshold(size_t bytes);
-  static size_t chunk_size_threshold();
-  static void notify();
+  static void evaluate(const JfrChunkWriter& writer);
+  static void set_threshold(intptr_t bytes);
+  static bool should_rotate();
+  static void on_rotation();
 };
 
-#endif // SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSIZENOTIFIER_HPP
+#endif // SHARE_VM_JFR_RECORDER_REPOSITORY_JFRCHUNKROTATION_HPP

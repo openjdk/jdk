@@ -113,7 +113,7 @@ abstract class SeedGenerator {
                                   + "generator: " + e.toString());
                 }
             }
-        } else if (egdSource.length() != 0) {
+        } else if (!egdSource.isEmpty()) {
             try {
                 instance = new URLSeedGenerator(egdSource);
                 if (debug != null) {

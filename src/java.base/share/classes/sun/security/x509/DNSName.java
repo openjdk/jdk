@@ -72,7 +72,7 @@ public class DNSName implements GeneralNameInterface {
      * @throws IOException if the name is not a valid DNSName subjectAltName
      */
     public DNSName(String name) throws IOException {
-        if (name == null || name.length() == 0)
+        if (name == null || name.isEmpty())
             throw new IOException("DNSName must not be null or empty");
         if (name.contains(" "))
             throw new IOException("DNSName with blank components is not permitted");

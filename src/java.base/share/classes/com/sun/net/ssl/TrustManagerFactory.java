@@ -155,7 +155,7 @@ public class TrustManagerFactory {
                                                  String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        if (provider == null || provider.length() == 0)
+        if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
         Object[] objs = SSLSecurity.getImpl(algorithm, "TrustManagerFactory",
                                             provider);

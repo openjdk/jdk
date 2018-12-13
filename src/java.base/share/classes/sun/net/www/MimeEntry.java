@@ -201,9 +201,7 @@ public class MimeEntry implements Cloneable {
     }
 
     private boolean isStarred(String typeName) {
-        return (typeName != null)
-            && (typeName.length() > 0)
-            && (typeName.endsWith("/*"));
+        return typeName != null && typeName.endsWith("/*");
     }
 
     /**
@@ -300,7 +298,7 @@ public class MimeEntry implements Cloneable {
         }
 
         String extensions = getExtensionsAsList();
-        if (extensions.length() > 0) {
+        if (!extensions.isEmpty()) {
             sj.add("file_extensions=" + extensions);
         }
 

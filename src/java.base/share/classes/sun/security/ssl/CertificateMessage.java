@@ -440,7 +440,7 @@ final class CertificateMessage {
                 // It is not necessary to check the certificate update if
                 // endpoint identification is enabled.
                 String identityAlg = chc.sslConfig.identificationProtocol;
-                if ((identityAlg == null || identityAlg.length() == 0) &&
+                if ((identityAlg == null || identityAlg.isEmpty()) &&
                         !isIdentityEquivalent(x509Certs[0],
                                 chc.reservedServerCerts[0])) {
                     chc.conContext.fatal(Alert.BAD_CERTIFICATE,

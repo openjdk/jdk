@@ -103,7 +103,7 @@ public final class ConstantBootstraps {
         if (type != Class.class) {
             throw new IllegalArgumentException();
         }
-        if (name.length() == 0 || name.length() > 1) {
+        if (name.length() != 1) {
             throw new IllegalArgumentException(String.format("not primitive: %s", name));
         }
 

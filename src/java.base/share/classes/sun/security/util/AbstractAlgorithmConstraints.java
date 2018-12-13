@@ -75,7 +75,7 @@ public abstract class AbstractAlgorithmConstraints
 
     static boolean checkAlgorithm(String[] algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
-        if (algorithm == null || algorithm.length() == 0) {
+        if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 

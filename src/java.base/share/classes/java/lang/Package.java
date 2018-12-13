@@ -397,11 +397,11 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     public String toString() {
         String spec = versionInfo.specTitle;
         String ver =  versionInfo.specVersion;
-        if (spec != null && spec.length() > 0)
+        if (spec != null && !spec.isEmpty())
             spec = ", " + spec;
         else
             spec = "";
-        if (ver != null && ver.length() > 0)
+        if (ver != null && !ver.isEmpty())
             ver = ", version " + ver;
         else
             ver = "";

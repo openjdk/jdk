@@ -337,7 +337,7 @@ public class SealedObject implements Serializable {
         if (key == null) {
             throw new NullPointerException("key is null");
         }
-        if (provider == null || provider.length() == 0) {
+        if (provider == null || provider.isEmpty()) {
             throw new IllegalArgumentException("missing provider");
         }
 

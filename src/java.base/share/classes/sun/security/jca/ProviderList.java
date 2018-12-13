@@ -175,7 +175,7 @@ public final class ProviderList {
 
         while ((entry = Security.getProperty("security.provider." + i)) != null) {
             entry = entry.trim();
-            if (entry.length() == 0) {
+            if (entry.isEmpty()) {
                 System.err.println("invalid entry for " +
                                    "security.provider." + i);
                 break;
@@ -200,7 +200,7 @@ public final class ProviderList {
 
         // Load config entries for use when getInstance is called
         entry = Security.getProperty("jdk.security.provider.preferred");
-        if (entry != null && (entry = entry.trim()).length() > 0) {
+        if (entry != null && !(entry = entry.trim()).isEmpty()) {
             String[] entries = entry.split(",");
             if (ProviderList.preferredPropList == null) {
                 ProviderList.preferredPropList = new PreferredList();

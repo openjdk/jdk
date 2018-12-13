@@ -451,7 +451,7 @@ public class BytecodeName {
      * @return true if the name is non-empty and all of its characters are safe
      */
     public static boolean isSafeBytecodeName(String s) {
-        if (s.length() == 0)  return false;
+        if (s.isEmpty())  return false;
         // check occurrences of each DANGEROUS char
         for (char xc : DANGEROUS_CHARS_A) {
             if (xc == ESCAPE_C)  continue;  // not really that dangerous
@@ -476,7 +476,7 @@ public class BytecodeName {
     }
 
     private static String mangle(String s) {
-        if (s.length() == 0)
+        if (s.isEmpty())
             return NULL_ESCAPE;
 
         // build this lazily, when we first need an escape:

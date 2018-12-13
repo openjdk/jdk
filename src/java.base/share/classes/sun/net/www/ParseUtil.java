@@ -536,8 +536,7 @@ public final class ParseUtil {
         throws URISyntaxException
     {
         if (scheme != null) {
-            if ((path != null)
-                && ((path.length() > 0) && (path.charAt(0) != '/')))
+            if (path != null && !path.isEmpty() && path.charAt(0) != '/')
                 throw new URISyntaxException(s,
                                              "Relative path in absolute URI");
         }

@@ -65,19 +65,19 @@
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
   </Event>
 
-  <Event name="BiasedLockRevocation" category="Java Application" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
+  <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
     stackTrace="true">
     <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="Thread" name="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation" />
   </Event>
 
-  <Event name="BiasedLockSelfRevocation" category="Java Application" label="Biased Lock Self Revocation" description="Revoked bias of object biased towards own thread"
+  <Event name="BiasedLockSelfRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Self Revocation" description="Revoked bias of object biased towards own thread"
     thread="true" stackTrace="true">
     <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
   </Event>
 
-  <Event name="BiasedLockClassRevocation" category="Java Application" label="Biased Lock Class Revocation" description="Revoked biases for all instances of a class"
+  <Event name="BiasedLockClassRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Class Revocation" description="Revoked biases for all instances of a class"
     thread="true" stackTrace="true">
     <Field type="Class" name="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked" />
     <Field type="boolean" name="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed" />
@@ -350,7 +350,7 @@
     <Field type="ulong" contentType="bytes" name="recentMutatorAllocationSize" label="Recent Mutator Allocation Size"
       description="Mutator allocation during mutator operation in the most recent interval" />
     <Field type="long" contentType="millis" name="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval" />
-    <Field type="double" name="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second" />
+    <Field type="double" contentType="bytes-per-second" name="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second" />
     <Field type="long" contentType="millis" name="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last initial mark to the first mixed GC" />
   </Event>
 
@@ -362,7 +362,7 @@
     <Field type="ulong" contentType="bytes" name="ihopTargetOccupancy" label="IHOP Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
-    <Field type="double" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
+    <Field type="double" contentType="bytes-per-second" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
       description="Current predicted time from the end of the last initial mark to the first mixed GC" />
     <Field type="boolean" name="predictionActive" label="Prediction Active" description="Indicates whether the adaptive IHOP prediction is active" />
@@ -564,9 +564,9 @@
       relation="SafepointId" />
   </Event>
 
-  <Event name="Shutdown" category="Java Virtual Machine, Runtime" label="VM Shutdown" description="VM shutting down" thread="true" stackTrace="true"
+  <Event name="Shutdown" category="Java Virtual Machine, Runtime" label="JVM Shutdown" description="JVM shutting down" thread="true" stackTrace="true"
     startTime="false">
-    <Field type="string" name="reason" label="Reason" description="Reason for VM shutdown" />
+    <Field type="string" name="reason" label="Reason" description="Reason for JVM shutdown" />
   </Event>
 
   <Event name="ObjectAllocationInNewTLAB" category="Java Application" label="Allocation in new TLAB" description="Allocation in new Thread Local Allocation Buffer"
@@ -582,7 +582,7 @@
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
-  <Event name="OldObjectSample" category="Java Application" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
+  <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />
     <Field type="ulong" contentType="bytes" name="lastKnownHeapUsage" label="Last Known Heap Usage" />
@@ -647,8 +647,8 @@
   <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter" period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
-    <Field type="long" name="osFrequency" label="OS Frequency Per Second" />
-    <Field type="long" name="fastTimeFrequency" label="Fast Time Frequency per Second" />
+    <Field type="long" contentType="hertz" name="osFrequency" label="OS Frequency" />
+    <Field type="long" contentType="hertz" name="fastTimeFrequency" label="Fast Time Frequency" />
   </Event>
 
   <Event name="CPULoad" category="Operating System, Processor" label="CPU Load" description="OS CPU Load" period="everyChunk">
@@ -663,13 +663,13 @@
   </Event>
 
   <Event name="ThreadContextSwitchRate" category="Operating System, Processor" label="Thread Context Switch Rate" period="everyChunk">
-    <Field type="float" name="switchRate" label="Switch Rate" description="Number of context switches per second" />
+    <Field type="float" contentType="hertz" name="switchRate" label="Switch Rate" description="Number of context switches per second" />
   </Event>
 
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
     <Field type="NetworkInterfaceName" name="networkInterface" label="Network Interface" description="Network Interface Name"/>
-    <Field type="long" contentType="bytes" name="readRate" label="Read Rate" description="Number of incoming bytes per second"/>
-    <Field type="long" contentType="bytes" name="writeRate" label="Write Rate" description="Number of outgoing bytes per second"/>
+    <Field type="long" contentType="bits-per-second" name="readRate" label="Read Rate" description="Number of incoming bits per second"/>
+    <Field type="long" contentType="bits-per-second" name="writeRate" label="Write Rate" description="Number of outgoing bits per second"/>
   </Event>
 
   <Event name="JavaThreadStatistics" category="Java Application, Statistics" label="Java Thread Statistics" period="everyChunk">
@@ -687,7 +687,7 @@
   <Event name="ClassLoaderStatistics" category="Java Application, Statistics" label="Class Loader Statistics" period="everyChunk">
     <Field type="ClassLoader" name="classLoader" label="Class Loader" />
     <Field type="ClassLoader" name="parentClassLoader" label="Parent Class Loader" />
-    <Field type="ulong" contentType="address" name="classLoaderData" label="ClassLoaderData pointer" description="Pointer to the ClassLoaderData structure in the JVM" />
+    <Field type="ulong" contentType="address" name="classLoaderData" label="ClassLoaderData Pointer" description="Pointer to the ClassLoaderData structure in the JVM" />
     <Field type="long" name="classCount" label="Classes" description="Number of loaded classes" />
     <Field type="ulong" contentType="bytes" name="chunkSize" label="Total Chunk Size" description="Total size of all allocated metaspace chunks (each chunk has several blocks)" />
     <Field type="ulong" contentType="bytes" name="blockSize" label="Total Block Size" description="Total size of all allocated metaspace blocks (each chunk has several blocks)" />
@@ -741,8 +741,7 @@
   <Event name="ModuleExport" category="Java Virtual Machine, Runtime, Modules" label="Module Export" thread="false" period="everyChunk">
     <Field type="Package" name="exportedPackage" label="Exported Package" />
     <Field type="Module" name="targetModule" label="Target Module"
-      description="Module to which the package is qualifiedly exported.
-             If null, the package is unqualifiedly exported" />
+      description="Module to which the package is qualifiedly exported. If null or N/A, the package is unqualifiedly exported" />
   </Event>
 
   <Event name="CompilerStatistics" category="Java Virtual Machine, Compiler" label="Compiler Statistics" thread="false" period="everyChunk" startTime="false">
@@ -1096,7 +1095,7 @@
     <Field type="OldObjectArray" name="array" label="Array Information" description="Array or null if it is not an array" />
     <Field type="OldObjectField" name="field" label="Field Information" description="Field or null if it is an array" />
     <Field type="OldObject" name="object" label="Object" description="Object holder for this reference" />
-    <Field type="int" name="skip" label="Skip value" description="The object is this many hops away" />
+    <Field type="int" name="skip" label="Skip Value" description="The object is this many hops away" />
   </Type>
 
   <Type name="StackFrame">
@@ -1134,13 +1133,16 @@
   <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/> 
   <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/> 
  
-  <XmlContentType name="bytes" annotationType="jdk.jfr.DataAmount" annotationValue="BYTES" />
-  <XmlContentType name="tickstamp" annotationType="jdk.jfr.Timestamp" annotationValue="TICKS" />
-  <XmlContentType name="epochmillis" annotationType="jdk.jfr.Timestamp" annotationValue="MILLISECONDS_SINCE_EPOCH" />
-  <XmlContentType name="tickspan" annotationType="jdk.jfr.Timespan" annotationValue="TICKS" />
-  <XmlContentType name="address" annotationType="jdk.jfr.MemoryAddress" />
-  <XmlContentType name="percentage" annotationType="jdk.jfr.Percentage" />
-  <XmlContentType name="millis" annotationType="jdk.jfr.Timespan" annotationValue="MILLISECONDS" />
-  <XmlContentType name="nanos" annotationType="jdk.jfr.Timespan" annotationValue="NANOSECONDS" />
-  
+  <XmlContentType name="bytes" annotation="jdk.jfr.DataAmount(BYTES)" />
+  <XmlContentType name="tickstamp" annotation="jdk.jfr.Timestamp(TICKS)" />
+  <XmlContentType name="epochmillis" annotation="jdk.jfr.Timestamp(MILLISECONDS_SINCE_EPOCH)" />
+  <XmlContentType name="tickspan" annotation="jdk.jfr.Timespan(TICKS)" />
+  <XmlContentType name="address" annotation="jdk.jfr.MemoryAddress" />
+  <XmlContentType name="percentage" annotation="jdk.jfr.Percentage" />
+  <XmlContentType name="millis" annotation="jdk.jfr.Timespan(MILLISECONDS)" />
+  <XmlContentType name="nanos" annotation="jdk.jfr.Timespan(NANOSECONDS)" />
+  <XmlContentType name="hertz" annotation="jdk.jfr.Frequency" />
+  <XmlContentType name="bytes-per-second" annotation="jdk.jfr.DataAmount(BYTES), jdk.jfr.Frequency" />
+  <XmlContentType name="bits-per-second" annotation="jdk.jfr.DataAmount(BITS), jdk.jfr.Frequency" />
+ 
 </Metadata>

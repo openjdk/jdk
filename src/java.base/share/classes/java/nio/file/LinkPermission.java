@@ -104,7 +104,7 @@ public final class LinkPermission extends BasicPermission {
     public LinkPermission(String name, String actions) {
         super(name);
         checkName(name);
-        if (actions != null && actions.length() > 0) {
+        if (actions != null && !actions.isEmpty()) {
             throw new IllegalArgumentException("actions: " + actions);
         }
     }

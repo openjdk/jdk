@@ -133,7 +133,7 @@ public abstract class SSLSocketFactory extends SocketFactory
                 String s = java.security.Security.getProperty(name);
                 if (s != null) {
                     s = s.trim();
-                    if (s.length() == 0) {
+                    if (s.isEmpty()) {
                         s = null;
                     }
                 }

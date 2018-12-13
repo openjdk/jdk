@@ -109,7 +109,7 @@ abstract class AbstractDCmd {
             try {
                 print(" ");
                 long bytes = SecuritySupport.getFileSize(file);
-                printBytes(bytes, " ");
+                printBytes(bytes);
             } catch (IOException e) {
                 // Ignore, not essential
             }
@@ -152,8 +152,8 @@ abstract class AbstractDCmd {
         println();
     }
 
-    protected final void printBytes(long bytes, String separation) {
-        print(Utils.formatBytes(bytes, separation));
+    protected final void printBytes(long bytes) {
+        print(Utils.formatBytes(bytes));
     }
 
     protected final void printTimespan(Duration timespan, String separator) {

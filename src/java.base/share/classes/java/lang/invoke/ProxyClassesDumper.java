@@ -62,7 +62,7 @@ final class ProxyClassesDumper {
         }
         try {
             path = path.trim();
-            final Path dir = Path.of(path.length() == 0 ? "." : path);
+            final Path dir = Path.of(path.isEmpty() ? "." : path);
             AccessController.doPrivileged(new PrivilegedAction<>() {
                     @Override
                     public Void run() {

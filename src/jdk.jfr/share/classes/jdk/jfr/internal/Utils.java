@@ -103,18 +103,53 @@ public final class Utils {
         }
     }
 
-    public static String formatBytes(long bytes, String separation) {
-        if (bytes == 1) {
-            return "1 byte";
-        }
-        if (bytes < 1024) {
-            return bytes + " bytes";
-        }
-        int exp = (int) (Math.log(bytes) / Math.log(1024));
-        char bytePrefix = "kMGTPE".charAt(exp - 1);
-        return String.format("%.1f%s%cB", bytes / Math.pow(1024, exp), separation, bytePrefix);
+    // Tjis method can't handle Long.MIN_VALUE because absolute value is negative
+    private static String formatDataAmount(String formatter, long amount) {
+        int exp = (int) (Math.log(Math.abs(amount)) / Math.log(1024));
+        char unitPrefix = "kMGTPE".charAt(exp - 1);
+        return String.format(formatter, amount / Math.pow(1024, exp), unitPrefix);
     }
 
+    public static String formatBytesCompact(long bytes) {
+        if (bytes < 1024) {
+            return String.valueOf(bytes);
+        }
+        return formatDataAmount("%.1f%cB", bytes);
+    }
+
+    public static String formatBits(long bits) {
+        if (bits == 1 || bits == -1) {
+            return bits + " bit";
+        }
+        if (bits < 1024 && bits > -1024) {
+            return bits + " bits";
+        }
+        return formatDataAmount("%.1f %cbit", bits);
+    }
+
+    public static String formatBytes(long bytes) {
+        if (bytes == 1 || bytes == -1) {
+            return bytes + " byte";
+        }
+        if (bytes < 1024 && bytes > -1024) {
+            return bytes + " bytes";
+        }
+        return formatDataAmount("%.1f %cB", bytes);
+    }
+
+    public static String formatBytesPerSecond(long bytes) {
+        if (bytes < 1024 && bytes > -1024) {
+            return bytes + " byte/s";
+        }
+        return formatDataAmount("%.1f %cB/s", bytes);
+    }
+
+    public static String formatBitsPerSecond(long bits) {
+        if (bits < 1024 && bits > -1024) {
+            return bits + " bps";
+        }
+        return formatDataAmount("%.1f %cbps", bits);
+    }
     public static String formatTimespan(Duration dValue, String separation) {
         if (dValue == null) {
             return "0";

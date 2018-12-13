@@ -29,40 +29,27 @@
  * In the following example, the program prints a histogram of all method samples in a recording.
  * <pre>
  * <code>
- *   public static void main(String[] args) {
- *     if (args.length != 0) {
- *       System.out.println("Must specify recording file.");
- *       return;
+ * public static void main(String[] args) throws IOException {
+ *     if (args.length != 1) {
+ *         System.err.println("Must specify a recording file.");
+ *         return;
  *     }
- *     try (RecordingFile f = new RecordingFile(Paths.get(args[0]))) {
- *       Map{@literal <}String, SimpleEntry{@literal <}String, Integer{@literal >}{@literal >} histogram = new HashMap{@literal <}{@literal >}();
- *       int total = 0;
- *       while (f.hasMoreEvents()) {
- *         RecordedEvent event = f.readEvent();
- *         if (event.getEventType().getName().equals("jdk.ExecutionSample")) {
- *           RecordedStackTrace s = event.getStackTrace();
- *           if (s != null) {
- *             RecordedFrame topFrame= s.getFrames().get(0);
- *             if (topFrame.isJavaFrame())  {
- *               RecordedMethod method = topFrame.getMethod();
- *               String methodName = method.getType().getName() + "#" + method.getName() + " " + method.getDescriptor();
- *               Entry entry = histogram.computeIfAbsent(methodName, u -{@literal >} new SimpleEntry{@literal <}String, Integer{@literal >}(methodName, 0));
- *               entry.setValue(entry.getValue() + 1);
- *               total++;
- *             }
- *           }
- *         }
- *       }
- *       List{@literal <}SimpleEntry{@literal <}String, Integer{@literal >}{@literal >} entries = new ArrayList{@literal <}{@literal >}(histogram.values());
- *       entries.sort((u, v) -{@literal >} v.getValue().compareTo(u.getValue()));
- *       for (SimpleEntry{@literal <}String, Integer{@literal >} c : entries) {
- *         System.out.printf("%2.0f%% %s\n", 100 * (float) c.getValue() / total, c.getKey());
- *       }
- *       System.out.println("\nSample count: " + total);
- *     } catch (IOException ioe) {
- *       System.out.println("Error reading file " + args[0] + ". " + ioe.getMessage());
- *     }
- *   }
+ *
+ *     RecordingFile.readAllEvents(Path.of(args[0])).stream()
+ *         .filter(e -> e.getEventType().getName().equals("jdk.ExecutionSample"))
+ *         .map(e -> e.getStackTrace())
+ *         .filter(s -> s != null)
+ *         .map(s -> s.getFrames().get(0))
+ *         .filter(f -> f.isJavaFrame())
+ *         .map(f -> f.getMethod())
+ *         .collect(
+ *             Collectors.groupingBy(m -> m.getType().getName() + "." + m.getName() + " " + m.getDescriptor(),
+ *             Collectors.counting()))
+ *         .entrySet()
+ *         .stream()
+ *         .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+ *         .forEach(e -> System.out.printf("%8d %s\n", e.getValue(), e.getKey()));
+ * }
  * </code>
  * </pre>
  * <p>

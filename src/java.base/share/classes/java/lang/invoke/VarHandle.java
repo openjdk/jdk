@@ -1864,6 +1864,16 @@ public abstract class VarHandle implements Constable {
         }
     }
 
+    /**
+     * Compare this {@linkplain VarHandle} with another object for equality.
+     * Two {@linkplain VarHandle}s are considered equal if they both describe the
+     * same instance field, both describe the same static field, both describe
+     * array elements for arrays with the same component type, or both describe
+     * the same component of an off-heap structure.
+     *
+     * @param o the other object
+     * @return Whether this {@linkplain VarHandle} is equal to the other object
+     */
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
@@ -1883,6 +1893,12 @@ public abstract class VarHandle implements Constable {
 
     abstract int internalHashCode();
 
+    /**
+     * Returns a compact textual description of this {@linkplain VarHandle},
+     * including the type of variable described, and a description of its coordinates.
+     *
+     * @return A compact textual description of this {@linkplain VarHandle}
+     */
     @Override
     public final String toString() {
         return String.format("VarHandle[varType=%s, coord=%s]",
@@ -2272,6 +2288,14 @@ public abstract class VarHandle implements Constable {
             }
         }
 
+        /**
+         * Returns a compact textual description of this constant description.
+         * For a field {@linkplain VarHandle}, includes the owner, name, and type
+         * of the field, and whether it is static; for an array {@linkplain VarHandle},
+         * the name of the component type.
+         *
+         * @return A compact textual description of this descriptor
+         */
         @Override
         public String toString() {
             switch (kind) {

@@ -243,7 +243,7 @@ class WindowsPath implements Path {
             // relative to default directory
             String remaining = path.substring(root.length());
             String defaultDirectory = getFileSystem().defaultDirectory();
-            if (remaining.length() == 0) {
+            if (remaining.isEmpty()) {
                 return defaultDirectory;
             } else if (defaultDirectory.endsWith("\\")) {
                  return defaultDirectory + remaining;
@@ -299,7 +299,7 @@ class WindowsPath implements Path {
     // -- Path operations --
 
     private boolean isEmpty() {
-        return path.length() == 0;
+        return path.isEmpty();
     }
 
     private WindowsPath emptyPath() {
@@ -340,7 +340,7 @@ class WindowsPath implements Path {
 
     @Override
     public WindowsPath getRoot() {
-        if (root.length() == 0)
+        if (root.isEmpty())
             return null;
         return new WindowsPath(getFileSystem(), type, root, root);
     }
@@ -556,7 +556,7 @@ class WindowsPath implements Path {
 
         // corner case - all names removed
         if (remaining == 0) {
-            return (root.length() == 0) ? emptyPath() : getRoot();
+            return root.isEmpty() ? emptyPath() : getRoot();
         }
 
         // re-constitute the path from the remaining names.

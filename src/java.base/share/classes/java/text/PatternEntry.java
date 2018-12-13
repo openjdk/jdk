@@ -141,7 +141,7 @@ class PatternEntry {
         if (showWhiteSpace)
             toAddTo.append(' ');
         appendQuoted(chars,toAddTo);
-        if (showExtension && extension.length() != 0) {
+        if (showExtension && !extension.isEmpty()) {
             toAddTo.append('/');
             appendQuoted(extension,toAddTo);
         }

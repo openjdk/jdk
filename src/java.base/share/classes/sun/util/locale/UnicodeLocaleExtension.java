@@ -80,7 +80,7 @@ public class UnicodeLocaleExtension extends Extension {
                 String value = keyword.getValue();
 
                 sj.add(key);
-                if (value.length() > 0) {
+                if (!value.isEmpty()) {
                     sj.add(value);
                 }
             }

@@ -61,7 +61,8 @@ public interface TypeDescriptor {
         boolean isArray();
 
         /**
-         * Does this field descriptor describe a primitive type?
+         * Does this field descriptor describe a primitive type (including void.)
+         *
          * @return whether this field descriptor describes a primitive type
          */
         boolean isPrimitive();

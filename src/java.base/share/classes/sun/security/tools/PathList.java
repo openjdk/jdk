@@ -46,9 +46,9 @@ public class PathList {
      * @return the resulting path
      */
     public static String appendPath(String pathTo, String pathFrom) {
-        if (pathTo == null || pathTo.length() == 0) {
+        if (pathTo == null || pathTo.isEmpty()) {
             return pathFrom;
-        } else if (pathFrom == null || pathFrom.length() == 0) {
+        } else if (pathFrom == null || pathFrom.isEmpty()) {
             return pathTo;
         } else {
             return pathTo  + File.pathSeparator + pathFrom;

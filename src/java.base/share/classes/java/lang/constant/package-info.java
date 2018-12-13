@@ -49,7 +49,7 @@
  * storing the value in a constant pool entry, or reconstituting the value given
  * a class loading context.  Every {@link java.lang.constant.ConstantDesc}
  * knows how to <em>resolve</em> itself -- compute the value that it describes --
- * via {@link java.lang.constant.ConstantDesc#resolveConstantDesc(java.lang.invoke.MethodHandles.Lookup)}.
+ * via {@link java.lang.constant.ConstantDesc#resolveConstantDesc(java.lang.invoke.MethodHandles.Lookup) ConstantDesc.resolveConstantDesc}.
  * This allows an API which accepts {@link java.lang.constant.ConstantDesc}
  * objects to evaluate them reflectively, provided that the classes and methods
  * referenced in their nominal description are present and accessible.
@@ -68,7 +68,7 @@
  * When a bytecode-reading API encounters a constant pool entry, it can
  * convert it to the appropriate type of nominal descriptor.  For dynamic
  * constants, bytecode-reading APIs may wish to use the factory
- * {@link java.lang.constant.DynamicConstantDesc#ofCanonical(DirectMethodHandleDesc, java.lang.String, ClassDesc, ConstantDesc[])},
+ * {@link java.lang.constant.DynamicConstantDesc#ofCanonical(DirectMethodHandleDesc, java.lang.String, ClassDesc, ConstantDesc[]) DynamicConstantDesc.ofCanonical},
  * which will inspect the bootstrap and, for well-known bootstraps, return
  * a more specific subtype of {@link java.lang.constant.DynamicConstantDesc}, such as
  * {@link java.lang.Enum.EnumDesc}.

@@ -327,7 +327,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # Only enable Shenandoah on supported arches
   AC_MSG_CHECKING([if shenandoah can be built])
-  if test "x$OPENJDK_TARGET_CPU_ARCH" = "xx86" || test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+  if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
     AC_MSG_RESULT([yes])
   else
     DISABLED_JVM_FEATURES="$DISABLED_JVM_FEATURES shenandoahgc"

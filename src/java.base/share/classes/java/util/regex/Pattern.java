@@ -1390,7 +1390,7 @@ public final class Pattern
         localTCNCount = 0;
 
         // if length > 0, the Pattern is lazily compiled
-        if (pattern.length() == 0) {
+        if (pattern.isEmpty()) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
             compiled = true;
@@ -1423,7 +1423,7 @@ public final class Pattern
         localCount = 0;
         localTCNCount = 0;
 
-        if (pattern.length() > 0) {
+        if (!pattern.isEmpty()) {
             compile();
         } else {
             root = new Start(lastAccept);

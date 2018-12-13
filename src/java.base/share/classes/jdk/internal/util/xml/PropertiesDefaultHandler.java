@@ -103,7 +103,7 @@ public class PropertiesDefaultHandler extends DefaultHandler {
             writer.writeStartDocument();
             writer.writeDTD(PROPS_DTD_DECL);
             writer.writeStartElement(ELEMENT_ROOT);
-            if (comment != null && comment.length() > 0) {
+            if (comment != null && !comment.isEmpty()) {
                 writer.writeStartElement(ELEMENT_COMMENT);
                 writer.writeCharacters(comment);
                 writer.writeEndElement();

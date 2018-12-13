@@ -66,7 +66,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
         String path = url.getPath();
-        if (path.length() == 0 || path.charAt(0) != '/')
+        if (path.isEmpty() || path.charAt(0) != '/')
             throw new MalformedURLException(url + " missing path or /");
         if (path.length() == 1) {
             this.module = null;

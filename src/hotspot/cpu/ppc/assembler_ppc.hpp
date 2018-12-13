@@ -539,6 +539,12 @@ class Assembler : public AbstractAssembler {
     XVSUBDP_OPCODE = (60u << OPCODE_SHIFT |  104u << 3),
     XVMULSP_OPCODE = (60u << OPCODE_SHIFT |   80u << 3),
     XVMULDP_OPCODE = (60u << OPCODE_SHIFT |  112u << 3),
+    XVMADDASP_OPCODE=(60u << OPCODE_SHIFT |   65u << 3),
+    XVMADDADP_OPCODE=(60u << OPCODE_SHIFT |   97u << 3),
+    XVMSUBASP_OPCODE=(60u << OPCODE_SHIFT |   81u << 3),
+    XVMSUBADP_OPCODE=(60u << OPCODE_SHIFT |  113u << 3),
+    XVNMSUBASP_OPCODE=(60u<< OPCODE_SHIFT |  209u << 3),
+    XVNMSUBADP_OPCODE=(60u<< OPCODE_SHIFT |  241u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -2227,6 +2233,12 @@ class Assembler : public AbstractAssembler {
   inline void xvsubdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmulsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmuldp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaddasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaddadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

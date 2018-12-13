@@ -78,7 +78,7 @@ public final class Resources {
         String s = dir.relativize(file)
                       .toString()
                       .replace(File.separatorChar, '/');
-        if (s.length() > 0 && Files.isDirectory(file))
+        if (!s.isEmpty() && Files.isDirectory(file))
             s += "/";
         return s;
     }

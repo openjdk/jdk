@@ -329,7 +329,7 @@ class WindowsLinkSupport {
 
             // remove special prefix
             String target = stripPrefix(new String(name));
-            if (target.length() == 0) {
+            if (target.isEmpty()) {
                 throw new IOException("Symbolic link target is invalid");
             }
             return target;

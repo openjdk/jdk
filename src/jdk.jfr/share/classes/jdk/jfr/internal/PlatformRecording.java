@@ -123,7 +123,7 @@ public final class PlatformRecording implements AutoCloseable {
                     options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
                 }
                 if (maxSize != 0) {
-                    options.add("maxsize=" + Utils.formatBytes(maxSize, ""));
+                    options.add("maxsize=" + Utils.formatBytesCompact(maxSize));
                 }
                 if (dumpOnExit) {
                     options.add("dumponexit=true");

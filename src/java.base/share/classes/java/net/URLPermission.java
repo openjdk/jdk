@@ -409,7 +409,7 @@ public final class URLPermission extends Permission {
             char c = methods.charAt(i);
             if (c == ',') {
                 String s = b.toString();
-                if (s.length() > 0)
+                if (!s.isEmpty())
                     l.add(s);
                 b = new StringBuilder();
             } else if (c == ' ' || c == '\t') {
@@ -423,7 +423,7 @@ public final class URLPermission extends Permission {
             }
         }
         String s = b.toString();
-        if (s.length() > 0)
+        if (!s.isEmpty())
             l.add(s);
         return l;
     }
@@ -448,7 +448,7 @@ public final class URLPermission extends Permission {
                 b.append(c);
             } else if (c == ',') {
                 String s = b.toString();
-                if (s.length() > 0)
+                if (!s.isEmpty())
                     l.add(s);
                 b = new StringBuilder();
                 capitalizeNext = true;
@@ -458,7 +458,7 @@ public final class URLPermission extends Permission {
             }
         }
         String s = b.toString();
-        if (s.length() > 0)
+        if (!s.isEmpty())
             l.add(s);
         return l;
     }

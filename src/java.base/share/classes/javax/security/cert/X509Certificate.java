@@ -210,7 +210,7 @@ public abstract class X509Certificate extends Certificate {
          * under JDK1.1.
          */
         String className = X509Provider;
-        if (className == null || className.length() == 0) {
+        if (className == null || className.isEmpty()) {
             // shouldn't happen, but assume corrupted properties file
             // provide access to sun implementation
             className = "com.sun.security.cert.internal.x509.X509V1CertImpl";

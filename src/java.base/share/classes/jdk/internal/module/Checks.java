@@ -63,22 +63,6 @@ public final class Checks {
     }
 
     /**
-     * Returns {@code true} if the given name is a legal module name.
-     */
-    public static boolean isModuleName(String name) {
-        int next;
-        int off = 0;
-        while ((next = name.indexOf('.', off)) != -1) {
-            String id = name.substring(off, next);
-            if (!isJavaIdentifier(id))
-                return false;
-            off = next+1;
-        }
-        String last = name.substring(off);
-        return isJavaIdentifier(last);
-    }
-
-    /**
      * Checks a name to ensure that it's a legal package name.
      *
      * @throws IllegalArgumentException if name is null or not a legal
@@ -181,20 +165,20 @@ public final class Checks {
     }
 
     /**
-     * Returns true if the given char sequence is a legal Java identifier,
+     * Returns true if the given string is a legal Java identifier,
      * otherwise false.
      */
-    private static boolean isJavaIdentifier(CharSequence cs) {
-        if (cs.length() == 0 || RESERVED.contains(cs))
+    private static boolean isJavaIdentifier(String str) {
+        if (str.isEmpty() || RESERVED.contains(str))
             return false;
 
-        int first = Character.codePointAt(cs, 0);
+        int first = Character.codePointAt(str, 0);
         if (!Character.isJavaIdentifierStart(first))
             return false;
 
         int i = Character.charCount(first);
-        while (i < cs.length()) {
-            int cp = Character.codePointAt(cs, i);
+        while (i < str.length()) {
+            int cp = Character.codePointAt(str, i);
             if (!Character.isJavaIdentifierPart(cp))
                 return false;
             i += Character.charCount(cp);

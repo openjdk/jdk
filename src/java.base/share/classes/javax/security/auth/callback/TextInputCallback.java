@@ -63,7 +63,7 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      *                  or if {@code prompt} has a length of 0.
      */
     public TextInputCallback(String prompt) {
-        if (prompt == null || prompt.length() == 0)
+        if (prompt == null || prompt.isEmpty())
             throw new IllegalArgumentException();
         this.prompt = prompt;
     }
@@ -83,8 +83,8 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      *                  or if {@code defaultText} has a length of 0.
      */
     public TextInputCallback(String prompt, String defaultText) {
-        if (prompt == null || prompt.length() == 0 ||
-            defaultText == null || defaultText.length() == 0)
+        if (prompt == null || prompt.isEmpty() ||
+            defaultText == null || defaultText.isEmpty())
             throw new IllegalArgumentException();
 
         this.prompt = prompt;

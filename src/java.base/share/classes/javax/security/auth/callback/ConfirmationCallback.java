@@ -248,7 +248,7 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
             throw new IllegalArgumentException();
 
         for (int i = 0; i < options.length; i++) {
-            if (options[i] == null || options[i].length() == 0)
+            if (options[i] == null || options[i].isEmpty())
                 throw new IllegalArgumentException();
         }
 
@@ -294,7 +294,7 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public ConfirmationCallback(String prompt, int messageType,
                 int optionType, int defaultOption) {
 
-        if (prompt == null || prompt.length() == 0 ||
+        if (prompt == null || prompt.isEmpty() ||
             messageType < INFORMATION || messageType > ERROR ||
             optionType < YES_NO_OPTION || optionType > OK_CANCEL_OPTION)
             throw new IllegalArgumentException();
@@ -357,14 +357,14 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public ConfirmationCallback(String prompt, int messageType,
                 String[] options, int defaultOption) {
 
-        if (prompt == null || prompt.length() == 0 ||
+        if (prompt == null || prompt.isEmpty() ||
             messageType < INFORMATION || messageType > ERROR ||
             options == null || options.length == 0 ||
             defaultOption < 0 || defaultOption >= options.length)
             throw new IllegalArgumentException();
 
         for (int i = 0; i < options.length; i++) {
-            if (options[i] == null || options[i].length() == 0)
+            if (options[i] == null || options[i].isEmpty())
                 throw new IllegalArgumentException();
         }
 

@@ -436,7 +436,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     "System property " + propertyName + " is set to '" +
                     property + "'");
         }
-        if (property != null && property.length() != 0) {
+        if (property != null && !property.isEmpty()) {
             // remove double quote marks from beginning/end of the property
             if (property.length() > 1 && property.charAt(0) == '"' &&
                     property.charAt(property.length() - 1) == '"') {
@@ -444,7 +444,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             }
         }
 
-        if (property != null && property.length() != 0) {
+        if (property != null && !property.isEmpty()) {
             String[] cipherSuiteNames = property.split(",");
             Collection<CipherSuite> cipherSuites =
                         new ArrayList<>(cipherSuiteNames.length);
@@ -845,7 +845,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 return;
             }
 
-            if (property.length() != 0) {
+            if (!property.isEmpty()) {
                 // remove double quote marks from beginning/end of the property
                 if (property.length() > 1 && property.charAt(0) == '"' &&
                         property.charAt(property.length() - 1) == '"') {
@@ -853,7 +853,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }
             }
 
-            if (property.length() != 0) {
+            if (!property.isEmpty()) {
                 String[] protocols = property.split(",");
                 for (int i = 0; i < protocols.length; i++) {
                     protocols[i] = protocols[i].trim();
@@ -1109,7 +1109,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             KeyStore ks = null;
             char[] passwd = null;
             try {
-                if (defaultKeyStore.length() != 0 &&
+                if (!defaultKeyStore.isEmpty() &&
                         !NONE.equals(defaultKeyStore)) {
                     fs = AccessController.doPrivileged(
                             new PrivilegedExceptionAction<FileInputStream>() {
@@ -1121,7 +1121,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }
 
                 String defaultKeyStorePassword = props.get("keyStorePasswd");
-                if (defaultKeyStorePassword.length() != 0) {
+                if (!defaultKeyStorePassword.isEmpty()) {
                     passwd = defaultKeyStorePassword.toCharArray();
                 }
 
@@ -1132,7 +1132,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.finest("init keystore");
                     }
-                    if (defaultKeyStoreProvider.length() == 0) {
+                    if (defaultKeyStoreProvider.isEmpty()) {
                         ks = KeyStore.getInstance(defaultKeyStoreType);
                     } else {
                         ks = KeyStore.getInstance(defaultKeyStoreType,
@@ -1561,7 +1561,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // check endpoint identity
             String identityAlg = sslSocket.getSSLParameters().
                                         getEndpointIdentificationAlgorithm();
-            if (identityAlg != null && identityAlg.length() != 0) {
+            if (identityAlg != null && !identityAlg.isEmpty()) {
                 String hostname = session.getPeerHost();
                 X509TrustManagerImpl.checkIdentity(
                                     hostname, chain[0], identityAlg);
@@ -1601,7 +1601,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // check endpoint identity
             String identityAlg = engine.getSSLParameters().
                                         getEndpointIdentificationAlgorithm();
-            if (identityAlg != null && identityAlg.length() != 0) {
+            if (identityAlg != null && !identityAlg.isEmpty()) {
                 String hostname = session.getPeerHost();
                 X509TrustManagerImpl.checkIdentity(
                                     hostname, chain[0], identityAlg);

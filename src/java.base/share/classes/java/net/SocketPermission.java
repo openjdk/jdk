@@ -460,7 +460,7 @@ public final class SocketPermission extends Permission
             }
             return;
         } else {
-            if (host.length() > 0) {
+            if (!host.isEmpty()) {
                 // see if we are being initialized with an IP address.
                 char ch = host.charAt(0);
                 if (ch == ':' || Character.digit(ch, 16) != -1) {
@@ -705,8 +705,7 @@ public final class SocketPermission extends Permission
                                       .orElse(b);
         }
 
-        return cdomain.length() != 0 && hdomain.length() != 0
-                        && cdomain.equals(hdomain);
+        return !cdomain.isEmpty() && !hdomain.isEmpty() && cdomain.equals(hdomain);
     }
 
     private boolean authorized(String cname, byte[] addr) {
