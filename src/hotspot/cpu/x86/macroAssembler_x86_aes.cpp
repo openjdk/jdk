@@ -29,6 +29,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
 
+#ifdef _LP64
 // Multiply 128 x 128 bits, using 4 pclmulqdq operations
 void MacroAssembler::schoolbookAAD(int i, Register htbl, XMMRegister data,
     XMMRegister tmp0, XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3) {
@@ -320,3 +321,4 @@ void MacroAssembler::avx_ghash(Register input_state, Register htbl,
     vpxor(xmm3, xmm3, xmm3, Assembler::AVX_128bit);
     vpxor(xmm15, xmm15, xmm15, Assembler::AVX_128bit);
 }
+#endif // _LP64
