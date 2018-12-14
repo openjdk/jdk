@@ -69,6 +69,7 @@
 #if defined(_ALLBSD_SOURCE)
   #ifndef MACOSX
     #define statvfs64 statvfs
+    #define stat64 stat
   #endif
 #endif
 
@@ -121,8 +122,8 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
 static jboolean
 statMode(const char *path, int *mode)
 {
-    struct stat sb;
-    if (stat(path, &sb) == 0) {
+    struct stat64 sb;
+    if (stat64(path, &sb) == 0) {
         *mode = sb.st_mode;
         return JNI_TRUE;
     }
@@ -229,8 +230,8 @@ Java_java_io_UnixFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat sb;
-        if (stat(path, &sb) == 0) {
+        struct stat64 sb;
+        if (stat64(path, &sb) == 0) {
 #if defined(_AIX)
             rv =  (jlong)sb.st_mtime * 1000;
             rv += (jlong)sb.st_mtime_n / 1000000;
@@ -254,8 +255,8 @@ Java_java_io_UnixFileSystem_getLength(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat sb;
-        if (stat(path, &sb) == 0) {
+        struct stat64 sb;
+        if (stat64(path, &sb) == 0) {
             rv = sb.st_size;
         }
     } END_PLATFORM_STRING(env, path);
@@ -408,9 +409,9 @@ Java_java_io_UnixFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat sb;
+        struct stat64 sb;
 
-        if (stat(path, &sb) == 0) {
+        if (stat64(path, &sb) == 0) {
             struct timeval tv[2];
 
             /* Preserve access time */
