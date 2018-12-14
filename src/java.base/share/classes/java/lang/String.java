@@ -664,7 +664,7 @@ public final class String
      *          object.
      */
     public int length() {
-        return isLatin1() ? value.length : value.length >> UTF16;
+        return value.length >> coder();
     }
 
     /**
