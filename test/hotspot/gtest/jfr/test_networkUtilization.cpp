@@ -258,7 +258,7 @@ TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionBasic) {
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(1u, MockEventNetworkUtilization::committed.size());
   MockEventNetworkUtilization& e = MockEventNetworkUtilization::committed[0];
-  EXPECT_EQ(5, e.readRate);
+  EXPECT_EQ(40, e.readRate);
   EXPECT_EQ(0, e.writeRate);
   EXPECT_STREQ("eth0", e.iface.c_str());
 }
@@ -282,16 +282,16 @@ TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionMultiple) {
   const MockEventNetworkUtilization& eth1_event = MockEventNetworkUtilization::get_committed("eth1");
   const MockEventNetworkUtilization& ppp0_event = MockEventNetworkUtilization::get_committed("ppp0");
 
-  EXPECT_EQ(5, eth0_event.readRate);
+  EXPECT_EQ(40, eth0_event.readRate);
   EXPECT_EQ(0, eth0_event.writeRate);
   EXPECT_STREQ("eth0", eth0_event.iface.c_str());
 
-  EXPECT_EQ(50, eth1_event.readRate);
+  EXPECT_EQ(400, eth1_event.readRate);
   EXPECT_EQ(0, eth1_event.writeRate);
   EXPECT_STREQ("eth1", eth1_event.iface.c_str());
 
   EXPECT_EQ(0, ppp0_event.readRate);
-  EXPECT_EQ(25, ppp0_event.writeRate);
+  EXPECT_EQ(200, ppp0_event.writeRate);
   EXPECT_STREQ("ppp0", ppp0_event.iface.c_str());
 }
 
@@ -310,11 +310,11 @@ TEST_VM_F(JfrTestNetworkUtilization, InterfaceRemoved) {
   const MockEventNetworkUtilization& eth0_event = MockEventNetworkUtilization::get_committed("eth0");
   const MockEventNetworkUtilization& eth1_event = MockEventNetworkUtilization::get_committed("eth1");
 
-  EXPECT_EQ(5, eth0_event.readRate);
+  EXPECT_EQ(40, eth0_event.readRate);
   EXPECT_EQ(0, eth0_event.writeRate);
   EXPECT_STREQ("eth0", eth0_event.iface.c_str());
 
-  EXPECT_EQ(10, eth1_event.readRate);
+  EXPECT_EQ(80, eth1_event.readRate);
   EXPECT_EQ(0, eth1_event.writeRate);
   EXPECT_STREQ("eth1", eth1_event.iface.c_str());
 
@@ -327,7 +327,7 @@ TEST_VM_F(JfrTestNetworkUtilization, InterfaceRemoved) {
   ASSERT_EQ(1u, MockEventNetworkUtilization::committed.size());
   const MockEventNetworkUtilization& eth1_event_v2 = MockEventNetworkUtilization::get_committed("eth1");
 
-  EXPECT_EQ(5, eth1_event_v2.readRate);
+  EXPECT_EQ(40, eth1_event_v2.readRate);
   EXPECT_EQ(0, eth1_event_v2.writeRate);
   EXPECT_STREQ("eth1", eth1_event_v2.iface.c_str());
 }
@@ -343,7 +343,7 @@ TEST_VM_F(JfrTestNetworkUtilization, InterfaceReset) {
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(1u, MockEventNetworkUtilization::committed.size());
   const MockEventNetworkUtilization& event = MockEventNetworkUtilization::committed[0];
-  EXPECT_EQ(5, event.readRate);
+  EXPECT_EQ(40, event.readRate);
   EXPECT_EQ(0, event.writeRate);
   EXPECT_STREQ("eth0", event.iface.c_str());
 
@@ -360,7 +360,7 @@ TEST_VM_F(JfrTestNetworkUtilization, InterfaceReset) {
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(1u, MockEventNetworkUtilization::committed.size());
   const MockEventNetworkUtilization& event_v2 = MockEventNetworkUtilization::committed[0];
-  EXPECT_EQ(5, event_v2.readRate);
+  EXPECT_EQ(40, event_v2.readRate);
   EXPECT_EQ(0, event_v2.writeRate);
   EXPECT_STREQ("eth0", event_v2.iface.c_str());
 }
