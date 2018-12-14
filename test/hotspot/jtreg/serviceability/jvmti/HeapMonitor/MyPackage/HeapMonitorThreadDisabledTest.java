@@ -27,24 +27,40 @@ package MyPackage;
 /**
  * @test
  * @build Frame HeapMonitor ThreadInformation
- * @summary Ensures the JVMTI Heap Monitor is not thread enable (test to change when it becomes so)
- * @compile HeapMonitorEventsForTwoThreadsTest.java
- * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorEventsForTwoThreadsTest
+ * @summary Verifies the JVMTI Heap Monitor Thread can disable events for a given thread.
+ * @compile HeapMonitorThreadDisabledTest.java
+ * @run main/othervm/native -Xmx512m -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadDisabledTest
  */
 
 import java.util.List;
 
-public class HeapMonitorEventsForTwoThreadsTest {
-  public native static boolean checkSamples();
+public class HeapMonitorThreadDisabledTest {
+  private native static void enableSamplingEvents(Thread thread);
+  private native static boolean checkThreadSamplesOnlyFrom(Thread thread);
 
   public static void main(String[] args) {
-    final int numThreads = 24;
+    final int numThreads = 4;
     List<ThreadInformation> threadList = ThreadInformation.createThreadList(numThreads);
 
-    Thread firstThread = threadList.get(0).getThread();
-    Thread secondThread = threadList.get(1).getThread();
-    if (HeapMonitor.enableSamplingEventsForTwoThreads(firstThread, secondThread)) {
-      throw new RuntimeException("Sampling event is thread enabled, that is unexpected.");
+    // Sample at a interval of 8k.
+    HeapMonitor.setSamplingInterval(1 << 13);
+
+    // Only enable the sampling for a given thread.
+    Thread thread = threadList.get(0).getThread();
+    enableSamplingEvents(thread);
+
+    System.err.println("Starting threads");
+    ThreadInformation.startThreads(threadList);
+    ThreadInformation.waitForThreads(threadList);
+    System.err.println("Waited for threads");
+
+    // Only have the samples for a given thread should be captured.
+    if (!checkThreadSamplesOnlyFrom(thread)) {
+      throw new RuntimeException(
+          "Problem with checkSamples: got no events from the expected thread");
     }
+
+    // Now inform each thread we are done and wait for them to be done.
+    ThreadInformation.stopThreads(threadList);
   }
 }
