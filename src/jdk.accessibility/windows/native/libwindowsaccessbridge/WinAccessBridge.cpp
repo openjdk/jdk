@@ -76,7 +76,7 @@ BOOL CALLBACK newJVMFoundDialogProc(HWND hwndDlg, UINT message, WPARAM wParam, L
 
             // Remind user later that a new JVM was installed
         case cRemindThereIsNewJVM:
-            PrintDebugString("    newJVMDialogProc: cRemindThereIsNewJVM");
+            PrintDebugString("[INFO]:    newJVMDialogProc: cRemindThereIsNewJVM");
             // do nothing
             EndDialog(hwndDlg, wParam);
             return TRUE;
@@ -130,13 +130,14 @@ extern "C" {
 
         switch (fdwReason) {
         case DLL_PROCESS_ATTACH:        // A Windows executable loaded us
-            PrintDebugString("DLL_PROCESS_ATTACH");
+            initializeFileLogger("_windows_access_bridge");
+            PrintDebugString("[INFO]: DLL_PROCESS_ATTACH");
             theWindowsAccessBridge = new WinAccessBridge(hinstDll);
             break;
 
         case DLL_PROCESS_DETACH:        // A Windows executable unloaded us
             if (theWindowsAccessBridge != (WinAccessBridge *) 0) {
-                PrintDebugString("*** AccessBridgeDialogProc -> deleting theWindowsAccessBridge");
+                PrintDebugString("[INFO]: *** AccessBridgeDialogProc -> deleting theWindowsAccessBridge");
                 delete theWindowsAccessBridge;
             }
             break;
@@ -173,15 +174,15 @@ extern "C" {
 
         switch (message) {
         case WM_INITDIALOG:
-            PrintDebugString("AccessBridgeDialogProc -> Initializing");
+            PrintDebugString("[INFO]: AccessBridgeDialogProc -> Initializing");
             break;
 
             // call from Java with data for us to deliver
         case WM_COPYDATA:
             if (theDialogWindow == (HWND) wParam) {
-                PrintDebugString("AccessBridgeDialogProc -> Got WM_COPYDATA from Java Bridge DLL");
+                PrintDebugString("[INFO]: AccessBridgeDialogProc -> Got WM_COPYDATA from Java Bridge DLL");
             } else {
-                PrintDebugString("AccessBridgeDialogProc -> Got WM_COPYDATA from HWND %p", wParam);
+                PrintDebugString("[INFO]: AccessBridgeDialogProc -> Got WM_COPYDATA from HWND %p", wParam);
                 sentToUs = (COPYDATASTRUCT *) lParam;
                 package = (char *) sentToUs->lpData;
                 theWindowsAccessBridge->preProcessPackage(package, sentToUs->cbData);
@@ -190,7 +191,7 @@ extern "C" {
 
             // message to ourselves -> de-queue messages and send 'em
         case AB_MESSAGE_QUEUED:
-            PrintDebugString("AccessBridgeDialogProc -> Got AB_MESSAGE_QUEUED from ourselves");
+            PrintDebugString("[INFO]: AccessBridgeDialogProc -> Got AB_MESSAGE_QUEUED from ourselves");
             theWindowsAccessBridge->receiveAQueuedPackage();
             break;
 
@@ -214,12 +215,12 @@ extern "C" {
             // to the message queue.  That would delay the destruction of the instance
             // until the chain is not being traversed.
         case AB_DLL_GOING_AWAY:
-            PrintDebugString("***** AccessBridgeDialogProc -> Got AB_DLL_GOING_AWAY message");
+            PrintDebugString("[INFO]: ***** AccessBridgeDialogProc -> Got AB_DLL_GOING_AWAY message");
             if (isVMInstanceChainInUse) {
-                PrintDebugString("  javaVMs chain in use, calling PostMessage");
+                PrintDebugString("[INFO]:   javaVMs chain in use, calling PostMessage");
                 PostMessage(hDlg, AB_DLL_GOING_AWAY, wParam, (LPARAM)0);
             } else {
-                PrintDebugString("  calling javaVMDestroyed");
+                PrintDebugString("[INFO]:   calling javaVMDestroyed");
                 theWindowsAccessBridge->JavaVMDestroyed((HWND) wParam);
             }
             break;
@@ -228,7 +229,7 @@ extern "C" {
             // the JavaVM is saying "hi"!
             // wParam == sourceHwnd; lParam == JavaVMID
             if (message == theFromJavaHelloMsgID) {
-                PrintDebugString("AccessBridgeDialogProc -> Got theFromJavaHelloMsgID; wParam = %p, lParam = %p", wParam, lParam);
+                PrintDebugString("[INFO]: AccessBridgeDialogProc -> Got theFromJavaHelloMsgID; wParam = %p, lParam = %p", wParam, lParam);
                 theWindowsAccessBridge->rendezvousWithNewJavaDLL((HWND) wParam, (long ) lParam);
             }
             break;
@@ -250,7 +251,7 @@ extern "C" {
  */
 WinAccessBridge::WinAccessBridge(HINSTANCE hInstance) {
 
-    PrintDebugString("WinAccessBridge ctor");
+    PrintDebugString("[INFO]: WinAccessBridge ctor");
 
     //  IntializeCriticalSection should only be called once.
     InitializeCriticalSection(&sendMemoryIPCLock);
@@ -276,25 +277,25 @@ WinAccessBridge::~WinAccessBridge() {
     //  -> shut down all event listening
     //  -> release all objects held in the JVM by us
 
-    PrintDebugString("*****in WinAccessBridge::~WinAccessBridge()");
+    PrintDebugString("[INFO]: *****in WinAccessBridge::~WinAccessBridge()");
 
     // send a broadcast msg.; let other AccessBridge DLLs know we're going away
     AccessBridgeJavaVMInstance *current = javaVMs;
     while (current != (AccessBridgeJavaVMInstance *) 0) {
-        PrintDebugString("  telling %p we're going away", current->javaAccessBridgeWindow);
+        PrintDebugString("[INFO]:   telling %p we're going away", current->javaAccessBridgeWindow);
         SendMessage(current->javaAccessBridgeWindow,
                     AB_DLL_GOING_AWAY, (WPARAM) dialogWindow, (LPARAM) 0);
         current = current->nextJVMInstance;
     }
 
-    PrintDebugString("  finished telling JVMs about our demise");
+    PrintDebugString("[INFO]:   finished telling JVMs about our demise");
 
     delete eventHandler;
     delete messageQueue;
     delete javaVMs;
 
-    PrintDebugString("  finished deleting eventHandler, messageQueue, and javaVMs");
-    PrintDebugString("GOODBYE CRUEL WORLD...");
+    PrintDebugString("[INFO]:   finished deleting eventHandler, messageQueue, and javaVMs");
+    PrintDebugString("[INFO]: GOODBYE CRUEL WORLD...");
 
     DestroyWindow(theDialogWindow);
 }
@@ -338,7 +339,7 @@ LRESULT
 WinAccessBridge::rendezvousWithNewJavaDLL(HWND JavaBridgeDLLwindow, long vmID) {
     LRESULT returnVal;
 
-    PrintDebugString("in WinAccessBridge::rendezvousWithNewJavaDLL(%p, %X)",
+    PrintDebugString("[INFO]: in WinAccessBridge::rendezvousWithNewJavaDLL(%p, %X)",
                      JavaBridgeDLLwindow, vmID);
 
     isVMInstanceChainInUse = true;
@@ -354,23 +355,23 @@ WinAccessBridge::rendezvousWithNewJavaDLL(HWND JavaBridgeDLLwindow, long vmID) {
         long javaEventMask = eventHandler->getJavaEventMask();
         long accessibilityEventMask = eventHandler->getAccessibilityEventMask();
 
-        PrintDebugString("  Setting Java event mask to: %X", javaEventMask);
+        PrintDebugString("[INFO]:   Setting Java event mask to: %X", javaEventMask);
 
         if (javaEventMask != 0) {
             addJavaEventNotification(javaEventMask);
         }
 
-        PrintDebugString("  Setting Accessibility event mask to: %X", accessibilityEventMask);
+        PrintDebugString("[INFO]:   Setting Accessibility event mask to: %X", accessibilityEventMask);
 
         if (accessibilityEventMask != 0) {
             addAccessibilityEventNotification(accessibilityEventMask);
         }
     } else {
-        PrintDebugString("  ERROR: Failed to initiate IPC with newly created JavaVM!!!");
+        PrintDebugString("[ERROR]: Failed to initiate IPC with newly created JavaVM!!!");
         return FALSE;
     }
 
-    PrintDebugString("  Success!!  We rendezvoused with the JavaDLL");
+    PrintDebugString("[INFO]:   Success!!  We rendezvoused with the JavaDLL");
     return returnVal;
 }
 
@@ -421,7 +422,7 @@ WinAccessBridge::sendMemoryPackage(char *buffer, long bufsize, HWND destWindow) 
             return FALSE;
         }
     } else {
-        PrintDebugString("ERROR sending memory package: couldn't find destWindow");
+        PrintDebugString("[ERROR]: sending memory package: couldn't find destWindow");
         return FALSE;
     }
     return TRUE;
@@ -434,7 +435,7 @@ WinAccessBridge::sendMemoryPackage(char *buffer, long bufsize, HWND destWindow) 
  */
 BOOL
 WinAccessBridge::queuePackage(char *buffer, long bufsize) {
-    PrintDebugString("  in WinAccessBridge::queuePackage(%p, %d)", buffer, bufsize);
+    PrintDebugString("[INFO]:  in WinAccessBridge::queuePackage(%p, %d)", buffer, bufsize);
 
     AccessBridgeQueueElement *element = new AccessBridgeQueueElement(buffer, bufsize);
 
@@ -454,37 +455,37 @@ BOOL
 WinAccessBridge::receiveAQueuedPackage() {
     AccessBridgeQueueElement *element = NULL;
 
-    PrintDebugString("in WinAccessBridge::receiveAQueuedPackage()");
+    PrintDebugString("[INFO]: in WinAccessBridge::receiveAQueuedPackage()");
 
     // ensure against re-entrancy problems...
     if (messageQueue->getRemoveLockSetting() == FALSE) {
         messageQueue->setRemoveLock(TRUE);
 
-        PrintDebugString("  dequeueing message");
+        PrintDebugString("[INFO]:  dequeueing message");
 
         QueueReturns result = messageQueue->remove(&element);
 
         switch (result) {
 
         case cQueueBroken:
-            PrintDebugString("  ERROR!!! Queue seems to be broken!");
+            PrintDebugString("[ERROR]: Queue seems to be broken!");
             messageQueue->setRemoveLock(FALSE);
             return FALSE;
 
         case cMoreMessages:
         case cQueueEmpty:
             if (element != (AccessBridgeQueueElement *) 0) {
-                PrintDebugString("  found one; sending it!");
+                PrintDebugString("[INFO]:  found one; sending it!");
                 processPackage(element->buffer, element->bufsize);
                 delete element;
             } else {
-                PrintDebugString("  ODD... element == 0!");
+                PrintDebugString("[WARN]:   ODD... element == 0!");
                 return FALSE;
             }
             break;
 
         case cQueueInUse:
-            PrintDebugString("  Queue in use, will try again later...");
+            PrintDebugString("[WARN]:  Queue in use, will try again later...");
             PostMessage(dialogWindow, AB_MESSAGE_QUEUED, (WPARAM) 0, (LPARAM) 0);
             break;
 
@@ -493,7 +494,7 @@ WinAccessBridge::receiveAQueuedPackage() {
             return FALSE;       // should never get something we don't recognize!
         }
     } else {
-        PrintDebugString("  unable to dequeue message; remove lock is set");
+        PrintDebugString("[WARN]:  unable to dequeue message; remove lock is set");
         PostMessage(dialogWindow, AB_MESSAGE_QUEUED, (WPARAM) 0, (LPARAM) 0); // Fix for 6995891
     }
 
@@ -510,13 +511,13 @@ WinAccessBridge::receiveAQueuedPackage() {
  */
 void
 WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
-    PrintDebugString("PreProcessing package sent from Java:");
+    PrintDebugString("[INFO]: PreProcessing package sent from Java:");
 
     PackageType *type = (PackageType *) buffer;
 
     switch (*type) {
 
-    PrintDebugString("   type == %X", *type);
+    PrintDebugString("[INFO]:    type == %X", *type);
 
     // event packages all get queued for later handling
     //case cPropertyChangePackage:
@@ -555,11 +556,11 @@ WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
         // perhaps there will be some other packages to process at some point... //
 
     default:
-        PrintDebugString("   processing FAILED!! -> don't know how to handle type = %X", *type);
+        PrintDebugString("[ERROR]:   processing FAILED!! -> don't know how to handle type = %X", *type);
         break;
     }
 
-    PrintDebugString("   package preprocessing completed");
+    PrintDebugString("[INFO]:    package preprocessing completed");
 }
 
 
@@ -568,12 +569,12 @@ WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
         if (bufsize == sizeof(PackageType) + sizeof(eventPackage)) {                \
             eventPackage *pkg =                                                     \
                 (eventPackage *) (buffer + sizeof(PackageType));                    \
-            PrintDebugString("   begin callback to AT, type == %X", *type);         \
+            PrintDebugString("[INFO]:    begin callback to AT, type == %X", *type);         \
                 theWindowsAccessBridge->eventHandler->fireEventMethod(              \
                     pkg->vmID, pkg->Event, pkg->AccessibleContextSource);           \
-                PrintDebugString("   event callback complete!");                    \
+                PrintDebugString("[INFO]:    event callback complete!");                    \
         } else {                                                                    \
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d", \
+            PrintDebugString("[ERROR]:   processing FAILED!! -> bufsize = %d; expectation = %d", \
                 bufsize, sizeof(PackageType) + sizeof(eventPackage));               \
         }                                                                           \
         break;
@@ -583,13 +584,13 @@ WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
         if (bufsize == sizeof(PackageType) + sizeof(eventPackage)) {                \
             eventPackage *pkg =                                                     \
                 (eventPackage *) (buffer + sizeof(PackageType));                    \
-            PrintDebugString("   begin callback to AT, type == %X", *type);         \
+            PrintDebugString("[INFO]:    begin callback to AT, type == %X", *type);         \
             theWindowsAccessBridge->eventHandler->fireEventMethod(                  \
                 pkg->vmID, pkg->Event, pkg->AccessibleContextSource,                \
                 pkg->oldValue, pkg->newValue);                                      \
-            PrintDebugString("   event callback complete!");                        \
+            PrintDebugString("[INFO]:    event callback complete!");                        \
         } else {                                                                    \
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d", \
+            PrintDebugString("[ERROR]:   processing FAILED!! -> bufsize = %d; expectation = %d", \
                 bufsize, sizeof(PackageType) + sizeof(eventPackage));               \
         }                                                                           \
         break;
@@ -599,13 +600,13 @@ WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
         if (bufsize == sizeof(PackageType) + sizeof(eventPackage)) {                \
             eventPackage *pkg =                                                     \
                 (eventPackage *) (buffer + sizeof(PackageType));                    \
-            PrintDebugString("   begin callback to AT, type == %X", *type);         \
+            PrintDebugString("[INFO]:    begin callback to AT, type == %X", *type);         \
             theWindowsAccessBridge->eventHandler->fireEventMethod(                  \
                 pkg->vmID, pkg->Event, pkg->AccessibleContextSource,                \
                 pkg->oldValue, pkg->newValue);                                      \
-            PrintDebugString("   event callback complete!");                        \
+            PrintDebugString("[INFO]:    event callback complete!");                        \
         } else {                                                                    \
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d", \
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d", \
                 bufsize, sizeof(PackageType) + sizeof(eventPackage));                \
         }                                                                            \
         break;
@@ -617,24 +618,24 @@ WinAccessBridge::preProcessPackage(char *buffer, long bufsize) {
  */
 void
 WinAccessBridge::processPackage(char *buffer, long bufsize) {
-    PrintDebugString("WinAccessBridge::Processing package sent from Java:");
+    PrintDebugString("[INFO]: WinAccessBridge::Processing package sent from Java:");
 
     PackageType *type = (PackageType *) buffer;
 
     switch (*type) {
 
-    PrintDebugString("   type == %X", *type);
+    PrintDebugString("[INFO]:    type == %X", *type);
 
     case cJavaShutdownPackage:
-        PrintDebugString("   type == cJavaShutdownPackage");
+        PrintDebugString("[INFO]:    type == cJavaShutdownPackage");
         if (bufsize == sizeof(PackageType) + sizeof(JavaShutdownPackage)) {
             JavaShutdownPackage *pkg =
                 (JavaShutdownPackage *) (buffer + sizeof(PackageType));
             theWindowsAccessBridge->eventHandler->fireJavaShutdown(pkg->vmID);
-            PrintDebugString("   event callback complete!");
-            PrintDebugString("   event fired!");
+            PrintDebugString("[INFO]:    event callback complete!");
+            PrintDebugString("[INFO]:    event fired!");
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(JavaShutdownPackage));
         }
         break;
@@ -698,11 +699,11 @@ WinAccessBridge::processPackage(char *buffer, long bufsize) {
 
 
             default:
-        PrintDebugString("   processing FAILED!! -> don't know how to handle type = %X", *type);
+        PrintDebugString("[ERROR]:    processing FAILED!! -> don't know how to handle type = %X", *type);
         break;
     }
 
-    PrintDebugString("   package processing completed");
+    PrintDebugString("[INFO]:    package processing completed");
 }
 
 
@@ -710,7 +711,7 @@ WinAccessBridge::processPackage(char *buffer, long bufsize) {
 
 void
 WinAccessBridge::JavaVMDestroyed(HWND VMBridgeDLLWindow) {
-    PrintDebugString("***** WinAccessBridge::JavaVMDestroyed(%p)", VMBridgeDLLWindow);
+    PrintDebugString("[INFO]: ***** WinAccessBridge::JavaVMDestroyed(%p)", VMBridgeDLLWindow);
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
@@ -723,7 +724,7 @@ WinAccessBridge::JavaVMDestroyed(HWND VMBridgeDLLWindow) {
         javaVMs = javaVMs->nextJVMInstance;
         delete currentVM;
 
-        PrintDebugString("  data structures successfully removed");
+        PrintDebugString("[INFO]:   data structures successfully removed");
 
         // [[[FIXME]]] inform Windows AT that a JVM went away,
         // and that any jobjects it's got lying around for that JVM
@@ -735,7 +736,7 @@ WinAccessBridge::JavaVMDestroyed(HWND VMBridgeDLLWindow) {
                 previousVM->nextJVMInstance = currentVM->nextJVMInstance;
                 delete currentVM;
 
-                PrintDebugString("  data structures successfully removed");
+                PrintDebugString("[INFO]:   data structures successfully removed");
 
                 // [[[FIXME]]] inform Windows AT that a JVM went away,
                 // and that any jobjects it's got lying around for that JVM
@@ -747,7 +748,7 @@ WinAccessBridge::JavaVMDestroyed(HWND VMBridgeDLLWindow) {
                 currentVM = currentVM->nextJVMInstance;
             }
         }
-        PrintDebugString("  ERROR!! couldn't find matching data structures!");
+        PrintDebugString("[ERROR]: couldn't find matching data structures!");
     }
     isVMInstanceChainInUse = false;
 }
@@ -765,9 +766,9 @@ WinAccessBridge::JavaVMDestroyed(HWND VMBridgeDLLWindow) {
 void
 WinAccessBridge::releaseJavaObject(long vmID, JOBJECT64 object) {
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::releaseJavaObject(%X, %p)", vmID, object);
+    PrintDebugString("[INFO]: WinAccessBridge::releaseJavaObject(%X, %p)", vmID, object);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::releaseJavaObject(%X, %016I64X)", vmID, object);
+    PrintDebugString("[INFO]: WinAccessBridge::releaseJavaObject(%X, %016I64X)", vmID, object);
 #endif
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
@@ -802,15 +803,16 @@ WinAccessBridge::getVersionInfo(long vmID, AccessBridgeVersionInfo *info) {
     *type = cGetAccessBridgeVersionPackage;
     pkg->vmID = vmID;
 
-    PrintDebugString("WinAccessBridge::getVersionInfo(%X, )", vmID);
+    PrintDebugString("[INFO]: WinAccessBridge::getVersionInfo(%X, )", vmID);
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(info, &(pkg->rVersionInfo), sizeof(AccessBridgeVersionInfo));
-            PrintDebugString("  VMversion: %ls", info->VMversion);
-            PrintDebugString("  bridgeJavaClassVersion: %ls", info->bridgeJavaClassVersion);
-            PrintDebugString("  bridgeJavaDLLVersion: %ls", info->bridgeJavaDLLVersion);
-            PrintDebugString("  bridgeWinDLLVersion: %ls", info->bridgeWinDLLVersion);
+            PrintDebugString("[INFO]:   VMversion: %ls\n"\
+                             "          bridgeJavaClassVersion: %ls\n"\
+                             "          bridgeJavaDLLVersion: %ls\n"\
+                             "          bridgeWinDLLVersion: %ls\n"\
+            , info->VMversion, info->bridgeJavaClassVersion, info->bridgeJavaDLLVersion, info->bridgeWinDLLVersion);
             return TRUE;
         }
     }
@@ -843,7 +845,7 @@ WinAccessBridge::isJavaWindow(HWND window) {
         return FALSE;
     }
 
-    PrintDebugString("In WinAccessBridge::isJavaWindow");
+    PrintDebugString("[INFO]: In WinAccessBridge::isJavaWindow");
 
 
 
@@ -853,7 +855,7 @@ WinAccessBridge::isJavaWindow(HWND window) {
     *type = cIsJavaWindowPackage;
     pkg->window = (jint) window;
 
-    PrintDebugString("WinAccessBridge::isJavaWindow(%p)", window);
+    PrintDebugString("[INFO]: WinAccessBridge::isJavaWindow(%p)", window);
 
     isVMInstanceChainInUse = true;
     AccessBridgeJavaVMInstance *current = javaVMs;
@@ -908,9 +910,9 @@ BOOL
 WinAccessBridge::isSameObject(long vmID, JOBJECT64 obj1, JOBJECT64 obj2) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::isSameObject(%p %p)", obj1, obj2);
+    PrintDebugString("[INFO]: WinAccessBridge::isSameObject(%p %p)", obj1, obj2);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::isSameObject(%016I64X %016I64X)", obj1, obj2);
+    PrintDebugString("[INFO]: WinAccessBridge::isSameObject(%016I64X %016I64X)", obj1, obj2);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -928,14 +930,14 @@ WinAccessBridge::isSameObject(long vmID, JOBJECT64 obj1, JOBJECT64 obj2) {
     HWND destABWindow = javaVMs->findAccessBridgeWindow(pkg->vmID);
     if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
         if (pkg->rResult != 0) {
-            PrintDebugString("  WinAccessBridge::isSameObject returning TRUE (same object)");
+            PrintDebugString("[INFO]:   WinAccessBridge::isSameObject returning TRUE (same object)");
             return TRUE;
         } else {
-            PrintDebugString("  WinAccessBridge::isSameObject returning FALSE (different object)");
+            PrintDebugString("[INFO]:   WinAccessBridge::isSameObject returning FALSE (different object)");
             return FALSE;
         }
     }
-    PrintDebugString("  WinAccessBridge::isSameObject returning FALSE (sendMemoryPackage failed)");
+    PrintDebugString("[ERROR]:   WinAccessBridge::isSameObject returning FALSE (sendMemoryPackage failed)");
     return FALSE;
 }
 
@@ -958,7 +960,7 @@ WinAccessBridge::getAccessibleContextFromHWND(HWND window, long *vmID, JOBJECT64
     *type = cGetAccessibleContextFromHWNDPackage;
     pkg->window = (jint) window;
 
-    PrintDebugString("WinAccessBridge::getAccessibleContextFromHWND(%p, )", window);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleContextFromHWND(%p, )", window);
 
     DEBUG_CODE(pkg->rVMID = (long ) 0x01010101);
     DEBUG_CODE(pkg->rAccessibleContext = (JOBJECT64) 0x01010101);
@@ -971,15 +973,14 @@ WinAccessBridge::getAccessibleContextFromHWND(HWND window, long *vmID, JOBJECT64
             if (pkg->rAccessibleContext != 0) {
                 *vmID = pkg->rVMID;
                 *AccessibleContext = (JOBJECT64)pkg->rAccessibleContext;
-                PrintDebugString("    current->vmID = %X", current->vmID);
-                PrintDebugString("    pkg->rVMID = %X", pkg->rVMID);
+                PrintDebugString("[INFO]:     current->vmID = %X, pkg->rVMID = %X", current->vmID, pkg->rVMID);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-                PrintDebugString("    pkg->rAccessibleContext = %p", pkg->rAccessibleContext);
+                PrintDebugString("[INFO]:     pkg->rAccessibleContext = %p", pkg->rAccessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-                PrintDebugString("    pkg->rAccessibleContext = %016I64X", pkg->rAccessibleContext);
+                PrintDebugString("[INFO]:     pkg->rAccessibleContext = %016I64X", pkg->rAccessibleContext);
 #endif
                 if (pkg->rVMID != current->vmID) {
-                    PrintDebugString("    ERROR! getAccessibleContextFromHWND vmIDs don't match!");
+                    PrintDebugString("[ERROR]: getAccessibleContextFromHWND vmIDs don't match!");
                     isVMInstanceChainInUse = false;
                     return FALSE;
                 }
@@ -994,7 +995,7 @@ WinAccessBridge::getAccessibleContextFromHWND(HWND window, long *vmID, JOBJECT64
     // This isn't really an error; it just means that the HWND was for a non-Java
     // window.  It's also possible the HWND was for a Java window but the JVM has
     // since been shut down and sendMemoryPackage returned FALSE.
-    PrintDebugString("    ERROR! getAccessibleContextFromHWND no matching HWND found!");
+    PrintDebugString("[ERROR]: getAccessibleContextFromHWND no matching HWND found!");
     return FALSE;
 }
 
@@ -1003,7 +1004,7 @@ WinAccessBridge::getAccessibleContextFromHWND(HWND window, long *vmID, JOBJECT64
  */
 HWND
 WinAccessBridge::getHWNDFromAccessibleContext(long vmID, JOBJECT64 accessibleContext) {
-    PrintDebugString("  in WinAccessBridge::getHWNDFromAccessibleContext");
+    PrintDebugString("[INFO]:   in WinAccessBridge::getHWNDFromAccessibleContext");
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return (HWND)0;
     }
@@ -1015,9 +1016,9 @@ WinAccessBridge::getHWNDFromAccessibleContext(long vmID, JOBJECT64 accessibleCon
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getHWNDFromAccessibleContext(%p)", accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getHWNDFromAccessibleContext(%p)", accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getHWNDFromAccessibleContext(%016I64X)", accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getHWNDFromAccessibleContext(%016I64X)", accessibleContext);
 #endif
 
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -1081,7 +1082,7 @@ WinAccessBridge::getAccessibleContextAt(long vmID, JOBJECT64 AccessibleContextPa
     pkg->x = x;
     pkg->y = y;
 
-    PrintDebugString("WinAccessBridge::getAccessibleContextAt(%X, %p, %d, %c)", vmID, AccessibleContextParent, x, y);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleContextAt(%X, %p, %d, %c)", vmID, AccessibleContextParent, x, y);
     HWND destABWindow = javaVMs->findAccessBridgeWindow(pkg->vmID);
     if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
         *AccessibleContext = pkg->rAccessibleContext;
@@ -1114,7 +1115,7 @@ WinAccessBridge::getAccessibleContextWithFocus(HWND window, long *vmID, JOBJECT6
     GetAccessibleContextWithFocusPackage *pkg = (GetAccessibleContextWithFocusPackage *) (buffer + sizeof(PackageType));
     *type = cGetAccessibleContextWithFocusPackage;
 
-    PrintDebugString("WinAccessBridge::getAccessibleContextWithFocus(%p, %X, )", window, vmID);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleContextWithFocus(%p, %X, )", window, vmID);
     // find vmID, etc. from HWND; ask that VM for the AC w/Focus
     HWND pkgVMID;
     if (getAccessibleContextFromHWND(window, (long *)&(pkgVMID), &(pkg->rAccessibleContext)) == TRUE) {
@@ -1151,21 +1152,22 @@ WinAccessBridge::getAccessibleContextInfo(long vmID,
     pkg->AccessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleContextInfo(%X, %p, )", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleContextInfo(%X, %p, )", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleContextInfo(%X, %016I64X, )", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleContextInfo(%X, %016I64X, )", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(info, &(pkg->rAccessibleContextInfo), sizeof(AccessibleContextInfo));
-            PrintDebugString("  name: %ls", info->name);
-            PrintDebugString("  description: %ls", info->description);
-            PrintDebugString("  role: %ls", info->role);
-            PrintDebugString("  role_en_US: %ls", info->role_en_US);
-            PrintDebugString("  states: %ls", info->states);
-            PrintDebugString("  states_en_US: %ls", info->states_en_US);
+            PrintDebugString("[INFO]:   name: %ls\n"\
+                             "          description: %ls\n"\
+                             "          role: %ls\n"\
+                             "          role_en_US: %ls\n"\
+                             "          states: %ls\n"\
+                             "          states_en_US: %ls\n"\
+            , info->name, info->description, info->role, info->role_en_US, info->states, info->states_en_US);
             return TRUE;
         }
     }
@@ -1200,9 +1202,9 @@ WinAccessBridge::getAccessibleChildFromContext(long vmID,
     pkg->childIndex = childIndex;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleChildFromContext(%X, %p, %d)", vmID, AccessibleContext, childIndex);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleChildFromContext(%X, %p, %d)", vmID, AccessibleContext, childIndex);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleChildFromContext(%X, %016I64X, %d)", vmID, AccessibleContext, childIndex);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleChildFromContext(%X, %016I64X, %d)", vmID, AccessibleContext, childIndex);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -1235,7 +1237,7 @@ WinAccessBridge::getAccessibleParentFromContext(long vmID,
     pkg->vmID = vmID;
     pkg->AccessibleContext = AccessibleContext;
 
-    PrintDebugString("WinAccessBridge::getAccessibleParentFromContext(%X, %p)", vmID, AccessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleParentFromContext(%X, %p)", vmID, AccessibleContext);
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
@@ -1255,10 +1257,10 @@ WinAccessBridge::getAccessibleTableInfo(long vmID,
                                         AccessibleTableInfo *tableInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableInfo(%X, %p, %p)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableInfo(%X, %p, %p)", vmID, accessibleContext,
                      tableInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableInfo(%X, %016I64X, %p)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableInfo(%X, %016I64X, %p)", vmID, accessibleContext,
                      tableInfo);
 #endif
 
@@ -1278,12 +1280,12 @@ WinAccessBridge::getAccessibleTableInfo(long vmID,
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(tableInfo, &(pkg->rTableInfo), sizeof(AccessibleTableInfo));
             if (pkg->rTableInfo.rowCount != -1) {
-                PrintDebugString("  ##### WinAccessBridge::getAccessibleTableInfo succeeded");
+                PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableInfo succeeded");
                 return TRUE;
             }
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableInfo failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableInfo failed");
     return FALSE;
 }
 
@@ -1292,7 +1294,7 @@ WinAccessBridge::getAccessibleTableCellInfo(long vmID, JOBJECT64 accessibleTable
                                             jint row, jint column,
                                             AccessibleTableCellInfo *tableCellInfo) {
 
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableCellInfo(%X, %p, %d, %d, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableCellInfo(%X, %p, %d, %d, %p)", vmID,
                      accessibleTable, row, column, tableCellInfo);
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1311,13 +1313,13 @@ WinAccessBridge::getAccessibleTableCellInfo(long vmID, JOBJECT64 accessibleTable
 
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  XXXX pkg->rTableCellInfo.accessibleContext = %p", pkg->rTableCellInfo.accessibleContext);
+            PrintDebugString("[INFO]:   XXXX pkg->rTableCellInfo.accessibleContext = %p", pkg->rTableCellInfo.accessibleContext);
             memcpy(tableCellInfo, &(pkg->rTableCellInfo), sizeof(AccessibleTableCellInfo));
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableCellInfo succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableCellInfo succeeded");
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableCellInfo failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableCellInfo failed");
     return FALSE;
 }
 
@@ -1326,9 +1328,9 @@ BOOL
 WinAccessBridge::getAccessibleTableRowHeader(long vmID, JOBJECT64 accessibleContext, AccessibleTableInfo *tableInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowHeader(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowHeader(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowHeader(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowHeader(%X, %016I64X)", vmID, accessibleContext);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1345,12 +1347,12 @@ WinAccessBridge::getAccessibleTableRowHeader(long vmID, JOBJECT64 accessibleCont
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowHeader succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableRowHeader succeeded");
             memcpy(tableInfo, &(pkg->rTableInfo), sizeof(AccessibleTableInfo));
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowHeader failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableRowHeader failed");
     return FALSE;
 }
 
@@ -1358,9 +1360,9 @@ BOOL
 WinAccessBridge::getAccessibleTableColumnHeader(long vmID, JOBJECT64 accessibleContext, AccessibleTableInfo *tableInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnHeader(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnHeader(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnHeader(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnHeader(%X, %016I64X)", vmID, accessibleContext);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1377,12 +1379,12 @@ WinAccessBridge::getAccessibleTableColumnHeader(long vmID, JOBJECT64 accessibleC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnHeader succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableColumnHeader succeeded");
             memcpy(tableInfo, &(pkg->rTableInfo), sizeof(AccessibleTableInfo));
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnHeader failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableColumnHeader failed");
     return FALSE;
 }
 
@@ -1392,10 +1394,10 @@ WinAccessBridge::getAccessibleTableRowDescription(long vmID,
                                                   jint row) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowDescription(%X, %p, %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowDescription(%X, %p, %d)", vmID, accessibleContext,
                      row);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowDescription(%X, %016I64X, %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowDescription(%X, %016I64X, %d)", vmID, accessibleContext,
                      row);
 #endif
 
@@ -1414,11 +1416,11 @@ WinAccessBridge::getAccessibleTableRowDescription(long vmID,
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowDescription succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableRowDescription succeeded");
             return pkg->rAccessibleContext;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowDescription failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableRowDescription failed");
     return (JOBJECT64)0;
 }
 
@@ -1428,10 +1430,10 @@ WinAccessBridge::getAccessibleTableColumnDescription(long vmID,
                                                      jint column) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnDescription(%X, %p, %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnDescription(%X, %p, %d)", vmID, accessibleContext,
                      column);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnDescription(%X, %016I64X, %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnDescription(%X, %016I64X, %d)", vmID, accessibleContext,
                      column);
 #endif
 
@@ -1451,11 +1453,11 @@ WinAccessBridge::getAccessibleTableColumnDescription(long vmID,
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnDescription succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableColumnDescription succeeded");
             return pkg->rAccessibleContext;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnDescription failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableColumnDescription failed");
     return (JOBJECT64)0;
 }
 
@@ -1463,9 +1465,9 @@ jint
 WinAccessBridge::getAccessibleTableRowSelectionCount(long vmID, JOBJECT64 accessibleTable) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowSelectionCount(%X, %p)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowSelectionCount(%X, %p)", vmID, accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowSelectionCount(%X, %016I64X)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowSelectionCount(%X, %016I64X)", vmID, accessibleTable);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1483,11 +1485,11 @@ WinAccessBridge::getAccessibleTableRowSelectionCount(long vmID, JOBJECT64 access
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowSelectionCount succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableRowSelectionCount succeeded");
             return pkg->rCount;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowSelectionCount failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableRowSelectionCount failed");
     return 0;
 }
 
@@ -1495,9 +1497,9 @@ BOOL
 WinAccessBridge::isAccessibleTableRowSelected(long vmID, JOBJECT64 accessibleTable, jint row) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::isAccessibleTableRowSelected(%X, %p)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::isAccessibleTableRowSelected(%X, %p)", vmID, accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::isAccessibleTableRowSelected(%X, %016I64X)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::isAccessibleTableRowSelected(%X, %016I64X)", vmID, accessibleTable);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1515,11 +1517,11 @@ WinAccessBridge::isAccessibleTableRowSelected(long vmID, JOBJECT64 accessibleTab
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::isAccessibleTableRowSelected succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::isAccessibleTableRowSelected succeeded");
             return pkg->rResult;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::isAccessibleTableRowSelected failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::isAccessibleTableRowSelected failed");
     return FALSE;
 }
 
@@ -1527,9 +1529,9 @@ BOOL
 WinAccessBridge::getAccessibleTableRowSelections(long vmID, JOBJECT64 accessibleTable, jint count, jint *selections) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowSelections(%X, %p)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowSelections(%X, %p)", vmID, accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRowSelections(%X, %016I64X)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRowSelections(%X, %016I64X)", vmID, accessibleTable);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1548,12 +1550,12 @@ WinAccessBridge::getAccessibleTableRowSelections(long vmID, JOBJECT64 accessible
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowSelections succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableRowSelections succeeded");
             memcpy(selections, pkg->rSelections, count * sizeof(jint));
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRowSelections failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableRowSelections failed");
     return FALSE;
 }
 
@@ -1562,10 +1564,10 @@ jint
 WinAccessBridge::getAccessibleTableColumnSelectionCount(long vmID, JOBJECT64 accessibleTable) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnSelectionCount(%X, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnSelectionCount(%X, %p)", vmID,
                      accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnSelectionCount(%X, %016I64X)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnSelectionCount(%X, %016I64X)", vmID,
                      accessibleTable);
 #endif
 
@@ -1584,20 +1586,20 @@ WinAccessBridge::getAccessibleTableColumnSelectionCount(long vmID, JOBJECT64 acc
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnSelectionCount succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableColumnSelectionCount succeeded");
             return pkg->rCount;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnSelectionCount failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableColumnSelectionCount failed");
     return 0;
 }
 
 BOOL
 WinAccessBridge::isAccessibleTableColumnSelected(long vmID, JOBJECT64 accessibleTable, jint column) {
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::isAccessibleTableColumnSelected(%X, %p)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::isAccessibleTableColumnSelected(%X, %p)", vmID, accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::isAccessibleTableColumnSelected(%X, %016I64X)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::isAccessibleTableColumnSelected(%X, %016I64X)", vmID, accessibleTable);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1615,11 +1617,11 @@ WinAccessBridge::isAccessibleTableColumnSelected(long vmID, JOBJECT64 accessible
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::isAccessibleTableColumnSelected succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::isAccessibleTableColumnSelected succeeded");
             return pkg->rResult;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::isAccessibleTableColumnSelected failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::isAccessibleTableColumnSelected failed");
     return FALSE;
 }
 
@@ -1628,9 +1630,9 @@ WinAccessBridge::getAccessibleTableColumnSelections(long vmID, JOBJECT64 accessi
                                                     jint *selections) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnSelections(%X, %p)", vmID, accessibleTable);
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumnSelections(%X, %p)", vmID, accessibleTable);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumnSelections(%X, %016I64X)", vmID, accessibleTable);
+    PrintDebugString("[ERROR]: ##### WinAccessBridge::getAccessibleTableColumnSelections(%X, %016I64X)", vmID, accessibleTable);
 #endif
 
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
@@ -1649,12 +1651,12 @@ WinAccessBridge::getAccessibleTableColumnSelections(long vmID, JOBJECT64 accessi
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnSelections succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableColumnSelections succeeded");
             memcpy(selections, pkg->rSelections, count * sizeof(jint));
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumnSelections failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableColumnSelections failed");
     return FALSE;
 }
 
@@ -1662,10 +1664,10 @@ jint
 WinAccessBridge::getAccessibleTableRow(long vmID, JOBJECT64 accessibleTable, jint index) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRow(%X, %p, index=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRow(%X, %p, index=%d)", vmID,
                      accessibleTable, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableRow(%X, %016I64X, index=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableRow(%X, %016I64X, index=%d)", vmID,
                      accessibleTable, index);
 #endif
 
@@ -1685,11 +1687,11 @@ WinAccessBridge::getAccessibleTableRow(long vmID, JOBJECT64 accessibleTable, jin
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRow succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableRow succeeded");
             return pkg->rRow;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableRow failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableRow failed");
     return 0;
 }
 
@@ -1697,10 +1699,10 @@ jint
 WinAccessBridge::getAccessibleTableColumn(long vmID, JOBJECT64 accessibleTable, jint index) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumn(%X, %p, index=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumn(%X, %p, index=%d)", vmID,
                      accessibleTable, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableColumn(%X, %016I64X, index=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableColumn(%X, %016I64X, index=%d)", vmID,
                      accessibleTable, index);
 #endif
 
@@ -1720,11 +1722,11 @@ WinAccessBridge::getAccessibleTableColumn(long vmID, JOBJECT64 accessibleTable, 
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumn succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableColumn succeeded");
             return pkg->rColumn;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableColumn failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableColumn failed");
     return 0;
 }
 
@@ -1732,10 +1734,10 @@ jint
 WinAccessBridge::getAccessibleTableIndex(long vmID, JOBJECT64 accessibleTable, jint row, jint column) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableIndex(%X, %p, row=%d, col=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableIndex(%X, %p, row=%d, col=%d)", vmID,
                      accessibleTable, row, column);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleTableIndex(%X, %016I64X, row=%d, col=%d)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleTableIndex(%X, %016I64X, row=%d, col=%d)", vmID,
                      accessibleTable, row, column);
 #endif
 
@@ -1756,11 +1758,11 @@ WinAccessBridge::getAccessibleTableIndex(long vmID, JOBJECT64 accessibleTable, j
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleTableIndex succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleTableIndex succeeded");
             return pkg->rIndex;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleTableIndex failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleTableIndex failed");
     return 0;
 }
 
@@ -1771,10 +1773,10 @@ WinAccessBridge::getAccessibleRelationSet(long vmID, JOBJECT64 accessibleContext
                                           AccessibleRelationSetInfo *relationSetInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleRelationSet(%X, %p, %X)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleRelationSet(%X, %p, %X)", vmID,
                      accessibleContext, relationSetInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleRelationSet(%X, %016I64X, %X)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleRelationSet(%X, %016I64X, %X)", vmID,
                      accessibleContext, relationSetInfo);
 #endif
 
@@ -1792,14 +1794,14 @@ WinAccessBridge::getAccessibleRelationSet(long vmID, JOBJECT64 accessibleContext
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### pkg->rAccessibleRelationSetInfo.relationCount = %X",
+            PrintDebugString("[INFO]:   ##### pkg->rAccessibleRelationSetInfo.relationCount = %X",
                              pkg->rAccessibleRelationSetInfo.relationCount);
             memcpy(relationSetInfo, &(pkg->rAccessibleRelationSetInfo), sizeof(AccessibleRelationSetInfo));
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleRelationSet succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleRelationSet succeeded");
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleRelationSet failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleRelationSet failed");
     return FALSE;
 }
 
@@ -1811,10 +1813,10 @@ WinAccessBridge::getAccessibleHypertext(long vmID, JOBJECT64 accessibleContext,
                                         AccessibleHypertextInfo *hypertextInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertext(%X, %p, %X)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertext(%X, %p, %X)", vmID,
                      accessibleContext, hypertextInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertext(%X, %016I64X, %X)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertext(%X, %016I64X, %X)", vmID,
                      accessibleContext, hypertextInfo);
 #endif
 
@@ -1834,13 +1836,13 @@ WinAccessBridge::getAccessibleHypertext(long vmID, JOBJECT64 accessibleContext,
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(hypertextInfo, &(pkg->rAccessibleHypertextInfo), sizeof(AccessibleHypertextInfo));
 
-            PrintDebugString("  ##### hypertextInfo.linkCount = %d", hypertextInfo->linkCount);
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertext succeeded");
+            PrintDebugString("[INFO]:   ##### hypertextInfo.linkCount = %d", hypertextInfo->linkCount);
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleHypertext succeeded");
 
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertext failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleHypertext failed");
     return FALSE;
 }
 
@@ -1850,10 +1852,10 @@ WinAccessBridge::activateAccessibleHyperlink(long vmID, JOBJECT64 accessibleCont
                                              JOBJECT64 accessibleHyperlink) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::activateAccessibleHyperlink(%p %p)", accessibleContext,
+    PrintDebugString("[INFO]: WinAccessBridge::activateAccessibleHyperlink(%p %p)", accessibleContext,
                      accessibleHyperlink);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::activateAccessibleHyperlink(%016I64X %016I64X)", accessibleContext,
+    PrintDebugString("[INFO]: WinAccessBridge::activateAccessibleHyperlink(%016I64X %016I64X)", accessibleContext,
                      accessibleHyperlink);
 #endif
 
@@ -1873,7 +1875,7 @@ WinAccessBridge::activateAccessibleHyperlink(long vmID, JOBJECT64 accessibleCont
     if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
         return pkg->rResult;
     }
-    PrintDebugString("  WinAccessBridge::activateAccessibleHyperlink returning FALSE (sendMemoryPackage failed)");
+    PrintDebugString("[ERROR]:  WinAccessBridge::activateAccessibleHyperlink returning FALSE (sendMemoryPackage failed)");
     return FALSE;
 }
 
@@ -1887,10 +1889,10 @@ WinAccessBridge::getAccessibleHyperlinkCount(const long vmID,
                                              const AccessibleContext accessibleContext) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHyperlinkCount(%X, %p)",
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHyperlinkCount(%X, %p)",
                      vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHyperlinkCount(%X, %016I64X)",
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHyperlinkCount(%X, %016I64X)",
                      vmID, accessibleContext);
 #endif
 
@@ -1908,12 +1910,12 @@ WinAccessBridge::getAccessibleHyperlinkCount(const long vmID,
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### hypetext link count = %d", pkg->rLinkCount);
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleHyperlinkCount succeeded");
+            PrintDebugString("[INFO]:   ##### hypetext link count = %d", pkg->rLinkCount);
+            PrintDebugString("[INFO]:  ##### WinAccessBridge::getAccessibleHyperlinkCount succeeded");
             return pkg->rLinkCount;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleHyperlinkCount failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleHyperlinkCount failed");
     return -1;
 }
 
@@ -1931,10 +1933,10 @@ WinAccessBridge::getAccessibleHypertextExt(const long vmID,
                                            /* OUT */ AccessibleHypertextInfo *hypertextInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertextExt(%X, %p %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertextExt(%X, %p %p)", vmID,
                      accessibleContext, hypertextInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertextExt(%X, %016I64X %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertextExt(%X, %016I64X %p)", vmID,
                      accessibleContext, hypertextInfo);
 #endif
 
@@ -1953,19 +1955,18 @@ WinAccessBridge::getAccessibleHypertextExt(const long vmID,
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### pkg->rSuccess = %d", pkg->rSuccess);
+            PrintDebugString("[INFO]:   ##### pkg->rSuccess = %d", pkg->rSuccess);
 
             memcpy(hypertextInfo, &(pkg->rAccessibleHypertextInfo), sizeof(AccessibleHypertextInfo));
             if (pkg->rSuccess == TRUE) {
-                PrintDebugString("  ##### hypertextInfo.linkCount = %d", hypertextInfo->linkCount);
-                PrintDebugString("  ##### hypertextInfo.linkCount = %d", hypertextInfo->linkCount);
+                PrintDebugString("[INFO]:   ##### hypertextInfo.linkCount = %d", hypertextInfo->linkCount);
             } else {
-                PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertextExt failed");
+                PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleHypertextExt failed");
             }
-            return pkg->rSuccess;;
+            return pkg->rSuccess;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertextExt failed");
+    PrintDebugString("[ERROR]:  ##### WinAccessBridge::getAccessibleHypertextExt failed");
     return FALSE;
 }
 
@@ -1982,10 +1983,10 @@ WinAccessBridge::getAccessibleHypertextLinkIndex(const long vmID,
                                                  const jint charIndex) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertextLinkIndex(%X, %p)",
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertextLinkIndex(%X, %p)",
                      vmID, hypertext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHypertextLinkIndex(%X, %016I64X)",
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHypertextLinkIndex(%X, %016I64X)",
                      vmID, hypertext);
 #endif
 
@@ -2004,12 +2005,12 @@ WinAccessBridge::getAccessibleHypertextLinkIndex(const long vmID,
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  ##### hypetext link index = %d", pkg->rLinkIndex);
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertextLinkIndex  succeeded");
+            PrintDebugString("[INFO]:   ##### hypetext link index = %d", pkg->rLinkIndex);
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleHypertextLinkIndex  succeeded");
             return pkg->rLinkIndex;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertextLinkIndex  failed");
+    PrintDebugString("[ERROR]  ##### WinAccessBridge::getAccessibleHypertextLinkIndex  failed");
     return -1;
 }
 
@@ -2025,10 +2026,10 @@ WinAccessBridge::getAccessibleHyperlink(const long vmID,
                                         /* OUT */ AccessibleHyperlinkInfo *hyperlinkInfo) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHyperlink(%X, %p, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHyperlink(%X, %p, %p)", vmID,
                      hypertext, hyperlinkInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleHyperlink(%X, %016I64X, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleHyperlink(%X, %016I64X, %p)", vmID,
                      hypertext, hyperlinkInfo);
 #endif
 
@@ -2049,11 +2050,11 @@ WinAccessBridge::getAccessibleHyperlink(const long vmID,
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(hyperlinkInfo, &(pkg->rAccessibleHyperlinkInfo),
                    sizeof(AccessibleHyperlinkInfo));
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertext succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleHypertext succeeded");
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleHypertext failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleHypertext failed");
     return FALSE;
 }
 
@@ -2065,10 +2066,10 @@ WinAccessBridge::getAccessibleKeyBindings(long vmID, JOBJECT64 accessibleContext
                                           AccessibleKeyBindings *keyBindings) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleKeyBindings(%X, %p, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleKeyBindings(%X, %p, %p)", vmID,
                      accessibleContext, keyBindings);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleKeyBindings(%X, %016I64X, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleKeyBindings(%X, %016I64X, %p)", vmID,
                      accessibleContext, keyBindings);
 #endif
 
@@ -2088,19 +2089,20 @@ WinAccessBridge::getAccessibleKeyBindings(long vmID, JOBJECT64 accessibleContext
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(keyBindings, &(pkg->rAccessibleKeyBindings), sizeof(AccessibleKeyBindings));
 
-            PrintDebugString("  ##### keyBindings.keyBindingsCount = %d", keyBindings->keyBindingsCount);
+            PrintDebugString("[INFO]:   ##### keyBindings.keyBindingsCount = %d", keyBindings->keyBindingsCount);
             for (int i = 0; i < keyBindings->keyBindingsCount; ++i) {
-                PrintDebugString("  Key Binding # %d", i+1);
-                PrintDebugString("    Modifiers: 0x%x", keyBindings->keyBindingInfo[i].modifiers);
-                PrintDebugString("    Character (hex):  0x%x", keyBindings->keyBindingInfo[i].character);
-                PrintDebugString("    Character (wide char):  %lc", keyBindings->keyBindingInfo[i].character);
+                PrintDebugString("[INFO]:   Key Binding # %d"\
+                "                           Modifiers: 0x%x"\
+                "                           Character (hex):  0x%x"\
+                "                           Character (wide char):  %lc"\
+                , i+1, keyBindings->keyBindingInfo[i].modifiers, keyBindings->keyBindingInfo[i].character, keyBindings->keyBindingInfo[i].character);
             }
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleKeyBindings succeeded");
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleKeyBindings succeeded");
 
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleKeyBindings failed");
+    PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleKeyBindings failed");
     return FALSE;
 }
 
@@ -2108,10 +2110,10 @@ BOOL
 WinAccessBridge::getAccessibleIcons(long vmID, JOBJECT64 accessibleContext, AccessibleIcons *icons) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleIcons(%X, %p, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleIcons(%X, %p, %p)", vmID,
                      accessibleContext, icons);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleIcons(%X, %016I64X, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleIcons(%X, %016I64X, %p)", vmID,
                      accessibleContext, icons);
 #endif
 
@@ -2131,13 +2133,13 @@ WinAccessBridge::getAccessibleIcons(long vmID, JOBJECT64 accessibleContext, Acce
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(icons, &(pkg->rAccessibleIcons), sizeof(AccessibleIcons));
 
-            PrintDebugString("  ##### icons.iconsCount = %d", icons->iconsCount);
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleIcons succeeded");
+            PrintDebugString("[INFO]:   ##### icons.iconsCount = %d", icons->iconsCount);
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleIcons succeeded");
 
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleIcons failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleIcons failed");
     return FALSE;
 }
 
@@ -2145,10 +2147,10 @@ BOOL
 WinAccessBridge::getAccessibleActions(long vmID, JOBJECT64 accessibleContext, AccessibleActions *actions) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("##### WinAccessBridge::getAccessibleActions(%X, %p, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleActions(%X, %p, %p)", vmID,
                      accessibleContext, actions);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("##### WinAccessBridge::getAccessibleActions(%X, %016I64X, %p)", vmID,
+    PrintDebugString("[INFO]: ##### WinAccessBridge::getAccessibleActions(%X, %016I64X, %p)", vmID,
                      accessibleContext, actions);
 #endif
 
@@ -2168,13 +2170,13 @@ WinAccessBridge::getAccessibleActions(long vmID, JOBJECT64 accessibleContext, Ac
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(actions, &(pkg->rAccessibleActions), sizeof(AccessibleActions));
 
-            PrintDebugString("  ##### actions.actionsCount = %d", actions->actionsCount);
-            PrintDebugString("  ##### WinAccessBridge::getAccessibleActions succeeded");
+            PrintDebugString("[INFO]:   ##### actions.actionsCount = %d", actions->actionsCount);
+            PrintDebugString("[INFO]:   ##### WinAccessBridge::getAccessibleActions succeeded");
 
             return TRUE;
         }
     }
-    PrintDebugString("  ##### WinAccessBridge::getAccessibleActions failed");
+    PrintDebugString("[ERROR]:   ##### WinAccessBridge::getAccessibleActions failed");
     return FALSE;
 }
 
@@ -2183,11 +2185,11 @@ WinAccessBridge::doAccessibleActions(long vmID, JOBJECT64 accessibleContext,
                                      AccessibleActionsToDo *actionsToDo, jint *failure) {
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::doAccessibleActions(%p #actions %d %ls)", accessibleContext,
+    PrintDebugString("[INFO]: WinAccessBridge::doAccessibleActions(%p #actions %d %ls)", accessibleContext,
                      actionsToDo->actionsCount,
                      actionsToDo->actions[0].name);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::doAccessibleActions(%016I64X #actions %d %ls)", accessibleContext,
+    PrintDebugString("[INFO]: WinAccessBridge::doAccessibleActions(%016I64X #actions %d %ls)", accessibleContext,
                      actionsToDo->actionsCount,
                      actionsToDo->actions[0].name);
 #endif
@@ -2209,7 +2211,7 @@ WinAccessBridge::doAccessibleActions(long vmID, JOBJECT64 accessibleContext,
         *failure = pkg->failure;
         return pkg->rResult;
     }
-    PrintDebugString("  WinAccessBridge::doAccessibleActions returning FALSE (sendMemoryPackage failed)");
+    PrintDebugString("[ERROR]:   WinAccessBridge::doAccessibleActions returning FALSE (sendMemoryPackage failed)");
     return FALSE;
 }
 
@@ -2234,9 +2236,9 @@ WinAccessBridge::setTextContents (const long vmID, const AccessibleContext acces
     wcsncpy(pkg->text, text, sizeof(pkg->text)/sizeof(wchar_t)); // wide character copy
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::setTextContents(%X, %016I64X %ls)", vmID, accessibleContext, text);
+    PrintDebugString("[INFO]: WinAccessBridge::setTextContents(%X, %016I64X %ls)", vmID, accessibleContext, text);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::setTextContents(%X, %p %ls)", vmID, accessibleContext, text);
+    PrintDebugString("[INFO]: WinAccessBridge::setTextContents(%X, %p %ls)", vmID, accessibleContext, text);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2271,18 +2273,19 @@ WinAccessBridge::getParentWithRole (const long vmID, const AccessibleContext acc
     memcpy((void *)(&(pkg->role)), (void *)role, sizeof(pkg->role));
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getParentWithRole(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getParentWithRole(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getParentWithRole(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getParentWithRole(%X, %016I64X)", vmID, accessibleContext);
 #endif
-    PrintDebugString("  pkg->vmID: %X", pkg->vmID);
-    PrintDebugString("  pkg->accessibleContext: %p", pkg->accessibleContext);
-    PrintDebugString("  pkg->role: %ls", pkg->role);
+    PrintDebugString("[INFO]:   pkg->vmID: %X"\
+                     "          pkg->accessibleContext: %p"\
+                     "          pkg->role: %ls"\
+                     , pkg->vmID, pkg->accessibleContext, pkg->role);
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
-            PrintDebugString("  pkg->rAccessibleContext: %p", pkg->rAccessibleContext);
+            PrintDebugString("[INFO]:   pkg->rAccessibleContext: %p", pkg->rAccessibleContext);
             return pkg->rAccessibleContext;
         }
     }
@@ -2310,9 +2313,9 @@ WinAccessBridge::getTopLevelObject (const long vmID, const AccessibleContext acc
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getTopLevelObject(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getTopLevelObject(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getTopLevelObject(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getTopLevelObject(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2345,9 +2348,9 @@ WinAccessBridge::getParentWithRoleElseRoot (const long vmID, const AccessibleCon
     memcpy((void *)(&(pkg->role)), (void *)role, sizeof(pkg->role));
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getParentWithRoleElseRoot(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getParentWithRoleElseRoot(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getParentWithRoleElseRoot(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getParentWithRoleElseRoot(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2378,9 +2381,9 @@ WinAccessBridge::getObjectDepth (const long vmID, const AccessibleContext access
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getObjectDepth(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getObjectDepth(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getObjectDepth(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getObjectDepth(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2410,9 +2413,9 @@ WinAccessBridge::getActiveDescendent (const long vmID, const AccessibleContext a
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getActiveDescendent(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getActiveDescendent(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getActiveDescendent(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getActiveDescendent(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2451,16 +2454,16 @@ WinAccessBridge::getVirtualAccessibleName(long vmID, AccessibleContext accessibl
     pkg->len = (int)max;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getVirtualAccessibleName(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVirtualAccessibleName(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getVirtualAccessibleName(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVirtualAccessibleName(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             wcsncpy(name, pkg->rName, max);
-            PrintDebugString("    WinAccessBridge::getVirtualAccessibleName: Virtual name = %ls", name);
+            PrintDebugString("[INFO]:     WinAccessBridge::getVirtualAccessibleName: Virtual name = %ls", name);
             return TRUE;
         }
     }
@@ -2486,9 +2489,9 @@ WinAccessBridge::requestFocus(long vmID, AccessibleContext accessibleContext) {
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::requestFocus(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::requestFocus(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::requestFocus(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::requestFocus(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2521,10 +2524,10 @@ WinAccessBridge::selectTextRange(long vmID, AccessibleContext accessibleContext,
     pkg->endIndex = endIndex;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("    WinAccessBridge::selectTextRange(%X, %p %d %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]:     WinAccessBridge::selectTextRange(%X, %p %d %d)", vmID, accessibleContext,
                      startIndex, endIndex);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("    WinAccessBridge::selectTextRange(%X, %016I64X %d %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]:     WinAccessBridge::selectTextRange(%X, %016I64X %d %d)", vmID, accessibleContext,
                      startIndex, endIndex);
 #endif
     // need to call only the HWND/VM that contains this AC
@@ -2563,10 +2566,10 @@ WinAccessBridge::getTextAttributesInRange(long vmID, AccessibleContext accessibl
 
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("    WinAccessBridge::getTextAttributesInRange(%X, %p %d %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]:     WinAccessBridge::getTextAttributesInRange(%X, %p %d %d)", vmID, accessibleContext,
                      startIndex, endIndex);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("    WinAccessBridge::getTextAttributesInRange(%X, %016I64X %d %d)", vmID, accessibleContext,
+    PrintDebugString("[INFO]:     WinAccessBridge::getTextAttributesInRange(%X, %016I64X %d %d)", vmID, accessibleContext,
                      startIndex, endIndex);
 #endif
     // need to call only the HWND/VM that contains this AC
@@ -2600,9 +2603,9 @@ WinAccessBridge::getVisibleChildrenCount(long vmID, AccessibleContext accessible
     pkg->accessibleContext = accessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getVisibleChildrenCount(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVisibleChildrenCount(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getVisibleChildrenCount(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVisibleChildrenCount(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2635,9 +2638,9 @@ WinAccessBridge::getVisibleChildren(long vmID, AccessibleContext accessibleConte
     pkg->startIndex = startIndex;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getVisibleChildren(%X, %p)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVisibleChildren(%X, %p)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getVisibleChildren(%X, %016I64X)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::getVisibleChildren(%X, %016I64X)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2670,9 +2673,9 @@ WinAccessBridge::setCaretPosition(long vmID, AccessibleContext accessibleContext
     pkg->position = position;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::setCaretPosition(%X, %p %ls)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::setCaretPosition(%X, %p %ls)", vmID, accessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::setCaretPosition(%X, %016I64X %ls)", vmID, accessibleContext);
+    PrintDebugString("[INFO]: WinAccessBridge::setCaretPosition(%X, %016I64X %ls)", vmID, accessibleContext);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2712,9 +2715,9 @@ WinAccessBridge::getAccessibleTextInfo(long vmID,
     pkg->y = y;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextInfo(%X, %p, %p, %d, %d)", vmID, AccessibleContext, textInfo, x, y);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextInfo(%X, %p, %p, %d, %d)", vmID, AccessibleContext, textInfo, x, y);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextInfo(%X, %016I64X, %p, %d, %d)", vmID, AccessibleContext, textInfo, x, y);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextInfo(%X, %016I64X, %p, %d, %d)", vmID, AccessibleContext, textInfo, x, y);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2722,9 +2725,10 @@ WinAccessBridge::getAccessibleTextInfo(long vmID,
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(textInfo, &(pkg->rTextInfo), sizeof(AccessibleTextInfo));
             if (pkg->rTextInfo.charCount != -1) {
-                PrintDebugString("  charCount: %d", textInfo->charCount);
-                PrintDebugString("  caretIndex: %d", textInfo->caretIndex);
-                PrintDebugString("  indexAtPoint: %d", textInfo->indexAtPoint);
+                PrintDebugString("[INFO]:   charCount: %d"\
+                                 "          caretIndex: %d"\
+                                 "          indexAtPoint: %d"\
+                                 , textInfo->charCount, textInfo->caretIndex, textInfo->indexAtPoint);
                 return TRUE;
             }
         }
@@ -2760,9 +2764,9 @@ WinAccessBridge::getAccessibleTextItems(long vmID,
     pkg->rTextItemsInfo.sentence[0] = '\0';
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextItems(%X, %p, %p, %d)", vmID, AccessibleContext, textItems, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextItems(%X, %p, %p, %d)", vmID, AccessibleContext, textItems, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextItems(%X, %016I64X, %p, %d)", vmID, AccessibleContext, textItems, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextItems(%X, %016I64X, %p, %d)", vmID, AccessibleContext, textItems, index);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2799,9 +2803,9 @@ WinAccessBridge::getAccessibleTextSelectionInfo(long vmID,
     pkg->AccessibleContext = AccessibleContext;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextSelectionInfo(%X, %p, %p)", vmID, AccessibleContext, selectionInfo);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextSelectionInfo(%X, %p, %p)", vmID, AccessibleContext, selectionInfo);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextSelectionInfo(%X, %016I64X, %p)", vmID, AccessibleContext, selectionInfo);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextSelectionInfo(%X, %016I64X, %p)", vmID, AccessibleContext, selectionInfo);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2839,9 +2843,9 @@ WinAccessBridge::getAccessibleTextAttributes(long vmID,
     pkg->index = index;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextAttributes(%X, %p, %d, %p)", vmID, AccessibleContext, index, attributes);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextAttributes(%X, %p, %d, %p)", vmID, AccessibleContext, index, attributes);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextAttributes(%X, %016I64X, %d, %p)", vmID, AccessibleContext, index, attributes);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextAttributes(%X, %016I64X, %d, %p)", vmID, AccessibleContext, index, attributes);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2877,9 +2881,9 @@ WinAccessBridge::getAccessibleTextRect(long vmID,
     pkg->index = index;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextRect(%X, %p, %p, %d)", vmID, AccessibleContext, rectInfo, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextRect(%X, %p, %p, %d)", vmID, AccessibleContext, rectInfo, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextRect(%X, %016I64X, %p, %d)", vmID, AccessibleContext, rectInfo, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextRect(%X, %016I64X, %p, %d)", vmID, AccessibleContext, rectInfo, index);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2917,9 +2921,9 @@ WinAccessBridge::getCaretLocation(long vmID,
     pkg->index = index;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getCaretLocation(%X, %p, %p, %d)", vmID, AccessibleContext, rectInfo, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getCaretLocation(%X, %p, %p, %d)", vmID, AccessibleContext, rectInfo, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getCaretLocation(%X, %016I64X, %p, %d)", vmID, AccessibleContext, rectInfo, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getCaretLocation(%X, %016I64X, %p, %d)", vmID, AccessibleContext, rectInfo, index);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -2969,9 +2973,9 @@ WinAccessBridge::getAccessibleTextLineBounds(long vmID,
     pkg->index = index;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextLineBounds(%X, %p, %d, )", vmID, AccessibleContext, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextLineBounds(%X, %p, %d, )", vmID, AccessibleContext, index);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextLineBounds(%X, %016I64X, %d, )", vmID, AccessibleContext, index);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextLineBounds(%X, %016I64X, %d, )", vmID, AccessibleContext, index);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -3011,9 +3015,9 @@ WinAccessBridge::getAccessibleTextRange(long vmID,
     pkg->end = end;
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    PrintDebugString("WinAccessBridge::getAccessibleTextRange(%X, %p, %d, %d, )", vmID, AccessibleContext, start, end);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextRange(%X, %p, %d, %d, )", vmID, AccessibleContext, start, end);
 #else // JOBJECT64 is jlong (64 bit)
-    PrintDebugString("WinAccessBridge::getAccessibleTextRange(%X, %016I64X, %d, %d, )", vmID, AccessibleContext, start, end);
+    PrintDebugString("[INFO]: WinAccessBridge::getAccessibleTextRange(%X, %016I64X, %d, %d, )", vmID, AccessibleContext, start, end);
 #endif
     // need to call only the HWND/VM that contains this AC
     HWND destABWindow = javaVMs->findAccessBridgeWindow(vmID);
@@ -3290,7 +3294,7 @@ WinAccessBridge::selectAllAccessibleSelectionFromContext(long vmID,
  */
 void
 WinAccessBridge::addJavaEventNotification(jlong type) {
-    PrintDebugString("WinAccessBridge::addJavaEventNotification(%016I64X)", type);
+    PrintDebugString("[INFO]: WinAccessBridge::addJavaEventNotification(%016I64X)", type);
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
     }
@@ -3302,7 +3306,7 @@ WinAccessBridge::addJavaEventNotification(jlong type) {
     pkg->type = type;
     pkg->DLLwindow = ABHandleToLong(dialogWindow);
 
-    PrintDebugString("  ->pkgType = %X, eventType = %016I64X, DLLwindow = %p",
+    PrintDebugString("[INFO]:   ->pkgType = %X, eventType = %016I64X, DLLwindow = %p",
                      *pkgType, pkg->type, pkg->DLLwindow);
 
     // send addEventNotification message to all JVMs
@@ -3327,7 +3331,7 @@ WinAccessBridge::addJavaEventNotification(jlong type) {
  */
 void
 WinAccessBridge::removeJavaEventNotification(jlong type) {
-    PrintDebugString("in WinAccessBridge::removeJavaEventNotification(%016I64X)", type);
+    PrintDebugString("[INFO]: in WinAccessBridge::removeJavaEventNotification(%016I64X)", type);
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
     }
@@ -3338,7 +3342,7 @@ WinAccessBridge::removeJavaEventNotification(jlong type) {
     pkg->type = type;
     pkg->DLLwindow = ABHandleToLong(dialogWindow);
 
-    PrintDebugString("  ->pkgType = %X, eventType = %016I64X, DLLwindow = %p",
+    PrintDebugString("[INFO]:   ->pkgType = %X, eventType = %016I64X, DLLwindow = %p",
                      *pkgType, pkg->type, pkg->DLLwindow);
 
     // send removeEventNotification message to all JVMs
@@ -3365,7 +3369,7 @@ WinAccessBridge::removeJavaEventNotification(jlong type) {
  */
 void
 WinAccessBridge::addAccessibilityEventNotification(jlong type) {
-    PrintDebugString("in WinAccessBridge::addAccessibilityEventNotification(%016I64X)", type);
+    PrintDebugString("[INFO]: in WinAccessBridge::addAccessibilityEventNotification(%016I64X)", type);
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
     }
@@ -3376,7 +3380,7 @@ WinAccessBridge::addAccessibilityEventNotification(jlong type) {
     pkg->type = type;
     pkg->DLLwindow = ABHandleToLong(dialogWindow);
 
-    PrintDebugString("  ->pkgType = %X, eventType = %016I64X, DLLwindow = %X",
+    PrintDebugString("[INFO]:   ->pkgType = %X, eventType = %016I64X, DLLwindow = %X",
                      *pkgType, pkg->type, pkg->DLLwindow);
 
     // send addEventNotification message to all JVMs
@@ -3401,7 +3405,7 @@ WinAccessBridge::addAccessibilityEventNotification(jlong type) {
  */
 void
 WinAccessBridge::removeAccessibilityEventNotification(jlong type) {
-    PrintDebugString("in WinAccessBridge::removeAccessibilityEventNotification(%016I64X)", type);
+    PrintDebugString("[INFO]: in WinAccessBridge::removeAccessibilityEventNotification(%016I64X)", type);
     if ((AccessBridgeJavaVMInstance *) 0 == javaVMs) {
         return;
     }
@@ -3412,7 +3416,7 @@ WinAccessBridge::removeAccessibilityEventNotification(jlong type) {
     pkg->type = type;
     pkg->DLLwindow = ABHandleToLong(dialogWindow);
 
-    PrintDebugString("  ->pkgType = %X, eventType = %016I64X, DLLwindow = %X",
+    PrintDebugString("[INFO]:   ->pkgType = %X, eventType = %016I64X, DLLwindow = %X",
                      *pkgType, pkg->type, pkg->DLLwindow);
 
     // send removeEventNotification message to all JVMs
