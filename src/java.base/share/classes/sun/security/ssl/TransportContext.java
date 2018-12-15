@@ -328,6 +328,8 @@ class TransportContext implements ConnectionContext {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("Fatal: input record closure failed", ioe);
             }
+
+            closeReason.addSuppressed(ioe);
         }
 
         // invalidate the session
@@ -353,6 +355,8 @@ class TransportContext implements ConnectionContext {
                     SSLLogger.warning(
                         "Fatal: failed to send fatal alert " + alert, ioe);
                 }
+
+                closeReason.addSuppressed(ioe);
             }
         }
 
@@ -363,6 +367,8 @@ class TransportContext implements ConnectionContext {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("Fatal: output record closure failed", ioe);
             }
+
+            closeReason.addSuppressed(ioe);
         }
 
         // terminate the handshake context
@@ -377,6 +383,8 @@ class TransportContext implements ConnectionContext {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("Fatal: transport closure failed", ioe);
             }
+
+            closeReason.addSuppressed(ioe);
         } finally {
             isBroken = true;
         }

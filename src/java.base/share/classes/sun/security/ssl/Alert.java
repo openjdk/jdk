@@ -122,11 +122,17 @@ enum Alert {
             reason = (cause != null) ? cause.getMessage() : "";
         }
 
-        SSLException ssle = (this == UNEXPECTED_MESSAGE) ?
-                new SSLProtocolException(reason) :
-                (handshakeOnly ?
-                        new SSLHandshakeException(reason) :
-                        new SSLException(reason));
+        SSLException ssle;
+        if ((cause != null) && (cause instanceof IOException)) {
+            ssle = new SSLException(reason);
+        } else if ((this == UNEXPECTED_MESSAGE)) {
+            ssle = new SSLProtocolException(reason);
+        } else if (handshakeOnly) {
+            ssle = new SSLHandshakeException(reason);
+        } else {
+            ssle = new SSLException(reason);
+        }
+
         if (cause != null) {
             ssle.initCause(cause);
         }

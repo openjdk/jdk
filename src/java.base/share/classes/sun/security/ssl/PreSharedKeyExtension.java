@@ -171,7 +171,7 @@ final class PreSharedKeyExtension {
 
         int getIdsEncodedLength() {
             int idEncodedLength = 0;
-            for(PskIdentity curId : identities) {
+            for (PskIdentity curId : identities) {
                 idEncodedLength += curId.getEncodedLength();
             }
 
@@ -194,7 +194,7 @@ final class PreSharedKeyExtension {
             byte[] buffer = new byte[encodedLength];
             ByteBuffer m = ByteBuffer.wrap(buffer);
             Record.putInt16(m, idsEncodedLength);
-            for(PskIdentity curId : identities) {
+            for (PskIdentity curId : identities) {
                 curId.writeEncoded(m);
             }
             Record.putInt16(m, bindersEncodedLength);
@@ -538,12 +538,12 @@ final class PreSharedKeyExtension {
         }
         SecretKey psk = pskOpt.get();
 
-        SecretKey binderKey = deriveBinderKey(psk, session);
+        SecretKey binderKey = deriveBinderKey(shc, psk, session);
         byte[] computedBinder =
-                computeBinder(binderKey, session, pskBinderHash);
+                computeBinder(shc, binderKey, session, pskBinderHash);
         if (!Arrays.equals(binder, computedBinder)) {
             shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-            "Incorect PSK binder value");
+                    "Incorect PSK binder value");
         }
     }
 
@@ -687,13 +687,14 @@ final class PreSharedKeyExtension {
                     ageMillis + chc.resumingSession.getTicketAgeAdd();
             identities.add(new PskIdentity(chc.pskIdentity, obfuscatedAge));
 
-            SecretKey binderKey = deriveBinderKey(psk, chc.resumingSession);
+            SecretKey binderKey =
+                    deriveBinderKey(chc, psk, chc.resumingSession);
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
             CHPreSharedKeySpec pskPrototype = createPskPrototype(
                 chc.resumingSession.getSuite().hashAlg.hashLength, identities);
             HandshakeHash pskBinderHash = chc.handshakeHash.copy();
 
-            byte[] binder = computeBinder(binderKey, pskBinderHash,
+            byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
                     chc.resumingSession, chc, clientHello, pskPrototype);
 
             List<byte[]> binders = new ArrayList<>();
@@ -717,7 +718,8 @@ final class PreSharedKeyExtension {
         }
     }
 
-    private static byte[] computeBinder(SecretKey binderKey,
+    private static byte[] computeBinder(
+            HandshakeContext context, SecretKey binderKey,
             SSLSessionImpl session,
             HandshakeHash pskBinderHash) throws IOException {
 
@@ -726,10 +728,11 @@ final class PreSharedKeyExtension {
         pskBinderHash.update();
         byte[] digest = pskBinderHash.digest();
 
-        return computeBinder(binderKey, session, digest);
+        return computeBinder(context, binderKey, session, digest);
     }
 
-    private static byte[] computeBinder(SecretKey binderKey,
+    private static byte[] computeBinder(
+            HandshakeContext context, SecretKey binderKey,
             HandshakeHash hash, SSLSessionImpl session,
             HandshakeContext ctx, ClientHello.ClientHelloMessage hello,
             CHPreSharedKeySpec pskPrototype) throws IOException {
@@ -745,10 +748,11 @@ final class PreSharedKeyExtension {
         hash.update();
         byte[] digest = hash.digest();
 
-        return computeBinder(binderKey, session, digest);
+        return computeBinder(context, binderKey, session, digest);
     }
 
-    private static byte[] computeBinder(SecretKey binderKey,
+    private static byte[] computeBinder(HandshakeContext context,
+            SecretKey binderKey,
             SSLSessionImpl session, byte[] digest) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
@@ -766,15 +770,17 @@ final class PreSharedKeyExtension {
                 hmac.init(finishedKey);
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-                throw new IOException(ex);
+                context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+                return null; // fatal() always throws, make the compiler happy.
             }
         } catch (GeneralSecurityException ex) {
-            throw new IOException(ex);
+            context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+            return null; // fatal() always throws, make the compiler happy.
         }
     }
 
-    private static SecretKey deriveBinderKey(SecretKey psk,
-            SSLSessionImpl session) throws IOException {
+    private static SecretKey deriveBinderKey(HandshakeContext context,
+            SecretKey psk, SSLSessionImpl session) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
             HKDF hkdf = new HKDF(hashAlg.name);
@@ -788,7 +794,8 @@ final class PreSharedKeyExtension {
             return hkdf.expand(earlySecret,
                     hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
         } catch (GeneralSecurityException ex) {
-            throw new IOException(ex);
+            context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+            return null; // fatal() always throws, make the compiler happy.
         }
     }
 
@@ -844,7 +851,7 @@ final class PreSharedKeyExtension {
 
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
-                "Resuming session: ", chc.resumingSession);
+                        "Resuming session: ", chc.resumingSession);
             }
         }
     }

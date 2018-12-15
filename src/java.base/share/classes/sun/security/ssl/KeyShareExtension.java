@@ -823,8 +823,8 @@ final class KeyShareExtension {
             }
 
             if (selectedGroup == null) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        new IOException("No common named group"));
+                shc.conContext.fatal(
+                        Alert.UNEXPECTED_MESSAGE, "No common named group");
                 return null;    // make the complier happy
             }
 
