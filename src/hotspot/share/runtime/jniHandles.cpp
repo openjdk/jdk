@@ -318,7 +318,7 @@ void JNIHandles::print_on(outputStream* st) {
 class VerifyJNIHandles: public OopClosure {
 public:
   virtual void do_oop(oop* root) {
-    guarantee(oopDesc::is_oop(RawAccess<>::oop_load(root)), "Invalid oop");
+    guarantee(oopDesc::is_oop_or_null(RawAccess<>::oop_load(root)), "Invalid oop");
   }
   virtual void do_oop(narrowOop* root) { ShouldNotReachHere(); }
 };
