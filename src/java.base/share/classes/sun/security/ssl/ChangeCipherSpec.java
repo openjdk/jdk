@@ -105,6 +105,14 @@ final class ChangeCipherSpec {
                 throw new SSLException("Algorithm missing:  ", gse);
             }
 
+            if (writeCipher == null) {
+                hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + ncs +
+                    ") and protocol version (" + hc.negotiatedProtocol + ")");
+
+                return null;
+            }
+
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ChangeCipherSpec message");
             }
@@ -195,6 +203,16 @@ final class ChangeCipherSpec {
                     // unlikely
                     throw new SSLException("Algorithm missing:  ", gse);
                 }
+
+                if (readCipher == null) {
+                    hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Illegal cipher suite (" + hc.negotiatedCipherSuite +
+                        ") and protocol version (" + hc.negotiatedProtocol +
+                        ")");
+
+                    return;
+                }
+
                 tc.inputRecord.changeReadCiphers(readCipher);
             } else {
                 throw new UnsupportedOperationException("Not supported.");

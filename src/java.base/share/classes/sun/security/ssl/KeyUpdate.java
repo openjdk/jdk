@@ -223,6 +223,16 @@ final class KeyUpdate {
                         Authenticator.valueOf(hc.conContext.protocolVersion),
                         hc.conContext.protocolVersion, key, ivSpec,
                         hc.sslContext.getSecureRandom());
+
+                if (rc == null) {
+                    hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Illegal cipher suite (" + hc.negotiatedCipherSuite +
+                        ") and protocol version (" + hc.negotiatedProtocol +
+                        ")");
+
+                    return;
+                }
+
                 rc.baseSecret = nplus1;
                 hc.conContext.inputRecord.changeReadCiphers(rc);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
@@ -300,6 +310,14 @@ final class KeyUpdate {
             } catch (GeneralSecurityException gse) {
                 hc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive write secrets", gse);
+                return null;
+            }
+
+            if (wc == null) {
+                hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + hc.negotiatedCipherSuite +
+                    ") and protocol version (" + hc.negotiatedProtocol + ")");
+
                 return null;
             }
 

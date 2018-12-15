@@ -296,7 +296,7 @@ final class ServerHello {
                     shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "no cipher suites in common");
 
-                    return null;    // make the compiler happy
+                    return null;
                 }
                 shc.negotiatedCipherSuite = credentials.cipherSuite;
                 shc.handshakeKeyExchange = credentials.keyExchange;
@@ -461,7 +461,7 @@ final class ServerHello {
             shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "no cipher suites in common");
 
-            return null;    // make the compiler happy.
+            return null;
         }
 
         private static final class KeyExchangeProperties {
@@ -526,7 +526,7 @@ final class ServerHello {
                 if (cipherSuite == null) {
                     shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "no cipher suites in common");
-                    return null;    // make the compiler happy
+                    return null;
                 }
                 shc.negotiatedCipherSuite = cipherSuite;
                 shc.handshakeSession.setSuite(cipherSuite);
@@ -594,7 +594,7 @@ final class ServerHello {
                 // unlikely
                 shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not negotiated key shares");
-                return null;    // make the compiler happy
+                return null;
             }
 
             SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
@@ -608,7 +608,7 @@ final class ServerHello {
                 shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key derivation: " +
                         shc.negotiatedProtocol);
-                return null;    // make the compiler happy
+                return null;
             }
 
             SSLKeyDerivation kd =
@@ -636,7 +636,16 @@ final class ServerHello {
                 // unlikely
                 shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Missing cipher algorithm", gse);
-                return null;    // make the compiler happy
+                return null;
+            }
+
+            if (readCipher == null) {
+                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + shc.negotiatedCipherSuite +
+                    ") and protocol version (" + shc.negotiatedProtocol +
+                    ")");
+
+                return null;
             }
 
             shc.baseReadSecret = readSecret;
@@ -664,7 +673,16 @@ final class ServerHello {
                 // unlikely
                 shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Missing cipher algorithm", gse);
-                return null;    //  make the compiler happy
+                return null;
+            }
+
+            if (writeCipher == null) {
+                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + shc.negotiatedCipherSuite +
+                    ") and protocol version (" + shc.negotiatedProtocol +
+                    ")");
+
+                return null;
             }
 
             shc.baseWriteSecret = writeSecret;
@@ -748,7 +766,7 @@ final class ServerHello {
             if (cipherSuite == null) {
                 shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "no cipher suites in common for hello retry request");
-                return null;    // make the compiler happy
+                return null;
             }
 
             ServerHelloMessage hhrm = new ServerHelloMessage(shc,
@@ -1244,7 +1262,7 @@ final class ServerHello {
                 // unlikely
                 chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not negotiated key shares");
-                return;     // make the compiler happy
+                return;
             }
 
             SSLKeyDerivation handshakeKD = ke.createKeyDerivation(chc);
@@ -1257,7 +1275,7 @@ final class ServerHello {
                 chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key derivation: " +
                         chc.negotiatedProtocol);
-                return;     // make the compiler happy
+                return;
             }
 
             SSLKeyDerivation secretKD =
@@ -1286,7 +1304,16 @@ final class ServerHello {
                 // unlikely
                 chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Missing cipher algorithm", gse);
-                return;     // make the compiler happy
+                return;
+            }
+
+            if (readCipher == null) {
+                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + chc.negotiatedCipherSuite +
+                    ") and protocol version (" + chc.negotiatedProtocol +
+                    ")");
+
+                return;
             }
 
             chc.baseReadSecret = readSecret;
@@ -1314,7 +1341,16 @@ final class ServerHello {
                 // unlikely
                 chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Missing cipher algorithm", gse);
-                return;     //  make the compiler happy
+                return;
+            }
+
+            if (writeCipher == null) {
+                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Illegal cipher suite (" + chc.negotiatedCipherSuite +
+                    ") and protocol version (" + chc.negotiatedProtocol +
+                    ")");
+
+                return;
             }
 
             chc.baseWriteSecret = writeSecret;
