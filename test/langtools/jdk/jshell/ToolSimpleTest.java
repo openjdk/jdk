@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959 8215099
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -448,7 +448,8 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(
                 (a) -> assertHelp(a, "/?", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
-                (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
+                (a) -> assertHelp(a, "/help short", "shortcuts", "Tab"),
+                (a) -> assertHelp(a, "/help keys", "line", "Shift", "imports", "history"),
                 (a) -> assertHelp(a, "/? /li", "/list -all", "snippets"),
                 (a) -> assertHelp(a, "/help /set prompt", "optionally contain '%s'", "quoted"),
                 (a) -> assertHelp(a, "/help /help", "/help <command>"),
