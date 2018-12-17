@@ -49,15 +49,15 @@ inline oop* JNIHandles::jweak_ptr(jobject handle) {
 }
 
 // external_guard is true if called from resolve_external_guard.
-template<bool external_guard>
+template <DecoratorSet decorators, bool external_guard>
 inline oop JNIHandles::resolve_impl(jobject handle) {
   assert(handle != NULL, "precondition");
   assert(!current_thread_in_native(), "must not be in native");
   oop result;
   if (is_jweak(handle)) {       // Unlikely
-    result = resolve_jweak(handle);
+    result = NativeAccess<ON_PHANTOM_OOP_REF|decorators>::oop_load(jweak_ptr(handle));
   } else {
-    result = NativeAccess<>::oop_load(jobject_ptr(handle));
+    result = NativeAccess<decorators>::oop_load(jobject_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");
@@ -68,14 +68,28 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
 inline oop JNIHandles::resolve(jobject handle) {
   oop result = NULL;
   if (handle != NULL) {
-    result = resolve_impl<false /* external_guard */ >(handle);
+    result = resolve_impl<0 /* decorators */, false /* external_guard */>(handle);
   }
   return result;
 }
 
+inline oop JNIHandles::resolve_no_keepalive(jobject handle) {
+  oop result = NULL;
+  if (handle != NULL) {
+    result = resolve_impl<AS_NO_KEEPALIVE, false /* external_guard */>(handle);
+  }
+  return result;
+}
+
+inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
+  oop obj1 = resolve_no_keepalive(handle1);
+  oop obj2 = resolve_no_keepalive(handle2);
+  return oopDesc::equals(obj1, obj2);
+}
+
 inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(handle != NULL, "JNI handle should not be null");
-  oop result = resolve_impl<false /* external_guard */ >(handle);
+  oop result = resolve_impl<0 /* decorators */, false /* external_guard */>(handle);
   assert(result != NULL, "NULL read from jni handle");
   return result;
 }
