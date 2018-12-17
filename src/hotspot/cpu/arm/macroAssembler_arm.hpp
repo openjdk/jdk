@@ -371,10 +371,10 @@ public:
   // lock_reg and obj_reg must be loaded up with the appropriate values.
   // swap_reg must be supplied.
   // tmp_reg must be supplied.
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. If slow_case is NULL, then leaves condition
-  // codes set (for C2's Fast_Lock node) and jumps to done label.
-  // Falls through for the fast locking attempt.
+  // Done label is branched to with condition code EQ set if the lock is
+  // biased and we acquired it. Slow case label is branched to with
+  // condition code NE set if the lock is biased but we failed to acquire
+  // it. Otherwise fall through.
   // Returns offset of first potentially-faulting instruction for null
   // check info (currently consumed only by C1). If
   // swap_reg_contains_mark is true then returns -1 as it is assumed
@@ -1073,7 +1073,7 @@ public:
   void restore_default_fp_mode();
 
 #ifdef COMPILER2
-  void fast_lock(Register obj, Register box, Register scratch, Register scratch2);
+  void fast_lock(Register obj, Register box, Register scratch, Register scratch2, Register scratch3 = noreg);
   void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
 #endif
 
