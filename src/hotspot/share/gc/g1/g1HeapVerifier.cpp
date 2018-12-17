@@ -337,10 +337,6 @@ void G1HeapVerifier::verify_ready_for_archiving() {
 }
 
 class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
-private:
-  G1CollectedHeap* _g1h;
-public:
-  VerifyArchivePointerRegionClosure(G1CollectedHeap* g1h) { }
   virtual bool do_heap_region(HeapRegion* r) {
    if (r->is_archive()) {
       VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
@@ -352,7 +348,7 @@ public:
 
 void G1HeapVerifier::verify_archive_regions() {
   G1CollectedHeap*  g1h = G1CollectedHeap::heap();
-  VerifyArchivePointerRegionClosure cl(NULL);
+  VerifyArchivePointerRegionClosure cl;
   g1h->heap_region_iterate(&cl);
 }
 

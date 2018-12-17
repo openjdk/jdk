@@ -137,7 +137,9 @@ DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
-  _processed_buffers_mut(0), _processed_buffers_rs_thread(0)
+  _processed_buffers_mut(0),
+  _processed_buffers_rs_thread(0),
+  _cur_par_buffer_node(NULL)
 {
   _all_active = true;
 }

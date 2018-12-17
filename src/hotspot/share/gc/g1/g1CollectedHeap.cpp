@@ -4287,7 +4287,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
  public:
 
   G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
-    _free_region_list(free_region_list), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
+    _free_region_list(free_region_list), _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {

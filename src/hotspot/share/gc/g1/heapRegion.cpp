@@ -877,8 +877,10 @@ void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
 }
 
 G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
+  _top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
+  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
+  _pre_dummy_top(NULL)
 {
 }
 
