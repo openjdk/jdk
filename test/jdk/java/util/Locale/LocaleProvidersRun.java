@@ -156,6 +156,7 @@ public class LocaleProvidersRun {
         launcher.addToolArg("-cp")
                 .addToolArg(Utils.TEST_CLASS_PATH)
                 .addToolArg("-Djava.locale.providers=" + prefList)
+                .addToolArg("--add-exports=java.base/sun.util.locale.provider=ALL-UNNAMED")
                 .addToolArg("LocaleProviders")
                 .addToolArg(methodName)
                 .addToolArg(param1)
