@@ -1230,11 +1230,10 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   oop protection_domain = NULL;
 
   // Iterate through Java frames
-  RegisterMap reg_map(thread);
-  javaVFrame *vf = thread->last_java_vframe(&reg_map);
-  for (; vf != NULL; vf = vf->java_sender()) {
+  vframeStream vfst(thread);
+  for(; !vfst.at_end(); vfst.next()) {
     // get method of frame
-    Method* method = vf->method();
+    Method* method = vfst.method();
 
     // stop at the first privileged frame
     if (method->method_holder() == SystemDictionary::AccessController_klass() &&
@@ -1243,9 +1242,7 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
       // this frame is privileged
       is_privileged = true;
 
-      javaVFrame *priv = vf;                        // executePrivileged
-      javaVFrame *caller_fr = priv->java_sender();  // doPrivileged
-      caller_fr = caller_fr->java_sender();         // caller
+      javaVFrame *priv = vfst.asJavaVFrame();       // executePrivileged
 
       StackValueCollection* locals = priv->locals();
       privileged_context = locals->obj_at(1);
