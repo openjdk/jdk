@@ -111,14 +111,14 @@ final class PreSharedKeyExtension {
             //     PskBinderEntry binders<33..2^16-1>;
             // } OfferedPsks;
             if (m.remaining() < 44) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid pre_shared_key extension: " +
                     "insufficient data (length=" + m.remaining() + ")");
             }
 
             int idEncodedLength = Record.getInt16(m);
             if (idEncodedLength < 7) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid pre_shared_key extension: " +
                     "insufficient identities (length=" + idEncodedLength + ")");
             }
@@ -128,7 +128,7 @@ final class PreSharedKeyExtension {
             while (idReadLength < idEncodedLength) {
                 byte[] id = Record.getBytes16(m);
                 if (id.length < 1) {
-                    context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid pre_shared_key extension: " +
                         "insufficient identity (length=" + id.length + ")");
                 }
@@ -140,7 +140,7 @@ final class PreSharedKeyExtension {
             }
 
             if (m.remaining() < 35) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid pre_shared_key extension: " +
                         "insufficient binders data (length=" +
                         m.remaining() + ")");
@@ -148,7 +148,7 @@ final class PreSharedKeyExtension {
 
             int bindersEncodedLen = Record.getInt16(m);
             if (bindersEncodedLen < 33) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid pre_shared_key extension: " +
                         "insufficient binders (length=" +
                         bindersEncodedLen + ")");
@@ -159,7 +159,7 @@ final class PreSharedKeyExtension {
             while (bindersReadLength < bindersEncodedLen) {
                 byte[] binder = Record.getBytes8(m);
                 if (binder.length < 32) {
-                    context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                             "Invalid pre_shared_key extension: " +
                             "insufficient binder entry (length=" +
                             binder.length + ")");
@@ -271,7 +271,7 @@ final class PreSharedKeyExtension {
         SHPreSharedKeySpec(HandshakeContext context,
                 ByteBuffer m) throws IOException {
             if (m.remaining() < 2) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid pre_shared_key extension: " +
                         "insufficient selected_identity (length=" +
                         m.remaining() + ")");
@@ -348,21 +348,20 @@ final class PreSharedKeyExtension {
             try {
                 pskSpec = new CHPreSharedKeySpec(shc, buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // The "psk_key_exchange_modes" extension should have been loaded.
             if (!shc.handshakeExtensions.containsKey(
                     SSLExtension.PSK_KEY_EXCHANGE_MODES)) {
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Client sent PSK but not PSK modes, or the PSK " +
                         "extension is not the last extension");
             }
 
             // error if id and binder lists are not the same length
             if (pskSpec.identities.size() != pskSpec.binders.size()) {
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "PSK extension has incorrect number of binders");
             }
 
@@ -506,7 +505,7 @@ final class PreSharedKeyExtension {
             SHPreSharedKeySpec shPsk = (SHPreSharedKeySpec)
                     shc.handshakeExtensions.get(SSLExtension.SH_PRE_SHARED_KEY);
             if (chPsk == null || shPsk == null) {
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Required extensions are unavailable");
             }
 
@@ -533,7 +532,7 @@ final class PreSharedKeyExtension {
             HandshakeHash pskBinderHash, byte[] binder) throws IOException {
         Optional<SecretKey> pskOpt = session.getPreSharedKey();
         if (!pskOpt.isPresent()) {
-            shc.conContext.fatal(Alert.INTERNAL_ERROR,
+            throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Session has no PSK");
         }
         SecretKey psk = pskOpt.get();
@@ -542,7 +541,7 @@ final class PreSharedKeyExtension {
         byte[] computedBinder =
                 computeBinder(shc, binderKey, session, pskBinderHash);
         if (!Arrays.equals(binder, computedBinder)) {
-            shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+            throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Incorect PSK binder value");
         }
     }
@@ -770,12 +769,10 @@ final class PreSharedKeyExtension {
                 hmac.init(finishedKey);
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-                context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
-                return null; // fatal() always throws, make the compiler happy.
+                throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
             }
         } catch (GeneralSecurityException ex) {
-            context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
-            return null; // fatal() always throws, make the compiler happy.
+            throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
         }
     }
 
@@ -794,8 +791,7 @@ final class PreSharedKeyExtension {
             return hkdf.expand(earlySecret,
                     hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
         } catch (GeneralSecurityException ex) {
-            context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
-            return null; // fatal() always throws, make the compiler happy.
+            throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
         }
     }
 
@@ -834,7 +830,7 @@ final class PreSharedKeyExtension {
             // Is it a response of the specific request?
             if (!chc.handshakeExtensions.containsKey(
                     SSLExtension.CH_PRE_SHARED_KEY)) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Server sent unexpected pre_shared_key extension");
             }
 
@@ -845,7 +841,7 @@ final class PreSharedKeyExtension {
             }
 
             if (shPsk.selectedIdentity != 0) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Selected identity index is not in correct range.");
             }
 

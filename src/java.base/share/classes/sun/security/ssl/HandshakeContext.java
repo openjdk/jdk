@@ -365,26 +365,20 @@ abstract class HandshakeContext implements ConnectionContext {
         //     } Handshake;
 
         if (plaintext.contentType != ContentType.HANDSHAKE.id) {
-            conContext.fatal(Alert.INTERNAL_ERROR,
+            throw conContext.fatal(Alert.INTERNAL_ERROR,
                 "Unexpected operation for record: " + plaintext.contentType);
-
-            return 0;
         }
 
         if (plaintext.fragment == null || plaintext.fragment.remaining() < 4) {
-            conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+            throw conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Invalid handshake message: insufficient data");
-
-            return 0;
         }
 
         byte handshakeType = (byte)Record.getInt8(plaintext.fragment);
         int handshakeLen = Record.getInt24(plaintext.fragment);
         if (handshakeLen != plaintext.fragment.remaining()) {
-            conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+            throw conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Invalid handshake message: insufficient handshake body");
-
-            return 0;
         }
 
         return handshakeType;
@@ -438,16 +432,15 @@ abstract class HandshakeContext implements ConnectionContext {
         }
 
         if (consumer == null) {
-            conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+            throw conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected handshake message: " +
                     SSLHandshake.nameOf(handshakeType));
-            return;
         }
 
         try {
             consumer.consume(this, fragment);
         } catch (UnsupportedOperationException unsoe) {
-            conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+            throw conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unsupported handshake message: " +
                     SSLHandshake.nameOf(handshakeType), unsoe);
         }

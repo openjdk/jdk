@@ -274,7 +274,7 @@ final class RSAKeyExchange {
             }
 
             if (premaster == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient RSA key agreement parameters negotiated");
             }
 

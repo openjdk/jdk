@@ -78,7 +78,7 @@ final class KeyUpdate {
             super(context);
 
             if (m.remaining() != 1) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "KeyUpdate has an unexpected length of "+
                         m.remaining());
             }
@@ -86,7 +86,7 @@ final class KeyUpdate {
             byte request = m.get();
             this.status = KeyUpdateRequest.valueOf(request);
             if (status == null) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid KeyUpdate message value: " +
                         KeyUpdateRequest.nameOf(request));
             }
@@ -198,18 +198,17 @@ final class KeyUpdate {
                 SSLTrafficKeyDerivation.valueOf(hc.conContext.protocolVersion);
             if (kdg == null) {
                 // unlikely
-                hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key derivation: " +
                                 hc.conContext.protocolVersion);
-                return;
             }
 
             SSLKeyDerivation skd = kdg.createKeyDerivation(hc,
                     hc.conContext.inputRecord.readCipher.baseSecret);
             if (skd == null) {
                 // unlikely
-                hc.conContext.fatal(Alert.INTERNAL_ERROR, "no key derivation");
-                return;
+                throw hc.conContext.fatal(
+                        Alert.INTERNAL_ERROR, "no key derivation");
             }
 
             SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
@@ -225,12 +224,10 @@ final class KeyUpdate {
                         hc.sslContext.getSecureRandom());
 
                 if (rc == null) {
-                    hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    throw hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Illegal cipher suite (" + hc.negotiatedCipherSuite +
                         ") and protocol version (" + hc.negotiatedProtocol +
                         ")");
-
-                    return;
                 }
 
                 rc.baseSecret = nplus1;
@@ -239,9 +236,8 @@ final class KeyUpdate {
                     SSLLogger.fine("KeyUpdate: read key updated");
                 }
             } catch (GeneralSecurityException gse) {
-                hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive read secrets", gse);
-                return;
             }
 
             if (km.status == KeyUpdateRequest.REQUESTED) {
@@ -281,18 +277,17 @@ final class KeyUpdate {
                 SSLTrafficKeyDerivation.valueOf(hc.conContext.protocolVersion);
             if (kdg == null) {
                 // unlikely
-                hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key derivation: " +
                                 hc.conContext.protocolVersion);
-                return null;
             }
 
             SSLKeyDerivation skd = kdg.createKeyDerivation(hc,
                     hc.conContext.outputRecord.writeCipher.baseSecret);
             if (skd == null) {
                 // unlikely
-                hc.conContext.fatal(Alert.INTERNAL_ERROR, "no key derivation");
-                return null;
+                throw hc.conContext.fatal(
+                        Alert.INTERNAL_ERROR, "no key derivation");
             }
 
             SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
@@ -308,17 +303,14 @@ final class KeyUpdate {
                         hc.conContext.protocolVersion, key, ivSpec,
                         hc.sslContext.getSecureRandom());
             } catch (GeneralSecurityException gse) {
-                hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive write secrets", gse);
-                return null;
             }
 
             if (wc == null) {
-                hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Illegal cipher suite (" + hc.negotiatedCipherSuite +
                     ") and protocol version (" + hc.negotiatedProtocol + ")");
-
-                return null;
             }
 
             // Output the handshake message and change the write cipher.

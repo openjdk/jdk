@@ -193,7 +193,7 @@ enum Alert {
             //      AlertDescription description;
             //  } Alert;
             if (m.remaining() != 2) {
-                context.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid Alert message: no sufficient data");
             }
 
@@ -247,14 +247,14 @@ enum Alert {
                 if (tc.peerUserCanceled) {
                     tc.closeOutbound();
                 } else if (tc.handshakeContext != null) {
-                    tc.fatal(Alert.UNEXPECTED_MESSAGE,
+                    throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Received close_notify during handshake");
                 }
             } else if (alert == Alert.USER_CANCELED) {
                 if (level == Level.WARNING) {
                     tc.peerUserCanceled = true;
                 } else {
-                    tc.fatal(alert,
+                    throw tc.fatal(alert,
                             "Received fatal close_notify alert", true, null);
                 }
             } else if ((level == Level.WARNING) && (alert != null)) {
@@ -269,7 +269,7 @@ enum Alert {
                             alert != Alert.NO_CERTIFICATE ||
                             (tc.sslConfig.clientAuthType !=
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
-                        tc.fatal(Alert.HANDSHAKE_FAILURE,
+                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
                             "received handshake warning: " + alert.description);
                     }  // Otherwise, ignore the warning
                 }   // Otherwise, ignore the warning.
@@ -282,7 +282,7 @@ enum Alert {
                     diagnostic = "Received fatal alert: " + alert.description;
                 }
 
-                tc.fatal(alert, diagnostic, true, null);
+                throw tc.fatal(alert, diagnostic, true, null);
             }
         }
     }

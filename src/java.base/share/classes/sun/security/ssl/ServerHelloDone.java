@@ -50,7 +50,7 @@ final class ServerHelloDone {
                 ByteBuffer m) throws IOException {
             super(handshakeContext);
             if (m.hasRemaining()) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Error parsing ServerHelloDone message: not empty");
             }
         }

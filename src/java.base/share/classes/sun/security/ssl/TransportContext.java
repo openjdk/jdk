@@ -148,9 +148,8 @@ class TransportContext implements ConnectionContext {
 
         ContentType ct = ContentType.valueOf(plaintext.contentType);
         if (ct == null) {
-            fatal(Alert.UNEXPECTED_MESSAGE,
+            throw fatal(Alert.UNEXPECTED_MESSAGE,
                 "Unknown content type: " + plaintext.contentType);
-            return;
         }
 
         switch (ct) {
@@ -164,7 +163,7 @@ class TransportContext implements ConnectionContext {
                                 protocolVersion.useTLS13PlusSpec()) {
                             handshakeContext = new PostHandshakeContext(this);
                         } else {
-                            fatal(Alert.UNEXPECTED_MESSAGE,
+                            throw fatal(Alert.UNEXPECTED_MESSAGE,
                                     "Unexpected post-handshake message: " +
                                     SSLHandshake.nameOf(type));
                         }
@@ -185,7 +184,7 @@ class TransportContext implements ConnectionContext {
                 if (consumer != null) {
                     consumer.consume(this, plaintext.fragment);
                 } else {
-                    fatal(Alert.UNEXPECTED_MESSAGE,
+                    throw fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected content: " + plaintext.contentType);
                 }
         }
@@ -250,22 +249,22 @@ class TransportContext implements ConnectionContext {
         }
     }
 
-    void fatal(Alert alert,
+    SSLException fatal(Alert alert,
             String diagnostic) throws SSLException {
-        fatal(alert, diagnostic, null);
+        return fatal(alert, diagnostic, null);
     }
 
-    void fatal(Alert alert, Throwable cause) throws SSLException {
-        fatal(alert, null, cause);
+    SSLException fatal(Alert alert, Throwable cause) throws SSLException {
+        return fatal(alert, null, cause);
     }
 
-    void fatal(Alert alert,
+    SSLException fatal(Alert alert,
             String diagnostic, Throwable cause) throws SSLException {
-        fatal(alert, diagnostic, false, cause);
+        return fatal(alert, diagnostic, false, cause);
     }
 
     // Note: close_notify is not delivered via fatal() methods.
-    void fatal(Alert alert, String diagnostic,
+    SSLException fatal(Alert alert, String diagnostic,
             boolean recvFatalAlert, Throwable cause) throws SSLException {
         // If we've already shutdown because of an error, there is nothing we
         // can do except rethrow the exception.

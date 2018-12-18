@@ -60,7 +60,7 @@ final class EncryptedExtensions {
             //     Extension extensions<0..2^16-1>;
             // } EncryptedExtensions;
             if (m.remaining() < 2) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid EncryptedExtensions handshake message: " +
                         "no sufficient data");
             }

@@ -154,7 +154,8 @@ final class CertificateStatus {
                     encodedResponses.add(respDER);
                     encodedResponsesLen = 3 + respDER.length;
                 } else {
-                    handshakeContext.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw handshakeContext.conContext.fatal(
+                            Alert.HANDSHAKE_FAILURE,
                             "Zero-length OCSP Response");
                 }
             } else if (statusType == CertStatusRequestType.OCSP_MULTI) {
@@ -172,11 +173,13 @@ final class CertificateStatus {
                 }
 
                 if (respListLen != 0) {
-                    handshakeContext.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw handshakeContext.conContext.fatal(
+                            Alert.INTERNAL_ERROR,
                             "Bad OCSP response list length");
                 }
             } else {
-                handshakeContext.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw handshakeContext.conContext.fatal(
+                        Alert.HANDSHAKE_FAILURE,
                         "Unsupported StatusResponseType: " + statusType);
             }
             messageLength = messageLength();

@@ -115,7 +115,7 @@ interface SSLTransport {
                 }
             }
 
-            context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
+            throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
         } catch (BadPaddingException bpe) {
             /*
              * The basic SSLv3 record protection involves (optional)
@@ -126,15 +126,15 @@ interface SSLTransport {
             Alert alert = (context.handshakeContext != null) ?
                     Alert.HANDSHAKE_FAILURE :
                     Alert.BAD_RECORD_MAC;
-            context.fatal(alert, bpe);
+            throw context.fatal(alert, bpe);
         } catch (SSLHandshakeException she) {
             // may be record sequence number overflow
-            context.fatal(Alert.HANDSHAKE_FAILURE, she);
+            throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
         } catch (EOFException eofe) {
             // rethrow EOFException, the call will handle it if neede.
             throw eofe;
         } catch (IOException ioe) {
-            context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+            throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
         }
 
         if (plaintexts == null || plaintexts.length == 0) {
@@ -191,7 +191,7 @@ interface SSLTransport {
                     }
 
                     if (remains > 0) {
-                        context.fatal(Alert.INTERNAL_ERROR,
+                        throw context.fatal(Alert.INTERNAL_ERROR,
                             "no sufficient room in the destination buffers");
                     }
                 }

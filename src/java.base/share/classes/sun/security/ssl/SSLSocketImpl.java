@@ -402,7 +402,7 @@ public final class SSLSocketImpl
                     readHandshakeRecord();
                 }
             } catch (IOException ioe) {
-                conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Couldn't kickstart handshaking", ioe);
             } catch (Exception oe) {    // including RuntimeException
                 handleException(oe);
@@ -642,7 +642,7 @@ public final class SSLSocketImpl
         if (checkCloseNotify && !conContext.isInputCloseNotified &&
             (conContext.isNegotiated || conContext.handshakeContext != null)) {
 
-            conContext.fatal(Alert.INTERNAL_ERROR,
+            throw conContext.fatal(Alert.INTERNAL_ERROR,
                     "closing inbound before receiving peer's close_notify");
         }
 
@@ -982,9 +982,9 @@ public final class SSLSocketImpl
                 conContext.outputRecord.deliver(b, off, len);
             } catch (SSLHandshakeException she) {
                 // may be record sequence number overflow
-                conContext.fatal(Alert.HANDSHAKE_FAILURE, she);
+                throw conContext.fatal(Alert.HANDSHAKE_FAILURE, she);
             } catch (IOException e) {
-                conContext.fatal(Alert.UNEXPECTED_MESSAGE, e);
+                throw conContext.fatal(Alert.UNEXPECTED_MESSAGE, e);
             }
 
             // Is the sequence number is nearly overflow, or has the key usage
@@ -1309,7 +1309,8 @@ public final class SSLSocketImpl
                 alert = Alert.INTERNAL_ERROR;
             }
         }
-        conContext.fatal(alert, cause);
+
+        throw conContext.fatal(alert, cause);
     }
 
     private Plaintext handleEOF(EOFException eofe) throws IOException {
