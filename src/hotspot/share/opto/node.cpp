@@ -1367,7 +1367,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
         igvn->C->remove_range_check_cast(cast);
       }
       if (dead->Opcode() == Op_Opaque4) {
-        igvn->C->remove_range_check_cast(dead);
+        igvn->C->remove_opaque4_node(dead);
       }
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       bs->unregister_potential_barrier_node(dead);
