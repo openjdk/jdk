@@ -29,11 +29,18 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.hotspot.meta.HotSpotAOTProfilingPlugin.Options.TieredAOT;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.stream.Stream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
@@ -78,8 +85,31 @@ public final class Main {
 
     public static void main(String[] args) throws Exception {
         Main t = new Main();
-        final int exitCode = t.run(args);
+        final int exitCode = t.run(parse(args));
         System.exit(exitCode);
+    }
+
+    /**
+     * Expands '@file' in command line arguments by replacing '@file' with the content of 'file'
+     * parsed by StringTokenizer. '@' character can be quoted as '@@'.
+     */
+    private static String[] parse(String[] args) throws IOException {
+        List<String> result = new ArrayList<>();
+        for (String arg : args) {
+            if (arg.length() > 1 && arg.charAt(0) == '@') {
+                String v = arg.substring(1);
+                if (v.charAt(0) == '@') {
+                    result.add(v);
+                } else {
+                    try (Stream<String> file = Files.lines(Paths.get(v))) {
+                        file.map(StringTokenizer::new).map(Collections::list).flatMap(l -> l.stream().map(o -> (String) o)).forEachOrdered(result::add);
+                    }
+                }
+            } else {
+                result.add(arg);
+            }
+        }
+        return result.toArray(String[]::new);
     }
 
     private int run(String[] args) {
