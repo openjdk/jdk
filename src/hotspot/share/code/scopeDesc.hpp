@@ -67,6 +67,9 @@ class ScopeDesc : public ResourceObj {
   // avoid a .hpp-.hpp dependency.)
   ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
+  // Direct access to scope
+  ScopeDesc* at_offset(int decode_offset) { return new ScopeDesc(this, decode_offset); }
+
   // JVM state
   Method* method()      const { return _method; }
   int          bci()      const { return _bci;    }
@@ -85,12 +88,16 @@ class ScopeDesc : public ResourceObj {
   // Returns where the scope was decoded
   int decode_offset() const { return _decode_offset; }
 
+  int sender_decode_offset() const { return _sender_decode_offset; }
+
   // Tells whether sender() returns NULL
   bool is_top() const;
 
  private:
-  // Alternative constructor
+  void initialize(const ScopeDesc* parent, int decode_offset);
+  // Alternative constructors
   ScopeDesc(const ScopeDesc* parent);
+  ScopeDesc(const ScopeDesc* parent, int decode_offset);
 
   // JVM state
   Method*       _method;

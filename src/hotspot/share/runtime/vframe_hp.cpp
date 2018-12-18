@@ -252,6 +252,14 @@ compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, Java
   guarantee(_scope != NULL, "scope must be present");
 }
 
+compiledVFrame* compiledVFrame::at_scope(int decode_offset, int vframe_id) {
+  if (scope()->decode_offset() != decode_offset) {
+    ScopeDesc* scope = this->scope()->at_offset(decode_offset);
+    return new compiledVFrame(frame_pointer(), register_map(), thread(), scope, vframe_id);
+  }
+  assert(_vframe_id == vframe_id, "wrong frame id");
+  return this;
+}
 
 bool compiledVFrame::is_top() const {
   // FIX IT: Remove this when new native stubs are in place

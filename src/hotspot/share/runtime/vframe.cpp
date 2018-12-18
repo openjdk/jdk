@@ -452,8 +452,10 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
+  _prev_frame = top_frame;
   _frame  = top_frame.sender(&_reg_map);
   while (!fill_from_frame()) {
+    _prev_frame = _frame;
     _frame = _frame.sender(&_reg_map);
   }
 }
@@ -532,6 +534,37 @@ void vframeStreamCommon::skip_reflection_related_frames() {
            method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass()))) {
     next();
   }
+}
+
+javaVFrame* vframeStreamCommon::asJavaVFrame() {
+  javaVFrame* result = NULL;
+  if (_mode == compiled_mode) {
+    guarantee(_frame.is_compiled_frame(), "expected compiled Java frame");
+
+    // lazy update to register map
+    bool update_map = true;
+    RegisterMap map(_thread, update_map);
+    frame f = _prev_frame.sender(&map);
+
+    guarantee(f.is_compiled_frame(), "expected compiled Java frame");
+
+    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
+
+    guarantee(cvf->cb() == cb(), "wrong code blob");
+
+    // get the same scope as this stream
+    cvf = cvf->at_scope(_decode_offset, _vframe_id);
+
+    guarantee(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
+    guarantee(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
+    guarantee(cvf->vframe_id() == _vframe_id, "wrong vframe");
+
+    result = cvf;
+  } else {
+    result = javaVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
+  }
+  guarantee(result->method() == method(), "wrong method");
+  return result;
 }
 
 

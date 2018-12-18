@@ -72,6 +72,9 @@ class compiledVFrame: public javaVFrame {
   // Returns the scopeDesc
   ScopeDesc* scope() const { return _scope; }
 
+  // Return the compiledVFrame for the desired scope
+  compiledVFrame* at_scope(int decode_offset, int vframe_id);
+
   // Returns SynchronizationEntryBCI or bci() (used for synchronization)
   int raw_bci() const;
 

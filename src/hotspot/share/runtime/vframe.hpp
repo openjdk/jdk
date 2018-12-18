@@ -278,12 +278,16 @@ class MonitorInfo : public ResourceObj {
 class vframeStreamCommon : StackObj {
  protected:
   // common
+  frame        _prev_frame;
   frame        _frame;
   JavaThread*  _thread;
   RegisterMap  _reg_map;
   enum { interpreted_mode, compiled_mode, at_end_mode } _mode;
 
+  // For compiled_mode
+  int _decode_offset;
   int _sender_decode_offset;
+  int _vframe_id;
 
   // Cached information
   Method* _method;
@@ -319,6 +323,8 @@ class vframeStreamCommon : StackObj {
       assert( cb() != NULL && cb()->is_compiled(), "usage");
       return (CompiledMethod*) cb();
   }
+
+  javaVFrame* asJavaVFrame();
 
   // Frame type
   inline bool is_interpreted_frame() const;
