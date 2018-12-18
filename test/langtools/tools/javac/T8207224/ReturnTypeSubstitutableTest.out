@@ -1,0 +1,2 @@
+ReturnTypeSubstitutableTest.java:24:32: compiler.err.override.incompatible.ret: (compiler.misc.cant.override: test(ReturnTypeSubstitutableTest.AbstractResult), ReturnTypeSubstitutableTest.SimpleDemo, test(Request), ReturnTypeSubstitutableTest.AbstractDemo), ReturnTypeSubstitutableTest.SimpleResult, Response
+1 error
