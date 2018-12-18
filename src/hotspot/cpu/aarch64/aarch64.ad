@@ -12601,6 +12601,63 @@ instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zer
 %}
 
 
+// Math.max(FF)F
+instruct maxF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MaxF src1 src2));
+
+  format %{ "fmaxs   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmaxs(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+// Math.min(FF)F
+instruct minF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MinF src1 src2));
+
+  format %{ "fmins   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmins(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+// Math.max(DD)D
+instruct maxD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (MaxD src1 src2));
+
+  format %{ "fmaxd   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmaxd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_d);
+%}
+
+// Math.min(DD)D
+instruct minD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (MinD src1 src2));
+
+  format %{ "fmind   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmind(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_d);
+%}
+
+
 instruct divF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (DivF src1  src2));
 
