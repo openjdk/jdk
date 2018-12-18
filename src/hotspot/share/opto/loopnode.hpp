@@ -1306,6 +1306,14 @@ private:
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
 
+  // Determine if a method is too big for a/another round of split-if, based on
+  // a magic (approximate) ratio derived from the equally magic constant 35000,
+  // previously used for this purpose (but without relating to the node limit).
+  bool must_throttle_split_if() {
+    uint threshold = C->max_node_limit() * 2 / 5;
+    return C->live_nodes() > threshold;
+  }
+
   bool _created_loop_node;
 public:
   void set_created_loop_node() { _created_loop_node = true; }
