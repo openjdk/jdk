@@ -26,7 +26,7 @@ package nsk.jvmti.PopFrame;
 import java.io.*;
 
 /**
- * This test checks that a method's frame can be popped by the JVMTI
+ * This test checks that a method's frame can not be popped by the JVMTI
  * function <code>PopFrame()</code>:
  * <li>with intermediate native frames, and a thread, from which
  * the PopFrame() was called, is different than the current thread
@@ -41,7 +41,6 @@ public class popframe004 {
     public static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
 
-    static boolean DEBUG_MODE = false;
     static volatile boolean popFdone = false;
     static volatile boolean popF2done = false;
     static volatile int totRes = PASSED;
@@ -60,8 +59,8 @@ public class popframe004 {
         }
     }
 
-    native void nativeMeth(int vrb, popFrameCls popFrameClsThr);
-    native static int doPopFrame(int t_case, Thread popFrameClsThr);
+    native void nativeMeth(popFrameCls popFrameClsThr);
+    native static int doPopFrame(boolean otherThread, Thread popFrameClsThr);
     native static int getResult();
 
     public static void main(String[] argv) {
@@ -78,29 +77,22 @@ public class popframe004 {
         int retValue = 0;
 
         this.out = out;
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
 
         PipedInputStream pipeIn = new PipedInputStream();
         popFrameClsThr = new popFrameCls(pipeIn);
         synchronized (barrier) { // force a child thread to pause
             popFrameClsThr.start(); // start a separate thread
-// wait until the thread will enter into a necessary method
+            // wait until the thread will enter into a necessary method
             try {
                 int _byte = pipeIn.read();
             } catch (IOException e) {
                 out.println("TEST FAILED: reading from a pipe: caught " + e);
                 return FAILED;
             }
-// pop the frame
+            // pop the frame
             if (popFrameClsThr.isAlive()) {
-                if (DEBUG_MODE) {
-                    out.println("Going to pop the frame...");
-                    retValue=doPopFrame(1, popFrameClsThr);
-                } else
-                    retValue=doPopFrame(0, popFrameClsThr);
+                out.println("Going to pop the frame on other thread...");
+                retValue = doPopFrame(true, popFrameClsThr);
                 popFdone = true;
                 if (retValue != PASSED)
                     return FAILED;
@@ -125,23 +117,17 @@ public class popframe004 {
             totRes = FAILED;
         }
 
-        if (DEBUG_MODE) {
-            out.println("Going to pop the native frame...");
-            totRes=doPopFrame(5, Thread.currentThread());
-        } else
-            totRes=doPopFrame(4, Thread.currentThread());
-
+        out.println("Going to pop the native frame on the current thread...");
+        totRes = doPopFrame(false, Thread.currentThread());
         if (totRes != PASSED)
             return FAILED;
         else return getResult();
     }
 
     class popFrameCls extends Thread {
-        private PipedInputStream pipeIn;
         private PipedOutputStream pipeOut;
 
         popFrameCls(PipedInputStream pipeIn) {
-            this.pipeIn = pipeIn;
             try {
                 pipeOut = new PipedOutputStream(pipeIn);
             } catch (IOException e) {
@@ -152,63 +138,31 @@ public class popframe004 {
         }
 
         public void run() {
-            if (DEBUG_MODE)
-                nativeMeth(1, popFrameClsThr);
-            else nativeMeth(0, popFrameClsThr);
-            if (DEBUG_MODE)
-                out.println("popFrameCls (" + this +
-                    "): exiting...");
+            nativeMeth(popFrameClsThr);
+            out.println("popFrameCls (" + this + "): exiting...");
         }
 
         public void activeMethod() {
             int retVal = FAILED;
             boolean compl = true;
 
-            if (popframe004.popFdone) { // popping has been done
-                if (DEBUG_MODE)
-                    out.println("popFrameCls (" + this +
-                        "): enter activeMethod() after popping");
-// test case #2: popping from the current thread
-                if (!popframe004.popF2done) {
-                    popframe004.popF2done = true;
-                    if (DEBUG_MODE) {
-                        out.println("popFrameCls (" + this +
-                        "): going to pop a frame from the current thread...");
-                        retVal = doPopFrame(3, popFrameClsThr);
-                    } else
-                        retVal = doPopFrame(2, popFrameClsThr);
-                    if (retVal != PASSED)
-                        popframe004.totRes = FAILED;
-                }
-                if (DEBUG_MODE)
-                    out.println("popFrameCls (" + this +
-                        "): leaving activeMethod()...");
-                return;
-            }
             try {
                 pipeOut.write(123); // notify the main thread
-                if (DEBUG_MODE)
-                    out.println("popFrameCls (" + this +
-                        "): inside activeMethod()");
-// pause here until the main thread suspends us
+                out.println("popFrameCls (" + this + "): inside activeMethod()");
+                // pause here until the main thread suspends us
                 synchronized (popframe004.barrier) {
                     while (true) {
-                        if (DEBUG_MODE)
-                            out.println("popFrameCls (" + this +
-                                "): looping...");
+                        out.println("popFrameCls (" + this + "): looping...");
                         if (popframe004.popFdone) { // popping has been done
                             // popping has not to be done due to native frame
-                            if (DEBUG_MODE)
-                                out.println("popFrameCls (" + this +
-                                    "): exiting activeMethod()...");
+                            out.println("popFrameCls (" + this + "): exiting activeMethod()...");
                             compl = false;
                             return;
                         }
                     }
                 }
             } catch (Exception e) {
-                out.println("FAILURE: popFrameCls (" + this +
-                "): caught " + e);
+                out.println("FAILURE: popFrameCls (" + this + "): caught " + e);
                 popframe004.totRes = FAILED;
                 compl = false;
             } finally {

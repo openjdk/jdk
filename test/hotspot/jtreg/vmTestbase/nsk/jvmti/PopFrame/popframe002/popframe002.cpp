@@ -102,13 +102,10 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
     }
 
     switch (t_case) {
-/* NULL pointer to the thread in debug mode */
+    /* NULL pointer to the thread*/
     case 1:
         printf("\nInvoke PopFrame() with NULL pointer to a thread...\n");
         fflush(stdout);
-        // fallthrough
-/* NULL pointer to the thread */
-    case 0:
         set_watch_ev(1); /* watch JVMTI events */
         err = (jvmti->PopFrame(NULL)); /* explode the bomb */
         if (err != JVMTI_ERROR_INVALID_THREAD) {
@@ -118,13 +115,10 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
             tot_result = STATUS_FAILED;
         }
         break;
-/* invalid thread in debug mode */
-    case 3:
+    /* invalid thread */
+    case 2:
         printf("\nInvoke PopFrame() for an invalid thread...\n");
         fflush(stdout);
-        // fallthrough
-/* invalid thread */
-    case 2:
         set_watch_ev(1); /* watch JVMTI events */
         err = (jvmti->PopFrame(cls)); /* explode the bomb */
         set_watch_ev(0); /* ignore again JVMTI events */
@@ -135,13 +129,10 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
             tot_result = STATUS_FAILED;
         }
         break;
-/* non suspended thread in debug mode */
-    case 5:
+    /* non suspended thread */
+    case 3:
         printf("\nInvoke PopFrame() for a non suspended thread...\n");
         fflush(stdout);
-        // fallthrough
-/* non suspended thread */
-    case 4:
         set_watch_ev(1); /* watch JVMTI events */
         err = (jvmti->PopFrame(frameThr)); /* explode the bomb */
         set_watch_ev(0); /* ignore again JVMTI events */
@@ -152,6 +143,9 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
             tot_result = STATUS_FAILED;
         }
         break;
+    default:
+        printf("\nTEST ERROR: unexpected case: %lld\n", (long long)t_case);
+
     }
 
     if (gen_ev) {

@@ -46,7 +46,6 @@ public class popframe002 {
     static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
 
-    static boolean DEBUG_MODE = false;
     static volatile boolean popFdone = false;
     static volatile int totRes = PASSED;
     private PrintStream out;
@@ -65,6 +64,10 @@ public class popframe002 {
         }
     }
 
+    // t_case:
+    //   1 - PopFrame for NULL thread
+    //   2 - PopFrame for invalid thread (not Thread object)
+    //   3 - PopFrame for non-suspended thread
     native static int doPopFrame(int t_case, popFrameCls popFrameClsThr);
 
     public static void main(String[] argv) {
@@ -81,16 +84,12 @@ public class popframe002 {
         int retValue = 0;
 
         this.out = out;
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
 
         popFrameClsThr = new popFrameCls();
         synchronized (barrier) { // force a child thread to pause
             synchronized(readi) {
                 popFrameClsThr.start(); // start the child thread
-// wait until the thread will enter into a necessary method
+                // wait until the thread will enter into a necessary method
                 try {
                     readi.wait(); // wait for the child readiness
                 } catch (Exception e) {
@@ -100,53 +99,45 @@ public class popframe002 {
                 }
             }
 
-/* check that if PopFrame() would be invoked with NULL pointer to
-   the thread, it will return the error JVMTI_ERROR_NULL_POINTER */
-            if (DEBUG_MODE)
-                totRes = retValue = doPopFrame(1, popFrameClsThr);
-            else
-                totRes = retValue = doPopFrame(0, popFrameClsThr);
-            if (DEBUG_MODE && retValue == PASSED)
+            /* check that if PopFrame() would be invoked with NULL pointer to
+               the thread, it will return the error JVMTI_ERROR_NULL_POINTER */
+            totRes = retValue = doPopFrame(1, popFrameClsThr);
+            if (retValue == PASSED) {
                 out.println("Check #1 PASSED:\n" +
-                    "\tPopFrame(), being invoked with NULL pointer " +
-                    "to the thread,\n" +
-                    "\treturned the appropriate error JVMTI_ERROR_NULL_POINTER");
+                        "\tPopFrame(), being invoked with NULL pointer " +
+                        "to the thread,\n" +
+                        "\treturned the appropriate error JVMTI_ERROR_NULL_POINTER");
+            }
 
-/* check that if the thread, whose top frame is to be popped,
-  is invalid, the PopFrame() will return the error
-  JVMTI_ERROR_INVALID_THREAD */
-            if (DEBUG_MODE)
-                retValue = doPopFrame(3, popFrameClsThr);
-            else
-                retValue = doPopFrame(2, popFrameClsThr);
+            /* check that if the thread, whose top frame is to be popped,
+               is invalid, the PopFrame() will return the error
+               JVMTI_ERROR_INVALID_THREAD */
+            retValue = doPopFrame(2, popFrameClsThr);
             if (retValue == FAILED) {
                 popFdone = true;
                 totRes = FAILED;
-            } else
-                if (DEBUG_MODE && retValue == PASSED)
-                    out.println("Check #3 PASSED:\n" +
+            } else {
+                out.println("Check #2 PASSED:\n" +
                         "\tPopFrame(), being invoked with " +
                         "the invalid thread,\n" +
                         "\treturned the appropriate error " +
                         "JVMTI_ERROR_INVALID_THREAD");
+            }
 
-/* check that if the thread, whose top frame is to be popped,
-  has not been suspended, the PopFrame() will return the error
-  JVMTI_ERROR_THREAD_NOT_SUSPENDED */
-            if (DEBUG_MODE)
-                retValue = doPopFrame(5, popFrameClsThr);
-            else
-                retValue = doPopFrame(4, popFrameClsThr);
+            /* check that if the thread, whose top frame is to be popped,
+               has not been suspended, the PopFrame() will return the error
+               JVMTI_ERROR_THREAD_NOT_SUSPENDED */
+            retValue = doPopFrame(3, popFrameClsThr);
             if (retValue == FAILED) {
                 popFdone = true;
                 totRes = FAILED;
-            } else
-                if (DEBUG_MODE && retValue == PASSED)
-                    out.println("Check #5 PASSED:\n" +
+            } else {
+                out.println("Check #3 PASSED:\n" +
                         "\tPopFrame(), being invoked with " +
                         "the non suspended thread,\n" +
                         "\treturned the appropriate error " +
                         "JVMTI_ERROR_THREAD_NOT_SUSPENDED");
+            }
         }
 
         return totRes;
@@ -159,17 +150,13 @@ public class popframe002 {
             if (popframe002.popFdone) { // popping has been done
                 out.println("TEST FAILED: frame with popFrameCls.run() was popped");
                 popframe002.totRes = FAILED;
-            }
-            else {
+            } else {
                 synchronized(readi) {
                     readi.notify(); // notify the main thread
                 }
             }
-            if (DEBUG_MODE)
-                out.println("popFrameCls (" + this +
-                    "): inside run()");
             try {
-// pause here and get the main thread a chance to run
+                // pause here and get the main thread a chance to run
                 synchronized (popframe002.barrier) {}
                 compl = false;
             } catch (Exception e) {

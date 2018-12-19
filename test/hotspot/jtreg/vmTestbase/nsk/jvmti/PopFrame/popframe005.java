@@ -37,7 +37,6 @@ import java.io.PrintStream;
 public class popframe005 {
     static final int WAIT_TIME = 2000;
 
-    static boolean DEBUG_MODE = false;
     static volatile int testedStep = 0; /* 0- action no yet started
                                            1- a frame is to be popped
                                            2- checking monitors state
@@ -78,19 +77,15 @@ public class popframe005 {
         Object lockObj[] = new Object[2];
 
         this.out = out;
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
 
         lockObj[0] = new Object();
         lockObj[1] = new Object();
 
-        startGuarantee = new Wicket("startGuarantee", 1, (DEBUG_MODE ? System.out : null));
-        finishGuarantee = new Wicket("finishGuarantee", 1, (DEBUG_MODE ? System.out : null));
+        startGuarantee = new Wicket("startGuarantee", 1, System.out);
+        finishGuarantee = new Wicket("finishGuarantee", 1, System.out);
 
         allThreadsStoppedGuarantee =
-            new Wicket("allThreadsStoppedGuarantee", 3, (DEBUG_MODE ? System.out : null));
+            new Wicket("allThreadsStoppedGuarantee", 3, System.out);
 
         // start a thread whose top frame is to be popped
         popFrameClsThr = new popFrameCls("Tested Thread", lockObj);
@@ -109,20 +104,16 @@ public class popframe005 {
         // pause until the first thread exit notification-block
         allThreadsStoppedGuarantee.waitFor();
         synchronized (allThreadsStoppedBarrier) {
-            if (DEBUG_MODE) {
-                out.println("Passed barrier in main thread");
-                out.flush();
-            }
+            out.println("Passed barrier in main thread");
+            out.flush();
         }
 
         /////////////////////// popping a frame ////////////////////////
         testedStep = 1;
 
-        if (DEBUG_MODE) {
-            out.println("State transition: testedStep: 0->1");
-            out.println("Going to pop the frame...");
-            out.flush();
-        }
+        out.println("State transition: testedStep: 0->1");
+        out.println("Going to pop the frame...");
+        out.flush();
 
         boolean retValue = doPopFrame(popFrameClsThr);
 
@@ -133,10 +124,8 @@ public class popframe005 {
         ///////////////////// check monitors state /////////////////////
         testedStep = 2;
 
-        if (DEBUG_MODE) {
-            out.println("State transition: testedStep: 1->2");
-            out.flush();
-        }
+        out.println("State transition: testedStep: 1->2");
+        out.flush();
 
         if (!popFrameClsThr.isAlive()) {
             out.println("TEST FAILURE: thread with the method's popped frame is dead");
@@ -146,8 +135,7 @@ public class popframe005 {
         try {
             objWaiterThr2.join(WAIT_TIME);
         } catch (InterruptedException e) {
-            if (DEBUG_MODE)
-                out.println("Joining the objWaiterThr2's thread: caught " + e);
+            out.println("Joining the objWaiterThr2's thread: caught " + e);
         }
 
         if (objWaiterThr2.isAlive()) { // objWaiterThr2 should be dead
@@ -158,10 +146,8 @@ public class popframe005 {
         try {
             objWaiterThr1.join(WAIT_TIME);
         } catch (InterruptedException e) {
-            if (DEBUG_MODE) {
-                out.println("Joining the objWaiterThr1's thread: caught " + e);
-                out.flush();
-            }
+            out.println("Joining the objWaiterThr1's thread: caught " + e);
+            out.flush();
         }
         if (!objWaiterThr1.isAlive()) { // objWaiterThr2 should be alive
             out.println("TEST FAILED: Lock acquired by a frame, different from the popped one,\n"
@@ -172,10 +158,8 @@ public class popframe005 {
         /////////////////////// finish the test ///////////////////////
         testedStep = 3;
 
-        if (DEBUG_MODE) {
-            out.println("State transition: testedStep: 2->3");
-            out.flush();
-        }
+        out.println("State transition: testedStep: 2->3");
+        out.flush();
 
         finishGuarantee.unlock();
 
@@ -209,29 +193,22 @@ public class popframe005 {
             synchronized(lockObj[0]) {
                 activeMethod();
             }
-            if (DEBUG_MODE)
-                out.println("popFrameCls (" + this +
-                    "): exiting..."); out.flush();
+            out.println("popFrameCls (" + this + "): exiting...");
+            out.flush();
         }
 
         public void activeMethod() {
             boolean compl = true;
 
             if (popframe005.testedStep != 0) { // popping has been done
-                if (DEBUG_MODE) {
-                    out.println("popFrameCls (" + this +
-                        "): enter activeMethod() after popping");
-                    out.flush();
-                }
+                out.println("popFrameCls (" + this + "): enter activeMethod() after popping");
+                out.flush();
 
                 // wait for checking monitors state by the main thread
                 finishGuarantee.waitFor();
 
-                if (DEBUG_MODE) {
-                    out.println("popFrameCls (" + this +
-                        "): leaving activeMethod()");
-                    out.flush();
-                }
+                out.println("popFrameCls (" + this + "): leaving activeMethod()");
+                out.flush();
 
                 return;
             }
@@ -239,10 +216,8 @@ public class popframe005 {
             try {
                 synchronized(lockObj[1]) {
                     synchronized(allThreadsStoppedBarrier) {
-                        if (DEBUG_MODE) {
-                            out.println("popFrameCls (" + this + "): inside activeMethod()");
-                            out.flush();
-                        }
+                        out.println("popFrameCls (" + this + "): inside activeMethod()");
+                        out.flush();
 
                         // notify the main thread
                         startGuarantee.unlock();
@@ -301,12 +276,10 @@ public class popframe005 {
         public void run() {
             // notify the main thread
             synchronized(allThreadsStoppedBarrier) {
-                if (DEBUG_MODE) {
-                    out.println("objWaiter(" + this +
-                            "): waiting for a lockObj" + objIdent +
-                            "'s monitor; testedStep=" + testedStep);
-                    out.flush();
-                }
+                out.println("objWaiter(" + this +
+                        "): waiting for a lockObj" + objIdent +
+                        "'s monitor; testedStep=" + testedStep);
+                out.flush();
 
                 allThreadsStoppedGuarantee.unlock();
             }
@@ -317,17 +290,15 @@ public class popframe005 {
                         out.println("TEST FAILED: the lockObj" + objIdent +
                             "'s monitor became free too early");
                         result = Consts.TEST_FAILED;
-                    } else if (DEBUG_MODE) {
+                    } else {
                         out.println("Check PASSED: objWaiter(" + this +
                             "): enter the lockObj" + objIdent + "'s monitor");
                         out.flush();
                     }
                 }
 
-                if (DEBUG_MODE) {
-                    out.println("objWaiter (" + this + "): exiting...");
-                    out.flush();
-                }
+                out.println("objWaiter (" + this + "): exiting...");
+                out.flush();
             } catch (Exception e) {
                 out.println("TEST FAILURE: objWaiter (" + this + "): caught " + e);
             }

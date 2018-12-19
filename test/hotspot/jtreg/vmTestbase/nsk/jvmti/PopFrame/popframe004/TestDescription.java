@@ -29,7 +29,7 @@
  * VM Testbase keywords: [quick, jpda, jvmti, noras]
  * VM Testbase readme:
  * DESCRIPTION
- *     This test checks that a method's frame can be popped by
+ *     This test checks that a method's frame can not be popped by
  *     the JVMTI function PopFrame():
  *      - with intermediate native frames, and a thread, from which
  *        the PopFrame() was called, is different than the current thread;
