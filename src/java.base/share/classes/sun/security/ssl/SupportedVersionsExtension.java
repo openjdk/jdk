@@ -225,8 +225,7 @@ final class SupportedVersionsExtension {
             try {
                 spec = new CHSupportedVersionsSpec(buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // Update the context.
@@ -368,8 +367,7 @@ final class SupportedVersionsExtension {
             try {
                 spec = new SHSupportedVersionsSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // Update the context.
@@ -458,8 +456,7 @@ final class SupportedVersionsExtension {
             try {
                 spec = new SHSupportedVersionsSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // Update the context.

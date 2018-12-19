@@ -463,4 +463,17 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
         return n;
     }
+
+    // Try to use up the input stream without impact the performance too much.
+    void deplete(boolean tryToRead) throws IOException {
+        int remaining = is.available();
+        if (tryToRead && (remaining == 0)) {
+            // try to wait and read one byte if no buffered input
+            is.read();
+        }
+
+        while ((remaining = is.available()) != 0) {
+            is.skip(remaining);
+        }
+    }
 }

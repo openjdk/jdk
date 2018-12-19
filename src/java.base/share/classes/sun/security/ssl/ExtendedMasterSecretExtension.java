@@ -172,8 +172,7 @@ final class ExtendedMasterSecretExtension {
             try {
                 spec = new ExtendedMasterSecretSpec(buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             if (shc.isResumption && shc.resumingSession != null &&
@@ -232,7 +231,7 @@ final class ExtendedMasterSecretExtension {
                 //
                 // As if extended master extension is required for full
                 // handshake, it MUST be used in abbreviated handshake too.
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Extended Master Secret extension is required");
             }
 
@@ -242,7 +241,7 @@ final class ExtendedMasterSecretExtension {
                     // session used the "extended_master_secret" extension
                     // but the new ClientHello does not contain it, the
                     // server MUST abort the abbreviated handshake.
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Missing Extended Master Secret extension " +
                             "on session resumption");
                 } else {
@@ -250,7 +249,7 @@ final class ExtendedMasterSecretExtension {
                     // original session nor the new ClientHello uses the
                     // extension, the server SHOULD abort the handshake.
                     if (!SSLConfiguration.allowLegacyResumption) {
-                        shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Missing Extended Master Secret extension " +
                             "on session resumption");
                     } else {  // Otherwise, continue with a full handshake.
@@ -318,7 +317,7 @@ final class ExtendedMasterSecretExtension {
             ExtendedMasterSecretSpec requstedSpec = (ExtendedMasterSecretSpec)
                     chc.handshakeExtensions.get(CH_EXTENDED_MASTER_SECRET);
             if (requstedSpec == null) {
-                chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
+                throw chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
                         "Server sent the extended_master_secret " +
                         "extension improperly");
             }
@@ -328,13 +327,12 @@ final class ExtendedMasterSecretExtension {
             try {
                 spec = new ExtendedMasterSecretSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             if (chc.isResumption && chc.resumingSession != null &&
                     !chc.resumingSession.useExtendedMasterSecret) {
-                chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
+                throw chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
                         "Server sent an unexpected extended_master_secret " +
                         "extension on session resumption");
             }
@@ -364,7 +362,7 @@ final class ExtendedMasterSecretExtension {
                 // For full handshake, if a client receives a ServerHello
                 // without the extension, it SHOULD abort the handshake if
                 // it does not wish to interoperate with legacy servers.
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Extended Master Secret extension is required");
             }
 
@@ -374,14 +372,14 @@ final class ExtendedMasterSecretExtension {
                     // the "extended_master_secret" extension but the new
                     // ServerHello does not contain the extension, the client
                     // MUST abort the handshake.
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Missing Extended Master Secret extension " +
                             "on session resumption");
                 } else if (SSLConfiguration.useExtendedMasterSecret &&
                         !SSLConfiguration.allowLegacyResumption &&
                         chc.negotiatedProtocol.useTLS10PlusSpec()) {
                     // Unlikely, abbreviated handshake should be discarded.
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Extended Master Secret extension is required");
                 }
             }

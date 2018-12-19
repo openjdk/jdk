@@ -30,7 +30,6 @@ package MyPackage;
  * @summary Verifies the JVMTI Heap Monitor Thread information sanity.
  * @compile HeapMonitorThreadTest.java
  * @run main/othervm/native -Xmx512m -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadTest
- * @requires vm.gc != "Z"
  */
 
 import java.util.List;

@@ -206,7 +206,7 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = (os::javaTimeMillis() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("VM operation took too long: " SIZE_FORMAT " ms (timeout: " SIZE_FORMAT " ms)",
+      fatal("VM operation took too long: " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
             delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }

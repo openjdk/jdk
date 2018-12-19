@@ -438,7 +438,7 @@ final class DHKeyExchange {
             }
 
             if (dhePossession == null || dheCredentials == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient DHE key agreement parameters negotiated");
             }
 

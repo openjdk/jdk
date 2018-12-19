@@ -113,7 +113,7 @@ final class ECDHServerKeyExchange {
 
             if (ecdhePossession == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "No ECDHE credentials negotiated for server key exchange");
             }
 
@@ -125,7 +125,7 @@ final class ECDHServerKeyExchange {
             this.namedGroup = NamedGroup.valueOf(params);
             if ((namedGroup == null) || (namedGroup.oid == null) ) {
                 // unlikely
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unnamed EC parameter spec: " + params);
             }
 
@@ -146,7 +146,7 @@ final class ECDHServerKeyExchange {
                     if (signatureScheme == null) {
                         // Unlikely, the credentials generator should have
                         // selected the preferable signature algorithm properly.
-                        shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                                 "No preferred signature algorithm for " +
                                 x509Possession.popPrivateKey.getAlgorithm() +
                                 "  key");
@@ -156,7 +156,7 @@ final class ECDHServerKeyExchange {
                                 x509Possession.popPrivateKey);
                     } catch (NoSuchAlgorithmException | InvalidKeyException |
                             InvalidAlgorithmParameterException nsae) {
-                        shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                             "Unsupported signature algorithm: " +
                             signatureScheme.name, nsae);
                     }
@@ -167,7 +167,7 @@ final class ECDHServerKeyExchange {
                                 x509Possession.popPrivateKey.getAlgorithm(),
                                 x509Possession.popPrivateKey);
                     } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                        shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                             "Unsupported signature algorithm: " +
                             x509Possession.popPrivateKey.getAlgorithm(), e);
                     }
@@ -180,7 +180,7 @@ final class ECDHServerKeyExchange {
                             namedGroup.id, publicPoint);
                     signature = signer.sign();
                 } catch (SignatureException ex) {
-                    shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failed to sign ecdhe parameters: " +
                         x509Possession.popPrivateKey.getAlgorithm(), ex);
                 }
@@ -199,37 +199,37 @@ final class ECDHServerKeyExchange {
             byte curveType = (byte)Record.getInt8(m);
             if (curveType != CURVE_NAMED_CURVE) {
                 // Unlikely as only the named curves should be negotiated.
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported ECCurveType: " + curveType);
             }
 
             int namedGroupId = Record.getInt16(m);
             this.namedGroup = NamedGroup.valueOf(namedGroupId);
             if (namedGroup == null) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unknown named group ID: " + namedGroupId);
             }
 
             if (!SupportedGroups.isSupported(namedGroup)) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported named group: " + namedGroup);
             }
 
             if (namedGroup.oid == null) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unknown named EC curve: " + namedGroup);
             }
 
             ECParameterSpec parameters =
                     JsseJce.getECParameterSpec(namedGroup.oid);
             if (parameters == null) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "No supported EC parameter: " + namedGroup);
             }
 
             publicPoint = Record.getBytes8(m);
             if (publicPoint.length == 0) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Insufficient ECPoint data: " + namedGroup);
             }
 
@@ -242,7 +242,7 @@ final class ECDHServerKeyExchange {
                     new ECPublicKeySpec(point, parameters));
             } catch (NoSuchAlgorithmException |
                     InvalidKeySpecException | IOException ex) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid ECPoint: " + namedGroup, ex);
             }
 
@@ -259,7 +259,7 @@ final class ECDHServerKeyExchange {
             if (x509Credentials == null) {
                 // anonymous, no authentication, no signature
                 if (m.hasRemaining()) {
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid DH ServerKeyExchange: unknown extra data");
                 }
                 this.signatureScheme = null;
@@ -275,13 +275,13 @@ final class ECDHServerKeyExchange {
                 int ssid = Record.getInt16(m);
                 signatureScheme = SignatureScheme.valueOf(ssid);
                 if (signatureScheme == null) {
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid signature algorithm (" + ssid +
                         ") used in ECDH ServerKeyExchange handshake message");
                 }
 
                 if (!chc.localSupportedSignAlgs.contains(signatureScheme)) {
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in ECDH ServerKeyExchange handshake message");
@@ -299,11 +299,9 @@ final class ECDHServerKeyExchange {
                             x509Credentials.popPublicKey);
                 } catch (NoSuchAlgorithmException | InvalidKeyException |
                         InvalidAlgorithmParameterException nsae) {
-                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm: " +
                         signatureScheme.name, nsae);
-
-                    return;     // make the compiler happe
                 }
             } else {
                 try {
@@ -311,11 +309,9 @@ final class ECDHServerKeyExchange {
                             x509Credentials.popPublicKey.getAlgorithm(),
                             x509Credentials.popPublicKey);
                 } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm: " +
                         x509Credentials.popPublicKey.getAlgorithm(), e);
-
-                    return;     // make the compiler happe
                 }
             }
 
@@ -326,11 +322,11 @@ final class ECDHServerKeyExchange {
                         namedGroup.id, publicPoint);
 
                 if (!signer.verify(paramsSignature)) {
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid ECDH ServerKeyExchange signature");
                 }
             } catch (SignatureException ex) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot verify ECDH ServerKeyExchange signature", ex);
             }
         }
@@ -546,7 +542,7 @@ final class ECDHServerKeyExchange {
             if (!chc.algorithmConstraints.permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                     skem.publicKey)) {
-                chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "ECDH ServerKeyExchange does not comply " +
                         "to algorithm constraints");
             }
