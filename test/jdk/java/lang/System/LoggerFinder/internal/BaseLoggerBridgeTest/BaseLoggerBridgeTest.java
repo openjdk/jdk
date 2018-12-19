@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.util.stream.Stream;
  *   Tests a naive implementation of System.Logger, and in particular
  *   the default mapping provided by PlatformLogger.Bridge.
  * @modules java.base/sun.util.logging java.base/jdk.internal.logger
- * @build CustomSystemClassLoader BaseLoggerBridgeTest
+ * @build CustomSystemClassLoader BaseLoggerFinder BaseLoggerBridgeTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest NOSECURITY
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest NOPERMISSIONS
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest WITHPERMISSIONS
@@ -94,7 +94,7 @@ public class BaseLoggerBridgeTest {
     static final Class<?> providerClass;
     static {
         try {
-            providerClass = ClassLoader.getSystemClassLoader().loadClass("BaseLoggerBridgeTest$BaseLoggerFinder");
+            providerClass = ClassLoader.getSystemClassLoader().loadClass("BaseLoggerFinder");
         } catch (ClassNotFoundException ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -336,31 +336,10 @@ public class BaseLoggerBridgeTest {
                 log(LogEvent.of(isLoggable(level), name, level, thrown, msgSupplier));
             }
 
-
-
         }
 
         public Logger getLogger(String name, Module caller);
         public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module caller);
-    }
-
-    public static class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
-        @Override
-        public Logger getLogger(String name, Module caller) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
-            PrivilegedAction<ClassLoader> pa = () -> caller.getClassLoader();
-            ClassLoader callerLoader = AccessController.doPrivileged(pa);
-            if (callerLoader == null) {
-                return system.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            } else {
-                return user.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            }
-        }
     }
 
     static PlatformLogger.Bridge convert(Logger logger) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import sun.util.logging.PlatformLogger;
  *          implementation.
  * @modules java.base/sun.util.logging
  *          java.base/jdk.internal.logger
- * @build AccessSystemLogger BaseDefaultLoggerFinderTest CustomSystemClassLoader
+ * @build AccessSystemLogger BaseDefaultLoggerFinderTest CustomSystemClassLoader BaseLoggerFinder
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOSECURITY
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOPERMISSIONS
@@ -97,7 +97,7 @@ public class BaseDefaultLoggerFinderTest {
     static {
         try {
             providerClass = new Class<?>[] {
-                ClassLoader.getSystemClassLoader().loadClass("BaseDefaultLoggerFinderTest$BaseLoggerFinder"),
+                ClassLoader.getSystemClassLoader().loadClass("BaseLoggerFinder"),
             };
         } catch (ClassNotFoundException ex) {
             throw new ExceptionInInitializerError(ex);
@@ -118,43 +118,6 @@ public class BaseDefaultLoggerFinderTest {
         void setLevel(Logger logger, Level level, Module caller);
         void setLevel(Logger logger, PlatformLogger.Level level, Module caller);
         PlatformLogger.Bridge asPlatformLoggerBridge(Logger logger);
-    }
-
-    public static class BaseLoggerFinder extends DefaultLoggerFinder implements TestLoggerFinder {
-
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                    new RuntimePermission("loggerFinder");
-        public BaseLoggerFinder() {
-            if (fails.get()) {
-                throw new RuntimeException("Simulate exception while loading provider");
-            }
-        }
-
-        @Override
-        public void setLevel(Logger logger, Level level, Module caller) {
-            PrivilegedAction<Void> pa = () -> {
-                setLevel(logger, PlatformLogger.toPlatformLevel(level), caller);
-                return null;
-            };
-            AccessController.doPrivileged(pa);
-        }
-
-        @Override
-        public void setLevel(Logger logger, PlatformLogger.Level level, Module caller) {
-            PrivilegedAction<Logger> pa = () -> demandLoggerFor(logger.getName(), caller);
-            Logger impl = AccessController.doPrivileged(pa);
-            SimpleConsoleLogger.class.cast(impl)
-                    .getLoggerConfiguration()
-                    .setPlatformLevel(level);
-        }
-
-        @Override
-        public PlatformLogger.Bridge asPlatformLoggerBridge(Logger logger) {
-            PrivilegedAction<PlatformLogger.Bridge> pa = () ->
-                PlatformLogger.Bridge.convert(logger);
-            return AccessController.doPrivileged(pa);
-        }
-
     }
 
     public static class MyBundle extends ResourceBundle {
@@ -477,7 +440,7 @@ public class BaseDefaultLoggerFinderTest {
                     System.out.println("\n*** Without Security Manager\n");
                     System.out.println(TestLoggerFinder.conf.get());
                     provider = getLoggerFinder(expectedClass);
-                    if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                    if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                         throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                     }
                     test(provider, true);
@@ -498,7 +461,7 @@ public class BaseDefaultLoggerFinderTest {
                         try {
                             allowControl.get().set(true);
                             provider = getLoggerFinder(expectedClass);
-                            if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                            if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                                 throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                             }
                         } finally {
@@ -516,7 +479,7 @@ public class BaseDefaultLoggerFinderTest {
                     try {
                         allowControl.get().set(true);
                         provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                             throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                         }
                         test(provider, true);
@@ -532,7 +495,7 @@ public class BaseDefaultLoggerFinderTest {
                     try {
                         allowControl.get().set(true);
                         provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                             throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                         }
                         test(provider, CustomLoggerWrapper::new, true);
@@ -550,7 +513,7 @@ public class BaseDefaultLoggerFinderTest {
                     try {
                         allowControl.get().set(true);
                         provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                             throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                         }
                         test(provider, ReflectionLoggerWrapper::new, true);

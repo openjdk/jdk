@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.security.AllPermission;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -39,8 +40,7 @@ import java.security.ProtectionDomain;
 public class CustomSystemClassLoader extends ClassLoader {
 
 
-    Class<?> loggerFinderClass = null;
-//    Class<?> loggerImplClass = null;
+    private final ConcurrentHashMap<String, Class<?>> classes = new ConcurrentHashMap<>();
 
     public CustomSystemClassLoader() {
         super();
@@ -51,8 +51,13 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     private Class<?> defineFinderClass(String name)
         throws ClassNotFoundException {
+
+        Class<?> loggerFinderClass = classes.get(name);
+        if (loggerFinderClass != null) return loggerFinderClass;
+
         final Object obj = getClassLoadingLock(name);
         synchronized(obj) {
+            loggerFinderClass = classes.get(name);
             if (loggerFinderClass != null) return loggerFinderClass;
 
             URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
@@ -66,6 +71,7 @@ public class CustomSystemClassLoader extends ClassLoader {
                             name, b, 0, b.length, new ProtectionDomain(
                             this.getClass().getProtectionDomain().getCodeSource(),
                             perms));
+                    classes.put(name, loggerFinderClass);
                     System.out.println("Loaded " + name);
                     return loggerFinderClass;
                 } catch (Throwable ex) {
@@ -78,61 +84,22 @@ public class CustomSystemClassLoader extends ClassLoader {
             }
         }
     }
-//    private Class<?> defineLoggerImplClass(String name)
-//        throws ClassNotFoundException {
-//        final Object obj = getClassLoadingLock(name);
-//        synchronized(obj) {
-//            if (loggerImplClass != null) return loggerImplClass;
-//
-//            URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-//            File file = new File(url.getPath(), name+".class");
-//            if (file.canRead()) {
-//                try {
-//                    byte[] b = Files.readAllBytes(file.toPath());
-//                    Permissions perms = new Permissions();
-//                    perms.add(new AllPermission());
-//                    loggerImplClass = defineClass(
-//                            name, b, 0, b.length, new ProtectionDomain(
-//                            this.getClass().getProtectionDomain().getCodeSource(),
-//                            perms));
-//                    System.out.println("Loaded " + name);
-//                    return loggerImplClass;
-//                } catch (Throwable ex) {
-//                    ex.printStackTrace();
-//                    throw new ClassNotFoundException(name, ex);
-//                }
-//            } else {
-//                throw new ClassNotFoundException(name,
-//                        new IOException(file.toPath() + ": can't read"));
-//            }
-//        }
-//    }
-//
+
     @Override
     public synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name.endsWith("$LogProducerFinder")) {
+        if (name.equals("LogProducerFinder") || name.startsWith("LogProducerFinder$")) {
             Class<?> c = defineFinderClass(name);
             if (resolve) {
                 resolveClass(c);
             }
             return c;
         }
-//        if (name.endsWith("$LogProducerFinder$LoggerImpl")) {
-//            Class<?> c = defineLoggerImplClass(name);
-//            if (resolve) {
-//                resolveClass(c);
-//            }
-//            return c;
-//        }
         return super.loadClass(name, resolve);
     }
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-//        if (name.endsWith("$LogProducerFinder$LoggerImpl")) {
-//            return defineLoggerImplClass(name);
-//        }
-        if (name.endsWith("$$LogProducerFinder")) {
+        if (name.equals("LogProducerFinder") || name.startsWith("LogProducerFinder$")) {
             return defineFinderClass(name);
         }
         return super.findClass(name);

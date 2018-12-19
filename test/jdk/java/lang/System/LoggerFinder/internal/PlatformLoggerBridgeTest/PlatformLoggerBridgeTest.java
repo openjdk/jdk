@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import sun.util.logging.PlatformLogger;
  *          backend whose loggers implement PlatformLogger.Bridge.
  * @modules java.base/sun.util.logging
  *          java.logging
- * @build CustomSystemClassLoader PlatformLoggerBridgeTest
+ * @build CustomSystemClassLoader LogProducerFinder PlatformLoggerBridgeTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader PlatformLoggerBridgeTest NOSECURITY
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader PlatformLoggerBridgeTest NOPERMISSIONS
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader PlatformLoggerBridgeTest WITHPERMISSIONS
@@ -89,18 +89,18 @@ public class PlatformLoggerBridgeTest {
         }
     };
 
+    public static final Queue<LogEvent> eventQueue = new ArrayBlockingQueue<>(128);
+
     static final Class<?> providerClass;
     static {
         try {
             // Preload classes before the security manager is on.
-            providerClass = ClassLoader.getSystemClassLoader().loadClass("PlatformLoggerBridgeTest$LogProducerFinder");
+            providerClass = ClassLoader.getSystemClassLoader().loadClass("LogProducerFinder");
             ((LoggerFinder)providerClass.newInstance()).getLogger("foo", providerClass.getModule());
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
-
-    public static final Queue<LogEvent> eventQueue = new ArrayBlockingQueue<>(128);
 
     public static final class LogEvent implements Cloneable {
 
@@ -234,200 +234,182 @@ public class PlatformLoggerBridgeTest {
 
     }
 
-    public static class LogProducerFinder extends LoggerFinder {
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
-        final ConcurrentHashMap<String, LoggerImpl> system = new ConcurrentHashMap<>();
-        final ConcurrentHashMap<String, LoggerImpl> user = new ConcurrentHashMap<>();
+    public static class LoggerImpl implements System.Logger, PlatformLogger.Bridge {
+        private final String name;
+        private sun.util.logging.PlatformLogger.Level level = sun.util.logging.PlatformLogger.Level.INFO;
+        private sun.util.logging.PlatformLogger.Level OFF = sun.util.logging.PlatformLogger.Level.OFF;
+        private sun.util.logging.PlatformLogger.Level FINE = sun.util.logging.PlatformLogger.Level.FINE;
+        private sun.util.logging.PlatformLogger.Level FINER = sun.util.logging.PlatformLogger.Level.FINER;
+        private sun.util.logging.PlatformLogger.Level FINEST = sun.util.logging.PlatformLogger.Level.FINEST;
+        private sun.util.logging.PlatformLogger.Level CONFIG = sun.util.logging.PlatformLogger.Level.CONFIG;
+        private sun.util.logging.PlatformLogger.Level INFO = sun.util.logging.PlatformLogger.Level.INFO;
+        private sun.util.logging.PlatformLogger.Level WARNING = sun.util.logging.PlatformLogger.Level.WARNING;
+        private sun.util.logging.PlatformLogger.Level SEVERE = sun.util.logging.PlatformLogger.Level.SEVERE;
 
-        public class LoggerImpl implements Logger, PlatformLogger.Bridge {
-            private final String name;
-            private sun.util.logging.PlatformLogger.Level level = sun.util.logging.PlatformLogger.Level.INFO;
-            private sun.util.logging.PlatformLogger.Level OFF = sun.util.logging.PlatformLogger.Level.OFF;
-            private sun.util.logging.PlatformLogger.Level FINE = sun.util.logging.PlatformLogger.Level.FINE;
-            private sun.util.logging.PlatformLogger.Level FINER = sun.util.logging.PlatformLogger.Level.FINER;
-            private sun.util.logging.PlatformLogger.Level FINEST = sun.util.logging.PlatformLogger.Level.FINEST;
-            private sun.util.logging.PlatformLogger.Level CONFIG = sun.util.logging.PlatformLogger.Level.CONFIG;
-            private sun.util.logging.PlatformLogger.Level INFO = sun.util.logging.PlatformLogger.Level.INFO;
-            private sun.util.logging.PlatformLogger.Level WARNING = sun.util.logging.PlatformLogger.Level.WARNING;
-            private sun.util.logging.PlatformLogger.Level SEVERE = sun.util.logging.PlatformLogger.Level.SEVERE;
+        public LoggerImpl(String name) {
+            this.name = name;
+        }
 
-            public LoggerImpl(String name) {
-                this.name = name;
-            }
-
-            @Override
-            public String getName() {
-                return name;
-            }
-
-            @Override
-            public boolean isLoggable(Level level) {
-                return this.level != OFF && this.level.intValue() <= level.getSeverity();
-            }
-
-            @Override
-            public void log(Level level, ResourceBundle bundle,
-                    String key, Throwable thrown) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void log(Level level, ResourceBundle bundle,
-                    String format, Object... params) {
-                throw new UnsupportedOperationException();
-            }
-
-            void log(LogEvent event) {
-                eventQueue.add(event);
-            }
-
-            @Override
-            public void log(Level level, Supplier<String> msgSupplier) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void log(Level level, Supplier<String> msgSupplier,
-                            Throwable thrown) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void log(sun.util.logging.PlatformLogger.Level level, String msg) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, null, msg, null, (Object[])null));
-            }
-
-            @Override
-            public void log(sun.util.logging.PlatformLogger.Level level,
-                    Supplier<String> msgSupplier) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, null, msgSupplier, null, (Object[])null));
-            }
-
-            @Override
-            public void log(sun.util.logging.PlatformLogger.Level level, String msg,
-                    Object... params) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, null, msg, null, params));
-            }
-
-            @Override
-            public void log(sun.util.logging.PlatformLogger.Level level, String msg,
-                    Throwable thrown) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, null, msg, thrown, (Object[])null));
-            }
-
-            @Override
-            public void log(sun.util.logging.PlatformLogger.Level level, Throwable thrown,
-                    Supplier<String> msgSupplier) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, null, msgSupplier, thrown, (Object[])null));
-            }
-
-            @Override
-            public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, String msg) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, null, msg, null, (Object[])null));
-            }
-
-            @Override
-            public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, Supplier<String> msgSupplier) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, null, msgSupplier, null, (Object[])null));
-            }
-
-            @Override
-            public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, String msg, Object... params) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, null, msg, null, params));
-            }
-
-            @Override
-            public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, String msg, Throwable thrown) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, null, msg, thrown, (Object[])null));
-            }
-
-            @Override
-            public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, Throwable thrown,
-                    Supplier<String> msgSupplier) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, null, msgSupplier, thrown, (Object[])null));
-            }
-
-            @Override
-            public void logrb(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, ResourceBundle bundle, String msg,
-                    Object... params) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, bundle, msg, null, params));
-            }
-
-            @Override
-            public void logrb(sun.util.logging.PlatformLogger.Level level, ResourceBundle bundle,
-                    String msg, Object... params) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, bundle, msg, null, params));
-            }
-
-            @Override
-            public void logrb(sun.util.logging.PlatformLogger.Level level, String sourceClass,
-                    String sourceMethod, ResourceBundle bundle, String msg,
-                    Throwable thrown) {
-                log(LogEvent.of(isLoggable(level), name,
-                        sourceClass, sourceMethod,
-                        level, bundle, msg, thrown, (Object[])null));
-            }
-
-            @Override
-            public void logrb(sun.util.logging.PlatformLogger.Level level, ResourceBundle bundle,
-                    String msg, Throwable thrown) {
-                log(LogEvent.of(isLoggable(level), name, null, null,
-                        level, bundle, msg, thrown, (Object[])null));
-            }
-
-            @Override
-            public boolean isLoggable(sun.util.logging.PlatformLogger.Level level) {
-                return this.level != OFF && level.intValue()
-                        >= this.level.intValue();
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return this.level != OFF;
-            }
-
-
+        public void configureLevel(sun.util.logging.PlatformLogger.Level level) {
+            this.level = level;
         }
 
         @Override
-        public Logger getLogger(String name, Module caller) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
-            PrivilegedAction<ClassLoader> pa = () -> caller.getClassLoader();
-            ClassLoader callerLoader = AccessController.doPrivileged(pa);
-            if (callerLoader == null) {
-                return system.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            } else {
-                return user.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            }
+        public String getName() {
+            return name;
         }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return this.level != OFF && this.level.intValue() <= level.getSeverity();
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle,
+                        String key, Throwable thrown) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle,
+                        String format, Object... params) {
+            throw new UnsupportedOperationException();
+        }
+
+        void log(PlatformLoggerBridgeTest.LogEvent event) {
+            eventQueue.add(event);
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> msgSupplier) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> msgSupplier,
+                        Throwable thrown) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void log(sun.util.logging.PlatformLogger.Level level, String msg) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, null, msg, null, (Object[]) null));
+        }
+
+        @Override
+        public void log(sun.util.logging.PlatformLogger.Level level,
+                        Supplier<String> msgSupplier) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, null, msgSupplier, null, (Object[]) null));
+        }
+
+        @Override
+        public void log(sun.util.logging.PlatformLogger.Level level, String msg,
+                        Object... params) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, null, msg, null, params));
+        }
+
+        @Override
+        public void log(sun.util.logging.PlatformLogger.Level level, String msg,
+                        Throwable thrown) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, null, msg, thrown, (Object[]) null));
+        }
+
+        @Override
+        public void log(sun.util.logging.PlatformLogger.Level level, Throwable thrown,
+                        Supplier<String> msgSupplier) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, null, msgSupplier, thrown, (Object[]) null));
+        }
+
+        @Override
+        public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                         String sourceMethod, String msg) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, null, msg, null, (Object[]) null));
+        }
+
+        @Override
+        public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                         String sourceMethod, Supplier<String> msgSupplier) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, null, msgSupplier, null, (Object[]) null));
+        }
+
+        @Override
+        public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                         String sourceMethod, String msg, Object... params) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, null, msg, null, params));
+        }
+
+        @Override
+        public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                         String sourceMethod, String msg, Throwable thrown) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, null, msg, thrown, (Object[]) null));
+        }
+
+        @Override
+        public void logp(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                         String sourceMethod, Throwable thrown,
+                         Supplier<String> msgSupplier) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, null, msgSupplier, thrown, (Object[]) null));
+        }
+
+        @Override
+        public void logrb(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                          String sourceMethod, ResourceBundle bundle, String msg,
+                          Object... params) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, bundle, msg, null, params));
+        }
+
+        @Override
+        public void logrb(sun.util.logging.PlatformLogger.Level level, ResourceBundle bundle,
+                          String msg, Object... params) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, bundle, msg, null, params));
+        }
+
+        @Override
+        public void logrb(sun.util.logging.PlatformLogger.Level level, String sourceClass,
+                          String sourceMethod, ResourceBundle bundle, String msg,
+                          Throwable thrown) {
+            log(LogEvent.of(isLoggable(level), name,
+                    sourceClass, sourceMethod,
+                    level, bundle, msg, thrown, (Object[]) null));
+        }
+
+        @Override
+        public void logrb(sun.util.logging.PlatformLogger.Level level, ResourceBundle bundle,
+                          String msg, Throwable thrown) {
+            log(LogEvent.of(isLoggable(level), name, null, null,
+                    level, bundle, msg, thrown, (Object[]) null));
+        }
+
+        @Override
+        public boolean isLoggable(sun.util.logging.PlatformLogger.Level level) {
+            return this.level != OFF && level.intValue()
+                    >= this.level.intValue();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return this.level != OFF;
+        }
+
+
     }
 
     static final sun.util.logging.PlatformLogger.Level[] julLevels = {
@@ -593,11 +575,11 @@ public class PlatformLoggerBridgeTest {
             System.out.println("Got expected exception for system logger: " + acx);
         }
 
-        final LogProducerFinder.LoggerImpl sysSink;
+        final LoggerImpl sysSink;
         boolean old = allowControl.get().get();
         allowControl.get().set(true);
         try {
-           sysSink = LogProducerFinder.LoggerImpl.class.cast(
+           sysSink = LoggerImpl.class.cast(
                         provider.getLogger("foo", Thread.class.getModule()));
         } finally {
             allowControl.get().set(old);
@@ -647,20 +629,20 @@ public class PlatformLoggerBridgeTest {
         }
     }
 
-    static void setLevel( LogProducerFinder.LoggerImpl sink,
+    static void setLevel(LoggerImpl sink,
             sun.util.logging.PlatformLogger.Level loggerLevel) {
-        sink.level = loggerLevel;
+        sink.configureLevel(loggerLevel);
     }
 
     // Calls the methods defined on LogProducer and verify the
-    // parameters received by the underlying LogProducerFinder.LoggerImpl
+    // parameters received by the underlying LoggerImpl
     // logger.
     private static void testLogger(LoggerFinder provider,
             Map<PlatformLogger, String> loggerDescMap,
             String name,
             ResourceBundle loggerBundle,
             PlatformLogger logger,
-            LogProducerFinder.LoggerImpl sink) {
+            LoggerImpl sink) {
 
         System.out.println("Testing " + loggerDescMap.get(logger) + " [" + logger +"]");
         final sun.util.logging.PlatformLogger.Level OFF = sun.util.logging.PlatformLogger.Level.OFF;
