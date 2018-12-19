@@ -2871,6 +2871,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     public BigDecimal movePointLeft(int n) {
+        if (n == 0) return this;
+
         // Cannot use movePointRight(-n) in case of n==Integer.MIN_VALUE
         int newScale = checkScale((long)scale + n);
         BigDecimal num = new BigDecimal(intVal, intCompact, newScale, 0);
@@ -2893,6 +2895,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     public BigDecimal movePointRight(int n) {
+        if (n == 0) return this;
+
         // Cannot use movePointLeft(-n) in case of n==Integer.MIN_VALUE
         int newScale = checkScale((long)scale - n);
         BigDecimal num = new BigDecimal(intVal, intCompact, newScale, 0);
