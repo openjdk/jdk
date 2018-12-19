@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,17 @@
 package jdk.nio.zipfs;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.util.Formatter;
 
-/*
- *
- * @author  Xueming Shen, Rajendra Gutupalli, Jaya Hangal
+/**
+ * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
-
 class ZipFileStore extends FileStore {
 
     private final ZipFileSystem zfs;
@@ -76,7 +72,6 @@ class ZipFileStore extends FileStore {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
         if (type == null)
             throw new NullPointerException();

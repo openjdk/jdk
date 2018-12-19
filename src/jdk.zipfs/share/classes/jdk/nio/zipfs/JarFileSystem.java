@@ -48,7 +48,6 @@ import java.util.jar.Manifest;
  *
  * @author Steve Drach
  */
-
 class JarFileSystem extends ZipFileSystem {
     private Function<byte[],byte[]> lookup;
 

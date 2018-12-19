@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,36 @@
 
 package jdk.nio.zipfs;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
-import java.nio.channels.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.attribute.*;
-import java.util.*;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.*;
-import static java.nio.file.StandardCopyOption.*;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
- *
- * @author  Xueming Shen, Rajendra Gutupalli,Jaya Hangal
+ * @author Xueming Shen, Rajendra Gutupalli,Jaya Hangal
  */
-
 final class ZipPath implements Path {
 
     private final ZipFileSystem zfs;
@@ -522,7 +536,6 @@ final class ZipPath implements Path {
     private byte[] normalize(String path, int off, int len) {
         StringBuilder to = new StringBuilder(len);
         to.append(path, 0, off);
-        int m = off;
         char prevC = 0;
         while (off < len) {
             char c = path.charAt(off++);
