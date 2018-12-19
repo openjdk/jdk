@@ -152,7 +152,7 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
 oop JNIHandles::resolve_external_guard(jobject handle) {
   oop result = NULL;
   if (handle != NULL) {
-    result = resolve_impl<0 /* decorators */, true /* external_guard */>(handle);
+    result = resolve_impl<DECORATORS_NONE, true /* external_guard */>(handle);
   }
   return result;
 }
