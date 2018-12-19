@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,7 +770,7 @@ public class DistributionPointFetcher {
          *
          * In practice, conforming CAs MUST use the key identifier method,
          * and MUST include authority key identifier extension in all CRLs
-         * issued. [section 5.2.1, RFC 2459]
+         * issued. [section 5.2.1, RFC 5280]
          */
         AuthorityKeyIdentifierExtension crlAKID = crl.getAuthKeyIdExtension();
         issuerSelector.setSkiAndSerialNumber(crlAKID);

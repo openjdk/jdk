@@ -166,15 +166,15 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
             // Several AlgorithmId should omit the whole parameter part when
             // it's NULL. They are ---
-            // rfc3370 2.1: Implementations SHOULD generate SHA-1
+            // RFC 3370 2.1: Implementations SHOULD generate SHA-1
             // AlgorithmIdentifiers with absent parameters.
-            // rfc3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
+            // RFC 3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
             // id-sha512 are used in an AlgorithmIdentifier the parameters
             // (which are optional) SHOULD be omitted.
-            // rfc3279 2.3.2: The id-dsa algorithm syntax includes optional
+            // RFC 3279 2.3.2: The id-dsa algorithm syntax includes optional
             // domain parameters... When omitted, the parameters component
             // MUST be omitted entirely
-            // rfc3370 3.1: When the id-dsa-with-sha1 algorithm identifier
+            // RFC 3370 3.1: When the id-dsa-with-sha1 algorithm identifier
             // is used, the AlgorithmIdentifier parameters field MUST be absent.
             /*if (
                 algid.equals((Object)SHA_oid) ||
