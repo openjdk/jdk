@@ -91,7 +91,6 @@ public class Types {
     final Names names;
     final boolean allowDefaultMethods;
     final boolean mapCapturesToBounds;
-    final boolean returnTypeSustitutableSameType;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -115,7 +114,6 @@ public class Types {
         Source source = Source.instance(context);
         allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
         mapCapturesToBounds = Feature.MAP_CAPTURES_TO_BOUNDS.allowedInSource(source);
-        returnTypeSustitutableSameType = Feature.RETURN_TYPE_SUBSTITUTABLE_SAME_TYPE.allowedInSource(source);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -4237,13 +4235,8 @@ public class Types {
             return covariantReturnType(r1.getReturnType(), r2res, warner);
         if (isSubtypeUnchecked(r1.getReturnType(), r2res, warner))
             return true;
-        if (returnTypeSustitutableSameType) {
-            if (!isSameType(r1.getReturnType(), erasure(r2res)))
-                return false;
-        } else {
-            if (!isSubtype(r1.getReturnType(), erasure(r2res)))
-                return false;
-        }
+        if (!isSubtype(r1.getReturnType(), erasure(r2res)))
+            return false;
         warner.warn(LintCategory.UNCHECKED);
         return true;
     }
