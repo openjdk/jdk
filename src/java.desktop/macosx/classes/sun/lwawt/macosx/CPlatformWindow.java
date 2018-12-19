@@ -266,12 +266,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         ComponentAccessor componentAccessor = AWTAccessor.getComponentAccessor();
         Object p1 = componentAccessor.getPeer(w1);
         Object p2 = componentAccessor.getPeer(w2);
-        if (p1 instanceof LWWindowPeer && p2 instanceof LWWindowPeer) {
-            return Long.compare(
-                    ((CPlatformWindow) (((LWWindowPeer) p1).getPlatformWindow())).lastBecomeMainTime,
-                    ((CPlatformWindow) (((LWWindowPeer) p2).getPlatformWindow())).lastBecomeMainTime);
+        long time1 = 0;
+        if (p1 instanceof LWWindowPeer) {
+            time1 = ((CPlatformWindow) (((LWWindowPeer) p1).getPlatformWindow())).lastBecomeMainTime;
         }
-        return 0;
+        long time2 = 0;
+        if (p2 instanceof LWWindowPeer) {
+            time2 = ((CPlatformWindow) (((LWWindowPeer) p2).getPlatformWindow())).lastBecomeMainTime;
+        }
+        return Long.compare(time1, time2);
     };
 
     // Bounds of the native widget but in the Java coordinate system.
