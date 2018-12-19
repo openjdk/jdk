@@ -61,6 +61,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
@@ -1245,8 +1246,12 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
       javaVFrame *priv = vfst.asJavaVFrame();       // executePrivileged
 
       StackValueCollection* locals = priv->locals();
-      privileged_context = locals->obj_at(1);
-      Handle caller      = locals->obj_at(2);
+      StackValue* ctx_sv = locals->at(1); // AccessControlContext context
+      StackValue* clr_sv = locals->at(2); // Class<?> caller
+      assert(!ctx_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      assert(!clr_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      privileged_context    = ctx_sv->get_obj();
+      Handle caller         = clr_sv->get_obj();
 
       Klass *caller_klass = java_lang_Class::as_Klass(caller());
       protection_domain  = caller_klass->protection_domain();
