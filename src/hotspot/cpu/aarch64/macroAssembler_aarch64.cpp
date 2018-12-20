@@ -4896,7 +4896,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   // A very short string
   cmpw(cnt2, minCharsInWord);
-  br(Assembler::LT, SHORT_STRING);
+  br(Assembler::LE, SHORT_STRING);
 
   // Compare longwords
   // load first parts of strings and finish initialization while loading
@@ -4920,8 +4920,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       ldr(tmp2, Address(str2));
       cmp(cnt2, STUB_THRESHOLD);
       br(GE, STUB);
-      subsw(cnt2, cnt2, 4);
-      br(EQ, TAIL_CHECK);
+      subw(cnt2, cnt2, 4);
       eor(vtmpZ, T16B, vtmpZ, vtmpZ);
       lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
       lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
@@ -4937,8 +4936,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       ldrs(vtmp, Address(str2));
       cmp(cnt2, STUB_THRESHOLD);
       br(GE, STUB);
-      subsw(cnt2, cnt2, 4);
-      br(EQ, TAIL_CHECK);
+      subw(cnt2, cnt2, 4);
       lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
       eor(vtmpZ, T16B, vtmpZ, vtmpZ);
       lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));

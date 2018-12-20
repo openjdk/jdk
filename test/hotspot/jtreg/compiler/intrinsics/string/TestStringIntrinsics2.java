@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -641,6 +641,12 @@ public class TestStringIntrinsics2 {
             String b2 = new String(bc);
             assertEquals(-3, asmStringCompareTo(a2, b2),
                          "TestOther.asmStringCompareTo(very_very_long_strings_2)");
+        }
+
+        // See bug 8215100
+        {
+            assertEquals(-20, asmStringCompareTo("e.\u0259.", "y.e."));
+            assertEquals(20, asmStringCompareTo("y.e.", "e.\u0259."));
         }
     }
 
