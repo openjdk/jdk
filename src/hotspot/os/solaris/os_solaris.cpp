@@ -2871,16 +2871,6 @@ size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
   return res;
 }
 
-void os::naked_short_sleep(jlong ms) {
-  assert(ms < 1000, "Un-interruptable sleep, short time use only");
-
-  // usleep is deprecated and removed from POSIX, in favour of nanosleep, but
-  // Solaris requires -lrt for this.
-  usleep((ms * 1000));
-
-  return;
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...

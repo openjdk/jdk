@@ -4033,33 +4033,6 @@ size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
 }
 
-// Short sleep, direct OS call.
-//
-// Note: certain versions of Linux CFS scheduler (since 2.6.23) do not guarantee
-// sched_yield(2) will actually give up the CPU:
-//
-//   * Alone on this pariticular CPU, keeps running.
-//   * Before the introduction of "skip_buddy" with "compat_yield" disabled
-//     (pre 2.6.39).
-//
-// So calling this with 0 is an alternative.
-//
-void os::naked_short_sleep(jlong ms) {
-  struct timespec req;
-
-  assert(ms < 1000, "Un-interruptable sleep, short time use only");
-  req.tv_sec = 0;
-  if (ms > 0) {
-    req.tv_nsec = (ms % 1000) * 1000000;
-  } else {
-    req.tv_nsec = 1;
-  }
-
-  nanosleep(&req, NULL);
-
-  return;
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -4072,6 +4045,16 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
+// Linux CFS scheduler (since 2.6.23) does not guarantee sched_yield(2) will
+// actually give up the CPU. Since skip buddy (v2.6.28):
+//
+// * Sets the yielding task as skip buddy for current CPU's run queue.
+// * Picks next from run queue, if empty, picks a skip buddy (can be the yielding task).
+// * Clears skip buddies for this run queue (yielding task no longer a skip buddy).
+//
+// An alternative is calling os::naked_short_nanosleep with a small number to avoid
+// getting re-scheduled immediately.
+//
 void os::naked_yield() {
   sched_yield();
 }
