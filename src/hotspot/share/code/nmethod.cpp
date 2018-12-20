@@ -2540,6 +2540,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::section_word_type:     return "section_word";
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
+        case relocInfo::trampoline_stub_type:  return "trampoline_stub";
         case relocInfo::type_mask:             return "type_bit_mask";
 
         default:
