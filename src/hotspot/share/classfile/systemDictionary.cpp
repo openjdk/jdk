@@ -71,7 +71,6 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/arguments_ext.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"

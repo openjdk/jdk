@@ -34,7 +34,6 @@
 #include "runtime/vmThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "services/diagnosticCommand_ext.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
