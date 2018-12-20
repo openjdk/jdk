@@ -81,6 +81,7 @@ class jvmtiDeferredLocalVariableSet;
 
 class GCTaskQueue;
 class ThreadClosure;
+class ICRefillVerifier;
 class IdealGraphPrinter;
 
 class Metadata;
@@ -329,15 +330,15 @@ class Thread: public ThreadShadow {
  private:
 
 #ifdef ASSERT
-  void* _missed_ic_stub_refill_mark;
+  ICRefillVerifier* _missed_ic_stub_refill_verifier;
 
  public:
-  void* missed_ic_stub_refill_mark() {
-    return _missed_ic_stub_refill_mark;
+  ICRefillVerifier* missed_ic_stub_refill_verifier() {
+    return _missed_ic_stub_refill_verifier;
   }
 
-  void set_missed_ic_stub_refill_mark(void* mark) {
-    _missed_ic_stub_refill_mark = mark;
+  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
+    _missed_ic_stub_refill_verifier = verifier;
   }
 #endif
 
