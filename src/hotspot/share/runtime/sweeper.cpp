@@ -149,7 +149,7 @@ long     NMethodSweeper::_time_counter                 = 0;    // Virtual time u
 long     NMethodSweeper::_last_sweep                   = 0;    // Value of _time_counter when the last sweep happened
 int      NMethodSweeper::_seen                         = 0;    // Nof. nmethod we have currently processed in current pass of CodeCache
 
-volatile bool NMethodSweeper::_should_sweep            = true; // Indicates if we should invoke the sweeper
+volatile bool NMethodSweeper::_should_sweep            = false;// Indicates if we should invoke the sweeper
 volatile bool NMethodSweeper::_force_sweep             = false;// Indicates if we should force a sweep
 volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the total nmethod size if the nmethod changed from:
                                                                //   1) alive       -> not_entrant
