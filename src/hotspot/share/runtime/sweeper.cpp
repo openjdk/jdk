@@ -717,12 +717,6 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     // stack we can safely convert it to a zombie method
     OrderAccess::loadload(); // _stack_traversal_mark and _state
     if (cm->can_convert_to_zombie()) {
-      // Clear ICStubs to prevent back patching stubs of zombie or flushed
-      // nmethods during the next safepoint (see ICStub::finalize).
-      {
-        CompiledICLocker ml(cm);
-        cm->clear_ic_stubs();
-      }
       // Code cache state change is tracked in make_zombie()
       cm->make_zombie();
       SWEEP(cm);

@@ -1283,6 +1283,13 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
       flush_dependencies(/*delete_immediately*/true);
     }
 
+    // Clear ICStubs to prevent back patching stubs of zombie or flushed
+    // nmethods during the next safepoint (see ICStub::finalize).
+    {
+      CompiledICLocker ml(this);
+      clear_ic_stubs();
+    }
+
     // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
     // event and it hasn't already been reported for this nmethod then
     // report it now. The event may have been reported earlier if the GC
