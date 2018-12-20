@@ -71,9 +71,9 @@ bool G1YoungRemSetSamplingThread::should_start_periodic_gc() {
 
   // Check if load is lower than max.
   double recent_load;
-  if ((G1PeriodicGCSystemLoadThreshold > 0) &&
+  if ((G1PeriodicGCSystemLoadThreshold > 0.0f) &&
       (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
-    log_debug(gc, periodic)("Load %1.2f is higher than threshold " UINTX_FORMAT ". Skipping.",
+    log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
                             recent_load, G1PeriodicGCSystemLoadThreshold);
     return false;
   }
