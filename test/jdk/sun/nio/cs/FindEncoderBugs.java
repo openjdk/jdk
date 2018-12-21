@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class FindEncoderBugs {
         private final long failed0 = failed;
 
         // legend: r=regular d=direct In=Input Ou=Output
-        static final int maxBufSize = 20;
+        static final int maxBufSize = 40;
         static final CharBuffer[] rInBuffers = new CharBuffer[maxBufSize];
         static final CharBuffer[] dInBuffers = new CharBuffer[maxBufSize];
 
@@ -444,6 +444,28 @@ public class FindEncoderBugs {
             }
         }
 
+        void testISO88591InvalidChar() {
+            // Several architectures implement the ISO-8859-1 encoder as an
+            // intrinsic where the vectorised assembly has separate cases
+            // for different input sizes, so exhaustively test all sizes
+            // from 0 to maxBufSize to ensure we get coverage
+
+            for (int i = 0; i < CharsetTester.maxBufSize; i++) {
+                char[] ia = new char[i];
+                for (int j = 0; j < i; j++)
+                    ia[j] = randomChar();
+
+                test(ia);
+
+                // Test break on unrepresentable character
+                for (int j = 0; j < i; j++) {
+                    char[] iaInvalid = ia.clone();
+                    iaInvalid[j] = (char)(randomChar() | 0x100);
+                    test(iaInvalid);
+                }
+            }
+        }
+
         void testPrefix(char[] prefix) {
             if (prefix.length > 0)
                 System.out.printf("Testing prefix %s%n", string(prefix));
@@ -492,6 +514,9 @@ public class FindEncoderBugs {
             System.out.println("More ISCII testing...");
             new CharsetTester(cs).testPrefix(new char[]{'\u094d'}); // Halant
             new CharsetTester(cs).testPrefix(new char[]{'\u093c'}); // Nukta
+        } else if (csn.equals("ISO-8859-1")) {
+            System.out.println("More ISO-8859-1 testing...");
+            new CharsetTester(cs).testISO88591InvalidChar();
         }
     }
 
