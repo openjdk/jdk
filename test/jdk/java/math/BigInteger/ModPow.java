@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,25 @@
  */
 
 /* @test
- * @bug 4181191
- * @summary test BigInteger modPow method
+ * @bug 4181191 8215759
+ * @summary test BigInteger modPow method (use -Dseed=X to set PRNG seed)
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main ModPow
+ * @key randomness
  */
 import java.math.BigInteger;
 import java.util.Random;
+import jdk.test.lib.RandomFactory;
 
 public class ModPow {
     public static void main(String[] args) {
-        Random rnd = new Random(1234);
+        Random rnd = RandomFactory.getRandom();
 
         for (int i=0; i<2000; i++) {
-            BigInteger m = new BigInteger(800, rnd);
+            // Clamp random modulus to a positive value or modPow() will
+            // throw an ArithmeticException.
+            BigInteger m = new BigInteger(800, rnd).max(BigInteger.ONE);
             BigInteger base = new BigInteger(16, rnd);
             if (rnd.nextInt() % 1 == 0)
                 base = base.negate();
