@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,7 @@ implements CertAttrSet<String>, Cloneable {
      * expanded by a merge, just remain constant or become more
      * limiting.
      * <p>
-     * IETF RFC2459 specifies the processing of Name Constraints as
+     * IETF RFC 5280 specifies the processing of Name Constraints as
      * follows:
      * <p>
      * (j)  If permittedSubtrees is present in the certificate, set the

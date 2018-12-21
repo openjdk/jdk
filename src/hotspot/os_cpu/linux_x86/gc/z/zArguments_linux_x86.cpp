@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,20 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZARGUMENTS_HPP
-#define SHARE_GC_Z_ZARGUMENTS_HPP
+#include "precompiled.hpp"
+#include "gc/z/zArguments.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
+#include "utilities/debug.hpp"
 
-#include "gc/shared/gcArguments.hpp"
-
-class CollectedHeap;
-
-class ZArguments : public GCArguments {
-private:
-  void initialize_platform();
-
-public:
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment();
-  virtual CollectedHeap* create_heap();
-};
-
-#endif // SHARE_GC_Z_ZARGUMENTS_HPP
+void ZArguments::initialize_platform() {
+  // The C2 barrier slow path expects vector registers to be least
+  // 16 bytes wide, which is the minimum width available on all
+  // x86-64 systems. However, the user could have speficied a lower
+  // number on the command-line, in which case we print a warning
+  // and raise it to 16.
+  if (MaxVectorSize < 16) {
+    warning("ZGC requires MaxVectorSize to be at least 16");
+    FLAG_SET_DEFAULT(MaxVectorSize, 16);
+  }
+}

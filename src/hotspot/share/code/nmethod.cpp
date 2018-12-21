@@ -1283,6 +1283,13 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
       flush_dependencies(/*delete_immediately*/true);
     }
 
+    // Clear ICStubs to prevent back patching stubs of zombie or flushed
+    // nmethods during the next safepoint (see ICStub::finalize).
+    {
+      CompiledICLocker ml(this);
+      clear_ic_stubs();
+    }
+
     // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
     // event and it hasn't already been reported for this nmethod then
     // report it now. The event may have been reported earlier if the GC
@@ -2533,6 +2540,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::section_word_type:     return "section_word";
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
+        case relocInfo::trampoline_stub_type:  return "trampoline_stub";
         case relocInfo::type_mask:             return "type_bit_mask";
 
         default:

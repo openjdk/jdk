@@ -231,7 +231,7 @@ Thread::Thread() {
   set_active_handles(NULL);
   set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
-  DEBUG_ONLY(_missed_ic_stub_refill_mark = NULL);
+  DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
