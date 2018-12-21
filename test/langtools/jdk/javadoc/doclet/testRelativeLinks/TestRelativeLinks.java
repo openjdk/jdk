@@ -27,11 +27,13 @@
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestRelativeLinks
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestRelativeLinks extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestRelativeLinks extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-use",
                 "--frames",
@@ -97,7 +99,7 @@ public class TestRelativeLinks extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-use",

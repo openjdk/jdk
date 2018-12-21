@@ -27,11 +27,13 @@
  * @summary  Make sure that all inherited methods from multiple extended
  *           interfaces are documented
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestMultiInheritance
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestMultiInheritance extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestMultiInheritance extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg3");

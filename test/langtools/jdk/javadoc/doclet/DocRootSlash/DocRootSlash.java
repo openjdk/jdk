@@ -26,9 +26,9 @@
  * @bug 4524350 4662945 4633447 8196202
  * @summary stddoclet: {@docRoot} inserts an extra trailing "/"
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main DocRootSlash
  */
 
@@ -39,6 +39,8 @@ import java.util.regex.*;
  * It reads each file, complete with newlines, into a string to easily
  * find strings that contain newlines.
  */
+import javadoc.tester.JavadocTester;
+
 public class DocRootSlash extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -47,7 +49,7 @@ public class DocRootSlash extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         // Directory that contains source files that javadoc runs on
         String srcdir = System.getProperty("test.src", ".");
 

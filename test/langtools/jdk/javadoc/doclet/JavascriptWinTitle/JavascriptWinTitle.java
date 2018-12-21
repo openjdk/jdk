@@ -27,11 +27,13 @@
  * @summary  Javascript IE load error when linked by -linkoffline
  *           Window title shouldn't change when loading left frames (javascript)
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main JavascriptWinTitle
  */
+
+import javadoc.tester.JavadocTester;
 
 public class JavascriptWinTitle extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class JavascriptWinTitle extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-source", "8",
                 "--frames",

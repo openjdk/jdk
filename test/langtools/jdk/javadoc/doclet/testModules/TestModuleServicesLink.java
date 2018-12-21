@@ -29,15 +29,17 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @library ../lib /tools/lib
- * @build toolbox.ToolBox toolbox.ModuleBuilder JavadocTester
+ * @library ../../lib /tools/lib
+ * @build toolbox.ToolBox toolbox.ModuleBuilder javadoc.tester.*
  * @run main TestModuleServicesLink
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import toolbox.*;
+import javadoc.tester.JavadocTester;
+import toolbox.ModuleBuilder;
+import toolbox.ToolBox;
 
 public class TestModuleServicesLink extends JavadocTester {
 

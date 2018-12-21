@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug 4640745
  * @summary This test verifys that the -link option handles absolute paths.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestAbsLinkPath
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestAbsLinkPath extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestAbsLinkPath extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         String out1 = "out1";
         javadoc("-d", out1, "-sourcepath", testSrc, "pkg2");
         checkExit(Exit.OK);

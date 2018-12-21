@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug 4504730 4526070 5077317 8162363
  * @summary Test the generation of constant-values.html.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestConstantValuesDriver
  */
+import javadoc.tester.JavadocTester;
+
 public class TestConstantValuesDriver extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -39,7 +41,7 @@ public class TestConstantValuesDriver extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 testSrc("TestConstantValues.java"),
                 testSrc("TestConstantValues2.java"),

@@ -27,11 +27,13 @@
  *      8182765 8196202
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestUseOption
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestUseOption extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-use",
@@ -142,7 +144,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out-1-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -181,7 +183,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "-use",
@@ -205,7 +207,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test2_html4() {
+    public void test2_html4() {
         javadoc("-d", "out-2-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -223,7 +225,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out-3",
                 "-sourcepath", testSrc,
                 "-use",
@@ -237,7 +239,7 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    void test3_html4() {
+    public void test3_html4() {
         javadoc("-d", "out-3-html4",
                 "-html4",
                 "-sourcepath", testSrc,

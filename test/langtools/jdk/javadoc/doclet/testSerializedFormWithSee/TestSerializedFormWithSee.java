@@ -25,9 +25,9 @@
  * @test
  * @bug 8207214
  * @summary Test serialized forms, with at-see to other members
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester toolbox.ToolBox
+ * @build javadoc.tester.* toolbox.ToolBox
  * @run main TestSerializedFormWithSee
  */
 
@@ -46,6 +46,8 @@ import toolbox.ToolBox;
  * to {@code checkLinks}, to verify that there are no broken
  * links in the generated files.
  */
+import javadoc.tester.JavadocTester;
+
 public class TestSerializedFormWithSee extends JavadocTester {
 
     public static void main(String... args) throws Exception {

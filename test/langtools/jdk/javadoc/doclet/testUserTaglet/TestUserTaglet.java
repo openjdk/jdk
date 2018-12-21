@@ -25,11 +25,13 @@
  * @test
  * @bug      8176836 8201817
  * @summary  Provide Taglet with context
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester InfoTaglet
+ * @build    javadoc.tester.* InfoTaglet
  * @run main TestUserTaglet
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestUserTaglet extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestUserTaglet extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-tagletpath", System.getProperty("test.class.path"),

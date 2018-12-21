@@ -30,11 +30,13 @@
  *           class-use pages. The class/annotation pages should check for type
  *           parameter links in the class/annotation signature section when -linksource is set.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestTypeParameters
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestTypeParameters extends JavadocTester {
 
@@ -44,7 +46,7 @@ public class TestTypeParameters extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-use",
                 "-sourcepath", testSrc,
@@ -74,7 +76,7 @@ public class TestTypeParameters extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out-1-html4",
                 "-html4",
                 "-use",
@@ -90,7 +92,7 @@ public class TestTypeParameters extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-linksource",
                 "-sourcepath", testSrc,

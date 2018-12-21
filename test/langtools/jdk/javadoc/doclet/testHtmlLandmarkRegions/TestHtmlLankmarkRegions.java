@@ -25,12 +25,12 @@
  * @test
  * @bug 8210047
  * @summary some pages contains content outside of landmark region
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHtmlLankmarkRegions
  */
 
@@ -41,6 +41,8 @@ import java.nio.file.Paths;
 import builder.ClassBuilder;
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlLankmarkRegions extends JavadocTester {
 
@@ -56,7 +58,7 @@ public class TestHtmlLankmarkRegions extends JavadocTester {
     }
 
     @Test
-    void testModules(Path base) throws Exception {
+    public void testModules(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createModules(srcDir);
 
@@ -100,7 +102,7 @@ public class TestHtmlLankmarkRegions extends JavadocTester {
     }
 
     @Test
-    void testModulesHtml4(Path base) throws Exception {
+    public void testModulesHtml4(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createModules(srcDir);
 
@@ -136,7 +138,7 @@ public class TestHtmlLankmarkRegions extends JavadocTester {
     }
 
     @Test
-    void testPackages(Path base) throws Exception {
+    public void testPackages(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createPackages(srcDir);
 
@@ -170,7 +172,7 @@ public class TestHtmlLankmarkRegions extends JavadocTester {
     }
 
     @Test
-    void testPackagesHtml4(Path base) throws Exception {
+    public void testPackagesHtml4(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createPackages(srcDir);
 

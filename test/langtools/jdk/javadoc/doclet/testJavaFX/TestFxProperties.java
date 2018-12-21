@@ -26,15 +26,17 @@
  * @bug 8025091
  * @summary Tests the basic selection of FX related property methods, fields,
  *          setters and getters, by executing this test in the strict mode.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester propgen.PropGen
+ * @build javadoc.tester.* propgen.PropGen
  * @run main TestFxProperties
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javadoc.tester.JavadocTester;
 
 public class TestFxProperties extends JavadocTester {
 
@@ -59,7 +61,7 @@ public class TestFxProperties extends JavadocTester {
     }
 
     @Test
-    void test1() throws Exception {
+    public void test1() throws Exception {
         Path srcdir = Paths.get("src-propgen");
         Files.createDirectory(srcdir);
         new propgen.PropGen(srcdir).run();

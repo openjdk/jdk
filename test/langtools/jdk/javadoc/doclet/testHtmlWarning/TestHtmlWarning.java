@@ -25,9 +25,9 @@
  * @test
  * @bug 8194955 8182765
  * @summary Warn when default HTML version is used.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHtmlWarning
  */
 
@@ -35,6 +35,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlWarning extends JavadocTester {
 
@@ -54,7 +56,7 @@ public class TestHtmlWarning extends JavadocTester {
             + "in your comments are valid in HTML5, and remove the -html4 option.";
 
     @Test
-    void testHtml4() {
+    public void testHtml4() {
         javadoc("-d", "out-4",
                 "-html4",
                 testFile.toString());
@@ -64,7 +66,7 @@ public class TestHtmlWarning extends JavadocTester {
     }
 
     @Test
-    void testHtml5() {
+    public void testHtml5() {
         javadoc("-d", "out-5",
                 "-html5",
                 testFile.toString());
@@ -74,7 +76,7 @@ public class TestHtmlWarning extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 testFile.toString());
         checkExit(Exit.OK);

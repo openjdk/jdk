@@ -26,11 +26,13 @@
  * @bug 4524136
  * @summary Test to make sure label is used for inline links.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestInlineLinkLabel
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestInlineLinkLabel extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestInlineLinkLabel extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

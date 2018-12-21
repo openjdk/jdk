@@ -27,11 +27,13 @@
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestAnnotationTypes
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestAnnotationTypes extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestAnnotationTypes extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -92,7 +94,7 @@ public class TestAnnotationTypes extends JavadocTester {
     }
 
     @Test
-    void testLinkSource() {
+    public void testLinkSource() {
         javadoc("-d", "out-2",
                 "-linksource",
                 "-sourcepath", testSrc,
@@ -117,7 +119,7 @@ public class TestAnnotationTypes extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

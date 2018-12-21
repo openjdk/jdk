@@ -27,9 +27,9 @@
  * @summary  This test ensures that the value tag works in all
  *           use cases, the tests are explained below.
  * @author   jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestValueTag
  */
 
@@ -39,6 +39,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import javadoc.tester.JavadocTester;
+
 public class TestValueTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -47,7 +49,7 @@ public class TestValueTag extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "-tag", "todo",
@@ -117,7 +119,7 @@ public class TestValueTag extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-Xdoclint:none",
                 "-d", "out2",
                 "-sourcepath", testSrc,
@@ -140,7 +142,7 @@ public class TestValueTag extends JavadocTester {
     }
 
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out3",
                 "-sourcepath", testSrc,
                 "pkg2", "pkg3");
@@ -156,7 +158,7 @@ public class TestValueTag extends JavadocTester {
     }
 
     @Test
-    void test4() throws IOException {
+    public void test4() throws IOException {
         Path base = Paths.get("test4");
         Path src = base.resolve("src");
         Files.createDirectories(src.resolve("p"));

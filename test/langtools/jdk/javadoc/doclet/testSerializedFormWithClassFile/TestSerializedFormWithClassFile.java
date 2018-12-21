@@ -25,12 +25,12 @@
  * @test
  * @bug 8199307
  * @summary NPE in jdk.javadoc.internal.doclets.toolkit.util.Utils.getLineNumber
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestSerializedFormWithClassFile
  */
 
@@ -42,6 +42,8 @@ import java.nio.file.Paths;
 import builder.ClassBuilder.MethodBuilder;
 import toolbox.ToolBox;
 import toolbox.JavacTask;
+
+import javadoc.tester.JavadocTester;
 
 public class TestSerializedFormWithClassFile extends JavadocTester {
 
@@ -57,7 +59,7 @@ public class TestSerializedFormWithClassFile extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(base, srcDir);
 

@@ -25,11 +25,13 @@
  * @test
  * @bug 8157000 8192850 8182765
  * @summary  test the behavior of --override-methods option
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestOverrideMethods
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestOverrideMethods  extends JavadocTester {
     public static void main(String... args) throws Exception {
@@ -38,7 +40,7 @@ public class TestOverrideMethods  extends JavadocTester {
     }
 
     @Test
-    void testInvalidOption() {
+    public void testInvalidOption() {
         // Make sure an invalid argument fails
         javadoc("-d", "out-bad-option",
                 "-sourcepath", testSrc,
@@ -51,7 +53,7 @@ public class TestOverrideMethods  extends JavadocTester {
     }
 
     @Test
-    void testDetail() {
+    public void testDetail() {
         // Make sure the option works
         javadoc("-d", "out-detail",
                 "-sourcepath", testSrc,
@@ -64,7 +66,7 @@ public class TestOverrideMethods  extends JavadocTester {
     }
 
     @Test
-    void testSummary() {
+    public void testSummary() {
         javadoc("-d", "out-summary",
                 "-sourcepath", testSrc,
                 "-javafx",
@@ -257,7 +259,7 @@ public class TestOverrideMethods  extends JavadocTester {
     }
 
     @Test
-    void testSummary_html4() {
+    public void testSummary_html4() {
         javadoc("-d", "out-summary-html4",
                 "-html4",
                 "-sourcepath", testSrc,

@@ -25,9 +25,9 @@
  * @test
  * @bug      8203176
  * @summary  javadoc handles non-ASCII characters incorrectly
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox JavadocTester
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestUnicode
  */
 
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 public class TestUnicode extends JavadocTester {
@@ -47,7 +48,7 @@ public class TestUnicode extends JavadocTester {
     ToolBox tb = new ToolBox();
 
     @Test
-    void test() throws Exception {
+    public void test() throws Exception {
         char ellipsis = '\u2026';
         Path src = Files.createDirectories(Paths.get("src"));
         tb.writeJavaFiles(src,

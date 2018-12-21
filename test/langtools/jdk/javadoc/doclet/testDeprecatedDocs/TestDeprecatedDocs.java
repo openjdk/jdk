@@ -27,11 +27,13 @@
  *           8169819 8074407 8191030 8182765 8184205
  * @summary  test generated docs for deprecated items
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestDeprecatedDocs
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestDeprecatedDocs extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestDeprecatedDocs extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -299,7 +301,7 @@ public class TestDeprecatedDocs extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

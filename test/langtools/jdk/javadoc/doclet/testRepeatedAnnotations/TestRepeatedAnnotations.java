@@ -26,11 +26,13 @@
  * @bug      8005092 6469562 8182765
  * @summary  Test repeated annotations output.
  * @author   bpatel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestRepeatedAnnotations
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestRepeatedAnnotations extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg", "pkg1");
@@ -136,7 +138,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

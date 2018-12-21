@@ -21,6 +21,8 @@
  * questions.
  */
 
+package javadoc.tester;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -264,7 +266,7 @@ public abstract class JavadocTester {
 
     /** Marker annotation for test methods to be invoked by runTests. */
     @Retention(RetentionPolicy.RUNTIME)
-    @interface Test { }
+    public @interface Test { }
 
     /**
      * Run all methods annotated with @Test, followed by printSummary.

@@ -25,11 +25,13 @@
  * @test
  * @bug      8176231 8189843 8182765 8203791
  * @summary  Test JavaFX property.
- * @library  ../lib/
+ * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestProperty
+ * @build    javadoc.tester.* TestProperty
  * @run main TestProperty
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestProperty extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestProperty extends JavadocTester {
     }
 
     @Test
-    void testArrays() {
+    public void testArrays() {
         javadoc("-d", "out",
                 "-javafx",
                 "--disable-javafx-strict-checks",
@@ -110,7 +112,7 @@ public class TestProperty extends JavadocTester {
     }
 
     @Test
-    void testArrays_html4() {
+    public void testArrays_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-javafx",

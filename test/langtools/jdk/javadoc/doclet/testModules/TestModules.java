@@ -30,11 +30,13 @@
         8184205
  * @summary Test modules support in javadoc.
  * @author bpatel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestModules
  */
+import javadoc.tester.JavadocTester;
+
 public class TestModules extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -46,7 +48,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for HTML 4.
      */
     @Test
-    void testHtml4() {
+    public void testHtml4() {
         javadoc("-d", "out",
                 "-html4",
                 "-use",
@@ -73,7 +75,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for HTML 5.
      */
     @Test
-    void testHtml5() {
+    public void testHtml5() {
         javadoc("-d", "out-html5",
                 "-use",
                 "-Xdoclint:none",
@@ -99,7 +101,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for HTML 4 with -nocomment option.
      */
     @Test
-    void testHtml4NoComment() {
+    public void testHtml4NoComment() {
         javadoc("-d", "out-nocomment",
                 "-html4",
                 "-nocomment",
@@ -122,7 +124,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for HTML 5 with -nocomment option.
      */
     @Test
-    void testHtml5NoComment() {
+    public void testHtml5NoComment() {
         javadoc("-d", "out-html5-nocomment",
                 "-nocomment",
                 "-use",
@@ -144,7 +146,7 @@ public class TestModules extends JavadocTester {
      * Test generated pages, in an unnamed module, for HTML 4.
      */
     @Test
-    void testHtml4UnnamedModule() {
+    public void testHtml4UnnamedModule() {
         javadoc("-d", "out-nomodule",
                 "-html4",
                 "-use",
@@ -164,7 +166,7 @@ public class TestModules extends JavadocTester {
      * Test generated pages, in an unnamed module, for HTML 5.
      */
     @Test
-    void testHtml5UnnamedModule() {
+    public void testHtml5UnnamedModule() {
         javadoc("-d", "out-html5-nomodule",
                 "-use",
                 "--frames",
@@ -182,7 +184,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages with javadoc tags.
      */
     @Test
-    void testJDTagsInModules() {
+    public void testJDTagsInModules() {
         javadoc("-d", "out-mdltags",
                 "-author",
                 "-version",
@@ -200,7 +202,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages with javadoc tags.
      */
     @Test
-    void testJDTagsInModules_html4() {
+    public void testJDTagsInModules_html4() {
         javadoc("-d", "out-mdltags-html4",
                 "-html4",
                 "-author",
@@ -219,7 +221,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page.
      */
     @Test
-    void testModuleSummary() {
+    public void testModuleSummary() {
         javadoc("-d", "out-moduleSummary",
                 "-use",
                 "-Xdoclint:none",
@@ -235,7 +237,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page.
      */
     @Test
-    void testModuleSummary_html4() {
+    public void testModuleSummary_html4() {
         javadoc("-d", "out-moduleSummary-html4",
                 "-html4",
                 "-use",
@@ -252,7 +254,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page of an aggregating module.
      */
     @Test
-    void testAggregatorModuleSummary() {
+    public void testAggregatorModuleSummary() {
         javadoc("-d", "out-aggregatorModuleSummary",
                 "-use",
                 "--module-source-path", testSrc,
@@ -266,7 +268,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages and pages with link to modules.
      */
     @Test
-    void testModuleFilesAndLinks() {
+    public void testModuleFilesAndLinks() {
         javadoc("-d", "out-modulelinks",
                 "-Xdoclint:none",
                 "--frames",
@@ -282,7 +284,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for a deprecated module.
      */
     @Test
-    void testModuleDeprecation() {
+    public void testModuleDeprecation() {
         javadoc("-d", "out-moduledepr",
                 "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
@@ -298,7 +300,7 @@ public class TestModules extends JavadocTester {
      * Test annotations on modules.
      */
     @Test
-    void testModuleAnnotation() {
+    public void testModuleAnnotation() {
         javadoc("-d", "out-moduleanno",
                 "-Xdoclint:none",
                 "--module-source-path", testSrc,
@@ -312,7 +314,7 @@ public class TestModules extends JavadocTester {
      * Test annotations on modules.
      */
     @Test
-    void testModuleAnnotation_html4() {
+    public void testModuleAnnotation_html4() {
         javadoc("-d", "out-moduleanno-html4",
                 "-html4",
                 "-Xdoclint:none",
@@ -327,7 +329,7 @@ public class TestModules extends JavadocTester {
      * Test module summary pages in "api" mode.
      */
     @Test
-    void testApiMode() {
+    public void testApiMode() {
         javadoc("-d", "out-api",
                 "-use",
                 "--show-module-contents=api",
@@ -352,7 +354,7 @@ public class TestModules extends JavadocTester {
      * Test module summary pages in "all" mode.
      */
     @Test
-    void testAllMode() {
+    public void testAllMode() {
         javadoc("-d", "out-all",
                 "-use",
                 "--show-module-contents=all",
@@ -377,7 +379,7 @@ public class TestModules extends JavadocTester {
      * Test module summary pages in "all" mode.
      */
     @Test
-    void testAllModeHtml4() {
+    public void testAllModeHtml4() {
         javadoc("-d", "out-all-html4",
                 "-html4",
                 "-use",
@@ -400,7 +402,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page of a module with no exported package.
      */
     @Test
-    void testModuleSummaryNoExportedPkgAll() {
+    public void testModuleSummaryNoExportedPkgAll() {
         javadoc("-d", "out-ModuleSummaryNoExportedPkgAll",
                 "-use",
                 "--show-module-contents=all",
@@ -415,7 +417,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page of a module with no exported package.
      */
     @Test
-    void testModuleSummaryNoExportedPkgAll_html4() {
+    public void testModuleSummaryNoExportedPkgAll_html4() {
         javadoc("-d", "out-ModuleSummaryNoExportedPkgAll-html4",
                 "-html4",
                 "-use",
@@ -431,7 +433,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page of a module with no exported package.
      */
     @Test
-    void testModuleSummaryNoExportedPkgApi() {
+    public void testModuleSummaryNoExportedPkgApi() {
         javadoc("-d", "out-ModuleSummaryNoExportedPkgApi",
                 "-use",
                 "-sourcepath", testSrc + "/moduleNoExport",
@@ -445,7 +447,7 @@ public class TestModules extends JavadocTester {
      * Test generated module summary page of a module with no exported package.
      */
     @Test
-    void testModuleSummaryNoExportedPkgApi_html4() {
+    public void testModuleSummaryNoExportedPkgApi_html4() {
         javadoc("-d", "out-ModuleSummaryNoExportedPkgApi-html4",
                 "-html4",
                 "-use",
@@ -460,7 +462,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for javadoc run for a single module having a single package.
      */
     @Test
-    void testSingleModuleSinglePkg() {
+    public void testSingleModuleSinglePkg() {
         javadoc("-d", "out-singlemod",
                 "--frames",
                 "--module-source-path", testSrc,
@@ -474,7 +476,7 @@ public class TestModules extends JavadocTester {
      * Test generated module pages for javadoc run for a single module having multiple packages.
      */
     @Test
-    void testSingleModuleMultiplePkg() {
+    public void testSingleModuleMultiplePkg() {
         javadoc("-d", "out-singlemodmultiplepkg",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
@@ -490,7 +492,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for modules. The overview-summary.html page should group the modules accordingly.
      */
     @Test
-    void testGroupOption() {
+    public void testGroupOption() {
         javadoc("-d", "out-group",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
@@ -512,7 +514,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for modules. The overview-summary.html page should group the modules accordingly.
      */
     @Test
-    void testGroupOption_html4() {
+    public void testGroupOption_html4() {
         javadoc("-d", "out-group-html4",
                 "-html4",
                 "--show-module-contents=all",
@@ -537,7 +539,7 @@ public class TestModules extends JavadocTester {
      * the order it was provided on the command-line.
      */
     @Test
-    void testGroupOptionOrdering() {
+    public void testGroupOptionOrdering() {
         javadoc("-d", "out-groupOrder",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
@@ -560,7 +562,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for unnamed modules. The overview-summary.html page should group the packages accordingly.
      */
     @Test
-    void testUnnamedModuleGroupOption() {
+    public void testUnnamedModuleGroupOption() {
         javadoc("-d", "out-groupnomodule",
                 "-use",
                 "-Xdoclint:none",
@@ -578,7 +580,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for unnamed modules. The overview-summary.html page should group the packages accordingly.
      */
     @Test
-    void testUnnamedModuleGroupOption_html4() {
+    public void testUnnamedModuleGroupOption_html4() {
         javadoc("-d", "out-groupnomodule-html4",
                 "-html4",
                 "-use",
@@ -599,7 +601,7 @@ public class TestModules extends JavadocTester {
      * the order it was provided on the command-line.
      */
     @Test
-    void testGroupOptionPackageOrdering() {
+    public void testGroupOptionPackageOrdering() {
         javadoc("-d", "out-groupPkgOrder",
                 "-use",
                 "-Xdoclint:none",
@@ -617,7 +619,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for a single module.
      */
     @Test
-    void testGroupOptionSingleModule() {
+    public void testGroupOptionSingleModule() {
         javadoc("-d", "out-groupsinglemodule",
                 "-use",
                 "-Xdoclint:none",
@@ -634,7 +636,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for a single module.
      */
     @Test
-    void testGroupOptionSingleModule_html4() {
+    public void testGroupOptionSingleModule_html4() {
         javadoc("-d", "out-groupsinglemodule-html4",
                 "-html4",
                 "-use",
@@ -652,7 +654,7 @@ public class TestModules extends JavadocTester {
      * Test -group option for a single module.
      */
     @Test
-    void testModuleName() {
+    public void testModuleName() {
         javadoc("-d", "out-modulename",
                 "-use",
                 "-Xdoclint:none",
@@ -668,7 +670,7 @@ public class TestModules extends JavadocTester {
      * Test -linkoffline option.
      */
     @Test
-    void testLinkOffline() {
+    public void testLinkOffline() {
         String url = "https://docs.oracle.com/javase/9/docs/api/";
         javadoc("-d", "out-linkoffline",
                 "-use",

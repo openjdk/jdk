@@ -26,11 +26,13 @@
  * @bug 6802694 8025633 8026567 8183511 8074407 8182765
  * @summary This test verifies deprecation info in serialized-form.html.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestSerializedFormDeprecationInfo
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg1");
@@ -51,7 +53,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     }
 
     @Test
-    void testNoComment() {
+    public void testNoComment() {
         javadoc("-d", "out-nocmnt",
                 "-nocomment",
                 "-sourcepath", testSrc,
@@ -63,7 +65,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     }
 
     @Test
-    void testNoDeprecated() {
+    public void testNoDeprecated() {
         javadoc("-d", "out-nodepr",
                 "-nodeprecated",
                 "-sourcepath", testSrc,
@@ -75,7 +77,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     }
 
     @Test
-    void testNoCommentNoDeprecated() {
+    public void testNoCommentNoDeprecated() {
         javadoc("-d", "out-nocmnt-nodepr",
                 "-nocomment",
                 "-nodeprecated",

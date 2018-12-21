@@ -25,9 +25,9 @@
  * @test
  * @bug      8202947
  * @summary  Test TagletManager initialization
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox JavadocTester
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestTaglets
  */
 
@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 /*
@@ -62,7 +63,7 @@ public class TestTaglets extends JavadocTester {
     }
 
     @Test
-    void test() throws Exception {
+    public void test() throws Exception {
         javadoc("-d", "out",
                 "-javafx",
                 "--show-taglets",

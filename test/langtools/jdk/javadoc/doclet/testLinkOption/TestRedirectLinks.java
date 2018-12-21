@@ -25,12 +25,12 @@
  * @test
  * @bug 8190312
  * @summary test redirected URLs for -link
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox toolbox.JavacTask JavadocTester
+ * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @run main TestRedirectLinks
  */
 
@@ -59,9 +59,9 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
+import javadoc.tester.JavadocTester;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
-
 
 public class TestRedirectLinks extends JavadocTester {
     /**
@@ -103,6 +103,7 @@ public class TestRedirectLinks extends JavadocTester {
                     out.println("Header: " + httpConn.getHeaderFieldKey(n) + ": " + httpConn.getHeaderField(n));
                     n++;
                 }
+                httpConn.disconnect();
             }
         } catch (Exception e) {
             out.println("Exception occurred: " + e);

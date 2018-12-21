@@ -28,11 +28,13 @@
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestMemberSummary
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestMemberSummary extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestMemberSummary extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-private",
                 "-sourcepath", testSrc,
@@ -76,7 +78,7 @@ public class TestMemberSummary extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-private",

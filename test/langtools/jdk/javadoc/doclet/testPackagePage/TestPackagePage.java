@@ -28,11 +28,13 @@
  * passed to Javadoc.  Also test that the proper package links are generated
  * when single or multiple packages are documented.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestPackagePage
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestPackagePage extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestPackagePage extends JavadocTester {
     }
 
     @Test
-    void testSinglePackage() {
+    public void testSinglePackage() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 testSrc("com/pkg/C.java"));
@@ -69,7 +71,7 @@ public class TestPackagePage extends JavadocTester {
 
 
     @Test
-    void testMultiplePackages() {
+    public void testMultiplePackages() {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "com.pkg", "pkg2");

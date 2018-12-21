@@ -27,13 +27,15 @@
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestLinkOption
  */
 
 import java.io.File;
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinkOption extends JavadocTester {
     /**
@@ -50,7 +52,7 @@ public class TestLinkOption extends JavadocTester {
     // it generates. Therefore we run everything serially in a single @Test
     // method and not in independent @Test methods.
     @Test
-    void test() {
+    public void test() {
         String mylib = "mylib";
         String[] javacArgs = {
             "-d", mylib, testSrc + "/extra/StringBuilder.java"

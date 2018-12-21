@@ -25,11 +25,13 @@
  * @test
  * @bug      8173425 8186332 8182765 8196202
  * @summary  tests for the summary tag behavior
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestSummaryTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestSummaryTag extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "p1");
@@ -95,7 +97,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out1-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -139,7 +141,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out2",
                 "-sourcepath", testSrc,
                 "p2");
@@ -153,7 +155,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out3",
                 "--frames",
                 "-sourcepath", testSrc,

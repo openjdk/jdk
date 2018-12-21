@@ -25,11 +25,13 @@
  * @test
  * @bug 8071982 8196202
  * @summary Test for package-frame.html.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestClassDocCatalog
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestClassDocCatalog extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestClassDocCatalog extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "--frames",
                 testSrc("pkg1/EmptyAnnotation.java"),

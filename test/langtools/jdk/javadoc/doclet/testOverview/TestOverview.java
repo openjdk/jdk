@@ -26,11 +26,13 @@
  * @bug 8173302 8182765 8196202 8210047
  * @summary make sure the overview-summary and module-summary pages don't
  *          don't have the See link, and the overview is copied correctly.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestOverview
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestOverview extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestOverview extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
@@ -53,7 +55,7 @@ public class TestOverview extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out-1-html4",
                 "-html4",
                 "-doctitle", "Document Title",
@@ -67,7 +69,7 @@ public class TestOverview extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
@@ -80,7 +82,7 @@ public class TestOverview extends JavadocTester {
     }
 
     @Test
-    void test2_html4() {
+    public void test2_html4() {
         javadoc("-d", "out-2-html4",
                 "-html4",
                 "-doctitle", "Document Title",

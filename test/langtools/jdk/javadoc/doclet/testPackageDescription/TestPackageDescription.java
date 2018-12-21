@@ -25,11 +25,13 @@
  * @test
  * @bug      8185194 8182765
  * @summary  Test anchor for package description in package summary page
-  * @library  ../lib/
+  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestPackageDescription
+ * @build    javadoc.tester.* TestPackageDescription
  * @run main TestPackageDescription
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestPackageDescription extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestPackageDescription extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -53,7 +55,7 @@ public class TestPackageDescription extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-html4",
                 "-sourcepath", testSrc,
