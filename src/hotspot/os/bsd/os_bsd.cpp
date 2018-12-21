@@ -2330,14 +2330,13 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
 #elif defined(__APPLE__) || defined(__NetBSD__)
   struct sched_param sp;
   int policy;
-  pthread_t self = pthread_self();
 
-  if (pthread_getschedparam(self, &policy, &sp) != 0) {
+  if (pthread_getschedparam(thread->osthread()->pthread_id(), &policy, &sp) != 0) {
     return OS_ERR;
   }
 
   sp.sched_priority = newpri;
-  if (pthread_setschedparam(self, policy, &sp) != 0) {
+  if (pthread_setschedparam(thread->osthread()->pthread_id(), policy, &sp) != 0) {
     return OS_ERR;
   }
 
@@ -2361,8 +2360,14 @@ OSReturn os::get_native_priority(const Thread* const thread, int *priority_ptr) 
   int policy;
   struct sched_param sp;
 
-  pthread_getschedparam(pthread_self(), &policy, &sp);
-  *priority_ptr = sp.sched_priority;
+  int res = pthread_getschedparam(thread->osthread()->pthread_id(), &policy, &sp);
+  if (res != 0) {
+    *priority_ptr = -1;
+    return OS_ERR;
+  } else {
+    *priority_ptr = sp.sched_priority;
+    return OS_OK;
+  }
 #else
   *priority_ptr = getpriority(PRIO_PROCESS, thread->osthread()->thread_id());
 #endif
