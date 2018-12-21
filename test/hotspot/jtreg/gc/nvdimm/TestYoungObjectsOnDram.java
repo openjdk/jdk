@@ -73,6 +73,9 @@ public class TestYoungObjectsOnDram {
 
         // Test with G1 GC
         runTest("-XX:+UseG1GC");
+        // Test with ParallelOld GC
+        runTest("-XX:+UseParallelOldGC -XX:-UseAdaptiveGCBoundary");
+        runTest("-XX:+UseParallelOldGC -XX:+UseAdaptiveGCBoundary");
     }
 
     private static void runTest(String... extraFlags) throws Exception {

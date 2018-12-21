@@ -54,6 +54,8 @@ public class TestAllocateOldGenAt {
                                                  "-version"});
 
     runTest("-XX:+UseG1GC");
+    runTest("-XX:+UseParallelOldGC -XX:-UseAdaptiveGCBoundary");
+    runTest("-XX:+UseParallelOldGC -XX:+UseAdaptiveGCBoundary");
   }
 
   private static void runTest(String... extraFlags) throws Exception {

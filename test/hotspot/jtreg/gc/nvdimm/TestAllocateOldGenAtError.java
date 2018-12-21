@@ -63,6 +63,7 @@ public class TestAllocateOldGenAtError {
                                                  "-version"});
 
     testG1();
+    testParallelOld();
   }
 
   private static void testG1() throws Exception {
@@ -71,6 +72,19 @@ public class TestAllocateOldGenAtError {
     OutputAnalyzer output = runTest("-XX:+UseG1GC");
 
     output.shouldContain("Could not initialize G1 heap");
+    output.shouldContain("Error occurred during initialization of VM");
+    output.shouldNotHaveExitValue(0);
+
+  }
+
+  private static void testParallelOld() throws Exception {
+    System.out.println("Testing ParallelOld GC with UseAdaptiveGCBoundary disabled");
+    OutputAnalyzer output = runTest("-XX:+UseParallelOldGC -XX:-UseAdaptiveGCBoundary");
+    output.shouldContain("Error occurred during initialization of VM");
+    output.shouldNotHaveExitValue(0);
+
+    System.out.println("Testing ParallelOld GC with UseAdaptiveGCBoundary enabled");
+    output = runTest("-XX:+UseParallelOldGC -XX:+UseAdaptiveGCBoundary");
     output.shouldContain("Error occurred during initialization of VM");
     output.shouldNotHaveExitValue(0);
   }

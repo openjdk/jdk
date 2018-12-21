@@ -500,7 +500,7 @@ WB_END
 
 #endif // INCLUDE_G1GC
 
-#if INCLUDE_G1GC
+#if INCLUDE_G1GC || INCLUDE_PARALLELGC
 WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -511,7 +511,16 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
       return (jlong)g1h->base();
     }
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1");
+  if (UseParallelGC) {
+    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
+    if (AllocateOldGenAt != NULL) {
+      MemRegion reserved = ps_heap->young_gen()->reserved();
+      return (jlong)reserved.start();
+    } else {
+      return (jlong)ps_heap->base();
+    }
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
@@ -524,7 +533,16 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
       return (jlong)g1h->base() + g1h->collector_policy()->max_heap_byte_size();
     }
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1");
+  if (UseParallelGC) {
+    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
+    if (AllocateOldGenAt != NULL) {
+      MemRegion reserved = ps_heap->young_gen()->reserved();
+      return (jlong)reserved.end();
+    } else {
+      return (jlong)ps_heap->reserved_region().end();
+    }
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
@@ -537,7 +555,16 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1");
+  if (UseParallelGC) {
+    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
+    if (AllocateOldGenAt != NULL) {
+      MemRegion reserved = ps_heap->old_gen()->reserved();
+      return (jlong)reserved.start();
+    } else {
+      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
+    }
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
@@ -550,10 +577,19 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1");
+  if (UseParallelGC) {
+    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
+    if (AllocateOldGenAt != NULL) {
+      MemRegion reserved = ps_heap->old_gen()->reserved();
+      return (jlong)reserved.end();
+      } else {
+      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
+    }
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1 and Parallel GC");
 WB_END
 
-#endif // INCLUDE_G1GC
+#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 
 #if INCLUDE_PARALLELGC
 
@@ -2109,11 +2145,13 @@ static JNINativeMethod methods[] = {
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
+#endif // INCLUDE_G1GC
+#if INCLUDE_G1GC || INCLUDE_PARALLELGC
   {CC"dramReservedStart",   CC"()J",                  (void*)&WB_DramReservedStart },
   {CC"dramReservedEnd",     CC"()J",                  (void*)&WB_DramReservedEnd },
   {CC"nvdimmReservedStart", CC"()J",                  (void*)&WB_NvdimmReservedStart },
   {CC"nvdimmReservedEnd",   CC"()J",                  (void*)&WB_NvdimmReservedEnd },
-#endif // INCLUDE_G1GC
+#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 #if INCLUDE_PARALLELGC
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
