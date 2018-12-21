@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GCARGUMENTS_HPP
-#define SHARE_GC_SHARED_GCARGUMENTS_HPP
+#ifndef SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPYOUNGGENSIZER_HPP
+#define SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPYOUNGGENSIZER_HPP
 
-#include "memory/allocation.hpp"
+#include "gc/g1/g1YoungGenSizer.hpp"
 
-class CollectedHeap;
+// This class prevents the size of young generation of G1 heap to exceed dram
+// memory available. If set on command line, MaxRAM and MaxRAMFraction/MaxRAMPercentage
+// are used to determine the maximum size that young generation can grow.
+// Else we set the maximum size to 80% of dram available in the system.
 
-class GCArguments {
-protected:
-  template <class Heap, class Policy>
-  CollectedHeap* create_heap_with_policy();
+class G1HeterogeneousHeapYoungGenSizer : public G1YoungGenSizer {
+private:
+  // maximum no of regions that young generation can grow to. Calculated in constructor.
+  uint _max_young_length;
+  void adjust_lengths_based_on_dram_memory();
 
 public:
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment() = 0;
-  virtual CollectedHeap* create_heap() = 0;
-  static bool check_args_consistency();
+  G1HeterogeneousHeapYoungGenSizer();
+
+  // Calculate the maximum length of the young gen given the number of regions
+  // depending on the sizing algorithm.
+  virtual void adjust_max_new_size(uint number_of_heap_regions);
+
+  virtual void heap_size_changed(uint new_number_of_heap_regions);
 };
 
-#endif // SHARE_GC_SHARED_GCARGUMENTS_HPP
+#endif // SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPYOUNGGENSIZER_HPP

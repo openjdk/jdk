@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 
 void GCArguments::initialize() {
@@ -53,4 +54,28 @@ void GCArguments::initialize() {
     // If class unloading is disabled, also disable concurrent class unloading.
     FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
   }
+
+  if (!FLAG_IS_DEFAULT(AllocateOldGenAt)) {
+    // CompressedOops not supported when AllocateOldGenAt is set.
+    FLAG_SET_DEFAULT(UseCompressedOops, false);
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+    // When AllocateOldGenAt is set, we cannot use largepages for entire heap memory.
+    // Only young gen which is allocated in dram can use large pages, but we currently don't support that.
+    FLAG_SET_DEFAULT(UseLargePages, false);
+  }
+}
+
+bool GCArguments::check_args_consistency() {
+  bool status = true;
+  if (!FLAG_IS_DEFAULT(AllocateHeapAt) && !FLAG_IS_DEFAULT(AllocateOldGenAt)) {
+    jio_fprintf(defaultStream::error_stream(),
+      "AllocateHeapAt and AllocateOldGenAt cannot be used together.\n");
+    status = false;
+  }
+  if (!FLAG_IS_DEFAULT(AllocateOldGenAt) && (UseSerialGC || UseConcMarkSweepGC || UseEpsilonGC || UseZGC)) {
+    jio_fprintf(defaultStream::error_stream(),
+      "AllocateOldGenAt is not supported for selected GC.\n");
+    status = false;
+  }
+  return status;
 }

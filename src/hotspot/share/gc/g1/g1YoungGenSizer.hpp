@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
 #define SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
 
+#include "gc/g1/g1CollectorPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // There are three command line options related to the young gen size:
@@ -63,7 +64,7 @@
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer {
+class G1YoungGenSizer : public CHeapObj<mtGC> {
 private:
   enum SizerKind {
     SizerDefaults,
@@ -73,8 +74,6 @@ private:
     SizerNewRatio
   };
   SizerKind _sizer_kind;
-  uint _min_desired_young_length;
-  uint _max_desired_young_length;
 
   // False when using a fixed young generation size due to command-line options,
   // true otherwise.
@@ -87,13 +86,17 @@ private:
   // given the number of heap regions depending on the kind of sizing algorithm.
   void recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length);
 
+protected:
+  uint _min_desired_young_length;
+  uint _max_desired_young_length;
+
 public:
   G1YoungGenSizer();
   // Calculate the maximum length of the young gen given the number of regions
   // depending on the sizing algorithm.
-  void adjust_max_new_size(uint number_of_heap_regions);
+  virtual void adjust_max_new_size(uint number_of_heap_regions);
 
-  void heap_size_changed(uint new_number_of_heap_regions);
+  virtual void heap_size_changed(uint new_number_of_heap_regions);
   uint min_desired_young_length() const {
     return _min_desired_young_length;
   }
@@ -104,6 +107,8 @@ public:
   bool adaptive_young_list_length() const {
     return _adaptive_size;
   }
+
+  static G1YoungGenSizer* create_gen_sizer(G1CollectorPolicy* policy);
 };
 
 #endif // SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP

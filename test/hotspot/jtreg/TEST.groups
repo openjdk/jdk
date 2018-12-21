@@ -40,7 +40,8 @@ hotspot_compiler_all_gcs = \
   -:tier1_compiler_not_cms
 
 hotspot_gc = \
-  gc
+  gc \
+  -gc/nvdimm
 
 hotspot_runtime = \
   runtime
@@ -190,7 +191,8 @@ tier1_gc_2 = \
   -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
-  -gc/shenandoah
+  -gc/shenandoah \
+  -gc/nvdimm
 
 gc_epsilon = \
   gc/epsilon/ \

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +22,27 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GCARGUMENTS_HPP
-#define SHARE_GC_SHARED_GCARGUMENTS_HPP
+#ifndef SHARE_VM_GC_G1_G1HETEROGENEOUSCOLLECTORPOLICY_HPP
+#define SHARE_VM_GC_G1_G1HETEROGENEOUSCOLLECTORPOLICY_HPP
 
-#include "memory/allocation.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1HeterogeneousHeapYoungGenSizer.hpp"
 
-class CollectedHeap;
+class G1HeterogeneousCollectorPolicy : public G1CollectorPolicy {
+private:
+  // Max fraction of dram to use for young generation when MaxRAMFraction and
+  // MaxRAMPercentage are not specified on commandline.
+  static const double MaxRamFractionForYoung;
+  static size_t MaxMemoryForYoung;
 
-class GCArguments {
 protected:
-  template <class Heap, class Policy>
-  CollectedHeap* create_heap_with_policy();
+  virtual void initialize_flags();
 
 public:
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment() = 0;
-  virtual CollectedHeap* create_heap() = 0;
-  static bool check_args_consistency();
+  G1HeterogeneousCollectorPolicy() {}
+  virtual size_t heap_reserved_size_bytes() const;
+  virtual bool is_hetero_heap() const;
+  static size_t reasonable_max_memory_for_young();
 };
 
-#endif // SHARE_GC_SHARED_GCARGUMENTS_HPP
+#endif // SHARE_VM_GC_G1_G1HETEROGENEOUSCOLLECTORPOLICY_HPP

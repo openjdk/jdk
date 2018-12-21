@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +22,27 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GCARGUMENTS_HPP
-#define SHARE_GC_SHARED_GCARGUMENTS_HPP
+#ifndef SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
+#define SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
 
-#include "memory/allocation.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1Policy.hpp"
+#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 
-class CollectedHeap;
-
-class GCArguments {
-protected:
-  template <class Heap, class Policy>
-  CollectedHeap* create_heap_with_policy();
+class G1HeterogeneousHeapPolicy : public G1Policy {
+  // Stash a pointer to the hrm.
+  HeterogeneousHeapRegionManager* _manager;
 
 public:
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment() = 0;
-  virtual CollectedHeap* create_heap() = 0;
-  static bool check_args_consistency();
-};
+  G1HeterogeneousHeapPolicy(G1CollectorPolicy* policy, STWGCTimer* gc_timer);
 
-#endif // SHARE_GC_SHARED_GCARGUMENTS_HPP
+  // initialize policy
+  virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
+  // Record end of an evacuation pause.
+  virtual void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
+  // Record the end of full collection.
+  virtual void record_full_collection_end();
+
+  virtual bool force_upgrade_to_full();
+};
+#endif // SHARE_VM_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP

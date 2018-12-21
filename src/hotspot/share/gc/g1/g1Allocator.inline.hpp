@@ -97,7 +97,7 @@ inline void G1ArchiveAllocator::enable_archive_object_check() {
   }
 
   _archive_check_enabled = true;
-  size_t length = Universe::heap()->max_capacity();
+  size_t length = G1CollectedHeap::heap()->max_reserved_capacity();
   _closed_archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
                                         (HeapWord*)Universe::heap()->base() + length,
                                         HeapRegion::GrainBytes);
