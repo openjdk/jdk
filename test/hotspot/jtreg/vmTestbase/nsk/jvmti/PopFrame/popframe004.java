@@ -147,8 +147,8 @@ public class popframe004 {
             boolean compl = true;
 
             try {
-                pipeOut.write(123); // notify the main thread
                 out.println("popFrameCls (" + this + "): inside activeMethod()");
+                pipeOut.write(123); // notify the main thread
                 // pause here until the main thread suspends us
                 synchronized (popframe004.barrier) {
                     while (true) {
