@@ -90,7 +90,7 @@ public:
   static bool is_thread_cpu_time_enabled()    { return _thread_cpu_time_enabled; }
 
   static bool set_thread_allocated_memory_enabled(bool flag);
-  static bool is_thread_allocated_memory_enabled() { return _thread_cpu_time_enabled; }
+  static bool is_thread_allocated_memory_enabled() { return _thread_allocated_memory_enabled; }
 
   static jlong get_total_thread_count()       { return _total_threads_count->get_value(); }
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
