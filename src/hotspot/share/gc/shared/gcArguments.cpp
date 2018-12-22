@@ -57,8 +57,8 @@ void GCArguments::initialize() {
 
   if (!FLAG_IS_DEFAULT(AllocateOldGenAt)) {
     // CompressedOops not supported when AllocateOldGenAt is set.
-    FLAG_SET_DEFAULT(UseCompressedOops, false);
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+    LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
+    LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
     // When AllocateOldGenAt is set, we cannot use largepages for entire heap memory.
     // Only young gen which is allocated in dram can use large pages, but we currently don't support that.
     FLAG_SET_DEFAULT(UseLargePages, false);
