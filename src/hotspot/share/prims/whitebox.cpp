@@ -502,6 +502,7 @@ WB_END
 
 #if INCLUDE_G1GC || INCLUDE_PARALLELGC
 WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
+#if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->g1_collector_policy()->is_hetero_heap()) {
@@ -511,6 +512,8 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
       return (jlong)g1h->base();
     }
   }
+#endif // INCLUDE_G1GC
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
     ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
     if (AllocateOldGenAt != NULL) {
@@ -520,10 +523,12 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
       return (jlong)ps_heap->base();
     }
   }
+#endif // INCLUDE_PARALLELGC
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
+#if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->g1_collector_policy()->is_hetero_heap()) {
@@ -533,6 +538,8 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
       return (jlong)g1h->base() + g1h->collector_policy()->max_heap_byte_size();
     }
   }
+#endif // INCLUDE_G1GC
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
     ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
     if (AllocateOldGenAt != NULL) {
@@ -542,10 +549,12 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
       return (jlong)ps_heap->reserved_region().end();
     }
   }
+#endif // INCLUDE_PARALLELGC
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
+#if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->g1_collector_policy()->is_hetero_heap()) {
@@ -555,6 +564,8 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
+#endif // INCLUDE_G1GC
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
     ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
     if (AllocateOldGenAt != NULL) {
@@ -564,10 +575,12 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
+#endif // INCLUDE_PARALLELGC
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1 and Parallel GC");
 WB_END
 
 WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
+#if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->g1_collector_policy()->is_hetero_heap()) {
@@ -577,6 +590,8 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
+#endif // INCLUDE_G1GC
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
     ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
     if (AllocateOldGenAt != NULL) {
@@ -586,6 +601,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
   }
+#endif // INCLUDE_PARALLELGC
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1 and Parallel GC");
 WB_END
 
