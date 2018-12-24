@@ -450,7 +450,12 @@ public class Modules extends JCTree.Visitor {
                 String moduleOverride = singleModuleOverride(trees);
                 switch (rootModules.size()) {
                     case 0:
-                        defaultModule = moduleFinder.findSingleModule();
+                        try {
+                            defaultModule = moduleFinder.findSingleModule();
+                        } catch (CompletionFailure cf) {
+                            chk.completionError(null, cf);
+                            defaultModule = syms.unnamedModule;
+                        }
                         if (defaultModule == syms.unnamedModule) {
                             if (moduleOverride != null) {
                                 checkNoAllModulePath();
