@@ -112,7 +112,7 @@ public abstract class Pack200 {
     /**
      * Obtain new instance of a class that implements Packer.
      * <ul>
-     * <li><p>If the system property {@code java.util.jar.Pack200.Packer}
+     * <li><p>If the system property {@systemProperty java.util.jar.Pack200.Packer}
      * is defined, then the value is taken to be the fully-qualified name
      * of a concrete implementation class, which must implement Packer.
      * This class is loaded and instantiated.  If this process fails
@@ -138,7 +138,7 @@ public abstract class Pack200 {
     /**
      * Obtain new instance of a class that implements Unpacker.
      * <ul>
-     * <li><p>If the system property {@code java.util.jar.Pack200.Unpacker}
+     * <li><p>If the system property {@systemProperty java.util.jar.Pack200.Unpacker}
      * is defined, then the value is taken to be the fully-qualified
      * name of a concrete implementation class, which must implement Unpacker.
      * The class is loaded and instantiated.  If this process fails

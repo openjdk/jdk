@@ -60,7 +60,7 @@ import sun.util.logging.PlatformLogger;
  * the <code>getInstance</code> methods.
  * <p>
  * Users can supersede the Java runtime currency data by means of the system
- * property {@code java.util.currency.data}. If this system property is
+ * property {@systemProperty java.util.currency.data}. If this system property is
  * defined then its value is the location of a properties file, the contents of
  * which are key/value pairs of the ISO 3166 country codes and the ISO 4217
  * currency data respectively.  The value part consists of three ISO 4217 values

@@ -66,7 +66,7 @@ import java.net.*;
  *     RMISocketFactory.setSocketFactory(new LoopbackSocketFactory());
  * }</pre>
  *
- * Set the {@code java.rmi.server.hostname} system property
+ * Set the {@systemProperty java.rmi.server.hostname} system property
  * to {@code 127.0.0.1} to ensure that the generated stubs connect to the right
  * network interface.
  *
