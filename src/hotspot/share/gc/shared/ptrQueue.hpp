@@ -275,19 +275,16 @@ public:
 // A PtrQueueSet represents resources common to a set of pointer queues.
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
-// All these variables are are protected by the TLOQ_CBL_mon. XXX ???
 class PtrQueueSet {
   BufferNode::Allocator* _allocator;
 
-protected:
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
   size_t _n_completed_buffers;
-  size_t _process_completed_buffers_threshold;
-  volatile bool _process_completed;
 
-  bool _all_active;
+  size_t _process_completed_buffers_threshold;
+  volatile bool _process_completed_buffers;
 
   // If true, notify_all on _cbl_mon when the threshold is reached.
   bool _notify_when_complete;
@@ -297,11 +294,11 @@ protected:
   size_t _max_completed_buffers;
   size_t _completed_buffers_padding;
 
-  size_t completed_buffers_list_length();
-  void assert_completed_buffer_list_len_correct_locked();
-  void assert_completed_buffer_list_len_correct();
+  void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
 
 protected:
+  bool _all_active;
+
   // A mutator thread does the the work of processing a buffer.
   // Returns "true" iff the work is complete (and the buffer may be
   // deallocated).
@@ -318,6 +315,12 @@ protected:
   // arguments.
   void initialize(Monitor* cbl_mon, BufferNode::Allocator* allocator);
 
+  // For (unlocked!) iteration over the completed buffers.
+  BufferNode* completed_buffers_head() const { return _completed_buffers_head; }
+
+  // Deallocate all of the completed buffers.
+  void abandon_completed_buffers();
+
 public:
 
   // Return the buffer for a BufferNode of size buffer_size().
@@ -327,18 +330,21 @@ public:
   // to have been allocated with a size of buffer_size().
   void deallocate_buffer(BufferNode* node);
 
-  // Declares that "buf" is a complete buffer.
-  void enqueue_complete_buffer(BufferNode* node);
+  // A completed buffer is a buffer the mutator is finished with, and
+  // is ready to be processed by the collector.  It need not be full.
+
+  // Adds node to the completed buffer list.
+  void enqueue_completed_buffer(BufferNode* node);
+
+  // If the number of completed buffers is > stop_at, then remove and
+  // return a completed buffer from the list.  Otherwise, return NULL.
+  BufferNode* get_completed_buffer(size_t stop_at = 0);
 
   // To be invoked by the mutator.
-  bool process_or_enqueue_complete_buffer(BufferNode* node);
+  bool process_or_enqueue_completed_buffer(BufferNode* node);
 
-  bool completed_buffers_exist_dirty() {
-    return _n_completed_buffers > 0;
-  }
-
-  bool process_completed_buffers() { return _process_completed; }
-  void set_process_completed(bool x) { _process_completed = x; }
+  bool process_completed_buffers() { return _process_completed_buffers; }
+  void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
 
   bool is_active() { return _all_active; }
 

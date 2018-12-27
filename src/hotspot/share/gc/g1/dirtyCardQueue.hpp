@@ -136,9 +136,7 @@ public:
   // must never return false. Must only be called during GC.
   bool apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i);
 
-  BufferNode* get_completed_buffer(size_t stop_at);
-
-  void reset_for_par_iteration() { _cur_par_buffer_node = _completed_buffers_head; }
+  void reset_for_par_iteration() { _cur_par_buffer_node = completed_buffers_head(); }
   // Applies the current closure to all completed buffers, non-consumptively.
   // Can be used in parallel, all callers using the iteration state initialized
   // by reset_for_par_iteration.
@@ -148,16 +146,12 @@ public:
     return &_shared_dirty_card_queue;
   }
 
-  // Deallocate any completed log buffers
-  void clear();
-
   // If a full collection is happening, reset partial logs, and ignore
   // completed ones: the full collection will make them all irrelevant.
   void abandon_logs();
 
   // If any threads have partial logs, add them to the global list of logs.
   void concatenate_logs();
-  void clear_n_completed_buffers() { _n_completed_buffers = 0;}
 
   jint processed_buffers_mut() {
     return _processed_buffers_mut;

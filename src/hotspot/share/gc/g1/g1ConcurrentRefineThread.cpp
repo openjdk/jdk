@@ -75,7 +75,7 @@ void G1ConcurrentRefineThread::activate() {
     set_active(true);
   } else {
     DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed(true);
+    dcqs.set_process_completed_buffers(true);
   }
   _monitor->notify();
 }
@@ -86,7 +86,7 @@ void G1ConcurrentRefineThread::deactivate() {
     set_active(false);
   } else {
     DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed(false);
+    dcqs.set_process_completed_buffers(false);
   }
 }
 
