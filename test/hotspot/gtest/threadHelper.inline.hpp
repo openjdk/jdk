@@ -51,7 +51,7 @@ public:
   VMThreadBlocker() {}
   virtual ~VMThreadBlocker() {}
   const char* get_thread_name_string(char* buf, int buflen) const {
-    return (char*) "VMThreadBlocker";
+    return "VMThreadBlocker";
   }
   void run() {
     this->set_thread_state(_thread_in_vm);
@@ -95,7 +95,7 @@ public:
   virtual ~JavaTestThread() {}
 
   const char* get_thread_name_string(char* buf, int buflen) const {
-    return (char*) "JavaTestThread";
+    return "JavaTestThread";
   }
 
   void pre_run() {
