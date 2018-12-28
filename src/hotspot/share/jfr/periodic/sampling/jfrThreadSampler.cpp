@@ -335,7 +335,8 @@ class JfrThreadSampler : public NonJavaThread {
   void set_native_interval(size_t interval) { _interval_native = interval; };
   size_t get_java_interval() { return _interval_java; };
   size_t get_native_interval() { return _interval_native; };
-
+ protected:
+  virtual void post_run();
  public:
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }
@@ -484,6 +485,10 @@ void JfrThreadSampler::run() {
       last_native_ms = get_monotonic_ms();
     }
   }
+}
+
+void JfrThreadSampler::post_run() {
+  this->NonJavaThread::post_run();
   delete this;
 }
 

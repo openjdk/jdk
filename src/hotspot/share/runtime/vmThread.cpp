@@ -285,8 +285,6 @@ void VMThread::destroy() {
 void VMThread::run() {
   assert(this == vm_thread(), "check");
 
-  this->initialize_named_thread();
-
   // Notify_lock wait checks on active_handles() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify

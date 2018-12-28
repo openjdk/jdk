@@ -705,6 +705,8 @@ static void *thread_native_entry(Thread *thread) {
     }
   }
 
+  assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
+
   // call one more level start routine
   thread->call_run();
 

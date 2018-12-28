@@ -50,6 +50,9 @@ public:
   Semaphore _unblock;
   VMThreadBlocker() {}
   virtual ~VMThreadBlocker() {}
+  const char* get_thread_name_string(char* buf, int buflen) const {
+    return (char*) "VMThreadBlocker";
+  }
   void run() {
     this->set_thread_state(_thread_in_vm);
     {
@@ -58,9 +61,15 @@ public:
     }
     VM_StopSafepoint ss(&_ready, &_unblock);
     VMThread::execute(&ss);
+  }
+
+  // Override as JavaThread::post_run() calls JavaThread::exit which
+  // expects a valid thread object oop.
+  virtual void post_run() {
     Threads::remove(this);
     this->smr_delete();
   }
+
   void doit() {
     if (os::create_thread(this, os::os_thread)) {
       os::start_thread(this);
@@ -85,7 +94,11 @@ public:
   }
   virtual ~JavaTestThread() {}
 
-  void prerun() {
+  const char* get_thread_name_string(char* buf, int buflen) const {
+    return (char*) "JavaTestThread";
+  }
+
+  void pre_run() {
     this->set_thread_state(_thread_in_vm);
     {
       MutexLocker ml(Threads_lock);
@@ -99,12 +112,12 @@ public:
   virtual void main_run() = 0;
 
   void run() {
-    prerun();
     main_run();
-    postrun();
   }
 
-  void postrun() {
+  // Override as JavaThread::post_run() calls JavaThread::exit which
+  // expects a valid thread object oop. And we need to call signal.
+  void post_run() {
     Threads::remove(this);
     _post->signal();
     this->smr_delete();
