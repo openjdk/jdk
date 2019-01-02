@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,27 +43,29 @@
 class AdjoiningGenerations : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  // The young generation and old generation, respectively
-  PSYoungGen* _young_gen;
-  PSOldGen* _old_gen;
-
-  // The spaces used by the two generations.
-  AdjoiningVirtualSpaces _virtual_spaces;
-
   // Move boundary up to expand old gen.  Checks are made to
   // determine if the move can be done with specified limits.
   void request_old_gen_expansion(size_t desired_change_in_bytes);
   // Move boundary down to expand young gen.
   bool request_young_gen_expansion(size_t desired_change_in_bytes);
 
+ protected:
+   // The young generation and old generation, respectively
+   PSYoungGen* _young_gen;
+   PSOldGen* _old_gen;
+
+   // The spaces used by the two generations.
+   AdjoiningVirtualSpaces* _virtual_spaces;
+
  public:
   AdjoiningGenerations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
+  AdjoiningGenerations();
 
   // Accessors
   PSYoungGen* young_gen() { return _young_gen; }
   PSOldGen* old_gen() { return _old_gen; }
 
-  AdjoiningVirtualSpaces* virtual_spaces() { return &_virtual_spaces; }
+  AdjoiningVirtualSpaces* virtual_spaces() { return _virtual_spaces; }
 
   // Additional space is needed in the old generation.  Check
   // the available space and attempt to move the boundary if more space
@@ -74,7 +76,9 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
 
   // Return the total byte size of the reserved space
   // for the adjoining generations.
-  size_t reserved_byte_size();
-};
+  virtual size_t reserved_byte_size();
 
+  // Return new AdjoiningGenerations instance based on collector policy (specifically - whether heap is heterogeneous).
+  static AdjoiningGenerations* create_adjoining_generations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
+};
 #endif // SHARE_VM_GC_PARALLEL_ADJOININGGENERATIONS_HPP

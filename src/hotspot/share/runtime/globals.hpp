@@ -2575,6 +2575,12 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Path to the directoy where a temporary file will be created "    \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
+  experimental(ccstr, AllocateOldGenAt, NULL,                               \
+          "Path to the directoy where a temporary file will be "            \
+          "created to use as the backing store for old generation."         \
+          "File of size Xmx is pre-allocated for performance reason, so"    \
+          "we need that much space available")                              \
+                                                                            \
   develop(bool, VerifyMetaspace, false,                                     \
           "Verify metaspace on chunk movements.")                           \
                                                                             \

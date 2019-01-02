@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * equivalent to one returned by invoking the {@link UID#UID(short)}
  * constructor with the value zero.
  *
- * <p>If the system property <code>java.rmi.server.randomIDs</code>
+ * <p>If the system property {@systemProperty java.rmi.server.randomIDs}
  * is defined to equal the string <code>"true"</code> (case insensitive),
  * then the {@link #ObjID()} constructor will use a cryptographically
  * strong random number generator to choose the object number of the

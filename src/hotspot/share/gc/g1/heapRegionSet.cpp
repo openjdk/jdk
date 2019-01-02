@@ -234,6 +234,21 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   verify_optional();
 }
 
+uint FreeRegionList::num_of_regions_in_range(uint start, uint end) const {
+  HeapRegion* cur = _head;
+  uint num = 0;
+  while (cur != NULL) {
+    uint index = cur->hrm_index();
+    if (index > end) {
+      break;
+    } else if (index >= start) {
+      num++;
+    }
+    cur = cur->next();
+  }
+  return num;
+}
+
 void FreeRegionList::verify() {
   // See comment in HeapRegionSetBase::verify() about MT safety and
   // verification.

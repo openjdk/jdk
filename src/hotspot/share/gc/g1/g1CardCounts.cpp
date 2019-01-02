@@ -63,7 +63,7 @@ G1CardCounts::G1CardCounts(G1CollectedHeap *g1h):
 }
 
 void G1CardCounts::initialize(G1RegionToSpaceMapper* mapper) {
-  assert(_g1h->max_capacity() > 0, "initialization order");
+  assert(_g1h->max_reserved_capacity() > 0, "initialization order");
   assert(_g1h->capacity() == 0, "initialization order");
 
   if (G1ConcRSHotCardLimit > 0) {

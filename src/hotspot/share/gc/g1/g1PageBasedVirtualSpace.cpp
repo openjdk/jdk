@@ -100,6 +100,12 @@ size_t G1PageBasedVirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
 }
 
+void G1PageBasedVirtualSpace::commit_and_set_special() {
+  commit_internal(addr_to_page_index(_low_boundary), addr_to_page_index(_high_boundary));
+  _special = true;
+  _dirty.initialize(reserved_size()/_page_size);
+}
+
 size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
   return (addr - _low_boundary) / _page_size;
 }

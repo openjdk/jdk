@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
+#include "gc/g1/g1HeterogeneousCollectorPolicy.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcArguments.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -156,5 +157,9 @@ void G1Arguments::initialize() {
 }
 
 CollectedHeap* G1Arguments::create_heap() {
-  return create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
+  if (AllocateOldGenAt != NULL) {
+    return create_heap_with_policy<G1CollectedHeap, G1HeterogeneousCollectorPolicy>();
+  } else {
+    return create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
+  }
 }

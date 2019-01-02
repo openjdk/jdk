@@ -317,5 +317,15 @@
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)                                     \
+                                                                            \
+  experimental(uintx, G1YoungExpansionBufferPercent, 10,                    \
+               "When heterogenous heap is enabled by AllocateOldGenAt "     \
+               "option, after every GC, young gen is re-sized which "       \
+               "involves system calls to commit/uncommit memory. To "       \
+               "reduce these calls, we keep a buffer of extra regions to "  \
+               "absorb small changes in young gen length. This flag takes " \
+               "the buffer size as an percentage of young gen length")      \
+               range(0, 100)                                                \
+
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP

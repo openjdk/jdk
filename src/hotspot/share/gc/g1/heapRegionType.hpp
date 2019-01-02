@@ -117,6 +117,9 @@ private:
     _tag = tag;
   }
 
+  // Private constructor used static constants
+  HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(_tag); }
+
 public:
   // Queries
 
@@ -186,6 +189,11 @@ public:
   G1HeapRegionTraceType::Type get_trace_type();
 
   HeapRegionType() : _tag(FreeTag) { hrt_assert_is_valid(_tag); }
+
+  static const HeapRegionType Eden;
+  static const HeapRegionType Survivor;
+  static const HeapRegionType Old;
+  static const HeapRegionType Humongous;
 };
 
 #endif // SHARE_VM_GC_G1_HEAPREGIONTYPE_HPP

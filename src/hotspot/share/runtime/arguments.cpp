@@ -2061,6 +2061,9 @@ bool Arguments::check_vm_args_consistency() {
       log_warning(arguments) ("NUMA support for Heap depends on the file system when AllocateHeapAt option is used.\n");
     }
   }
+
+  status = status && GCArguments::check_args_consistency();
+
   return status;
 }
 
@@ -2952,6 +2955,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   }
 #endif // LINUX
   fix_appclasspath();
+
   return JNI_OK;
 }
 

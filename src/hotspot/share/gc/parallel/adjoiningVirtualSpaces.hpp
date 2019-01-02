@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@
 // moved up consistently.  AdjoiningVirtualSpaces provide the
 // interfaces for moving the this boundary.
 
-class AdjoiningVirtualSpaces {
+class AdjoiningVirtualSpaces : public CHeapObj<mtGC> {
+protected:
   // space at the high end and the low end, respectively
   PSVirtualSpace*    _high;
   PSVirtualSpace*    _low;
@@ -84,17 +85,17 @@ class AdjoiningVirtualSpaces {
                          size_t alignment);
 
   // accessors
-  PSVirtualSpace* high() { return _high; }
-  PSVirtualSpace* low()  { return _low; }
+  virtual PSVirtualSpace* high() { return _high; }
+  virtual PSVirtualSpace* low()  { return _low; }
   ReservedSpace reserved_space() { return _reserved_space; }
   size_t min_low_byte_size() { return _min_low_byte_size; }
   size_t min_high_byte_size() { return _min_high_byte_size; }
   size_t alignment() const { return _alignment; }
 
   // move boundary between the two spaces up
-  bool adjust_boundary_up(size_t size_in_bytes);
+  virtual bool adjust_boundary_up(size_t size_in_bytes);
   // and down
-  bool adjust_boundary_down(size_t size_in_bytes);
+  virtual bool adjust_boundary_down(size_t size_in_bytes);
 
   // Maximum byte size for the high space.
   size_t high_byte_size_limit() {
@@ -107,9 +108,8 @@ class AdjoiningVirtualSpaces {
 
   // Sets the boundaries for the virtual spaces and commits and
   // initial size;
-  void initialize(size_t max_low_byte_size,
+  virtual void initialize(size_t max_low_byte_size,
                   size_t init_low_byte_size,
                   size_t init_high_byte_size);
 };
-
 #endif // SHARE_VM_GC_PARALLEL_ADJOININGVIRTUALSPACES_HPP

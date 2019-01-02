@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1HeterogeneousHeapYoungGenSizer.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
-  _min_desired_young_length(0), _max_desired_young_length(0), _adaptive_size(true) {
+  _adaptive_size(true), _min_desired_young_length(0), _max_desired_young_length(0) {
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
@@ -126,4 +128,12 @@ void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
 void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
   recalculate_min_max_young_length(new_number_of_heap_regions, &_min_desired_young_length,
           &_max_desired_young_length);
+}
+
+G1YoungGenSizer* G1YoungGenSizer::create_gen_sizer(G1CollectorPolicy* policy) {
+  if (policy->is_hetero_heap()) {
+    return new G1HeterogeneousHeapYoungGenSizer();
+  } else {
+    return new G1YoungGenSizer();
+  }
 }

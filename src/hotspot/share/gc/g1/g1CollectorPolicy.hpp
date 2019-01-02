@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ protected:
 
 public:
   G1CollectorPolicy();
+  virtual size_t heap_reserved_size_bytes() const;
+  virtual bool is_hetero_heap() const;
 };
-
 #endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
