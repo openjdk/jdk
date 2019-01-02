@@ -99,7 +99,8 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	)
         ifeq ($(BUILD_CDS_ARCHIVE), true)
 	  $(call LogWarn, Creating CDS archive for jdk image)
-	  $(JDK_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+	  $(FIXPATH) $(JDK_IMAGE_DIR)/bin/java \
+	      -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
         endif
 	$(TOUCH) $@
 
@@ -114,7 +115,8 @@ $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	)
         ifeq ($(BUILD_CDS_ARCHIVE), true)
 	  $(call LogWarn, Creating CDS archive for jre image)
-	  $(JRE_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+	  $(FIXPATH) $(JRE_IMAGE_DIR)/bin/java \
+	      -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
         endif
 	$(TOUCH) $@
 

@@ -145,7 +145,7 @@
 <li><p>Do not check out the source code in a path which contains spaces. Chances are the build will not work. This is most likely to be an issue on Windows systems.</p></li>
 <li><p>Do not check out the source code in a path which has a very long name or is nested many levels deep. Chances are you will hit an OS limitation during the build.</p></li>
 <li><p>Put the source code on a local disk, not a network share. If possible, use an SSD. The build process is very disk intensive, and having slow disk access will significantly increase build times. If you need to use a network share for the source code, see below for suggestions on how to keep the build artifacts on a local disk.</p></li>
-<li><p>On Windows, extra care must be taken to make sure the <a href="#cygwin">Cygwin</a> environment is consistent. It is recommended that you follow this procedure:</p>
+<li><p>On Windows, if using <a href="#cygwin">Cygwin</a>, extra care must be taken to make sure the environment is consistent. It is recommended that you follow this procedure:</p>
 <ul>
 <li><p>Create the directory that is going to contain the top directory of the JDK clone by using the <code>mkdir</code> command in the Cygwin bash shell. That is, do <em>not</em> create it using Windows Explorer. This will ensure that it will have proper Cygwin attributes, and that it's children will inherit those attributes.</p></li>
 <li><p>Do not put the JDK clone in a path under your Cygwin home directory. This is especially important if your user name contains spaces and/or mixed upper and lower case letters.</p></li>
@@ -201,12 +201,12 @@
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build the JDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
-<p>Windows is the only non-POSIX OS supported by the JDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. Currently, the only supported such layer is Cygwin. (Msys is no longer supported due to a too old bash; msys2 and the new Windows Subsystem for Linux (WSL) would likely be possible to support in a future version but that would require effort to implement.)</p>
+<p>Windows is the only non-POSIX OS supported by the JDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. Currently, the only supported such layers are Cygwin and Windows Subsystem for Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would likely be possible to support in a future version but that would require effort to implement.)</p>
 <p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
-<p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is thus required for building the JDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
+<p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is required for building the JDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating all packages without any easy way to install or revert to a specific version of a package. This means that whenever you add or update a package in Cygwin, you might (inadvertently) update tools that are used by the JDK build process, and that can cause unexpected build problems.</p>
-<p>The JDK requires GNU Make 4.0 or greater on Windows. This is usually not a problem, since Cygwin currently only distributes GNU Make at a version above 4.0.</p>
+<p>The JDK requires GNU Make 4.0 or greater in Cygwin. This is usually not a problem, since Cygwin currently only distributes GNU Make at a version above 4.0.</p>
 <p>Apart from the basic Cygwin installation, the following packages must also be installed:</p>
 <ul>
 <li><code>autoconf</code></li>
@@ -217,6 +217,11 @@
 <p>Often, you can install these packages using the following command line:</p>
 <pre><code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf -P make -P unzip -P zip</code></pre>
 <p>Unfortunately, Cygwin can be unreliable in certain circumstances. If you experience build tool crashes or strange issues when building on Windows, please check the Cygwin FAQ on the <a href="https://cygwin.com/faq/faq.html#faq.using.bloda">&quot;BLODA&quot; list</a> and the section on <a href="https://cygwin.com/faq/faq.html#faq.using.fixing-fork-failures">fork() failures</a>.</p>
+<h4 id="windows-subsystem-for-linux-wsl">Windows Subsystem for Linux (WSL)</h4>
+<p>Windows 10 1809 or newer is supported due to a dependency on the wslpath utility and support for environment variable sharing through WSLENV. Version 1803 can work but intermittent build failures have been observed.</p>
+<p>It's possible to build both Windows and Linux binaries from WSL. To build Windows binaries, you must use a Windows boot JDK (located in a Windows-accessible directory). To build Linux binaries, you must use a Linux boot JDK. The default behavior is to build for Windows. To build for Linux, pass <code>--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu</code> to <code>configure</code>.</p>
+<p>If building Windows binaries, the source code must be located in a Windows- accessible directory. This is because Windows executables (such as Visual Studio and the boot JDK) must be able to access the source code. Also, the drive where the source is stored must be mounted as case-insensitive by changing either /etc/fstab or /etc/wsl.conf in WSL. Individual directories may be corrected using the fsutil tool in case the source was cloned before changing the mount options.</p>
+<p>Note that while it's possible to build on WSL, testing is still not fully supported.</p>
 <h3 id="solaris">Solaris</h3>
 <p>See <code>make/devkit/solaris11.1-package-list.txt</code> for a list of recommended packages to install when building on Solaris. The versions specified in this list is the versions used by the daily builds at Oracle, and is likely to work properly.</p>
 <p>Older versions of Solaris shipped a broken version of <code>objcopy</code>. At least version 2.21.1 is needed, which is provided by Solaris 11 Update 1. Objcopy is needed if you want to have external debug symbols. Please make sure you are using at least version 2.21.1 of objcopy, or that you disable external debug symbols.</p>

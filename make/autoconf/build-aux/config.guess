@@ -60,6 +60,15 @@ if test $? = 0; then
   esac
 fi
 
+# Test and fix wsl
+echo $OUT | grep x86_64-unknown-linux-gnu > /dev/null 2> /dev/null
+if test $? = 0; then
+  uname -r | grep Microsoft > /dev/null 2> /dev/null
+  if test $? = 0; then
+    OUT="x86_64-pc-wsl"
+  fi
+fi
+
 # Test and fix architecture string on AIX
 # On AIX 'config.guess' returns 'powerpc' as architecture but 'powerpc' is
 # implicitely handled as 32-bit architecture in 'platform.m4' so we check
