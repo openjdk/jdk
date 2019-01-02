@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ extern "C" {
 
 #define NSK_JVMTI_MAX_OPTIONS       10
 #define NSK_JVMTI_OPTION_START      '-'
-#define NSK_JVMTI_OPTION_VAL_SEP    '='
 
 #define NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE "pathToNewByteCode"
 #define PATH_FORMAT "%s%02d/%s"
@@ -191,104 +190,69 @@ static void nsk_jvmti_free() {
     }
 }
 
-int isOptSep(char c) {
-    return isspace(c) || c == '~';
+
+/*
+ * Tokenize a string based on a list of delimiters.
+ */
+static char* token(char **s, const char *delim) {
+  char *p;
+  char *start = *s;
+
+  if (s == NULL || *s == NULL) {
+    return NULL;
+  }
+
+  p = strpbrk(*s, delim);
+  if (p != NULL) {
+    /* Advance to next token. */
+    *p = '\0';
+    *s = p + 1;
+  } else {
+    /* End of tokens. */
+    *s = NULL;
+  }
+
+  return start;
 }
 
-
-/**
- *
- * The current option will not perform more than one
- * single option which given, this is due to places explained
- * in this question.
- *
- **/
-
- /*
-  * This whole play can be reduced with simple StringTokenizer (strtok).
-  *
-  */
-
 int nsk_jvmti_parseOptions(const char options[]) {
-    size_t len;
-    const char* opt;
     int success = NSK_TRUE;
 
-    context.options.string = NULL;
-    context.options.count = 0;
-    context.waittime = 2;
-
+    char *str = NULL;
+    char *name = NULL;
+    char *value = NULL;
+    const char *delimiters = " ,";
     if (options == NULL)
-        return NSK_TRUE;
+        return success;
 
-    len = strlen(options);
-    context.options.string = (char*)malloc(len + 2);
+    /*
+     * Save a copy of the full options string for
+     * ArgumentHandler.getAgentOptionsString().
+     */
+    context.options.string = strdup(options);
 
-    if (context.options.string == NULL) {
-            nsk_complain("nsk_jvmti_parseOptions(): out of memory\n");
-            return NSK_FALSE;
-    }
-    strncpy(context.options.string, options, len);
-    context.options.string[len] = '\0';
-    context.options.string[len+1] = '\0';
+    /* Create a temporary copy of the options string to be tokenized. */
+    str = strdup(options);
+    while ((name = token(&str, delimiters)) != NULL) {
+        value = strchr(name, '=');
 
-    for (opt = context.options.string; ;) {
-        const char* opt_end;
-        const char* val_sep;
-        int opt_len=0;
-        int val_len=0;
-        int exit=1;
-
-        while (*opt != '\0' && isOptSep(*opt)) opt++;
-        if (*opt == '\0') break;
-
-        val_sep = NULL;
-        /*
-            This should break when the first option it encounters other wise
-        */
-        for (opt_end = opt, opt_len=0; !(*opt_end == '\0' || isOptSep(*opt_end)); opt_end++,opt_len++) {
-            if (*opt_end == NSK_JVMTI_OPTION_VAL_SEP) {
-                val_sep = opt_end;
-                exit=0;
-                break;
-            }
+        if (value != NULL) {
+            *value++ = '\0';
         }
-
-        if (exit == 1) break;
-
-        /* now scan for the search  for the option value end.
-
-        */
-        exit =1;
-        opt_end++;
-        val_sep++;
-        /**
-         * I was expecting this jvmti_parseOptions(),
-         * should be for multiple options as well.
-         * If this break is not there then It will expects
-         * to have. so a space should be sufficient as well.
-         */
-        for (val_len=0; !(*opt_end == '\0' || isOptSep(*opt_end)); opt_end++,val_len++) {
-            //if (*opt_end == NSK_JVMTI_OPTION_START) {
-            //    break;
-            //}
-        }
-
-        if (!add_option(opt, opt_len, val_sep, val_len)) {
+        if (!add_option(name, (int)strlen(name), value,
+                        value ? (int)strlen(value) : 0)) {
             success = NSK_FALSE;
             break;
         }
-        opt_end++;
-        opt = opt_end;
     }
-
     if (!success) {
         nsk_jvmti_free();
     }
-
+    if (str != NULL) {
+      free(str);
+    }
     return success;
 }
-
 
 /*************************************************************/
 
