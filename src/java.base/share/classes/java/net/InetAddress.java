@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,7 @@ class InetAddress implements java.io.Serializable {
      * @param   timeout the time, in milliseconds, before the call aborts
      * @throws  IllegalArgumentException if either {@code timeout}
      *                          or {@code ttl} are negative.
-     * @return a {@code boolean}indicating if the address is reachable.
+     * @return a {@code boolean} indicating if the address is reachable.
      * @throws IOException if a network error occurs
      * @since 1.5
      */
