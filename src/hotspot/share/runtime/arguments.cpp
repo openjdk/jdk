@@ -3111,6 +3111,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
+
+    // Compilation is already disabled if the user specifies -Xshare:dump.
+    // Disable compilation in case user specifies -XX:+DumpSharedSpaces instead of -Xshare:dump.
+    set_mode_flags(_int);
   }
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
