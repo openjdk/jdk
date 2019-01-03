@@ -221,7 +221,7 @@ int nsk_jvmti_parseOptions(const char options[]) {
     char *str = NULL;
     char *name = NULL;
     char *value = NULL;
-    const char *delimiters = " ,";
+    const char *delimiters = " ,~";
     if (options == NULL)
         return success;
 
