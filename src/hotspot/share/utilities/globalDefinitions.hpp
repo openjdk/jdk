@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,16 +412,6 @@ const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == 
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
-
-//----------------------------------------------------------------------------------------------------
-// Default and minimum StringTable and SymbolTable size values
-// Must be a power of 2
-
-const size_t defaultStringTableSize = NOT_LP64(1024) LP64_ONLY(65536);
-const size_t minimumStringTableSize = 128;
-
-const size_t defaultSymbolTableSize = 32768; // 2^15
-const size_t minimumSymbolTableSize = 1024;
 
 //----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.
@@ -839,8 +829,6 @@ enum JavaThreadState {
 
 class ClassFileStream;
 
-class Event;
-
 class Thread;
 class  VMThread;
 class  JavaThread;
@@ -853,17 +841,11 @@ class CodeBlob;
 class  CompiledMethod;
 class   nmethod;
 class RuntimeBlob;
-class  OSRAdapter;
-class  I2CAdapter;
-class  C2IAdapter;
 class CompiledIC;
 class relocInfo;
 class ScopeDesc;
 class PcDesc;
 
-class Recompiler;
-class Recompilee;
-class RecompilationPolicy;
 class RFrame;
 class  CompiledRFrame;
 class  InterpretedRFrame;
@@ -872,7 +854,6 @@ class vframe;
 class   javaVFrame;
 class     interpretedVFrame;
 class     compiledVFrame;
-class     deoptimizedVFrame;
 class   externalVFrame;
 class     entryVFrame;
 
@@ -888,11 +869,8 @@ class PeriodicTask;
 class JavaCallWrapper;
 
 class   oopDesc;
-class   metaDataOopDesc;
 
 class NativeCall;
-
-class zone;
 
 class StubQueue;
 
@@ -906,10 +884,6 @@ class CompressedStream;
 class   DebugInfoReadStream;
 class   DebugInfoWriteStream;
 class LocationValue;
-class ConstantValue;
-class IllegalValue;
-
-class MonitorArray;
 
 class MonitorInfo;
 
@@ -1124,111 +1098,15 @@ inline intx byte_size(void* from, void* to) {
 // Avoid non-portable casts with these routines (DEPRECATED)
 
 // NOTE: USE Bytes class INSTEAD WHERE POSSIBLE
-//       Bytes is optimized machine-specifically and may be much faster then the portable routines below.
+//       Bytes is optimized machine-specifically and may be much faster than the portable routines below.
 
 // Given sequence of four bytes, build into a 32-bit word
 // following the conventions used in class files.
-// On the 386, this could be realized with a simple address cast.
-//
 
-// This routine takes eight bytes:
-inline u8 build_u8_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  (( u8(c1) << 56 )  &  ( u8(0xff) << 56 ))
-       |  (( u8(c2) << 48 )  &  ( u8(0xff) << 48 ))
-       |  (( u8(c3) << 40 )  &  ( u8(0xff) << 40 ))
-       |  (( u8(c4) << 32 )  &  ( u8(0xff) << 32 ))
-       |  (( u8(c5) << 24 )  &  ( u8(0xff) << 24 ))
-       |  (( u8(c6) << 16 )  &  ( u8(0xff) << 16 ))
-       |  (( u8(c7) <<  8 )  &  ( u8(0xff) <<  8 ))
-       |  (( u8(c8) <<  0 )  &  ( u8(0xff) <<  0 ));
-}
-
-// This routine takes four bytes:
-inline u4 build_u4_from( u1 c1, u1 c2, u1 c3, u1 c4 ) {
-  return  (( u4(c1) << 24 )  &  0xff000000)
-       |  (( u4(c2) << 16 )  &  0x00ff0000)
-       |  (( u4(c3) <<  8 )  &  0x0000ff00)
-       |  (( u4(c4) <<  0 )  &  0x000000ff);
-}
-
-// And this one works if the four bytes are contiguous in memory:
-inline u4 build_u4_from( u1* p ) {
-  return  build_u4_from( p[0], p[1], p[2], p[3] );
-}
-
-// Ditto for two-byte ints:
-inline u2 build_u2_from( u1 c1, u1 c2 ) {
-  return  u2((( u2(c1) <<  8 )  &  0xff00)
-          |  (( u2(c2) <<  0 )  &  0x00ff));
-}
-
-// And this one works if the two bytes are contiguous in memory:
+// This one works if the two bytes are contiguous in memory:
 inline u2 build_u2_from( u1* p ) {
-  return  build_u2_from( p[0], p[1] );
-}
-
-// Ditto for floats:
-inline jfloat build_float_from( u1 c1, u1 c2, u1 c3, u1 c4 ) {
-  u4 u = build_u4_from( c1, c2, c3, c4 );
-  return  *(jfloat*)&u;
-}
-
-inline jfloat build_float_from( u1* p ) {
-  u4 u = build_u4_from( p );
-  return  *(jfloat*)&u;
-}
-
-
-// now (64-bit) longs
-
-inline jlong build_long_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  return  (( jlong(c1) << 56 )  &  ( jlong(0xff) << 56 ))
-       |  (( jlong(c2) << 48 )  &  ( jlong(0xff) << 48 ))
-       |  (( jlong(c3) << 40 )  &  ( jlong(0xff) << 40 ))
-       |  (( jlong(c4) << 32 )  &  ( jlong(0xff) << 32 ))
-       |  (( jlong(c5) << 24 )  &  ( jlong(0xff) << 24 ))
-       |  (( jlong(c6) << 16 )  &  ( jlong(0xff) << 16 ))
-       |  (( jlong(c7) <<  8 )  &  ( jlong(0xff) <<  8 ))
-       |  (( jlong(c8) <<  0 )  &  ( jlong(0xff) <<  0 ));
-}
-
-inline jlong build_long_from( u1* p ) {
-  return  build_long_from( p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7] );
-}
-
-
-// Doubles, too!
-inline jdouble build_double_from( u1 c1, u1 c2, u1 c3, u1 c4, u1 c5, u1 c6, u1 c7, u1 c8 ) {
-  jlong u = build_long_from( c1, c2, c3, c4, c5, c6, c7, c8 );
-  return  *(jdouble*)&u;
-}
-
-inline jdouble build_double_from( u1* p ) {
-  jlong u = build_long_from( p );
-  return  *(jdouble*)&u;
-}
-
-
-// Portable routines to go the other way:
-
-inline void explode_short_to( u2 x, u1& c1, u1& c2 ) {
-  c1 = u1(x >> 8);
-  c2 = u1(x);
-}
-
-inline void explode_short_to( u2 x, u1* p ) {
-  explode_short_to( x, p[0], p[1]);
-}
-
-inline void explode_int_to( u4 x, u1& c1, u1& c2, u1& c3, u1& c4 ) {
-  c1 = u1(x >> 24);
-  c2 = u1(x >> 16);
-  c3 = u1(x >>  8);
-  c4 = u1(x);
-}
-
-inline void explode_int_to( u4 x, u1* p ) {
-  explode_int_to( x, p[0], p[1], p[2], p[3]);
+  return  u2((( u2(p[0]) <<  8 )  &  0xff00)
+          |  (( u2(p[1]) <<  0 )  &  0x00ff));
 }
 
 

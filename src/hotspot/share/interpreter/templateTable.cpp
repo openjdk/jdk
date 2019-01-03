@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,25 +221,6 @@ void TemplateTable::def(Bytecodes::Code code, int flags, TosState in, TosState o
 void TemplateTable::def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(Condition cc), Condition cc) {
   def(code, flags, in, out, (Template::generator)gen, (int)cc);
 }
-
-#if defined(TEMPLATE_TABLE_BUG)
-//
-// It appears that gcc (version 2.91) generates bad code for the template
-// table init if this macro is not defined.  My symptom was an assertion
-// assert(Universe::heap()->is_in(obj), "sanity check") in handles.cpp line 24.
-// when called from interpreterRuntime.resolve_invoke().
-//
-  #define iload  TemplateTable::iload
-  #define lload  TemplateTable::lload
-  #define fload  TemplateTable::fload
-  #define dload  TemplateTable::dload
-  #define aload  TemplateTable::aload
-  #define istore TemplateTable::istore
-  #define lstore TemplateTable::lstore
-  #define fstore TemplateTable::fstore
-  #define dstore TemplateTable::dstore
-  #define astore TemplateTable::astore
-#endif // TEMPLATE_TABLE_BUG
 
 void TemplateTable::initialize() {
   if (_is_initialized) return;
@@ -529,20 +510,6 @@ void TemplateTable::initialize() {
 
   _is_initialized = true;
 }
-
-#if defined(TEMPLATE_TABLE_BUG)
-  #undef iload
-  #undef lload
-  #undef fload
-  #undef dload
-  #undef aload
-  #undef istore
-  #undef lstore
-  #undef fstore
-  #undef dstore
-  #undef astore
-#endif // TEMPLATE_TABLE_BUG
-
 
 void templateTable_init() {
   TemplateTable::initialize();
