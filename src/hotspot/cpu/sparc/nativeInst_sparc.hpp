@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,8 @@ inline NativeInstruction* nativeInstruction_at(address address) {
 
 // The NativeCall is an abstraction for accessing/manipulating native call imm32 instructions.
 // (used to manipulate inline caches, primitive & dll calls, etc.)
+class NativeCall;
+
 inline NativeCall* nativeCall_at(address instr);
 inline NativeCall* nativeCall_overwriting_at(address instr,
                                              address destination);

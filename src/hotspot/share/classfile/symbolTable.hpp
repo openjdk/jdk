@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "oops/symbol.hpp"
 #include "utilities/concurrentHashTable.hpp"
 #include "utilities/hashtable.hpp"
+
+class JavaThread;
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).

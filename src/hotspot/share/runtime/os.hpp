@@ -53,6 +53,8 @@ class Thread;
 class JavaThread;
 class NativeCallStack;
 class methodHandle;
+class OSThread;
+class Mutex;
 
 template<class E> class GrowableArray;
 

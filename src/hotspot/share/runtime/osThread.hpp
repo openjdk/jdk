@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ enum ThreadState {
   SLEEPING,                     // Thread.sleep()
   ZOMBIE                        // All done, but not reclaimed yet
 };
+
+typedef int (*OSThreadStartFunc)(void*);
 
 class OSThread: public CHeapObj<mtThread> {
   friend class VMStructs;

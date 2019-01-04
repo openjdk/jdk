@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ class Thread;
 class Handle;
 class Symbol;
 class JavaCallArguments;
+class methodHandle;
 
 // The ThreadShadow class is a helper class to access the _pending_exception
 // field of the Thread class w/o having access to the Thread's interface (for
