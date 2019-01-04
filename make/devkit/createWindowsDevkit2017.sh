@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #
 
 # This script copies parts of a Visual Studio installation into a devkit
-# suitable for building OpenJDK and OracleJDK. Needs to run in Cygwin.
+# suitable for building OpenJDK and OracleJDK. Needs to run in Cygwin or WSL.
 # erik.joelsson@oracle.com
 
 VS_VERSION="2017"
@@ -34,6 +34,8 @@ VS_DLL_VERSION="140"
 SDK_VERSION="10"
 SDK_FULL_VERSION="10.0.16299.0"
 MSVC_DIR="Microsoft.VC141.CRT"
+MSVC_FULL_VERSION="14.12.25827"
+REDIST_FULL_VERSION="14.12.25810"
 
 SCRIPT_DIR="$(cd "$(dirname $0)" > /dev/null && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
@@ -41,22 +43,42 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 ################################################################################
 # Prepare settings
 
+UNAME_SYSTEM=`uname -s`
+UNAME_RELEASE=`uname -r`
+
+# Detect cygwin or WSL
+IS_CYGWIN=`echo $UNAME_SYSTEM | grep -i CYGWIN`
+IS_WSL=`echo $UNAME_RELEASE | grep Microsoft`
+if test "x$IS_CYGWIN" != "x"; then
+    BUILD_ENV="cygwin"
+elif test "x$IS_WSL" != "x"; then
+    BUILD_ENV="wsl"
+else
+    echo "Unknown environment; only Cygwin and WSL are supported."
+    exit 1
+fi
+
+if test "x$BUILD_ENV" = "xcygwin"; then
+    WINDOWS_PATH_TO_UNIX_PATH="cygpath -u"
+elif test "x$BUILD_ENV" = "xwsl"; then
+    WINDOWS_PATH_TO_UNIX_PATH="wslpath -u"
+fi
+
 # Work around the insanely named ProgramFiles(x86) env variable
-PROGRAMFILES_X86="$(cygpath "$(env | sed -n 's/^ProgramFiles(x86)=//p')")"
+PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
 
 # Find Visual Studio installation dir
-eval VSNNNCOMNTOOLS="\"\${VS${VS_VERSION_NUM_NODOT}COMNTOOLS}\""
+VSNNNCOMNTOOLS=`cmd.exe /c echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
 if [ -d "$VSNNNCOMNTOOLS" ]; then
-    VS_INSTALL_DIR="$(cygpath "$VSNNNCOMNTOOLS/../..")"
+    VS_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS/../..")"
 else
     VS_INSTALL_DIR="${PROGRAMFILES_X86}/Microsoft Visual Studio/2017"
-    VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional} 2>/dev/null | head -n1)"
-    VS_INSTALL_DIR="$(cygpath "$VS_INSTALL_DIR")"
+    VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional,Enterprise} 2>/dev/null | head -n1)"
 fi
 echo "VS_INSTALL_DIR: $VS_INSTALL_DIR"
 
 # Extract semantic version
-POTENTIAL_INI_FILES="Common7\IDE\wdexpress.isolation.ini Common7\IDE\devenv.isolation.ini"
+POTENTIAL_INI_FILES="Common7/IDE/wdexpress.isolation.ini Common7/IDE/devenv.isolation.ini"
 for f in $POTENTIAL_INI_FILES; do
     if [ -f "$VS_INSTALL_DIR/$f" ]; then
         VS_VERSION_SP="$(grep ^SemanticVersion= "$VS_INSTALL_DIR/$f")"
@@ -86,8 +108,8 @@ MSVCP_DLL=${MSVC_DIR}/msvcp${VS_DLL_VERSION}.dll
 # Copy Visual Studio files
 
 if [ ! -d $DEVKIT_ROOT/VC ]; then
-    VC_SUBDIR="VC/Tools/MSVC/14.12.25827"
-    REDIST_SUBDIR="VC/Redist/MSVC/14.12.25810"
+    VC_SUBDIR="VC/Tools/MSVC/$MSVC_FULL_VERSION"
+    REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_FULL_VERSION"
     echo "Copying VC..."
     mkdir -p $DEVKIT_ROOT/VC/bin
     cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
@@ -117,7 +139,7 @@ fi
 ################################################################################
 # Copy SDK files
 
-SDK_INSTALL_DIR="$(cygpath "$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION")"
+SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
 if [ ! -d $DEVKIT_ROOT/$SDK_VERSION ]; then
