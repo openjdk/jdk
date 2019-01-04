@@ -2049,7 +2049,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "    to higher native thread priorities. This policy should be   "\
           "    used with care, as sometimes it can cause performance       "\
           "    degradation in the application and/or the entire system. On "\
-          "    Linux this policy requires root privilege.")                 \
+          "    Linux/BSD/macOS this policy requires root privilege or an   "\
+          "    extended capability.")                                       \
           range(0, 1)                                                       \
                                                                             \
   product(bool, ThreadPriorityVerbose, false,                               \
