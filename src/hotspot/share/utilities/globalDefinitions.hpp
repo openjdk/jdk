@@ -1094,21 +1094,6 @@ inline intx byte_size(void* from, void* to) {
   return (address)to - (address)from;
 }
 
-//----------------------------------------------------------------------------------------------------
-// Avoid non-portable casts with these routines (DEPRECATED)
-
-// NOTE: USE Bytes class INSTEAD WHERE POSSIBLE
-//       Bytes is optimized machine-specifically and may be much faster than the portable routines below.
-
-// Given sequence of four bytes, build into a 32-bit word
-// following the conventions used in class files.
-
-// This one works if the two bytes are contiguous in memory:
-inline u2 build_u2_from( u1* p ) {
-  return  u2((( u2(p[0]) <<  8 )  &  0xff00)
-          |  (( u2(p[1]) <<  0 )  &  0x00ff));
-}
-
 
 // Pack and extract shorts to/from ints:
 
