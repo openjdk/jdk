@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,8 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
 else ifeq ($(OPENJDK_TARGET_OS), windows)
   NUM_CORES := $(NUMBER_OF_PROCESSORS)
   MEMORY_SIZE := $(shell \
-      $(EXPR) `wmic computersystem get totalphysicalmemory -value | $(GREP) = \
+      $(EXPR) `wmic computersystem get totalphysicalmemory -value \
+          | $(GREP) = | $(SED) 's/\\r//g' \
           | $(CUT) -d "=" -f 2-` / 1024 / 1024 \
   )
 endif
