@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ serviceability/sa/CDSJMapClstats.java 8193639 solaris-all
 serviceability/sa/ClhsdbField.java 8193639 solaris-all
 serviceability/sa/ClhsdbFindPC.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbFlags.java 8193639 solaris-all
-serviceability/sa/ClhsdbInspect.java 8193639,8211767,8213457 solaris-all,linux-ppc64le,linux-ppc64,windows-all
+serviceability/sa/ClhsdbInspect.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbJdis.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbJhisto.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbJstack.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
