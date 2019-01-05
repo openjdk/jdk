@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,11 +157,6 @@ void Klass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int len
 
 void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
-}
-
-bool Klass::compute_is_subtype_of(Klass* k) {
-  assert(k->is_klass(), "argument must be a class");
-  return is_subclass_of(k);
 }
 
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
