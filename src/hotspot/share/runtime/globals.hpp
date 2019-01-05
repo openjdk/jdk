@@ -2317,11 +2317,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
-  /* New JDK 1.4 reflection implementation */                               \
-                                                                            \
-  develop(intx, FastSuperclassLimit, 8,                                     \
-          "Depth of hardwired instanceof accelerator array")                \
-                                                                            \
   /* Properties for Java libraries  */                                      \
                                                                             \
   product(uint64_t, MaxDirectMemorySize, 0,                                 \

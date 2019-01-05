@@ -231,11 +231,6 @@ bool Klass::can_be_primary_super_slow() const {
 }
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
-  if (FastSuperclassLimit == 0) {
-    // None of the other machinery matters.
-    set_super(k);
-    return;
-  }
   if (k == NULL) {
     set_super(NULL);
     _primary_supers[0] = this;

@@ -429,14 +429,7 @@ protected:
   static jint array_layout_helper(BasicType etype);
 
   // What is the maximum number of primary superclasses any klass can have?
-#ifdef PRODUCT
   static juint primary_super_limit()         { return _primary_super_limit; }
-#else
-  static juint primary_super_limit() {
-    assert(FastSuperclassLimit <= _primary_super_limit, "parameter oob");
-    return FastSuperclassLimit;
-  }
-#endif
 
   // vtables
   klassVtable vtable() const;
