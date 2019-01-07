@@ -312,7 +312,7 @@ public final class PrivateCredentialPermission extends Permission {
 
     private void init(String name) {
 
-        if (name == null || name.trim().length() == 0) {
+        if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("invalid empty name");
         }
 

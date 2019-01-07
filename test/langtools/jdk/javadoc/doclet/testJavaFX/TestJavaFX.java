@@ -28,11 +28,13 @@
  *      8203791 8184205
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestJavaFX
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestJavaFX extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestJavaFX extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "-javafx",
@@ -175,7 +177,7 @@ public class TestJavaFX extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out1-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -203,7 +205,7 @@ public class TestJavaFX extends JavadocTester {
      * are treated correctly.
      */
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out2a",
                 "-sourcepath", testSrc,
                 "-javafx",
@@ -262,7 +264,7 @@ public class TestJavaFX extends JavadocTester {
     }
 
     @Test
-    void test2_html4() {
+    public void test2_html4() {
         javadoc("-d", "out2a-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -313,7 +315,7 @@ public class TestJavaFX extends JavadocTester {
      * are treated just like any other java method.
      */
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out2b",
                 "-sourcepath", testSrc,
                 "-package",
@@ -355,7 +357,7 @@ public class TestJavaFX extends JavadocTester {
     }
 
     @Test
-    void test3_html4() {
+    public void test3_html4() {
         javadoc("-d", "out2b-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -402,7 +404,7 @@ public class TestJavaFX extends JavadocTester {
      * --javafx flag.
      */
     @Test
-    void test4() {
+    public void test4() {
         javadoc("-d", "out4",
                 "--javafx",
                 "--disable-javafx-strict-checks",

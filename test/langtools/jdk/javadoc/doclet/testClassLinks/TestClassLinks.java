@@ -25,12 +25,14 @@
  * @test
  * @bug 8163800 8175200 8186332 8182765
  * @summary The fix for JDK-8072052 shows up other minor incorrect use of styles
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @build TestClassLinks
  * @run main TestClassLinks
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestClassLinks extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestClassLinks extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
 
         javadoc("-d", "out",
                 "-Xdoclint:none",
@@ -85,7 +87,7 @@ public class TestClassLinks extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
 
         javadoc("-d", "out-html4",
                 "-html4",

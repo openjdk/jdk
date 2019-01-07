@@ -73,7 +73,7 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         String[] s = split(attribute);
-        if (s[0].length() == 0)
+        if (s[0].isEmpty())
             throw new IllegalArgumentException(attribute);
         DynamicFileAttributeView view = getFileAttributeView(file, s[0], options);
         if (view == null)
@@ -86,7 +86,7 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         String[] s = split(attributes);
-        if (s[0].length() == 0)
+        if (s[0].isEmpty())
             throw new IllegalArgumentException(attributes);
         DynamicFileAttributeView view = getFileAttributeView(file, s[0], options);
         if (view == null)

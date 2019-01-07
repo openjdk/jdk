@@ -166,15 +166,15 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
             // Several AlgorithmId should omit the whole parameter part when
             // it's NULL. They are ---
-            // rfc3370 2.1: Implementations SHOULD generate SHA-1
+            // RFC 3370 2.1: Implementations SHOULD generate SHA-1
             // AlgorithmIdentifiers with absent parameters.
-            // rfc3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
+            // RFC 3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
             // id-sha512 are used in an AlgorithmIdentifier the parameters
             // (which are optional) SHOULD be omitted.
-            // rfc3279 2.3.2: The id-dsa algorithm syntax includes optional
+            // RFC 3279 2.3.2: The id-dsa algorithm syntax includes optional
             // domain parameters... When omitted, the parameters component
             // MUST be omitted entirely
-            // rfc3370 3.1: When the id-dsa-with-sha1 algorithm identifier
+            // RFC 3370 3.1: When the id-dsa-with-sha1 algorithm identifier
             // is used, the AlgorithmIdentifier parameters field MUST be absent.
             /*if (
                 algid.equals((Object)SHA_oid) ||
@@ -771,8 +771,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 5, 10});
     public static final ObjectIdentifier pbeWithSHA1AndRC2_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 5, 11});
+    public static ObjectIdentifier pbeWithSHA1AndRC4_128_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 1});
+    public static ObjectIdentifier pbeWithSHA1AndRC4_40_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 2});
     public static ObjectIdentifier pbeWithSHA1AndDESede_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 3});
+    public static ObjectIdentifier pbeWithSHA1AndRC2_128_oid =
+        ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 5});
     public static ObjectIdentifier pbeWithSHA1AndRC2_40_oid =
         ObjectIdentifier.newInternal(new int[] {1, 2, 840, 113549, 1, 12, 1, 6});
 
@@ -961,7 +967,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(pbeWithMD5AndRC2_oid, "PBEWithMD5AndRC2");
         nameTable.put(pbeWithSHA1AndDES_oid, "PBEWithSHA1AndDES");
         nameTable.put(pbeWithSHA1AndRC2_oid, "PBEWithSHA1AndRC2");
+        nameTable.put(pbeWithSHA1AndRC4_128_oid, "PBEWithSHA1AndRC4_128");
+        nameTable.put(pbeWithSHA1AndRC4_40_oid, "PBEWithSHA1AndRC4_40");
         nameTable.put(pbeWithSHA1AndDESede_oid, "PBEWithSHA1AndDESede");
+        nameTable.put(pbeWithSHA1AndRC2_128_oid, "PBEWithSHA1AndRC2_128");
         nameTable.put(pbeWithSHA1AndRC2_40_oid, "PBEWithSHA1AndRC2_40");
     }
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986
  * @summary Check switch expressions embedded in switch expressions.
- * @compile --enable-preview -source 12 ExpressionSwitchInExpressionSwitch.java
+ * @compile --enable-preview -source 13 ExpressionSwitchInExpressionSwitch.java
  * @run main/othervm --enable-preview ExpressionSwitchInExpressionSwitch
  */
 

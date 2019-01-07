@@ -287,13 +287,13 @@ static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
 
 void JfrThreadSampleClosure::commit_events(JfrSampleType type) {
   if (JAVA_SAMPLE == type) {
-    assert(_added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
+    assert(_added_java > 0 && _added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
     for (uint i = 0; i < _added_java; ++i) {
       _events[i].commit();
     }
   } else {
     assert(NATIVE_SAMPLE == type, "invariant");
-    assert(_added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
+    assert(_added_native > 0 && _added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
     for (uint i = 0; i < _added_native; ++i) {
       _events_native[i].commit();
     }
@@ -335,7 +335,8 @@ class JfrThreadSampler : public NonJavaThread {
   void set_native_interval(size_t interval) { _interval_native = interval; };
   size_t get_java_interval() { return _interval_java; };
   size_t get_native_interval() { return _interval_native; };
-
+ protected:
+  virtual void post_run();
  public:
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }
@@ -484,6 +485,10 @@ void JfrThreadSampler::run() {
       last_native_ms = get_monotonic_ms();
     }
   }
+}
+
+void JfrThreadSampler::post_run() {
+  this->NonJavaThread::post_run();
   delete this;
 }
 
@@ -495,7 +500,7 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
   JfrThreadSampleClosure sample_task(samples, samples_native);
 
   const uint sample_limit = JAVA_SAMPLE == type ? MAX_NR_OF_JAVA_SAMPLES : MAX_NR_OF_NATIVE_SAMPLES;
-  uint num_sample_attempts = 0;
+  uint num_samples = 0;
   JavaThread* start = NULL;
 
   {
@@ -509,7 +514,7 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
       _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
       JavaThread* current = _cur_index != -1 ? *last_thread : NULL;
 
-      while (num_sample_attempts < sample_limit) {
+      while (num_samples < sample_limit) {
         current = next_thread(tlh.list(), start, current);
         if (current == NULL) {
           break;
@@ -520,8 +525,9 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
         if (current->is_Compiler_thread()) {
           continue;
         }
-        sample_task.do_sample_thread(current, _frames, _max_frames, type);
-        num_sample_attempts++;
+        if (sample_task.do_sample_thread(current, _frames, _max_frames, type)) {
+          num_samples++;
+        }
       }
       *last_thread = current;  // remember the thread we last attempted to sample
     }
@@ -529,7 +535,7 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
     log_trace(jfr)("JFR thread sampling done in %3.7f secs with %d java %d native samples",
                    sample_time.seconds(), sample_task.java_entries(), sample_task.native_entries());
   }
-  if (num_sample_attempts > 0) {
+  if (num_samples > 0) {
     sample_task.commit_events(type);
   }
 }

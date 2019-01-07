@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 import java.net.*;
-import java.util.Map;
+import java.util.*;
 import java.security.*;
 
 import jdk.internal.util.StaticProperty;
@@ -75,17 +75,28 @@ import sun.security.action.GetPropertyAction;
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
 
-final class SunEntries {
+public final class SunEntries {
 
-    private static final boolean useLegacyDSA =
-        Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty
-            ("jdk.security.legacyDSAKeyPairGenerator"));
-
-    private SunEntries() {
-        // empty
+    // create an aliases List from the specified aliases
+    public static List<String> createAliases(String ... aliases) {
+        return Arrays.asList(aliases);
     }
 
-    static void putEntries(Map<Object, Object> map) {
+    // create an aliases List from the specified oid followed by other aliases
+    public static List<String> createAliasesWithOid(String ... oids) {
+        String[] result = Arrays.copyOf(oids, oids.length + 1);
+        result[result.length - 1] = "OID." + oids[0];
+        return Arrays.asList(result);
+    }
+
+    // extend LinkedHashSet to preserve the ordering (needed by SecureRandom?)
+    SunEntries(Provider p) {
+        services = new LinkedHashSet<>(50, 0.9f);
+
+        // start populating content using the specified provider
+
+        // common attribute map
+        HashMap<String, String> attrs = new HashMap<>(3);
 
         /*
          * SecureRandom
@@ -100,265 +111,216 @@ final class SunEntries {
         boolean useNativePRNG = seedSource.equals(URL_DEV_URANDOM) ||
             seedSource.equals(URL_DEV_RANDOM);
 
+        attrs.put("ThreadSafe", "true");
         if (nativeAvailable && useNativePRNG) {
-            map.put("SecureRandom.NativePRNG",
-                "sun.security.provider.NativePRNG");
-            map.put("SecureRandom.NativePRNG ThreadSafe", "true");
+            add(p, "SecureRandom", "NativePRNG",
+               "sun.security.provider.NativePRNG", null, attrs);
         }
-
-        map.put("SecureRandom.DRBG", "sun.security.provider.DRBG");
-        map.put("SecureRandom.DRBG ThreadSafe", "true");
-
-        map.put("SecureRandom.SHA1PRNG",
-             "sun.security.provider.SecureRandom");
-
-        map.put("SecureRandom.SHA1PRNG ThreadSafe", "true");
+        attrs.put("ImplementedIn", "Software");
+        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG", null, attrs);
+        add(p, "SecureRandom", "SHA1PRNG",
+            "sun.security.provider.SecureRandom", null, attrs);
+        attrs.remove("ImplementedIn");
         if (nativeAvailable && !useNativePRNG) {
-            map.put("SecureRandom.NativePRNG",
-                "sun.security.provider.NativePRNG");
-            map.put("SecureRandom.NativePRNG ThreadSafe", "true");
+            add(p, "SecureRandom", "NativePRNG", "sun.security.provider.NativePRNG",
+               null, attrs);
         }
 
         if (NativePRNG.Blocking.isAvailable()) {
-            map.put("SecureRandom.NativePRNGBlocking",
-                "sun.security.provider.NativePRNG$Blocking");
-            map.put("SecureRandom.NativePRNGBlocking ThreadSafe", "true");
+            add(p, "SecureRandom", "NativePRNGBlocking",
+                "sun.security.provider.NativePRNG$Blocking", null, attrs);
         }
-
         if (NativePRNG.NonBlocking.isAvailable()) {
-            map.put("SecureRandom.NativePRNGNonBlocking",
-                "sun.security.provider.NativePRNG$NonBlocking");
-            map.put("SecureRandom.NativePRNGNonBlocking ThreadSafe", "true");
+            add(p, "SecureRandom", "NativePRNGNonBlocking",
+                "sun.security.provider.NativePRNG$NonBlocking", null, attrs);
         }
 
         /*
          * Signature engines
          */
-        map.put("Signature.SHA1withDSA",
-                "sun.security.provider.DSA$SHA1withDSA");
-        map.put("Signature.NONEwithDSA", "sun.security.provider.DSA$RawDSA");
-        map.put("Alg.Alias.Signature.RawDSA", "NONEwithDSA");
-        map.put("Signature.SHA224withDSA",
-                "sun.security.provider.DSA$SHA224withDSA");
-        map.put("Signature.SHA256withDSA",
-                "sun.security.provider.DSA$SHA256withDSA");
-
-        map.put("Signature.SHA1withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA1withDSAinP1363Format");
-        map.put("Signature.NONEwithDSAinP1363Format",
-                "sun.security.provider.DSA$RawDSAinP1363Format");
-        map.put("Signature.SHA224withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA224withDSAinP1363Format");
-        map.put("Signature.SHA256withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA256withDSAinP1363Format");
-
+        attrs.clear();
         String dsaKeyClasses = "java.security.interfaces.DSAPublicKey" +
                 "|java.security.interfaces.DSAPrivateKey";
-        map.put("Signature.SHA1withDSA SupportedKeyClasses", dsaKeyClasses);
-        map.put("Signature.NONEwithDSA SupportedKeyClasses", dsaKeyClasses);
-        map.put("Signature.SHA224withDSA SupportedKeyClasses", dsaKeyClasses);
-        map.put("Signature.SHA256withDSA SupportedKeyClasses", dsaKeyClasses);
+        attrs.put("SupportedKeyClasses", dsaKeyClasses);
+        attrs.put("ImplementedIn", "Software");
 
-        map.put("Alg.Alias.Signature.DSA", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.DSS", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.SHA/DSA", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.SHA-1/DSA", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.SHA1/DSA", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.SHAwithDSA", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.DSAWithSHA1", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.OID.1.2.840.10040.4.3",
-                "SHA1withDSA");
-        map.put("Alg.Alias.Signature.1.2.840.10040.4.3", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.1.3.14.3.2.13", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.1.3.14.3.2.27", "SHA1withDSA");
-        map.put("Alg.Alias.Signature.OID.2.16.840.1.101.3.4.3.1",
-                "SHA224withDSA");
-        map.put("Alg.Alias.Signature.2.16.840.1.101.3.4.3.1", "SHA224withDSA");
-        map.put("Alg.Alias.Signature.OID.2.16.840.1.101.3.4.3.2",
-                "SHA256withDSA");
-        map.put("Alg.Alias.Signature.2.16.840.1.101.3.4.3.2", "SHA256withDSA");
+        attrs.put("KeySize", "1024"); // for NONE and SHA1 DSA signatures
+
+        add(p, "Signature", "SHA1withDSA",
+                "sun.security.provider.DSA$SHA1withDSA",
+                createAliasesWithOid("1.2.840.10040.4.3", "DSA", "DSS", "SHA/DSA",
+                    "SHA-1/DSA", "SHA1/DSA", "SHAwithDSA", "DSAWithSHA1",
+                    "1.3.14.3.2.13", "1.3.14.3.2.27"), attrs);
+        add(p, "Signature", "NONEwithDSA", "sun.security.provider.DSA$RawDSA",
+                createAliases("RawDSA"), attrs);
+
+        attrs.put("KeySize", "2048"); // for SHA224 and SHA256 DSA signatures
+
+        add(p, "Signature", "SHA224withDSA",
+                "sun.security.provider.DSA$SHA224withDSA",
+                createAliasesWithOid("2.16.840.1.101.3.4.3.1"), attrs);
+        add(p, "Signature", "SHA256withDSA",
+                "sun.security.provider.DSA$SHA256withDSA",
+                createAliasesWithOid("2.16.840.1.101.3.4.3.2"), attrs);
+
+        attrs.remove("KeySize");
+
+        add(p, "Signature", "SHA1withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA1withDSAinP1363Format",
+                null, null);
+        add(p, "Signature", "NONEwithDSAinP1363Format",
+                "sun.security.provider.DSA$RawDSAinP1363Format",
+                null, null);
+        add(p, "Signature", "SHA224withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA224withDSAinP1363Format",
+                null, null);
+        add(p, "Signature", "SHA256withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA256withDSAinP1363Format",
+                null, null);
 
         /*
          *  Key Pair Generator engines
          */
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        attrs.put("KeySize", "2048"); // for DSA KPG and APG only
+
+        String dsaOid = "1.2.840.10040.4.1";
+        List<String> dsaAliases = createAliasesWithOid(dsaOid, "1.3.14.3.2.12");
         String dsaKPGImplClass = "sun.security.provider.DSAKeyPairGenerator$";
         dsaKPGImplClass += (useLegacyDSA? "Legacy" : "Current");
-        map.put("KeyPairGenerator.DSA", dsaKPGImplClass);
-        map.put("Alg.Alias.KeyPairGenerator.OID.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.KeyPairGenerator.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.KeyPairGenerator.1.3.14.3.2.12", "DSA");
-
-        /*
-         * Digest engines
-         */
-        map.put("MessageDigest.MD2", "sun.security.provider.MD2");
-        map.put("MessageDigest.MD5", "sun.security.provider.MD5");
-        map.put("MessageDigest.SHA", "sun.security.provider.SHA");
-
-        map.put("Alg.Alias.MessageDigest.SHA-1", "SHA");
-        map.put("Alg.Alias.MessageDigest.SHA1", "SHA");
-        map.put("Alg.Alias.MessageDigest.1.3.14.3.2.26", "SHA");
-        map.put("Alg.Alias.MessageDigest.OID.1.3.14.3.2.26", "SHA");
-
-        map.put("MessageDigest.SHA-224", "sun.security.provider.SHA2$SHA224");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.4", "SHA-224");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.4",
-                "SHA-224");
-
-        map.put("MessageDigest.SHA-256", "sun.security.provider.SHA2$SHA256");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.1", "SHA-256");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.1",
-                "SHA-256");
-        map.put("MessageDigest.SHA-384", "sun.security.provider.SHA5$SHA384");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.2", "SHA-384");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.2",
-                "SHA-384");
-        map.put("MessageDigest.SHA-512", "sun.security.provider.SHA5$SHA512");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.3", "SHA-512");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.3",
-                "SHA-512");
-        map.put("MessageDigest.SHA-512/224", "sun.security.provider.SHA5$SHA512_224");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.5", "SHA-512/224");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.5",
-                "SHA-512/224");
-        map.put("MessageDigest.SHA-512/256", "sun.security.provider.SHA5$SHA512_256");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.6", "SHA-512/256");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.6",
-                "SHA-512/256");
-
-        map.put("MessageDigest.SHA3-224", "sun.security.provider.SHA3$SHA224");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.7", "SHA3-224");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.7",
-                "SHA3-224");
-
-        map.put("MessageDigest.SHA3-256", "sun.security.provider.SHA3$SHA256");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.8", "SHA3-256");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.8",
-                "SHA3-256");
-        map.put("MessageDigest.SHA3-384", "sun.security.provider.SHA3$SHA384");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.9", "SHA3-384");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.9",
-                "SHA3-384");
-        map.put("MessageDigest.SHA3-512", "sun.security.provider.SHA3$SHA512");
-        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.10", "SHA3-512");
-        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.10",
-                "SHA3-512");
-
+        add(p, "KeyPairGenerator", "DSA", dsaKPGImplClass, dsaAliases, attrs);
 
         /*
          * Algorithm Parameter Generator engines
          */
-        map.put("AlgorithmParameterGenerator.DSA",
-            "sun.security.provider.DSAParameterGenerator");
+        add(p, "AlgorithmParameterGenerator", "DSA",
+            "sun.security.provider.DSAParameterGenerator", dsaAliases, attrs);
+        attrs.remove("KeySize");
 
         /*
          * Algorithm Parameter engines
          */
-        map.put("AlgorithmParameters.DSA",
-            "sun.security.provider.DSAParameters");
-        map.put("Alg.Alias.AlgorithmParameters.OID.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.AlgorithmParameters.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.AlgorithmParameters.1.3.14.3.2.12", "DSA");
+        add(p, "AlgorithmParameters", "DSA",
+                "sun.security.provider.DSAParameters", dsaAliases, attrs);
 
         /*
          * Key factories
          */
-        map.put("KeyFactory.DSA", "sun.security.provider.DSAKeyFactory");
-        map.put("Alg.Alias.KeyFactory.OID.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.KeyFactory.1.2.840.10040.4.1", "DSA");
-        map.put("Alg.Alias.KeyFactory.1.3.14.3.2.12", "DSA");
+        add(p, "KeyFactory", "DSA", "sun.security.provider.DSAKeyFactory",
+                dsaAliases, attrs);
+
+        /*
+         * Digest engines
+         */
+        add(p, "MessageDigest", "MD2", "sun.security.provider.MD2", null, attrs);
+        add(p, "MessageDigest", "MD5", "sun.security.provider.MD5", null, attrs);
+        add(p, "MessageDigest", "SHA", "sun.security.provider.SHA",
+                createAliasesWithOid("1.3.14.3.2.26", "SHA-1", "SHA1"), attrs);
+
+        String sha2BaseOid = "2.16.840.1.101.3.4.2";
+        add(p, "MessageDigest", "SHA-224", "sun.security.provider.SHA2$SHA224",
+                createAliasesWithOid(sha2BaseOid + ".4"), attrs);
+        add(p, "MessageDigest", "SHA-256", "sun.security.provider.SHA2$SHA256",
+                createAliasesWithOid(sha2BaseOid + ".1"), attrs);
+        add(p, "MessageDigest", "SHA-384", "sun.security.provider.SHA5$SHA384",
+                createAliasesWithOid(sha2BaseOid + ".2"), attrs);
+        add(p, "MessageDigest", "SHA-512", "sun.security.provider.SHA5$SHA512",
+                createAliasesWithOid(sha2BaseOid + ".3"), attrs);
+        add(p, "MessageDigest", "SHA-512/224",
+                "sun.security.provider.SHA5$SHA512_224",
+                createAliasesWithOid(sha2BaseOid + ".5"), attrs);
+        add(p, "MessageDigest", "SHA-512/256",
+                "sun.security.provider.SHA5$SHA512_256",
+                createAliasesWithOid(sha2BaseOid + ".6"), attrs);
+        add(p, "MessageDigest", "SHA3-224", "sun.security.provider.SHA3$SHA224",
+                createAliasesWithOid(sha2BaseOid + ".7"), attrs);
+        add(p, "MessageDigest", "SHA3-256", "sun.security.provider.SHA3$SHA256",
+                createAliasesWithOid(sha2BaseOid + ".8"), attrs);
+        add(p, "MessageDigest", "SHA3-384", "sun.security.provider.SHA3$SHA384",
+                createAliasesWithOid(sha2BaseOid + ".9"), attrs);
+        add(p, "MessageDigest", "SHA3-512", "sun.security.provider.SHA3$SHA512",
+                createAliasesWithOid(sha2BaseOid + ".10"), attrs);
 
         /*
          * Certificates
          */
-        map.put("CertificateFactory.X.509",
-            "sun.security.provider.X509Factory");
-        map.put("Alg.Alias.CertificateFactory.X509", "X.509");
+        add(p, "CertificateFactory", "X.509",
+                "sun.security.provider.X509Factory",
+                createAliases("X509"), attrs);
 
         /*
          * KeyStore
          */
-        map.put("KeyStore.PKCS12",
-                        "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12");
-        map.put("KeyStore.JKS",
-                        "sun.security.provider.JavaKeyStore$DualFormatJKS");
-        map.put("KeyStore.CaseExactJKS",
-                        "sun.security.provider.JavaKeyStore$CaseExactJKS");
-        map.put("KeyStore.DKS", "sun.security.provider.DomainKeyStore$DKS");
+        add(p, "KeyStore", "PKCS12",
+                "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
+                null, null);
+        add(p, "KeyStore", "JKS",
+                "sun.security.provider.JavaKeyStore$DualFormatJKS",
+                null, attrs);
+        add(p, "KeyStore", "CaseExactJKS",
+                "sun.security.provider.JavaKeyStore$CaseExactJKS",
+                null, attrs);
+        add(p, "KeyStore", "DKS", "sun.security.provider.DomainKeyStore$DKS",
+                null, attrs);
 
-        /*
-         * Policy
-         */
-        map.put("Policy.JavaPolicy", "sun.security.provider.PolicySpiFile");
-
-        /*
-         * Configuration
-         */
-        map.put("Configuration.JavaLoginConfig",
-                        "sun.security.provider.ConfigFile$Spi");
-
-        /*
-         * CertPathBuilder
-         */
-        map.put("CertPathBuilder.PKIX",
-            "sun.security.provider.certpath.SunCertPathBuilder");
-        map.put("CertPathBuilder.PKIX ValidationAlgorithm",
-            "RFC5280");
-
-        /*
-         * CertPathValidator
-         */
-        map.put("CertPathValidator.PKIX",
-            "sun.security.provider.certpath.PKIXCertPathValidator");
-        map.put("CertPathValidator.PKIX ValidationAlgorithm",
-            "RFC5280");
 
         /*
          * CertStores
          */
-        map.put("CertStore.Collection",
-            "sun.security.provider.certpath.CollectionCertStore");
-        map.put("CertStore.com.sun.security.IndexedCollection",
-            "sun.security.provider.certpath.IndexedCollectionCertStore");
+        add(p, "CertStore", "Collection",
+                "sun.security.provider.certpath.CollectionCertStore",
+                null, attrs);
+        add(p, "CertStore", "com.sun.security.IndexedCollection",
+                "sun.security.provider.certpath.IndexedCollectionCertStore",
+                null, attrs);
 
         /*
-         * KeySize
+         * Policy
          */
-        map.put("Signature.NONEwithDSA KeySize", "1024");
-        map.put("Signature.SHA1withDSA KeySize", "1024");
-        map.put("Signature.SHA224withDSA KeySize", "2048");
-        map.put("Signature.SHA256withDSA KeySize", "2048");
-
-        map.put("KeyPairGenerator.DSA KeySize", "2048");
-        map.put("AlgorithmParameterGenerator.DSA KeySize", "2048");
+        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile",
+                null, null);
 
         /*
-         * Implementation type: software or hardware
+         * Configuration
          */
-        map.put("Signature.SHA1withDSA ImplementedIn", "Software");
-        map.put("KeyPairGenerator.DSA ImplementedIn", "Software");
-        map.put("MessageDigest.MD5 ImplementedIn", "Software");
-        map.put("MessageDigest.SHA ImplementedIn", "Software");
-        map.put("AlgorithmParameterGenerator.DSA ImplementedIn",
-            "Software");
-        map.put("AlgorithmParameters.DSA ImplementedIn", "Software");
-        map.put("KeyFactory.DSA ImplementedIn", "Software");
-        map.put("SecureRandom.SHA1PRNG ImplementedIn", "Software");
-        map.put("SecureRandom.DRBG ImplementedIn", "Software");
-        map.put("CertificateFactory.X.509 ImplementedIn", "Software");
-        map.put("KeyStore.JKS ImplementedIn", "Software");
-        map.put("CertPathValidator.PKIX ImplementedIn", "Software");
-        map.put("CertPathBuilder.PKIX ImplementedIn", "Software");
-        map.put("CertStore.Collection ImplementedIn", "Software");
-        map.put("CertStore.com.sun.security.IndexedCollection ImplementedIn",
-            "Software");
+        add(p, "Configuration", "JavaLoginConfig",
+                "sun.security.provider.ConfigFile$Spi", null, null);
 
+        /*
+         * CertPathBuilder and CertPathValidator
+         */
+        attrs.clear();
+        attrs.put("ValidationAlgorithm", "RFC5280");
+        attrs.put("ImplementedIn", "Software");
+
+        add(p, "CertPathBuilder", "PKIX",
+                "sun.security.provider.certpath.SunCertPathBuilder",
+                null, attrs);
+        add(p, "CertPathValidator", "PKIX",
+                "sun.security.provider.certpath.PKIXCertPathValidator",
+                null, attrs);
     }
+
+    Iterator<Provider.Service> iterator() {
+        return services.iterator();
+    }
+
+    private void add(Provider p, String type, String algo, String cn,
+             List<String> aliases, HashMap<String, String> attrs) {
+         services.add(new Provider.Service(p, type, algo, cn, aliases, attrs));
+    }
+
+    private LinkedHashSet<Provider.Service> services;
 
     // name of the *System* property, takes precedence over PROP_RNDSOURCE
     private static final String PROP_EGD = "java.security.egd";
     // name of the *Security* property
     private static final String PROP_RNDSOURCE = "securerandom.source";
+
+    private static final boolean useLegacyDSA =
+        Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty
+            ("jdk.security.legacyDSAKeyPairGenerator"));
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";

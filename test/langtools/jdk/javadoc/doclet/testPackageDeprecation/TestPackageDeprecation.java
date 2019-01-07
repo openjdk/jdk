@@ -26,11 +26,13 @@
  * @bug      6492694 8026567 8048351 8162363 8183511 8169819 8074407 8196202
  * @summary  Test package deprecation.
  * @author   bpatel
- * @library  ../lib/
+ * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestPackageDeprecation
+ * @build    javadoc.tester.* TestPackageDeprecation
  * @run main TestPackageDeprecation
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestPackageDeprecation extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestPackageDeprecation extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "-use",
@@ -60,7 +62,7 @@ public class TestPackageDeprecation extends JavadocTester {
     }
 
     @Test
-    void testNoDeprecated() {
+    public void testNoDeprecated() {
         javadoc("-d", "out-nodepr",
                 "-sourcepath", testSrc,
                 "-use",

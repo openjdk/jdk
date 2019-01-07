@@ -29,6 +29,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1HeterogeneousHeapPolicy.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -46,7 +47,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
-G1Policy::G1Policy(STWGCTimer* gc_timer) :
+G1Policy::G1Policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
   _remset_tracker(),
@@ -62,7 +63,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _survivor_surv_rate_group(new SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
-  _young_gen_sizer(),
+  _young_gen_sizer(G1YoungGenSizer::create_gen_sizer(policy)),
   _free_regions_at_end_of_collection(0),
   _max_rs_lengths(0),
   _rs_lengths_prediction(0),
@@ -83,6 +84,15 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
 
 G1Policy::~G1Policy() {
   delete _ihop_control;
+  delete _young_gen_sizer;
+}
+
+G1Policy* G1Policy::create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw) {
+  if (policy->is_hetero_heap()) {
+    return new G1HeterogeneousHeapPolicy(policy, gc_timer_stw);
+  } else {
+    return new G1Policy(policy, gc_timer_stw);
+  }
 }
 
 G1CollectorState* G1Policy::collector_state() const { return _g1h->collector_state(); }
@@ -94,9 +104,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
   if (!adaptive_young_list_length()) {
-    _young_list_fixed_length = _young_gen_sizer.min_desired_young_length();
+    _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
   }
-  _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
+  _young_gen_sizer->adjust_max_new_size(_g1h->max_expandable_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -176,7 +186,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
   // smaller than 1.0) we'll get 1.
   _reserve_regions = (uint) ceil(reserve_regions_d);
 
-  _young_gen_sizer.heap_size_changed(new_number_of_regions);
+  _young_gen_sizer->heap_size_changed(new_number_of_regions);
 
   _ihop_control->update_target_occupancy(new_number_of_regions * HeapRegion::GrainBytes);
 }
@@ -195,14 +205,14 @@ uint G1Policy::calculate_young_list_desired_min_length(uint base_min_length) con
   }
   desired_min_length += base_min_length;
   // make sure we don't go below any user-defined minimum bound
-  return MAX2(_young_gen_sizer.min_desired_young_length(), desired_min_length);
+  return MAX2(_young_gen_sizer->min_desired_young_length(), desired_min_length);
 }
 
 uint G1Policy::calculate_young_list_desired_max_length() const {
   // Here, we might want to also take into account any additional
   // constraints (i.e., user-defined minimum bound). Currently, we
   // effectively don't set this bound.
-  return _young_gen_sizer.max_desired_young_length();
+  return _young_gen_sizer->max_desired_young_length();
 }
 
 uint G1Policy::update_young_list_max_and_target_length() {
@@ -218,6 +228,7 @@ uint G1Policy::update_young_list_max_and_target_length(size_t rs_lengths) {
 uint G1Policy::update_young_list_target_length(size_t rs_lengths) {
   YoungTargetLengths young_lengths = young_list_target_lengths(rs_lengths);
   _young_list_target_length = young_lengths.first;
+
   return young_lengths.second;
 }
 
@@ -469,6 +480,10 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
+
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
+         "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
 
   assert(_g1h->used() == _g1h->recalculate_used(),
          "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
@@ -896,11 +911,11 @@ bool G1Policy::can_expand_young_list() const {
 }
 
 bool G1Policy::adaptive_young_list_length() const {
-  return _young_gen_sizer.adaptive_young_list_length();
+  return _young_gen_sizer->adaptive_young_list_length();
 }
 
-size_t G1Policy::desired_survivor_size() const {
-  size_t const survivor_capacity = HeapRegion::GrainWords * _max_survivor_regions;
+size_t G1Policy::desired_survivor_size(uint max_regions) const {
+  size_t const survivor_capacity = HeapRegion::GrainWords * max_regions;
   return (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
 }
 
@@ -927,15 +942,22 @@ void G1Policy::update_max_gc_locker_expansion() {
 void G1Policy::update_survivors_policy() {
   double max_survivor_regions_d =
                  (double) _young_list_target_length / (double) SurvivorRatio;
-  // We use ceiling so that if max_survivor_regions_d is > 0.0 (but
-  // smaller than 1.0) we'll get 1.
-  _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
-  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(desired_survivor_size());
+  // Calculate desired survivor size based on desired max survivor regions (unconstrained
+  // by remaining heap). Otherwise we may cause undesired promotions as we are
+  // already getting close to end of the heap, impacting performance even more.
+  uint const desired_max_survivor_regions = ceil(max_survivor_regions_d);
+  size_t const survivor_size = desired_survivor_size(desired_max_survivor_regions);
+
+  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(survivor_size);
   if (UsePerfData) {
     _policy_counters->tenuring_threshold()->set_value(_tenuring_threshold);
-    _policy_counters->desired_survivor_size()->set_value(desired_survivor_size() * oopSize);
+    _policy_counters->desired_survivor_size()->set_value(survivor_size * oopSize);
   }
+  // The real maximum survivor size is bounded by the number of regions that can
+  // be allocated into.
+  _max_survivor_regions = MIN2(desired_max_survivor_regions,
+                               _g1h->num_free_or_available_regions());
 }
 
 bool G1Policy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause) {

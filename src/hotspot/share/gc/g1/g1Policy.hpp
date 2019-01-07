@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1POLICY_HPP
 #define SHARE_VM_GC_G1_G1POLICY_HPP
 
+#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
@@ -91,7 +92,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // for the first time during initialization.
   uint   _reserve_regions;
 
-  G1YoungGenSizer _young_gen_sizer;
+  G1YoungGenSizer* _young_gen_sizer;
 
   uint _free_regions_at_end_of_collection;
 
@@ -282,9 +283,11 @@ private:
   void abort_time_to_mixed_tracking();
 public:
 
-  G1Policy(STWGCTimer* gc_timer);
+  G1Policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer);
 
   virtual ~G1Policy();
+
+  static G1Policy* create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw);
 
   G1CollectorState* collector_state() const;
 
@@ -298,7 +301,7 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
-  void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
+  virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   void note_gc_start();
 
@@ -308,11 +311,11 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
+  virtual void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
-  void record_full_collection_end();
+  virtual void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
@@ -399,7 +402,7 @@ private:
 
   AgeTable _survivors_age_table;
 
-  size_t desired_survivor_size() const;
+  size_t desired_survivor_size(uint max_regions) const;
 public:
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,
@@ -432,6 +435,10 @@ public:
   void update_max_gc_locker_expansion();
 
   void update_survivors_policy();
+
+  virtual bool force_upgrade_to_full() {
+    return false;
+  }
 };
 
 #endif // SHARE_VM_GC_G1_G1POLICY_HPP

@@ -35,6 +35,8 @@ import java.util.Map;
 
 import sun.security.util.SecurityProperties;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * The Manifest class is used to maintain Manifest entry names and their
  * associated Attributes. There are main Manifest Attributes as well as
@@ -197,31 +199,28 @@ public class Manifest implements Cloneable {
      * @exception IOException if an I/O error has occurred
      * @see #getMainAttributes
      */
-    @SuppressWarnings("deprecation")
     public void write(OutputStream out) throws IOException {
         DataOutputStream dos = new DataOutputStream(out);
         // Write out the main attributes for the manifest
         attr.writeMain(dos);
         // Now write out the per-entry attributes
+        StringBuilder buffer = entries.isEmpty() ? null : new StringBuilder(72);
         for (Map.Entry<String, Attributes> e : entries.entrySet()) {
-            StringBuffer buffer = new StringBuffer("Name: ");
-            String value = e.getKey();
-            if (value != null) {
-                byte[] vb = value.getBytes("UTF8");
-                value = new String(vb, 0, 0, vb.length);
-            }
-            buffer.append(value);
-            make72Safe(buffer);
-            buffer.append("\r\n");
-            dos.writeBytes(buffer.toString());
+            buffer.setLength(0);
+            buffer.append("Name: ");
+            buffer.append(e.getKey());
+            println72(dos, buffer.toString());
             e.getValue().write(dos);
         }
         dos.flush();
     }
 
     /**
-     * Adds line breaks to enforce a maximum 72 bytes per line.
+     * Adds line breaks to enforce a maximum of 72 bytes per line.
+     *
+     * @deprecation Replaced with {@link #println72}.
      */
+    @Deprecated(since = "13")
     static void make72Safe(StringBuffer line) {
         int length = line.length();
         int index = 72;
@@ -230,7 +229,38 @@ public class Manifest implements Cloneable {
             index += 74; // + line width + line break ("\r\n")
             length += 3; // + line break ("\r\n") and space
         }
-        return;
+    }
+
+    /**
+     * Writes {@code line} to {@code out} with line breaks and continuation
+     * spaces within the limits of 72 bytes of contents per line followed
+     * by a line break.
+     */
+    static void println72(OutputStream out, String line) throws IOException {
+        if (!line.isEmpty()) {
+            byte[] lineBytes = line.getBytes(UTF_8);
+            int length = lineBytes.length;
+            // first line can hold one byte more than subsequent lines which
+            // start with a continuation line break space
+            out.write(lineBytes[0]);
+            int pos = 1;
+            while (length - pos > 71) {
+                out.write(lineBytes, pos, 71);
+                pos += 71;
+                println(out);
+                out.write(' ');
+            }
+            out.write(lineBytes, pos, length - pos);
+        }
+        println(out);
+    }
+
+    /**
+     * Writes a line break to {@code out}.
+     */
+    static void println(OutputStream out) throws IOException {
+        out.write('\r');
+        out.write('\n');
     }
 
     static String getErrorPosition(String filename, final int lineNumber) {
@@ -304,7 +334,7 @@ public class Manifest implements Cloneable {
                     lastline = buf;
                     continue;
                 }
-                name = new String(buf, 0, buf.length, "UTF8");
+                name = new String(buf, 0, buf.length, UTF_8);
                 lastline = null;
             }
             Attributes attr = getAttributes(name);
@@ -330,7 +360,7 @@ public class Manifest implements Cloneable {
             toLower(lbuf[2]) == 'm' && toLower(lbuf[3]) == 'e' &&
             lbuf[4] == ':' && lbuf[5] == ' ') {
             try {
-                return new String(lbuf, 6, len - 6, "UTF8");
+                return new String(lbuf, 6, len - 6, UTF_8);
             }
             catch (Exception e) {
             }

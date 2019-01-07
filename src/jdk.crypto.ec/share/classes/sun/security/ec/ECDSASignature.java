@@ -25,9 +25,7 @@
 
 package sun.security.ec;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.math.BigInteger;
 
 import java.security.*;
 import java.security.interfaces.*;
@@ -453,7 +451,7 @@ abstract class ECDSASignature extends SignatureSpi {
         if (p1363Format) {
             return sig;
         } else {
-            return encodeSignature(sig);
+            return ECUtil.encodeSignature(sig);
         }
     }
 
@@ -476,7 +474,7 @@ abstract class ECDSASignature extends SignatureSpi {
         if (p1363Format) {
             sig = signature;
         } else {
-            sig = decodeSignature(signature);
+            sig = ECUtil.decodeSignature(signature);
         }
 
         try {
@@ -513,79 +511,6 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected AlgorithmParameters engineGetParameters() {
         return null;
-    }
-
-    // Convert the concatenation of R and S into their DER encoding
-    private byte[] encodeSignature(byte[] signature) throws SignatureException {
-
-        try {
-
-            int n = signature.length >> 1;
-            byte[] bytes = new byte[n];
-            System.arraycopy(signature, 0, bytes, 0, n);
-            BigInteger r = new BigInteger(1, bytes);
-            System.arraycopy(signature, n, bytes, 0, n);
-            BigInteger s = new BigInteger(1, bytes);
-
-            DerOutputStream out = new DerOutputStream(signature.length + 10);
-            out.putInteger(r);
-            out.putInteger(s);
-            DerValue result =
-            new DerValue(DerValue.tag_Sequence, out.toByteArray());
-
-            return result.toByteArray();
-
-        } catch (Exception e) {
-            throw new SignatureException("Could not encode signature", e);
-        }
-    }
-
-    // Convert the DER encoding of R and S into a concatenation of R and S
-    private byte[] decodeSignature(byte[] sig) throws SignatureException {
-
-        try {
-            // Enforce strict DER checking for signatures
-            DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
-            DerValue[] values = in.getSequence(2);
-
-            // check number of components in the read sequence
-            // and trailing data
-            if ((values.length != 2) || (in.available() != 0)) {
-                throw new IOException("Invalid encoding for signature");
-            }
-
-            BigInteger r = values[0].getPositiveBigInteger();
-            BigInteger s = values[1].getPositiveBigInteger();
-
-            // trim leading zeroes
-            byte[] rBytes = trimZeroes(r.toByteArray());
-            byte[] sBytes = trimZeroes(s.toByteArray());
-            int k = Math.max(rBytes.length, sBytes.length);
-            // r and s each occupy half the array
-            byte[] result = new byte[k << 1];
-            System.arraycopy(rBytes, 0, result, k - rBytes.length,
-            rBytes.length);
-            System.arraycopy(sBytes, 0, result, result.length - sBytes.length,
-            sBytes.length);
-            return result;
-
-        } catch (Exception e) {
-            throw new SignatureException("Invalid encoding for signature", e);
-        }
-    }
-
-    // trim leading (most significant) zeroes from the result
-    private static byte[] trimZeroes(byte[] b) {
-        int i = 0;
-        while ((i < b.length - 1) && (b[i] == 0)) {
-            i++;
-        }
-        if (i == 0) {
-            return b;
-        }
-        byte[] t = new byte[b.length - i];
-        System.arraycopy(b, i, t, 0, t.length);
-        return t;
     }
 
     /**

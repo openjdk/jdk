@@ -40,9 +40,9 @@ import static com.sun.tools.javac.main.Option.PROFILE;
  *  deletion without notice.</b>
  */
 public enum Profile {
-    COMPACT1("compact1", 1, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12),
-    COMPACT2("compact2", 2, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12),
-    COMPACT3("compact3", 3, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12),
+    COMPACT1("compact1", 1, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12, Target.JDK1_13),
+    COMPACT2("compact2", 2, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12, Target.JDK1_13),
+    COMPACT3("compact3", 3, Target.JDK1_8, Target.JDK1_9, Target.JDK1_10, Target.JDK1_11, Target.JDK1_12, Target.JDK1_13),
 
     DEFAULT {
         @Override

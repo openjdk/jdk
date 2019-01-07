@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,27 +37,27 @@ import sun.security.util.DerValue;
 /**
  * This class implements the IPAddressName as required by the GeneralNames
  * ASN.1 object.  Both IPv4 and IPv6 addresses are supported using the
- * formats specified in IETF PKIX RFC2459.
+ * formats specified in IETF PKIX RFC 5280.
  * <p>
- * [RFC2459 4.2.1.7 Subject Alternative Name]
- * When the subjectAltName extension contains a iPAddress, the address
- * MUST be stored in the octet string in "network byte order," as
- * specified in RFC 791. The least significant bit (LSB) of
- * each octet is the LSB of the corresponding byte in the network
- * address. For IP Version 4, as specified in RFC 791, the octet string
- * MUST contain exactly four octets.  For IP Version 6, as specified in
- * RFC 1883, the octet string MUST contain exactly sixteen octets.
+ * [RFC 5280 4.2.1.6 Subject Alternative Name]
+ * When the subjectAltName extension contains an iPAddress, the address
+ * MUST be stored in the octet string in "network byte order", as
+ * specified in [RFC791].  The least significant bit (LSB) of each octet
+ * is the LSB of the corresponding byte in the network address.  For IP
+ * version 4, as specified in [RFC791], the octet string MUST contain
+ * exactly four octets.  For IP version 6, as specified in
+ * [RFC 2460], the octet string MUST contain exactly sixteen octets.
  * <p>
- * [RFC2459 4.2.1.11 Name Constraints]
- * The syntax of iPAddress MUST be as described in section 4.2.1.7 with
- * the following additions specifically for Name Constraints.  For IPv4
- * addresses, the ipAddress field of generalName MUST contain eight (8)
- * octets, encoded in the style of RFC 1519 (CIDR) to represent an
- * address range.[RFC 1519]  For IPv6 addresses, the ipAddress field
+ * [RFC 5280 4.2.1.10 Name Constraints]
+ * The syntax of iPAddress MUST be as described in Section 4.2.1.6 with
+ * the following additions specifically for name constraints.  For IPv4
+ * addresses, the iPAddress field of GeneralName MUST contain eight (8)
+ * octets, encoded in the style of RFC 4632 (CIDR) to represent an
+ * address range [RFC 4632].  For IPv6 addresses, the iPAddress field
  * MUST contain 32 octets similarly encoded.  For example, a name
- * constraint for "class C" subnet 10.9.8.0 shall be represented as the
- * octets 0A 09 08 00 FF FF FF 00, representing the CIDR notation
- * 10.9.8.0/255.255.255.0.
+ * constraint for "class C" subnet 192.0.2.0 is represented as the
+ * octets C0 00 02 00 FF FF FF 00, representing the CIDR notation
+ * 192.0.2.0/24 (mask 255.255.255.0).
  * <p>
  * @see GeneralName
  * @see GeneralNameInterface
@@ -125,7 +125,7 @@ public class IPAddressName implements GeneralNameInterface {
      */
     public IPAddressName(String name) throws IOException {
 
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             throw new IOException("IPAddress cannot be null or empty");
         }
         if (name.charAt(name.length() - 1) == '/') {
@@ -376,15 +376,16 @@ public class IPAddressName implements GeneralNameInterface {
      * </ul>.  These results are used in checking NameConstraints during
      * certification path verification.
      * <p>
-     * [RFC2459] The syntax of iPAddress MUST be as described in section
-     * 4.2.1.7 with the following additions specifically for Name Constraints.
-     * For IPv4 addresses, the ipAddress field of generalName MUST contain
-     * eight (8) octets, encoded in the style of RFC 1519 (CIDR) to represent an
-     * address range.[RFC 1519]  For IPv6 addresses, the ipAddress field
+     * [RFC 5280 4.2.1.10 Name Constraints]
+     * The syntax of iPAddress MUST be as described in Section 4.2.1.6 with
+     * the following additions specifically for name constraints.  For IPv4
+     * addresses, the iPAddress field of GeneralName MUST contain eight (8)
+     * octets, encoded in the style of RFC 4632 (CIDR) to represent an
+     * address range [RFC 4632].  For IPv6 addresses, the iPAddress field
      * MUST contain 32 octets similarly encoded.  For example, a name
-     * constraint for "class C" subnet 10.9.8.0 shall be represented as the
-     * octets 0A 09 08 00 FF FF FF 00, representing the CIDR notation
-     * 10.9.8.0/255.255.255.0.
+     * constraint for "class C" subnet 192.0.2.0 is represented as the
+     * octets C0 00 02 00 FF FF FF 00, representing the CIDR notation
+     * 192.0.2.0/24 (mask 255.255.255.0).
      *
      * @param inputName to be checked for being constrained
      * @return constraint type above

@@ -26,11 +26,13 @@
  * @test
  * @bug 8189841
  * @summary Error in alternate row coloring in package-summary files
- * @library  ../lib/
+ * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestPackageSummary
+ * @build    javadoc.tester.* TestPackageSummary
  * @run main TestPackageSummary
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestPackageSummary extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestPackageSummary extends JavadocTester {
     }
 
     @Test
-    void testStripes() {
+    public void testStripes() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

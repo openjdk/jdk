@@ -626,7 +626,7 @@ public final class ConfigFile extends Configuration {
                     return url.openStream();
                 } catch (Exception e) {
                     String file = url.getPath();
-                    if (url.getHost().length() > 0) {  // For Windows UNC
+                    if (!url.getHost().isEmpty()) {  // For Windows UNC
                         file = "//" + url.getHost() + file;
                     }
                     if (debugConfig != null) {
@@ -651,7 +651,7 @@ public final class ConfigFile extends Configuration {
                 return value;
             }
             String s = PropertyExpander.expand(value);
-            if (s == null || s.length() == 0) {
+            if (s == null || s.isEmpty()) {
                 throw ioException(
                     "Configuration.Error.Line.line.system.property.value.expanded.to.empty.value",
                     linenum, value);

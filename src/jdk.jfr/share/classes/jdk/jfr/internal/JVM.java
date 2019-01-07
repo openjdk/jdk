@@ -516,4 +516,11 @@ public final class JVM {
      * @param emitAll emit all samples in old object queue
      */
     public native void emitOldObjectSamples(long cutoff, boolean emitAll);
+
+    /**
+     * Test if a chunk rotation is warranted.
+     *
+     * @return if it is time to perform a chunk rotation
+     */
+    public native boolean shouldRotateDisk();
 }

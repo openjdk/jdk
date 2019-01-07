@@ -113,7 +113,7 @@ public final class StopDetectingInputStream extends InputStream {
     }
 
     public synchronized void write(int b) {
-        if (state != State.BUFFER) {
+        if (state == State.READ) {
             state = State.WAIT;
         }
         int newEnd = (end + 1) % buffer.length;

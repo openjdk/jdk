@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,11 +235,6 @@ inline int g_isfinite(jdouble f)                 { return finite(f); }
 // Wide characters
 
 inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
-
-// Portability macros
-#define PRAGMA_INTERFACE
-#define PRAGMA_IMPLEMENTATION
-#define PRAGMA_IMPLEMENTATION_(arg)
 
 // Formatting.
 #ifdef _LP64

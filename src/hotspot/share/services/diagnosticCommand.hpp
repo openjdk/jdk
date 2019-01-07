@@ -34,7 +34,6 @@
 #include "runtime/vmThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "services/diagnosticCommand_ext.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -866,5 +865,27 @@ public:
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
+
+#if INCLUDE_JVMTI
+class DebugOnCmdStartDCmd : public DCmdWithParser {
+public:
+  DebugOnCmdStartDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.start_java_debugging";
+  }
+  static const char* description() {
+    return "Starts up the Java debugging if the jdwp agentlib was enabled with the option onjcmd=y.";
+  }
+  static const char* impact() {
+    return "High: Switches the VM into Java debug mode.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission", "monitor", NULL };
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+#endif // INCLUDE_JVMTI
 
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP

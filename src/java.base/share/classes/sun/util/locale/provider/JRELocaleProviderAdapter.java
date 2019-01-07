@@ -503,7 +503,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
          */
         String supportedLocaleString = createSupportedLocaleString("AvailableLocales");
 
-        if (supportedLocaleString.length() == 0) {
+        if (supportedLocaleString.isEmpty()) {
             throw new InternalError("No available locales for JRE");
         }
 

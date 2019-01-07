@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @ignore Uses certutil.exe that isn't guaranteed to be installed
  * @bug 6483657 8154113
  * @requires os.family == "windows"
  * @library /test/lib
  * @summary Test "keytool -list" displays correctly same named certificates
+ * @ignore Uses certutil.exe that isn't guaranteed to be installed
  */
 
 import jdk.test.lib.process.ProcessTools;

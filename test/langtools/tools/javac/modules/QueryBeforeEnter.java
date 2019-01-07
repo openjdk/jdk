@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8208184
  * @summary tests for module resolution
  * @library /tools/lib
  * @modules
@@ -33,19 +34,33 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Arrays;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
+import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 // import com.sun.source.util.JavacTask;
@@ -423,6 +438,125 @@ public class QueryBeforeEnter extends ModuleTestBase {
         @Override
         public SourceVersion getSupportedSourceVersion() {
             return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
+    public void testBrokenModule(Path base) throws Exception {
+        Map<String, String> sourceFileName2Content = new HashMap<>();
+
+        sourceFileName2Content.put("module-info.java", "module test { requires unknown.; } ");
+        sourceFileName2Content.put("test/Test.java", "package test; public class Test {}");
+
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
+                                                              new TestMemoryFileManager(fm, sourceFileName2Content),
+                                                              null,
+                                                              Arrays.asList("-d", out.toString()),
+                                                              null,
+                                                              null);
+            task.getElements().getTypeElement("test.Test");
+        }
+    }
+
+    private static final class TestMemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
+
+        private final Map<String, String> sourceFileName2Content;
+
+        public TestMemoryFileManager(JavaFileManager fileManager, Map<String, String> sourceFileName2Content) {
+            super(fileManager);
+            this.sourceFileName2Content = sourceFileName2Content;
+        }
+
+        @Override
+        public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException {
+            if (location == StandardLocation.SOURCE_PATH) {
+                List<JavaFileObject> result = new ArrayList<>();
+                String dir = packageName.replace('.', '/') + "/";
+
+                for (Entry<String, String> e : sourceFileName2Content.entrySet()) {
+                    if (e.getKey().startsWith(dir) &&
+                        !e.getKey().substring(dir.length()).contains("/")) {
+                        try {
+                            result.add(new SourceFileObject(e.getKey(), e.getValue()));
+                        } catch (URISyntaxException ex) {
+                            throw new IOException(ex);
+                        }
+                    }
+                }
+
+                return result;
+            }
+            return super.list(location, packageName, kinds, recurse);
+        }
+
+        @Override
+        public JavaFileObject getJavaFileForInput(Location location, String className, Kind kind) throws IOException {
+            if (location == StandardLocation.SOURCE_PATH) {
+                String path = className.replace('.', '/') + ".java";
+                String code = sourceFileName2Content.get(path);
+
+                if (code == null) return null;
+
+                try {
+                    return new SourceFileObject(path, code);
+                } catch (URISyntaxException ex) {
+                    throw new IOException(ex);
+                }
+            }
+            return super.getJavaFileForInput(location, className, kind);
+        }
+
+        @Override
+        public boolean hasLocation(Location location) {
+            return super.hasLocation(location) || location == StandardLocation.SOURCE_PATH;
+        }
+
+        @Override
+        public boolean contains(Location location, FileObject fo) throws IOException {
+            if (location == StandardLocation.SOURCE_PATH) {
+                return fo instanceof SourceFileObject;
+            }
+            return super.contains(location, fo);
+        }
+
+        @Override
+        public String inferBinaryName(Location location, JavaFileObject file) {
+            if (location == StandardLocation.SOURCE_PATH) {
+                String path = ((SourceFileObject) file).path;
+                String fileName = path.substring(path.lastIndexOf('/'));
+                return fileName.substring(0, fileName.length() - ".java".length());
+            }
+            return super.inferBinaryName(location, file);
+        }
+
+    }
+
+    private static final class SourceFileObject extends SimpleJavaFileObject {
+        private final String path;
+        private final String code;
+
+        public SourceFileObject(String path, String code) throws URISyntaxException {
+            super(new URI("mem://" + path), Kind.SOURCE);
+            this.path = path;
+            this.code = code;
+        }
+
+        @Override
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+            return code;
+        }
+
+        @Override
+        public boolean isNameCompatible(String simpleName, Kind kind) {
+            return path.endsWith(simpleName + kind.extension);
         }
 
     }

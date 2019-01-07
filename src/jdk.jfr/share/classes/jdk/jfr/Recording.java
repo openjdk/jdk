@@ -54,7 +54,7 @@ import jdk.jfr.internal.WriteableUserPath;
  *   System.gc();
  *   Thread.sleep(5000);
  *   r.stop();
- *   r.copyTo(Files.createTempFile("my-recording", ".jfr"));
+ *   r.dump(Files.createTempFile("my-recording", ".jfr"));
  * </code>
  * </pre>
  *

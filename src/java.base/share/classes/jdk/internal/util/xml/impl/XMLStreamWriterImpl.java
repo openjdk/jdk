@@ -205,7 +205,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
      * @throws XMLStreamException
      */
     public void writeStartElement(String localName) throws XMLStreamException {
-        if (localName == null || localName.length() == 0) {
+        if (localName == null || localName.isEmpty()) {
             throw new XMLStreamException("Local Name cannot be null or empty");
         }
 
@@ -420,7 +420,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     }
 
     private void writeXMLContent(String content) throws XMLStreamException {
-        if ((content != null) && (content.length() > 0)) {
+        if (content != null && !content.isEmpty()) {
             writeXMLContent(content,
                     _escapeCharacters, // boolean = escapeChars
                     false);             // false = escapeDoubleQuotes

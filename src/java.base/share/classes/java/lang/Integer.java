@@ -1409,7 +1409,7 @@ public final class Integer extends Number
         boolean negative = false;
         Integer result;
 
-        if (nm.length() == 0)
+        if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
         char firstChar = nm.charAt(0);
         // Handle sign, if present
@@ -1838,8 +1838,8 @@ public final class Integer extends Number
     }
 
     /**
-     * Returns a nominal descriptor for this instance, which is the instance
-     * itself.
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * instance, which is the instance itself.
      *
      * @return an {@link Optional} describing the {@linkplain Integer} instance
      * @since 12

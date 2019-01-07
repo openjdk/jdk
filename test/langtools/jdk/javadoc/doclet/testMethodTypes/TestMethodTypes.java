@@ -26,11 +26,13 @@
  * @bug      8002304 8024096 8193671 8196201 8203791 8184205
  * @summary  Test for various method type tabs in the method summary table
  * @author   Bhavesh Patel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestMethodTypes
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestMethodTypes extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestMethodTypes extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg1");

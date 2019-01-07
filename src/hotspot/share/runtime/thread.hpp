@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;
 class Parker;
+class MonitorInfo;
 
 class ciEnv;
 class CompileThread;
@@ -74,18 +75,21 @@ class CompileLog;
 class CompileTask;
 class CompileQueue;
 class CompilerCounters;
+
 class vframeArray;
+class vframe;
+class javaVFrame;
 
 class DeoptResourceMark;
 class jvmtiDeferredLocalVariableSet;
 
 class GCTaskQueue;
 class ThreadClosure;
+class ICRefillVerifier;
 class IdealGraphPrinter;
 
 class Metadata;
-template <class T, MEMFLAGS F> class ChunkedList;
-typedef ChunkedList<Metadata*, mtInternal> MetadataOnStackBuffer;
+class ResourceArea;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -109,6 +113,27 @@ class WorkerThread;
 // This means !t->is_Java_thread() iff t is a NonJavaThread, or t is
 // a partially constructed/destroyed Thread.
 
+// Thread execution sequence and actions:
+// All threads:
+//  - thread_native_entry  // per-OS native entry point
+//    - stack initialization
+//    - other OS-level initialization (signal masks etc)
+//    - handshake with creating thread (if not started suspended)
+//    - this->call_run()  // common shared entry point
+//      - shared common initialization
+//      - this->pre_run()  // virtual per-thread-type initialization
+//      - this->run()      // virtual per-thread-type "main" logic
+//      - shared common tear-down
+//      - this->post_run()  // virtual per-thread-type tear-down
+//      - // 'this' no longer referenceable
+//    - OS-level tear-down (minimal)
+//    - final logging
+//
+// For JavaThread:
+//   - this->run()  // virtual but not normally overridden
+//     - this->thread_main_inner()  // extra call level to ensure correct stack calculations
+//       - this->entry_point()  // set differently for each kind of JavaThread
+
 class Thread: public ThreadShadow {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -119,7 +144,6 @@ class Thread: public ThreadShadow {
   static THREAD_LOCAL_DECL Thread* _thr_current;
 #endif
 
- private:
   // Thread local data area available to the GC. The internal
   // structure and contents of this data area is GC-specific.
   // Only GC and GC barrier code should access this data area.
@@ -141,6 +165,9 @@ class Thread: public ThreadShadow {
   // const char* _exception_file;                   // file information for exception (debugging only)
   // int         _exception_line;                   // line information for exception (debugging only)
  protected:
+
+  DEBUG_ONLY(static Thread* _starting_thread;)
+
   // Support for forcing alignment of thread objects for biased locking
   void*       _real_malloc_address;
 
@@ -329,15 +356,15 @@ class Thread: public ThreadShadow {
  private:
 
 #ifdef ASSERT
-  void* _missed_ic_stub_refill_mark;
+  ICRefillVerifier* _missed_ic_stub_refill_verifier;
 
  public:
-  void* missed_ic_stub_refill_mark() {
-    return _missed_ic_stub_refill_mark;
+  ICRefillVerifier* missed_ic_stub_refill_verifier() {
+    return _missed_ic_stub_refill_verifier;
   }
 
-  void set_missed_ic_stub_refill_mark(void* mark) {
-    _missed_ic_stub_refill_mark = mark;
+  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
+    _missed_ic_stub_refill_verifier = verifier;
   }
 #endif
 
@@ -417,6 +444,21 @@ class Thread: public ThreadShadow {
  protected:
   // To be implemented by children.
   virtual void run() = 0;
+  virtual void pre_run() = 0;
+  virtual void post_run() = 0;  // Note: Thread must not be deleted prior to calling this!
+
+#ifdef ASSERT
+  enum RunState {
+    PRE_CALL_RUN,
+    CALL_RUN,
+    PRE_RUN,
+    RUN,
+    POST_RUN
+    // POST_CALL_RUN - can't define this one as 'this' may be deleted when we want to set it
+  };
+  RunState _run_state;  // for lifecycle checks
+#endif
+
 
  public:
   // invokes <ChildThreadClass>::run(), with common preparations and cleanups.
@@ -795,6 +837,13 @@ class NonJavaThread: public Thread {
   class List;
   static List _the_list;
 
+  void add_to_the_list();
+  void remove_from_the_list();
+
+ protected:
+  virtual void pre_run();
+  virtual void post_run();
+
  public:
   NonJavaThread();
   ~NonJavaThread();
@@ -802,12 +851,12 @@ class NonJavaThread: public Thread {
   class Iterator;
 };
 
-// Provides iteration over the list of NonJavaThreads.  Because list
-// management occurs in the NonJavaThread constructor and destructor,
-// entries in the list may not be fully constructed instances of a
-// derived class.  Threads created after an iterator is constructed
-// will not be visited by the iterator.  The scope of an iterator is a
-// critical section; there must be no safepoint checks in that scope.
+// Provides iteration over the list of NonJavaThreads.
+// List addition occurs in pre_run(), and removal occurs in post_run(),
+// so that only live fully-initialized threads can be found in the list.
+// Threads created after an iterator is constructed will not be visited
+// by the iterator. The scope of an iterator is a critical section; there
+// must be no safepoint checks in that scope.
 class NonJavaThread::Iterator : public StackObj {
   uint _protect_enter;
   NonJavaThread* _current;
@@ -843,7 +892,6 @@ class NamedThread: public NonJavaThread {
   ~NamedThread();
   // May only be called once per thread.
   void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
-  void initialize_named_thread();
   virtual bool is_Named_thread() const { return true; }
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
   JavaThread *processed_thread() { return _processed_thread; }
@@ -874,7 +922,7 @@ class WorkerThread: public NamedThread {
 // A single WatcherThread is used for simulating timer interrupts.
 class WatcherThread: public NonJavaThread {
   friend class VMStructs;
- public:
+ protected:
   virtual void run();
 
  private:
@@ -1831,9 +1879,9 @@ class JavaThread: public Thread {
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
   const char* get_thread_name() const;
- private:
+ protected:
   // factor out low-level mechanics for use in both normal and error cases
-  const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
+  virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
  public:
   const char* get_threadgroup_name() const;
   const char* get_parent_name() const;
@@ -1886,9 +1934,12 @@ class JavaThread: public Thread {
 
   inline CompilerThread* as_CompilerThread();
 
- public:
+ protected:
+  virtual void pre_run();
   virtual void run();
   void thread_main_inner();
+  virtual void post_run();
+
 
  private:
   GrowableArray<oop>* _array_for_gc;

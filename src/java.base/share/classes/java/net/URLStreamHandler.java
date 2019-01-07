@@ -235,7 +235,7 @@ public abstract class URLStreamHandler {
             start = i;
             // If the authority is defined then the path is defined by the
             // spec only; See RFC 2396 Section 5.2.4.
-            if (authority != null && authority.length() > 0)
+            if (authority != null && !authority.isEmpty())
                 path = "";
         }
 
@@ -247,7 +247,7 @@ public abstract class URLStreamHandler {
         if (start < limit) {
             if (spec.charAt(start) == '/') {
                 path = spec.substring(start, limit);
-            } else if (path != null && path.length() > 0) {
+            } else if (path != null && !path.isEmpty()) {
                 isRelPath = true;
                 int ind = path.lastIndexOf('/');
                 String separator = "";
@@ -483,11 +483,11 @@ public abstract class URLStreamHandler {
         String s;
         return u.getProtocol()
             + ':'
-            + (((s = u.getAuthority()) != null && s.length() > 0)
+            + ((s = u.getAuthority()) != null && !s.isEmpty()
                ? "//" + s : "")
-            + (((s = u.getPath()) != null) ? s : "")
-            + (((s = u.getQuery()) != null) ? '?' + s : "")
-            + (((s = u.getRef()) != null) ? '#' + s : "");
+            + ((s = u.getPath()) != null ? s : "")
+            + ((s = u.getQuery()) != null ? '?' + s : "")
+            + ((s = u.getRef()) != null ? '#' + s : "");
     }
 
     /**
@@ -544,7 +544,7 @@ public abstract class URLStreamHandler {
          */
         String authority = null;
         String userInfo = null;
-        if (host != null && host.length() != 0) {
+        if (host != null && !host.isEmpty()) {
             authority = (port == -1) ? host : host + ":" + port;
             int at = host.lastIndexOf('@');
             if (at != -1) {

@@ -27,11 +27,13 @@
  *           8187288
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestTypeAnnotations
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestTypeAnnotations extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestTypeAnnotations extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-private",
@@ -720,7 +722,7 @@ public class TestTypeAnnotations extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

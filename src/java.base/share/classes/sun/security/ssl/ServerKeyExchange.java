@@ -68,9 +68,8 @@ final class ServerKeyExchange {
             }
 
             // not producer defined.
-            shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No ServerKeyExchange handshake message can be produced.");
-            return null;    // make the compiler happe
         }
     }
 
@@ -107,7 +106,7 @@ final class ServerKeyExchange {
             }
 
             // no consumer defined.
-            chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+            throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected ServerKeyExchange handshake message.");
         }
     }

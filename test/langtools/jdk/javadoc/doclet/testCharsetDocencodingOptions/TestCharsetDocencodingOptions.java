@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug      8183582
  * @summary  Rationalize doclet -docencoding and -charset options.
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestCharsetDocencodingOptions
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestCharsetDocencodingOptions extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testWithNoOptions() {
+    public void testWithNoOptions() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -49,7 +51,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testWithDocencoding() {
+    public void testWithDocencoding() {
         javadoc("-d", "out-1",
                 "-docencoding", "ISO-8859-1",
                 "-sourcepath", testSrc,
@@ -60,7 +62,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testWithCharset() {
+    public void testWithCharset() {
         javadoc("-d", "out-2",
                 "-charset", "ISO-8859-1",
                 "-sourcepath", testSrc,
@@ -71,7 +73,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testDocencodingWithCharsetSimilar() {
+    public void testDocencodingWithCharsetSimilar() {
         javadoc("-d", "out-3",
                 "-docencoding", "ISO-8859-1",
                 "-charset", "ISO-8859-1",
@@ -83,7 +85,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testDocencodingWithCharsetDifferent() {
+    public void testDocencodingWithCharsetDifferent() {
         javadoc("-d", "out-4",
                 "-charset", "UTF-8",
                 "-docencoding", "ISO-8859-1",
@@ -96,7 +98,7 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
     }
 
     @Test
-    void testWithEncoding() {
+    public void testWithEncoding() {
         javadoc("-d", "out-5",
                 "-sourcepath", testSrc,
                 "-encoding", "ISO-8859-1",

@@ -1826,12 +1826,16 @@ public:
   INSN(fdivs, 0b000, 0b00, 0b0001);
   INSN(fadds, 0b000, 0b00, 0b0010);
   INSN(fsubs, 0b000, 0b00, 0b0011);
+  INSN(fmaxs, 0b000, 0b00, 0b0100);
+  INSN(fmins, 0b000, 0b00, 0b0101);
   INSN(fnmuls, 0b000, 0b00, 0b1000);
 
   INSN(fmuld, 0b000, 0b01, 0b0000);
   INSN(fdivd, 0b000, 0b01, 0b0001);
   INSN(faddd, 0b000, 0b01, 0b0010);
   INSN(fsubd, 0b000, 0b01, 0b0011);
+  INSN(fmaxd, 0b000, 0b01, 0b0100);
+  INSN(fmind, 0b000, 0b01, 0b0101);
   INSN(fnmuld, 0b000, 0b01, 0b1000);
 
 #undef INSN

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,42 @@ class EncodeISOArrayNode: public Node {
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//-------------------------------DigitNode----------------------------------------
+class DigitNode : public Node {
+public:
+  DigitNode(Node* control, Node *in1) : Node(control, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------LowerCaseNode------------------------------------
+class LowerCaseNode : public Node {
+public:
+  LowerCaseNode(Node* control, Node *in1) : Node(control, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------UpperCaseNode------------------------------------
+class UpperCaseNode : public Node {
+public:
+  UpperCaseNode(Node* control, Node *in1) : Node(control, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------WhitespaceCode-----------------------------------
+class WhitespaceNode : public Node {
+public:
+  WhitespaceNode(Node* control, Node *in1) : Node(control, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
 };
 
 #endif // SHARE_VM_OPTO_INTRINSICNODE_HPP

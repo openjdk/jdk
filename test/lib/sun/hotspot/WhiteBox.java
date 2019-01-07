@@ -182,6 +182,10 @@ public class WhiteBox {
   public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
+  public native long    dramReservedStart();
+  public native long    dramReservedEnd();
+  public native long    nvdimmReservedStart();
+  public native long    nvdimmReservedEnd();
   public native MemoryUsage g1AuxiliaryMemoryUsage();
   private  native Object[]    parseCommandLine0(String commandline, char delim, DiagnosticCommand[] args);
   public          Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args) {

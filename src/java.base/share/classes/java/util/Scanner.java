@@ -1297,16 +1297,16 @@ public final class Scanner implements Iterator<String>, Closeable {
         nanString = "\\Q" + dfs.getNaN() + "\\E";
         infinityString = "\\Q" + dfs.getInfinity() + "\\E";
         positivePrefix = df.getPositivePrefix();
-        if (positivePrefix.length() > 0)
+        if (!positivePrefix.isEmpty())
             positivePrefix = "\\Q" + positivePrefix + "\\E";
         negativePrefix = df.getNegativePrefix();
-        if (negativePrefix.length() > 0)
+        if (!negativePrefix.isEmpty())
             negativePrefix = "\\Q" + negativePrefix + "\\E";
         positiveSuffix = df.getPositiveSuffix();
-        if (positiveSuffix.length() > 0)
+        if (!positiveSuffix.isEmpty())
             positiveSuffix = "\\Q" + positiveSuffix + "\\E";
         negativeSuffix = df.getNegativeSuffix();
-        if (negativeSuffix.length() > 0)
+        if (!negativeSuffix.isEmpty())
             negativeSuffix = "\\Q" + negativeSuffix + "\\E";
 
         // Force rebuilding and recompilation of locale dependent

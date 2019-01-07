@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ class JNIid;
 class JvmtiCachedClassFieldMap;
 class nmethodBucket;
 class SuperTypeClosure;
+class OopMapCache;
+class InterpreterOopMap;
 
 // This is used in iterators below.
 class FieldClosure: public StackObj {
@@ -1017,7 +1019,6 @@ public:
   bool is_leaf_class() const               { return _subklass == NULL; }
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
-  bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
   int oop_size(oop obj)  const             { return size_helper(); }
   // slow because it's a virtual call and used for verifying the layout_helper.

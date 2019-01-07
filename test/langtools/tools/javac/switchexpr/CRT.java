@@ -151,7 +151,7 @@ public class CRT {
         new JavacTask(tb)
                 .options("-Xjcov",
                          "--enable-preview",
-                         "-source", "12")
+                         "-source", "13")
                 .outdir(classes)
                 .sources("public class Test {\n" +
                          code +

@@ -26,11 +26,13 @@
  * @bug      4637604 4775148 8183037 8182765 8196202
  * @summary  Test the tables for summary attribute
  * @author   dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main AccessSummary
  */
+
+import javadoc.tester.JavadocTester;
 
 public class AccessSummary extends JavadocTester {
     /**
@@ -44,7 +46,7 @@ public class AccessSummary extends JavadocTester {
     }
 
     @Test
-    void testAccessSummary() {
+    public void testAccessSummary() {
         javadoc("-d", "out",
                 "--frames",
                 "-sourcepath", testSrc,
@@ -54,7 +56,7 @@ public class AccessSummary extends JavadocTester {
     }
 
     @Test
-    void testAccessSummary_html4() {
+    public void testAccessSummary_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "--frames",

@@ -942,7 +942,7 @@ public class SecureRandom extends java.util.Random {
                 }
             });
 
-        if ((property == null) || (property.length() == 0)) {
+        if (property == null || property.isEmpty()) {
             throw new NoSuchAlgorithmException(
                 "Null/empty securerandom.strongAlgorithms Security Property");
         }

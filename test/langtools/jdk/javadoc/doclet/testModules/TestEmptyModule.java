@@ -29,16 +29,17 @@
  *          jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- * @library ../lib /tools/lib
- * @build toolbox.ToolBox toolbox.ModuleBuilder JavadocTester
+ * @library ../../lib /tools/lib
+ * @build toolbox.ToolBox toolbox.ModuleBuilder javadoc.tester.*
  * @run main TestEmptyModule
  */
 
-import toolbox.ModuleBuilder;
-import toolbox.ToolBox;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javadoc.tester.JavadocTester;
+import toolbox.ModuleBuilder;
+import toolbox.ToolBox;
 
 public class TestEmptyModule extends JavadocTester {
 

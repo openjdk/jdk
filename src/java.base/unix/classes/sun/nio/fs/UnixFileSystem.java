@@ -58,8 +58,7 @@ abstract class UnixFileSystem
         // default directory.
         String propValue = GetPropertyAction
                 .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
-        boolean chdirAllowed = (propValue.length() == 0) ?
-            true : Boolean.valueOf(propValue);
+        boolean chdirAllowed = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
         if (chdirAllowed) {
             this.needToResolveAgainstDefaultDirectory = true;
         } else {
@@ -269,7 +268,7 @@ abstract class UnixFileSystem
             StringBuilder sb = new StringBuilder();
             sb.append(first);
             for (String segment: more) {
-                if (segment.length() > 0) {
+                if (!segment.isEmpty()) {
                     if (sb.length() > 0)
                         sb.append('/');
                     sb.append(segment);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,93 @@ package com.sun.hotspot.tools.compiler;
 
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.Test;
 import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
-import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.*;
 
 @RunWith(value = Parameterized.class)
 public class TestLogCompilation {
 
     String logFile;
 
-    public TestLogCompilation(String logFile) {
-        this.logFile = logFile;
-    }
+    static final String setupArgsTieredVersion[] = {
+        "java",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/tiered_version.log",
+        "-version"
+    };
+
+    static final String setupArgsTiered[] = {
+        "java",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/tiered_short.log"
+    };
+
+    static final String setupArgsTieredBatch[] = {
+        "java",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/tiered_short_batch.log",
+        "-Xbatch"
+    };
+
+    static final String setupArgsNoTiered[] = {
+        "java",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/no_tiered_short.log"
+    };
+
+    static final String setupArgsNoTieredBatch[] = {
+        "java",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/no_tiered_short_batch.log",
+        "-Xbatch"
+    };
+
+    static final String allSetupArgs[][] = {
+        setupArgsTieredVersion,
+        setupArgsTiered,
+        setupArgsTieredBatch,
+        setupArgsNoTiered,
+        setupArgsNoTieredBatch
+    };
 
     @Parameters
     public static Collection data() {
         Object[][] data = new Object[][]{
-            // Simply running this jar with jdk-9 no args,
-            // no file (just prints the help)
-            {"./src/test/resources/hotspot_pid23756.log"},
-            // LogCompilation output of running on above file
-            {"./src/test/resources/hotspot_pid25109.log"},
-            {"./src/test/resources/no_tiered_short.log"},
-            {"./src/test/resources/tiered_short.log"}
-
+            // Take care these match whats created in the setup method
+            {"./target/tiered_version.log"},
+            {"./target/tiered_short.log"},
+            {"./target/tiered_short_batch.log"},
+            {"./target/no_tiered_short.log"},
+            {"./target/no_tiered_short_batch.log"}
         };
+        assert data.length == allSetupArgs.length : "Files dont match args.";
         return Arrays.asList(data);
+    }
+
+    @BeforeClass
+    public static void setup() {
+        try {
+            for (String[] setupArgs : allSetupArgs) {
+                Process p = Runtime.getRuntime().exec(setupArgs);
+                p.waitFor();
+            }
+        } catch (Exception e) {
+            System.out.println(e + ": exec failed:" + setupArgsNoTiered[0]);
+        }
+    }
+
+    public TestLogCompilation(String logFile) {
+        this.logFile = logFile;
     }
 
     @Test

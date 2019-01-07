@@ -457,12 +457,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     if (pCode == NULL) {
         JNU_ThrowIOExceptionWithLastError(env, "VirtualAllocEx failed");
         VirtualFreeEx(hProcess, pData, 0, MEM_RELEASE);
+        (*env)->ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);
         return;
     }
     WriteProcessMemory( hProcess, (LPVOID)pCode, (LPCVOID)stubCode, (SIZE_T)stubLen, NULL );
-    if (isCopy) {
-        (*env)->ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);
-    }
+    (*env)->ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);
 
     /*
      * Create thread in target process to execute code

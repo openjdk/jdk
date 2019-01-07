@@ -32,6 +32,13 @@ AC_DEFUN([BASIC_WINDOWS_REWRITE_AS_UNIX_PATH],
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
     $1="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    # wslpath does not check the input, only call if an actual windows path was
+    # given.
+    if $ECHO "$windows_path" | $GREP -q ["^[a-zA-Z]:[\\\\/]"]; then
+      unix_path=`$WSLPATH -u "$windows_path"`
+      $1="$unix_path"
+    fi
   fi
 ])
 
@@ -43,6 +50,9 @@ AC_DEFUN([BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH],
     $1="$windows_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     windows_path=`cmd //c echo $unix_path`
+    $1="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    windows_path=`$WSLPATH -m "$unix_path"`
     $1="$windows_path"
   fi
 ])
@@ -97,6 +107,31 @@ AC_DEFUN([BASIC_MAKE_WINDOWS_SPACE_SAFE_MSYS],
   if test "x$has_forbidden_chars" != x; then
     # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
     new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+])
+
+# Helper function which possibly converts a path using DOS-style short mode.
+# If so, the updated path is stored in $new_path.
+# $1: The path to check
+AC_DEFUN([BASIC_MAKE_WINDOWS_SPACE_SAFE_WSL],
+[
+  input_path="$1"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use @<:@ and @:>@ instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [[^-_/:a-zA-Z0-9\\.]]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    TOPDIR_windows="$TOPDIR"
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([TOPDIR_windows])
+    # First convert to Windows path to make input valid for cmd
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([input_path])
+    new_path=`$CMD /c $TOPDIR_windows/make/scripts/windowsShortName.bat "$input_path" \
+        | $SED -e 's|\r||g' \
+        | $TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+    # Rewrite back to unix style
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([new_path])
   fi
 ])
 
@@ -155,6 +190,23 @@ AC_DEFUN([BASIC_FIXUP_PATH_MSYS],
 
   # Save the first 10 bytes of this path to the storage, so fixpath can work.
   all_fixpath_prefixes=("${all_fixpath_prefixes@<:@@@:>@}" "${new_path:0:10}")
+])
+
+AC_DEFUN([BASIC_FIXUP_PATH_WSL],
+[
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="[$]$1"
+  BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([new_path])
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  BASIC_MAKE_WINDOWS_SPACE_SAFE_WSL([$new_path])
+
+  if test "x$path" != "x$new_path"; then
+    $1="$new_path"
+    AC_MSG_NOTICE([Rewriting $1 to "$new_path"])
+  fi
 ])
 
 AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
@@ -305,6 +357,79 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_MSYS],
   fi
 ])
 
+AC_DEFUN([BASIC_FIXUP_EXECUTABLE_WSL],
+[
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="[$]$1"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+  BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([new_path])
+
+  # Now try to locate executable using which
+  new_path_bak="$new_path"
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not considered executable in WSL
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path="$new_path_back"
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([new_path])
+    new_path_bak="$new_path"
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not considered executable in WSL
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$new_path_bak"
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        AC_MSG_NOTICE([You might be mixing spaces in the path and extra arguments, which is not allowed.])
+      fi
+      AC_MSG_ERROR([Cannot locate the the path of $1])
+    fi
+  fi
+
+  # In WSL, suffixes must be present for Windows executables
+  if test ! -f "$new_path"; then
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      AC_MSG_NOTICE([The path of $1, which resolves as "$new_path", is invalid.])
+      AC_MSG_NOTICE([Neither "$new_path" nor "$new_path.exe/cmd" can be found])
+      AC_MSG_ERROR([Cannot locate the the path of $1])
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+  BASIC_MAKE_WINDOWS_SPACE_SAFE_WSL([$input_to_shortpath])
+])
+
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 [
@@ -353,8 +478,28 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(MSYS_ROOT_PATH)
     AC_MSG_RESULT([$MSYS_ROOT_PATH])
     WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    AC_MSG_CHECKING([Windows version])
+    # m4 replaces [ and ] so we use @<:@ and @:>@ instead
+    WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '(@<:@0-9@:>@+\.)+@<:@0-9@:>@+'`
+    AC_MSG_RESULT([$WINDOWS_VERSION])
+
+    AC_MSG_CHECKING([WSL kernel version])
+    WSL_KERNEL_VERSION=`$UNAME -v`
+    AC_MSG_RESULT([$WSL_KERNEL_VERSION])
+
+    AC_MSG_CHECKING([WSL kernel release])
+    WSL_KERNEL_RELEASE=`$UNAME -r`
+    AC_MSG_RESULT([$WSL_KERNEL_RELEASE])
+
+    AC_MSG_CHECKING([WSL distribution])
+    WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
+    AC_MSG_RESULT([$WSL_DISTRIBUTION])
+
+    WINDOWS_ENV_VENDOR='WSL'
+    WINDOWS_ENV_VERSION="$WSL_DISTRIBUTION $WSL_KERNEL_VERSION $WSL_KERNEL_RELEASE (on Windows build $WINDOWS_VERSION)"
   else
-    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin nor msys was detected.])
+    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys, nor wsl was detected.])
   fi
 
   # Test if windows or unix (cygwin/msys) find is first in path.
@@ -395,6 +540,8 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
           | tr ' ' '\n' | $GREP '^/./' | $SORT | $UNIQ`
       fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
       FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
+    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.wsl; then
+      FIXPATH="$FIXPATH_BIN -w"
     fi
     FIXPATH_SRC_W="$FIXPATH_SRC"
     FIXPATH_BIN_W="$FIXPATH_BIN"
@@ -412,6 +559,17 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
       AC_MSG_ERROR([Could not create $FIXPATH_BIN])
     fi
     AC_MSG_RESULT([yes])
+
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+      OLD_WSLENV="$WSLENV"
+      WSLENV=`$ECHO $WSLENV | $SED 's/PATH\/l://'`
+      BASIC_APPEND_TO_PATH(WSLENV, "FIXPATH_PATH")
+      export WSLENV
+      export FIXPATH_PATH=$VS_PATH_WINDOWS
+      AC_MSG_NOTICE([FIXPATH_PATH is $FIXPATH_PATH])
+      AC_MSG_NOTICE([Rewriting WSLENV from $OLD_WSLENV to $WSLENV])
+    fi
+
     AC_MSG_CHECKING([if fixpath.exe works])
     cd $FIXPATH_DIR
     $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \

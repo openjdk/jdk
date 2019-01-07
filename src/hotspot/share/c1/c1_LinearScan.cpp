@@ -574,7 +574,7 @@ void LinearScan::compute_local_live_sets() {
       // Phi functions at the begin of an exception handler are
       // implicitly defined (= killed) at the beginning of the block.
       for_each_phi_fun(block, phi,
-        live_kill.set_bit(phi->operand()->vreg_number())
+        if (!phi->is_illegal()) { live_kill.set_bit(phi->operand()->vreg_number()); }
       );
     }
 
@@ -1904,7 +1904,7 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, MoveResolver &move_r
 
   // the live_in bits are not set for phi functions of the xhandler entry, so iterate them separately
   for_each_phi_fun(block, phi,
-    resolve_exception_entry(block, phi->operand()->vreg_number(), move_resolver)
+    if (!phi->is_illegal()) { resolve_exception_entry(block, phi->operand()->vreg_number(), move_resolver); }
   );
 
   if (move_resolver.has_mappings()) {
@@ -1978,7 +1978,7 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, M
 
   // the live_in bits are not set for phi functions of the xhandler entry, so iterate them separately
   for_each_phi_fun(block, phi,
-    resolve_exception_edge(handler, throwing_op_id, phi->operand()->vreg_number(), phi, move_resolver)
+    if (!phi->is_illegal()) { resolve_exception_edge(handler, throwing_op_id, phi->operand()->vreg_number(), phi, move_resolver); }
   );
 
   if (move_resolver.has_mappings()) {

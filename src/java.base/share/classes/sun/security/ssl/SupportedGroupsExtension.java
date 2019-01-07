@@ -483,7 +483,7 @@ final class SupportedGroupsExtension {
             // default groups and preferences will be used.
             String property = GetPropertyAction
                     .privilegedGetProperty("jdk.tls.namedGroups");
-            if (property != null && property.length() != 0) {
+            if (property != null && !property.isEmpty()) {
                 // remove double quote marks from beginning/end of the property
                 if (property.length() > 1 && property.charAt(0) == '"' &&
                         property.charAt(property.length() - 1) == '"') {
@@ -492,7 +492,7 @@ final class SupportedGroupsExtension {
             }
 
             ArrayList<NamedGroup> groupList;
-            if (property != null && property.length() != 0) {
+            if (property != null && !property.isEmpty()) {
                 String[] groups = property.split(",");
                 groupList = new ArrayList<>(groups.length);
                 for (String group : groups) {
@@ -900,8 +900,7 @@ final class SupportedGroupsExtension {
             try {
                 spec = new SupportedGroupsSpec(buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // Update the context.
@@ -1024,8 +1023,7 @@ final class SupportedGroupsExtension {
             try {
                 spec = new SupportedGroupsSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             // Update the context.

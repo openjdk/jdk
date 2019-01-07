@@ -190,7 +190,7 @@ public class URLClassPath {
                 String element = (next == -1)
                     ? cp.substring(off)
                     : cp.substring(off, next);
-                if (element.length() > 0 || !skipEmptyElements) {
+                if (!element.isEmpty() || !skipEmptyElements) {
                     URL url = toFileURL(element);
                     if (url != null) path.add(url);
                 }

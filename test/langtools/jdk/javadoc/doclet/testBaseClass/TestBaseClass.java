@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
  * @bug 4197513
  * @summary Javadoc does not process base class.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build BaseClass
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestBaseClass
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestBaseClass extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestBaseClass extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-sourcepath", testSrc,
                 "-docletpath", System.getProperty("test.classes", "."),
                 "-doclet", "BaseClass",

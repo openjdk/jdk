@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,17 @@
  * @bug 4651598 8026567
  * @summary Javadoc wrongly inserts </DD> tags when using multiple @author tags
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main AuthorDD
  */
 
 /**
  * Runs javadoc and runs regression tests on the resulting HTML.
  */
+import javadoc.tester.JavadocTester;
+
 public class AuthorDD extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -43,7 +45,7 @@ public class AuthorDD extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         // Test for all cases except the split index page
         javadoc("-d", "out",
                 "-author",

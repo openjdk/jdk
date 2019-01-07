@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ package jdk.nio.zipfs;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
+ * The attributes of a file stored in a zip file.
  *
- * @author  Xueming Shen, Rajendra Gutupalli,Jaya Hangal
+ * @author Xueming Shen, Rajendra Gutupalli,Jaya Hangal
  */
-
 interface ZipFileAttributes extends BasicFileAttributes {
     public long compressedSize();
     public long crc();

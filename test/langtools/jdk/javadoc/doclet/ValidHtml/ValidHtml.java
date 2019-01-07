@@ -29,11 +29,13 @@
  *           Missing whitespace in DOCTYPE declaration
  *           HTML table tags inserted in wrong place in pakcage use page
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main ValidHtml
  */
+
+import javadoc.tester.JavadocTester;
 
 public class ValidHtml extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class ValidHtml extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         // Test for all cases except the split index page
         javadoc("-d", "out",
                     "-doctitle", "Document Title",
@@ -66,7 +68,7 @@ public class ValidHtml extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         // Test for all cases except the split index page
         javadoc("-d", "out-html4",
                 "-html4",

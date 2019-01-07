@@ -391,9 +391,9 @@ public class PolicyParser {
         out.print("keystore \"");
         out.print(keyStoreUrlString);
         out.print('"');
-        if (keyStoreType != null && keyStoreType.length() > 0)
+        if (keyStoreType != null && !keyStoreType.isEmpty())
             out.print(", \"" + keyStoreType + "\"");
-        if (keyStoreProvider != null && keyStoreProvider.length() > 0)
+        if (keyStoreProvider != null && !keyStoreProvider.isEmpty())
             out.print(", \"" + keyStoreProvider + "\"");
         out.println(";");
         out.println();
@@ -446,7 +446,7 @@ public class PolicyParser {
                     String alias = aliases.nextToken().trim();
                     if (alias.equals(","))
                         cctr++;
-                    else if (alias.length() > 0)
+                    else if (!alias.isEmpty())
                         actr++;
                 }
                 if (actr <= cctr)

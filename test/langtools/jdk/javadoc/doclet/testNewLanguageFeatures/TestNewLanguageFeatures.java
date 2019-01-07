@@ -29,11 +29,13 @@
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestNewLanguageFeatures
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestNewLanguageFeatures extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
@@ -59,7 +61,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-html4",
                 "-html4",

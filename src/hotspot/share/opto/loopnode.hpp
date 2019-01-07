@@ -302,7 +302,7 @@ public:
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
 
-  virtual LoopNode* skip_strip_mined(int expect_opaq = 1);
+  virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
   virtual IfTrueNode* outer_loop_tail() const;
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
@@ -1248,6 +1248,9 @@ public:
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
   Node *remix_address_expressions( Node *n );
+
+  // Convert add to muladd to generate MuladdS2I under certain criteria
+  Node * convert_add_to_muladd(Node * n);
 
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );

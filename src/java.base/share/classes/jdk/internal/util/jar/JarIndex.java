@@ -291,7 +291,7 @@ public class JarIndex {
         while((line = br.readLine()) != null && !line.endsWith(".jar"));
 
         for(;line != null; line = br.readLine()) {
-            if (line.length() == 0)
+            if (line.isEmpty())
                 continue;
 
             if (line.endsWith(".jar")) {

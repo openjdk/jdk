@@ -1645,12 +1645,6 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
     return;
   }
 
-  // NonJavaThread instances may not be fully initialized yet, so we need to
-  // skip any that aren't - check for zero stack_size()
-  if (!thread->is_Java_thread() && thread->stack_size() == 0) {
-    return;
-  }
-
   if (_count >= _names_len || _count >= _times_len) {
     // skip if the result array is not big enough
     return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,10 @@
 #include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
 
-// constant tags in Java .class files
 
+class outputStream;
+
+// constant tags in Java .class files
 
 enum {
   // See jvm.h for shared JVM_CONSTANT_XXX tags

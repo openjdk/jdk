@@ -299,7 +299,7 @@ class ValueStack: public CompilationResourceObj {
 }
 
 
-// Macro definition for simple iteration of all phif functions of a block, i.e all
+// Macro definition for simple iteration of all phi functions of a block, i.e all
 // phi functions of the ValueStack where the block matches.
 // Use the following code pattern to iterate all phi functions of a block:
 //
@@ -315,7 +315,7 @@ class ValueStack: public CompilationResourceObj {
   Value value;                                                                                 \
   {                                                                                            \
     for_each_stack_value(cur_state, cur_index, value) {                                        \
-      Phi* v_phi = value->as_Phi();                                                      \
+      Phi* v_phi = value->as_Phi();                                                            \
       if (v_phi != NULL && v_phi->block() == v_block) {                                        \
         v_code;                                                                                \
       }                                                                                        \
@@ -323,7 +323,7 @@ class ValueStack: public CompilationResourceObj {
   }                                                                                            \
   {                                                                                            \
     for_each_local_value(cur_state, cur_index, value) {                                        \
-      Phi* v_phi = value->as_Phi();                                                      \
+      Phi* v_phi = value->as_Phi();                                                            \
       if (v_phi != NULL && v_phi->block() == v_block) {                                        \
         v_code;                                                                                \
       }                                                                                        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
              "G1YoungRemSetSamplingThread monitor",
              true,
              Monitor::_safepoint_check_never),
-    _last_periodic_gc_attempt_s(os::elapsedTime()) {
+    _last_periodic_gc_attempt_s(os::elapsedTime()),
+    _vtime_accum(0) {
   set_name("G1 Young RemSet Sampling");
   create_and_start();
 }
@@ -71,9 +72,9 @@ bool G1YoungRemSetSamplingThread::should_start_periodic_gc() {
 
   // Check if load is lower than max.
   double recent_load;
-  if ((G1PeriodicGCSystemLoadThreshold > 0) &&
+  if ((G1PeriodicGCSystemLoadThreshold > 0.0f) &&
       (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
-    log_debug(gc, periodic)("Load %1.2f is higher than threshold " UINTX_FORMAT ". Skipping.",
+    log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
                             recent_load, G1PeriodicGCSystemLoadThreshold);
     return false;
   }

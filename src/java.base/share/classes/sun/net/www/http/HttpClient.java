@@ -603,7 +603,7 @@ public class HttpClient extends NetworkClient {
             StringBuilder result = new StringBuilder(128);
             result.append(url.getProtocol());
             result.append(":");
-            if (url.getAuthority() != null && url.getAuthority().length() > 0) {
+            if (url.getAuthority() != null && !url.getAuthority().isEmpty()) {
                 result.append("//");
                 result.append(url.getAuthority());
             }
@@ -619,7 +619,7 @@ public class HttpClient extends NetworkClient {
         } else {
             fileName = url.getFile();
 
-            if ((fileName == null) || (fileName.length() == 0)) {
+            if ((fileName == null) || (fileName.isEmpty())) {
                 fileName = "/";
             } else if (fileName.charAt(0) == '?') {
                 /* HTTP/1.1 spec says in 5.1.2. about Request-URI:

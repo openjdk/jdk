@@ -168,14 +168,6 @@ JAVADOC_TOP := \
     font-family: DejaVu Sans, Arial, Helvetica, sans-serif; \
     font-weight: normal;">$(DRAFT_TEXT)</div>
 
-JDK_INDEX_CONTENT := \
-    <!DOCTYPE html> \
-    <html lang="en"> \
-    <head> \
-    <meta http-equiv="refresh" content="0;url=api/index.html"> \
-    </head> \
-    </html>
-
 ################################################################################
 # JDK javadoc titles/text snippets
 
@@ -485,14 +477,7 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 
 ################################################################################
 
-JDK_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
-
-$(JDK_INDEX_HTML):
-	$(ECHO) '$(JDK_INDEX_CONTENT)' > $@
-
-JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
-
-# Copy the global resources
+# Copy the global resources, including the top-level redirect index.html
 GLOBAL_SPECS_RESOURCES_DIR := $(TOPDIR)/make/data/docs-resources/
 $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
@@ -532,9 +517,9 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
-ifeq ($(ENABLE_FULL_DOCS), true)
+ifeq ($(ENABLE_PANDOC), true)
   # For all markdown files in $module/share/specs directories, convert them to
-  # html.
+  # html, if we have pandoc (otherwise we'll just skip this).
 
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
 

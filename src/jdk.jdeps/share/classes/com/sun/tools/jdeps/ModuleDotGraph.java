@@ -307,9 +307,7 @@ public class ModuleDotGraph {
                     .map(ModuleReference::descriptor)
                     .map(ModuleDescriptor::name)
                     .filter(name -> !JAVA_SE_SUBGRAPH.contains(name) &&
-                                        (name.startsWith("java.") ||
-                                            name.startsWith("jdk.") ||
-                                            name.startsWith("javafx.")))
+                                        (name.startsWith("java.") || name.startsWith("jdk.")))
                     .collect(Collectors.toSet());
         }
 

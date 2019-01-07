@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,15 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 
     // Find the next colon or quote
     char* next = strpbrk(str, ":\"");
+#ifdef _WINDOWS
+    // Skip over Windows paths such as "C:\..."
+    // Handle both C:\... and file=C:\..."
+    if (next != NULL && next[0] == ':' && next[1] == '\\') {
+      if (next == str + 1 || (strncmp(str, "file=", 5) == 0)) {
+        next = strpbrk(next + 1, ":\"");
+      }
+    }
+#endif
     while (next != NULL && *next == '"') {
       char* end_quote = strchr(next + 1, '"');
       if (end_quote == NULL) {
@@ -553,7 +562,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("\t Log messages tagged with 'gc' tag up to 'debug' level to file 'gc.txt' with no decorations.");
   out->cr();
 
-  out->print_cr(" -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m");
+  out->print_cr(" -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pid:filecount=5,filesize=1m");
   out->print_cr("\t Log messages tagged with 'gc' tag up to 'trace' level to a rotating fileset of 5 files of size 1MB,");
   out->print_cr("\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.");
   out->cr();

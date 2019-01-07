@@ -253,7 +253,7 @@ final class DHKeyExchange {
         static {
             String property = GetPropertyAction.privilegedGetProperty(
                     "jdk.tls.ephemeralDHKeySize");
-            if (property == null || property.length() == 0) {
+            if (property == null || property.isEmpty()) {
                 useLegacyEphemeralDHKeys = false;
                 useSmartEphemeralDHKeys = false;
                 customizedDHKeySize = -1;
@@ -438,7 +438,7 @@ final class DHKeyExchange {
             }
 
             if (dhePossession == null || dheCredentials == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient DHE key agreement parameters negotiated");
             }
 

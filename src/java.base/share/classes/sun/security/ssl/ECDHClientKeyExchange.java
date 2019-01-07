@@ -190,20 +190,20 @@ final class ECDHClientKeyExchange {
             }
 
             if (x509Credentials == null) {
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No server certificate for ECDH client key exchange");
             }
 
             PublicKey publicKey = x509Credentials.popPublicKey;
             if (!publicKey.getAlgorithm().equals("EC")) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Not EC server certificate for ECDH client key exchange");
             }
 
             ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
             NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported EC server cert for ECDH client key exchange");
             }
 
@@ -228,7 +228,7 @@ final class ECDHClientKeyExchange {
                     chc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
@@ -240,7 +240,7 @@ final class ECDHClientKeyExchange {
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
                 if (kd == null) {
                     // unlikely
-                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                             "Not supported key derivation: " +
                             chc.negotiatedProtocol);
                 } else {
@@ -280,15 +280,14 @@ final class ECDHClientKeyExchange {
 
             if (x509Possession == null) {
                 // unlikely, have been checked during cipher suite negotiation.
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No expected EC server cert for ECDH client key exchange");
-                return;     // make the compiler happy
             }
 
             PrivateKey privateKey = x509Possession.popPrivateKey;
             if (!privateKey.getAlgorithm().equals("EC")) {
                 // unlikely, have been checked during cipher suite negotiation.
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Not EC server cert for ECDH client key exchange");
             }
 
@@ -296,7 +295,7 @@ final class ECDHClientKeyExchange {
             NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
                 // unlikely, have been checked during cipher suite negotiation.
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported EC server cert for ECDH client key exchange");
             }
 
@@ -305,9 +304,8 @@ final class ECDHClientKeyExchange {
                     shc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
-                return;     // make the compiler happy
             }
 
             // parse the handshake message
@@ -353,7 +351,7 @@ final class ECDHClientKeyExchange {
                     SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
             if (kd == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Not supported key derivation: " + shc.negotiatedProtocol);
             } else {
                 shc.handshakeKeyDerivation =
@@ -387,7 +385,7 @@ final class ECDHClientKeyExchange {
             }
 
             if (ecdheCredentials == null) {
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No ECDHE credentials negotiated for client key exchange");
             }
 
@@ -412,7 +410,7 @@ final class ECDHClientKeyExchange {
                     chc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
@@ -424,7 +422,7 @@ final class ECDHClientKeyExchange {
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
                 if (kd == null) {
                     // unlikely
-                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                             "Not supported key derivation: " +
                             chc.negotiatedProtocol);
                 } else {
@@ -463,16 +461,15 @@ final class ECDHClientKeyExchange {
             }
             if (ecdhePossession == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No expected ECDHE possessions for client key exchange");
-                return;     // make the compiler happy
             }
 
             ECParameterSpec params = ecdhePossession.publicKey.getParams();
             NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
                 // unlikely, have been checked during cipher suite negotiation.
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported EC server cert for ECDHE client key exchange");
             }
 
@@ -481,9 +478,8 @@ final class ECDHClientKeyExchange {
                     shc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
-                return;     // make the compiler happy
             }
 
             // parse the handshake message
@@ -529,7 +525,7 @@ final class ECDHClientKeyExchange {
                     SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
             if (kd == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Not supported key derivation: " + shc.negotiatedProtocol);
             } else {
                 shc.handshakeKeyDerivation =

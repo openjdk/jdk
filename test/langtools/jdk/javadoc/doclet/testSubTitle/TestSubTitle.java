@@ -26,11 +26,13 @@
  * @bug 7010342 8150000 8174974
  * @summary Test for correct sub title generation.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestSubTitle
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestSubTitle extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestSubTitle extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

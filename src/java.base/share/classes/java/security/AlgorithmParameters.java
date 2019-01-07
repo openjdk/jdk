@@ -209,7 +209,7 @@ public class AlgorithmParameters {
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (provider == null || provider.length() == 0)
+        if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "AlgorithmParameters",
                                          provider);

@@ -1061,6 +1061,77 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
   java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
 
 #
+# PKCS12 KeyStore properties
+#
+# The following properties, if configured, are used by the PKCS12 KeyStore
+# implementation during the creation of a new keystore. Several of the
+# properties may also be used when modifying an existing keystore. The
+# properties can be overridden by a KeyStore API that specifies its own
+# algorithms and parameters.
+#
+# If an existing PKCS12 keystore is loaded and then stored, the algorithm and
+# parameter used to generate the existing Mac will be reused. If the existing
+# keystore does not have a Mac, no Mac will be created while storing. If there
+# is at least one certificate in the existing keystore, the algorithm and
+# parameters used to encrypt the last certificate in the existing keystore will
+# be reused to encrypt all certificates while storing. If the last certificate
+# in the existing keystore is not encrypted, all certificates will be stored
+# unencrypted. If there is no certificate in the existing keystore, any newly
+# added certificate will be encrypted (or stored unencrypted if algorithm
+# value is "NONE") using the "keystore.pkcs12.certProtectionAlgorithm" and
+# "keystore.pkcs12.certPbeIterationCount" values defined here. Existing private
+# and secret key(s) are not changed. Newly set private and secret key(s) will
+# be encrypted using the "keystore.pkcs12.keyProtectionAlgorithm" and
+# "keystore.pkcs12.keyPbeIterationCount" values defined here.
+#
+# In order to apply new algorithms and parameters to all entries in an
+# existing keystore, one can create a new keystore and add entries in the
+# existing keystore into the new keystore. This can be achieved by calling the
+# "keytool -importkeystore" command.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# If the property is set to an illegal value,
+# an iteration count that is not a positive integer, or an unknown algorithm
+# name, an exception will be thrown when the property is used.
+# If the property is not set or empty, a default value will be used.
+#
+# Note: These properties are currently used by the JDK Reference implementation.
+# They are not guaranteed to be examined and used by other implementations.
+
+# The algorithm used to encrypt a certificate. This can be any non-Hmac PBE
+# algorithm defined in the Cipher section of the Java Security Standard
+# Algorithm Names Specification. When set to "NONE", the certificate
+# is not encrypted. The default value is "PBEWithSHA1AndRC2_40".
+#keystore.pkcs12.certProtectionAlgorithm = PBEWithSHA1AndRC2_40
+
+# The iteration count used by the PBE algorithm when encrypting a certificate.
+# This value must be a positive integer. The default value is 50000.
+#keystore.pkcs12.certPbeIterationCount = 50000
+
+# The algorithm used to encrypt a private key or secret key. This can be
+# any non-Hmac PBE algorithm defined in the Cipher section of the Java
+# Security Standard Algorithm Names Specification. The value must not be "NONE".
+# The default value is "PBEWithSHA1AndDESede".
+#keystore.pkcs12.keyProtectionAlgorithm = PBEWithSHA1AndDESede
+
+# The iteration count used by the PBE algorithm when encrypting a private key
+# or a secret key. This value must be a positive integer. The default value
+# is 50000.
+#keystore.pkcs12.keyPbeIterationCount = 50000
+
+# The algorithm used to calculate the optional MacData at the end of a PKCS12
+# file. This can be any HmacPBE algorithm defined in the Mac section of the
+# Java Security Standard Algorithm Names Specification. When set to "NONE",
+# no Mac is generated. The default value is "HmacPBESHA1".
+#keystore.pkcs12.macAlgorithm = HmacPBESHA1
+
+# The iteration count used by the MacData algorithm. This value must be a
+# positive integer. The default value is 100000.
+#keystore.pkcs12.macIterationCount = 100000
+
+#
 # Enhanced exception message information
 #
 # By default, exception messages should not include potentially sensitive

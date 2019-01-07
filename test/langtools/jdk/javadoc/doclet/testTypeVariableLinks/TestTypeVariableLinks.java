@@ -25,11 +25,13 @@
  * @test
  * @bug 8174805 8182765
  * @summary JavacTrees should use Types.skipTypeVars() to get the upper bound of type variables
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestTypeVariableLinks
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestTypeVariableLinks extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestTypeVariableLinks extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-package",
@@ -57,7 +59,7 @@ public class TestTypeVariableLinks extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
+    public void test1_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

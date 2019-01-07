@@ -145,47 +145,42 @@ JVMFlag::Error CompileThresholdConstraintFunc(intx value, bool verbose) {
 }
 
 JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) {
-  int backward_branch_limit;
+  int64_t  max_percentage_limit = INT_MAX;
+  if (!ProfileInterpreter) {
+    max_percentage_limit = (max_percentage_limit>>InvocationCounter::count_shift);
+  }
+  max_percentage_limit = CompileThreshold == 0  ? max_percentage_limit*100 : max_percentage_limit*100/CompileThreshold;
+
   if (ProfileInterpreter) {
-    if (OnStackReplacePercentage < InterpreterProfilePercentage) {
+    if (value < InterpreterProfilePercentage) {
       JVMFlag::printError(verbose,
                           "OnStackReplacePercentage (" INTX_FORMAT ") must be "
                           "larger than InterpreterProfilePercentage (" INTX_FORMAT ")\n",
-                          OnStackReplacePercentage, InterpreterProfilePercentage);
+                          value, InterpreterProfilePercentage);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
 
-    backward_branch_limit = ((CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100)
-                            << InvocationCounter::count_shift;
-
-    if (backward_branch_limit < 0) {
+    max_percentage_limit += InterpreterProfilePercentage;
+    if (value > max_percentage_limit) {
       JVMFlag::printError(verbose,
-                          "CompileThreshold * (InterpreterProfilePercentage - OnStackReplacePercentage) / 100 = "
-                          INTX_FORMAT " "
-                          "must be between 0 and %d, try changing "
-                          "CompileThreshold, InterpreterProfilePercentage, and/or OnStackReplacePercentage\n",
-                          (CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100,
-                          INT_MAX >> InvocationCounter::count_shift);
+                          "OnStackReplacePercentage (" INTX_FORMAT ") must be between 0 and " INT64_FORMAT "\n",
+                          value,
+                          max_percentage_limit);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   } else {
-    if (OnStackReplacePercentage < 0 ) {
+    if (value < 0) {
       JVMFlag::printError(verbose,
                           "OnStackReplacePercentage (" INTX_FORMAT ") must be "
-                          "non-negative\n", OnStackReplacePercentage);
+                          "non-negative\n", value);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
 
-    backward_branch_limit = ((CompileThreshold * OnStackReplacePercentage) / 100)
-                            << InvocationCounter::count_shift;
-
-    if (backward_branch_limit < 0) {
+    if (value > max_percentage_limit) {
       JVMFlag::printError(verbose,
-                          "CompileThreshold * OnStackReplacePercentage / 100 = " INTX_FORMAT " "
-                          "must be between 0 and %d, try changing "
-                          "CompileThreshold and/or OnStackReplacePercentage\n",
-                          (CompileThreshold * OnStackReplacePercentage) / 100,
-                          INT_MAX >> InvocationCounter::count_shift);
+                          "OnStackReplacePercentage (" INTX_FORMAT ") must be between 0 and " INT64_FORMAT "\n",
+                          value,
+                          max_percentage_limit);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }

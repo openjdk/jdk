@@ -552,7 +552,7 @@ public final class ModulePatcher {
         public Stream<String> list() throws IOException {
             return Files.walk(dir, Integer.MAX_VALUE)
                         .map(f -> Resources.toResourceName(dir, f))
-                        .filter(s -> s.length() > 0);
+                        .filter(s -> !s.isEmpty());
         }
     }
 

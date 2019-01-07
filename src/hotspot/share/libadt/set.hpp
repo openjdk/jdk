@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,16 +112,15 @@ class SetI_;
 
 //------------------------------Set--------------------------------------------
 class Set : public ResourceObj {
- public:
+ protected:
 
   // Creates a new, empty set.
-  // DO NOT CONSTRUCT A Set.  THIS IS AN ABSTRACT CLASS, FOR INHERITENCE ONLY
   Set(Arena *arena) : _set_arena(arena) {};
 
   // Creates a new set from an existing set
-  // DO NOT CONSTRUCT A Set.  THIS IS AN ABSTRACT CLASS, FOR INHERITENCE ONLY
-  Set(const Set &) {};
+  Set(const Set & s) : ResourceObj(s) {};
 
+ public:
   // Set assignment; deep-copy guts
   virtual Set &operator =(const Set &s)=0;
   virtual Set &clone(void) const=0;

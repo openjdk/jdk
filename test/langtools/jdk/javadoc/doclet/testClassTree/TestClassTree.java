@@ -29,11 +29,13 @@
  *           Make sure class tree includes heirarchy for enums and annotation
  *           types.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestClassTree
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestClassTree extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestClassTree extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

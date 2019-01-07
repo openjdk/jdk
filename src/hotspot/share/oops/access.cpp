@@ -32,5 +32,5 @@
   template struct RuntimeDispatch<DecoratorFixup<decorators>::value, T, barrier_type>
 
 namespace AccessInternal {
-  INSTANTIATE_HPP_ACCESS(INTERNAL_EMPTY, oop, BARRIER_EQUALS);
+  INSTANTIATE_HPP_ACCESS(DECORATORS_NONE, oop, BARRIER_EQUALS);
 }

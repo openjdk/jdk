@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986
  * @summary Check fall through in switch expressions.
- * @compile --enable-preview -source 12 ExpressionSwitchFallThrough.java
+ * @compile --enable-preview -source 13 ExpressionSwitchFallThrough.java
  * @run main/othervm --enable-preview ExpressionSwitchFallThrough
  */
 

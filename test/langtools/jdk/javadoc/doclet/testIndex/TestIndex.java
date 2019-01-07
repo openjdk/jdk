@@ -28,11 +28,13 @@
  *           Also test that index-all.html has the appropriate output.
  *           Test for unnamed package in index.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestIndex
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestIndex extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestIndex extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "--frames",
                 "-sourcepath", testSrc,

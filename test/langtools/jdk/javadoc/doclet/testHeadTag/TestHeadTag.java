@@ -25,9 +25,9 @@
  * @test
  * @bug 8203792
  * @summary Remove "compatibility" features from Head.java
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester toolbox.ToolBox builder.ClassBuilder
+ * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
  * @run main TestHeadTag
  */
 
@@ -38,6 +38,8 @@ import java.time.LocalDate;
 
 import builder.ClassBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHeadTag extends JavadocTester {
 
@@ -53,7 +55,7 @@ public class TestHeadTag extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(srcDir);
 
@@ -70,7 +72,7 @@ public class TestHeadTag extends JavadocTester {
     }
 
     @Test
-    void testWithNoTimestamp(Path base) throws Exception {
+    public void testWithNoTimestamp(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(srcDir);
 

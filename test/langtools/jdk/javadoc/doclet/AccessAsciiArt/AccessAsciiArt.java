@@ -26,11 +26,13 @@
  * @bug 4706779 4956908
  * @summary  Add text equivalent of class tree ASCII art for accessibility
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main AccessAsciiArt
  */
+
+import javadoc.tester.JavadocTester;
 
 public class AccessAsciiArt extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class AccessAsciiArt extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "p1", "p1.subpkg");

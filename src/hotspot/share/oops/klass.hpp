@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,14 +429,7 @@ protected:
   static jint array_layout_helper(BasicType etype);
 
   // What is the maximum number of primary superclasses any klass can have?
-#ifdef PRODUCT
   static juint primary_super_limit()         { return _primary_super_limit; }
-#else
-  static juint primary_super_limit() {
-    assert(FastSuperclassLimit <= _primary_super_limit, "parameter oob");
-    return FastSuperclassLimit;
-  }
-#endif
 
   // vtables
   klassVtable vtable() const;
@@ -529,9 +522,6 @@ protected:
   virtual void remove_java_mirror();
   virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
- protected:
-  // computes the subtype relationship
-  virtual bool compute_is_subtype_of(Klass* k);
  public:
   // subclass accessor (here for convenience; undefined for non-klass objects)
   virtual bool is_leaf_class() const { fatal("not a class"); return false; }

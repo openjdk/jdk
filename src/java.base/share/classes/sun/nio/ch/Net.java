@@ -403,14 +403,8 @@ public class Net {
 
     public static boolean isFastTcpLoopbackRequested() {
         String loopbackProp = GetPropertyAction
-                .privilegedGetProperty("jdk.net.useFastTcpLoopback");
-        boolean enable;
-        if ("".equals(loopbackProp)) {
-            enable = true;
-        } else {
-            enable = Boolean.parseBoolean(loopbackProp);
-        }
-        return enable;
+                .privilegedGetProperty("jdk.net.useFastTcpLoopback", "false");
+        return loopbackProp.isEmpty() ? true : Boolean.parseBoolean(loopbackProp);
     }
 
     // -- Socket operations --

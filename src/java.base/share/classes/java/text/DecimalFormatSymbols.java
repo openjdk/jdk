@@ -663,7 +663,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         // Check for empty country string separately because it's a valid
         // country ID for Locale (and used for the C locale), but not a valid
         // ISO 3166 country code, and exceptions are expensive.
-        if (locale.getCountry().length() > 0) {
+        if (!locale.getCountry().isEmpty()) {
             try {
                 currency = Currency.getInstance(locale);
             } catch (IllegalArgumentException e) {

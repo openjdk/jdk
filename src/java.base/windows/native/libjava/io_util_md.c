@@ -559,8 +559,6 @@ JNIEXPORT jlong JNICALL
 handleLseek(FD fd, jlong offset, jint whence)
 {
     LARGE_INTEGER pos, distance;
-    DWORD lowPos = 0;
-    long highPos = 0;
     DWORD op = FILE_CURRENT;
     HANDLE h = (HANDLE)fd;
 

@@ -459,7 +459,7 @@ public class Collections {
             for (int i=size; i>1; i--)
                 swap(list, i-1, rnd.nextInt(i));
         } else {
-            Object arr[] = list.toArray();
+            Object[] arr = list.toArray();
 
             // Shuffle array
             for (int i=size; i>1; i--)
@@ -5099,6 +5099,53 @@ public class Collections {
                 throw new IllegalArgumentException("fromIndex(" + fromIndex +
                                                    ") > toIndex(" + toIndex + ")");
             return new CopiesList<>(toIndex - fromIndex, element);
+        }
+
+        @Override
+        public int hashCode() {
+            if (n == 0) return 1;
+            // hashCode of n repeating elements is 31^n + elementHash * Sum(31^k, k = 0..n-1)
+            // this implementation completes in O(log(n)) steps taking advantage of
+            // 31^(2*n) = (31^n)^2 and Sum(31^k, k = 0..(2*n-1)) = Sum(31^k, k = 0..n-1) * (31^n + 1)
+            int pow = 31;
+            int sum = 1;
+            for (int i = Integer.numberOfLeadingZeros(n) + 1; i < Integer.SIZE; i++) {
+                sum *= pow + 1;
+                pow *= pow;
+                if ((n << i) < 0) {
+                    pow *= 31;
+                    sum = sum * 31 + 1;
+                }
+            }
+            return pow + sum * (element == null ? 0 : element.hashCode());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof CopiesList) {
+                CopiesList<?> other = (CopiesList<?>) o;
+                return n == other.n && (n == 0 || eq(element, other.element));
+            }
+            if (!(o instanceof List))
+                return false;
+
+            int remaining = n;
+            E e = element;
+            Iterator<?> itr = ((List<?>) o).iterator();
+            if (e == null) {
+                while (itr.hasNext() && remaining-- > 0) {
+                    if (itr.next() != null)
+                        return false;
+                }
+            } else {
+                while (itr.hasNext() && remaining-- > 0) {
+                    if (!e.equals(itr.next()))
+                        return false;
+                }
+            }
+            return remaining == 0 && !itr.hasNext();
         }
 
         // Override default methods in Collection

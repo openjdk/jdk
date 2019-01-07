@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * If docRoot performs as documented, the test passes.
  * Make sure that the docRoot tag works with the -bottom option.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestDocRootInlineTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestDocRootInlineTag extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestDocRootInlineTag extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         String uri = "http://www.java.sun.com/j2se/1.4/docs/api";
 
         javadoc("-bottom", "The value of @docRoot is \"{@docRoot}\"",

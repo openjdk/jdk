@@ -171,6 +171,8 @@ inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16) 
 inline void Assembler::cmp(   ConditionRegister f, int l, Register a, Register b) { emit_int32( CMP_OPCODE   | bf(f) | l10(l) | ra(a) | rb(b)); }
 inline void Assembler::cmpli( ConditionRegister f, int l, Register a, int ui16)   { emit_int32( CMPLI_OPCODE | bf(f) | l10(l) | ra(a) | uimm(ui16,16)); }
 inline void Assembler::cmpl(  ConditionRegister f, int l, Register a, Register b) { emit_int32( CMPL_OPCODE  | bf(f) | l10(l) | ra(a) | rb(b)); }
+inline void Assembler::cmprb( ConditionRegister f, int l, Register a, Register b) { emit_int32( CMPRB_OPCODE | bf(f) | l10(l) | ra(a) | rb(b)); }
+inline void Assembler::cmpeqb(ConditionRegister f, Register a, Register b)        { emit_int32( CMPEQB_OPCODE| bf(f) | ra(a)  | rb(b)); }
 
 // extended mnemonics of Compare Instructions
 inline void Assembler::cmpwi( ConditionRegister crx, Register a, int si16)   { Assembler::cmpi( crx, 0, a, si16); }
@@ -371,6 +373,8 @@ inline void Assembler::mfcr( Register d )         { emit_int32(MFCR_OPCODE  | rt
 inline void Assembler::mcrf( ConditionRegister crd, ConditionRegister cra)
                                                       { emit_int32(MCRF_OPCODE | bf(crd) | bfa(cra)); }
 inline void Assembler::mtcr( Register s)          { Assembler::mtcrf(0xff, s); }
+inline void Assembler::setb(Register d, ConditionRegister cra)
+                                                  { emit_int32(SETB_OPCODE | rt(d) | bfa(cra)); }
 
 // Special purpose registers
 // Exception Register
@@ -786,6 +790,12 @@ inline void Assembler::xvadddp( VectorSRegister d, VectorSRegister a, VectorSReg
 inline void Assembler::xvsubdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVSUBDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmulsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmuldp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaddasp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMADDASP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaddadp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMADDADP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmsubasp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMSUBASP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmsubadp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMSUBADP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBASP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBADP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::mtvrd(   VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }

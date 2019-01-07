@@ -174,6 +174,22 @@ inline bool java_lang_Class::is_instance(oop obj) {
   return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
 }
 
+inline bool java_lang_Class::is_primitive(oop java_class) {
+  // should assert:
+  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  bool is_primitive = (java_class->metadata_field(_klass_offset) == NULL);
+
+#ifdef ASSERT
+  if (is_primitive) {
+    Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
+    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
+        "Should be either the T_VOID primitive or a java primitive");
+  }
+#endif
+
+  return is_primitive;
+}
+
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }

@@ -92,7 +92,7 @@
 // access.inline.hpp. The accesses that are allowed through the access.hpp file
 // must be instantiated in access.cpp using the INSTANTIATE_HPP_ACCESS macro.
 
-template <DecoratorSet decorators = INTERNAL_EMPTY>
+template <DecoratorSet decorators = DECORATORS_NONE>
 class Access: public AllStatic {
   // This function asserts that if an access gets passed in a decorator outside
   // of the expected_decorators, then something is wrong. It additionally checks
@@ -272,7 +272,7 @@ public:
   }
 
   static oop resolve(oop obj) {
-    verify_decorators<INTERNAL_EMPTY>();
+    verify_decorators<DECORATORS_NONE>();
     return AccessInternal::resolve<decorators>(obj);
   }
 
@@ -284,21 +284,21 @@ public:
 
 // Helper for performing raw accesses (knows only of memory ordering
 // atomicity decorators as well as compressed oops)
-template <DecoratorSet decorators = INTERNAL_EMPTY>
+template <DecoratorSet decorators = DECORATORS_NONE>
 class RawAccess: public Access<AS_RAW | decorators> {};
 
 // Helper for performing normal accesses on the heap. These accesses
 // may resolve an accessor on a GC barrier set
-template <DecoratorSet decorators = INTERNAL_EMPTY>
+template <DecoratorSet decorators = DECORATORS_NONE>
 class HeapAccess: public Access<IN_HEAP | decorators> {};
 
 // Helper for performing normal accesses in roots. These accesses
 // may resolve an accessor on a GC barrier set
-template <DecoratorSet decorators = INTERNAL_EMPTY>
+template <DecoratorSet decorators = DECORATORS_NONE>
 class NativeAccess: public Access<IN_NATIVE | decorators> {};
 
 // Helper for array access.
-template <DecoratorSet decorators = INTERNAL_EMPTY>
+template <DecoratorSet decorators = DECORATORS_NONE>
 class ArrayAccess: public HeapAccess<IS_ARRAY | decorators> {
   typedef HeapAccess<IS_ARRAY | decorators> AccessT;
 public:

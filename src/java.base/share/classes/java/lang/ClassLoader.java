@@ -1119,7 +1119,7 @@ public abstract class ClassLoader {
 
     // true if the name is null or has the potential to be a valid binary name
     private boolean checkName(String name) {
-        if ((name == null) || (name.length() == 0))
+        if ((name == null) || (name.isEmpty()))
             return true;
         if ((name.indexOf('/') != -1) || (name.charAt(0) == '['))
             return false;
@@ -1864,12 +1864,12 @@ public abstract class ClassLoader {
      * <p> The default system class loader is an implementation-dependent
      * instance of this class.
      *
-     * <p> If the system property "{@code java.system.class.loader}" is defined
-     * when this method is first invoked then the value of that property is
-     * taken to be the name of a class that will be returned as the system
-     * class loader.  The class is loaded using the default system class loader
-     * and must define a public constructor that takes a single parameter of
-     * type {@code ClassLoader} which is used as the delegation parent.  An
+     * <p> If the system property "{@systemProperty java.system.class.loader}"
+     * is defined when this method is first invoked then the value of that
+     * property is taken to be the name of a class that will be returned as the
+     * system class loader. The class is loaded using the default system class
+     * loader and must define a public constructor that takes a single parameter
+     * of type {@code ClassLoader} which is used as the delegation parent. An
      * instance is then created using this constructor with the default system
      * class loader as the parameter.  The resulting class loader is defined
      * to be the system class loader. During construction, the class loader

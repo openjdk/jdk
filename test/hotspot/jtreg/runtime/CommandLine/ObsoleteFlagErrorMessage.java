@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,18 @@ public class ObsoleteFlagErrorMessage {
 
     // Case 1: Newly obsolete flags with extra junk appended should not be treated as newly obsolete (8060449)
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:SafepointSpinBeforeYieldPlusJunk", "-version");
+        "-XX:UseMembarPlusJunk", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Unrecognized VM option 'SafepointSpinBeforeYieldPlusJunk'"); // Must identify bad option.
+    output.shouldContain("Unrecognized VM option 'UseMembarPlusJunk'"); // Must identify bad option.
     output.shouldHaveExitValue(1);
 
     // Case 2: Newly obsolete flags should be recognized as newly obsolete (8073989)
     ProcessBuilder pb2 = ProcessTools.createJavaProcessBuilder(
-        "-XX:+EmitSync", "-version");
+        "-XX:+UseMembar", "-version");
 
     OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
     output2.shouldContain("Ignoring option").shouldContain("support was removed");
-    output2.shouldContain("EmitSync");
+    output2.shouldContain("UseMembar");
   }
 }

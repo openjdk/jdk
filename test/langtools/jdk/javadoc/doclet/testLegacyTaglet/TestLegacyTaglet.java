@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
  * @summary Test to ensure that the refactored version of the standard
  * doclet still works with Taglets that implement the 1.4.0 interface.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester ToDoTaglet UnderlineTaglet Check
+ * @build javadoc.tester.* ToDoTaglet UnderlineTaglet Check
  * @run main TestLegacyTaglet
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestLegacyTaglet extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestLegacyTaglet extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-tagletpath", System.getProperty("test.classes", "."),

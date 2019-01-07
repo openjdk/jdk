@@ -121,7 +121,7 @@ public class RDN {
                  * Plus sign is a separator
                  */
                 String avaString = name.substring(avaOffset, nextPlus);
-                if (avaString.length() == 0) {
+                if (avaString.isEmpty()) {
                     throw new IOException("empty AVA in RDN \"" + name + "\"");
                 }
 
@@ -141,7 +141,7 @@ public class RDN {
 
         // parse last or only AVA
         String avaString = name.substring(avaOffset);
-        if (avaString.length() == 0) {
+        if (avaString.isEmpty()) {
             throw new IOException("empty AVA in RDN \"" + name + "\"");
         }
         AVA ava = new AVA(new StringReader(avaString), keywordMap);
@@ -199,7 +199,7 @@ public class RDN {
                  * Plus sign is a separator
                  */
                 String avaString = name.substring(avaOffset, nextPlus);
-                if (avaString.length() == 0) {
+                if (avaString.isEmpty()) {
                     throw new IOException("empty AVA in RDN \"" + name + "\"");
                 }
 
@@ -217,7 +217,7 @@ public class RDN {
 
         // parse last or only AVA
         String avaString = name.substring(avaOffset);
-        if (avaString.length() == 0) {
+        if (avaString.isEmpty()) {
             throw new IOException("empty AVA in RDN \"" + name + "\"");
         }
         AVA ava = new AVA(new StringReader(avaString), AVA.RFC2253, keywordMap);

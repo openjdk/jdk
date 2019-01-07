@@ -30,11 +30,13 @@
  *           a "link unresolved" warning.
  *           Make sure error message starts with "error -".
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestWarnings
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestWarnings extends JavadocTester {
     public static void main(String... args) throws Exception  {
@@ -43,7 +45,7 @@ public class TestWarnings extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -70,7 +72,7 @@ public class TestWarnings extends JavadocTester {
     }
 
     @Test
-    void testPrivate() {
+    public void testPrivate() {
         javadoc("-d", "out-private",
                 "-private",
                 "-sourcepath", testSrc,
@@ -84,7 +86,7 @@ public class TestWarnings extends JavadocTester {
     }
 
     @Test
-    void testPrivate_html4() {
+    public void testPrivate_html4() {
         javadoc("-d", "out-private-html4",
                 "-html4",
                 "-private",

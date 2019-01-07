@@ -304,7 +304,7 @@ public final class URL implements java.io.Serializable {
      *     or all providers have been exhausted.
      * <li>If the previous step fails to find a protocol handler, the
      *     constructor reads the value of the system property:
-     *     <blockquote>{@code
+     *     <blockquote>{@systemProperty
      *         java.protocol.handler.pkgs
      *     }</blockquote>
      *     If the value of that system property is not {@code null},
@@ -1220,16 +1220,22 @@ public final class URL implements java.io.Serializable {
     private static final URLStreamHandlerFactory defaultFactory = new DefaultFactory();
 
     private static class DefaultFactory implements URLStreamHandlerFactory {
-        private static String PREFIX = "sun.net.www.protocol";
+        private static String PREFIX = "sun.net.www.protocol.";
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
-            String name = PREFIX + "." + protocol + ".Handler";
+            // Avoid using reflection during bootstrap
+            switch (protocol) {
+                case "file":
+                    return new sun.net.www.protocol.file.Handler();
+                case "jar":
+                    return new sun.net.www.protocol.jar.Handler();
+                case "jrt":
+                    return new sun.net.www.protocol.jrt.Handler();
+            }
+            String name = PREFIX + protocol + ".Handler";
             try {
-                @SuppressWarnings("deprecation")
-                Object o = Class.forName(name).newInstance();
+                Object o = Class.forName(name).getDeclaredConstructor().newInstance();
                 return (URLStreamHandler)o;
-            } catch (ClassNotFoundException x) {
-                // ignore
             } catch (Exception e) {
                 // For compatibility, all Exceptions are ignored.
                 // any number of exceptions can get thrown here
@@ -1513,7 +1519,7 @@ public final class URL implements java.io.Serializable {
         String ref = (String)gf.get("ref", null);
         int hashCode = gf.get("hashCode", -1);
         if (authority == null
-                && ((host != null && host.length() > 0) || port != -1)) {
+                && ((host != null && !host.isEmpty()) || port != -1)) {
             if (host == null)
                 host = "";
             authority = (port == -1) ? host : host + ":" + port;
@@ -1560,7 +1566,7 @@ public final class URL implements java.io.Serializable {
 
         // Construct authority part
         if (authority == null
-            && ((host != null && host.length() > 0) || port != -1)) {
+            && ((host != null && !host.isEmpty()) || port != -1)) {
             if (host == null)
                 host = "";
             authority = (port == -1) ? host : host + ":" + port;
@@ -1716,7 +1722,7 @@ final class UrlDeserializedState {
 
         // pre-compute length of StringBuffer
         int len = protocol.length() + 1;
-        if (authority != null && authority.length() > 0)
+        if (authority != null && !authority.isEmpty())
             len += 2 + authority.length();
         if (file != null) {
             len += file.length();
@@ -1726,7 +1732,7 @@ final class UrlDeserializedState {
         StringBuilder result = new StringBuilder(len);
         result.append(protocol);
         result.append(":");
-        if (authority != null && authority.length() > 0) {
+        if (authority != null && !authority.isEmpty()) {
             result.append("//");
             result.append(authority);
         }

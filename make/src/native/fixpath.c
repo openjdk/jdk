@@ -24,6 +24,7 @@
  */
 
 #include <Windows.h>
+#include <stdbool.h>
 #include <io.h>
 #include <stdio.h>
 #include <string.h>
@@ -53,25 +54,16 @@ void report_error(char const * msg)
 }
 
 /*
- * Test if pos points to /cygdrive/_/ where _ can
+ * Test if pos points to /prefix/_/ where _ can
  * be any character.
  */
-int is_cygdrive_here(int pos, char const *in, int len)
+int is_prefix_here(int pos, char const *in, int len, const char* prefix)
 {
-  // Length of /cygdrive/c/ is 12
-  if (pos+12 > len) return 0;
-  if (in[pos+11]=='/' &&
-      in[pos+9]=='/' &&
-      in[pos+8]=='e' &&
-      in[pos+7]=='v' &&
-      in[pos+6]=='i' &&
-      in[pos+5]=='r' &&
-      in[pos+4]=='d' &&
-      in[pos+3]=='g' &&
-      in[pos+2]=='y' &&
-      in[pos+1]=='c' &&
-      in[pos+0]=='/') {
-    return 1;
+  // Length of c/ is 2
+  int prefix_size = strlen(prefix);
+  if (pos+prefix_size+2 > len) return 0;
+  if (in[pos+prefix_size+1]=='/') {
+    return strncmp(in + pos, prefix, prefix_size) == 0;
   }
   return 0;
 }
@@ -93,7 +85,7 @@ char *replace_cygdrive_cygwin(char const *in)
   }
 
   for (i = 0, j = 0; i<len;) {
-    if (is_cygdrive_here(i, in, len)) {
+    if (is_prefix_here(i, in, len, "/cygdrive/")) {
       out[j++] = in[i+10];
       out[j++] = ':';
       i+=11;
@@ -196,7 +188,39 @@ char *replace_cygdrive_msys(char const *in)
   return str;
 }
 
+/*
+ * Replace /mnt/_/ with _:/
+ * Works in place since drive letter is always
+ * shorter than /mnt/
+ */
+char *replace_cygdrive_wsl(char const *in)
+{
+  size_t len = strlen(in);
+  char *out = (char*) malloc(len+1);
+  int i,j;
+
+  if (len < 7) {
+    memmove(out, in, len + 1);
+    return out;
+  }
+
+  for (i = 0, j = 0; i<len;) {
+    if (is_prefix_here(i, in, len, "/mnt/")) {
+      out[j++] = in[i+5];
+      out[j++] = ':';
+      i+=6;
+    } else {
+      out[j] = in[i];
+      i++;
+      j++;
+    }
+  }
+  out[j] = '\0';
+  return out;
+}
+
 char*(*replace_cygdrive)(char const *in) = NULL;
+bool debug_fixpath = false;
 
 char *files_to_delete[1024];
 int num_files_to_delete = 0;
@@ -250,11 +274,11 @@ char *fix_at_file(char const *in)
     append(&buffer, &buflen, &used, block, blocklen);
   }
   buffer[used] = 0;
-  if (getenv("DEBUG_FIXPATH") != NULL) {
+  if (debug_fixpath) {
     fprintf(stderr, "fixpath input from @-file %s: %s\n", &in[1], buffer);
   }
   fixed = replace_cygdrive(buffer);
-  if (getenv("DEBUG_FIXPATH") != NULL) {
+  if (debug_fixpath) {
     fprintf(stderr, "fixpath converted to @-file %s is: %s\n", name, fixed);
   }
   fwrite(fixed, strlen(fixed), 1, atout);
@@ -362,28 +386,36 @@ int main(int argc, char const ** argv)
     DWORD processFlags = 0;
     BOOL processInheritHandles = TRUE;
     BOOL waitForChild = TRUE;
+    char* fixpathPath;
 
-    if (argc<2 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
-        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> [--detach] /cygdrive/c/WINDOWS/notepad.exe [/cygdrive/c/x/test.txt|@/cygdrive/c/x/atfile]\n");
+    debug_fixpath = (getenv("DEBUG_FIXPATH") != NULL);
+
+    if (argc<2 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm' && argv[1][1] != 'w')) {
+        fprintf(stderr, "Usage: fixpath -c|m|w<path@path@...> [--detach] /cygdrive/c/WINDOWS/notepad.exe [/cygdrive/c/x/test.txt|@/cygdrive/c/x/atfile]\n");
         exit(0);
     }
 
-    if (getenv("DEBUG_FIXPATH") != NULL) {
+    if (debug_fixpath) {
       char const * cmdline = GetCommandLine();
       fprintf(stderr, "fixpath input line >%s<\n", strstr(cmdline, argv[1]));
     }
 
     if (argv[1][1] == 'c' && argv[1][2] == '\0') {
-      if (getenv("DEBUG_FIXPATH") != NULL) {
+      if (debug_fixpath) {
         fprintf(stderr, "fixpath using cygwin mode\n");
       }
       replace_cygdrive = replace_cygdrive_cygwin;
     } else if (argv[1][1] == 'm') {
-      if (getenv("DEBUG_FIXPATH") != NULL) {
+      if (debug_fixpath) {
         fprintf(stderr, "fixpath using msys mode, with path list: %s\n", &argv[1][2]);
       }
       setup_msys_path_list(argv[1]);
       replace_cygdrive = replace_cygdrive_msys;
+    } else if (argv[1][1] == 'w') {
+      if (debug_fixpath) {
+        fprintf(stderr, "fixpath using wsl mode, with path list: %s\n", &argv[1][2]);
+      }
+      replace_cygdrive = replace_cygdrive_wsl;
     } else {
       fprintf(stderr, "fixpath Unknown mode: %s\n", argv[1]);
       exit(-1);
@@ -391,7 +423,7 @@ int main(int argc, char const ** argv)
 
     if (argv[2][0] == '-') {
       if (strcmp(argv[2], "--detach") == 0) {
-        if (getenv("DEBUG_FIXPATH") != NULL) {
+        if (debug_fixpath) {
           fprintf(stderr, "fixpath in detached mode\n");
         }
         processFlags |= DETACHED_PROCESS;
@@ -417,7 +449,7 @@ int main(int argc, char const ** argv)
         var[var_len - 1] = '\0';
         strupr(var);
 
-        if (getenv("DEBUG_FIXPATH") != NULL) {
+        if (debug_fixpath) {
           fprintf(stderr, "fixpath setting var >%s< to >%s<\n", var, val);
         }
 
@@ -480,15 +512,15 @@ int main(int argc, char const ** argv)
     }
     *current = '\0';
 
-    if (getenv("DEBUG_FIXPATH") != NULL) {
+    if (debug_fixpath) {
       fprintf(stderr, "fixpath converted line >%s<\n", line);
     }
 
     if (cmd == argc) {
-       if (getenv("DEBUG_FIXPATH") != NULL) {
-         fprintf(stderr, "fixpath no command provided!\n");
-       }
-       exit(0);
+      if (debug_fixpath) {
+        fprintf(stderr, "fixpath no command provided!\n");
+      }
+      exit(0);
     }
 
     ZeroMemory(&si, sizeof(si));
@@ -497,6 +529,23 @@ int main(int argc, char const ** argv)
 
     fflush(stderr);
     fflush(stdout);
+
+    fixpathPath = calloc(32767, sizeof(char));
+    rc = GetEnvironmentVariable("FIXPATH_PATH", fixpathPath, 32767);
+    if (rc) {
+      if (debug_fixpath) {
+        fprintf(stderr, "Setting Path to FIXPATH_PATH: %s\n", fixpathPath);
+      }
+      rc = SetEnvironmentVariable("Path", fixpathPath);
+      if (!rc) {
+        // Could not set Path for some reason.  Try to report why.
+        const int msg_len = 80 + strlen(fixpathPath);
+        char * msg = (char *)alloca(msg_len);
+        _snprintf_s(msg, msg_len, _TRUNCATE, "Could not set environment variable [Path=%s]", fixpathPath);
+        report_error(msg);
+        exit(1);
+      }
+    }
 
     rc = CreateProcess(NULL,
                        line,
@@ -518,7 +567,7 @@ int main(int argc, char const ** argv)
       WaitForSingleObject(pi.hProcess, INFINITE);
       GetExitCodeProcess(pi.hProcess, &exitCode);
 
-      if (getenv("DEBUG_FIXPATH") != NULL) {
+      if (debug_fixpath) {
         for (i=0; i<num_files_to_delete; ++i) {
           fprintf(stderr, "fixpath Not deleting temporary file %s\n",
                   files_to_delete[i]);
@@ -530,13 +579,13 @@ int main(int argc, char const ** argv)
       }
 
       if (exitCode != 0) {
-        if (getenv("DEBUG_FIXPATH") != NULL) {
+        if (debug_fixpath) {
           fprintf(stderr, "fixpath exit code %d\n",
                   exitCode);
         }
       }
     } else {
-      if (getenv("DEBUG_FIXPATH") != NULL) {
+      if (debug_fixpath) {
         fprintf(stderr, "fixpath Not waiting for child process");
       }
     }

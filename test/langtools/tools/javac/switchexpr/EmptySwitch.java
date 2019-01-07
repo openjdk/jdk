@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986
  * @summary Verify than an empty switch expression is rejected.
- * @compile/fail/ref=EmptySwitch.out --enable-preview -source 12 -XDrawDiagnostics EmptySwitch.java
+ * @compile/fail/ref=EmptySwitch.out --enable-preview -source 13 -XDrawDiagnostics EmptySwitch.java
  */
 
 public class EmptySwitch {

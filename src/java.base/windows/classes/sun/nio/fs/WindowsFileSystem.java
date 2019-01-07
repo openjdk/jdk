@@ -218,7 +218,7 @@ class WindowsFileSystem
             StringBuilder sb = new StringBuilder();
             sb.append(first);
             for (String segment: more) {
-                if (segment.length() > 0) {
+                if (!segment.isEmpty()) {
                     if (sb.length() > 0)
                         sb.append('\\');
                     sb.append(segment);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 
 class GenerationSizer : public GenCollectorPolicy {
  private:
-
   // The alignment used for boundary between young gen and old gen
   static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
 
@@ -41,5 +40,9 @@ class GenerationSizer : public GenCollectorPolicy {
   void initialize_alignments();
   void initialize_flags();
   void initialize_size_info();
+
+ public:
+  virtual size_t heap_reserved_size_bytes() const;
+  virtual bool is_hetero_heap() const;
 };
 #endif // SHARE_VM_GC_PARALLEL_GENERATIONSIZER_HPP

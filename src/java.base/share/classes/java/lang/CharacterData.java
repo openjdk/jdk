@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package java.lang;
 abstract class CharacterData {
     abstract int getProperties(int ch);
     abstract int getType(int ch);
+    abstract boolean isDigit(int ch);
+    abstract boolean isLowerCase(int ch);
+    abstract boolean isUpperCase(int ch);
     abstract boolean isWhitespace(int ch);
     abstract boolean isMirrored(int ch);
     abstract boolean isJavaIdentifierStart(int ch);

@@ -1113,7 +1113,7 @@ void LIRGenerator::do_ExceptionObject(ExceptionObject* x) {
   // no moves are created for phi functions at the begin of exception
   // handlers, so assign operands manually here
   for_each_phi_fun(block(), phi,
-                   operand_for_instruction(phi));
+                   if (!phi->is_illegal()) { operand_for_instruction(phi); });
 
   LIR_Opr thread_reg = getThreadPointer();
   __ move_wide(new LIR_Address(thread_reg, in_bytes(JavaThread::exception_oop_offset()), T_OBJECT),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 // A CALLBACK_FUNC and LOOKUP_FUNC needs to be provided for get and insert.
 
 class Thread;
+class Mutex;
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
 class ConcurrentHashTable : public CHeapObj<F> {

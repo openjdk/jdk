@@ -25,11 +25,13 @@
  * @test
  * @bug 8073100 8182765 8196202
  * @summary ensure the hidden tag works as intended
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHiddenTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHiddenTag extends JavadocTester {
 

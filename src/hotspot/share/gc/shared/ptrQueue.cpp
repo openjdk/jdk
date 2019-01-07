@@ -54,7 +54,7 @@ void PtrQueue::flush_impl() {
       // No work to do.
       qset()->deallocate_buffer(node);
     } else {
-      qset()->enqueue_complete_buffer(node);
+      qset()->enqueue_completed_buffer(node);
     }
     _buf = NULL;
     set_index(0);
@@ -165,11 +165,11 @@ PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _completed_buffers_tail(NULL),
   _n_completed_buffers(0),
   _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
-  _process_completed(false),
-  _all_active(false),
+  _process_completed_buffers(false),
   _notify_when_complete(notify_when_complete),
   _max_completed_buffers(MaxCompletedBuffersUnlimited),
-  _completed_buffers_padding(0)
+  _completed_buffers_padding(0),
+  _all_active(false)
 {}
 
 PtrQueueSet::~PtrQueueSet() {
@@ -211,11 +211,11 @@ void PtrQueue::handle_zero_index() {
       BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
       _buf = NULL;         // clear shared _buf field
 
-      qset()->enqueue_complete_buffer(node);
+      qset()->enqueue_completed_buffer(node);
       assert(_buf == NULL, "multiple enqueuers appear to be racing");
     } else {
       BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-      if (qset()->process_or_enqueue_complete_buffer(node)) {
+      if (qset()->process_or_enqueue_completed_buffer(node)) {
         // Recycle the buffer. No allocation.
         assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
         assert(capacity() == qset()->buffer_size(), "invariant");
@@ -231,7 +231,7 @@ void PtrQueue::handle_zero_index() {
   reset();
 }
 
-bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
+bool PtrQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) {
   if (Thread::current()->is_Java_thread()) {
     // If the number of buffers exceeds the limit, make this Java
     // thread do the processing itself.  We don't lock to access
@@ -246,11 +246,11 @@ bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
     }
   }
   // The buffer will be enqueued. The caller will have to get a new one.
-  enqueue_complete_buffer(node);
+  enqueue_completed_buffer(node);
   return false;
 }
 
-void PtrQueueSet::enqueue_complete_buffer(BufferNode* cbn) {
+void PtrQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   cbn->set_next(NULL);
   if (_completed_buffers_tail == NULL) {
@@ -263,35 +263,72 @@ void PtrQueueSet::enqueue_complete_buffer(BufferNode* cbn) {
   }
   _n_completed_buffers++;
 
-  if (!_process_completed &&
+  if (!_process_completed_buffers &&
       (_n_completed_buffers > _process_completed_buffers_threshold)) {
-    _process_completed = true;
+    _process_completed_buffers = true;
     if (_notify_when_complete) {
       _cbl_mon->notify();
     }
   }
-  DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
+  assert_completed_buffers_list_len_correct_locked();
 }
 
-size_t PtrQueueSet::completed_buffers_list_length() {
-  size_t n = 0;
-  BufferNode* cbn = _completed_buffers_head;
-  while (cbn != NULL) {
-    n++;
-    cbn = cbn->next();
-  }
-  return n;
-}
-
-void PtrQueueSet::assert_completed_buffer_list_len_correct() {
+BufferNode* PtrQueueSet::get_completed_buffer(size_t stop_at) {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  assert_completed_buffer_list_len_correct_locked();
+
+  if (_n_completed_buffers <= stop_at) {
+    return NULL;
+  }
+
+  assert(_n_completed_buffers > 0, "invariant");
+  assert(_completed_buffers_head != NULL, "invariant");
+  assert(_completed_buffers_tail != NULL, "invariant");
+
+  BufferNode* bn = _completed_buffers_head;
+  _n_completed_buffers--;
+  _completed_buffers_head = bn->next();
+  if (_completed_buffers_head == NULL) {
+    assert(_n_completed_buffers == 0, "invariant");
+    _completed_buffers_tail = NULL;
+    _process_completed_buffers = false;
+  }
+  assert_completed_buffers_list_len_correct_locked();
+  bn->set_next(NULL);
+  return bn;
 }
 
-void PtrQueueSet::assert_completed_buffer_list_len_correct_locked() {
-  guarantee(completed_buffers_list_length() ==  _n_completed_buffers,
-            "Completed buffer length is wrong.");
+void PtrQueueSet::abandon_completed_buffers() {
+  BufferNode* buffers_to_delete = NULL;
+  {
+    MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+    buffers_to_delete = _completed_buffers_head;
+    _completed_buffers_head = NULL;
+    _completed_buffers_tail = NULL;
+    _n_completed_buffers = 0;
+    _process_completed_buffers = false;
+  }
+  while (buffers_to_delete != NULL) {
+    BufferNode* bn = buffers_to_delete;
+    buffers_to_delete = bn->next();
+    bn->set_next(NULL);
+    deallocate_buffer(bn);
+  }
 }
+
+#ifdef ASSERT
+
+void PtrQueueSet::assert_completed_buffers_list_len_correct_locked() {
+  assert_lock_strong(_cbl_mon);
+  size_t n = 0;
+  for (BufferNode* bn = _completed_buffers_head; bn != NULL; bn = bn->next()) {
+    ++n;
+  }
+  assert(n == _n_completed_buffers,
+         "Completed buffer length is wrong: counted: " SIZE_FORMAT
+         ", expected: " SIZE_FORMAT, n, _n_completed_buffers);
+}
+
+#endif // ASSERT
 
 // Merge lists of buffers. Notify the processing threads.
 // The source queue is emptied as a result. The queues
@@ -315,16 +352,18 @@ void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
   src->_n_completed_buffers = 0;
   src->_completed_buffers_head = NULL;
   src->_completed_buffers_tail = NULL;
+  src->_process_completed_buffers = false;
 
   assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
          _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
          "Sanity");
+  assert_completed_buffers_list_len_correct_locked();
 }
 
 void PtrQueueSet::notify_if_necessary() {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (_n_completed_buffers > _process_completed_buffers_threshold) {
-    _process_completed = true;
+    _process_completed_buffers = true;
     if (_notify_when_complete)
       _cbl_mon->notify();
   }

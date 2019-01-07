@@ -77,7 +77,7 @@ public class SdpProvider extends NetHooks.Provider {
         String logfile = props.getProperty("com.sun.sdp.debug");
         if (logfile != null) {
             out = System.out;
-            if (logfile.length() > 0) {
+            if (!logfile.isEmpty()) {
                 try {
                     out = new PrintStream(logfile);
                 } catch (IOException ignore) { }
@@ -167,9 +167,9 @@ public class SdpProvider extends NetHooks.Provider {
                 result[1] = all ? MAX_PORT : result[0];
             } else {
                 String low = s.substring(0, pos);
-                if (low.length() == 0) low = "*";
+                if (low.isEmpty()) low = "*";
                 String high = s.substring(pos+1);
-                if (high.length() == 0) high = "*";
+                if (high.isEmpty()) high = "*";
                 result[0] = low.equals("*") ? 0 : Integer.parseInt(low);
                 result[1] = high.equals("*") ? MAX_PORT : Integer.parseInt(high);
             }
@@ -199,7 +199,7 @@ public class SdpProvider extends NetHooks.Provider {
                 String line = scanner.nextLine().trim();
 
                 // skip blank lines and comments
-                if (line.length() == 0 || line.charAt(0) == '#')
+                if (line.isEmpty() || line.charAt(0) == '#')
                     continue;
 
                 // must have 3 fields

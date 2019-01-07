@@ -37,11 +37,13 @@
  *           Make sure when no modifier appear in the class signature, the
  *           signature is displayed correctly without extra space at the beginning.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestPrivateClasses
  */
+import javadoc.tester.JavadocTester;
+
 public class TestPrivateClasses extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -50,7 +52,7 @@ public class TestPrivateClasses extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg", "pkg2");
@@ -139,7 +141,7 @@ public class TestPrivateClasses extends JavadocTester {
     }
 
     @Test
-    void testDefault_html4() {
+    public void testDefault_html4() {
         javadoc("-d", "out-default-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -175,7 +177,7 @@ public class TestPrivateClasses extends JavadocTester {
     }
 
     @Test
-    void testPrivate() {
+    public void testPrivate() {
         javadoc("-d", "out-private",
                 "-sourcepath", testSrc,
                 "-private",
@@ -269,7 +271,7 @@ public class TestPrivateClasses extends JavadocTester {
     }
 
     @Test
-    void testPrivate_html4() {
+    public void testPrivate_html4() {
         javadoc("-d", "out-private-html4",
                 "-html4",
                 "-sourcepath", testSrc,

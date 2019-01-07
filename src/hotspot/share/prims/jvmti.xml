@@ -13595,7 +13595,7 @@ myInit() {
   </event>
 
   <event label="Sampled Object Allocation"
-    id="SampledObjectAlloc" const="JVMTI_EVENT_SAMPLED_OBJECT_ALLOC" num="86" since="11">
+    id="SampledObjectAlloc" const="JVMTI_EVENT_SAMPLED_OBJECT_ALLOC" filtered="thread" num="86" since="11">
     <description>
       Sent when an allocated object is sampled.
       By default, the sampling interval is set to 512KB. The sampling is semi-random to avoid

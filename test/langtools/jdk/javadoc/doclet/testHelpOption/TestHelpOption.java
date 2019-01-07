@@ -26,14 +26,16 @@
  * @bug      4934778 4777599 6553182 8146427 8146475 8175055 8185371
  * @summary  Make sure that --help, -helpfile and -nohelp options work correctly.
  * @author   jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestHelpOption
+ * @build    javadoc.tester.* TestHelpOption
  * @run main TestHelpOption
  */
 
 import java.util.*;
 import java.util.stream.*;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHelpOption extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testLineLengths() {
+    public void testLineLengths() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "-X",
@@ -63,7 +65,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testWithOption() {
+    public void testWithOption() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "--help",
@@ -74,7 +76,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testWithoutOption() {
+    public void testWithoutOption() {
         javadoc("-d", "out2",
                 "-sourcepath", testSrc,
                 testSrc("Sample.java"));
@@ -82,7 +84,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testNohelpOption() {
+    public void testNohelpOption() {
         javadoc("-d", "out3",
                 "-sourcepath", testSrc,
                 "-nohelp",
@@ -92,7 +94,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testHelpfileOption() {
+    public void testHelpfileOption() {
         javadoc("-d", "out4",
                 "-sourcepath", testSrc,
                 "-helpfile", testSrc("test-help.html"),
@@ -105,7 +107,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testHelpfileReuseOption() {
+    public void testHelpfileReuseOption() {
         javadoc("-d", "out5",
                 "-sourcepath", testSrc,
                 "-helpfile", testSrc("test-help.html"),
@@ -115,7 +117,7 @@ public class TestHelpOption extends JavadocTester {
     }
 
     @Test
-    void testHelpfileNohelpConflict() {
+    public void testHelpfileNohelpConflict() {
         javadoc("-d", "out6",
                 "-sourcepath", testSrc,
                 "-helpfile", testSrc("test-help.html"),

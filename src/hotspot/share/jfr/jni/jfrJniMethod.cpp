@@ -33,7 +33,7 @@
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
-#include "jfr/recorder/repository/jfrChunkSizeNotifier.hpp"
+#include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -114,7 +114,7 @@ NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jobject jvm, jlong event_type_i
 NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_file_notification(JNIEnv* env, jobject jvm, jlong threshold))
-  JfrChunkSizeNotifier::set_chunk_size_threshold((size_t)threshold);
+  JfrChunkRotation::set_threshold((intptr_t)threshold);
 NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads))
@@ -173,6 +173,9 @@ NO_TRANSITION(jboolean, jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_typ
   return JfrEventSetting::set_cutoff(event_type_id, cutoff_ticks) ? JNI_TRUE : JNI_FALSE;
 NO_TRANSITION_END
 
+NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jobject jvm))
+  return JfrChunkRotation::should_rotate() ? JNI_TRUE : JNI_FALSE;
+NO_TRANSITION_END
 
 /*
  * JVM_ENTRY_NO_ENV entries

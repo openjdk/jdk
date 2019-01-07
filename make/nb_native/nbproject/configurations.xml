@@ -2538,7 +2538,6 @@
               <in>arguments.cpp</in>
               <in>arguments.hpp</in>
               <in>arguments_ext.cpp</in>
-              <in>arguments_ext.hpp</in>
               <in>atomic.hpp</in>
               <in>basicLock.cpp</in>
               <in>basicLock.hpp</in>
@@ -2702,7 +2701,6 @@
               <in>diagnosticArgument.hpp</in>
               <in>diagnosticCommand.cpp</in>
               <in>diagnosticCommand.hpp</in>
-              <in>diagnosticCommand_ext.hpp</in>
               <in>diagnosticFramework.cpp</in>
               <in>diagnosticFramework.hpp</in>
               <in>dtraceAttacher.cpp</in>
@@ -13687,11 +13685,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/runtime/arguments_ext.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../src/hotspot/share/runtime/atomic.hpp"
             ex="false"
             tool="3"
@@ -14493,11 +14486,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/services/diagnosticCommand.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/services/diagnosticCommand_ext.hpp"
             ex="false"
             tool="3"
             flavor2="0">
@@ -27454,11 +27442,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/runtime/arguments_ext.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../src/hotspot/share/runtime/atomic.hpp"
             ex="false"
             tool="3"
@@ -28260,11 +28243,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/services/diagnosticCommand.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/services/diagnosticCommand_ext.hpp"
             ex="false"
             tool="3"
             flavor2="0">

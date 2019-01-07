@@ -135,7 +135,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
-        if (algorithm == null || algorithm.length() == 0) {
+        if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
@@ -188,7 +188,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         // check the signature algorithm with parameters
-        if (algorithm != null && algorithm.length() != 0) {
+        if (algorithm != null && !algorithm.isEmpty()) {
             if (!permits(primitives, algorithm, parameters)) {
                 return false;
             }

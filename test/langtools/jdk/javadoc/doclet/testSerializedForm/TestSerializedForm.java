@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,16 @@
  * in the serialized form page.
  * Make sure see tags work in serialized form.
  * @author jamieh
- * @library ../lib/
+ * @library ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @build TestSerializedForm
  * @run main TestSerializedForm
  */
 
 import java.io.*;
+
+import javadoc.tester.JavadocTester;
 
 public class TestSerializedForm extends JavadocTester {
     public static void main(String... args) throws Exception {
@@ -52,7 +54,7 @@ public class TestSerializedForm extends JavadocTester {
 
     // @ignore 8146022
     // @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default", "-serialwarn", "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 testSrc("SerializedForm.java"), testSrc("ExternalizedForm.java"), "pkg1");
@@ -100,7 +102,7 @@ public class TestSerializedForm extends JavadocTester {
     }
 
     @Test
-    void testPrivate() {
+    public void testPrivate() {
         javadoc("-private",
                 "-d", "out-private",
                 "-sourcepath", testSrc,
@@ -142,7 +144,7 @@ public class TestSerializedForm extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-private",
                 "-d", "out-2",
                 "-sourcepath", testSrc,

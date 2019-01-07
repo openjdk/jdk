@@ -28,11 +28,13 @@
  *           is present for three sets of options: (1) -header,
  *           (2) -packagesheader, and (3) -header -packagesheader
  * @author   dkramer
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main PackagesHeader
  */
+
+import javadoc.tester.JavadocTester;
 
 public class PackagesHeader extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class PackagesHeader extends JavadocTester {
     }
 
     @Test
-    void testHeader() {
+    public void testHeader() {
         // First test with -header only
         javadoc("-d", "out-header",
                 "-header", "Main Frame Header",
@@ -57,7 +59,7 @@ public class PackagesHeader extends JavadocTester {
     }
 
     @Test
-    void testPackagesHeader() {
+    public void testPackagesHeader() {
         // Second test with -packagesheader only
         javadoc("-d", "out-packages-header",
                 "-packagesheader", "Packages Frame Header",
@@ -73,7 +75,7 @@ public class PackagesHeader extends JavadocTester {
     }
 
     @Test
-    void testBothHeaders() {
+    public void testBothHeaders() {
         // Third test with both -packagesheader and -header
         javadoc("-d", "out-both",
                 "-packagesheader", "Packages Frame Header",

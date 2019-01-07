@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,14 +73,18 @@ public class Basic {
             private PathMatcher matcher =
                 dir.getFileSystem().getPathMatcher("glob:f*");
             public boolean accept(Path file) {
-                return matcher.matches(file);
+                return matcher.matches(file.getFileName());
             }
         };
+
+        found = false;
         try (DirectoryStream<Path> ds = newDirectoryStream(dir, filter)) {
             for (Path entry: ds) {
-                if (!entry.getFileName().equals(foo))
-                    throw new RuntimeException("entry not expected");
+                if (entry.getFileName().equals(foo))
+                   found = true;
             }
+            if (!found)
+                throw new RuntimeException(String.format("Error: entry: %s was not found", foo));
         }
 
         // check filtering: z* should not match any files
@@ -88,7 +92,7 @@ public class Basic {
             private PathMatcher matcher =
                 dir.getFileSystem().getPathMatcher("glob:z*");
             public boolean accept(Path file) {
-                return matcher.matches(file);
+                return matcher.matches(file.getFileName());
             }
         };
         try (DirectoryStream<Path> ds = newDirectoryStream(dir, filter)) {

@@ -212,7 +212,7 @@ public class LanguageTag {
         if (!itr.isDone() && !sts.isError()) {
             String s = itr.current();
             sts.errorIndex = itr.currentStart();
-            if (s.length() == 0) {
+            if (s.isEmpty()) {
                 sts.errorMsg = "Empty subtag";
             } else {
                 sts.errorMsg = "Invalid subtag: " + s;
@@ -454,7 +454,7 @@ public class LanguageTag {
             variant = "";
         }
 
-        if (variant.length() > 0) {
+        if (!variant.isEmpty()) {
             List<String> variants = null;
             StringTokenIterator varitr = new StringTokenIterator(variant, BaseLocale.SEP);
             while (!varitr.isDone()) {
@@ -527,7 +527,7 @@ public class LanguageTag {
             tag.privateuse = privateuse;
         }
 
-        if (tag.language.length() == 0 && (hasSubtag || privateuse == null)) {
+        if (tag.language.isEmpty() && (hasSubtag || privateuse == null)) {
             // use lang "und" when 1) no language is available AND
             // 2) any of other subtags other than private use are available or
             // no private use tag is available
@@ -712,18 +712,18 @@ public class LanguageTag {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        if (language.length() > 0) {
+        if (!language.isEmpty()) {
             sb.append(language);
 
             for (String extlang : extlangs) {
                 sb.append(SEP).append(extlang);
             }
 
-            if (script.length() > 0) {
+            if (!script.isEmpty()) {
                 sb.append(SEP).append(script);
             }
 
-            if (region.length() > 0) {
+            if (!region.isEmpty()) {
                 sb.append(SEP).append(region);
             }
 
@@ -735,7 +735,7 @@ public class LanguageTag {
                 sb.append(SEP).append(extension);
             }
         }
-        if (privateuse.length() > 0) {
+        if (!privateuse.isEmpty()) {
             if (sb.length() > 0) {
                 sb.append(SEP);
             }

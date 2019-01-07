@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,9 @@ typedef bool (*thread_info_callback)(struct ps_prochandle* ph, pthread_t pid, lw
 
 // reads thread info using libthread_db and calls above callback for each thread
 bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb);
+
+// deletes a thread from the thread list
+void delete_thread_info(struct ps_prochandle* ph, thread_info* thr);
 
 // adds a new shared object to lib list, returns NULL on failure
 lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base);

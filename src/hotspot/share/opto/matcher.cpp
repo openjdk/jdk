@@ -2352,6 +2352,15 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_MulAddS2I: {
+      Node* pair1 = new BinaryNode(n->in(1), n->in(2));
+      Node* pair2 = new BinaryNode(n->in(3), n->in(4));
+      n->set_req(1, pair1);
+      n->set_req(2, pair2);
+      n->del_req(4);
+      n->del_req(3);
+      break;
+    }
     default:
       break;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8008768
  * @summary Using {@inheritDoc} in simple tag defined via -tag fails
  * @author Mike Duigou
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main DocTest
  */
 
@@ -39,6 +39,8 @@
  * @implSpec DocTest implementation spec.
  * @implNote DocTest implementation note.
  */
+import javadoc.tester.JavadocTester;
+
 public class DocTest extends JavadocTester {
     public static void main(String... args) throws Exception {
         DocTest tester = new DocTest();
@@ -46,7 +48,7 @@ public class DocTest extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-verbose",
                 "-d", "DocTest",
                 "-tag", "apiNote:optcm:<em>API Note</em>",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,13 @@
 #define  trueInTiered false
 #define falseInTiered true
 #endif
+
+// Default and minimum StringTable and SymbolTable size values
+// Must be powers of 2
+const size_t defaultStringTableSize = NOT_LP64(1024) LP64_ONLY(65536);
+const size_t minimumStringTableSize = 128;
+const size_t defaultSymbolTableSize = 32768; // 2^15
+const size_t minimumSymbolTableSize = 1024;
 
 #include CPU_HEADER(globals)
 #include OS_HEADER(globals)
@@ -500,6 +507,13 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   diagnostic(bool, AbortVMOnSafepointTimeout, false,                        \
           "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
+                                                                            \
+  diagnostic(bool, AbortVMOnVMOperationTimeout, false,                      \
+          "Abort upon failure to complete VM operation promptly")           \
+                                                                            \
+  diagnostic(intx, AbortVMOnVMOperationTimeoutDelay, 1000,                  \
+          "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
+          range(0, max_intx)                                                \
                                                                             \
   /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
   /* typically, at most a few retries are needed                    */      \
@@ -2303,11 +2317,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
-  /* New JDK 1.4 reflection implementation */                               \
-                                                                            \
-  develop(intx, FastSuperclassLimit, 8,                                     \
-          "Depth of hardwired instanceof accelerator array")                \
-                                                                            \
   /* Properties for Java libraries  */                                      \
                                                                             \
   product(uint64_t, MaxDirectMemorySize, 0,                                 \
@@ -2567,6 +2576,12 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directoy where a temporary file will be created "    \
           "to use as the backing store for Java Heap.")                     \
+                                                                            \
+  experimental(ccstr, AllocateOldGenAt, NULL,                               \
+          "Path to the directoy where a temporary file will be "            \
+          "created to use as the backing store for old generation."         \
+          "File of size Xmx is pre-allocated for performance reason, so"    \
+          "we need that much space available")                              \
                                                                             \
   develop(bool, VerifyMetaspace, false,                                     \
           "Verify metaspace on chunk movements.")                           \

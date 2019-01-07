@@ -174,8 +174,8 @@ void JfrNetworkUtilization::send_events() {
         event.set_starttime(cur_time);
         event.set_endtime(cur_time);
         event.set_networkInterface(entry.id);
-        event.set_readRate(read_rate);
-        event.set_writeRate(write_rate);
+        event.set_readRate(8 * read_rate);
+        event.set_writeRate(8 * write_rate);
         event.commit();
       }
       // update existing entry with new values

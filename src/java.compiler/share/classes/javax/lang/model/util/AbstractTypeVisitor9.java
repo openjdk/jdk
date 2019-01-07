@@ -33,7 +33,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A skeletal visitor of types with default behavior appropriate for
  * source versions {@link SourceVersion#RELEASE_9 RELEASE_9} through
- * {@link SourceVersion#RELEASE_12 RELEASE_12}.
+ * {@link SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
  * by this class may have methods added to it in the future to
@@ -63,7 +63,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractTypeVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public abstract class AbstractTypeVisitor9<R, P> extends AbstractTypeVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses to call.

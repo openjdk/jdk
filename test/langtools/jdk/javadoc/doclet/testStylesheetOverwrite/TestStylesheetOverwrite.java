@@ -24,9 +24,9 @@
  * @test
  * @bug      8196913
  * @summary  javadoc does not (over)write stylesheet.css
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester toolbox.ToolBox builder.ClassBuilder
+ * @build    javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
  * @run main TestStylesheetOverwrite
  */
 
@@ -37,6 +37,8 @@ import java.util.List;
 
 import builder.ClassBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestStylesheetOverwrite extends JavadocTester {
     final ToolBox tb;
@@ -51,7 +53,7 @@ public class TestStylesheetOverwrite extends JavadocTester {
     }
 
     @Test
-    void testStylesheetFile(Path base) throws Exception {
+    public void testStylesheetFile(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(srcDir);
 

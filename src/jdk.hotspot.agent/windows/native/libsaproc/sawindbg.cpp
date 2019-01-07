@@ -722,19 +722,25 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebugger
 
   IDebugDataSpaces* ptrIDebugDataSpaces = (IDebugDataSpaces*) env->GetLongField(obj,
                                                        ptrIDebugDataSpaces_ID);
-  CHECK_EXCEPTION_(0);
+  if (env->ExceptionOccurred()) {
+     env->ReleaseByteArrayElements(byteArray, bytePtr, JNI_ABORT);
+     return 0;
+  }
 
   ULONG bytesRead;
   if (ptrIDebugDataSpaces->ReadVirtual((ULONG64) address, (PVOID) bytePtr,
                                   (ULONG)numBytes, &bytesRead) != S_OK) {
-     THROW_NEW_DEBUGGER_EXCEPTION_("Windbg Error: ReadVirtual failed!", 0);
-  }
-
-  if (bytesRead != numBytes) {
+     env->ReleaseByteArrayElements(byteArray, bytePtr, JNI_ABORT);
+     throwNewDebuggerException(env, "Windbg Error: ReadVirtual failed!");
      return 0;
   }
 
+  if (bytesRead != numBytes) {
+     env->ReleaseByteArrayElements(byteArray, bytePtr, JNI_ABORT);
+     return 0;
+  }
   env->ReleaseByteArrayElements(byteArray, bytePtr, 0);
+
   CHECK_EXCEPTION_(0);
 
   return byteArray;

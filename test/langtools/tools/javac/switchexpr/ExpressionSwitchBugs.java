@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986 8214114 8214529
  * @summary Verify various corner cases with nested switch expressions.
- * @compile --enable-preview -source 12 ExpressionSwitchBugs.java
+ * @compile --enable-preview -source 13 ExpressionSwitchBugs.java
  * @run main/othervm --enable-preview ExpressionSwitchBugs
  */
 

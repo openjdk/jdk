@@ -311,10 +311,21 @@
           "perform a concurrent GC as periodic GC, otherwise use a STW "    \
           "Full GC.")                                                       \
                                                                             \
-  manageable(uintx, G1PeriodicGCSystemLoadThreshold, 0,                     \
-          "Maximum recent system wide system load as returned by the 1m "   \
-          "value of getloadavg() at which G1 triggers a periodic GC. A "    \
-          "load above this value cancels a given periodic GC. A value of "  \
-          "zero disables this check.")                                      \
+  manageable(double, G1PeriodicGCSystemLoadThreshold, 0.0,                  \
+          "Maximum recent system wide load as returned by the 1m value "    \
+          "of getloadavg() at which G1 triggers a periodic GC. A load "     \
+          "above this value cancels a given periodic GC. A value of zero "  \
+          "disables this check.")                                           \
+          range(0.0, (double)max_uintx)                                     \
+                                                                            \
+  experimental(uintx, G1YoungExpansionBufferPercent, 10,                    \
+               "When heterogenous heap is enabled by AllocateOldGenAt "     \
+               "option, after every GC, young gen is re-sized which "       \
+               "involves system calls to commit/uncommit memory. To "       \
+               "reduce these calls, we keep a buffer of extra regions to "  \
+               "absorb small changes in young gen length. This flag takes " \
+               "the buffer size as an percentage of young gen length")      \
+               range(0, 100)                                                \
+
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP

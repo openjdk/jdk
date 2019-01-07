@@ -112,13 +112,13 @@ public interface ClassDesc
      *
      * A field type descriptor string for a non-array type is either
      * a one-letter code corresponding to a primitive type
-     * ({@code J,I,C,S,B,D,F,Z,V}), or the letter {@code L}, followed
-     * by the fully qualified binary name of a class, followed by {@code ;}.
-     * A field type descriptor for an array type is the character {@code [}
+     * ({@code "J", "I", "C", "S", "B", "D", "F", "Z", "V"}), or the letter {@code "L"}, followed
+     * by the fully qualified binary name of a class, followed by {@code ";"}.
+     * A field type descriptor for an array type is the character {@code "["}
      * followed by the field descriptor for the component type.  Examples of
-     * valid type descriptor strings include {@code Ljava/lang/String;}, {@code I},
-     * {@code [I}, {@code V}, {@code [Ljava/lang/String;}, etc.
-     * for more detail.
+     * valid type descriptor strings include {@code "Ljava/lang/String;"}, {@code "I"},
+     * {@code "[I"}, {@code "V"}, {@code "[Ljava/lang/String;"}, etc.
+     * See JVMS 4.3.2 ("Field Descriptors") for more detail.
      *
      * @param descriptor a field descriptor string
      * @return a {@linkplain ClassDesc} describing the desired class
@@ -126,9 +126,15 @@ public interface ClassDesc
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
      * @jvms 4.3.2 Field Descriptors
+     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     static ClassDesc ofDescriptor(String descriptor) {
         requireNonNull(descriptor);
+        int depth = ConstantUtils.arrayDepth(descriptor);
+        if (depth > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+            throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
+                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+        }
         return (descriptor.length() == 1)
                ? new PrimitiveClassDescImpl(descriptor)
                : new ReferenceClassDescImpl(descriptor);
@@ -139,8 +145,15 @@ public interface ClassDesc
      * is described by this {@linkplain ClassDesc}.
      *
      * @return a {@linkplain ClassDesc} describing the array type
+     * @throws IllegalStateException if the resulting {@linkplain ClassDesc} would have an array rank of greater than 255
+     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType() {
+        int depth = ConstantUtils.arrayDepth(descriptorString());
+        if (depth >= ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+            throw new IllegalStateException(String.format("Cannot create an array type descriptor with more than %d dimensions",
+                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+        }
         return arrayType(1);
     }
 
@@ -150,17 +163,26 @@ public interface ClassDesc
      *
      * @param rank the rank of the array
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalArgumentException if the rank is zero or negative
+     * @throws IllegalArgumentException if the rank is less than zero or if the rank of the resulting array type is
+     * greater than 255
+     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
-        if (rank <= 0)
-            throw new IllegalArgumentException("rank: " + rank);
+        int currentDepth = ConstantUtils.arrayDepth(descriptorString());
+        if (rank <= 0 || currentDepth + rank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS)
+            throw new IllegalArgumentException("rank: " + currentDepth + rank);
         return ClassDesc.ofDescriptor("[".repeat(rank) + descriptorString());
     }
 
     /**
      * Returns a {@linkplain ClassDesc} for a nested class of the class or
      * interface type described by this {@linkplain ClassDesc}.
+     *
+     * @apiNote
+     *
+     * Example: If descriptor {@code d} describes the class {@code java.util.Map}, a
+     * descriptor for the class {@code java.util.Map.Entry} could be obtained
+     * by {@code d.nested("Entry")}.
      *
      * @param nestedName the unqualified name of the nested class
      * @return a {@linkplain ClassDesc} describing the nested class

@@ -25,12 +25,12 @@
  * @test
  * @bug 8205593
  * @summary Javadoc -link makes broken links if module name matches package name
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestLinkOptionWithModule
  */
 
@@ -42,6 +42,8 @@ import builder.ClassBuilder.*;
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
 
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinkOptionWithModule extends JavadocTester {
 
@@ -60,7 +62,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
     }
 
     @Test
-    void testModuleLinkedToModule(Path base) throws Exception {
+    public void testModuleLinkedToModule(Path base) throws Exception {
         Path out1 = base.resolve("out1a"), out2 = base.resolve("out1b");
 
         javadoc("-d", out1.toString(),
@@ -79,7 +81,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
     }
 
     @Test
-    void testPackageLinkedToPackage(Path base) throws Exception {
+    public void testPackageLinkedToPackage(Path base) throws Exception {
         Path out1 = base.resolve("out2a"), out2 = base.resolve("out2b");
 
         javadoc("-d", out1.toString(),
@@ -98,7 +100,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
     }
 
     @Test
-    void testModuleLinkedToPackage(Path base) throws Exception {
+    public void testModuleLinkedToPackage(Path base) throws Exception {
         Path out1 = base.resolve("out3a"), out2 = base.resolve("out3b");
 
         javadoc("-d", out1.toString(),
@@ -117,7 +119,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
     }
 
     @Test
-    void testPackageLinkedToModule(Path base) throws Exception {
+    public void testPackageLinkedToModule(Path base) throws Exception {
         Path out1 = base.resolve("out4a"), out2 = base.resolve("out4b");
 
         javadoc("-d", out1.toString(),

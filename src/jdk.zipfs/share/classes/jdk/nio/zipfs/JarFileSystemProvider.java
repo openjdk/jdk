@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,13 @@
 
 package jdk.nio.zipfs;
 
-import java.nio.file.*;
-import java.nio.file.spi.*;
-import java.nio.file.attribute.*;
-import java.nio.file.spi.FileSystemProvider;
-
 import java.net.URI;
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.channels.FileChannel;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-class JarFileSystemProvider extends ZipFileSystemProvider
-{
+class JarFileSystemProvider extends ZipFileSystemProvider {
 
     @Override
     public String getScheme() {

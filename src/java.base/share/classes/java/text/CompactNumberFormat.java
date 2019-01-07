@@ -799,7 +799,7 @@ public final class CompactNumberFormat extends NumberFormat {
      */
     private void append(StringBuffer result, String string,
             FieldDelegate delegate, List<FieldPosition> positions) {
-        if (string.length() > 0) {
+        if (!string.isEmpty()) {
             int start = result.length();
             result.append(string);
             for (int counter = 0; counter < positions.size(); counter++) {
@@ -1213,7 +1213,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
 
         // If no 0s are specified in a non empty pattern, it is invalid
-        if (pattern.length() != 0 && zeros.isEmpty()) {
+        if (!pattern.isEmpty() && zeros.isEmpty()) {
             throw new IllegalArgumentException("Invalid pattern"
                     + " [" + pattern + "]: all patterns must include digit"
                     + " placement 0s");

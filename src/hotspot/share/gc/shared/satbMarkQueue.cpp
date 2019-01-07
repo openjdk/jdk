@@ -180,17 +180,7 @@ void SATBMarkQueueSet::filter_thread_buffers() {
 }
 
 bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) {
-  BufferNode* nd = NULL;
-  {
-    MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-    if (_completed_buffers_head != NULL) {
-      nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next();
-      if (_completed_buffers_head == NULL) _completed_buffers_tail = NULL;
-      _n_completed_buffers--;
-      if (_n_completed_buffers == 0) _process_completed = false;
-    }
-  }
+  BufferNode* nd = get_completed_buffer();
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     size_t index = nd->index();
@@ -216,7 +206,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   tty->cr();
   tty->print_cr("SATB BUFFERS [%s]", msg);
 
-  BufferNode* nd = _completed_buffers_head;
+  BufferNode* nd = completed_buffers_head();
   int i = 0;
   while (nd != NULL) {
     void** buf = BufferNode::make_buffer_from_node(nd);
@@ -238,24 +228,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 #endif // PRODUCT
 
 void SATBMarkQueueSet::abandon_partial_marking() {
-  BufferNode* buffers_to_delete = NULL;
-  {
-    MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-    while (_completed_buffers_head != NULL) {
-      BufferNode* nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next();
-      nd->set_next(buffers_to_delete);
-      buffers_to_delete = nd;
-    }
-    _completed_buffers_tail = NULL;
-    _n_completed_buffers = 0;
-    DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
-  }
-  while (buffers_to_delete != NULL) {
-    BufferNode* nd = buffers_to_delete;
-    buffers_to_delete = nd->next();
-    deallocate_buffer(nd);
-  }
+  abandon_completed_buffers();
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {

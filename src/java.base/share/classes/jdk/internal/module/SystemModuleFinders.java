@@ -83,7 +83,7 @@ public final class SystemModuleFinders {
         if (value == null) {
             USE_FAST_PATH = true;
         } else {
-            USE_FAST_PATH = (value.length() > 0) && !Boolean.parseBoolean(value);
+            USE_FAST_PATH = !value.isEmpty() && !Boolean.parseBoolean(value);
         }
     }
 

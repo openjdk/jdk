@@ -248,7 +248,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         this.realm = realm;
 
         String urlPath = url.getPath();
-        if (urlPath.length() == 0)
+        if (urlPath.isEmpty())
             this.path = urlPath;
         else {
             this.path = reducePath (urlPath);

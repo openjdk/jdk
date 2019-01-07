@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,21 @@ class CharacterData02 extends CharacterData {
             break;
         }
         return retval;
+    }
+
+    boolean isDigit(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.DECIMAL_DIGIT_NUMBER;
+    }
+
+    boolean isLowerCase(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.LOWERCASE_LETTER;
+    }
+
+    boolean isUpperCase(int ch) {
+        int props = getProperties(ch);
+        return (props & $$maskType) == Character.UPPERCASE_LETTER;
     }
 
     boolean isWhitespace(int ch) {

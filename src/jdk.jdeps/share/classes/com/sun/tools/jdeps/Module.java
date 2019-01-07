@@ -115,7 +115,7 @@ class Module extends Archive {
     public boolean isJDK() {
         String mn = name();
         return isSystem &&
-            (mn.startsWith("java.") || mn.startsWith("jdk.") || mn.startsWith("javafx."));
+            (mn.startsWith("java.") || mn.startsWith("jdk."));
     }
 
     public boolean isSystem() {

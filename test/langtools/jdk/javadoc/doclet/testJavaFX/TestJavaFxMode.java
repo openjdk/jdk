@@ -25,9 +25,9 @@
  * @test
  * @bug 8208531
  * @summary -javafx mode should be on by default when JavaFX is available.
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestJavaFxMode
  */
 
@@ -35,6 +35,8 @@ import toolbox.ToolBox;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javadoc.tester.JavadocTester;
 
 public class TestJavaFxMode extends JavadocTester {
 
@@ -63,7 +65,7 @@ public class TestJavaFxMode extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path src = base.resolve("src");
         createTestClass(src);
         Path outDir = base.resolve("out");

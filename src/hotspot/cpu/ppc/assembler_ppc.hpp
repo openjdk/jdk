@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,6 +299,8 @@ class Assembler : public AbstractAssembler {
     CMPI_OPCODE   = (11u << OPCODE_SHIFT),
     CMPL_OPCODE   = (31u << OPCODE_SHIFT |  32u << 1),
     CMPLI_OPCODE  = (10u << OPCODE_SHIFT),
+    CMPRB_OPCODE  = (31u << OPCODE_SHIFT | 192u << 1),
+    CMPEQB_OPCODE = (31u << OPCODE_SHIFT | 224u << 1),
 
     ISEL_OPCODE   = (31u << OPCODE_SHIFT |  15u << 1),
 
@@ -336,6 +338,7 @@ class Assembler : public AbstractAssembler {
     MTCRF_OPCODE  = (31u << OPCODE_SHIFT | 144u << 1),
     MFCR_OPCODE   = (31u << OPCODE_SHIFT | 19u << 1),
     MCRF_OPCODE   = (19u << OPCODE_SHIFT | 0u << 1),
+    SETB_OPCODE   = (31u << OPCODE_SHIFT | 128u << 1),
 
     // condition register logic instructions
     CRAND_OPCODE  = (19u << OPCODE_SHIFT | 257u << 1),
@@ -536,6 +539,12 @@ class Assembler : public AbstractAssembler {
     XVSUBDP_OPCODE = (60u << OPCODE_SHIFT |  104u << 3),
     XVMULSP_OPCODE = (60u << OPCODE_SHIFT |   80u << 3),
     XVMULDP_OPCODE = (60u << OPCODE_SHIFT |  112u << 3),
+    XVMADDASP_OPCODE=(60u << OPCODE_SHIFT |   65u << 3),
+    XVMADDADP_OPCODE=(60u << OPCODE_SHIFT |   97u << 3),
+    XVMSUBASP_OPCODE=(60u << OPCODE_SHIFT |   81u << 3),
+    XVMSUBADP_OPCODE=(60u << OPCODE_SHIFT |  113u << 3),
+    XVNMSUBASP_OPCODE=(60u<< OPCODE_SHIFT |  209u << 3),
+    XVNMSUBADP_OPCODE=(60u<< OPCODE_SHIFT |  241u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -1076,7 +1085,7 @@ class Assembler : public AbstractAssembler {
   static int frs(      int         x)  { return  opp_u_field(x,             10,  6); }
   static int frt(      int         x)  { return  opp_u_field(x,             10,  6); }
   static int fxm(      int         x)  { return  opp_u_field(x,             19, 12); }
-  static int l10(      int         x)  { return  opp_u_field(x,             10, 10); }
+  static int l10(      int         x)  { assert(x == 0 || x == 1,  "must be 0 or 1"); return opp_u_field(x, 10, 10); }
   static int l14(      int         x)  { return  opp_u_field(x,             15, 14); }
   static int l15(      int         x)  { return  opp_u_field(x,             15, 15); }
   static int l910(     int         x)  { return  opp_u_field(x,             10,  9); }
@@ -1443,6 +1452,10 @@ class Assembler : public AbstractAssembler {
   inline void cmplw( ConditionRegister crx, Register a, Register b);
   inline void cmpld( ConditionRegister crx, Register a, Register b);
 
+  // >= Power9
+  inline void cmprb( ConditionRegister bf, int l, Register a, Register b);
+  inline void cmpeqb(ConditionRegister bf, Register a, Register b);
+
   inline void isel(   Register d, Register a, Register b, int bc);
   // Convenient version which takes: Condition register, Condition code and invert flag. Omit b to keep old value.
   inline void isel(   Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b = noreg);
@@ -1642,6 +1655,8 @@ class Assembler : public AbstractAssembler {
   inline void mfcr( Register d);
   inline void mcrf( ConditionRegister crd, ConditionRegister cra);
   inline void mtcr( Register s);
+  // >= Power9
+  inline void setb( Register d, ConditionRegister cra);
 
   // Special purpose registers
   // Exception Register
@@ -2218,6 +2233,12 @@ class Assembler : public AbstractAssembler {
   inline void xvsubdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmulsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmuldp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaddasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaddadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

@@ -268,6 +268,7 @@ class sp06t001ThreadSleeping extends sp06t001Thread {
 
 class sp06t001ThreadRunningInterrupted extends sp06t001Thread {
     private Object waitingMonitor = new Object();
+    volatile boolean interruptReady = false;
 
     public sp06t001ThreadRunningInterrupted(String name, Log log) {
         super(name, log);
@@ -275,8 +276,9 @@ class sp06t001ThreadRunningInterrupted extends sp06t001Thread {
 
     public void testedMethod(boolean simulate, int i) {
         if (!simulate) {
+            interruptReady = true;
             synchronized (waitingMonitor) {
-                // wait on watingMonitor until interrupted
+                // wait on waitingMonitor until interrupted
                 try {
                     waitingMonitor.wait();
                 } catch (InterruptedException ignore) {
@@ -303,6 +305,14 @@ class sp06t001ThreadRunningInterrupted extends sp06t001Thread {
 
     public boolean checkReady() {
         // interrupt thread on wait()
+        // delay until testMethod is ready
+        while (!interruptReady) {
+            try {
+                sleep(1000);
+            } catch (InterruptedException ie) {
+                // ignored
+            }
+        }
         synchronized (waitingMonitor) {
             interrupt();
         }

@@ -28,7 +28,7 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
-#include "jfr/recorder/repository/jfrChunkSizeNotifier.hpp"
+#include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
@@ -340,6 +340,7 @@ void JfrRecorderService::prepare_for_vm_error_rotation() {
 void JfrRecorderService::open_new_chunk(bool vm_error) {
   assert(!_chunkwriter.is_valid(), "invariant");
   assert(!JfrStream_lock->owned_by_self(), "invariant");
+  JfrChunkRotation::on_rotation();
   MutexLockerEx stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
   if (!_repository.open_chunk(vm_error)) {
     assert(!_chunkwriter.is_valid(), "invariant");
@@ -535,8 +536,5 @@ void JfrRecorderService::scavenge() {
 }
 
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {
-  const size_t size_written = _chunkwriter.size_written();
-  if (size_written > JfrChunkSizeNotifier::chunk_size_threshold()) {
-    JfrChunkSizeNotifier::notify();
-  }
+  JfrChunkRotation::evaluate(_chunkwriter);
 }

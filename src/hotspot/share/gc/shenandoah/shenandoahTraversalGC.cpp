@@ -498,10 +498,6 @@ void ShenandoahTraversalGC::main_loop_work(T* cl, jushort* live_data, uint worke
   q = queues->claim_next();
   while (q != NULL) {
     if (_heap->check_cancelled_gc_and_yield(sts_yield)) {
-      ShenandoahCancelledTerminatorTerminator tt;
-      ShenandoahEvacOOMScopeLeaver oom_scope_leaver;
-      ShenandoahSuspendibleThreadSetLeaver stsl(sts_yield && ShenandoahSuspendibleWorkers);
-      while (!terminator->offer_termination(&tt));
       return;
     }
 
@@ -547,17 +543,15 @@ void ShenandoahTraversalGC::main_loop_work(T* cl, jushort* live_data, uint worke
       ShenandoahEvacOOMScopeLeaver oom_scope_leaver;
       ShenandoahSuspendibleThreadSetLeaver stsl(sts_yield && ShenandoahSuspendibleWorkers);
       ShenandoahTerminationTimingsTracker term_tracker(worker_id);
-      if (terminator->offer_termination()) return;
+      ShenandoahTerminatorTerminator tt(_heap);
+
+      if (terminator->offer_termination(&tt)) return;
     }
   }
 }
 
 bool ShenandoahTraversalGC::check_and_handle_cancelled_gc(ShenandoahTaskTerminator* terminator, bool sts_yield) {
   if (_heap->cancelled_gc()) {
-    ShenandoahCancelledTerminatorTerminator tt;
-    ShenandoahEvacOOMScopeLeaver oom_scope_leaver;
-    ShenandoahSuspendibleThreadSetLeaver stsl(sts_yield && ShenandoahSuspendibleWorkers);
-    while (! terminator->offer_termination(&tt));
     return true;
   }
   return false;

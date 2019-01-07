@@ -21,8 +21,13 @@
  * questions.
  */
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Locale;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
@@ -61,15 +66,13 @@ public class NoTimestampTest extends Test {
         Utils.createFiles(FIRST_FILE);
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
-        // calculate certificate expiration date
-        Date expirationDate = new Date(System.currentTimeMillis() + VALIDITY
-                * 24 * 60 * 60 * 1000L);
-
         // create key pair
         createAlias(CA_KEY_ALIAS);
         createAlias(KEY_ALIAS);
         issueCert(KEY_ALIAS,
                 "-validity", Integer.toString(VALIDITY));
+
+        Date expirationDate = getCertExpirationDate();
 
         // sign jar file
         OutputAnalyzer analyzer = jarsigner(
@@ -114,4 +117,12 @@ public class NoTimestampTest extends Test {
         System.out.println("Test passed");
     }
 
+    private static Date getCertExpirationDate() throws Exception {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try (InputStream in = new FileInputStream(KEYSTORE)) {
+            ks.load(in, PASSWORD.toCharArray());
+        }
+        X509Certificate cert = (X509Certificate) ks.getCertificate(KEY_ALIAS);
+        return cert.getNotAfter();
+    }
 }

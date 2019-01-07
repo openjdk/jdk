@@ -72,7 +72,7 @@ public class DNSName implements GeneralNameInterface {
      * @throws IOException if the name is not a valid DNSName subjectAltName
      */
     public DNSName(String name) throws IOException {
-        if (name == null || name.length() == 0)
+        if (name == null || name.isEmpty())
             throw new IOException("DNSName must not be null or empty");
         if (name.contains(" "))
             throw new IOException("DNSName with blank components is not permitted");
@@ -181,7 +181,7 @@ public class DNSName implements GeneralNameInterface {
      * For example, www.host.example.com would satisfy the constraint but
      * host1.example.com would not.
      * <p>
-     * draft-ietf-pkix-new-part1-00.txt:  DNSName restrictions are expressed as foo.bar.com.
+     * RFC 5280:  DNSName restrictions are expressed as foo.bar.com.
      * Any DNSName that
      * can be constructed by simply adding to the left hand side of the name
      * satisfies the name constraint. For example, www.foo.bar.com would

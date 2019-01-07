@@ -284,7 +284,7 @@ import java.util.function.LongConsumer;
  * }}</pre>
  *
  * @implNote
- * If the boolean system property {@code org.openjdk.java.util.stream.tripwire}
+ * If the boolean system property {@systemProperty org.openjdk.java.util.stream.tripwire}
  * is set to {@code true} then diagnostic warnings are reported if boxing of
  * primitive values occur when operating on primitive subtype specializations.
  *

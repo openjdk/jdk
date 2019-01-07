@@ -80,7 +80,7 @@ public class AlgorithmDecomposer {
      * Please override the method if need to support more name pattern.
      */
     public Set<String> decompose(String algorithm) {
-        if (algorithm == null || algorithm.length() == 0) {
+        if (algorithm == null || algorithm.isEmpty()) {
             return new HashSet<>();
         }
 
@@ -167,7 +167,7 @@ public class AlgorithmDecomposer {
      * message digest algorithm name to avoid overly complicated checking.
      */
     public static Set<String> decomposeOneHash(String algorithm) {
-        if (algorithm == null || algorithm.length() == 0) {
+        if (algorithm == null || algorithm.isEmpty()) {
             return new HashSet<>();
         }
 

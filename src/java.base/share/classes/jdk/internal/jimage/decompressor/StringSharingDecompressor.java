@@ -168,7 +168,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
                 int index = indices.get(argIndex);
                 argIndex += 1;
                 String pkg = reader.getString(index);
-                if (pkg.length() > 0) {
+                if (!pkg.isEmpty()) {
                     pkg = pkg + "/";
                     byte[] encoded = getEncoded(pkg);
                     buffer = safeAdd(buffer, encoded);

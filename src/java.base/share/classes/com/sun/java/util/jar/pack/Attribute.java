@@ -996,7 +996,7 @@ class Attribute implements Comparable<Attribute> {
                             endp = cstr.indexOf(',', cp);
                             if (endp < 0)  endp = cstrlen;
                             String cstr1 = cstr.substring(cp, endp);
-                            if (cstr1.length() == 0)
+                            if (cstr1.isEmpty())
                                 cstr1 = "empty";  // will fail parse
                             int value0, value1;
                             // Check for a case range (new in 1.6).

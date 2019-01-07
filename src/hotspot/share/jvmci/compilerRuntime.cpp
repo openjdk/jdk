@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/sizes.hpp"
 #include "aot/aotLoader.hpp"
 
 // Resolve and allocate String
@@ -41,7 +42,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thre
     oop str = *(oop*)string_result; // Is it resolved already?
     if (str == NULL) { // Do resolution
       // First 2 bytes of name contains length (number of bytes).
-      int len = build_u2_from((address)name);
+      int len = Bytes::get_Java_u2((address)name);
       name += 2;
       TempNewSymbol sym = SymbolTable::new_symbol(name, len, CHECK);
       str = StringTable::intern(sym, CHECK);
@@ -92,7 +93,7 @@ JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::resolve_klass_by_symbol(JavaThread *thr
     k = *klass_result; // Is it resolved already?
     if (k == NULL) { // Do resolution
       // First 2 bytes of name contains length (number of bytes).
-      int len = build_u2_from((address)name);
+      int len = Bytes::get_Java_u2((address)name);
       name += 2;
       k = CompilerRuntime::resolve_klass_helper(thread, name, len, CHECK_NULL);
       *klass_result = k; // Store result
@@ -186,13 +187,13 @@ JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_l
   JRT_BLOCK
      if (c == NULL) { // Do resolution
        // Get method name and its length
-       int method_name_len = build_u2_from((address)data);
+       int method_name_len = Bytes::get_Java_u2((address)data);
        data += sizeof(u2);
        const char* method_name = data;
        data += method_name_len;
 
        // Get signature and its length
-       int signature_name_len = build_u2_from((address)data);
+       int signature_name_len = Bytes::get_Java_u2((address)data);
        data += sizeof(u2);
        const char* signature_name = data;
 
@@ -221,7 +222,7 @@ JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::initialize_klass_by_symbol(JavaThread *
       k = klass_result[1]; // Is it resolved already?
       if (k == NULL) { // Do resolution
         // First 2 bytes of name contains length (number of bytes).
-        int len = build_u2_from((address)name);
+        int len = Bytes::get_Java_u2((address)name);
         const char *cname = name + 2;
         k = CompilerRuntime::resolve_klass_helper(thread,  cname, len, CHECK_NULL);
         klass_result[1] = k; // Store resolved result

@@ -121,7 +121,7 @@ public abstract class LocaleProviderAdapter {
         List<Type> typeList = new ArrayList<>();
 
         // Check user specified adapter preference
-        if (order != null && order.length() != 0) {
+        if (order != null && !order.isEmpty()) {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);

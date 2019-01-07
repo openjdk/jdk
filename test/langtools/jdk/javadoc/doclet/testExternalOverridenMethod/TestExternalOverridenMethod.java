@@ -28,11 +28,13 @@
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester TestExternalOverridenMethod
+ * @build javadoc.tester.* TestExternalOverridenMethod
  * @run main TestExternalOverridenMethod
  */
+import javadoc.tester.JavadocTester;
+
 public class TestExternalOverridenMethod extends JavadocTester {
 
     static final String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
@@ -43,7 +45,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-source","8",
                 "-sourcepath", testSrc,
@@ -66,7 +68,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-source", "8",
                 "-html4",
