@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,9 +163,6 @@ class Symbol : public MetaspaceObj {
     return ((unsigned)_identity_hash & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
-
-  // For symbol table alternate hashing
-  unsigned int new_hash(juint seed);
 
   // Reference counting.  See comments above this class for when to use.
   int refcount() const { return extract_refcount(_length_and_refcount); }
