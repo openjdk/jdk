@@ -164,7 +164,7 @@ bool JfrSymbolId::is_unsafe_anonymous_klass(const Klass* k) {
 uintptr_t JfrSymbolId::unsafe_anonymous_klass_name_hash_code(const InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
   assert(ik->is_unsafe_anonymous(), "invariant");
-  const oop mirror = ik->java_mirror();
+  const oop mirror = ik->java_mirror_no_keepalive();
   assert(mirror != NULL, "invariant");
   return (uintptr_t)mirror->identity_hash();
 }
@@ -174,7 +174,7 @@ const char* JfrSymbolId::create_unsafe_anonymous_klass_symbol(const InstanceKlas
   assert(ik->is_unsafe_anonymous(), "invariant");
   assert(0 == hashcode, "invariant");
   char* anonymous_symbol = NULL;
-  const oop mirror = ik->java_mirror();
+  const oop mirror = ik->java_mirror_no_keepalive();
   assert(mirror != NULL, "invariant");
   char hash_buf[40];
   hashcode = unsafe_anonymous_klass_name_hash_code(ik);
