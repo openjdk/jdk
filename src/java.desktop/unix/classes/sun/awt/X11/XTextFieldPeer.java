@@ -281,13 +281,16 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
     @Override
     public void setFont(Font f) {
+        boolean isChanged = false;
         synchronized (getStateLock()) {
             font = f;
             if (xtext != null && xtext.getFont() != f) {
                 xtext.setFont(font);
+                isChanged = true;
             }
         }
-        xtext.validate();
+        if (isChanged)
+            xtext.validate();
     }
 
     /**
