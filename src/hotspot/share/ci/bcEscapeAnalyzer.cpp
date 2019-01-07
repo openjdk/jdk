@@ -1219,8 +1219,6 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
 }
 
 bool BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsics::ID iid) {
-  ArgumentMap arg;
-  arg.clear();
   switch (iid) {
   case vmIntrinsics::_getClass:
     _return_local = false;
