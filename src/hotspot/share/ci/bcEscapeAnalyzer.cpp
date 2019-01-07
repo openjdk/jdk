@@ -79,7 +79,6 @@ public:
   void add_unknown()                    { _bits = UNKNOWN; }
   void add_allocated()                  { _bits = ALLOCATED; }
   void set_union(const ArgumentMap &am)     { _bits |= am._bits; }
-  void set_intersect(const ArgumentMap &am) { _bits |= am._bits; }
   void set_difference(const ArgumentMap &am) { _bits &=  ~am._bits; }
   void operator=(const ArgumentMap &am) { _bits = am._bits; }
   bool operator==(const ArgumentMap &am) { return _bits == am._bits; }
