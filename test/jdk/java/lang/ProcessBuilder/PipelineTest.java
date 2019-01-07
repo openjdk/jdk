@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.List;
 
 /*
  * @test PipelineTest
+ * @bug 8211844
+ * @summary Tests for ProcessBuilder.startPipeline
  */
 
 public class PipelineTest {
@@ -170,7 +172,7 @@ public class PipelineTest {
     static void verify(String input, String expected, List<ProcessBuilder> builders) throws IOException {
         File infile = new File("test.in");
         File outfile = new File("test.out");
-        setFileContents(infile, expected);
+        setFileContents(infile, input);
         for (int i = 0; i < builders.size(); i++) {
             ProcessBuilder b = builders.get(i);
             if (i == 0) {
@@ -184,8 +186,8 @@ public class PipelineTest {
         verifyProcesses(processes);
         waitForAll(processes);
         String result = fileContents(outfile);
-        System.out.printf(" in: %s%nout: %s%n", input, expected);
-        check(result.equals(expected), "result not as expected");
+        check(result.equals(expected),
+                "result not as expected: " + result + ", expected: " + expected);
     }
 
     /**
@@ -219,11 +221,14 @@ public class PipelineTest {
     static void verifyProcesses(List<Process> processes) {
         for (int i = 0; i < processes.size(); i++) {
             Process p = processes.get(i);
+
             if (i != 0) {
                 verifyNullStream(p.getOutputStream(), "getOutputStream");
             }
-            if (i == processes.size() - 1) {
+            if (i <= processes.size() - 1) {
                 verifyNullStream(p.getInputStream(), "getInputStream");
+            }
+            if (i == processes.size() - 1) {
                 verifyNullStream(p.getErrorStream(), "getErrorStream");
             }
         }
@@ -232,7 +237,7 @@ public class PipelineTest {
     static void verifyNullStream(OutputStream s, String msg) {
         try {
             s.write(0xff);
-            fail("Stream should have been a NullStream" + msg);
+            fail("Stream should have been a NullStream: " + msg);
         } catch (IOException ie) {
             // expected
         }
@@ -241,7 +246,7 @@ public class PipelineTest {
     static void verifyNullStream(InputStream s, String msg) {
         try {
             int len = s.read();
-            check(len == -1, "Stream should have been a NullStream" + msg);
+            check(len == -1, "Stream should have been a NullStream: " + msg);
         } catch (IOException ie) {
             // expected
         }
@@ -271,9 +276,12 @@ public class PipelineTest {
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.err.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
+    static void fail() {failed++; new Exception("Stack trace").printStackTrace(System.out);}
+    static void fail(String msg) {
+        System.out.println(msg); failed++;
+        new Exception("Stack trace: " + msg).printStackTrace(System.out);
+    }
+    static void unexpected(Throwable t) {failed++; t.printStackTrace(System.out);}
     static void check(boolean cond) {if (cond) pass(); else fail();}
     static void check(boolean cond, String m) {if (cond) pass(); else fail(m);}
     static void equal(Object x, Object y) {
