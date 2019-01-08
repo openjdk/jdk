@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,8 +533,12 @@ class CheckedFeatures {
         {"linux-sparcv9",   "com.sun.jdi.SharedMemoryAttach"},
         {"linux-aarch64",   "com.sun.jdi.SharedMemoryAttach"},
         {"linux-arm",       "com.sun.jdi.SharedMemoryAttach"},
+        {"linux-ppc64",     "com.sun.jdi.SharedMemoryAttach"},
+        {"linux-ppc64le",   "com.sun.jdi.SharedMemoryAttach"},
+        {"linux-s390x",     "com.sun.jdi.SharedMemoryAttach"},
         {"macosx-amd64",    "com.sun.jdi.SharedMemoryAttach"},
         {"mac-x64",         "com.sun.jdi.SharedMemoryAttach"},
+        {"aix-ppc64",       "com.sun.jdi.SharedMemoryAttach"},
 
             // listening connectors
         /*
@@ -559,8 +563,12 @@ class CheckedFeatures {
         {"linux-sparcv9",   "com.sun.jdi.SharedMemoryListen"},
         {"linux-aarch64",   "com.sun.jdi.SharedMemoryListen"},
         {"linux-arm",       "com.sun.jdi.SharedMemoryListen"},
+        {"linux-ppc64",     "com.sun.jdi.SharedMemoryListen"},
+        {"linux-ppc64le",   "com.sun.jdi.SharedMemoryListen"},
+        {"linux-s390x",     "com.sun.jdi.SharedMemoryListen"},
         {"macosx-amd64",    "com.sun.jdi.SharedMemoryListen"},
         {"mac-x64",         "com.sun.jdi.SharedMemoryListen"},
+        {"aix-ppc64",       "com.sun.jdi.SharedMemoryListen"},
 
             // launching connectors
         /*
@@ -615,6 +623,15 @@ class CheckedFeatures {
         {"linux-arm",       "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
         {"linux-arm",       "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
 
+        {"linux-ppc64",     "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
+        {"linux-ppc64",     "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
+
+        {"linux-ppc64le",   "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
+        {"linux-ppc64le",   "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
+
+        {"linux-s390x",     "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
+        {"linux-s390x",     "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
+
         {"windows-i586",    "com.sun.jdi.CommandLineLaunch", "dt_socket"},
         {"windows-i586",    "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
 
@@ -633,6 +650,9 @@ class CheckedFeatures {
         {"mac-x64",         "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
         {"mac-x64",         "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
 
+        {"aix-ppc64",       "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
+        {"aix-ppc64",       "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
+
         // shared memory transport is implemented only on windows platform
         {"solaris-sparc",   "dt_shmem"},
         {"solaris-sparcv9", "dt_shmem"},
@@ -647,7 +667,11 @@ class CheckedFeatures {
         {"linux-sparcv9",   "dt_shmem"},
         {"linux-aarch64",   "dt_shmem"},
         {"linux-arm",       "dt_shmem"},
+        {"linux-ppc64",     "dt_shmem"},
+        {"linux-ppc64le",   "dt_shmem"},
+        {"linux-s390x",     "dt_shmem"},
         {"macosx-amd64",    "dt_shmem"},
         {"mac-x64",         "dt_shmem"},
+        {"aix-ppc64",       "dt_shmem"},
     };
 }

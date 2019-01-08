@@ -61,6 +61,8 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
+compiler/loopopts/PeelingZeroTripCount.java 8216135 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -85,6 +87,7 @@ runtime/appcds/javaldr/GCSharedStringsDuringDump.java 8208778 macosx-x64
 runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
 runtime/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java 8213299 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
+runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
 runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 

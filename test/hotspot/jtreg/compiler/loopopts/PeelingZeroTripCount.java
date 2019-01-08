@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,36 @@
  * questions.
  */
 
-// Not run on AIX as it does not support ulimit -v.
-
 /*
  * @test
+ * @bug 8215044
+ * @summary C2 crash in loopTransform.cpp with assert(cl->trip_count() > 0) failed: peeling a fully unrolled loop
  *
- * @summary converted from VM Testbase nsk/jvmti/Allocate/alloc001.
- * VM Testbase keywords: [jpda, jvmti, noras, nonconcurrent]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercise JVMTI function Allocate(size, memPtr).
- *     The test checks the following:
- *       - if JVMTI_ERROR_NULL_POINTER is returned when memPtr is null
- *       - if allocated memory is available to access
- *       - if JVMTI_ERROR_OUT_OF_MEMORY is returned when there is
- *         insufficient memory available
- * COMMENTS
- *     Ported from JVMDI.
+ * @run main/othervm -XX:CompileOnly=PeelingZeroTripCount.test PeelingZeroTripCount
  *
- * @library /vmTestbase
- *          /test/lib
- * @requires os.family != "aix"
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jvmti.Allocate.alloc001
- * @run shell alloc001.sh
  */
 
+public class PeelingZeroTripCount {
+
+    public static void main(String[] args) {
+        PeelingZeroTripCount issue = new PeelingZeroTripCount();
+        for (int i = 0; i < 10000; i++) {
+            issue.test(new int[999]);
+        }
+    }
+
+    public void test(int[] iaarg) {
+        int[] iarr = new int[777];
+        for (int i = 4; i > 0; i--) {
+            for (int j = 0; j <= i - 1; j++) {
+                int istep = 2 * j - i + 1;
+                int iadj = 0;
+                if (istep < 0) {
+                    iadj = iarr[0-istep] + iaarg[i-1];
+                } else {
+                    iadj = iarr[istep] + iaarg[i-1];
+                }
+            }
+        }
+    }
+}
