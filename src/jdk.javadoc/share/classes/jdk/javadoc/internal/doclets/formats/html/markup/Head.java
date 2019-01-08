@@ -254,10 +254,6 @@ public class Head {
             tree.addContent(HtmlTree.META("keywords", k));
         }
 
-        for (Content c : extraContent) {
-            tree.addContent(c);
-        }
-
         if (canonicalLink != null) {
             HtmlTree link = new HtmlTree(HtmlTag.LINK);
             link.addAttr(HtmlAttr.REL, "canonical");
@@ -267,6 +263,7 @@ public class Head {
 
         addStylesheets(tree);
         addScripts(tree);
+        extraContent.forEach(tree::addContent);
 
         return tree;
     }
