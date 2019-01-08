@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -365,8 +365,6 @@ JNI_END
 
 
 
-static bool first_time_FindClass = true;
-
 DT_RETURN_MARK_DECL(FindClass, jclass
                     , HOTSPOT_JNI_FINDCLASS_RETURN(_ret_ref));
 
@@ -377,10 +375,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   jclass result = NULL;
   DT_RETURN_MARK(FindClass, jclass, (const jclass&)result);
-
-  // Remember if we are the first invocation of jni_FindClass
-  bool first_time = first_time_FindClass;
-  first_time_FindClass = false;
 
   // Sanity check the name:  it cannot be null or larger than the maximum size
   // name we can fit in the constant pool.
@@ -432,13 +426,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
-  }
-
-  // If we were the first invocation of jni_FindClass, we enable compilation again
-  // rather than just allowing invocation counter to overflow and decay.
-  // Controlled by flag DelayCompilationDuringStartup.
-  if (first_time) {
-    CompilationPolicy::completed_vm_startup();
   }
 
   return result;

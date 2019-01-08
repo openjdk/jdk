@@ -49,10 +49,6 @@ class CompilationPolicy : public CHeapObj<mtCompiler> {
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
 
 public:
-  static  void set_in_vm_startup(bool in_vm_startup) { _in_vm_startup = in_vm_startup; }
-  static  void completed_vm_startup();
-  static  bool delay_compilation_during_startup()    { return _in_vm_startup; }
-
   // If m must_be_compiled then request a compilation from the CompileBroker.
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,9 @@
 
 CompilationPolicy* CompilationPolicy::_policy;
 elapsedTimer       CompilationPolicy::_accumulated_time;
-bool               CompilationPolicy::_in_vm_startup;
 
 // Determine compilation policy based on command line argument
 void compilationPolicy_init() {
-  CompilationPolicy::set_in_vm_startup(DelayCompilationDuringStartup);
-
   switch(CompilationPolicyChoice) {
   case 0:
     CompilationPolicy::set_policy(new SimpleCompPolicy());
@@ -84,13 +81,6 @@ void compilationPolicy_init() {
     fatal("CompilationPolicyChoice must be in the range: [0-2]");
   }
   CompilationPolicy::policy()->initialize();
-}
-
-void CompilationPolicy::completed_vm_startup() {
-  if (TraceCompilationPolicy) {
-    tty->print("CompilationPolicy: completed vm startup.\n");
-  }
-  _in_vm_startup = false;
 }
 
 // Returns true if m must be compiled before executing it
@@ -184,7 +174,7 @@ bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, int comp_leve
 
 bool CompilationPolicy::is_compilation_enabled() {
   // NOTE: CompileBroker::should_compile_new_jobs() checks for UseCompiler
-  return !delay_compilation_during_startup() && CompileBroker::should_compile_new_jobs();
+  return CompileBroker::should_compile_new_jobs();
 }
 
 CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) {

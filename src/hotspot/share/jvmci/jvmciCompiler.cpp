@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,6 @@ void JVMCICompiler::initialize() {
   }
 
   set_state(initialized);
-
-  // JVMCI is considered as application code so we need to
-  // stop the VM deferring compilation now.
-  CompilationPolicy::completed_vm_startup();
 }
 
 void JVMCICompiler::bootstrap(TRAPS) {

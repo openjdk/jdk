@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,20 +130,11 @@ void InvocationCounter::def(State state, int init, Action action) {
   _action[state] = action;
 }
 
-address dummy_invocation_counter_overflow(const methodHandle& m, TRAPS) {
-  ShouldNotReachHere();
-  return NULL;
-}
-
-void InvocationCounter::reinitialize(bool delay_overflow) {
+void InvocationCounter::reinitialize() {
   // define states
   guarantee((int)number_of_states <= (int)state_limit, "adjust number_of_state_bits");
   def(wait_for_nothing, 0, do_nothing);
-  if (delay_overflow) {
-    def(wait_for_compile, 0, do_decay);
-  } else {
-    def(wait_for_compile, 0, dummy_invocation_counter_overflow);
-  }
+  def(wait_for_compile, 0, do_decay);
 
   InterpreterInvocationLimit = CompileThreshold << number_of_noncount_bits;
   InterpreterProfileLimit = ((CompileThreshold * InterpreterProfilePercentage) / 100)<< number_of_noncount_bits;
@@ -167,5 +158,5 @@ void InvocationCounter::reinitialize(bool delay_overflow) {
 }
 
 void invocationCounter_init() {
-  InvocationCounter::reinitialize(DelayCompilationDuringStartup);
+  InvocationCounter::reinitialize();
 }
