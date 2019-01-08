@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,21 +459,6 @@ HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t* actual_size) {
   guarantee(false, "thread-local allocation buffers not supported");
   return NULL;
-}
-
-oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
-  ObjAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
-}
-
-oop CollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
-  ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
-  return allocator.allocate();
-}
-
-oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
-  ClassAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
 }
 
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {

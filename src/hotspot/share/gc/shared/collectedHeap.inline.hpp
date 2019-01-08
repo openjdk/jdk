@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
@@ -64,6 +65,21 @@ inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
   } else {
     return NULL;
   }
+}
+
+inline oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
+  ObjAllocator allocator(klass, size, THREAD);
+  return allocator.allocate();
+}
+
+inline oop CollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
+  ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  return allocator.allocate();
+}
+
+inline oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
+  ClassAllocator allocator(klass, size, THREAD);
+  return allocator.allocate();
 }
 
 #endif // SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
