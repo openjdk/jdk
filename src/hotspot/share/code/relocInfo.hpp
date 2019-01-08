@@ -29,6 +29,7 @@
 #include "utilities/macros.hpp"
 
 class nmethod;
+class CodeBlob;
 class CompiledMethod;
 class Metadata;
 class NativeMovConstReg;
