@@ -40,10 +40,6 @@ class RFrame;
 
 class CompilationPolicy : public CHeapObj<mtCompiler> {
   static CompilationPolicy* _policy;
-  // Accumulated time
-  static elapsedTimer       _accumulated_time;
-
-  static bool               _in_vm_startup;
 
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
@@ -63,9 +59,6 @@ public:
 
   static CompileTask* select_task_helper(CompileQueue* compile_queue);
 
-  // Profiling
-  elapsedTimer* accumulated_time() { return &_accumulated_time; }
-  void print_time() PRODUCT_RETURN;
   // Return initial compile level that is used with Xcomp
   virtual CompLevel initial_compile_level() = 0;
   virtual int compiler_count(CompLevel comp_level) = 0;

@@ -1496,12 +1496,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  develop(bool, TraceCompilationPolicy, false,                              \
-          "Trace compilation policy")                                       \
-                                                                            \
-  develop(bool, TimeCompilationPolicy, false,                               \
-          "Time the compilation policy")                                    \
-                                                                            \
   product(bool, UseCounterDecay, true,                                      \
           "Adjust recompilation counters")                                  \
                                                                             \
