@@ -2709,6 +2709,9 @@ JNI_QUICK_ENTRY(ElementType*, \
   ElementType* result; \
   int len = a->length(); \
   if (len == 0) { \
+    if (isCopy != NULL) { \
+      *isCopy = JNI_FALSE; \
+    } \
     /* Empty array: legal but useless, can't return NULL. \
      * Return a pointer to something useless. \
      * Avoid asserts in typeArrayOop. */ \
