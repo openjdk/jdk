@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ void ZReferenceProcessor::update_soft_reference_clock() const {
   java_lang_ref_SoftReference::set_clock(now);
 }
 
-bool ZReferenceProcessor::is_reference_inactive(oop obj) const {
-  // A non-null next field means the reference is inactive
-  return java_lang_ref_Reference::next(obj) != NULL;
+bool ZReferenceProcessor::is_inactive_final_reference(oop obj, ReferenceType type) const {
+  // A non-null next field for a FinalReference means the reference is inactive.
+  return (type == REF_FINAL) && (java_lang_ref_Reference::next(obj) != NULL);
 }
 
 ReferenceType ZReferenceProcessor::reference_type(oop obj) const {
@@ -167,11 +167,6 @@ bool ZReferenceProcessor::should_mark_referent(ReferenceType type) const {
   return type == REF_FINAL;
 }
 
-bool ZReferenceProcessor::should_clear_referent(ReferenceType type) const {
-  // Referents that were not marked must be cleared
-  return !should_mark_referent(type);
-}
-
 void ZReferenceProcessor::keep_referent_alive(oop obj, ReferenceType type) const {
   volatile oop* const p = reference_referent_addr(obj);
   if (type == REF_PHANTOM) {
@@ -192,8 +187,8 @@ bool ZReferenceProcessor::discover_reference(oop obj, ReferenceType type) {
   // Update statistics
   _encountered_count.get()[type]++;
 
-  if (is_reference_inactive(obj) ||
-      is_referent_strongly_alive_or_null(obj, type) ||
+  if (is_referent_strongly_alive_or_null(obj, type) ||
+      is_inactive_final_reference(obj, type) ||
       is_referent_softly_alive(obj, type)) {
     // Not discovered
     return false;
@@ -242,22 +237,18 @@ oop* ZReferenceProcessor::keep(oop obj, ReferenceType type) {
   // Update statistics
   _enqueued_count.get()[type]++;
 
-  // Clear referent
-  if (should_clear_referent(type)) {
+  if (type != REF_FINAL) {
+    // Clear referent
     java_lang_ref_Reference::set_referent(obj, NULL);
+  } else {
+    // For a FinalReference, don't clear the referent, because it is
+    // needed for the finalize call.  Instead, make the reference
+    // inactive by self-looping the 'next' field.  FinalReference
+    // doesn't allow Reference.enqueue, so there's no race to worry
+    // about when setting 'next'.
+    assert(java_lang_ref_Reference::next(obj) == NULL, "enqueued FinalReference");
+    java_lang_ref_Reference::set_next_raw(obj, obj);
   }
-
-  // Make reference inactive by self-looping the next field. We could be racing with a
-  // call to Reference.enqueue() from the application, which is why we are using a CAS
-  // to make sure we change the next field only if it is NULL. A failing CAS means the
-  // reference has already been enqueued. However, we don't check the result of the CAS,
-  // since we still have no option other than keeping the reference on the pending list.
-  // It's ok to have the reference both on the pending list and enqueued at the same
-  // time (the pending list is linked through the discovered field, while the reference
-  // queue is linked through the next field). When the ReferenceHandler thread later
-  // calls Reference.enqueue() we detect that it has already been enqueued and drop it.
-  oop* const next_addr = (oop*)java_lang_ref_Reference::next_addr_raw(obj);
-  Atomic::cmpxchg(obj, next_addr, oop(NULL));
 
   // Return next in list
   return (oop*)java_lang_ref_Reference::discovered_addr_raw(obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8008577
  *      8010666 8013086 8013233 8013903 8015960 8028771 8054482 8062006
- *      8150432
+ *      8150432 8215913
  * @summary tests for "java.locale.providers" system property
  * @library /test/lib
  * @build LocaleProviders
@@ -143,7 +143,7 @@ public class LocaleProvidersRun {
         //testing 8027289 fix, if the platform format default is zh_CN
         // this assumes Windows' currency symbol for zh_CN is \u00A5, the yen
         // (yuan) sign.
-        if (!defLang.equals("en") && !defCtry.equals("CN")){
+        if (defFmtLang.equals("zh") && defFmtCtry.equals("CN")) {
             testRun("JRE,HOST", "bug8027289Test", "FFE5", "", "");
             testRun("COMPAT,HOST", "bug8027289Test", "FFE5", "", "");
             testRun("HOST", "bug8027289Test", "00A5", "", "");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1976,7 +1976,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
     ast->print_cr("  The age of a compiled method in the CodeHeap is not available as a\n"
                   "  time stamp. Instead, a relative age is deducted from the method's compilation ID.\n"
                   "  Age information is available for tier1 and tier2 methods only. There is no\n"
-                  "  age information for stubs and blobs, because they have no compilation ID assigned.\n"
+                  "  age information for stubs and blobs, because they have no compilation ID assigned.\n"
                   "  Information for the youngest method (highest ID) in the granule is printed.\n"
                   "  Refer to the legend to learn how method age is mapped to the displayed digit.");
     print_age_legend(ast);
