@@ -104,8 +104,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private FSInfo fsInfo;
 
-    private final Set<JavaFileObject.Kind> sourceOrClass =
-        EnumSet.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
+    private static final Set<JavaFileObject.Kind> SOURCE_OR_CLASS =
+        Set.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
 
     protected boolean symbolFileEnabled;
 
@@ -500,6 +500,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         }
     }
 
+    private static final Set<FileVisitOption> NO_FILE_VISIT_OPTIONS = Set.of();
+    private static final Set<FileVisitOption> FOLLOW_LINKS_OPTIONS = Set.of(FOLLOW_LINKS);
+
     private final class ArchiveContainer implements Container {
         private final Path archivePath;
         private final FileSystem fileSystem;
@@ -517,7 +520,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             }
             packages = new HashMap<>();
             for (Path root : fileSystem.getRootDirectories()) {
-                Files.walkFileTree(root, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE,
+                Files.walkFileTree(root, NO_FILE_VISIT_OPTIONS, Integer.MAX_VALUE,
                         new SimpleFileVisitor<Path>() {
                             @Override
                             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
@@ -548,8 +551,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 return ;
 
             int maxDepth = (recurse ? Integer.MAX_VALUE : 1);
-            Set<FileVisitOption> opts = EnumSet.of(FOLLOW_LINKS);
-            Files.walkFileTree(resolvedSubdirectory, opts, maxDepth,
+            Files.walkFileTree(resolvedSubdirectory, FOLLOW_LINKS_OPTIONS, maxDepth,
                     new SimpleFileVisitor<Path>() {
                         @Override
                         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
@@ -763,7 +765,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         // validateClassName(className);
         nullCheck(className);
         nullCheck(kind);
-        if (!sourceOrClass.contains(kind))
+        if (!SOURCE_OR_CLASS.contains(kind))
             throw new IllegalArgumentException("Invalid kind: " + kind);
         return getFileForInput(location, RelativeFile.forClass(className, kind));
     }
@@ -811,7 +813,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         // validateClassName(className);
         nullCheck(className);
         nullCheck(kind);
-        if (!sourceOrClass.contains(kind))
+        if (!SOURCE_OR_CLASS.contains(kind))
             throw new IllegalArgumentException("Invalid kind: " + kind);
         return getFileForOutput(location, RelativeFile.forClass(className, kind), sibling);
     }
