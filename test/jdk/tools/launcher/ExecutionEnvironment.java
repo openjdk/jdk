@@ -241,17 +241,26 @@ public class ExecutionEnvironment extends TestHelper {
      */
     @Test
     void testVmSelection() {
+        boolean haveSomeVM = false;
         if (haveClientVM) {
-            TestResult tr = doExec(javaCmd, "-client", "-version");
-            if (!tr.matches(".*Client VM.*")) {
-                flagError(tr, "the expected vm -client did not launch");
-            }
+            tryVmOption("-client", ".*Client VM.*");
+            haveSomeVM = true;
         }
         if (haveServerVM) {
-            TestResult tr = doExec(javaCmd, "-server", "-version");
-            if (!tr.matches(".*Server VM.*")) {
-                flagError(tr, "the expected vm -server did not launch");
-            }
+            tryVmOption("-server", ".*Server VM.*");
+            haveSomeVM = true;
+        }
+        if (!haveSomeVM) {
+            String msg = "Don't have a known VM";
+            System.err.println(msg);
+            throw new RuntimeException(msg);
+        }
+    }
+
+    private void tryVmOption(String opt, String expected) {
+        TestResult tr = doExec(javaCmd, opt, "-version");
+        if (!tr.matches(expected)) {
+            flagError(tr, "the expected vm " + opt + " did not launch");
         }
     }
 
