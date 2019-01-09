@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1015,7 +1015,11 @@ static netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
  */
 static short translateIPv4AddressToPrefix(struct sockaddr_in *addr) {
     short prefix = 0;
-    unsigned int mask = ntohl(addr->sin_addr.s_addr);
+    unsigned int mask;
+    if (addr == NULL) {
+        return 0;
+    }
+    mask = ntohl(addr->sin_addr.s_addr);
     while (mask) {
         mask <<= 1;
         prefix++;
@@ -1028,7 +1032,11 @@ static short translateIPv4AddressToPrefix(struct sockaddr_in *addr) {
  */
 static short translateIPv6AddressToPrefix(struct sockaddr_in6 *addr) {
     short prefix = 0;
-    u_char *addrBytes = (u_char *)&(addr->sin6_addr);
+    u_char *addrBytes;
+    if (addr == NULL) {
+        return 0;
+    }
+    addrBytes = (u_char *)&(addr->sin6_addr);
     unsigned int byte, bit;
 
     for (byte = 0; byte < sizeof(struct in6_addr); byte++, prefix += 8) {
@@ -1541,20 +1549,23 @@ static int getMacAddress
 
     if (getkerninfo(KINFO_NDD, nddp, &size, 0) < 0) {
         perror("getkerninfo 2");
+        free(nddp);
         return -1;
     }
 
     end = (void *)nddp + size;
     while ((void *)nddp < end) {
         if (!strcmp(nddp->ndd_alias, ifname) ||
-                !strcmp(nddp->ndd_name, ifname)) {
+                 !strcmp(nddp->ndd_name, ifname)) {
             bcopy(nddp->ndd_addr, buf, 6);
+            free(nddp);
             return 6;
         } else {
             nddp++;
         }
     }
 
+    free(nddp);
     return -1;
 }
 
@@ -2092,14 +2103,16 @@ static int getMacAddress
         // cycle through the interfaces
         for (i = 0, ifa = ifa0; ifa != NULL; ifa = ifa->ifa_next, i++) {
             saddr = ifa->ifa_addr;
-            // link layer contains the MAC address
-            if (saddr->sa_family == AF_LINK && !strcmp(ifname, ifa->ifa_name)) {
-                struct sockaddr_dl *sadl = (struct sockaddr_dl *) saddr;
-                // check the address has the correct length
-                if (sadl->sdl_alen == ETHER_ADDR_LEN) {
-                    memcpy(buf, (sadl->sdl_data + sadl->sdl_nlen), ETHER_ADDR_LEN);
-                    freeifaddrs(ifa0);
-                    return ETHER_ADDR_LEN;
+            if (saddr != NULL) {
+                // link layer contains the MAC address
+                if (saddr->sa_family == AF_LINK && !strcmp(ifname, ifa->ifa_name)) {
+                    struct sockaddr_dl *sadl = (struct sockaddr_dl *) saddr;
+                    // check the address has the correct length
+                    if (sadl->sdl_alen == ETHER_ADDR_LEN) {
+                        memcpy(buf, (sadl->sdl_data + sadl->sdl_nlen), ETHER_ADDR_LEN);
+                        freeifaddrs(ifa0);
+                        return ETHER_ADDR_LEN;
+                    }
                 }
             }
         }
