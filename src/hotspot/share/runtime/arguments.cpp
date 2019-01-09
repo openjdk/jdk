@@ -3793,6 +3793,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION(AllocateHeapAt);
+  UNSUPPORTED_OPTION(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT

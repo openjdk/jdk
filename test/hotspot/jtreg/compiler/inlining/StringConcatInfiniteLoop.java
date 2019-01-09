@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,34 @@
  * questions.
  */
 
-// key: compiler.err.unicode.backtick
-// key: compiler.misc.feature.raw.string.literals
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source 13 -Xlint:preview
+/*
+ * @test 8214862
+ * @summary Multiple passes of PhaseRemoveUseless causes infinite loop to be optimized out
+ *
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=StringConcatInfiniteLoop::test -XX:CompileCommand=dontinline,*StringBuilder::* StringConcatInfiniteLoop
+ *
+ */
 
-class RawStringLiteral {
-    String m() {
-        return `abc` + \u0060`def`;
+public class StringConcatInfiniteLoop {
+    public static void main(String[] args) {
+        StringBuilder sb = new StringBuilder();
+        test(sb, "foo", "bar", true);
+    }
+
+    private static void test(Object v, String s1, String s2, boolean flag) {
+        if (flag) {
+            return;
+        }
+        int i = 0;
+        for (; i < 10; i++);
+        if (i == 10) {
+            v = null;
+        }
+        StringBuilder sb = new StringBuilder(s1);
+        sb.append(s2);
+        while (v == null);
+    }
+
+    private static class A {
     }
 }
-
-

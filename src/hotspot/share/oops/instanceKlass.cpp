@@ -3654,14 +3654,14 @@ void JNIid::verify(Klass* holder) {
   }
 }
 
-#ifdef ASSERT
 void InstanceKlass::set_init_state(ClassState state) {
+#ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
+#endif
   _init_state = (u1)state;
 }
-#endif
 
 #if INCLUDE_JVMTI
 

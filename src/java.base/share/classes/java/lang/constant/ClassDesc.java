@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,10 @@ public interface ClassDesc
      */
     static ClassDesc of(String packageName, String className) {
         ConstantUtils.validateBinaryClassName(requireNonNull(packageName));
-        validateMemberName(requireNonNull(className));
+        if (packageName.isEmpty()) {
+            return of(className);
+        }
+        validateMemberName(requireNonNull(className), false);
         return ofDescriptor(String.format("L%s%s%s;",
                                           binaryToInternal(packageName),
                                           (packageName.length() > 0 ? "/" : ""),
@@ -130,6 +133,9 @@ public interface ClassDesc
      */
     static ClassDesc ofDescriptor(String descriptor) {
         requireNonNull(descriptor);
+        if (descriptor.isEmpty()) {
+            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
+        }
         int depth = ConstantUtils.arrayDepth(descriptor);
         if (depth > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
             throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
@@ -192,7 +198,7 @@ public interface ClassDesc
      * @throws IllegalArgumentException if the nested class name is invalid
      */
     default ClassDesc nested(String nestedName) {
-        validateMemberName(nestedName);
+        validateMemberName(nestedName, false);
         if (!isClassOrInterface())
             throw new IllegalStateException("Outer class is not a class or interface type");
         return ClassDesc.ofDescriptor(String.format("%s$%s;", dropLastChar(descriptorString()), nestedName));

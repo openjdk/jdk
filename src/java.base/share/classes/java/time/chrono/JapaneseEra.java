@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ import sun.util.calendar.CalendarDate;
  * dates before Meiji 6, January 1 are not supported.
  * The number of the valid eras may increase, as new eras may be
  * defined by the Japanese government. Once an era is defined,
- * subsequent versions of this class will add a singleton instance
+ * future versions of the platform may add a singleton instance
  * for it. The defined era is expected to have a consecutive integer
  * associated with it.
  *

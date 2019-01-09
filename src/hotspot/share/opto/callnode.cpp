@@ -1271,6 +1271,14 @@ uint SafePointNode::match_edge(uint idx) const {
   return (TypeFunc::Parms == idx);
 }
 
+void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
+  assert(Opcode() == Op_SafePoint, "only value for safepoint in loops");
+  int nb = igvn->C->root()->find_prec_edge(this);
+  if (nb != -1) {
+    igvn->C->root()->rm_prec(nb);
+  }
+}
+
 //==============  SafePointScalarObjectNode  ==============
 
 SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
