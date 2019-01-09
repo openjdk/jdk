@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
      * @deprecated Release 7 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="12")
     protected ElementScanner7(){
         super(null); // Superclass constructor deprecated too
     }
@@ -112,7 +112,7 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
      * @deprecated Release 7 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="12")
     protected ElementScanner7(R defaultValue){
         super(defaultValue); // Superclass constructor deprecated too
     }
