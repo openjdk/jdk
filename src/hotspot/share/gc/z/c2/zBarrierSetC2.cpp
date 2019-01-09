@@ -1170,7 +1170,7 @@ static bool split_barrier_thru_phi(PhaseIdealLoop* phase, LoadBarrierNode* lb) {
   if (lb->in(LoadBarrierNode::Oop)->is_Phi()) {
     Node* oop_phi = lb->in(LoadBarrierNode::Oop);
 
-    if (oop_phi->in(2) == oop_phi) {
+    if ((oop_phi->req() != 3) || (oop_phi->in(2) == oop_phi)) {
       // Ignore phis with only one input
       return false;
     }
