@@ -1344,6 +1344,16 @@ void java_lang_Class::set_module(oop java_class, oop module) {
   java_class->obj_field_put(_module_offset, module);
 }
 
+oop java_lang_Class::name(Handle java_class, TRAPS) {
+  assert(_name_offset != 0, "must be set");
+  oop o = java_class->obj_field(_name_offset);
+  if (o == NULL) {
+    o = StringTable::intern(java_lang_Class::as_external_name(java_class()), THREAD);
+    java_class->obj_field_put(_name_offset, o);
+  }
+  return o;
+}
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
@@ -1504,7 +1514,8 @@ int  java_lang_Class::classRedefinedCount_offset = -1;
   macro(classRedefinedCount_offset, k, "classRedefinedCount", int_signature,         false) ; \
   macro(_class_loader_offset,       k, "classLoader",         classloader_signature, false); \
   macro(_component_mirror_offset,   k, "componentType",       class_signature,       false); \
-  macro(_module_offset,             k, "module",              module_signature,      false)
+  macro(_module_offset,             k, "module",              module_signature,      false); \
+  macro(_name_offset,               k, "name",                string_signature,      false); \
 
 void java_lang_Class::compute_offsets() {
   if (offsets_computed) {
@@ -2550,12 +2561,14 @@ void java_lang_StackTraceElement::fill_in(Handle element,
                                           int version, int bci, Symbol* name, TRAPS) {
   assert(element->is_a(SystemDictionary::StackTraceElement_klass()), "sanity check");
 
-  // Fill in class name
   ResourceMark rm(THREAD);
-  const char* str = holder->external_name();
-  oop classname = StringTable::intern(str, CHECK);
+  HandleMark hm(THREAD);
+
+  // Fill in class name
+  Handle java_class(THREAD, holder->java_mirror());
+  oop classname = java_lang_Class::name(java_class, CHECK);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
-  java_lang_StackTraceElement::set_declaringClassObject(element(), holder->java_mirror());
+  java_lang_StackTraceElement::set_declaringClassObject(element(), java_class());
 
   oop loader = holder->class_loader();
   if (loader != NULL) {
@@ -3966,6 +3979,7 @@ int java_lang_Class::_protection_domain_offset;
 int java_lang_Class::_component_mirror_offset;
 int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
+int java_lang_Class::_name_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 int java_lang_Throwable::backtrace_offset;

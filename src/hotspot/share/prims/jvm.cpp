@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1059,21 +1059,14 @@ JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
 
-JVM_ENTRY(jstring, JVM_GetClassName(JNIEnv *env, jclass cls))
+JVM_ENTRY(jstring, JVM_InitClassName(JNIEnv *env, jclass cls))
   assert (cls != NULL, "illegal class");
-  JVMWrapper("JVM_GetClassName");
+  JVMWrapper("JVM_InitClassName");
   JvmtiVMObjectAllocEventCollector oam;
   ResourceMark rm(THREAD);
-  const char* name;
-  if (java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
-    name = type2name(java_lang_Class::primitive_type(JNIHandles::resolve(cls)));
-  } else {
-    // Consider caching interned string in Klass
-    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-    assert(k->is_klass(), "just checking");
-    name = k->external_name();
-  }
-  oop result = StringTable::intern((char*) name, CHECK_NULL);
+  HandleMark hm(THREAD);
+  Handle java_class(THREAD, JNIHandles::resolve(cls));
+  oop result = java_lang_Class::name(java_class, CHECK_NULL);
   return (jstring) JNIHandles::make_local(env, result);
 JVM_END
 
