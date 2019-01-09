@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8215510
  * @compile NameValidationTest.java
  * @run testng NameValidationTest
  * @summary unit tests for verifying member names
@@ -45,8 +46,8 @@ public class NameValidationTest {
     private static final String[] badMemberNames = new String[] {"xx.xx", "zz;zz", "[l", "aa/aa", "<cinit>"};
     private static final String[] goodMemberNames = new String[] {"<clinit>", "<init>", "3", "~", "$", "qq"};
 
-    private static final String[] badClassNames = new String[] {"zz;zz", "[l", "aa/aa"};
-    private static final String[] goodClassNames = new String[] {"3", "~", "$", "qq", ".", "a.a"};
+    private static final String[] badClassNames = new String[] {"zz;zz", "[l", "aa/aa", ".", "a..b"};
+    private static final String[] goodClassNames = new String[] {"3", "~", "$", "qq", "a.a"};
 
     public void testMemberNames() {
         DirectMethodHandleDesc mh = MethodHandleDesc.of(Kind.VIRTUAL, CD_String, "isEmpty", "()Z");

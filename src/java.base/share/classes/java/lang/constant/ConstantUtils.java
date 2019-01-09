@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class ConstantUtils {
      * @return the name passed if valid
      * @throws IllegalArgumentException if the member name is invalid
      */
-    public static String validateMemberName(String name) {
+    public static String validateMemberName(String name, boolean method) {
         requireNonNull(name);
         if (name.length() == 0)
             throw new IllegalArgumentException("zero-length member name");
@@ -73,7 +73,7 @@ class ConstantUtils {
             char ch = name.charAt(i);
             if (ch == '.' || ch == ';' || ch == '[' || ch == '/')
                 throw new IllegalArgumentException("Invalid member name: " + name);
-            if (ch == '<' || ch == '>') {
+            if (method && (ch == '<' || ch == '>')) {
                 if (!pointyNames.contains(name))
                     throw new IllegalArgumentException("Invalid member name: " + name);
             }
@@ -126,8 +126,8 @@ class ConstantUtils {
 
         ++cur;  // skip '('
         while (cur < end && descriptor.charAt(cur) != ')') {
-            int len = matchSig(descriptor, cur, end);
-            if (len == 0 || descriptor.charAt(cur) == 'V')
+            int len = skipOverFieldSignature(descriptor, cur, end, false);
+            if (len == 0)
                 throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
             ptypes.add(descriptor.substring(cur, cur + len));
             cur += len;
@@ -136,41 +136,103 @@ class ConstantUtils {
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
         ++cur;  // skip ')'
 
-        int rLen = matchSig(descriptor, cur, end);
+        int rLen = skipOverFieldSignature(descriptor, cur, end, true);
         if (rLen == 0 || cur + rLen != end)
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
         ptypes.add(0, descriptor.substring(cur, cur + rLen));
         return ptypes;
     }
 
+    private static final char JVM_SIGNATURE_ARRAY = '[';
+    private static final char JVM_SIGNATURE_BYTE = 'B';
+    private static final char JVM_SIGNATURE_CHAR = 'C';
+    private static final char JVM_SIGNATURE_CLASS = 'L';
+    private static final char JVM_SIGNATURE_ENDCLASS = ';';
+    private static final char JVM_SIGNATURE_ENUM = 'E';
+    private static final char JVM_SIGNATURE_FLOAT = 'F';
+    private static final char JVM_SIGNATURE_DOUBLE = 'D';
+    private static final char JVM_SIGNATURE_FUNC = '(';
+    private static final char JVM_SIGNATURE_ENDFUNC = ')';
+    private static final char JVM_SIGNATURE_INT = 'I';
+    private static final char JVM_SIGNATURE_LONG = 'J';
+    private static final char JVM_SIGNATURE_SHORT = 'S';
+    private static final char JVM_SIGNATURE_VOID = 'V';
+    private static final char JVM_SIGNATURE_BOOLEAN = 'Z';
+
     /**
      * Validates that the characters at [start, end) within the provided string
      * describe a valid field type descriptor.
-     *
-     * @param str the descriptor string
+     * @param descriptor the descriptor string
      * @param start the starting index into the string
      * @param end the ending index within the string
+     * @param voidOK is void acceptable?
      * @return the length of the descriptor, or 0 if it is not a descriptor
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
-    static int matchSig(String str, int start, int end) {
-        if (start >= end || start >= str.length() || end > str.length())
-            return 0;
-        char c = str.charAt(start);
-        if (c == 'L') {
-            int endc = str.indexOf(';', start);
-            int badc = str.indexOf('.', start);
-            if (badc >= 0 && badc < endc)
-                return 0;
-            badc = str.indexOf('[', start);
-            if (badc >= 0 && badc < endc)
-                return 0;
-            return (endc < 0) ? 0 : endc - start + 1;
-        } else if (c == '[') {
-            int t = matchSig(str, start+1, end);
-            return (t > 0) ? t + 1 : 0;
-        } else {
-            return ("IJCSBFDZV".indexOf(c) >= 0) ? 1 : 0;
+    @SuppressWarnings("fallthrough")
+    static int skipOverFieldSignature(String descriptor, int start, int end, boolean voidOK) {
+        int arrayDim = 0;
+        int index = start;
+        while (index < end) {
+            switch (descriptor.charAt(index)) {
+                case JVM_SIGNATURE_VOID: if (!voidOK) { return index; }
+                case JVM_SIGNATURE_BOOLEAN:
+                case JVM_SIGNATURE_BYTE:
+                case JVM_SIGNATURE_CHAR:
+                case JVM_SIGNATURE_SHORT:
+                case JVM_SIGNATURE_INT:
+                case JVM_SIGNATURE_FLOAT:
+                case JVM_SIGNATURE_LONG:
+                case JVM_SIGNATURE_DOUBLE:
+                    return index - start + 1;
+                case JVM_SIGNATURE_CLASS:
+                    // Skip leading 'L' and ignore first appearance of ';'
+                    index++;
+                    int indexOfSemi = descriptor.indexOf(';', index);
+                    if (indexOfSemi != -1) {
+                        String unqualifiedName = descriptor.substring(index, indexOfSemi);
+                        boolean legal = verifyUnqualifiedClassName(unqualifiedName);
+                        if (!legal) {
+                            return 0;
+                        }
+                        return index - start + unqualifiedName.length() + 1;
+                    }
+                    return 0;
+                case JVM_SIGNATURE_ARRAY:
+                    arrayDim++;
+                    if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                        throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
+                                ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+                    }
+                    // The rest of what's there better be a legal descriptor
+                    index++;
+                    voidOK = false;
+                    break;
+                default:
+                    return 0;
+            }
         }
+        return 0;
+    }
+
+    static boolean verifyUnqualifiedClassName(String name) {
+        for (int index = 0; index < name.length(); index++) {
+            char ch = name.charAt(index);
+            if (ch < 128) {
+                if (ch == '.' || ch == ';' || ch == '[' ) {
+                    return false;   // do not permit '.', ';', or '['
+                }
+                if (ch == '/') {
+                    // check for '//' or leading or trailing '/' which are not legal
+                    // unqualified name must not be empty
+                    if (index == 0 || index + 1 >= name.length() || name.charAt(index + 1) == '/') {
+                        return false;
+                    }
+                }
+            } else {
+                index ++;
+            }
+        }
+        return true;
     }
 }
