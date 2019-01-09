@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_ACCESS_INLINE_HPP
 #define SHARE_OOPS_ACCESS_INLINE_HPP
 
+#include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/barrierSetConfig.inline.hpp"
 #include "oops/access.hpp"
 #include "oops/accessBackend.inline.hpp"
