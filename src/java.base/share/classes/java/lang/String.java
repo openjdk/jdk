@@ -2982,6 +2982,9 @@ public final class String
      * This method allows the application of a function to {@code this}
      * string. The function should expect a single String argument
      * and produce an {@code R} result.
+     * <p>
+     * Any exception thrown by {@code f()} will be propagated to the
+     * caller.
      *
      * @param f    functional interface to a apply
      *
