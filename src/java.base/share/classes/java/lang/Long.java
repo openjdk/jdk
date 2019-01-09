@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,7 +731,7 @@ public final class Long extends Number
      *             {@code endIndex} or if {@code endIndex} is greater than
      *             {@code s.length()}.
      * @throws     NumberFormatException  if the {@code CharSequence} does not
-     *             contain a parsable {@code int} in the specified
+     *             contain a parsable {@code long} in the specified
      *             {@code radix}, or if {@code radix} is either smaller than
      *             {@link java.lang.Character#MIN_RADIX} or larger than
      *             {@link java.lang.Character#MAX_RADIX}.
