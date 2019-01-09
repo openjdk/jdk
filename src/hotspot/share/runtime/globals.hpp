@@ -1330,9 +1330,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, TypeProfileCasts,  true,                                    \
           "treat casts like calls for purposes of type profiling")          \
                                                                             \
-  develop(bool, FillDelaySlots, true,                                       \
-          "Fill delay slots (on SPARC only)")                               \
-                                                                            \
   develop(bool, TimeLivenessAnalysis, false,                                \
           "Time computation of bytecode liveness analysis")                 \
                                                                             \
