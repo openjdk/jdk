@@ -210,6 +210,12 @@ inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, siz
   task(worker_id)->update_liveness(obj, size);
 }
 
+inline void G1CMTask::abort_marking_if_regular_check_fail() {
+  if (!regular_clock_call()) {
+    set_has_aborted();
+  }
+}
+
 inline bool G1CMTask::make_reference_grey(oop obj) {
   if (!_cm->mark_in_next_bitmap(_worker_id, obj)) {
     return false;
