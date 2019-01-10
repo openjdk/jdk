@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import nsk.share.TestBug;
  * because average execution time of one iteration may be different.
  * This is value which is enough to do what test intends to do and it should
  * also give average execution time on most configurations less than
- * standard value of stressTime parameter (60 seconds).
+ * standard value of stressTime parameter (30 seconds).
  *
  * @see nsk.share.test.StressOptions for explanation of stress options.
  */
