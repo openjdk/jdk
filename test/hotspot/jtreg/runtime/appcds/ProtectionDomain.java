@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,25 +48,24 @@ public class ProtectionDomain {
          TestCommon.list("ProtDomain",
                          "ProtDomainBOther",
                          "java/util/Dictionary",
-                         "sun/tools/javac/Main",
+                         "com/sun/tools/javac/Main",
                          "jdk/nio/zipfs/ZipInfo",
                          "java/net/URL",
                          "sun/rmi/rmic/Main",
                          "com/sun/jndi/dns/DnsName"));
 
-    OutputAnalyzer output;
-
     // First class is loaded from CDS, second class is loaded from JAR
-    output = TestCommon.exec(appJar, "ProtDomain");
-    TestCommon.checkExec(output, "Protection Domains match");
+    TestCommon.run("-cp", appJar, "ProtDomain")
+        .assertNormalExit("Protection Domains match");
 
     // First class is loaded from JAR, second class is loaded from CDS
-    output = TestCommon.exec(appJar, "ProtDomainB");
-    TestCommon.checkExec(output, "Protection Domains match");
+    TestCommon.run("-cp", appJar, "ProtDomainB")
+        .assertNormalExit("Protection Domains match");
 
     // Test ProtectionDomain for application and extension module classes from the
     // "modules" jimage
-    output = TestCommon.exec(appJar, "JimageClassProtDomain");
-    output.shouldNotContain("Failed: Protection Domains do not match");
+    TestCommon.run("-cp", appJar, "JimageClassProtDomain")
+        .assertNormalExit(output -> output.shouldNotContain(
+                          "Failed: Protection Domains do not match"));
   }
 }
