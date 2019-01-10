@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6453386
+ * @bug 6453386 8216404
  * @summary Test Elements.getPackageOf
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
@@ -56,6 +56,7 @@ public class TestGetPackageOf extends JavacTestingAbstractProcessor {
             TypeElement    stringElt   = eltUtils.getTypeElement("java.lang.String");
             PackageElement javaLangPkg = eltUtils.getPackageElement("java.lang");
             PackageElement unnamedPkg  = eltUtils.getPackageElement("");
+            ModuleElement  moduleElt   = eltUtils.getModuleElement("java.base");
             PackageElement pkg = null;
 
             if (!javaLangPkg.equals(pkg=eltUtils.getPackageOf(stringElt) ) )
@@ -66,6 +67,10 @@ public class TestGetPackageOf extends JavacTestingAbstractProcessor {
 
             if (!unnamedPkg.equals(pkg=eltUtils.getPackageOf(unnamedPkg) ) )
                 throw new RuntimeException("Unexpected package for unnamed pkg: " + pkg);
+
+            if (eltUtils.getPackageOf(moduleElt) != null)
+                throw new RuntimeException("Unexpected package for module" +
+                                           moduleElt.getSimpleName());
         }
         return true;
     }

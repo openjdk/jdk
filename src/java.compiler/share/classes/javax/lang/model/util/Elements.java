@@ -451,6 +451,7 @@ public interface Elements {
     /**
      * Returns the package of an element.  The package of a package is
      * itself.
+     * The package of a module is {@code null}.
      *
      * @param type the element being examined
      * @return the package of an element
