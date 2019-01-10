@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_X86_VM_VMSTRUCTS_BSD_X86_HPP
-#define OS_CPU_BSD_X86_VM_VMSTRUCTS_BSD_X86_HPP
+#ifndef OS_CPU_BSD_X86_VMSTRUCTS_BSD_X86_HPP
+#define OS_CPU_BSD_X86_VMSTRUCTS_BSD_X86_HPP
 
 // These are the OS and CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -50,4 +50,4 @@
 
 #define VM_LONG_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 
-#endif // OS_CPU_BSD_X86_VM_VMSTRUCTS_BSD_X86_HPP
+#endif // OS_CPU_BSD_X86_VMSTRUCTS_BSD_X86_HPP

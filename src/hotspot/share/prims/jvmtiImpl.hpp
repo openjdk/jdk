@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIIMPL_HPP
-#define SHARE_VM_PRIMS_JVMTIIMPL_HPP
+#ifndef SHARE_PRIMS_JVMTIIMPL_HPP
+#define SHARE_PRIMS_JVMTIIMPL_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -532,4 +532,4 @@ class JvmtiDeferredEventQueue : AllStatic {
 // Utility macro that checks for NULL pointers:
 #define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
 
-#endif // SHARE_VM_PRIMS_JVMTIIMPL_HPP
+#endif // SHARE_PRIMS_JVMTIIMPL_HPP

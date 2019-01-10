@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_JNI_JFRJAVASUPPORT_HPP
-#define SHARE_VM_JFR_JNI_JFRJAVASUPPORT_HPP
+#ifndef SHARE_JFR_JNI_JFRJAVASUPPORT_HPP
+#define SHARE_JFR_JNI_JFRJAVASUPPORT_HPP
 
 #include "jfr/jni/jfrJavaCall.hpp"
 #include "utilities/exceptions.hpp"
@@ -111,4 +111,4 @@ class JfrJavaSupport : public AllStatic {
   static void set_cause(jthrowable throwable, Thread* t);
 };
 
-#endif // SHARE_VM_JFR_JNI_JFRJAVASUPPORT_HPP
+#endif // SHARE_JFR_JNI_JFRJAVASUPPORT_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_FLAGS_JVMFLAG_HPP
-#define SHARE_VM_RUNTIME_FLAGS_JVMFLAG_HPP
+#ifndef SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
+#define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -279,4 +279,4 @@ public:
   static void verify() PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_RUNTIME_FLAGS_JVMFLAG_HPP
+#endif // SHARE_RUNTIME_FLAGS_JVMFLAG_HPP

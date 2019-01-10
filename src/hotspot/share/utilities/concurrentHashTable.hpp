@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_CONCURRENT_HASH_TABLE_HPP
-#define SHARE_UTILITIES_CONCURRENT_HASH_TABLE_HPP
+#ifndef SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP
+#define SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalCounter.hpp"
@@ -505,4 +505,4 @@ class ConcurrentHashTable : public CHeapObj<F> {
   class GrowTask;
 };
 
-#endif // include guard
+#endif // SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP

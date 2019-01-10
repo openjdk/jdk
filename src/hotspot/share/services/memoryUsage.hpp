@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_MEMORYUSAGE_HPP
-#define SHARE_VM_SERVICES_MEMORYUSAGE_HPP
+#ifndef SHARE_SERVICES_MEMORYUSAGE_HPP
+#define SHARE_SERVICES_MEMORYUSAGE_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -83,4 +83,4 @@ public:
   jlong max_size_as_jlong()  const { return convert_to_jlong(_maxSize); }
 };
 
-#endif // SHARE_VM_SERVICES_MEMORYUSAGE_HPP
+#endif // SHARE_SERVICES_MEMORYUSAGE_HPP

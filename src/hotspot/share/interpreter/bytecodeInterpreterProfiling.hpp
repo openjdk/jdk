@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,8 +27,8 @@
 // for updating a method's methodData object.
 
 
-#ifndef SHARE_VM_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
-#define SHARE_VM_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
+#ifndef SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
+#define SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
 
 #ifdef CC_INTERP
 
@@ -56,4 +56,4 @@
 
 #endif // CC_INTERP
 
-#endif // SHARE_VM_INTERPRETER_BYTECODECINTERPRETERPROFILING_HPP
+#endif // SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP

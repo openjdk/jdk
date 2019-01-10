@@ -36,4 +36,4 @@ public:
   virtual CollectedHeap* create_heap();
 };
 
-#endif // SHARE_GC_CMS_PARALLELARGUMENTS_HPP
+#endif // SHARE_GC_PARALLEL_PARALLELARGUMENTS_HPP

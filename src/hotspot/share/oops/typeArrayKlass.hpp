@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
-#define SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
+#ifndef SHARE_OOPS_TYPEARRAYKLASS_HPP
+#define SHARE_OOPS_TYPEARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -135,4 +135,4 @@ class TypeArrayKlass : public ArrayKlass {
   PackageEntry* package() const;
 };
 
-#endif // SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
+#endif // SHARE_OOPS_TYPEARRAYKLASS_HPP

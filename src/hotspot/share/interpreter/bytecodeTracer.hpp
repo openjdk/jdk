@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
-#define SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
+#ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
+#define SHARE_INTERPRETER_BYTECODETRACER_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
@@ -62,4 +62,4 @@ class BytecodeClosure {
   virtual void trace(const methodHandle& method, address bcp, outputStream* st) = 0;
 };
 
-#endif // SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
+#endif // SHARE_INTERPRETER_BYTECODETRACER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
-#define SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
+#ifndef SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
+#define SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -568,4 +568,4 @@ extern "C" {                                                         \
 
 #define JVM_END } }
 
-#endif // SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
+#endif // SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP

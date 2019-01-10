@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
-#define SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
+#ifndef SHARE_GC_G1_DIRTYCARDQUEUE_HPP
+#define SHARE_GC_G1_DIRTYCARDQUEUE_HPP
 
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
@@ -164,4 +164,4 @@ public:
 
 };
 
-#endif // SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
+#endif // SHARE_GC_G1_DIRTYCARDQUEUE_HPP

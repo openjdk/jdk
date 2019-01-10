@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCI_CODE_INSTALLER_HPP
-#define SHARE_VM_JVMCI_JVMCI_CODE_INSTALLER_HPP
+#ifndef SHARE_JVMCI_JVMCICODEINSTALLER_HPP
+#define SHARE_JVMCI_JVMCICODEINSTALLER_HPP
 
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -279,4 +279,4 @@ Method* getMethodFromHotSpotMethod(oop hotspot_method);
 
 
 
-#endif // SHARE_VM_JVMCI_JVMCI_CODE_INSTALLER_HPP
+#endif // SHARE_JVMCI_JVMCICODEINSTALLER_HPP

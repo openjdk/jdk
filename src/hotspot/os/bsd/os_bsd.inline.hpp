@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_BSD_VM_OS_BSD_INLINE_HPP
-#define OS_BSD_VM_OS_BSD_INLINE_HPP
+#ifndef OS_BSD_OS_BSD_INLINE_HPP
+#define OS_BSD_OS_BSD_INLINE_HPP
 
 #include "runtime/os.hpp"
 
@@ -156,4 +156,4 @@ inline void os::exit(int num) {
   ::exit(num);
 }
 
-#endif // OS_BSD_VM_OS_BSD_INLINE_HPP
+#endif // OS_BSD_OS_BSD_INLINE_HPP

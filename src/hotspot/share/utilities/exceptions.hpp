@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_EXCEPTIONS_HPP
-#define SHARE_VM_UTILITIES_EXCEPTIONS_HPP
+#ifndef SHARE_UTILITIES_EXCEPTIONS_HPP
+#define SHARE_UTILITIES_EXCEPTIONS_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -333,4 +333,4 @@ class ExceptionMark {
 
 #define EXCEPTION_MARK                           Thread* THREAD = NULL; ExceptionMark __em(THREAD);
 
-#endif // SHARE_VM_UTILITIES_EXCEPTIONS_HPP
+#endif // SHARE_UTILITIES_EXCEPTIONS_HPP

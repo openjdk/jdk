@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
-#define SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
+#ifndef SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP
+#define SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP
 
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
@@ -68,4 +68,4 @@ class GlobalCounter::CriticalSection {
   }
 };
 
-#endif // include guard
+#endif // SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP

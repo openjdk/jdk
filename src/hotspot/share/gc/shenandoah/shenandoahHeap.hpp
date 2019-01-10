@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
@@ -754,4 +754,4 @@ private:
   bool should_inject_alloc_failure();
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

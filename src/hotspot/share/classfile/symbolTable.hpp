@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
-#define SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+#ifndef SHARE_CLASSFILE_SYMBOLTABLE_HPP
+#define SHARE_CLASSFILE_SYMBOLTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -259,4 +259,4 @@ public:
   static void print_histogram() PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+#endif // SHARE_CLASSFILE_SYMBOLTABLE_HPP

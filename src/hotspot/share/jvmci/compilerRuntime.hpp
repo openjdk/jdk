@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_RUNTIME_COMPILERRUNTIME_HPP
-#define SHARE_VM_RUNTIME_COMPILERRUNTIME_HPP
+#ifndef SHARE_JVMCI_COMPILERRUNTIME_HPP
+#define SHARE_JVMCI_COMPILERRUNTIME_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -48,4 +48,4 @@ class CompilerRuntime : AllStatic {
   static void backedge_event(JavaThread *thread, MethodCounters* counters, int branch_bci, int target_bci);
 };
 
-#endif // SHARE_VM_RUNTIME_COMPILERRUNTIME_HPP
+#endif // SHARE_JVMCI_COMPILERRUNTIME_HPP

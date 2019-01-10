@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
-#define SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
+#ifndef SHARE_ASM_MACROASSEMBLER_INLINE_HPP
+#define SHARE_ASM_MACROASSEMBLER_INLINE_HPP
 
 #include "asm/macroAssembler.hpp"
 #include CPU_HEADER_INLINE(macroAssembler)
 
-#endif // SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
+#endif // SHARE_ASM_MACROASSEMBLER_INLINE_HPP

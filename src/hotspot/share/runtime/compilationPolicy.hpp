@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP
-#define SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP
+#ifndef SHARE_RUNTIME_COMPILATIONPOLICY_HPP
+#define SHARE_RUNTIME_COMPILATIONPOLICY_HPP
 
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
@@ -140,4 +140,4 @@ class StackWalkCompPolicy : public NonTieredCompPolicy {
 };
 #endif
 
-#endif // SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP
+#endif // SHARE_RUNTIME_COMPILATIONPOLICY_HPP

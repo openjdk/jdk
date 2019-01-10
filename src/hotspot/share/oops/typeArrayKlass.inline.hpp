@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
+#ifndef SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP
+#define SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP
 
 #include "oops/arrayKlass.hpp"
 #include "oops/klass.hpp"
@@ -54,4 +54,4 @@ void TypeArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   oop_oop_iterate_impl(obj, closure);
 }
 
-#endif // SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
+#endif // SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP

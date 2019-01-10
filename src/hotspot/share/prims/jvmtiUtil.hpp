@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIUTIL_HPP
-#define SHARE_VM_PRIMS_JVMTIUTIL_HPP
+#ifndef SHARE_PRIMS_JVMTIUTIL_HPP
+#define SHARE_PRIMS_JVMTIUTIL_HPP
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/resourceArea.hpp"
@@ -92,4 +92,4 @@ class SafeResourceMark : public ResourceMark {
 
 };
 
-#endif // SHARE_VM_PRIMS_JVMTIUTIL_HPP
+#endif // SHARE_PRIMS_JVMTIUTIL_HPP

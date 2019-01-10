@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_COPY_PPC_HPP
-#define CPU_PPC_VM_COPY_PPC_HPP
+#ifndef CPU_PPC_COPY_PPC_HPP
+#define CPU_PPC_COPY_PPC_HPP
 
 #ifndef PPC64
 #error "copy currently only implemented for PPC64"
@@ -168,4 +168,4 @@ static void pd_zero_to_bytes(void* to, size_t count) {
   (void)memset(to, 0, count);
 }
 
-#endif // CPU_PPC_VM_COPY_PPC_HPP
+#endif // CPU_PPC_COPY_PPC_HPP

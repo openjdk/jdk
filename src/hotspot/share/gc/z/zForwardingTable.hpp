@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZFORWARDING_HPP
-#define SHARE_GC_Z_ZFORWARDING_HPP
+#ifndef SHARE_GC_Z_ZFORWARDINGTABLE_HPP
+#define SHARE_GC_Z_ZFORWARDINGTABLE_HPP
 
 #include "gc/z/zForwardingTableEntry.hpp"
 #include "memory/allocation.hpp"
@@ -56,4 +56,4 @@ public:
   void verify(size_t object_max_count, size_t live_objects) const;
 };
 
-#endif // SHARE_GC_Z_ZFORWARDING_HPP
+#endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP

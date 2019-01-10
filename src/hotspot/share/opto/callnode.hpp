@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_CALLNODE_HPP
-#define SHARE_VM_OPTO_CALLNODE_HPP
+#ifndef SHARE_OPTO_CALLNODE_HPP
+#define SHARE_OPTO_CALLNODE_HPP
 
 #include "opto/connode.hpp"
 #include "opto/mulnode.hpp"
@@ -1126,4 +1126,4 @@ public:
   JVMState* dbg_jvms() const { return NULL; }
 #endif
 };
-#endif // SHARE_VM_OPTO_CALLNODE_HPP
+#endif // SHARE_OPTO_CALLNODE_HPP

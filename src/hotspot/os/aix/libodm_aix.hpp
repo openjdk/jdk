@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
 
 // Encapsulates the libodm library and provides more convenient interfaces.
 
-#ifndef OS_AIX_VM_LIBODM_AIX_HPP
-#define OS_AIX_VM_LIBODM_AIX_HPP
+#ifndef OS_AIX_LIBODM_AIX_HPP
+#define OS_AIX_LIBODM_AIX_HPP
 
 #include <odmi.h>
 
@@ -103,4 +103,4 @@ class odmWrapper : private dynamicOdm {
   static void determine_os_kernel_version(uint32_t* p_ver);
 };
 
-#endif // OS_AIX_VM_LIBODM_AIX_HPP
+#endif // OS_AIX_LIBODM_AIX_HPP

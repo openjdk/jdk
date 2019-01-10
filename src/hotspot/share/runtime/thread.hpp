@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_THREAD_HPP
-#define SHARE_VM_RUNTIME_THREAD_HPP
+#ifndef SHARE_RUNTIME_THREAD_HPP
+#define SHARE_RUNTIME_THREAD_HPP
 
 #include "jni.h"
 #include "code/compiledMethod.hpp"
@@ -2329,4 +2329,4 @@ class SignalHandlerMark: public StackObj {
 };
 
 
-#endif // SHARE_VM_RUNTIME_THREAD_HPP
+#endif // SHARE_RUNTIME_THREAD_HPP

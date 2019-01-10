@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_INTERP_MASM_AARCH64_64_HPP
-#define CPU_AARCH64_VM_INTERP_MASM_AARCH64_64_HPP
+#ifndef CPU_AARCH64_INTERP_MASM_AARCH64_HPP
+#define CPU_AARCH64_INTERP_MASM_AARCH64_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -295,4 +295,4 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 };
 
-#endif // CPU_AARCH64_VM_INTERP_MASM_AARCH64_64_HPP
+#endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGTAG_HPP
-#define SHARE_VM_LOGGING_LOGTAG_HPP
+#ifndef SHARE_LOGGING_LOGTAG_HPP
+#define SHARE_LOGGING_LOGTAG_HPP
 
 #include "logging/logTag_ext.hpp"
 #include "memory/allocation.hpp"
@@ -220,4 +220,4 @@ class LogTag : public AllStatic {
 
 typedef LogTag::type LogTagType;
 
-#endif // SHARE_VM_LOGGING_LOGTAG_HPP
+#endif // SHARE_LOGGING_LOGTAG_HPP

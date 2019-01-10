@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP
-#define SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP
+#ifndef SHARE_PRIMS_JVMTITHREADSTATE_HPP
+#define SHARE_PRIMS_JVMTITHREADSTATE_HPP
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
@@ -413,4 +413,4 @@ class RedefineVerifyMark : public StackObj {
   }
 };
 
-#endif // SHARE_VM_PRIMS_JVMTITHREADSTATE_HPP
+#endif // SHARE_PRIMS_JVMTITHREADSTATE_HPP

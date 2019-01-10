@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
-#define SHARE_VM_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
@@ -373,4 +373,4 @@ class KlassArtifactRegistrator {
   }
 };
 
-#endif // SHARE_VM_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP

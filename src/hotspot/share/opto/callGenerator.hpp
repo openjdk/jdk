@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_CALLGENERATOR_HPP
-#define SHARE_VM_OPTO_CALLGENERATOR_HPP
+#ifndef SHARE_OPTO_CALLGENERATOR_HPP
+#define SHARE_OPTO_CALLGENERATOR_HPP
 
 #include "compiler/compileBroker.hpp"
 #include "opto/callnode.hpp"
@@ -342,4 +342,4 @@ class WarmCallInfo : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_OPTO_CALLGENERATOR_HPP
+#endif // SHARE_OPTO_CALLGENERATOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_LINEARSCAN_HPP
-#define SHARE_VM_C1_C1_LINEARSCAN_HPP
+#ifndef SHARE_C1_C1_LINEARSCAN_HPP
+#define SHARE_C1_C1_LINEARSCAN_HPP
 
 #include "c1/c1_FpuStackSim.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -964,4 +964,4 @@ class LinearScanTimers : public StackObj {
 // Pick up platform-dependent implementation details
 #include CPU_HEADER(c1_LinearScan)
 
-#endif // SHARE_VM_C1_C1_LINEARSCAN_HPP
+#endif // SHARE_C1_C1_LINEARSCAN_HPP

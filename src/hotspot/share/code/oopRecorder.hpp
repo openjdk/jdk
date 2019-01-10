@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_OOPRECORDER_HPP
-#define SHARE_VM_CODE_OOPRECORDER_HPP
+#ifndef SHARE_CODE_OOPRECORDER_HPP
+#define SHARE_CODE_OOPRECORDER_HPP
 
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
@@ -257,4 +257,4 @@ class OopRecorder : public ResourceObj {
 };
 
 
-#endif // SHARE_VM_CODE_OOPRECORDER_HPP
+#endif // SHARE_CODE_OOPRECORDER_HPP

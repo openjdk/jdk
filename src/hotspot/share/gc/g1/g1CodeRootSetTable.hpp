@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_GC_G1_G1CODEROOTSETTABLE_HPP
-#define SHARE_VM_GC_G1_G1CODEROOTSETTABLE_HPP
+#ifndef SHARE_GC_G1_G1CODEROOTSETTABLE_HPP
+#define SHARE_GC_G1_G1CODEROOTSETTABLE_HPP
 
 #include "utilities/hashtable.hpp"
 
@@ -73,4 +73,4 @@ class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
   size_t mem_size();
 };
 
-#endif /* SHARE_VM_GC_G1_G1CODEROOTSETTABLE_HPP */
+#endif // SHARE_GC_G1_G1CODEROOTSETTABLE_HPP

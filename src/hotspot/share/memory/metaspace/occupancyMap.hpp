@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -239,5 +239,4 @@ class OccupancyMap : public CHeapObj<mtInternal> {
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_OCCUPANCYMAP_HPP */
-
+#endif // SHARE_MEMORY_METASPACE_OCCUPANCYMAP_HPP

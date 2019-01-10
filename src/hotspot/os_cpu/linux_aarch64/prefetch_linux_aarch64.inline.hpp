@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_VM_PREFETCH_LINUX_AARCH64_INLINE_HPP
-#define OS_CPU_LINUX_AARCH64_VM_PREFETCH_LINUX_AARCH64_INLINE_HPP
+#ifndef OS_CPU_LINUX_AARCH64_PREFETCH_LINUX_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_PREFETCH_LINUX_AARCH64_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
 
@@ -43,4 +43,4 @@ inline void Prefetch::write(void *loc, intx interval) {
 #endif
 }
 
-#endif // OS_CPU_LINUX_AARCH64_VM_PREFETCH_LINUX_AARCH64_INLINE_HPP
+#endif // OS_CPU_LINUX_AARCH64_PREFETCH_LINUX_AARCH64_INLINE_HPP

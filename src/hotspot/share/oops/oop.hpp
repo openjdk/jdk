@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_HPP
-#define SHARE_VM_OOPS_OOP_HPP
+#ifndef SHARE_OOPS_OOP_HPP
+#define SHARE_OOPS_OOP_HPP
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
@@ -331,4 +331,4 @@ class oopDesc {
   static oop   oop_or_null(address addr);
 };
 
-#endif // SHARE_VM_OOPS_OOP_HPP
+#endif // SHARE_OOPS_OOP_HPP

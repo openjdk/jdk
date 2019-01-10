@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 
 #define GC_SHENANDOAH_FLAGS(develop,                                        \
                             develop_pd,                                     \
@@ -414,4 +414,4 @@
   experimental(bool, ShenandoahLoopOptsAfterExpansion, true,                \
           "Attempt more loop opts after write barrier expansion")           \
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

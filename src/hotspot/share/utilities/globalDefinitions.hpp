@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
-#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+#ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
+#define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
@@ -1096,4 +1096,4 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 }
 
 
-#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+#endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

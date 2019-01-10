@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_JAVACALLS_HPP
-#define SHARE_VM_RUNTIME_JAVACALLS_HPP
+#ifndef SHARE_RUNTIME_JAVACALLS_HPP
+#define SHARE_RUNTIME_JAVACALLS_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
@@ -268,4 +268,4 @@ class JavaCalls: AllStatic {
   static void call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS);
 };
 
-#endif // SHARE_VM_RUNTIME_JAVACALLS_HPP
+#endif // SHARE_RUNTIME_JAVACALLS_HPP

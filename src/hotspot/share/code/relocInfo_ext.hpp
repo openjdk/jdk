@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_RELOCINFO_EXT_HPP
-#define SHARE_VM_CODE_RELOCINFO_EXT_HPP
+#ifndef SHARE_CODE_RELOCINFO_EXT_HPP
+#define SHARE_CODE_RELOCINFO_EXT_HPP
 
 // symbolic_Relocation allows to anotate some addresses in the generated code.
 //
@@ -58,4 +58,4 @@ class symbolic_Relocation : AllStatic {
   static address symbolic_value(symbolic_reference t);
 };
 
-#endif // SHARE_VM_CODE_RELOCINFO_EXT_HPP
+#endif // SHARE_CODE_RELOCINFO_EXT_HPP

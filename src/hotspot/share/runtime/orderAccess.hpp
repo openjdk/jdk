@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_ORDERACCESS_HPP
-#define SHARE_VM_RUNTIME_ORDERACCESS_HPP
+#ifndef SHARE_RUNTIME_ORDERACCESS_HPP
+#define SHARE_RUNTIME_ORDERACCESS_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -346,4 +346,4 @@ template <typename T, typename D>
 inline void OrderAccess::release_store_fence(volatile D* p, T v) {
   StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
 }
-#endif // SHARE_VM_RUNTIME_ORDERACCESS_HPP
+#endif // SHARE_RUNTIME_ORDERACCESS_HPP

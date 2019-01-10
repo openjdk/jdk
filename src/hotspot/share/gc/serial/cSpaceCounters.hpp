@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SERIAL_CSPACECOUNTERS_HPP
-#define SHARE_VM_GC_SERIAL_CSPACECOUNTERS_HPP
+#ifndef SHARE_GC_SERIAL_CSPACECOUNTERS_HPP
+#define SHARE_GC_SERIAL_CSPACECOUNTERS_HPP
 
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
@@ -71,4 +71,4 @@ class ContiguousSpaceUsedHelper : public PerfLongSampleHelper {
     jlong take_sample();
 };
 
-#endif // SHARE_VM_GC_SERIAL_CSPACECOUNTERS_HPP
+#endif // SHARE_GC_SERIAL_CSPACECOUNTERS_HPP

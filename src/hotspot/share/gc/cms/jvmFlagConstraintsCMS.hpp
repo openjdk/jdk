@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_CMS_COMMANDLINEFLAGCONSTRAINTSCMS_HPP
-#define SHARE_GC_CMS_COMMANDLINEFLAGCONSTRAINTSCMS_HPP
+#ifndef SHARE_GC_CMS_JVMFLAGCONSTRAINTSCMS_HPP
+#define SHARE_GC_CMS_JVMFLAGCONSTRAINTSCMS_HPP
 
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -45,4 +45,4 @@ JVMFlag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose);
 JVMFlag::Error ParallelGCThreadsConstraintFuncCMS(uint value, bool verbose);
 JVMFlag::Error OldPLABSizeConstraintFuncCMS(size_t value, bool verbose);
 
-#endif // SHARE_GC_CMS_COMMANDLINEFLAGCONSTRAINTSCMS_HPP
+#endif // SHARE_GC_CMS_JVMFLAGCONSTRAINTSCMS_HPP

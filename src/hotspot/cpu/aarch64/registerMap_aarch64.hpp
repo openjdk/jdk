@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_REGISTERMAP_AARCH64_HPP
-#define CPU_AARCH64_VM_REGISTERMAP_AARCH64_HPP
+#ifndef CPU_AARCH64_REGISTERMAP_AARCH64_HPP
+#define CPU_AARCH64_REGISTERMAP_AARCH64_HPP
 
 // machine-dependent implemention for register maps
   friend class frame;
@@ -42,4 +42,4 @@
   void pd_initialize() {}
   void pd_initialize_from(const RegisterMap* map) {}
 
-#endif // CPU_AARCH64_VM_REGISTERMAP_AARCH64_HPP
+#endif // CPU_AARCH64_REGISTERMAP_AARCH64_HPP

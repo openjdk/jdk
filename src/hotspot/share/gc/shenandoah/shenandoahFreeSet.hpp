@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -94,4 +94,4 @@ public:
   void print_on(outputStream* out) const;
 };
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP

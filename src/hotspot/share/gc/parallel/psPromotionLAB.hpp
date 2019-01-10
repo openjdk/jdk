@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_PSPROMOTIONLAB_HPP
-#define SHARE_VM_GC_PARALLEL_PSPROMOTIONLAB_HPP
+#ifndef SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP
+#define SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP
 
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -134,4 +134,4 @@ class PSOldPromotionLAB : public PSPromotionLAB {
   debug_only(virtual bool lab_is_valid(MemRegion lab));
 };
 
-#endif // SHARE_VM_GC_PARALLEL_PSPROMOTIONLAB_HPP
+#endif // SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_C1_MACROASSEMBLER_S390_HPP
-#define CPU_S390_VM_C1_MACROASSEMBLER_S390_HPP
+#ifndef CPU_S390_C1_MACROASSEMBLER_S390_HPP
+#define CPU_S390_C1_MACROASSEMBLER_S390_HPP
 
   void pd_init() { /* nothing to do */ }
 
@@ -98,4 +98,4 @@
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
 
-#endif // CPU_S390_VM_C1_MACROASSEMBLER_S390_HPP
+#endif // CPU_S390_C1_MACROASSEMBLER_S390_HPP

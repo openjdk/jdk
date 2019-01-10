@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2014 Google Inc.  All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_PPC_VM_BYTES_LINUX_PPC_INLINE_HPP
-#define OS_CPU_LINUX_PPC_VM_BYTES_LINUX_PPC_INLINE_HPP
+#ifndef OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_INLINE_HPP
+#define OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_INLINE_HPP
 
 #if defined(VM_LITTLE_ENDIAN)
 #include <byteswap.h>
@@ -36,4 +36,4 @@ inline u4 Bytes::swap_u4(u4 x) { return bswap_32(x); }
 inline u8 Bytes::swap_u8(u8 x) { return bswap_64(x); }
 #endif // VM_LITTLE_ENDIAN
 
-#endif // OS_CPU_LINUX_PPC_VM_BYTES_LINUX_PPC_INLINE_HPP
+#endif // OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_INLINE_HPP

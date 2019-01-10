@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_C1_LINEARSCAN_HPP
-#define CPU_AARCH64_VM_C1_LINEARSCAN_HPP
+#ifndef CPU_AARCH64_C1_LINEARSCAN_AARCH64_HPP
+#define CPU_AARCH64_C1_LINEARSCAN_AARCH64_HPP
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
   return reg_num <= FrameMap::last_cpu_reg() || reg_num >= pd_nof_cpu_regs_frame_map;
@@ -73,4 +73,4 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
 }
 
 
-#endif // CPU_AARCH64_VM_C1_LINEARSCAN_HPP
+#endif // CPU_AARCH64_C1_LINEARSCAN_AARCH64_HPP

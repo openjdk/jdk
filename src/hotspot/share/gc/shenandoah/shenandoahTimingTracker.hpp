@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
 
 #include "jfr/jfrEvents.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -65,5 +65,4 @@ public:
   static ShenandoahPhaseTimings::Phase current_termination_phase() { return _current_termination_phase; }
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
-
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP

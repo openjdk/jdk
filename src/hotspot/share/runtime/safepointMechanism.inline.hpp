@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
-#define SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#ifndef SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#define SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/safepoint.hpp"
@@ -95,4 +95,4 @@ void SafepointMechanism::disarm_local_poll_release(JavaThread* thread) {
   thread->set_polling_page_release(poll_disarmed_value());
 }
 
-#endif // SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#endif // SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP

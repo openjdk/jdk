@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP
-#define SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP
+#ifndef SHARE_RUNTIME_DEOPTIMIZATION_HPP
+#define SHARE_RUNTIME_DEOPTIMIZATION_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/frame.hpp"
@@ -468,4 +468,4 @@ public:
   static bool is_active() { return _is_active; }
 };
 
-#endif // SHARE_VM_RUNTIME_DEOPTIMIZATION_HPP
+#endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

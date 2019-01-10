@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_NATIVEINST_SPARC_HPP
-#define CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+#ifndef CPU_SPARC_NATIVEINST_SPARC_HPP
+#define CPU_SPARC_NATIVEINST_SPARC_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "runtime/icache.hpp"
@@ -809,4 +809,4 @@ class NativeIllegalInstruction: public NativeInstruction {
   static void insert(address code_pos);
 };
 
-#endif // CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+#endif // CPU_SPARC_NATIVEINST_SPARC_HPP

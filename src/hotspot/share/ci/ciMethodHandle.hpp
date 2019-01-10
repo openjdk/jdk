@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIMETHODHANDLE_HPP
-#define SHARE_VM_CI_CIMETHODHANDLE_HPP
+#ifndef SHARE_CI_CIMETHODHANDLE_HPP
+#define SHARE_CI_CIMETHODHANDLE_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciInstance.hpp"
@@ -41,4 +41,4 @@ public:
   ciMethod* get_vmtarget() const;
 };
 
-#endif // SHARE_VM_CI_CIMETHODHANDLE_HPP
+#endif // SHARE_CI_CIMETHODHANDLE_HPP

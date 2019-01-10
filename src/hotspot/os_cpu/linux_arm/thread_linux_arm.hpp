@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_VM_THREAD_LINUX_ARM_HPP
-#define OS_CPU_LINUX_ARM_VM_THREAD_LINUX_ARM_HPP
+#ifndef OS_CPU_LINUX_ARM_THREAD_LINUX_ARM_HPP
+#define OS_CPU_LINUX_ARM_THREAD_LINUX_ARM_HPP
 
  private:
   // The following thread-local variables replicate corresponding global variables.
@@ -84,4 +84,4 @@ public:
   static void enable_register_stack_guard() {}
   static void disable_register_stack_guard() {}
 
-#endif // OS_CPU_LINUX_ARM_VM_THREAD_LINUX_ARM_HPP
+#endif // OS_CPU_LINUX_ARM_THREAD_LINUX_ARM_HPP

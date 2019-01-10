@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_STUBROUTINES_AARCH64_HPP
-#define CPU_AARCH64_VM_STUBROUTINES_AARCH64_HPP
+#ifndef CPU_AARCH64_STUBROUTINES_AARCH64_HPP
+#define CPU_AARCH64_STUBROUTINES_AARCH64_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
@@ -195,4 +195,4 @@ private:
   // end trigonometric tables block
 };
 
-#endif // CPU_AARCH64_VM_STUBROUTINES_AARCH64_HPP
+#endif // CPU_AARCH64_STUBROUTINES_AARCH64_HPP

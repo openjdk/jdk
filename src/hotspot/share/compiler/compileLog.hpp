@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_COMPILELOG_HPP
-#define SHARE_VM_COMPILER_COMPILELOG_HPP
+#ifndef SHARE_COMPILER_COMPILELOG_HPP
+#define SHARE_COMPILER_COMPILELOG_HPP
 
 #include "utilities/xmlstream.hpp"
 
@@ -97,4 +97,4 @@ class CompileLog : public xmlStream {
   static void finish_log_on_error(outputStream* out, char *buf, int buflen);
 };
 
-#endif // SHARE_VM_COMPILER_COMPILELOG_HPP
+#endif // SHARE_COMPILER_COMPILELOG_HPP

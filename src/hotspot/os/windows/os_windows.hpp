@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_OS_WINDOWS_HPP
-#define OS_WINDOWS_VM_OS_WINDOWS_HPP
+#ifndef OS_WINDOWS_OS_WINDOWS_HPP
+#define OS_WINDOWS_OS_WINDOWS_HPP
 // Win32_OS defines the interface to windows operating systems
 
 // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
@@ -184,4 +184,4 @@ class PlatformParker : public CHeapObj<mtInternal> {
 
 } ;
 
-#endif // OS_WINDOWS_VM_OS_WINDOWS_HPP
+#endif // OS_WINDOWS_OS_WINDOWS_HPP

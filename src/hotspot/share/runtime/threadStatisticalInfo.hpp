@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_THREADSTATISTICS_HPP
-#define SHARE_VM_RUNTIME_THREADSTATISTICS_HPP
+#ifndef SHARE_RUNTIME_THREADSTATISTICALINFO_HPP
+#define SHARE_RUNTIME_THREADSTATISTICALINFO_HPP
 
 #include "jni.h"
 #include "runtime/os.hpp"
@@ -45,4 +45,4 @@ public:
   uint64_t getElapsedTime() const           { return os::javaTimeMillis() - getStartTime(); }
 };
 
-#endif // SHARE_VM_RUNTIME_THREADSTATISTICS_HPP
+#endif // SHARE_RUNTIME_THREADSTATISTICALINFO_HPP

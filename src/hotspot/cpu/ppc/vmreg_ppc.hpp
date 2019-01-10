@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_VMREG_PPC_HPP
-#define CPU_PPC_VM_VMREG_PPC_HPP
+#ifndef CPU_PPC_VMREG_PPC_HPP
+#define CPU_PPC_VMREG_PPC_HPP
 
 inline bool is_Register() {
   return (unsigned int)value() < (unsigned int)ConcreteRegisterImpl::max_gpr;
@@ -50,4 +50,4 @@ inline bool is_concrete() {
   return is_even(value());
 }
 
-#endif // CPU_PPC_VM_VMREG_PPC_HPP
+#endif // CPU_PPC_VMREG_PPC_HPP

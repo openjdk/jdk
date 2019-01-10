@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_KLASSVTABLE_HPP
-#define SHARE_VM_OOPS_KLASSVTABLE_HPP
+#ifndef SHARE_OOPS_KLASSVTABLE_HPP
+#define SHARE_OOPS_KLASSVTABLE_HPP
 
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
@@ -352,4 +352,4 @@ class klassItable {
   static void update_stats(int size) PRODUCT_RETURN NOT_PRODUCT({ _total_classes++; _total_size += size; })
 };
 
-#endif // SHARE_VM_OOPS_KLASSVTABLE_HPP
+#endif // SHARE_OOPS_KLASSVTABLE_HPP

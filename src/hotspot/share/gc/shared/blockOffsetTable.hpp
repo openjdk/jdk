@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
-#define SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#ifndef SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#define SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "memory/allocation.hpp"
@@ -545,4 +545,4 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   virtual size_t last_active_index() const;
 };
 
-#endif // SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#endif // SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP

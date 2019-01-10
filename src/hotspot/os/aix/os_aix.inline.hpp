@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_OS_AIX_INLINE_HPP
-#define OS_AIX_VM_OS_AIX_INLINE_HPP
+#ifndef OS_AIX_OS_AIX_INLINE_HPP
+#define OS_AIX_OS_AIX_INLINE_HPP
 
 #include "runtime/os.hpp"
 
@@ -151,4 +151,4 @@ inline void os::exit(int num) {
   ::exit(num);
 }
 
-#endif // OS_AIX_VM_OS_AIX_INLINE_HPP
+#endif // OS_AIX_OS_AIX_INLINE_HPP

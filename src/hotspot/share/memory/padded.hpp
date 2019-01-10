@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_PADDED_HPP
-#define SHARE_VM_MEMORY_PADDED_HPP
+#ifndef SHARE_MEMORY_PADDED_HPP
+#define SHARE_MEMORY_PADDED_HPP
 
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -117,4 +117,4 @@ class PaddedPrimitiveArray {
   static T* create_unfreeable(size_t length);
 };
 
-#endif // SHARE_VM_MEMORY_PADDED_HPP
+#endif // SHARE_MEMORY_PADDED_HPP

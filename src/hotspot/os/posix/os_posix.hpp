@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 #include "runtime/os.hpp"
 
-#ifndef OS_POSIX_VM_OS_POSIX_HPP
-#define OS_POSIX_VM_OS_POSIX_HPP
+#ifndef OS_POSIX_OS_POSIX_HPP
+#define OS_POSIX_OS_POSIX_HPP
 
 // File conventions
 static const char* file_separator() { return "/"; }
@@ -224,4 +224,4 @@ class PlatformParker : public CHeapObj<mtInternal> {
 
 #endif // !SOLARIS
 
-#endif // OS_POSIX_VM_OS_POSIX_HPP
+#endif // OS_POSIX_OS_POSIX_HPP

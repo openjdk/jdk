@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_ALLOCATION_HPP
-#define SHARE_VM_MEMORY_ALLOCATION_HPP
+#ifndef SHARE_MEMORY_ALLOCATION_HPP
+#define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -570,4 +570,4 @@ class MallocArrayAllocator : public AllStatic {
   static void free(E* addr);
 };
 
-#endif // SHARE_VM_MEMORY_ALLOCATION_HPP
+#endif // SHARE_MEMORY_ALLOCATION_HPP

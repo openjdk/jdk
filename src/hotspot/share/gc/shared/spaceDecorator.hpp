@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_SPACEDECORATOR_HPP
-#define SHARE_VM_GC_SHARED_SPACEDECORATOR_HPP
+#ifndef SHARE_GC_SHARED_SPACEDECORATOR_HPP
+#define SHARE_GC_SHARED_SPACEDECORATOR_HPP
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/space.hpp"
@@ -147,4 +147,4 @@ class MutableSpaceMangler: public SpaceMangler {
   MutableSpaceMangler(MutableSpace* sp) : SpaceMangler(), _sp(sp) {}
 };
 
-#endif // SHARE_VM_GC_SHARED_SPACEDECORATOR_HPP
+#endif // SHARE_GC_SHARED_SPACEDECORATOR_HPP

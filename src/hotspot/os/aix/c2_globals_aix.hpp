@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_C2_GLOBALS_AIX_HPP
-#define OS_AIX_VM_C2_GLOBALS_AIX_HPP
+#ifndef OS_AIX_C2_GLOBALS_AIX_HPP
+#define OS_AIX_C2_GLOBALS_AIX_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -34,4 +34,4 @@
 // server compiler. (see c2_globals.hpp)
 //
 
-#endif // OS_AIX_VM_C2_GLOBALS_AIX_HPP
+#endif // OS_AIX_C2_GLOBALS_AIX_HPP

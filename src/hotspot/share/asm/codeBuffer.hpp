@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ASM_CODEBUFFER_HPP
-#define SHARE_VM_ASM_CODEBUFFER_HPP
+#ifndef SHARE_ASM_CODEBUFFER_HPP
+#define SHARE_ASM_CODEBUFFER_HPP
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
@@ -670,4 +670,4 @@ inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   return false;
 }
 
-#endif // SHARE_VM_ASM_CODEBUFFER_HPP
+#endif // SHARE_ASM_CODEBUFFER_HPP

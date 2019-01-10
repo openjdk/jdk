@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_METAPROGRAMMING_REMOVEPOINTER_HPP
-#define SHARE_VM_METAPROGRAMMING_REMOVEPOINTER_HPP
+#ifndef SHARE_METAPROGRAMMING_REMOVEPOINTER_HPP
+#define SHARE_METAPROGRAMMING_REMOVEPOINTER_HPP
 
 #include "memory/allocation.hpp"
 
@@ -38,4 +38,4 @@ template <typename T> struct RemovePointer<T* const>: AllStatic { typedef T type
 template <typename T> struct RemovePointer<T* volatile>: AllStatic { typedef T type; };
 template <typename T> struct RemovePointer<T* const volatile>: AllStatic { typedef T type; };
 
-#endif // SHARE_VM_METAPROGRAMMING_REMOVEPOINTER_HPP
+#endif // SHARE_METAPROGRAMMING_REMOVEPOINTER_HPP

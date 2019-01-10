@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
-#define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
+#ifndef OS_WINDOWS_OS_WINDOWS_INLINE_HPP
+#define OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -94,4 +94,4 @@ inline void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
-#endif // OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
+#endif // OS_WINDOWS_OS_WINDOWS_INLINE_HPP

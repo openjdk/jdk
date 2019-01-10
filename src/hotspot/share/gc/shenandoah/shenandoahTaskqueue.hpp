@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -329,4 +329,4 @@ public:
   bool offer_termination() { return offer_termination((ShenandoahTerminatorTerminator*)NULL); }
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGDECORATIONS_HPP
-#define SHARE_VM_LOGGING_LOGDECORATIONS_HPP
+#ifndef SHARE_LOGGING_LOGDECORATIONS_HPP
+#define SHARE_LOGGING_LOGDECORATIONS_HPP
 
 #include "logging/logDecorators.hpp"
 #include "logging/logTagSet.hpp"
@@ -64,4 +64,4 @@ class LogDecorations {
   }
 };
 
-#endif // SHARE_VM_LOGGING_LOGDECORATIONS_HPP
+#endif // SHARE_LOGGING_LOGDECORATIONS_HPP

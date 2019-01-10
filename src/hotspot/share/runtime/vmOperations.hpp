@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VMOPERATIONS_HPP
-#define SHARE_VM_RUNTIME_VMOPERATIONS_HPP
+#ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
+#define SHARE_RUNTIME_VMOPERATIONS_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "memory/allocation.hpp"
@@ -518,4 +518,4 @@ class VM_PrintClassHierarchy: public VM_Operation {
 };
 #endif // INCLUDE_SERVICES
 
-#endif // SHARE_VM_RUNTIME_VMOPERATIONS_HPP
+#endif // SHARE_RUNTIME_VMOPERATIONS_HPP

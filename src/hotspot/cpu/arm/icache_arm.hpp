@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_ICACHE_ARM_HPP
-#define CPU_ARM_VM_ICACHE_ARM_HPP
+#ifndef CPU_ARM_ICACHE_ARM_HPP
+#define CPU_ARM_ICACHE_ARM_HPP
 
 // Interface for updating the instruction cache.  Whenever the VM modifies
 // code, part of the processor instruction cache potentially has to be flushed.
@@ -37,4 +37,4 @@ class ICache : public AbstractICache {
   };
 };
 
-#endif // CPU_ARM_VM_ICACHE_ARM_HPP
+#endif // CPU_ARM_ICACHE_ARM_HPP

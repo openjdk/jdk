@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
-#define SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
+#ifndef SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP
+#define SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP
 
 #include "classfile/placeholders.hpp"
 #include "utilities/hashtable.hpp"
@@ -130,4 +130,4 @@ public:
   void set_loader(int i, oop p);
 };
 
-#endif // SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
+#endif // SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP

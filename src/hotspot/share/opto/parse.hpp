@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_PARSE_HPP
-#define SHARE_VM_OPTO_PARSE_HPP
+#ifndef SHARE_OPTO_PARSE_HPP
+#define SHARE_OPTO_PARSE_HPP
 
 #include "ci/ciMethodData.hpp"
 #include "ci/ciTypeFlow.hpp"
@@ -629,4 +629,4 @@ class Parse : public GraphKit {
 #endif
 };
 
-#endif // SHARE_VM_OPTO_PARSE_HPP
+#endif // SHARE_OPTO_PARSE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_STUBROUTINES_ZERO_HPP
-#define CPU_ZERO_VM_STUBROUTINES_ZERO_HPP
+#ifndef CPU_ZERO_STUBROUTINES_ZERO_HPP
+#define CPU_ZERO_STUBROUTINES_ZERO_HPP
 
   // This file holds the platform specific parts of the StubRoutines
   // definition. See stubRoutines.hpp for a description on how to
@@ -48,4 +48,4 @@
     method_handles_adapters_code_size = 0
   };
 
-#endif // CPU_ZERO_VM_STUBROUTINES_ZERO_HPP
+#endif // CPU_ZERO_STUBROUTINES_ZERO_HPP

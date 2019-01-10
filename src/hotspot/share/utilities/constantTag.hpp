@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
-#define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#ifndef SHARE_UTILITIES_CONSTANTTAG_HPP
+#define SHARE_UTILITIES_CONSTANTTAG_HPP
 
 #include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
@@ -141,4 +141,4 @@ class constantTag {
   void print_on(outputStream* st) const PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#endif // SHARE_UTILITIES_CONSTANTTAG_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
-#define SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
+#ifndef SHARE_RUNTIME_OBJECTMONITOR_HPP
+#define SHARE_RUNTIME_OBJECTMONITOR_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -315,4 +315,4 @@ class ObjectMonitor {
   bool      ExitSuspendEquivalent(JavaThread * Self);
 };
 
-#endif // SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
+#endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

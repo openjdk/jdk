@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
+#ifndef OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
@@ -43,4 +43,4 @@ define_pd_global(uintx,HeapBaseMinAddress,       2*G);
 class Thread;
 extern __thread Thread *aarch64_currentThread;
 
-#endif // OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
+#endif // OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP

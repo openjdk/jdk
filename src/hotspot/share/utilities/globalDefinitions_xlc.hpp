@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
-#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#define SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
 
 #include "jni.h"
 
@@ -162,4 +162,4 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define NOINLINE     __attribute__((__noinline__))
 #define ALWAYSINLINE inline __attribute__((__always_inline__))
 
-#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#endif // SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

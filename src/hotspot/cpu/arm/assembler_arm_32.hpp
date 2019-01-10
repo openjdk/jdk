@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_ASSEMBLER_ARM_32_HPP
-#define CPU_ARM_VM_ASSEMBLER_ARM_32_HPP
+#ifndef CPU_ARM_ASSEMBLER_ARM_32_HPP
+#define CPU_ARM_ASSEMBLER_ARM_32_HPP
 
 // ARM Addressing Mode 1 - Data processing operands
 class AsmOperand {
@@ -1250,4 +1250,4 @@ extern double __aeabi_dsub_glibc(double, double);
 #endif // __SOFTFP__
 
 
-#endif // CPU_ARM_VM_ASSEMBLER_ARM_32_HPP
+#endif // CPU_ARM_ASSEMBLER_ARM_32_HPP

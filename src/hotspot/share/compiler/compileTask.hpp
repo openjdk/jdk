@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_COMPILETASK_HPP
-#define SHARE_VM_COMPILER_COMPILETASK_HPP
+#ifndef SHARE_COMPILER_COMPILETASK_HPP
+#define SHARE_COMPILER_COMPILETASK_HPP
 
 #include "ci/ciMethod.hpp"
 #include "code/nmethod.hpp"
@@ -212,4 +212,4 @@ public:
   static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = NULL);
 };
 
-#endif // SHARE_VM_COMPILER_COMPILETASK_HPP
+#endif // SHARE_COMPILER_COMPILETASK_HPP

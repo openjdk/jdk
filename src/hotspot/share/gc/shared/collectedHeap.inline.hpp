@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
-#define SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#ifndef SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#define SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
@@ -82,4 +82,4 @@ inline oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
   return allocator.allocate();
 }
 
-#endif // SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

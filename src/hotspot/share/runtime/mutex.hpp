@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_MUTEX_HPP
-#define SHARE_VM_RUNTIME_MUTEX_HPP
+#ifndef SHARE_RUNTIME_MUTEX_HPP
+#define SHARE_RUNTIME_MUTEX_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
@@ -320,4 +320,4 @@ public:
     Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
 };
 
-#endif // SHARE_VM_RUNTIME_MUTEX_HPP
+#endif // SHARE_RUNTIME_MUTEX_HPP

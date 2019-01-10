@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -279,4 +279,4 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
   return bs->arraycopy_loop_1(src_raw, dst_raw, length, bound, checkcast, satb, disjoint, storeval_mode);
 }
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP

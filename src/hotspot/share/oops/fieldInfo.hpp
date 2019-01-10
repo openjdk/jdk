@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FIELDINFO_HPP
-#define SHARE_VM_OOPS_FIELDINFO_HPP
+#ifndef SHARE_OOPS_FIELDINFO_HPP
+#define SHARE_OOPS_FIELDINFO_HPP
 
 #include "oops/constantPool.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -254,4 +254,4 @@ class FieldInfo {
   }
 };
 
-#endif // SHARE_VM_OOPS_FIELDINFO_HPP
+#endif // SHARE_OOPS_FIELDINFO_HPP

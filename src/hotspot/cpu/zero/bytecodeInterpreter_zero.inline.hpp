@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_INLINE_HPP
-#define CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_BYTECODEINTERPRETER_ZERO_INLINE_HPP
+#define CPU_ZERO_BYTECODEINTERPRETER_ZERO_INLINE_HPP
 
 // Inline interpreter functions for zero
 
@@ -303,4 +303,4 @@ inline jbyte BytecodeInterpreter::VMint2Byte(jint val) {
   return (jbyte) val;
 }
 
-#endif // CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_INLINE_HPP
+#endif // CPU_ZERO_BYTECODEINTERPRETER_ZERO_INLINE_HPP

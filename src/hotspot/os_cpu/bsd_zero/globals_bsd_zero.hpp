@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_GLOBALS_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_VM_GLOBALS_BSD_ZERO_HPP
+#ifndef OS_CPU_BSD_ZERO_GLOBALS_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_GLOBALS_BSD_ZERO_HPP
 
 //
 // Set the default values for platform dependent flags used by the
@@ -44,4 +44,4 @@ define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 // Used on 64 bit platforms for UseCompressedOops base address
 define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 
-#endif // OS_CPU_BSD_ZERO_VM_GLOBALS_BSD_ZERO_HPP
+#endif // OS_CPU_BSD_ZERO_GLOBALS_BSD_ZERO_HPP

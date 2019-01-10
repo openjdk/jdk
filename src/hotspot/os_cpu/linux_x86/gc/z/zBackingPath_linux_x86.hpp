@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_X86_ZBACKINGPATH_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_ZBACKINGPATH_LINUX_X86_HPP
+#ifndef OS_CPU_LINUX_X86_GC_Z_ZBACKINGPATH_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_GC_Z_ZBACKINGPATH_LINUX_X86_HPP
 
 #include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
@@ -49,4 +49,4 @@ public:
   const char* get() const;
 };
 
-#endif // OS_CPU_LINUX_X86_ZBACKINGPATH_LINUX_X86_HPP
+#endif // OS_CPU_LINUX_X86_GC_Z_ZBACKINGPATH_LINUX_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_GLOBALS_S390_HPP
-#define CPU_S390_VM_GLOBALS_S390_HPP
+#ifndef CPU_S390_GLOBALS_S390_HPP
+#define CPU_S390_GLOBALS_S390_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -128,4 +128,4 @@ define_pd_global(bool, ThreadLocalHandshakes, true);
   product(bool, TraceTraps, false, "Trace all traps the signal handler"       \
           "handles.")
 
-#endif // CPU_S390_VM_GLOBALS_S390_HPP
+#endif // CPU_S390_GLOBALS_S390_HPP

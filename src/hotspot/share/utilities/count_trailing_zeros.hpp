@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_COUNTTRAILINGZEROS_HPP
-#define SHARE_VM_UTILITIES_COUNTTRAILINGZEROS_HPP
+#ifndef SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
+#define SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
 
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -105,4 +105,4 @@ inline unsigned count_trailing_zeros(uintx x) {
 
 #endif // Toolchain dispatch
 
-#endif // include guard
+#endif // SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP

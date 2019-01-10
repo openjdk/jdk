@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_HPP
+#ifndef OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
 
   static void setup_fpu();
   static bool supports_sse();
@@ -42,4 +42,4 @@
     *(jlong *) dst = *(const jlong *) src;
   }
 
-#endif // OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_HPP
+#endif // OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP

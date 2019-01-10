@@ -20,8 +20,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
-#define SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#ifndef SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#define SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
 
 #include "gc/shared/taskqueue.hpp"
 #include "runtime/mutex.hpp"
@@ -76,4 +76,4 @@ private:
 };
 
 
-#endif // SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#endif // SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP

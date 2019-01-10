@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OS_HPP
-#define SHARE_VM_RUNTIME_OS_HPP
+#ifndef SHARE_RUNTIME_OS_HPP
+#define SHARE_RUNTIME_OS_HPP
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -995,4 +995,4 @@ template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {
 
 extern "C" int SpinPause();
 
-#endif // SHARE_VM_RUNTIME_OS_HPP
+#endif // SHARE_RUNTIME_OS_HPP

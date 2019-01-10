@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_DISASSEMBLER_PPC_HPP
-#define CPU_PPC_VM_DISASSEMBLER_PPC_HPP
+#ifndef CPU_PPC_DISASSEMBLER_PPC_HPP
+#define CPU_PPC_DISASSEMBLER_PPC_HPP
 
   static int pd_instruction_alignment() {
     return sizeof(int);
@@ -34,4 +34,4 @@
     return "ppc64";
   }
 
-#endif // CPU_PPC_VM_DISASSEMBLER_PPC_HPP
+#endif // CPU_PPC_DISASSEMBLER_PPC_HPP

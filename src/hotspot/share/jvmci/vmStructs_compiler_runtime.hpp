@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_VMSTRUCTS_COMPILER_RUNTIME_HPP
-#define SHARE_VM_JVMCI_VMSTRUCTS_COMPILER_RUNTIME_HPP
+#ifndef SHARE_JVMCI_VMSTRUCTS_COMPILER_RUNTIME_HPP
+#define SHARE_JVMCI_VMSTRUCTS_COMPILER_RUNTIME_HPP
 
 #if INCLUDE_AOT
 #include "jvmci/compilerRuntime.hpp"
@@ -42,4 +42,4 @@
 
 #endif // INCLUDE_AOT
 
-#endif // SHARE_VM_AOT_VMSTRUCTS_COMPILER_RUNTIME_HPP
+#endif // SHARE_JVMCI_VMSTRUCTS_COMPILER_RUNTIME_HPP

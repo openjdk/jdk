@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -43,4 +43,4 @@ public:
   static void shenandoah_clone_barrier(oopDesc* obj);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP

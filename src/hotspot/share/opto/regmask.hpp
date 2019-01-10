@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_REGMASK_HPP
-#define SHARE_VM_OPTO_REGMASK_HPP
+#ifndef SHARE_OPTO_REGMASK_HPP
+#define SHARE_OPTO_REGMASK_HPP
 
 #include "code/vmreg.hpp"
 #include "opto/optoreg.hpp"
@@ -313,4 +313,4 @@ public:
 // Do not use this constant directly in client code!
 #undef RM_SIZE
 
-#endif // SHARE_VM_OPTO_REGMASK_HPP
+#endif // SHARE_OPTO_REGMASK_HPP

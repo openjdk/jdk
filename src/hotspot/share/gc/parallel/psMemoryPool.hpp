@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
-#define SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
+#ifndef SHARE_GC_PARALLEL_PSMEMORYPOOL_HPP
+#define SHARE_GC_PARALLEL_PSMEMORYPOOL_HPP
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/psOldGen.hpp"
@@ -86,4 +86,4 @@ public:
   }
 };
 
-#endif // SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
+#endif // SHARE_GC_PARALLEL_PSMEMORYPOOL_HPP

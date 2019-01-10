@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_VM_VERSION_X86_HPP
-#define CPU_X86_VM_VM_VERSION_X86_HPP
+#ifndef CPU_X86_VM_VERSION_X86_HPP
+#define CPU_X86_VM_VERSION_X86_HPP
 
 #include "runtime/globals_extension.hpp"
 #include "runtime/vm_version.hpp"
@@ -932,4 +932,4 @@ public:
   static bool supports_on_spin_wait() { return supports_sse2(); }
 };
 
-#endif // CPU_X86_VM_VM_VERSION_X86_HPP
+#endif // CPU_X86_VM_VERSION_X86_HPP

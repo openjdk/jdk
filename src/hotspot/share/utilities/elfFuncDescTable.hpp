@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_ELF_FUNC_DESC_TABLE_HPP
-#define SHARE_VM_UTILITIES_ELF_FUNC_DESC_TABLE_HPP
+#ifndef SHARE_UTILITIES_ELFFUNCDESCTABLE_HPP
+#define SHARE_UTILITIES_ELFFUNCDESCTABLE_HPP
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
@@ -145,4 +145,4 @@ private:
 
 #endif // !_WINDOWS && !__APPLE__
 
-#endif // SHARE_VM_UTILITIES_ELF_FUNC_DESC_TABLE_HPP
+#endif // SHARE_UTILITIES_ELFFUNCDESCTABLE_HPP

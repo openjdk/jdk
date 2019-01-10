@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_TEMPLATETABLE_AARCH64_64_HPP
-#define CPU_AARCH64_VM_TEMPLATETABLE_AARCH64_64_HPP
+#ifndef CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP
+#define CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP
 
 static void prepare_invoke(int byte_no,
                              Register method,         // linked method (or i-klass)
@@ -39,4 +39,4 @@ static void prepare_invoke(int byte_no,
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);
 
-#endif // CPU_AARCH64_VM_TEMPLATETABLE_AARCH64_64_HPP
+#endif // CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP

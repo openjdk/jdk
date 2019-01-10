@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OSTHREAD_HPP
-#define SHARE_VM_RUNTIME_OSTHREAD_HPP
+#ifndef SHARE_RUNTIME_OSTHREAD_HPP
+#define SHARE_RUNTIME_OSTHREAD_HPP
 
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
@@ -147,4 +147,4 @@ class OSThreadContendState : public StackObj {
   }
 };
 
-#endif // SHARE_VM_RUNTIME_OSTHREAD_HPP
+#endif // SHARE_RUNTIME_OSTHREAD_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_
-#define SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_
+#ifndef SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP
+#define SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP
 
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -55,4 +55,4 @@ public:
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_ */
+#endif // SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP

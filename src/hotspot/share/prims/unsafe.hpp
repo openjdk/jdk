@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 
-#ifndef SHARE_VM_PRIMS_UNSAFE_HPP
-#define SHARE_VM_PRIMS_UNSAFE_HPP
+#ifndef SHARE_PRIMS_UNSAFE_HPP
+#define SHARE_PRIMS_UNSAFE_HPP
 
 #include "jni.h"
 
@@ -36,4 +36,4 @@ jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
 
 jlong Unsafe_field_offset_from_byte_offset(jlong byte_offset);
 
-#endif // SHARE_VM_PRIMS_UNSAFE_HPP
+#endif // SHARE_PRIMS_UNSAFE_HPP

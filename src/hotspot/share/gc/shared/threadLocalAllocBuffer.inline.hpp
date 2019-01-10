@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
-#define SHARE_VM_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
+#ifndef SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
+#define SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
@@ -95,4 +95,4 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
                               obj_size, free(), refill_waste_limit());
 }
 
-#endif // SHARE_VM_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
+#endif // SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP

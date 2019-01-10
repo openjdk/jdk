@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_PACKAGEENTRY_HPP
-#define SHARE_VM_CLASSFILE_PACKAGEENTRY_HPP
+#ifndef SHARE_CLASSFILE_PACKAGEENTRY_HPP
+#define SHARE_CLASSFILE_PACKAGEENTRY_HPP
 
 #include "classfile/moduleEntry.hpp"
 #include "oops/symbol.hpp"
@@ -265,4 +265,4 @@ public:
   void verify();
 };
 
-#endif // SHARE_VM_CLASSFILE_PACKAGEENTRY_HPP
+#endif // SHARE_CLASSFILE_PACKAGEENTRY_HPP

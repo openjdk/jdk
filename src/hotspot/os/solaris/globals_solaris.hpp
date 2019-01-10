@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP
-#define OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP
+#ifndef OS_SOLARIS_GLOBALS_SOLARIS_HPP
+#define OS_SOLARIS_GLOBALS_SOLARIS_HPP
 
 //
 // Defines Solaris specific flags. They are not available on other platforms.
@@ -51,4 +51,4 @@ define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, false);
 
-#endif // OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP
+#endif // OS_SOLARIS_GLOBALS_SOLARIS_HPP

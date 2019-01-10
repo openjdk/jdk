@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGSELECTIONLIST_HPP
-#define SHARE_VM_LOGGING_LOGSELECTIONLIST_HPP
+#ifndef SHARE_LOGGING_LOGSELECTIONLIST_HPP
+#define SHARE_LOGGING_LOGSELECTIONLIST_HPP
 
 #include "logging/logConfiguration.hpp"
 #include "logging/logSelection.hpp"
@@ -62,4 +62,4 @@ class LogSelectionList : public StackObj {
   bool verify_selections(outputStream* out = NULL) const;
 };
 
-#endif // SHARE_VM_LOGGING_LOGSELECTIONLIST_HPP
+#endif // SHARE_LOGGING_LOGSELECTIONLIST_HPP

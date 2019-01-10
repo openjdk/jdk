@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OS_INLINE_HPP
-#define SHARE_VM_RUNTIME_OS_INLINE_HPP
+#ifndef SHARE_RUNTIME_OS_INLINE_HPP
+#define SHARE_RUNTIME_OS_INLINE_HPP
 
 #include "runtime/os.hpp"
 
 #include OS_HEADER_INLINE(os)
 
-#endif // SHARE_VM_RUNTIME_OS_INLINE_HPP
+#endif // SHARE_RUNTIME_OS_INLINE_HPP

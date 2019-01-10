@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_JAVACLASSES_HPP
-#define SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+#ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
+#define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -1541,4 +1541,4 @@ class JavaClasses : AllStatic {
 
 #undef DECLARE_INJECTED_FIELD_ENUM
 
-#endif // SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+#endif // SHARE_CLASSFILE_JAVACLASSES_HPP

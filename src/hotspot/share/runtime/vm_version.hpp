@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VM_VERSION_HPP
-#define SHARE_VM_RUNTIME_VM_VERSION_HPP
+#ifndef SHARE_RUNTIME_VM_VERSION_HPP
+#define SHARE_RUNTIME_VM_VERSION_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
@@ -153,4 +153,4 @@ class Abstract_VM_Version: AllStatic {
 
 #include CPU_HEADER(vm_version)
 
-#endif // SHARE_VM_RUNTIME_VM_VERSION_HPP
+#endif // SHARE_RUNTIME_VM_VERSION_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_PPC_VM_GLOBALS_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_VM_GLOBALS_LINUX_PPC_HPP
+#ifndef OS_CPU_LINUX_PPC_GLOBALS_LINUX_PPC_HPP
+#define OS_CPU_LINUX_PPC_GLOBALS_LINUX_PPC_HPP
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
@@ -41,4 +41,4 @@ define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 // Only used on 64 bit platforms
 define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 
-#endif // OS_CPU_LINUX_PPC_VM_GLOBALS_LINUX_PPC_HPP
+#endif // OS_CPU_LINUX_PPC_GLOBALS_LINUX_PPC_HPP

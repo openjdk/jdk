@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_NATIVEINST_ARM_HPP
-#define CPU_ARM_VM_NATIVEINST_ARM_HPP
+#ifndef CPU_ARM_NATIVEINST_ARM_HPP
+#define CPU_ARM_NATIVEINST_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "runtime/icache.hpp"
@@ -33,4 +33,4 @@
 #include "nativeInst_arm_32.hpp"
 
 
-#endif // CPU_ARM_VM_NATIVEINST_ARM_HPP
+#endif // CPU_ARM_NATIVEINST_ARM_HPP

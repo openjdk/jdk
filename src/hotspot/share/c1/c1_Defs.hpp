@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_DEFS_HPP
-#define SHARE_VM_C1_C1_DEFS_HPP
+#ifndef SHARE_C1_C1_DEFS_HPP
+#define SHARE_C1_C1_DEFS_HPP
 
 #include "asm/register.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -56,4 +56,4 @@ enum {
   float_saved_as_double = pd_float_saved_as_double
 };
 
-#endif // SHARE_VM_C1_C1_DEFS_HPP
+#endif // SHARE_C1_C1_DEFS_HPP

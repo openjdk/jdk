@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_UNHANDLEDOOPS_HPP
-#define SHARE_VM_RUNTIME_UNHANDLEDOOPS_HPP
+#ifndef SHARE_RUNTIME_UNHANDLEDOOPS_HPP
+#define SHARE_RUNTIME_UNHANDLEDOOPS_HPP
 
 #ifdef CHECK_UNHANDLED_OOPS
 
@@ -86,4 +86,4 @@ const intptr_t BAD_OOP_ADDR =  0xfffffff1;
 #endif // _LP64
 #endif // CHECK_UNHANDLED_OOPS
 
-#endif // SHARE_VM_RUNTIME_UNHANDLEDOOPS_HPP
+#endif // SHARE_RUNTIME_UNHANDLEDOOPS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_VM_ATOMIC_LINUX_ARM_HPP
-#define OS_CPU_LINUX_ARM_VM_ATOMIC_LINUX_ARM_HPP
+#ifndef OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
+#define OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
 
 #include "runtime/os.hpp"
 #include "vm_version_arm.hpp"
@@ -137,4 +137,4 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
   return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, exchange_value, dest, compare_value);
 }
 
-#endif // OS_CPU_LINUX_ARM_VM_ATOMIC_LINUX_ARM_HPP
+#endif // OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP

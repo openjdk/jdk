@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
-#define SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
+#ifndef SHARE_GC_CMS_CMSOOPCLOSURES_HPP
+#define SHARE_GC_CMS_CMSOOPCLOSURES_HPP
 
 #include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -330,4 +330,4 @@ class CMSParKeepAliveClosure: public MetadataVisitingOopIterateClosure {
   virtual void do_oop(narrowOop* p);
 };
 
-#endif // SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
+#endif // SHARE_GC_CMS_CMSOOPCLOSURES_HPP

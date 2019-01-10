@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_C1_FRAMEMAP_S390_HPP
-#define CPU_S390_VM_C1_FRAMEMAP_S390_HPP
+#ifndef CPU_S390_C1_FRAMEMAP_S390_HPP
+#define CPU_S390_C1_FRAMEMAP_S390_HPP
 
  public:
 
@@ -138,4 +138,4 @@
   static int nof_caller_save_cpu_regs() { return pd_nof_caller_save_cpu_regs_frame_map; }
   static int last_cpu_reg()             { return pd_last_cpu_reg; }
 
-#endif // CPU_S390_VM_C1_FRAMEMAP_S390_HPP
+#endif // CPU_S390_C1_FRAMEMAP_S390_HPP

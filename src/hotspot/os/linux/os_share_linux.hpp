@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_LINUX_VM_OS_SHARE_LINUX_HPP
-#define OS_LINUX_VM_OS_SHARE_LINUX_HPP
+#ifndef OS_LINUX_OS_SHARE_LINUX_HPP
+#define OS_LINUX_OS_SHARE_LINUX_HPP
 
 // misc
 void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
@@ -33,4 +33,4 @@ void continue_with_dump(void);
 
 #define PROCFILE_LENGTH 128
 
-#endif // OS_LINUX_VM_OS_SHARE_LINUX_HPP
+#endif // OS_LINUX_OS_SHARE_LINUX_HPP

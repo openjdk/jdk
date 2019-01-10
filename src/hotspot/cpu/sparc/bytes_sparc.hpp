@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_BYTES_SPARC_HPP
-#define CPU_SPARC_VM_BYTES_SPARC_HPP
+#ifndef CPU_SPARC_BYTES_SPARC_HPP
+#define CPU_SPARC_BYTES_SPARC_HPP
 
 #include "memory/allocation.hpp"
 
@@ -157,4 +157,4 @@ class Bytes: AllStatic {
 // 1.17 99/06/22 16:37:35 bytes_i486.hpp
 //End
 
-#endif // CPU_SPARC_VM_BYTES_SPARC_HPP
+#endif // CPU_SPARC_BYTES_SPARC_HPP

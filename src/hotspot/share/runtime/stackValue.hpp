@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_STACKVALUE_HPP
-#define SHARE_VM_RUNTIME_STACKVALUE_HPP
+#ifndef SHARE_RUNTIME_STACKVALUE_HPP
+#define SHARE_RUNTIME_STACKVALUE_HPP
 
 #include "code/location.hpp"
 #include "runtime/handles.hpp"
@@ -117,4 +117,4 @@ class StackValue : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_RUNTIME_STACKVALUE_HPP
+#endif // SHARE_RUNTIME_STACKVALUE_HPP

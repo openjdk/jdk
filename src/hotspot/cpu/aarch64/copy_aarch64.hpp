@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_COPY_AARCH64_HPP
-#define CPU_AARCH64_VM_COPY_AARCH64_HPP
+#ifndef CPU_AARCH64_COPY_AARCH64_HPP
+#define CPU_AARCH64_COPY_AARCH64_HPP
 
 // Inline functions for memory copy and fill.
 
@@ -56,4 +56,4 @@ static void pd_zero_to_bytes(void* to, size_t count) {
   (void)memset(to, 0, count);
 }
 
-#endif // CPU_AARCH64_VM_COPY_AARCH64_HPP
+#endif // CPU_AARCH64_COPY_AARCH64_HPP

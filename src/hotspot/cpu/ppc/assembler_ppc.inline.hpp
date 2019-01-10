@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_ASSEMBLER_PPC_INLINE_HPP
-#define CPU_PPC_VM_ASSEMBLER_PPC_INLINE_HPP
+#ifndef CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
+#define CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
@@ -1127,4 +1127,4 @@ inline void Assembler::load_const32(Register d, int i) {
   ori(d, d, i & 0xFFFF);
 }
 
-#endif // CPU_PPC_VM_ASSEMBLER_PPC_INLINE_HPP
+#endif // CPU_PPC_ASSEMBLER_PPC_INLINE_HPP

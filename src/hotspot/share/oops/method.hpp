@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_METHODOOP_HPP
-#define SHARE_VM_OOPS_METHODOOP_HPP
+#ifndef SHARE_OOPS_METHOD_HPP
+#define SHARE_OOPS_METHOD_HPP
 
 #include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
@@ -1176,4 +1176,4 @@ class ExceptionTable : public StackObj {
   }
 };
 
-#endif // SHARE_VM_OOPS_METHODOOP_HPP
+#endif // SHARE_OOPS_METHOD_HPP

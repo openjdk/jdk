@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_KLASS_HPP
-#define SHARE_VM_OOPS_KLASS_HPP
+#ifndef SHARE_OOPS_KLASS_HPP
+#define SHARE_OOPS_KLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
@@ -706,4 +706,4 @@ protected:
   static Klass* decode_klass(narrowKlass v);
 };
 
-#endif // SHARE_VM_OOPS_KLASS_HPP
+#endif // SHARE_OOPS_KLASS_HPP

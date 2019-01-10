@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -184,5 +184,4 @@ public:
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
-
+#endif // SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_GLOBALS_AIX_HPP
-#define OS_AIX_VM_GLOBALS_AIX_HPP
+#ifndef OS_AIX_GLOBALS_AIX_HPP
+#define OS_AIX_GLOBALS_AIX_HPP
 
 //
 // Defines Aix specific flags. They are not available on other platforms.
@@ -94,4 +94,4 @@ define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
 
-#endif // OS_AIX_VM_GLOBALS_AIX_HPP
+#endif // OS_AIX_GLOBALS_AIX_HPP

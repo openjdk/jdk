@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_NMETHOD_HPP
-#define SHARE_VM_CODE_NMETHOD_HPP
+#ifndef SHARE_CODE_NMETHOD_HPP
+#define SHARE_CODE_NMETHOD_HPP
 
 #include "code/compiledMethod.hpp"
 
@@ -668,4 +668,4 @@ class nmethodLocker : public StackObj {
   }
 };
 
-#endif // SHARE_VM_CODE_NMETHOD_HPP
+#endif // SHARE_CODE_NMETHOD_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
-#define SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#ifndef SHARE_OOPS_INSTANCEKLASS_HPP
+#define SHARE_OOPS_INSTANCEKLASS_HPP
 
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -1470,4 +1470,4 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
-#endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#endif // SHARE_OOPS_INSTANCEKLASS_HPP

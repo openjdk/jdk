@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_FRAME_HPP
-#define SHARE_VM_RUNTIME_FRAME_HPP
+#ifndef SHARE_RUNTIME_FRAME_HPP
+#define SHARE_RUNTIME_FRAME_HPP
 
 #include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
@@ -470,4 +470,4 @@ class StackFrameStream : public StackObj {
   RegisterMap* register_map()     { return &_reg_map; }
 };
 
-#endif // SHARE_VM_RUNTIME_FRAME_HPP
+#endif // SHARE_RUNTIME_FRAME_HPP

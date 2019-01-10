@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_REGISTER_ARM_HPP
-#define CPU_ARM_VM_REGISTER_ARM_HPP
+#ifndef CPU_ARM_REGISTER_ARM_HPP
+#define CPU_ARM_REGISTER_ARM_HPP
 
 #include "asm/register.hpp"
 #include "vm_version_arm.hpp"
@@ -437,4 +437,4 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 #define j_rarg3  c_rarg3
 
 
-#endif // CPU_ARM_VM_REGISTER_ARM_HPP
+#endif // CPU_ARM_REGISTER_ARM_HPP

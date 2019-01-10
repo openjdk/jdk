@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
+#ifndef SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
+#define SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -127,4 +127,4 @@ void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closu
   oop_oop_iterate_statics_bounded<T>(obj, closure, mr);
 }
 
-#endif // SHARE_VM_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
+#endif // SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP

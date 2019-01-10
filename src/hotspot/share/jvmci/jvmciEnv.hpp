@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCIENV_HPP
-#define SHARE_VM_JVMCI_JVMCIENV_HPP
+#ifndef SHARE_JVMCI_JVMCIENV_HPP
+#define SHARE_JVMCI_JVMCIENV_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
@@ -181,4 +181,4 @@ public:
   static InstanceKlass* get_instance_klass_for_declared_method_holder(Klass* klass);
 };
 
-#endif // SHARE_VM_JVMCI_JVMCIENV_HPP
+#endif // SHARE_JVMCI_JVMCIENV_HPP

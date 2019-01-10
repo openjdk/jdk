@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_BYTES_ZERO_HPP
-#define CPU_ZERO_VM_BYTES_ZERO_HPP
+#ifndef CPU_ZERO_BYTES_ZERO_HPP
+#define CPU_ZERO_BYTES_ZERO_HPP
 
 #include "memory/allocation.hpp"
 
@@ -160,4 +160,4 @@ class Bytes: AllStatic {
 
 #endif // VM_LITTLE_ENDIAN
 
-#endif // CPU_ZERO_VM_BYTES_ZERO_HPP
+#endif // CPU_ZERO_BYTES_ZERO_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
-#define SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
+#ifndef SHARE_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
+#define SHARE_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 
 #include "gc/parallel/asPSOldGen.hpp"
 #include "gc/parallel/asPSYoungGen.hpp"
@@ -108,4 +108,4 @@
 #define VM_INT_CONSTANTS_PARALLELGC(declare_constant,                     \
                                     declare_constant_with_value)
 
-#endif // SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
+#endif // SHARE_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP

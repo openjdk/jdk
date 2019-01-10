@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
-#define SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
+#ifndef SHARE_UTILITIES_PRESERVEEXCEPTION_HPP
+#define SHARE_UTILITIES_PRESERVEEXCEPTION_HPP
 
 #include "runtime/handles.hpp"
 #include "runtime/thread.hpp"
@@ -90,4 +90,4 @@ private:
 // saving and restoring them
 #define PRESERVE_EXCEPTION_MARK                    Thread* THREAD; PreserveExceptionMark __em(THREAD);
 
-#endif // SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
+#endif // SHARE_UTILITIES_PRESERVEEXCEPTION_HPP

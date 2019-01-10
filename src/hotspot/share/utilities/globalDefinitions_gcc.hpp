@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
-#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
+#ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
+#define SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
 
 #include "jni.h"
 
@@ -271,4 +271,4 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 //
 #define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x+0)))
 
-#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
+#endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

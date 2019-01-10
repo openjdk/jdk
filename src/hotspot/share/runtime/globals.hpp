@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
-#define SHARE_VM_RUNTIME_GLOBALS_HPP
+#ifndef SHARE_RUNTIME_GLOBALS_HPP
+#define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "gc/shared/gc_globals.hpp"
 #include "utilities/align.hpp"
@@ -2733,4 +2733,4 @@ ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
 
 #include "runtime/globals_ext.hpp"
 
-#endif // SHARE_VM_RUNTIME_GLOBALS_HPP
+#endif // SHARE_RUNTIME_GLOBALS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_HPP
-#define OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_HPP
+#ifndef OS_CPU_SOLARIS_X86_ORDERACCESS_SOLARIS_X86_HPP
+#define OS_CPU_SOLARIS_X86_ORDERACCESS_SOLARIS_X86_HPP
 
 // Included in orderAccess.hpp header file.
 
@@ -54,4 +54,4 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
-#endif // OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_HPP
+#endif // OS_CPU_SOLARIS_X86_ORDERACCESS_SOLARIS_X86_HPP
