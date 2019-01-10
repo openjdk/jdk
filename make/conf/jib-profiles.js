@@ -386,7 +386,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "graphviz", "pandoc", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit,
-                "--enable-full-docs", "--with-zlib=system"),
+                "--enable-full-docs", "--with-zlib=system",
+                (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
+                    "--build=x86_64-unknown-linux-gnu" ] : [])),
             default_make_targets: ["docs-bundles"],
         },
 
@@ -833,6 +835,13 @@ var getJibProfilesDependencies = function (input, common) {
 
     var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
         + "-" + input.build_cpu;
+    var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")
+    // If running in WSL and building for Windows, it will look like Linux,
+    // but we need a Windows boot JDK.
+    if (isWsl(input) && input.target_os == "windows") {
+        boot_jdk_platform = "windows-" + input.build_cpu;
+        boot_jdk_ext = ".zip";
+    }
 
     var makeBinDir = (input.build_os == "windows"
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
@@ -846,8 +855,7 @@ var getJibProfilesDependencies = function (input, common) {
             version: common.boot_jdk_version,
             build_number: "28",
             file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
-                + boot_jdk_platform + "_bin"
-		+ (input.build_os == "windows" ? ".zip" : ".tar.gz"),
+                + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
         },
@@ -941,7 +949,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "2.3.1+1.0",
-            module: "pandoc-" + input.target_platform,
+            module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"
         },
@@ -1180,4 +1188,14 @@ var getVersionNumbers = function () {
         stream.close();
     }
     return version_numbers;
+}
+
+/**
+ * Returns true if running in Windows Subsystem for Linux. Jib does not yet
+ * detect wsl as osenv, so fall back on linux with version containing Microsoft.
+ */
+var isWsl = function (input) {
+    return ( input.build_osenv == "wsl"
+             || (input.build_os == "linux"
+                 && java.lang.System.getProperty("os.version").contains("Microsoft")));
 }

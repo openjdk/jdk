@@ -272,7 +272,26 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval USE_UCRT="\${VS_USE_UCRT_${VS_VERSION}}"
     eval VS_SUPPORTED="\${VS_SUPPORTED_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
-    VS_PATH="$TOOLCHAIN_PATH:$PATH"
+
+    # The TOOLCHAIN_PATH from a devkit is in Unix format. In WSL we need a
+    # windows version of the complete VS_PATH as VS_PATH_WINDOWS
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+      # Convert the toolchain path
+      OLDIFS="$IFS"
+      IFS=":"
+      VS_PATH_WINDOWS=""
+      for i in $TOOLCHAIN_PATH; do
+        path=$i
+        BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([path])
+        VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$path"
+      done
+      IFS="$OLDIFS"
+      # Append the current path from Windows env
+      WINDOWS_PATH="`$CMD /c echo %PATH%`"
+      VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$WINDOWS_PATH"
+    else
+      VS_PATH="$TOOLCHAIN_PATH:$PATH"
+    fi
 
     # Convert DEVKIT_VS_INCLUDE into windows style VS_INCLUDE so that it
     # can still be exported as INCLUDE for compiler invocations without
@@ -450,6 +469,34 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       . $VS_ENV_TMP_DIR/set-vs-env.sh
       # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
       # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
+
+      # In WSL, the extracted VS_PATH is Windows style. This needs to be
+      # rewritten as Unix style and the Windows style version is saved
+      # in VS_PATH_WINDOWS.
+      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+        OLDIFS="$IFS"
+        IFS=";"
+        # Convert VS_PATH to unix style
+        VS_PATH_WINDOWS="$VS_PATH"
+        VS_PATH=""
+        for i in $VS_PATH_WINDOWS; do
+          path=$i
+          # Only process non-empty elements
+          if test "x$path" != x; then
+            IFS="$OLDIFS"
+            # Check that directory exists before calling fixup_path
+            testpath=$path
+            BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([testpath])
+            if test -d "$testpath"; then
+              BASIC_FIXUP_PATH([path])
+              BASIC_APPEND_TO_PATH(VS_PATH, $path)
+            fi
+            IFS=";"
+          fi
+        done
+        IFS="$OLDIFS"
+      fi
+
     else
       # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
       AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
@@ -483,29 +530,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)
 
+      # Convert VS_INCLUDE into SYSROOT_CFLAGS
       OLDIFS="$IFS"
       IFS=";"
-      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-        # Convert VS_PATH to unix style
-        VS_PATH_WINDOWS="$VS_PATH"
-        VS_PATH=""
-        for i in $VS_PATH_WINDOWS; do
-          path=$i
-          # Only process non-empty elements
-          if test "x$path" != x; then
-            IFS="$OLDIFS"
-            # Check that directory exists before calling fixup_path
-            testpath=$path
-            BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([testpath])
-            if test -d "$testpath"; then
-              BASIC_FIXUP_PATH([path])
-              BASIC_APPEND_TO_PATH(VS_PATH, $path)
-            fi
-            IFS=";"
-          fi
-        done
-      fi
-      # Convert VS_INCLUDE into SYSROOT_CFLAGS
       for i in $VS_INCLUDE; do
         ipath=$i
         # Only process non-empty elements
