@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class JimageClassProtDomain {
               "java.util.Dictionary", "java.util.ServiceConfigurationError"},
 
              {"Loading shared app module class first",
-              "sun.tools.javac.Main", "sun.tools.javac.BatchParser"},
+              "com.sun.tools.javac.Main", "com.sun.tools.javac.code.Symbol"},
 
              {"Loading shared ext module class first",
               "jdk.nio.zipfs.ZipInfo", "jdk.nio.zipfs.ZipPath"},
@@ -46,7 +46,7 @@ public class JimageClassProtDomain {
               "java.net.HttpCookie", "java.net.URL"},
 
              {"Loading non-shared app module class first",
-              "sun.rmi.rmic.RMIGenerator", "sun.rmi.rmic.Main"},
+              "com.sun.tools.sjavac.Util", "com.sun.tools.sjavac.Main"},
 
              {"Loading non-shared ext module class first",
               "com.sun.jndi.dns.Resolver", "com.sun.jndi.dns.DnsName"}};
@@ -61,13 +61,16 @@ public class JimageClassProtDomain {
         Class c1 = Class.forName(shared);
         Class c2 = Class.forName(nonShared);
         if (c1.getProtectionDomain() != c2.getProtectionDomain()) {
-            System.out.println("Failed: Protection Domains do not match!");
             System.out.println(c1.getProtectionDomain());
             System.out.println(c1.getProtectionDomain().getCodeSource());
             System.out.println(c2.getProtectionDomain());
             System.out.println(c2.getProtectionDomain().getCodeSource());
-            System.exit(1);
+            throw new RuntimeException("Failed: Protection Domains do not match!");
         } else {
+            System.out.println(c1.getProtectionDomain());
+            System.out.println(c1.getProtectionDomain().getCodeSource());
+            System.out.println(c2.getProtectionDomain());
+            System.out.println(c2.getProtectionDomain().getCodeSource());
             System.out.println("Passed: Protection Domains match.");
         }
     }
