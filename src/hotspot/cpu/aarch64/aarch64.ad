@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2014, 2018, Red Hat, Inc. All rights reserved.
+// Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2014, 2019, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -3418,13 +3418,7 @@ encode %{
     }
 
     // Handle existing monitor
-    // we can use AArch64's bit test and branch here but
-    // markoopDesc does not define a bit index just the bit value
-    // so assert in case the bit pos changes
-#   define __monitor_value_log2 1
-    assert(markOopDesc::monitor_value == (1 << __monitor_value_log2), "incorrect bit position");
-    __ tbnz(disp_hdr, __monitor_value_log2, object_has_monitor);
-#   undef __monitor_value_log2
+    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
 
     // Set displaced_header to be (markOop of object | UNLOCK_VALUE).
     __ orr(disp_hdr, disp_hdr, markOopDesc::unlocked_value);
@@ -3454,14 +3448,6 @@ encode %{
       __ cbzw(tmp, cont);
       __ b(retry_load);
     }
-
-    // Formerly:
-    // __ cmpxchgptr(/*oldv=*/disp_hdr,
-    //               /*newv=*/box,
-    //               /*addr=*/oop,
-    //               /*tmp=*/tmp,
-    //               cont,
-    //               /*fail*/NULL);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -3511,42 +3497,18 @@ encode %{
       __ bind(fail);
     }
 
-    // Label next;
-    // __ cmpxchgptr(/*oldv=*/disp_hdr,
-    //               /*newv=*/rthread,
-    //               /*addr=*/tmp,
-    //               /*tmp=*/rscratch1,
-    //               /*succeed*/next,
-    //               /*fail*/NULL);
-    // __ bind(next);
-
-    // store a non-null value into the box.
-    __ str(box, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // PPC port checks the following invariants
-    // #ifdef ASSERT
-    // bne(flag, cont);
-    // We have acquired the monitor, check some invariants.
-    // addw(/*monitor=*/tmp, tmp, -ObjectMonitor::owner_offset_in_bytes());
-    // Invariant 1: _recursions should be 0.
-    // assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
-    // assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), tmp,
-    //                        "monitor->_recursions should be 0", -1);
-    // Invariant 2: OwnerIsThread shouldn't be 0.
-    // assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
-    //assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), tmp,
-    //                           "monitor->OwnerIsThread shouldn't be 0", -1);
-    // #endif
+    // Store a non-null value into the box to avoid looking like a re-entrant
+    // lock. The fast-path monitor unlock code checks for
+    // markOopDesc::monitor_value so use markOopDesc::unused_mark which has the
+    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
+    __ mov(tmp, (address)markOopDesc::unused_mark());
+    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
     __ bind(cont);
     // flag == EQ indicates success
     // flag == NE indicates failure
-
   %}
 
-  // TODO
-  // reimplement this with custom cmpxchgptr code
-  // which avoids some of the unnecessary branching
   enc_class aarch64_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
     MacroAssembler _masm(&cbuf);
     Register oop = as_Register($object$$reg);
@@ -3555,7 +3517,6 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label cas_failed;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
@@ -3570,7 +3531,6 @@ encode %{
     __ cmp(disp_hdr, zr);
     __ br(Assembler::EQ, cont);
 
-
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
     __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
@@ -3579,37 +3539,28 @@ encode %{
     // see the stack address of the basicLock in the markOop of the
     // object.
 
-      if (UseLSE) {
-        __ mov(tmp, box);
-        __ casl(Assembler::xword, tmp, disp_hdr, oop);
-        __ cmp(tmp, box);
-      } else {
-        Label retry_load;
-        if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
-          __ prfm(Address(oop), PSTL1STRM);
-        __ bind(retry_load);
-        __ ldxr(tmp, oop);
-        __ cmp(box, tmp);
-        __ br(Assembler::NE, cas_failed);
-        // use stlxr to ensure update is immediately visible
-        __ stlxr(tmp, disp_hdr, oop);
-        __ cbzw(tmp, cont);
-        __ b(retry_load);
-      }
+    if (UseLSE) {
+      __ mov(tmp, box);
+      __ casl(Assembler::xword, tmp, disp_hdr, oop);
+      __ cmp(tmp, box);
+      __ b(cont);
+    } else {
+      Label retry_load;
+      if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
+        __ prfm(Address(oop), PSTL1STRM);
+      __ bind(retry_load);
+      __ ldxr(tmp, oop);
+      __ cmp(box, tmp);
+      __ br(Assembler::NE, cont);
+      // use stlxr to ensure update is immediately visible
+      __ stlxr(tmp, disp_hdr, oop);
+      __ cbzw(tmp, cont);
+      __ b(retry_load);
+    }
 
-    // __ cmpxchgptr(/*compare_value=*/box,
-    //               /*exchange_value=*/disp_hdr,
-    //               /*where=*/oop,
-    //               /*result=*/tmp,
-    //               cont,
-    //               /*cas_failed*/NULL);
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
-    __ bind(cas_failed);
-
     // Handle existing monitor.
-    __ b(cont);
-
     __ bind(object_has_monitor);
     __ add(tmp, tmp, -markOopDesc::monitor_value); // monitor
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
@@ -3626,7 +3577,7 @@ encode %{
     __ cbnz(rscratch1, cont);
     // need a release store here
     __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-    __ stlr(rscratch1, tmp); // rscratch1 is zero
+    __ stlr(zr, tmp); // set unowned
 
     __ bind(cont);
     // flag == EQ indicates success
