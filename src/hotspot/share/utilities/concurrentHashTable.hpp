@@ -312,11 +312,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
   VALUE* internal_get(Thread* thread, LOOKUP_FUNC& lookup_f,
                       bool* grow_hint = NULL);
 
-  // Insert which handles a number of cases.
-  template <typename LOOKUP_FUNC, typename VALUE_FUNC, typename CALLBACK_FUNC>
-  bool internal_get_insert(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE_FUNC& value_f,
-                           CALLBACK_FUNC& callback_f, bool* grow_hint = NULL, bool* clean_hint = NULL);
-
   // Plain insert.
   template <typename LOOKUP_FUNC>
   bool internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
@@ -401,37 +396,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // under critical section or may have locked parts of table. Calling any
   // methods on the table during a callback is not supported.Only MultiGetHandle
   // supports multiple gets.
-
-  // LOOKUP_FUNC is matching methods, VALUE_FUNC creates value to be inserted
-  // and CALLBACK_FUNC is called with new or old value. Returns true if the
-  // value already exists.
-  template <typename LOOKUP_FUNC, typename VALUE_FUNC, typename CALLBACK_FUNC>
-  bool get_insert_lazy(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE_FUNC& val_f,
-                       CALLBACK_FUNC& callback_f, bool* grow_hint = NULL, bool* clean_hint = NULL) {
-    return !internal_get_insert(thread, lookup_f, val_f, callback_f, grow_hint, clean_hint);
-  }
-
-  // Same without CALLBACK_FUNC.
-  template <typename LOOKUP_FUNC, typename VALUE_FUNC>
-  bool get_insert_lazy(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE_FUNC& val_f,
-                       bool* grow_hint = NULL) {
-    return get_insert_lazy(thread, lookup_f, val_f, noOp, grow_hint);
-  }
-
-  // Same without VALUE_FUNC.
-  template <typename LOOKUP_FUNC, typename CALLBACK_FUNC>
-  bool get_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                  CALLBACK_FUNC& callback_f, bool* grow_hint = NULL) {
-    LazyValueRetrieve vp(value);
-    return get_insert_lazy(thread, lookup_f, vp, callback_f, grow_hint);
-  }
-
-  // Same without CALLBACK_FUNC and VALUE_FUNC.
-  template <typename LOOKUP_FUNC>
-  bool get_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                  bool* grow_hint = NULL) {
-    return get_insert(thread, lookup_f, value, noOp, grow_hint);
-  }
 
   // Get methods return true on found item with LOOKUP_FUNC and FOUND_FUNC is
   // called.

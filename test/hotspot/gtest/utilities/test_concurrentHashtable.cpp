@@ -81,39 +81,34 @@ static void cht_insert(Thread* thr) {
   delete cht;
 }
 
-struct ValVerify {
-  uintptr_t _val;
-  bool called_get;
-  bool called_insert;
-  ValVerify(uintptr_t val) : _val(val), called_get(false), called_insert(false) {}
-  void operator()(bool inserted, uintptr_t* val) {
-    EXPECT_EQ(_val, *val) << "The value inserted is not correct.";
-    if (inserted) {
-      called_insert = true;
-    } else {
-      called_get = true;
-    }
+struct ValueGet {
+  uintptr_t _return;
+  ValueGet() : _return(0) {}
+  void operator()(uintptr_t* value) {
+    EXPECT_NE(value, (uintptr_t*)NULL) << "expected valid value";
+    _return = *value;
   }
-  void verify(bool get, bool insert) {
-    EXPECT_EQ(called_get, get) << "Get unexpected";
-    EXPECT_EQ(called_insert, insert) << "Insert unexpected";
+  uintptr_t get_value() const {
+    return _return;
   }
 };
 
-static void cht_get_insert_helper(Thread* thr, SimpleTestTable* cht, uintptr_t val) {
+static void cht_get_helper(Thread* thr, SimpleTestTable* cht, uintptr_t val) {
   {
     SimpleTestLookup stl(val);
-    ValVerify vv(val);
-    EXPECT_EQ(cht->get_insert(thr, stl, val, vv), false) << "Inserting an unique value failed.";
-    vv.verify(false, true);
+    ValueGet vg;
+    EXPECT_EQ(cht->get(thr, stl, vg), true) << "Getting an old value failed.";
+    EXPECT_EQ(val, vg.get_value()) << "Getting an old value failed.";
+  }
+}
+
+static void cht_insert_helper(Thread* thr, SimpleTestTable* cht, uintptr_t val) {
+  {
+    SimpleTestLookup stl(val);
+    EXPECT_EQ(cht->insert(thr, stl, val), true) << "Inserting an unique value failed.";
   }
 
-  {
-    SimpleTestLookup stl(val);
-    ValVerify vv(val);
-    EXPECT_EQ(cht->get_insert(thr, stl, val, vv), true) << "Getting an old value failed.";
-    vv.verify(true, false);
-  }
+  cht_get_helper(thr, cht, val);
 }
 
 static void cht_get_insert(Thread* thr) {
@@ -123,7 +118,7 @@ static void cht_get_insert(Thread* thr) {
 
   {
     SCOPED_TRACE("First");
-    cht_get_insert_helper(thr, cht, val);
+    cht_insert_helper(thr, cht, val);
   }
   EXPECT_EQ(cht->get_copy(thr, stl), val) << "Get an old value failed";
   EXPECT_TRUE(cht->remove(thr, stl)) << "Removing existing value failed.";
@@ -131,7 +126,7 @@ static void cht_get_insert(Thread* thr) {
 
   {
     SCOPED_TRACE("Second");
-    cht_get_insert_helper(thr, cht, val);
+    cht_insert_helper(thr, cht, val);
   }
 
   delete cht;
@@ -148,10 +143,13 @@ static void getinsert_bulkdelete_del(uintptr_t* val) {
 
 static void cht_getinsert_bulkdelete_insert_verified(Thread* thr, SimpleTestTable* cht, uintptr_t val,
                                                      bool verify_expect_get, bool verify_expect_inserted) {
-  ValVerify vv(val);
   SimpleTestLookup stl(val);
-  EXPECT_EQ(cht->get_insert(thr, stl, val, vv), verify_expect_get) << "Inserting an unique value failed.";
-  vv.verify(verify_expect_get, verify_expect_inserted);
+  if (verify_expect_inserted) {
+    cht_insert_helper(thr, cht, val);
+  }
+  if (verify_expect_get) {
+    cht_get_helper(thr, cht, val);
+  }
 }
 
 static void cht_getinsert_bulkdelete(Thread* thr) {
@@ -856,10 +854,19 @@ public:
     bool grow;
     MyDel del(_br);
     for (uintptr_t v = _start; v <= _stop; v++) {
-      ValVerify vv(v);
-      TestLookup tl(v);
-      _cht->get_insert(this, tl, v, vv, &grow);
-      EXPECT_NE(vv.called_get, vv.called_insert) << "Non or both callbacks was called.";
+      {
+        TestLookup tl(v);
+        ValueGet vg;
+        do {
+          if (_cht->get(this, tl, vg, &grow)) {
+            EXPECT_EQ(v, vg.get_value()) << "Getting an old value failed.";
+            break;
+          }
+          if (_cht->insert(this, tl, v, &grow)) {
+            break;
+          }
+        } while(true);
+      }
       if (grow && !_shrink) {
         _cht->grow(this);
       }
