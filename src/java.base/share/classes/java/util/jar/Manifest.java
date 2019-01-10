@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,10 @@ public class Manifest implements Cloneable {
     // associated JarVerifier, not null when called by JarFile::getManifest.
     private final JarVerifier jv;
 
-    // name of the corresponding jar archive if available.
-    private final String jarFilename;
-
     /**
      * Constructs a new, empty Manifest.
      */
     public Manifest() {
-        jarFilename = null;
         jv = null;
     }
 
@@ -86,7 +82,7 @@ public class Manifest implements Cloneable {
      *
      * @param is the input stream containing manifest data
      * @param jarFilename the name of the corresponding jar archive if available
-     * @throws IOException if an I/O error has occured
+     * @throws IOException if an I/O error has occurred
      */
     Manifest(InputStream is, String jarFilename) throws IOException {
         this(null, is, jarFilename);
@@ -95,10 +91,14 @@ public class Manifest implements Cloneable {
     /**
      * Constructs a new Manifest from the specified input stream
      * and associates it with a JarVerifier.
+     *
+     * @param jv the JarVerifier to use
+     * @param is the input stream containing manifest data
+     * @param jarFilename the name of the corresponding jar archive if available
+     * @throws IOException if an I/O error has occurred
      */
     Manifest(JarVerifier jv, InputStream is, String jarFilename) throws IOException {
-        read(is);
-        this.jarFilename = jarFilename;
+        read(is, jarFilename);
         this.jv = jv;
     }
 
@@ -110,7 +110,6 @@ public class Manifest implements Cloneable {
     public Manifest(Manifest man) {
         attr.putAll(man.getMainAttributes());
         entries.putAll(man.getEntries());
-        jarFilename = null;
         jv = man.jv;
     }
 
@@ -280,6 +279,10 @@ public class Manifest implements Cloneable {
      * @exception IOException if an I/O error has occurred
      */
     public void read(InputStream is) throws IOException {
+        read(is, null);
+    }
+
+    private void read(InputStream is, String jarFilename) throws IOException {
         // Buffered input stream for reading manifest data
         FastInputStream fis = new FastInputStream(is);
         // Line buffer
@@ -315,7 +318,7 @@ public class Manifest implements Cloneable {
             if (name == null) {
                 name = parseName(lbuf, len);
                 if (name == null) {
-                    throw new IOException("invalid manifest format"
+                    throw new IOException("invalid manifest format ("
                               + getErrorPosition(jarFilename, lineNumber) + ")");
                 }
                 if (fis.peek() == ' ') {
