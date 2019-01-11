@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,8 +467,17 @@ void JfrThreadSampler::run() {
 
     jlong now_ms = get_monotonic_ms();
 
-    jlong next_j = java_interval + last_java_ms - now_ms;
-    jlong next_n = native_interval + last_native_ms - now_ms;
+    /*
+     * Let I be java_interval or native_interval.
+     * Let L be last_java_ms or last_native_ms.
+     * Let N be now_ms.
+     *
+     * Interval, I, might be max_jlong so the addition
+     * could potentially overflow without parenthesis (UB). Also note that
+     * L - N < 0. Avoid UB, by adding parenthesis.
+     */
+    jlong next_j = java_interval + (last_java_ms - now_ms);
+    jlong next_n = native_interval + (last_native_ms - now_ms);
 
     jlong sleep_to_next = MIN2<jlong>(next_j, next_n);
 
