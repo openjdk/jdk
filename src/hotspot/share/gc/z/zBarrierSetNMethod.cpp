@@ -42,6 +42,11 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   }
 
   if (nm->is_unloading()) {
+    // We don't need to take the lock when unlinking nmethods from
+    // the Method, because it is only concurrently unlinked by
+    // the entry barrier, which acquires the per nmethod lock.
+    nm->unlink_from_method(false /* acquire_lock */);
+
     // We can end up calling nmethods that are unloading
     // since we clear compiled ICs lazily. Returning false
     // will re-resovle the call and update the compiled IC.

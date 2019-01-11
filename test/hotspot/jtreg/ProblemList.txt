@@ -85,7 +85,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 runtime/appcds/javaldr/GCSharedStringsDuringDump.java 8208778 macosx-x64
 runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
-runtime/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java 8213299 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
 runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64

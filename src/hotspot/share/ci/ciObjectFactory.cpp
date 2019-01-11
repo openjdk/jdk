@@ -266,6 +266,24 @@ int ciObjectFactory::metadata_compare(Metadata* const& key, ciMetadata* const& e
 }
 
 // ------------------------------------------------------------------
+// ciObjectFactory::cached_metadata
+//
+// Get the ciMetadata corresponding to some Metadata. If the ciMetadata has
+// already been created, it is returned. Otherwise, null is returned.
+ciMetadata* ciObjectFactory::cached_metadata(Metadata* key) {
+  ASSERT_IN_VM;
+
+  bool found = false;
+  int index = _ci_metadata->find_sorted<Metadata*, ciObjectFactory::metadata_compare>(key, found);
+
+  if (!found) {
+    return NULL;
+  }
+  return _ci_metadata->at(index)->as_metadata();
+}
+
+
+// ------------------------------------------------------------------
 // ciObjectFactory::get_metadata
 //
 // Get the ciMetadata corresponding to some Metadata. If the ciMetadata has

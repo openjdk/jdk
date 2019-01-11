@@ -2813,8 +2813,7 @@ public final class String
      * lines are then concatenated and returned.
      * <p>
      * If {@code n > 0} then {@code n} spaces (U+0020) are inserted at the
-     * beginning of each line. {@link String#isBlank() Blank lines} are
-     * unaffected.
+     * beginning of each line.
      * <p>
      * If {@code n < 0} then up to {@code n}
      * {@link Character#isWhitespace(int) white space characters} are removed
@@ -2849,7 +2848,7 @@ public final class String
                                              : lines();
         if (n > 0) {
             final String spaces = " ".repeat(n);
-            stream = stream.map(s -> s.isBlank() ? s : spaces + s);
+            stream = stream.map(s -> spaces + s);
         } else if (n == Integer.MIN_VALUE) {
             stream = stream.map(s -> s.stripLeading());
         } else if (n < 0) {

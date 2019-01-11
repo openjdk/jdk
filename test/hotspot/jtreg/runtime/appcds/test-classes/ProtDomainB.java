@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ public class ProtDomainB {
     if (mine == his) {
       System.out.println("Protection Domains match");
     } else {
-      System.out.println("Protection Domains do not match!");
-      System.exit(1);
+      throw new RuntimeException("Protection Domains do not match!");
     }
   }
 }

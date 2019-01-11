@@ -67,7 +67,7 @@ public class Indent {
                         Stream<String> stream = input.lines();
                         if (adjust > 0) {
                             final String spaces = " ".repeat(adjust);
-                            stream = stream.map(s -> s.isBlank() ? s : spaces + s);
+                            stream = stream.map(s -> spaces + s);
                         } else if (adjust < 0) {
                             stream = stream.map(s -> s.substring(Math.min(-adjust, indexOfNonWhitespace(s))));
                         }
