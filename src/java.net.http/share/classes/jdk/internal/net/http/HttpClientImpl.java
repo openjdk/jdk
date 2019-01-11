@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.internal.net.http;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -561,6 +563,15 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 ConnectException ce = new ConnectException(msg);
                 ce.initCause(throwable);
                 throw ce;
+            } else if (throwable instanceof SSLHandshakeException) {
+                // special case for SSLHandshakeException
+                SSLHandshakeException he = new SSLHandshakeException(msg);
+                he.initCause(throwable);
+                throw he;
+            } else if (throwable instanceof SSLException) {
+                // any other SSLException is wrapped in a plain
+                // SSLException
+                throw new SSLException(msg, throwable);
             } else if (throwable instanceof IOException) {
                 throw new IOException(msg, throwable);
             } else {
