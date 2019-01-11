@@ -185,7 +185,7 @@ class ConsoleIOContext extends IOContext {
             it.set(current);
         }
 
-        historyLoad = Instant.now();
+        historyLoad = Instant.MIN;
         loadHistory.forEach(line -> reader.getHistory().add(historyLoad, line));
 
         in = reader;
