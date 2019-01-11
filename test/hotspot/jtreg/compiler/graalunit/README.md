@@ -28,7 +28,7 @@ directory. Then you can pass it to jtreg as java option by using "-vmoptions:-Dg
 by using "-e:TEST_IMAGE_GRAAL_DIR=..."
 
 Example:
-> jtreg -vt -jdk:<TESTED_JDK> -vmoptions:"-vmoptions:-Dgraalunit.libs=build/<platform>/images/test/hotspot/jtreg/graal"
+> jtreg -vt -jdk:<TESTED_JDK> -vmoptions:"-Dgraalunit.libs=build/<platform>/images/test/hotspot/jtreg/graal"
         compiler/graalunit/UtilTest.java
 
 To run Graal unit tests in Graal as JIT mode pass additional -vmoptions to jtreg:
