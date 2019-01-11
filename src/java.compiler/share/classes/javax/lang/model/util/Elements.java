@@ -189,7 +189,7 @@ public interface Elements {
     /**
      * Returns a module element given its fully qualified name.
      *
-     * If the named module cannot be found, {@code null} is
+     * If the requested module cannot be found, {@code null} is
      * returned. One situation where a module cannot be found is if
      * the environment does not include modules, such as an annotation
      * processing environment configured for a {@linkplain
@@ -199,7 +199,7 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  the name
+     * @param name  the name, or an empty string for an unnamed module
      * @return the named module element, or {@code null} if it cannot be found
      * @see #getAllModuleElements
      * @since 9
