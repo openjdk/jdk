@@ -2659,9 +2659,35 @@ void ShenandoahWriteBarrierNode::pin_and_expand(PhaseIdealLoop* phase) {
     wb->pin_and_expand_helper(phase);
   }
 
+  for (uint i = 0; i < enqueue_barriers.size(); i++) {
+    Node* barrier = enqueue_barriers.at(i);
+    Node* ctrl = phase->get_ctrl(barrier);
+    IdealLoopTree* loop = phase->get_loop(ctrl);
+    if (loop->_head->is_OuterStripMinedLoop()) {
+      // Expanding a barrier here will break loop strip mining
+      // verification. Transform the loop so the loop nest doesn't
+      // appear as strip mined.
+      OuterStripMinedLoopNode* outer = loop->_head->as_OuterStripMinedLoop();
+      hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
+    }
+  }
+
+  for (int i = ShenandoahBarrierSetC2::bsc2()->state()->shenandoah_barriers_count(); i > 0; i--) {
+    int cnt = ShenandoahBarrierSetC2::bsc2()->state()->shenandoah_barriers_count();
+    ShenandoahWriteBarrierNode* wb = ShenandoahBarrierSetC2::bsc2()->state()->shenandoah_barrier(i-1);
+    Node* ctrl = phase->get_ctrl(wb);
+    IdealLoopTree* loop = phase->get_loop(ctrl);
+    if (loop->_head->is_OuterStripMinedLoop()) {
+      // Expanding a barrier here will break loop strip mining
+      // verification. Transform the loop so the loop nest doesn't
+      // appear as strip mined.
+      OuterStripMinedLoopNode* outer = loop->_head->as_OuterStripMinedLoop();
+      hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
+    }
+  }
+
   MemoryGraphFixer fixer(Compile::AliasIdxRaw, true, phase);
   Unique_Node_List uses_to_ignore;
-  Unique_Node_List outer_lsms;
   for (uint i = 0; i < enqueue_barriers.size(); i++) {
     Node* barrier = enqueue_barriers.at(i);
     Node* pre_val = barrier->in(1);
@@ -2685,9 +2711,6 @@ void ShenandoahWriteBarrierNode::pin_and_expand(PhaseIdealLoop* phase) {
 
     Node* init_ctrl = ctrl;
     IdealLoopTree* loop = phase->get_loop(ctrl);
-    if (loop->_head->is_OuterStripMinedLoop()) {
-      outer_lsms.push(loop->_head);
-    }
     Node* raw_mem = fixer.find_mem(ctrl, barrier);
     Node* init_raw_mem = raw_mem;
     Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
@@ -2832,9 +2855,6 @@ void ShenandoahWriteBarrierNode::pin_and_expand(PhaseIdealLoop* phase) {
     Node* val = wb->in(ValueIn);
     Node* wbproj = wb->find_out_with(Op_ShenandoahWBMemProj);
     IdealLoopTree *loop = phase->get_loop(ctrl);
-    if (loop->_head->is_OuterStripMinedLoop()) {
-      outer_lsms.push(loop->_head);
-    }
 
     assert(val->Opcode() != Op_ShenandoahWriteBarrier, "No chain of write barriers");
 
@@ -3019,14 +3039,6 @@ void ShenandoahWriteBarrierNode::pin_and_expand(PhaseIdealLoop* phase) {
   }
 
   assert(ShenandoahBarrierSetC2::bsc2()->state()->shenandoah_barriers_count() == 0, "all write barrier nodes should have been replaced");
-
-  for (uint i = 0; i < outer_lsms.size(); i++) {
-    // Expanding a barrier here will break loop strip mining
-    // verification. Transform the loop so the loop nest doesn't
-    // appear as strip mined.
-    OuterStripMinedLoopNode* outer = outer_lsms.at(i)->as_OuterStripMinedLoop();
-    hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
-  }
 }
 
 void ShenandoahWriteBarrierNode::move_heap_stable_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase) {
@@ -4274,5 +4286,3 @@ void MemoryGraphFixer::remove(Node* n) {
     _memory_nodes.map(c->_idx, mem->in(ShenandoahWBMemProjNode::WriteBarrier)->in(ShenandoahBarrierNode::Memory));
   }
 }
-
-
