@@ -49,5 +49,4 @@ define_pd_global(size_t, JVMInvokeMethodSlack,    8192);
 // Only used on 64 bit platforms.
 define_pd_global(size_t, HeapBaseMinAddress,      2*G);
 
-#endif // OS_CPU_LINUX_S390_VM_GLOBALS_LINUX_S390_HPP
 #endif // OS_CPU_LINUX_S390_GLOBALS_LINUX_S390_HPP

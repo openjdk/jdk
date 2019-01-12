@@ -34,5 +34,4 @@
 
   void getCpuData(const CodeBuffer * const cb) {}
 
-#endif // CPU_S390_VM_CODEBUFFER_S390_HPP
 #endif // CPU_S390_CODEBUFFER_S390_HPP
