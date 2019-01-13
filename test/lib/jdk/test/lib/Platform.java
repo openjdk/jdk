@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,6 +322,21 @@ public class Platform {
             return "dylib";
         } else {
             return "so";
+        }
+    }
+
+    /*
+     * Returns name of system variable containing paths to shared native libraries.
+     */
+    public static String sharedLibraryPathVariableName() {
+        if (isWindows()) {
+            return "PATH";
+        } else if (isOSX()) {
+            return "DYLD_LIBRARY_PATH";
+        } else if (isAix()) {
+            return "LIBPATH";
+        } else {
+            return "LD_LIBRARY_PATH";
         }
     }
 

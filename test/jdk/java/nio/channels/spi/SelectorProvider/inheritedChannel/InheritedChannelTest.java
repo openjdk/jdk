@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class InheritedChannelTest {
     private static final String ARCH = System.getProperty("os.arch");
     private static final String OS_ARCH = ARCH.equals("i386") ? "i586" : ARCH;
 
-    private static final Path LD_LIBRARY_PATH
+    private static final Path libraryPath
             = Paths.get(System.getProperty("java.library.path"));
 
     @DataProvider
@@ -98,7 +98,8 @@ public class InheritedChannelTest {
 
     @Test(dataProvider = "testCases")
     public void test(String desc, List<String> opts) throws Throwable {
-        System.out.println("LD_LIBRARY_PATH=" + LD_LIBRARY_PATH);
+        String pathVar = Platform.sharedLibraryPathVariableName();
+        System.out.println(pathVar + "=" + libraryPath);
 
         List<String> args = new ArrayList<>();
         args.add(JDKToolFinder.getJDKTool("java"));
@@ -111,9 +112,8 @@ public class InheritedChannelTest {
 
         Map<String, String> env = pb.environment();
         env.put("CLASSPATH", TEST_CLASSES);
-        env.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH.toString());
+        env.put(pathVar, libraryPath.toString());
 
-        ProcessTools.executeCommand(pb)
-                    .shouldHaveExitValue(0);
+        ProcessTools.executeCommand(pb).shouldHaveExitValue(0);
     }
 }

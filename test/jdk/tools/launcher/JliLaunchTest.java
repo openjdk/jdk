@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,15 +48,11 @@ public class JliLaunchTest {
         System.out.println("Launcher = " + launcher + (Files.exists(launcher) ? " (exists)" : " (not exists)"));
         ProcessBuilder pb = new ProcessBuilder(launcher.toString(), "--version");
         Map<String, String> env = pb.environment();
-        if (Platform.isWindows()) {
-            // The DLL should be in JDK/bin
-            String libdir = Paths.get(Utils.TEST_JDK).resolve("bin").toAbsolutePath().toString();
-            env.compute("PATH", (k, v) -> (v == null) ? libdir : libdir + ";" + v);
-        } else {
-            String libdir = Paths.get(Utils.TEST_JDK).resolve("lib").toAbsolutePath().toString();
-            String LD_LIBRARY_PATH = Platform.isOSX() ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH";
-            env.compute(LD_LIBRARY_PATH, (k, v) -> (v == null) ? libdir : libdir + ":" + v);
-        }
+        // On windows, the DLL should be in JDK/bin, else in JDK/lib.
+        String libdir = Paths.get(Utils.TEST_JDK).resolve(Platform.isWindows() ? "bin" : "lib")
+            .toAbsolutePath().toString();
+        String pathEnvVar = Platform.sharedLibraryPathVariableName();
+        env.compute(pathEnvVar, (k, v) -> (v == null) ? libdir : libdir + File.pathSeparator + v);
 
         OutputAnalyzer outputf = new OutputAnalyzer(pb.start());
         outputf.shouldHaveExitValue(0);

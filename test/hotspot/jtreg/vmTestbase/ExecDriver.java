@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class ExecDriver {
         if (launcher) {
             Path dir = Paths.get(Utils.TEST_JDK);
             String value;
-            String name;
+            String name = Platform.sharedLibraryPathVariableName();
             if (Platform.isWindows()) {
                 value = dir.resolve("bin")
                            .resolve(variant())
@@ -113,13 +113,11 @@ public class ExecDriver {
                 value += dir.resolve("bin")
                             .toAbsolutePath()
                             .toString();
-                name = "PATH";
             } else {
                 value = dir.resolve("lib")
                            .resolve(variant())
                            .toAbsolutePath()
                            .toString();
-                name = Platform.isOSX() ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH";
             }
 
             System.out.println("  with " + name + " = " +

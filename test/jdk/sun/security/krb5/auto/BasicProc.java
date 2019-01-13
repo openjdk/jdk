@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,8 +307,7 @@ public class BasicProc {
                     .prop("sun.security.nativegss.debug", "true");
             int pos = lib.lastIndexOf('/');
             if (pos > 0) {
-                p.env("LD_LIBRARY_PATH", lib.substring(0, pos));
-                p.env("DYLD_LIBRARY_PATH", lib.substring(0, pos));
+                p.env(Platform.sharedLibraryPathVariableName(), lib.substring(0, pos));
             }
         } else {
             p.perm(new java.util.PropertyPermission(

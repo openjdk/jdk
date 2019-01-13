@@ -77,17 +77,7 @@ public class TestDriver {
                 nsk.jvmti.RetransformClasses.retransform003.class.getName()
         );
 
-        String envName;
-        if (Platform.isWindows()) {
-            envName = "PATH";
-        } else if (Platform.isOSX()) {
-            envName = "DYLD_LIBRARY_PATH";
-        } else if (Platform.isAix()) {
-            envName = "LIBPATH";
-        } else {
-            envName = "LD_LIBRARY_PATH";
-        }
-
+        String envName = Platform.sharedLibraryPathVariableName();
         pb.environment()
           .merge(envName, ".", (x, y) -> y + File.pathSeparator + x);
 
