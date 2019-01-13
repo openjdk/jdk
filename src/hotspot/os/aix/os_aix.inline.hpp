@@ -98,12 +98,6 @@ inline int os::ftruncate(int fd, jlong length) {
 inline bool os::numa_has_static_binding()   { ShouldNotReachHere(); return true; }
 inline bool os::numa_has_group_homing()     { ShouldNotReachHere(); return false;  }
 
-inline size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE( (size_t) ::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
 inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;
   RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);

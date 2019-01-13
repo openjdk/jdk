@@ -539,9 +539,8 @@ class os: AllStatic {
 
   //File i/o operations
 
-  static size_t read(int fd, void *buf, unsigned int nBytes);
-  static size_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static size_t restartable_read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
   static size_t write(int fd, const void *buf, unsigned int nBytes);
 
   // Reading directories.

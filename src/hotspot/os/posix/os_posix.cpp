@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -552,6 +552,10 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
 
 FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
+}
+
+ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+  return ::pread(fd, buf, nBytes, offset);
 }
 
 void os::flockfile(FILE* fp) {

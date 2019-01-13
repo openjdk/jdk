@@ -2217,14 +2217,6 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   }
 }
 
-size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  RESTARTABLE_RETURN_INT(::read(fd, buf, nBytes));
-}
-
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
-  RESTARTABLE_RETURN_INT(::pread(fd, buf, nBytes, offset));
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
