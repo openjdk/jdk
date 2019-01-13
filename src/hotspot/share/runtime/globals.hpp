@@ -1327,9 +1327,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, TypeProfileCasts,  true,                                    \
           "treat casts like calls for purposes of type profiling")          \
                                                                             \
-  develop(bool, TimeLivenessAnalysis, false,                                \
-          "Time computation of bytecode liveness analysis")                 \
-                                                                            \
   develop(bool, TraceLivenessGen, false,                                    \
           "Trace the generation of liveness analysis information")          \
                                                                             \

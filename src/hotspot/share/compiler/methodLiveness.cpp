@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/timerTrace.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 // The MethodLiveness class performs a simple liveness analysis on a method
@@ -71,64 +70,6 @@
 //    a single set (_exception_exit), losing some information but simplifying the
 //    analysis.
 
-
-//--------------------------------------------------------------------------
-// The BitCounter class is used for counting the number of bits set in
-// some BitMap.  It is only used when collecting liveness statistics.
-
-#ifndef PRODUCT
-
-class BitCounter: public BitMapClosure {
- private:
-  int _count;
- public:
-  BitCounter() : _count(0) {}
-
-  // Callback when bit in map is set
-  virtual bool do_bit(size_t offset) {
-    _count++;
-    return true;
-  }
-
-  int count() {
-    return _count;
-  }
-};
-
-
-//--------------------------------------------------------------------------
-
-
-// Counts
-long MethodLiveness::_total_bytes = 0;
-int  MethodLiveness::_total_methods = 0;
-
-long MethodLiveness::_total_blocks = 0;
-int  MethodLiveness::_max_method_blocks = 0;
-
-long MethodLiveness::_total_edges = 0;
-int  MethodLiveness::_max_block_edges = 0;
-
-long MethodLiveness::_total_exc_edges = 0;
-int  MethodLiveness::_max_block_exc_edges = 0;
-
-long MethodLiveness::_total_method_locals = 0;
-int  MethodLiveness::_max_method_locals = 0;
-
-long MethodLiveness::_total_locals_queried = 0;
-long MethodLiveness::_total_live_locals_queried = 0;
-
-long MethodLiveness::_total_visits = 0;
-
-#endif
-
-// Timers
-elapsedTimer MethodLiveness::_time_build_graph;
-elapsedTimer MethodLiveness::_time_gen_kill;
-elapsedTimer MethodLiveness::_time_flow;
-elapsedTimer MethodLiveness::_time_query;
-elapsedTimer MethodLiveness::_time_total;
-
 MethodLiveness::MethodLiveness(Arena* arena, ciMethod* method)
 #ifdef COMPILER1
   : _bci_block_start(arena, method->code_size())
@@ -146,52 +87,11 @@ void MethodLiveness::compute_liveness() {
     tty->print("# Computing liveness information for ");
     method()->print_short_name();
   }
-
-  if (TimeLivenessAnalysis) _time_total.start();
 #endif
 
-  {
-    TraceTime buildGraph(NULL, &_time_build_graph, TimeLivenessAnalysis);
-    init_basic_blocks();
-  }
-  {
-    TraceTime genKill(NULL, &_time_gen_kill, TimeLivenessAnalysis);
-    init_gen_kill();
-  }
-  {
-    TraceTime flow(NULL, &_time_flow, TimeLivenessAnalysis);
-    propagate_liveness();
-  }
-
-#ifndef PRODUCT
-  if (TimeLivenessAnalysis) _time_total.stop();
-
-  if (TimeLivenessAnalysis) {
-    // Collect statistics
-    _total_bytes += method()->code_size();
-    _total_methods++;
-
-    int num_blocks = _block_count;
-    _total_blocks += num_blocks;
-    _max_method_blocks = MAX2(num_blocks,_max_method_blocks);
-
-    for (int i=0; i<num_blocks; i++) {
-      BasicBlock *block = _block_list[i];
-
-      int numEdges = block->_normal_predecessors->length();
-      int numExcEdges = block->_exception_predecessors->length();
-
-      _total_edges += numEdges;
-      _total_exc_edges += numExcEdges;
-      _max_block_edges = MAX2(numEdges,_max_block_edges);
-      _max_block_exc_edges = MAX2(numExcEdges,_max_block_exc_edges);
-    }
-
-    int numLocals = _bit_map_size_bits;
-    _total_method_locals += numLocals;
-    _max_method_locals = MAX2(numLocals,_max_method_locals);
-  }
-#endif
+  init_basic_blocks();
+  init_gen_kill();
+  propagate_liveness();
 }
 
 
@@ -473,8 +373,6 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
   MethodLivenessResult answer;
 
   if (_block_count > 0) {
-    if (TimeLivenessAnalysis) _time_total.start();
-    if (TimeLivenessAnalysis) _time_query.start();
 
     assert( 0 <= bci && bci < method()->code_size(), "bci out of range" );
     BasicBlock *block = _block_map->at(bci);
@@ -501,72 +399,11 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
       tty->print(" @ %d : result is ", bci);
       answer.print_on(tty);
     }
-
-    if (TimeLivenessAnalysis) _time_query.stop();
-    if (TimeLivenessAnalysis) _time_total.stop();
 #endif
   }
-
-#ifndef PRODUCT
-  if (TimeLivenessAnalysis) {
-    // Collect statistics.
-    _total_locals_queried += _bit_map_size_bits;
-    BitCounter counter;
-    answer.iterate(&counter);
-    _total_live_locals_queried += counter.count();
-  }
-#endif
 
   return answer;
 }
-
-
-#ifndef PRODUCT
-
-void MethodLiveness::print_times() {
-  tty->print_cr ("Accumulated liveness analysis times/statistics:");
-  tty->print_cr ("-----------------------------------------------");
-  tty->print_cr ("  Total         : %3.3f sec.", _time_total.seconds());
-  tty->print_cr ("    Build graph : %3.3f sec. (%2.2f%%)", _time_build_graph.seconds(),
-                 _time_build_graph.seconds() * 100 / _time_total.seconds());
-  tty->print_cr ("    Gen / Kill  : %3.3f sec. (%2.2f%%)", _time_gen_kill.seconds(),
-                 _time_gen_kill.seconds() * 100 / _time_total.seconds());
-  tty->print_cr ("    Dataflow    : %3.3f sec. (%2.2f%%)", _time_flow.seconds(),
-                 _time_flow.seconds() * 100 / _time_total.seconds());
-  tty->print_cr ("    Query       : %3.3f sec. (%2.2f%%)", _time_query.seconds(),
-                 _time_query.seconds() * 100 / _time_total.seconds());
-  tty->print_cr ("  #bytes   : %8ld (%3.0f bytes per sec)",
-                 _total_bytes,
-                 _total_bytes / _time_total.seconds());
-  tty->print_cr ("  #methods : %8d (%3.0f methods per sec)",
-                 _total_methods,
-                 _total_methods / _time_total.seconds());
-  tty->print_cr ("    avg locals : %3.3f    max locals : %3d",
-                 (float)_total_method_locals / _total_methods,
-                 _max_method_locals);
-  tty->print_cr ("    avg blocks : %3.3f    max blocks : %3d",
-                 (float)_total_blocks / _total_methods,
-                 _max_method_blocks);
-  tty->print_cr ("    avg bytes  : %3.3f",
-                 (float)_total_bytes / _total_methods);
-  tty->print_cr ("  #blocks  : %8ld",
-                 _total_blocks);
-  tty->print_cr ("    avg normal predecessors    : %3.3f  max normal predecessors    : %3d",
-                 (float)_total_edges / _total_blocks,
-                 _max_block_edges);
-  tty->print_cr ("    avg exception predecessors : %3.3f  max exception predecessors : %3d",
-                 (float)_total_exc_edges / _total_blocks,
-                 _max_block_exc_edges);
-  tty->print_cr ("    avg visits                 : %3.3f",
-                 (float)_total_visits / _total_blocks);
-  tty->print_cr ("  #locals queried : %8ld    #live : %8ld   %%live : %2.2f%%",
-                 _total_locals_queried,
-                 _total_live_locals_queried,
-                 100.0 * _total_live_locals_queried / _total_locals_queried);
-}
-
-#endif
-
 
 MethodLiveness::BasicBlock::BasicBlock(MethodLiveness *analyzer, int start, int limit) :
          _entry(analyzer->arena(),          analyzer->bit_map_size_bits()),

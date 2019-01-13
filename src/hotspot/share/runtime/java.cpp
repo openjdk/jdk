@@ -81,7 +81,6 @@
 #endif
 #ifdef COMPILER2
 #include "code/compiledIC.hpp"
-#include "compiler/methodLiveness.hpp"
 #include "opto/compile.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/runtime.hpp"
@@ -257,10 +256,6 @@ void print_statistics() {
 
   if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
-  }
-
-  if (TimeLivenessAnalysis) {
-    MethodLiveness::print_times();
   }
 #ifdef ASSERT
   if (CollectIndexSetStatistics) {
