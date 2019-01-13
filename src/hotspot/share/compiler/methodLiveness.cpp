@@ -340,7 +340,6 @@ void MethodLiveness::propagate_liveness() {
 
   while ((block = work_list_get()) != NULL) {
     block->propagate(this);
-    NOT_PRODUCT(_total_visits++;)
   }
 }
 
