@@ -158,10 +158,14 @@ grant codeBase "jrt:/jdk.internal.vm.compiler" {
 };
 
 grant codeBase "jrt:/jdk.internal.vm.compiler.management" {
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.hotspot";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.vm.compiler.collections";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.vm.ci.runtime";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.management.spi";
-    permission java.lang.RuntimePermission "sun.management.spi.PlatformMBeanProvider.subclass";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.core.common";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.debug";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.hotspot";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.options";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.phases.common.jmx";
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.serviceprovider";
 };
 
 grant codeBase "jrt:/jdk.jsobject" {

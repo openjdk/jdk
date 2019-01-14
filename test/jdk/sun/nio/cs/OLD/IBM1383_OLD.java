@@ -31,7 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
-import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.*;
 import sun.nio.cs.ext.*;
 
 

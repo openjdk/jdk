@@ -100,6 +100,7 @@ public:
   // Get the ciObject corresponding to some oop.
   ciObject* get(oop key);
   ciMetadata* get_metadata(Metadata* key);
+  ciMetadata* cached_metadata(Metadata* key);
   ciSymbol* get_symbol(Symbol* key);
 
   // Get the ciSymbol corresponding to one of the vmSymbols.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             for (int j = 0; j < vhs1.length; j++) {
                 if (i == j) {
                     assertEquals(vhs1[i], vhs1[i]);
-                    assertEquals(vhs1[i], vhs2[i]);
-                    assertEquals(vhs1[i].hashCode(), vhs2[i].hashCode());
                 }
                 else {
                     assertNotEquals(vhs1[i], vhs1[j]);

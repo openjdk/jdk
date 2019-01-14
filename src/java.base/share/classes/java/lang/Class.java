@@ -3419,8 +3419,8 @@ public final class Class<T> implements java.io.Serializable,
         StringBuilder sb = new StringBuilder();
         sb.append(getName() + "." + name + "(");
         if (argTypes != null) {
-            Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
-                collect(Collectors.joining(","));
+            sb.append(Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
+                      collect(Collectors.joining(",")));
         }
         sb.append(")");
         return sb.toString();

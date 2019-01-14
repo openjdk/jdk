@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1863,35 +1863,6 @@ public abstract class VarHandle implements Constable {
             this.mode = mode;
         }
     }
-
-    /**
-     * Compare this {@linkplain VarHandle} with another object for equality.
-     * Two {@linkplain VarHandle}s are considered equal if they both describe the
-     * same instance field, both describe the same static field, both describe
-     * array elements for arrays with the same component type, or both describe
-     * the same component of an off-heap structure.
-     *
-     * @param o the other object
-     * @return Whether this {@linkplain VarHandle} is equal to the other object
-     */
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        VarHandle that = (VarHandle) o;
-        return accessModeType(AccessMode.GET).equals(that.accessModeType(AccessMode.GET)) &&
-               internalEquals(that);
-    }
-
-    abstract boolean internalEquals(VarHandle vh);
-
-    @Override
-    public final int hashCode() {
-        return 31 * accessModeType(AccessMode.GET).hashCode() + internalHashCode();
-    }
-
-    abstract int internalHashCode();
 
     /**
      * Returns a compact textual description of this {@linkplain VarHandle},

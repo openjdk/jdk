@@ -78,10 +78,81 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
   _parameters = NULL;
 }
 
-void ciMethodData::load_extra_data() {
+// Check for entries that reference an unloaded method
+class PrepareExtraDataClosure : public CleanExtraDataClosure {
+  MethodData*            _mdo;
+  uint64_t               _safepoint_counter;
+  GrowableArray<Method*> _uncached_methods;
+
+public:
+  PrepareExtraDataClosure(MethodData* mdo)
+    : _mdo(mdo),
+      _safepoint_counter(SafepointSynchronize::safepoint_counter()),
+      _uncached_methods()
+  { }
+
+  bool is_live(Method* m) {
+    if (!m->method_holder()->is_loader_alive()) {
+      return false;
+    }
+    if (CURRENT_ENV->cached_metadata(m) == NULL) {
+      // Uncached entries need to be pre-populated.
+      _uncached_methods.append(m);
+    }
+    return true;
+  }
+
+  bool has_safepointed() {
+    return SafepointSynchronize::safepoint_counter() != _safepoint_counter;
+  }
+
+  bool finish() {
+    if (_uncached_methods.length() == 0) {
+      // Preparation finished iff all Methods* were already cached.
+      return true;
+    }
+    // Holding locks through safepoints is bad practice.
+    MutexUnlocker mu(_mdo->extra_data_lock());
+    for (int i = 0; i < _uncached_methods.length(); ++i) {
+      if (has_safepointed()) {
+        // The metadata in the growable array might contain stale
+        // entries after a safepoint.
+        return false;
+      }
+      Method* method = _uncached_methods.at(i);
+      // Populating ciEnv caches may cause safepoints due
+      // to taking the Compile_lock with safepoint checks.
+      (void)CURRENT_ENV->get_method(method);
+    }
+    return false;
+  }
+};
+
+void ciMethodData::prepare_metadata() {
   MethodData* mdo = get_MethodData();
 
+  for (;;) {
+    ResourceMark rm;
+    PrepareExtraDataClosure cl(mdo);
+    mdo->clean_extra_data(&cl);
+    if (cl.finish()) {
+      // When encountering uncached metadata, the Compile_lock might be
+      // acquired when creating ciMetadata handles, causing safepoints
+      // which requires a new round of preparation to clean out potentially
+      // new unloading metadata.
+      return;
+    }
+  }
+}
+
+void ciMethodData::load_extra_data() {
+  MethodData* mdo = get_MethodData();
   MutexLocker ml(mdo->extra_data_lock());
+  // Deferred metadata cleaning due to concurrent class unloading.
+  prepare_metadata();
+  // After metadata preparation, there is no stale metadata,
+  // and no safepoints can introduce more stale metadata.
+  NoSafepointVerifier no_safepoint;
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
@@ -94,7 +165,7 @@ void ciMethodData::load_extra_data() {
     // New traps in the MDO may have been added since we copied the
     // data (concurrent deoptimizations before we acquired
     // extra_data_lock above) or can be removed (a safepoint may occur
-    // in the translate_from call below) as we translate the copy:
+    // in the prepare_metadata call above) as we translate the copy:
     // update the copy as we go.
     int tag = dp_src->tag();
     if (tag != DataLayout::arg_info_data_tag) {
@@ -105,11 +176,7 @@ void ciMethodData::load_extra_data() {
     case DataLayout::speculative_trap_data_tag: {
       ciSpeculativeTrapData data_dst(dp_dst);
       SpeculativeTrapData   data_src(dp_src);
-
-      { // During translation a safepoint can happen or VM lock can be taken (e.g., Compile_lock).
-        MutexUnlocker ml(mdo->extra_data_lock());
-        data_dst.translate_from(&data_src);
-      }
+      data_dst.translate_from(&data_src);
       break;
     }
     case DataLayout::bit_data_tag:

@@ -269,7 +269,7 @@ class StubGenerator: public StubCodeGenerator {
       // when called via a c2i.
 
       // Pass initial_caller_sp to framemanager.
-      __ mr(R21_tmp1, R1_SP);
+      __ mr(R21_sender_SP, R1_SP);
 
       // Do a light-weight C-call here, r_new_arg_entry holds the address
       // of the interpreter entry point (frame manager or native entry)

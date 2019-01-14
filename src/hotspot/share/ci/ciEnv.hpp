@@ -46,6 +46,7 @@ class ciEnv : StackObj {
 
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
+  friend class PrepareExtraDataClosure;
 
 private:
   Arena*           _arena;       // Alias for _ciEnv_arena except in init_shared_objects()
@@ -186,6 +187,10 @@ private:
     } else {
       return _factory->get_metadata(o);
     }
+  }
+
+  ciMetadata* cached_metadata(Metadata* o) {
+    return _factory->cached_metadata(o);
   }
 
   ciInstance* get_instance(oop o) {

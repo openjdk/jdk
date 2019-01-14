@@ -1943,7 +1943,11 @@ public:
 // adjusted in the event of a change in control flow.
 //
 
-class CleanExtraDataClosure;
+class CleanExtraDataClosure : public StackObj {
+public:
+  virtual bool is_live(Method* m) = 0;
+};
+
 
 class MethodData : public Metadata {
   friend class VMStructs;
@@ -2116,11 +2120,12 @@ private:
   static bool profile_parameters_jsr292_only();
   static bool profile_all_parameters();
 
-  void clean_extra_data(CleanExtraDataClosure* cl);
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
 public:
+  void clean_extra_data(CleanExtraDataClosure* cl);
+
   static int header_size() {
     return sizeof(MethodData)/wordSize;
   }

@@ -377,6 +377,8 @@ class nmethod : public CompiledMethod {
 
   int   comp_level() const                        { return _comp_level; }
 
+  void unlink_from_method(bool acquire_lock);
+
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.
   oop   oop_at(int index) const;
