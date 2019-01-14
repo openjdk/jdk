@@ -1354,6 +1354,16 @@ oop java_lang_Class::name(Handle java_class, TRAPS) {
   return o;
 }
 
+oop java_lang_Class::source_file(oop java_class) {
+  assert(_source_file_offset != 0, "must be set");
+  return java_class->obj_field(_source_file_offset);
+}
+
+void java_lang_Class::set_source_file(oop java_class, oop source_file) {
+  assert(_source_file_offset != 0, "must be set");
+  java_class->obj_field_put(_source_file_offset, source_file);
+}
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
@@ -2602,10 +2612,26 @@ void java_lang_StackTraceElement::fill_in(Handle element,
   } else {
     // Fill in source file name and line number.
     Symbol* source = Backtrace::get_source_file_name(holder, version);
-    if (ShowHiddenFrames && source == NULL)
-      source = vmSymbols::unknown_class_name();
-    oop filename = StringTable::intern(source, CHECK);
-    java_lang_StackTraceElement::set_fileName(element(), filename);
+    oop source_file = java_lang_Class::source_file(java_class());
+    if (source != NULL) {
+      // Class was not redefined. We can trust its cache if set,
+      // else we have to initialize it.
+      if (source_file == NULL) {
+        source_file = StringTable::intern(source, CHECK);
+        java_lang_Class::set_source_file(java_class(), source_file);
+      }
+    } else {
+      // Class was redefined. Dump the cache if it was set.
+      if (source_file != NULL) {
+        source_file = NULL;
+        java_lang_Class::set_source_file(java_class(), source_file);
+      }
+      if (ShowHiddenFrames) {
+        source = vmSymbols::unknown_class_name();
+        source_file = StringTable::intern(source, CHECK);
+      }
+    }
+    java_lang_StackTraceElement::set_fileName(element(), source_file);
 
     int line_number = Backtrace::get_line_number(method, bci);
     java_lang_StackTraceElement::set_lineNumber(element(), line_number);
@@ -3980,6 +4006,7 @@ int java_lang_Class::_component_mirror_offset;
 int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
 int java_lang_Class::_name_offset;
+int java_lang_Class::_source_file_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 int java_lang_Throwable::backtrace_offset;

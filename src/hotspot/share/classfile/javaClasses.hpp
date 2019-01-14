@@ -219,7 +219,8 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
   macro(java_lang_Class, protection_domain,      object_signature,  false) \
-  macro(java_lang_Class, signers,                object_signature,  false)
+  macro(java_lang_Class, signers,                object_signature,  false) \
+  macro(java_lang_Class, source_file,            object_signature,  false) \
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
@@ -241,6 +242,7 @@ class java_lang_Class : AllStatic {
   static int _module_offset;
   static int _component_mirror_offset;
   static int _name_offset;
+  static int _source_file_offset;
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
@@ -312,6 +314,9 @@ class java_lang_Class : AllStatic {
   static oop module(oop java_class);
 
   static oop name(Handle java_class, TRAPS);
+
+  static oop source_file(oop java_class);
+  static void set_source_file(oop java_class, oop source_file);
 
   static int oop_size(oop java_class);
   static int oop_size_raw(oop java_class);
