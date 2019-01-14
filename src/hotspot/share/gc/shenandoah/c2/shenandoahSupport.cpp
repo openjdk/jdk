@@ -97,7 +97,7 @@ bool ShenandoahBarrierNode::needs_barrier_impl(PhaseGVN* phase, ShenandoahBarrie
     return false;
   }
 
-  if (n->is_CallJava() || n->Opcode() == Op_CallLeafNoFP) {
+  if (n->is_Call()) {
     return true;
   }
 
