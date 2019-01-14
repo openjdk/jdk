@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            jni->GetStaticObjectField(debugeeClass, field))
-                != NULL))
+            jni->GetStaticObjectField(debugeeClass, field)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)jni->NewGlobalRef(classBytes)) != NULL))
@@ -91,8 +90,7 @@ static int redefine(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_TRUE;
 
     if (!NSK_JNI_VERIFY(jni, (class_def.class_bytes = (unsigned char*)
-            jni->GetByteArrayElements(classBytes, NULL))
-                != NULL))
+            jni->GetByteArrayElements(classBytes, NULL)) != NULL))
         return NSK_TRUE;
 
     class_def.klass = testedClass;
