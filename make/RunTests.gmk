@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR AOT_MODULES, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR AOT_MODULES JCOV, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
@@ -595,9 +595,7 @@ define SetupRunGtestTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  $1: run-test-$1 parse-test-$1
-
-  TARGETS += $1
+  TARGETS += run-test-$1 parse-test-$1
 endef
 
 ################################################################################
@@ -702,9 +700,7 @@ define SetupRunMicroTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  $1: run-test-$1 parse-test-$1
-
-  TARGETS += $1
+  TARGETS += run-test-$1 parse-test-$1
 endef
 
 ################################################################################
@@ -879,6 +875,7 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
+	    $$(JCOV_ENVIRONMENT) \
 	    $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
 	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
 	        $$($1_JTREG_BASIC_OPTIONS) \
@@ -888,6 +885,7 @@ define SetupRunJtregTestBody
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
 	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
+	        $$(JTREG_JCOV_OPTIONS) \
 	        $$($1_TEST_NAME) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
@@ -921,9 +919,7 @@ define SetupRunJtregTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  $1: run-test-$1 parse-test-$1
-
-  TARGETS += $1
+  TARGETS += run-test-$1 parse-test-$1
 endef
 
 ################################################################################
@@ -985,9 +981,7 @@ define SetupRunSpecialTestBody
 	$$(eval $1_ERROR := 0)
 	$$(eval $1_TOTAL := 0)
 
-  $1: run-test-$1 parse-test-$1
-
-  TARGETS += $1
+  TARGETS += run-test-$1 parse-test-$1
 endef
 
 ################################################################################
@@ -1097,6 +1091,55 @@ run-test: $(TARGETS)
 	$(ECHO)
 	$(CAT) $(TEST_SUMMARY)
 	$(ECHO)
+
+################################################################################
+# Setup JCov
+################################################################################
+
+ifeq ($(TEST_OPTS_JCOV), true)
+
+  JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
+  JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
+  JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
+  JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
+  JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
+
+  ifneq ($(JCOV_IMAGE_DIR), )
+    JDK_IMAGE_DIR := $(JCOV_IMAGE_DIR)
+  endif
+
+  JCOV_ENVIRONMENT := JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
+      _JAVA_OPTIONS="$(JCOV_MEM_OPTIONS)"
+  JTREG_JCOV_OPTIONS := -e:JAVA_TOOL_OPTIONS='$(JCOV_MEM_OPTIONS)' \
+      -e:_JAVA_OPTIONS='$(JCOV_MEM_OPTIONS)'
+
+  jcov-do-start-grabber:
+	$(call MakeDir, $(JCOV_OUTPUT_DIR))
+	if $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -status 1>/dev/null 2>&1 ; then \
+	  $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600 ; \
+	fi
+	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
+	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
+	    1>$(JCOV_GRABBER_LOG) 2>&1 &
+
+  jcov-start-grabber: jcov-do-start-grabber
+	$(call LogWarn, Starting JCov Grabber...)
+	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -t 600 -wait
+
+  jcov-stop-grabber:
+	$(call LogWarn, Stopping JCov Grabber...)
+	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600
+
+  jcov-gen-report: run-test jcov-stop-grabber
+	$(call LogWarn, Generating JCov report ...)
+	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
+	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
+	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE)
+
+  $(TARGETS): jcov-start-grabber
+  all: jcov-gen-report
+
+endif
 
 ################################################################################
 
