@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
+
 
 /**
  * This is a framework to run 'jhsdb clhsdb' commands.
@@ -41,9 +44,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class ClhsdbLauncher {
 
     private Process toolProcess;
+    private boolean needPrivileges;
 
     public ClhsdbLauncher() {
         toolProcess = null;
+        needPrivileges = false;
     }
 
     /**
@@ -53,7 +58,6 @@ public class ClhsdbLauncher {
      */
     private void attach(long lingeredAppPid)
         throws IOException {
-
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         launcher.addToolArg("clhsdb");
         if (lingeredAppPid != -1) {
@@ -61,9 +65,12 @@ public class ClhsdbLauncher {
             System.out.println("Starting clhsdb against " + lingeredAppPid);
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
+        List<String> cmdStringList = Arrays.asList(launcher.getCommand());
+        if (needPrivileges) {
+            cmdStringList = SATestUtils.addPrivileges(cmdStringList);
+        }
+        ProcessBuilder processBuilder = new ProcessBuilder(cmdStringList);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-
         toolProcess = processBuilder.start();
     }
 
@@ -173,9 +180,19 @@ public class ClhsdbLauncher {
         throws IOException, InterruptedException {
 
         if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.out.println("SA attach not expected to work - test skipped.");
-            return null;
+            if (Platform.isOSX()) {
+                if (!SATestUtils.canAddPrivileges()) {
+                   // Skip the test if we don't have enough permissions to attach
+                   // and cannot add privileges.
+                   System.out.println("SA attach not expected to work - test skipped.");
+                   return null;
+               } else {
+                   needPrivileges = true;
+               }
+            } else {
+                System.out.println("SA attach not expected to work. Insufficient privileges.");
+                throw new Error("Cannot attach.");
+            }
         }
 
         attach(lingeredAppPid);
@@ -199,12 +216,6 @@ public class ClhsdbLauncher {
                             Map<String, List<String>> expectedStrMap,
                             Map<String, List<String>> unExpectedStrMap)
         throws IOException, InterruptedException {
-
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.out.println("SA attach not expected to work - test skipped.");
-            return null;
-        }
 
         loadCore(coreFileName);
         return runCmd(commands, expectedStrMap, unExpectedStrMap);
