@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -89,7 +89,6 @@ class outputStream;
   f(purge_class_unload,                             "    Unload Classes")               \
   f(purge_par,                                      "    Parallel Cleanup")             \
   f(purge_cldg,                                     "    CLDG")                         \
-  f(purge_string_dedup,                             "    String Dedup")                 \
   f(complete_liveness,                              "  Complete Liveness")              \
   f(prepare_evac,                                   "  Prepare Evacuation")             \
   f(recycle_regions,                                "  Recycle regions")                \
@@ -255,7 +254,6 @@ class outputStream;
   f(full_gc_purge_class_unload,                      "      Unload Classes")            \
   f(full_gc_purge_par,                               "    Parallel Cleanup")            \
   f(full_gc_purge_cldg,                              "    CLDG")                        \
-  f(full_gc_purge_string_dedup,                      "    String Dedup")                \
   f(full_gc_calculate_addresses,                     "  Calculate Addresses")           \
   f(full_gc_calculate_addresses_regular,             "    Regular Objects")             \
   f(full_gc_calculate_addresses_humong,              "    Humongous Objects")           \

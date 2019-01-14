@@ -113,14 +113,6 @@ public:
   }
 };
 
-void ShenandoahStringDedup::parallel_cleanup() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  log_debug(gc, stringdedup)("String dedup cleanup");
-  ShenandoahIsMarkedNextClosure cl;
-
-  unlink_or_oops_do(&cl, NULL, true);
-}
-
 //
 // Task for parallel unlink_or_oops_do() operation on the deduplication queue
 // and table.

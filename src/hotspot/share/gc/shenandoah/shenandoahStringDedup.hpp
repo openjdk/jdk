@@ -42,9 +42,6 @@ public:
   static void parallel_oops_do(OopClosure* cl, uint worker_id);
   static void oops_do_slow(OopClosure* cl);
 
-  // Parallel cleanup string dedup queues/table
-  static void parallel_cleanup();
-
   static inline bool is_candidate(oop obj) {
     return java_lang_String::is_instance_inlined(obj) &&
            java_lang_String::value(obj) != NULL;
