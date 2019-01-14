@@ -377,19 +377,19 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();
 
+  // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
+  // the space. This would be the last action if there is nothing to evacuate.
+  heap->entry_cleanup();
+
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->log_status();
+  }
+
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
   if (heap->is_evacuation_in_progress()) {
-    // Final mark had reclaimed some immediate garbage, kick cleanup to reclaim the space
-    // for the rest of the cycle, and report current state of free set.
-    heap->entry_cleanup();
-
-    {
-      ShenandoahHeapLocker locker(heap->lock());
-      heap->free_set()->log_status();
-    }
-
     // Concurrently evacuate
     heap->entry_evac();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_evac)) return;
@@ -403,13 +403,14 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
       if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
       heap->vmop_entry_final_updaterefs();
+
+      // Update references freed up collection set, kick the cleanup to reclaim the space.
+      heap->entry_cleanup();
+
     } else {
       heap->vmop_entry_final_evac();
     }
   }
-
-  // Reclaim space after cycle
-  heap->entry_cleanup();
 
   // Cycle is complete
   heap->heuristics()->record_success_concurrent();
