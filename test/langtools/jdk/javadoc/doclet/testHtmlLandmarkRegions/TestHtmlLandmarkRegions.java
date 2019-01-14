@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8210047
+ * @bug 8210047 8199892
  * @summary some pages contains content outside of landmark region
  * @library /tools/lib ../../lib
  * @modules
@@ -31,12 +31,14 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  * @build javadoc.tester.*
- * @run main TestHtmlLankmarkRegions
+ * @run main TestHtmlLandmarkRegions
  */
 
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import builder.ClassBuilder;
 import toolbox.ModuleBuilder;
@@ -44,16 +46,16 @@ import toolbox.ToolBox;
 
 import javadoc.tester.JavadocTester;
 
-public class TestHtmlLankmarkRegions extends JavadocTester {
+public class TestHtmlLandmarkRegions extends JavadocTester {
 
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestHtmlLankmarkRegions tester = new TestHtmlLankmarkRegions();
+        TestHtmlLandmarkRegions tester = new TestHtmlLandmarkRegions();
         tester.runTests(m -> new Object[]{Paths.get(m.getName())});
     }
 
-    TestHtmlLankmarkRegions() {
+    TestHtmlLandmarkRegions() {
         tb = new ToolBox();
     }
 
@@ -199,6 +201,37 @@ public class TestHtmlLankmarkRegions extends JavadocTester {
                 "<div class=\"indexContainer\">\n"
                 + "<h2 title=\"Packages\">Packages</h2>"
         );
+    }
+
+    @Test
+    public void testDocFiles(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        createPackages(srcDir);
+        Path docFiles = Files.createDirectory(srcDir.resolve("pkg1").resolve("doc-files"));
+        Files.write(docFiles.resolve("s.html"), List.of(
+                "<html>\n"
+                + "  <head>\n"
+                + "    <title>\"Hello World\"</title>\n"
+                + "  </head>\n"
+                + "  <body>\n"
+                + "     A sample doc file.\n"
+                + "  </body>\n"
+                + "</html>"));
+
+        Path outDir = base.resolve("out5");
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg1", "pkg2");
+
+        checkExit(Exit.OK);
+
+        checkOrder("pkg1/doc-files/s.html",
+                "<header role=\"banner\">\n"
+                + "<nav role=\"navigation\">\n",
+                "<main role=\"main\">A sample doc file",
+                "<footer role=\"contentinfo\">\n"
+                + "<nav role=\"navigation\">"
+                );
     }
 
     void createModules(Path srcDir) throws Exception {

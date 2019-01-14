@@ -25,16 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.AttributeTree;
-import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
-import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.doclint.HtmlTag;
-import com.sun.tools.doclint.HtmlTag.Attr;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -184,16 +181,28 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
         navBar.setNavLinkPackage(pkgLinkContent);
         navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        htmlContent.addContent(navBar.getContent(true));
+        Content header = docletWriter.createTagIfAllowed(
+                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.HEADER, HtmlTree::HEADER,
+                ContentBuilder::new);
+        header.addContent(navBar.getContent(true));
+        htmlContent.addContent(header);
+
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content bodyContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
-
         docletWriter.addTagsInfo(dfElement, bodyContent);
-        htmlContent.addContent(bodyContent);
+        Content main = docletWriter.createTagIfAllowed(
+                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.MAIN, HtmlTree::MAIN,
+                ContentBuilder::new);
+        main.addContent(bodyContent);
+        htmlContent.addContent(main);
 
         navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
-        htmlContent.addContent(navBar.getContent(false));
-        docletWriter.addBottom(htmlContent);
+        Content footer = docletWriter.createTagIfAllowed(
+                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.FOOTER, HtmlTree::FOOTER,
+                ContentBuilder::new);
+        footer.addContent(navBar.getContent(false));
+        docletWriter.addBottom(footer);
+        htmlContent.addContent(footer);
         docletWriter.printHtmlDocument(Collections.emptyList(), false, localTagsContent, htmlContent);
     }
 
