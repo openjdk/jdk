@@ -532,6 +532,12 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
               register_new_node(nn, get_ctrl(n));
               _igvn.replace_node(n, nn);
               return nn;
+            } else if ((adr1->in(AddPNode::Base) == adr4->in(AddPNode::Base)) &&
+                       (adr2->in(AddPNode::Base) == adr3->in(AddPNode::Base))) {
+              nn = new MulAddS2INode(mul_in1, mul_in2, mul_in4, mul_in3);
+              register_new_node(nn, get_ctrl(n));
+              _igvn.replace_node(n, nn);
+              return nn;
             }
           }
         }
