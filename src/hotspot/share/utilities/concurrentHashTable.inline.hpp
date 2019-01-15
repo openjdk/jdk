@@ -193,8 +193,12 @@ inline ConcurrentHashTable<VALUE, CONFIG, F>::
 {
   assert(_log2_size >= SIZE_SMALL_LOG2 && _log2_size <= SIZE_BIG_LOG2,
          "Bad size");
-  void* memory = NEW_C_HEAP_ARRAY(Bucket, _size, F);
-  _buckets = new (memory) Bucket[_size];
+  _buckets = NEW_C_HEAP_ARRAY(Bucket, _size, F);
+  // Use placement new for each element instead of new[] which could use more
+  // memory than allocated.
+  for (size_t i = 0; i < _size; ++i) {
+    new (_buckets + i) Bucket();
+  }
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>

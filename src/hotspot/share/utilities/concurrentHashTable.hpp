@@ -73,7 +73,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
     void print_value_on(outputStream* st) const {};
   };
 
-  // Only constructed with placement new[] from an array allocated with MEMFLAGS
+  // Only constructed with placement new from an array allocated with MEMFLAGS
   // of InternalTable.
   class Bucket {
    private:
