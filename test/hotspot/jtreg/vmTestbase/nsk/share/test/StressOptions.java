@@ -79,7 +79,7 @@ public class StressOptions {
      * Create StressOptions with default settings.
      */
     public StressOptions() {
-        time = 60;
+        time = 30;
         iterationsFactor = 1;
         threadsFactor = 1;
         runsFactor = 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ for a working version of this.
 public class StressOptions {
     // [2]
     &#064;Option(name="stressTime",
-                default_value="60",
+                default_value="30",
                 description="Stress time")
     private long stressTime;
 
@@ -227,7 +227,7 @@ Supported options:
     -iterations <number>
               Number of iterations (mandatory)
         -stressTime <number>
-              Stress time (default 60)
+              Stress time (default 30)
     -garbageProducer <garbage producer>
               Garbage producer (default byteArr). Supported keys:
                   byteArr    byte array producer
