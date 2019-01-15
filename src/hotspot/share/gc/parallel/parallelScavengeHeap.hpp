@@ -111,6 +111,8 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   virtual CollectorPolicy* collector_policy() const { return _collector_policy; }
 
+  virtual GenerationSizer* ps_collector_policy() const { return _collector_policy; }
+
   virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();

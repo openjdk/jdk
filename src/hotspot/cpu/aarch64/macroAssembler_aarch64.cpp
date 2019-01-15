@@ -4896,7 +4896,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   // A very short string
   cmpw(cnt2, minCharsInWord);
-  br(Assembler::LT, SHORT_STRING);
+  br(Assembler::LE, SHORT_STRING);
 
   // Compare longwords
   // load first parts of strings and finish initialization while loading
@@ -4920,8 +4920,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       ldr(tmp2, Address(str2));
       cmp(cnt2, STUB_THRESHOLD);
       br(GE, STUB);
-      subsw(cnt2, cnt2, 4);
-      br(EQ, TAIL_CHECK);
+      subw(cnt2, cnt2, 4);
       eor(vtmpZ, T16B, vtmpZ, vtmpZ);
       lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
       lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
@@ -4937,8 +4936,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       ldrs(vtmp, Address(str2));
       cmp(cnt2, STUB_THRESHOLD);
       br(GE, STUB);
-      subsw(cnt2, cnt2, 4);
-      br(EQ, TAIL_CHECK);
+      subw(cnt2, cnt2, 4);
       lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
       eor(vtmpZ, T16B, vtmpZ, vtmpZ);
       lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
@@ -5650,12 +5648,12 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
           orr(v5, T16B, Vtmp3, Vtmp4);
           uzp1(Vtmp1, T16B, Vtmp1, Vtmp2);
           uzp1(Vtmp3, T16B, Vtmp3, Vtmp4);
-          stpq(Vtmp1, Vtmp3, dst);
           uzp2(v5, T16B, v4, v5); // high bytes
           umov(tmp2, v5, D, 1);
           fmovd(tmp1, v5);
           orr(tmp1, tmp1, tmp2);
           cbnz(tmp1, LOOP_8);
+          stpq(Vtmp1, Vtmp3, dst);
           sub(len, len, 32);
           add(dst, dst, 32);
           add(src, src, 64);
@@ -5673,7 +5671,6 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       prfm(Address(src, SoftwarePrefetchHintDistance));
       uzp1(v4, T16B, Vtmp1, Vtmp2);
       uzp1(v5, T16B, Vtmp3, Vtmp4);
-      stpq(v4, v5, dst);
       orr(Vtmp1, T16B, Vtmp1, Vtmp2);
       orr(Vtmp3, T16B, Vtmp3, Vtmp4);
       uzp2(Vtmp1, T16B, Vtmp1, Vtmp3); // high bytes
@@ -5681,6 +5678,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       fmovd(tmp1, Vtmp1);
       orr(tmp1, tmp1, tmp2);
       cbnz(tmp1, LOOP_8);
+      stpq(v4, v5, dst);
       sub(len, len, 32);
       add(dst, dst, 32);
       add(src, src, 64);
@@ -5695,9 +5693,9 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       ld1(Vtmp1, T8H, src);
       uzp1(Vtmp2, T16B, Vtmp1, Vtmp1); // low bytes
       uzp2(Vtmp3, T16B, Vtmp1, Vtmp1); // high bytes
-      strd(Vtmp2, dst);
       fmovd(tmp1, Vtmp3);
       cbnz(tmp1, NEXT_1);
+      strd(Vtmp2, dst);
 
       sub(len, len, 8);
       add(dst, dst, 8);
@@ -5710,9 +5708,9 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     cbz(len, DONE);
     BIND(NEXT_1);
       ldrh(tmp1, Address(post(src, 2)));
-      strb(tmp1, Address(post(dst, 1)));
       tst(tmp1, 0xff00);
       br(NE, SET_RESULT);
+      strb(tmp1, Address(post(dst, 1)));
       subs(len, len, 1);
       br(GT, NEXT_1);
 

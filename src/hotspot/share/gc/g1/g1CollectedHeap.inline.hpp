@@ -57,13 +57,13 @@ size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
 // Inline functions for G1CollectedHeap
 
 // Return the region with the given index. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
+inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm->at(index); }
 
 // Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
+inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm->at_or_null(index); }
 
 inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
-  return _hrm.next_region_in_humongous(hr);
+  return _hrm->next_region_in_humongous(hr);
 }
 
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
@@ -74,7 +74,7 @@ inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
-  return _hrm.reserved().start() + index * HeapRegion::GrainWords;
+  return _hrm->reserved().start() + index * HeapRegion::GrainWords;
 }
 
 template <class T>
@@ -83,7 +83,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   assert(is_in_g1_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
          p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
-  return _hrm.addr_to_region((HeapWord*) addr);
+  return _hrm->addr_to_region((HeapWord*) addr);
 }
 
 template <class T>
@@ -266,12 +266,12 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 }
 
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
+  assert(_hrm->at(region)->is_starts_humongous(), "Must start a humongous object");
   _humongous_reclaim_candidates.set_candidate(region, value);
 }
 
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
+  assert(_hrm->at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
 }
 

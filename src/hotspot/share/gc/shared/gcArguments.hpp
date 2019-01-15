@@ -39,6 +39,7 @@ public:
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment() = 0;
   virtual CollectedHeap* create_heap() = 0;
+  static bool check_args_consistency();
 };
 
 #endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

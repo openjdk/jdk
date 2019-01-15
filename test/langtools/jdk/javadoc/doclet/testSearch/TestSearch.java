@@ -686,7 +686,7 @@ public class TestSearch extends JavadocTester {
                 + "            return ui.item.m + slash;\n"
                 + "        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {\n"
                 + "            $.each(packageSearchIndex, function(index, item) {\n"
-                + "                if (ui.item.p == item.l) {\n"
+                + "                if (item.m && ui.item.p == item.l) {\n"
                 + "                    urlPrefix = item.m + slash;\n"
                 + "                }\n"
                 + "            });\n"

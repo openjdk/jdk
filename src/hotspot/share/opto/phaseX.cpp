@@ -430,20 +430,6 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List *worklist
 
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->remove_useless_nodes(_useful);
-
-  // Remove edges from "root" to each SafePoint at a backward branch.
-  // They were inserted during parsing (see add_safepoint()) to make infinite
-  // loops without calls or exceptions visible to root, i.e., useful.
-  Node *root = C->root();
-  if( root != NULL ) {
-    for( uint i = root->req(); i < root->len(); ++i ) {
-      Node *n = root->in(i);
-      if( n != NULL && n->is_SafePoint() ) {
-        root->rm_prec(i);
-        --i;
-      }
-    }
-  }
 }
 
 //=============================================================================
@@ -1354,6 +1340,9 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
 
   while (_stack.is_nonempty()) {
     dead = _stack.node();
+    if (dead->Opcode() == Op_SafePoint) {
+      dead->as_SafePoint()->disconnect_from_root(this);
+    }
     uint progress_state = _stack.index();
     assert(dead != C->root(), "killing root, eh?");
     assert(!dead->is_top(), "add check for top when pushing");
@@ -1456,6 +1445,9 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
 //------------------------------subsume_node-----------------------------------
 // Remove users from node 'old' and add them to node 'nn'.
 void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
+  if (old->Opcode() == Op_SafePoint) {
+    old->as_SafePoint()->disconnect_from_root(this);
+  }
   assert( old != hash_find(old), "should already been removed" );
   assert( old != C->top(), "cannot subsume top node");
   // Copy debug or profile information to the new version:

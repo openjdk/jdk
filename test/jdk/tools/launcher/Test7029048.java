@@ -59,13 +59,10 @@ public class Test7029048 extends TestHelper {
     private static final File srcLibjvmSo = new File(srcServerDir, LIBJVM);
 
     private static final File dstLibDir = new File("lib");
-    private static final File dstLibArchDir =
-            new File(dstLibDir, getJreArch());
-
-    private static final File dstServerDir = new File(dstLibArchDir, "server");
+    private static final File dstServerDir = new File(dstLibDir, "server");
     private static final File dstServerLibjvm = new File(dstServerDir, LIBJVM);
 
-    private static final File dstClientDir = new File(dstLibArchDir, "client");
+    private static final File dstClientDir = new File(dstLibDir, "client");
     private static final File dstClientLibjvm = new File(dstClientDir, LIBJVM);
 
     private static final Map<String, String> env = new HashMap<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1757,6 +1757,14 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitByte(0x0F);
         emitByte(0x40 | cc.getValue());
         emitOperandHelper(dst, src, 0);
+    }
+
+    public final void cmpb(Register dst, Register src) {
+        CMP.byteRmOp.emit(this, BYTE, dst, src);
+    }
+
+    public final void cmpw(Register dst, Register src) {
+        CMP.rmOp.emit(this, WORD, dst, src);
     }
 
     public final void cmpl(Register dst, int imm32) {

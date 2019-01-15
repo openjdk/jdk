@@ -194,6 +194,8 @@ public:
   void remove_starting_at(HeapRegion* first, uint num_regions);
 
   virtual void verify();
+
+  uint num_of_regions_in_range(uint start, uint end) const;
 };
 
 // Iterator class that provides a convenient way to iterate over the

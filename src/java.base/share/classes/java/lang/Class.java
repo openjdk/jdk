@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3420,8 +3420,8 @@ public final class Class<T> implements java.io.Serializable,
         StringBuilder sb = new StringBuilder();
         sb.append(getName() + "." + name + "(");
         if (argTypes != null) {
-            Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
-                collect(Collectors.joining(","));
+            sb.append(Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
+                      collect(Collectors.joining(",")));
         }
         sb.append(")");
         return sb.toString();

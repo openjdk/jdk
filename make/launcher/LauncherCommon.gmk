@@ -203,7 +203,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
 
   ifneq ($(MAN_FILES_MD), )
     # If we got markdown files, ignore the troff files
-    ifeq ($(PANDOC), )
+    ifeq ($(ENABLE_PANDOC), false)
       $(info Warning: pandoc not found. Not generating man pages)
     else
       # Create dynamic man pages from markdown using pandoc. We need

@@ -83,11 +83,11 @@ final class CertificateVerify {
                 signer.update(hashes);
                 temproary = signer.sign();
             } catch (NoSuchAlgorithmException nsae) {
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (GeneralSecurityException gse) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot produce CertificateVerify signature", gse);
             }
 
@@ -112,7 +112,7 @@ final class CertificateVerify {
             //    };
             //  } Signature;
             if (m.remaining() < 2) {
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid CertificateVerify message: no sufficient data");
             }
 
@@ -128,7 +128,7 @@ final class CertificateVerify {
 
             if (x509Credentials == null ||
                     x509Credentials.popPublicKey == null) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No X509 credentials negotiated for CertificateVerify");
             }
 
@@ -140,15 +140,15 @@ final class CertificateVerify {
                         shc.handshakeSession.getMasterSecret());
                 signer.update(hashes);
                 if (!signer.verify(signature)) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify message: invalid signature");
                 }
             } catch (NoSuchAlgorithmException nsae) {
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (GeneralSecurityException gse) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot verify CertificateVerify signature", gse);
             }
         }
@@ -327,11 +327,11 @@ final class CertificateVerify {
                 signer.update(hashes);
                 temproary = signer.sign();
             } catch (NoSuchAlgorithmException nsae) {
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (GeneralSecurityException gse) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Cannot produce CertificateVerify signature", gse);
             }
 
@@ -356,7 +356,7 @@ final class CertificateVerify {
             //    };
             //  } Signature;
             if (m.remaining() < 2) {
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid CertificateVerify message: no sufficient data");
             }
 
@@ -372,7 +372,7 @@ final class CertificateVerify {
 
             if (x509Credentials == null ||
                     x509Credentials.popPublicKey == null) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No X509 credentials negotiated for CertificateVerify");
             }
 
@@ -383,15 +383,15 @@ final class CertificateVerify {
                 byte[] hashes = shc.handshakeHash.digest(algorithm);
                 signer.update(hashes);
                 if (!signer.verify(signature)) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify message: invalid signature");
                 }
             } catch (NoSuchAlgorithmException nsae) {
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (GeneralSecurityException gse) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot verify CertificateVerify signature", gse);
             }
         }
@@ -570,7 +570,7 @@ final class CertificateVerify {
             if (signatureScheme == null) {
                 // Unlikely, the credentials generator should have
                 // selected the preferable signature algorithm properly.
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No preferred signature algorithm for CertificateVerify");
             }
 
@@ -582,12 +582,12 @@ final class CertificateVerify {
                 temproary = signer.sign();
             } catch (NoSuchAlgorithmException |
                     InvalidAlgorithmParameterException nsae) {
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (InvalidKeyException | SignatureException ikse) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot produce CertificateVerify signature", ikse);
             }
 
@@ -607,7 +607,7 @@ final class CertificateVerify {
             //     opaque signature<0..2^16-1>;
             // } DigitallySigned;
             if (m.remaining() < 4) {
-                shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid CertificateVerify message: no sufficient data");
             }
 
@@ -615,13 +615,13 @@ final class CertificateVerify {
             int ssid = Record.getInt16(m);
             this.signatureScheme = SignatureScheme.valueOf(ssid);
             if (signatureScheme == null) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid signature algorithm (" + ssid +
                         ") used in CertificateVerify handshake message");
             }
 
             if (!shc.localSupportedSignAlgs.contains(signatureScheme)) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message");
@@ -638,7 +638,7 @@ final class CertificateVerify {
 
             if (x509Credentials == null ||
                     x509Credentials.popPublicKey == null) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No X509 credentials negotiated for CertificateVerify");
             }
 
@@ -649,17 +649,17 @@ final class CertificateVerify {
                     signatureScheme.getSignature(x509Credentials.popPublicKey);
                 signer.update(shc.handshakeHash.archived());
                 if (!signer.verify(signature)) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify signature");
                 }
             } catch (NoSuchAlgorithmException |
                     InvalidAlgorithmParameterException nsae) {
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (InvalidKeyException | SignatureException ikse) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot verify CertificateVerify signature", ikse);
             }
         }
@@ -871,7 +871,7 @@ final class CertificateVerify {
             if (signatureScheme == null) {
                 // Unlikely, the credentials generator should have
                 // selected the preferable signature algorithm properly.
-                context.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw context.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No preferred signature algorithm for CertificateVerify");
             }
 
@@ -897,12 +897,12 @@ final class CertificateVerify {
                 temproary = signer.sign();
             } catch (NoSuchAlgorithmException |
                     InvalidAlgorithmParameterException nsae) {
-                context.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw context.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (InvalidKeyException | SignatureException ikse) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot produce CertificateVerify signature", ikse);
             }
 
@@ -918,7 +918,7 @@ final class CertificateVerify {
             //     opaque signature<0..2^16-1>;
             // } DigitallySigned;
             if (m.remaining() < 4) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid CertificateVerify message: no sufficient data");
             }
 
@@ -926,13 +926,13 @@ final class CertificateVerify {
             int ssid = Record.getInt16(m);
             this.signatureScheme = SignatureScheme.valueOf(ssid);
             if (signatureScheme == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid signature algorithm (" + ssid +
                         ") used in CertificateVerify handshake message");
             }
 
             if (!context.localSupportedSignAlgs.contains(signatureScheme)) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message");
@@ -949,7 +949,7 @@ final class CertificateVerify {
 
             if (x509Credentials == null ||
                     x509Credentials.popPublicKey == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No X509 credentials negotiated for CertificateVerify");
             }
 
@@ -975,17 +975,17 @@ final class CertificateVerify {
                     signatureScheme.getSignature(x509Credentials.popPublicKey);
                 signer.update(contentCovered);
                 if (!signer.verify(signature)) {
-                    context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify signature");
                 }
             } catch (NoSuchAlgorithmException |
                     InvalidAlgorithmParameterException nsae) {
-                context.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw context.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" +
                         signatureScheme.name +
                         ") used in CertificateVerify handshake message", nsae);
             } catch (InvalidKeyException | SignatureException ikse) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot verify CertificateVerify signature", ikse);
             }
         }

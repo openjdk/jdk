@@ -4195,7 +4195,6 @@ public class BytecodeParser implements GraphBuilderContext {
             handleIllegalNewInstance(resolvedType);
             return;
         }
-
         maybeEagerlyInitialize(resolvedType);
 
         ClassInitializationPlugin classInitializationPlugin = graphBuilderConfig.getPlugins().getClassInitializationPlugin();
@@ -4509,7 +4508,6 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         ResolvedJavaType holder = resolvedField.getDeclaringClass();
-        maybeEagerlyInitialize(holder);
         ClassInitializationPlugin classInitializationPlugin = this.graphBuilderConfig.getPlugins().getClassInitializationPlugin();
         if (classInitializationPlugin != null) {
             classInitializationPlugin.apply(this, holder, this::createCurrentFrameState);
@@ -4545,16 +4543,20 @@ public class BytecodeParser implements GraphBuilderContext {
     private ResolvedJavaField resolveStaticFieldAccess(JavaField field, ValueNode value) {
         if (field instanceof ResolvedJavaField) {
             ResolvedJavaField resolvedField = (ResolvedJavaField) field;
-            if (resolvedField.getDeclaringClass().isInitialized() || graphBuilderConfig.getPlugins().getClassInitializationPlugin() != null) {
+            ResolvedJavaType resolvedType = resolvedField.getDeclaringClass();
+            maybeEagerlyInitialize(resolvedType);
+
+            if (resolvedType.isInitialized() || graphBuilderConfig.getPlugins().getClassInitializationPlugin() != null) {
                 return resolvedField;
             }
+
             /*
              * Static fields have initialization semantics but may be safely accessed under certain
              * conditions while the class is being initialized. Executing in the clinit or init of
-             * classes which are subtypes of the field holder are sure to be running in a context
-             * where the access is safe.
+             * subclasses (but not implementers) of the field holder are sure to be running in a
+             * context where the access is safe.
              */
-            if (resolvedField.getDeclaringClass().isAssignableFrom(method.getDeclaringClass())) {
+            if (!resolvedType.isInterface() && resolvedType.isAssignableFrom(method.getDeclaringClass())) {
                 if (method.isClassInitializer() || method.isConstructor()) {
                     return resolvedField;
                 }
@@ -4588,7 +4590,6 @@ public class BytecodeParser implements GraphBuilderContext {
 
         ClassInitializationPlugin classInitializationPlugin = this.graphBuilderConfig.getPlugins().getClassInitializationPlugin();
         ResolvedJavaType holder = resolvedField.getDeclaringClass();
-        maybeEagerlyInitialize(holder);
         if (classInitializationPlugin != null) {
             Supplier<FrameState> stateBefore = () -> {
                 JavaKind[] pushedSlotKinds = {field.getJavaKind()};

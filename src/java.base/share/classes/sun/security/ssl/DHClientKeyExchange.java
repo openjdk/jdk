@@ -87,7 +87,7 @@ final class DHClientKeyExchange {
 
             if (dhePossession == null) {
                 // unlikely
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No DHE credentials negotiated for client key exchange");
             }
 
@@ -104,14 +104,14 @@ final class DHClientKeyExchange {
                     (ServerHandshakeContext)handshakeContext;
 
             if (m.remaining() < 3) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Invalid DH ClientKeyExchange message: insufficient data");
             }
 
             this.y = Record.getBytes16(m);
 
             if (m.hasRemaining()) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Invalid DH ClientKeyExchange message: unknown extra data");
             }
         }
@@ -177,7 +177,7 @@ final class DHClientKeyExchange {
             }
 
             if (dheCredentials == null) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No DHE credentials negotiated for client key exchange");
             }
 
@@ -202,7 +202,7 @@ final class DHClientKeyExchange {
                     chc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
@@ -214,7 +214,7 @@ final class DHClientKeyExchange {
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
                 if (kd == null) {
                     // unlikely
-                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                             "Not supported key derivation: " +
                             chc.negotiatedProtocol);
                 } else {
@@ -254,7 +254,7 @@ final class DHClientKeyExchange {
 
             if (dhePossession == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No expected DHE possessions for client key exchange");
             }
 
@@ -263,7 +263,7 @@ final class DHClientKeyExchange {
                     shc.negotiatedProtocol);
             if (ke == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Not supported key exchange type");
             }
 
@@ -310,7 +310,7 @@ final class DHClientKeyExchange {
                     SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
             if (kd == null) {
                 // unlikely
-                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Not supported key derivation: " + shc.negotiatedProtocol);
             } else {
                 shc.handshakeKeyDerivation =

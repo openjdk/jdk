@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ package jdk.jfr.event.gc.detailed;
  *           & vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib /test/jdk
  * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:+UseG1GC -XX:-UseStringDeduplication -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 jdk.jfr.event.gc.detailed.TestPromotionEventWithG1
- * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:+UseG1GC -XX:-UseStringDeduplication -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 -XX:MinTLABSize=576 -XX:TLABSize=576 jdk.jfr.event.gc.detailed.TestPromotionEventWithG1
+ * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:AllocatePrefetchLines=1 -XX:AllocateInstancePrefetchLines=1 -XX:AllocatePrefetchStepSize=16 -XX:AllocatePrefetchDistance=1 -XX:+UseG1GC
+  *                  -XX:-UseStringDeduplication -Xlog:os+cpu=info -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 -XX:MinTLABSize=768 -XX:TLABSize=768 jdk.jfr.event.gc.detailed.TestPromotionEventWithG1
  */
 public class TestPromotionEventWithG1 {
 

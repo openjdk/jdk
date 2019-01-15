@@ -138,8 +138,8 @@ void VM_G1CollectForAllocation::doit() {
       // kind of GC.
       _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
     } else {
-      bool should_upgrade_to_full = !g1h->should_do_concurrent_full_gc(_gc_cause) &&
-                                    !g1h->has_regions_left_for_allocation();
+      bool should_upgrade_to_full = g1h->should_upgrade_to_full_gc(_gc_cause);
+
       if (should_upgrade_to_full) {
         // There has been a request to perform a GC to free some space. We have no
         // information on how much memory has been asked for. In case there are

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,14 @@ public class ConstantUtilsTest {
 
     public void testValidateMemberName() {
         try {
-            ConstantUtils.validateMemberName(null);
+            ConstantUtils.validateMemberName(null, false);
             fail("");
         } catch (NullPointerException e) {
             // good
         }
 
         try {
-            ConstantUtils.validateMemberName("");
+            ConstantUtils.validateMemberName("", false);
             fail("");
         } catch (IllegalArgumentException e) {
             // good
@@ -59,7 +59,7 @@ public class ConstantUtilsTest {
         List<String> badNames = List.of(".", ";", "[", "/", "<", ">");
         for (String n : badNames) {
             try {
-                ConstantUtils.validateMemberName(n);
+                ConstantUtils.validateMemberName(n, true);
                 fail(n);
             } catch (IllegalArgumentException e) {
                 // good

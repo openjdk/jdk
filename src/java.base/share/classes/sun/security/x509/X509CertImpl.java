@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,8 @@ import sun.security.provider.X509Factory;
  * direct knowledge of each other.  CA certificates are either signed by
  * themselves, or by some other CA such as a "root" CA.
  *
- * <P>RFC 1422 is very informative, though it does not describe much
- * of the recent work being done with X.509 certificates.  That includes
- * a 1996 version (X.509v3) and a variety of enhancements being made to
- * facilitate an explosion of personal certificates used as "Internet
- * Drivers' Licences", or with SET for credit card transactions.
- *
- * <P>More recent work includes the IETF PKIX Working Group efforts,
- * especially RFC2459.
+ * <P> Standards relating to X.509 Public Key Infrastructure for the Internet
+ * can be referenced in RFC 5280.
  *
  * @author Dave Brownell
  * @author Amit Kapoor

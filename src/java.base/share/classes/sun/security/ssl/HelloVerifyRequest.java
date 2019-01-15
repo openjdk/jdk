@@ -73,7 +73,7 @@ final class HelloVerifyRequest {
             //      opaque cookie<0..2^8-1>;
             //  } HelloVerifyRequest;
             if (m.remaining() < 3) {
-                chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid HelloVerifyRequest: no sufficient data");
             }
 
@@ -186,7 +186,7 @@ final class HelloVerifyRequest {
                 chc.handshakeConsumers.remove(SSLHandshake.SERVER_HELLO.id);
             }
             if (!chc.handshakeConsumers.isEmpty()) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "No more message expected before " +
                         "HelloVerifyRequest is processed");
             }

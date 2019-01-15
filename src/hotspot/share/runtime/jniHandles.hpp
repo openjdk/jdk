@@ -42,8 +42,10 @@ class JNIHandles : AllStatic {
   inline static oop* jobject_ptr(jobject handle); // NOT jweak!
   inline static oop* jweak_ptr(jobject handle);
 
-  template<bool external_guard> inline static oop resolve_impl(jobject handle);
-  static oop resolve_jweak(jweak handle);
+  template <DecoratorSet decorators, bool external_guard> inline static oop resolve_impl(jobject handle);
+
+  // Resolve handle into oop, without keeping the object alive
+  inline static oop resolve_no_keepalive(jobject handle);
 
   // This method is not inlined in order to avoid circular includes between
   // this header file and thread.hpp.
@@ -69,6 +71,9 @@ class JNIHandles : AllStatic {
   inline static oop resolve_non_null(jobject handle);
   // Resolve externally provided handle into oop with some guards
   static oop resolve_external_guard(jobject handle);
+
+  // Check for equality without keeping objects alive
+  static bool is_same_object(jobject handle1, jobject handle2);
 
   // Local handles
   static jobject make_local(oop obj);

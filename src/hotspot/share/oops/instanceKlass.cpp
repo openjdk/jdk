@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2186,6 +2186,7 @@ void InstanceKlass::clean_method_data() {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != NULL) {
+      MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : mdo->extra_data_lock());
       mdo->clean_method_data(/*always_clean*/false);
     }
   }
@@ -3662,14 +3663,14 @@ void JNIid::verify(Klass* holder) {
   }
 }
 
-#ifdef ASSERT
 void InstanceKlass::set_init_state(ClassState state) {
+#ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
+#endif
   _init_state = (u1)state;
 }
-#endif
 
 #if INCLUDE_JVMTI
 

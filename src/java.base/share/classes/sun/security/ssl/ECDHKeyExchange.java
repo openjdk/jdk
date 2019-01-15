@@ -274,7 +274,7 @@ final class ECDHKeyExchange {
                 NamedGroup ng = NamedGroup.valueOf(params);
                 if (ng == null) {
                     // unlikely, have been checked during cipher suite negotiation.
-                    shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Unsupported EC server cert for ECDH key exchange");
                 }
 
@@ -295,7 +295,7 @@ final class ECDHKeyExchange {
             }
 
             if (x509Possession == null || ecdheCredentials == null) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDHE key agreement parameters negotiated");
             }
 
@@ -327,7 +327,7 @@ final class ECDHKeyExchange {
                     NamedGroup namedGroup = NamedGroup.valueOf(params);
                     if (namedGroup == null) {
                         // unlikely, should have been checked previously
-                        chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                             "Unsupported EC server cert for ECDH key exchange");
                     }
 
@@ -344,7 +344,7 @@ final class ECDHKeyExchange {
             }
 
             if (ecdhePossession == null || x509Credentials == null) {
-                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDH key agreement parameters negotiated");
             }
 
@@ -388,7 +388,7 @@ final class ECDHKeyExchange {
             }
 
             if (ecdhePossession == null || ecdheCredentials == null) {
-                context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDHE key agreement parameters negotiated");
             }
 

@@ -47,6 +47,13 @@ public class SharedArchiveFile {
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
         CDSTestUtils.checkDump(out);
 
+        // -XX:+DumpSharedSpaces should behave the same as -Xshare:dump
+        pb = ProcessTools.createJavaProcessBuilder(true,
+                                "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
+                                "-XX:+DumpSharedSpaces");
+        out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
+        CDSTestUtils.checkDump(out);
+
         pb = ProcessTools.createJavaProcessBuilder(true,
                               "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                               "-Xshare:on", "-version");

@@ -25,23 +25,19 @@
 
 package jdk.jfr.event.runtime;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-
-import static java.util.stream.Collectors.averagingLong;
-import static java.util.stream.Collectors.groupingBy;
 
 /**
  * @test
@@ -56,21 +52,17 @@ public class TestNetworkUtilizationEvent {
     private static final long packetSendCount = 100;
 
     public static void main(String[] args) throws Throwable {
-        testSimple();
-    }
 
-    static void testSimple() throws Throwable {
-
-        Instant start = Instant.now();
         Recording recording = new Recording();
-        recording.enable(EventNames.NetworkUtilization);
+        recording.enable(EventNames.NetworkUtilization).with("period", "endChunk");
         recording.start();
 
         DatagramSocket socket = new DatagramSocket();
         String msg = "hello!";
         byte[] buf = msg.getBytes();
-
-        // Send a few packets both to the loopback address as well to an external
+        forceEndChunk();
+        // Send a few packets both to the loopback address as well to an
+        // external
         DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getLoopbackAddress(), 12345);
         for (int i = 0; i < packetSendCount; ++i) {
             socket.send(packet);
@@ -79,32 +71,38 @@ public class TestNetworkUtilizationEvent {
         for (int i = 0; i < packetSendCount; ++i) {
             socket.send(packet);
         }
-
-        // Now there should have been traffic on at least two different interfaces
+        forceEndChunk();
+        socket.close();
+        // Now there should have been traffic on at least two different
+        // interfaces
         recording.stop();
-        Duration runtime = Duration.between(start, Instant.now());
+
+        Set<String> networkInterfaces = new HashSet<>();
         List<RecordedEvent> events = Events.fromRecording(recording);
-
-        // Calculate the average write rate for each interface
-        Map<String, Double> writeRates = events.stream()
-                .collect(groupingBy(e -> Events.assertField(e, "networkInterface").getValue(),
-                         averagingLong(e -> Events.assertField(e, "writeRate").getValue())));
-
-        // Our test packets should have generated at least this much traffic per second
-        long expectedTraffic = (buf.length * packetSendCount) / Math.max(1, runtime.toSeconds());
-
-        // Count the number of interfaces that have seen at least our test traffic
-        long interfacesWithTraffic = writeRates.values().stream()
-                .filter(d -> d >= expectedTraffic)
-                .count();
+        Events.hasEvents(events);
+        for (RecordedEvent event : events) {
+            System.out.println(event);
+            Events.assertField(event, "writeRate").atLeast(0L).atMost(1000L * Integer.MAX_VALUE);
+            Events.assertField(event, "readRate").atLeast(0L).atMost(1000L * Integer.MAX_VALUE);
+            Events.assertField(event, "networkInterface").notNull();
+            if (event.getLong("writeRate") > 0) {
+                networkInterfaces.add(event.getString("networkInterface"));
+            }
+        }
 
         if (Platform.isWindows() || Platform.isSolaris()) {
-            // Windows and Solaris do not track statistics for the loopback interface
-            Asserts.assertGreaterThanOrEqual(writeRates.size(), 1);
-            Asserts.assertGreaterThanOrEqual(interfacesWithTraffic, Long.valueOf(1));
+            // Windows and Solaris do not track statistics for the loopback
+            // interface
+            Asserts.assertGreaterThanOrEqual(networkInterfaces.size(), 1);
         } else {
-            Asserts.assertGreaterThanOrEqual(writeRates.size(), 2);
-            Asserts.assertGreaterThanOrEqual(interfacesWithTraffic, Long.valueOf(2));
+            Asserts.assertGreaterThanOrEqual(networkInterfaces.size(), 2);
         }
+    }
+
+    private static void forceEndChunk() {
+       try(Recording r = new Recording()) {
+           r.start();
+           r.stop();
+       }
     }
 }

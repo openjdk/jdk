@@ -983,7 +983,7 @@ void ShenandoahBarrierSetC2::clone_barrier_at_expansion(ArrayCopyNode* ac, Node*
   Node* c = new ProjNode(call,TypeFunc::Control);
   c = igvn.transform(c);
   Node* m = new ProjNode(call, TypeFunc::Memory);
-  c = igvn.transform(m);
+  m = igvn.transform(m);
 
   Node* dest = ac->in(ArrayCopyNode::Dest);
   assert(dest->is_AddP(), "bad input");

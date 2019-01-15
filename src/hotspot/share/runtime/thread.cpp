@@ -231,7 +231,7 @@ Thread::Thread() {
   set_active_handles(NULL);
   set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
-  DEBUG_ONLY(_missed_ic_stub_refill_mark = NULL);
+  DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
@@ -2603,8 +2603,7 @@ void JavaThread::remove_stack_guard_pages() {
 }
 
 void JavaThread::enable_stack_reserved_zone() {
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  assert(_stack_guard_state != stack_guard_enabled, "already enabled");
+  assert(_stack_guard_state == stack_guard_reserved_disabled, "inconsistent state");
 
   // The base notation is from the stack's point of view, growing downward.
   // We need to adjust it to work correctly with guard_memory()
@@ -2622,11 +2621,10 @@ void JavaThread::enable_stack_reserved_zone() {
 }
 
 void JavaThread::disable_stack_reserved_zone() {
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  assert(_stack_guard_state != stack_guard_reserved_disabled, "already disabled");
+  assert(_stack_guard_state == stack_guard_enabled, "inconsistent state");
 
   // Simply return if called for a thread that does not use guard pages.
-  if (_stack_guard_state == stack_guard_unused) return;
+  if (_stack_guard_state != stack_guard_enabled) return;
 
   // The base notation is from the stack's point of view, growing downward.
   // We need to adjust it to work correctly with guard_memory()

@@ -68,7 +68,7 @@ import java.util.ServiceLoader;
  * <ul>
  *
  * <li>If the system property
- * <code>java.rmi.server.RMIClassLoaderSpi</code> is defined, then if
+ * {@systemProperty java.rmi.server.RMIClassLoaderSpi} is defined, then if
  * its value equals the string <code>"default"</code>, the provider
  * instance will be the value returned by an invocation of the {@link
  * #getDefaultProviderInstance()} method, and for any other value, if
@@ -429,7 +429,7 @@ public class RMIClassLoader {
      * system class loader such as the loader used for installed
      * extensions, or the bootstrap class loader (which may be
      * represented by <code>null</code>), then the value of the
-     * <code>java.rmi.server.codebase</code> property (or possibly an
+     * {@systemProperty java.rmi.server.codebase} property (or possibly an
      * earlier cached value) is returned, or
      * <code>null</code> is returned if that property is not set.
      *

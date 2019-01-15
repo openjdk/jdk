@@ -304,7 +304,7 @@ public final class URL implements java.io.Serializable {
      *     or all providers have been exhausted.
      * <li>If the previous step fails to find a protocol handler, the
      *     constructor reads the value of the system property:
-     *     <blockquote>{@code
+     *     <blockquote>{@systemProperty
      *         java.protocol.handler.pkgs
      *     }</blockquote>
      *     If the value of that system property is not {@code null},

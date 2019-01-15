@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,26 +503,33 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
 Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
                                                             ModuleEntry* mod, TRAPS) {
   ClassLoaderData *loader_data = mod->loader_data();
-  Handle protection_domain;
   if (mod->shared_protection_domain() == NULL) {
     Symbol* location = mod->location();
     if (location != NULL) {
-      Handle url_string = java_lang_String::create_from_symbol(
-                                 location, CHECK_(protection_domain));
+      Handle location_string = java_lang_String::create_from_symbol(
+                                     location, CHECK_NH);
+      Handle url;
       JavaValue result(T_OBJECT);
-      Klass* classLoaders_klass =
-        SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
-      JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
+      if (location->starts_with("jrt:/")) {
+        url = JavaCalls::construct_new_instance(SystemDictionary::URL_klass(),
+                                                vmSymbols::string_void_signature(),
+                                                location_string, CHECK_NH);
+      } else {
+        Klass* classLoaders_klass =
+          SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
+        JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
-                               url_string, CHECK_(protection_domain));
-      Handle url = Handle(THREAD, (oop)result.get_jobject());
+                               location_string, CHECK_NH);
+        url = Handle(THREAD, (oop)result.get_jobject());
+      }
 
-      Handle pd = get_protection_domain_from_classloader(class_loader, url, THREAD);
+      Handle pd = get_protection_domain_from_classloader(class_loader, url,
+                                                         CHECK_NH);
       mod->set_shared_protection_domain(loader_data, pd);
     }
   }
 
-  protection_domain = Handle(THREAD, mod->shared_protection_domain());
+  Handle protection_domain(THREAD, mod->shared_protection_domain());
   assert(protection_domain.not_null(), "sanity");
   return protection_domain;
 }

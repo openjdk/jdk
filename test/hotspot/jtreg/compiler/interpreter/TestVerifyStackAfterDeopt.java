@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @bug 8209825
  * @summary Checks VerifyStack after deoptimization of array allocation slow call
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TieredStopAtLevel=1
+ *                   -XX:AllocatePrefetchLines=1 -XX:AllocateInstancePrefetchLines=1 -XX:AllocatePrefetchStepSize=16 -XX:AllocatePrefetchDistance=1
  *                   -XX:MinTLABSize=1k -XX:TLABSize=1k
  *                   -XX:+DeoptimizeALot -XX:+VerifyStack
  *                   compiler.interpreter.TestVerifyStackAfterDeopt

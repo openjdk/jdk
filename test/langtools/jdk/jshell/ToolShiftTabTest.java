@@ -126,7 +126,7 @@ public class ToolShiftTabTest extends UITesting {
         doRunTest((inputSink, out) -> {
             inputSink.write("123");
             inputSink.write(FIX + "z");
-            waitOutput(out, "Unexpected character after Shift-Tab");
+            waitOutput(out, "Unexpected character after Shift\\+Tab");
         });
     }
 }

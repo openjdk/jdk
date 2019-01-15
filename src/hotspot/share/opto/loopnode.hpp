@@ -302,7 +302,7 @@ public:
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
 
-  virtual LoopNode* skip_strip_mined(int expect_opaq = 1);
+  virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
   virtual IfTrueNode* outer_loop_tail() const;
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
@@ -747,12 +747,14 @@ private:
   }
 
   Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
-  void duplicate_predicates_helper(Node* predicate, Node* castii, IdealLoopTree* outer_loop,
+  void duplicate_predicates_helper(Node* predicate, Node* start, Node* end, IdealLoopTree* outer_loop,
                                    LoopNode* outer_main_head, uint dd_main_head);
-  void duplicate_predicates(CountedLoopNode* pre_head, Node* castii, IdealLoopTree* outer_loop,
+  void duplicate_predicates(CountedLoopNode* pre_head, Node* start, Node* end, IdealLoopTree* outer_loop,
                             LoopNode* outer_main_head, uint dd_main_head);
-  Node* update_skeleton_predicate(Node* iff, Node* value, Node* predicate = NULL, Node* uncommon_proj = NULL,
-                                  Node* current_proj = NULL, IdealLoopTree* outer_loop = NULL, Node* prev_proj = NULL);
+  Node* clone_skeleton_predicate(Node* iff, Node* value, Node* predicate, Node* uncommon_proj,
+                                  Node* current_proj, IdealLoopTree* outer_loop, Node* prev_proj);
+  bool skeleton_predicate_has_opaque(IfNode* iff);
+  void update_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 
 public:
@@ -1128,7 +1130,7 @@ public:
                                       Deoptimization::DeoptReason reason);
   Node* add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
                                   Node* predicate_proj, int scale_con, Node* offset,
-                                  Node* limit, jint stride_con);
+                                  Node* limit, jint stride_con, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
@@ -1190,7 +1192,7 @@ public:
   // loop.  Scale_con, offset and limit are all loop invariant.
   void add_constraint( int stride_con, int scale_con, Node *offset, Node *low_limit, Node *upper_limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit );
   // Helper function for add_constraint().
-  Node* adjust_limit( int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl );
+  Node* adjust_limit(int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl, bool round_up);
 
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
@@ -1303,6 +1305,14 @@ private:
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
+
+  // Determine if a method is too big for a/another round of split-if, based on
+  // a magic (approximate) ratio derived from the equally magic constant 35000,
+  // previously used for this purpose (but without relating to the node limit).
+  bool must_throttle_split_if() {
+    uint threshold = C->max_node_limit() * 2 / 5;
+    return C->live_nodes() > threshold;
+  }
 
   bool _created_loop_node;
 public:

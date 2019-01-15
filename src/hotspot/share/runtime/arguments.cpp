@@ -2062,6 +2062,9 @@ bool Arguments::check_vm_args_consistency() {
       log_warning(arguments) ("NUMA support for Heap depends on the file system when AllocateHeapAt option is used.\n");
     }
   }
+
+  status = status && GCArguments::check_args_consistency();
+
   return status;
 }
 
@@ -2953,6 +2956,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   }
 #endif // LINUX
   fix_appclasspath();
+
   return JNI_OK;
 }
 
@@ -3107,6 +3111,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
+
+    // Compilation is already disabled if the user specifies -Xshare:dump.
+    // Disable compilation in case user specifies -XX:+DumpSharedSpaces instead of -Xshare:dump.
+    set_mode_flags(_int);
   }
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
@@ -3811,6 +3819,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION(AllocateHeapAt);
+  UNSUPPORTED_OPTION(AllocateOldGenAt);
 #endif
 
   ArgumentsExt::report_unsupported_options();

@@ -128,7 +128,8 @@ uintptr_t ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags fl
 }
 
 uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags) {
-  assert(ZThread::is_java() || ZThread::is_vm(), "Should be a Java or VM thread");
+  assert(ZThread::is_java() || ZThread::is_vm() || ZThread::is_runtime_worker(),
+         "Should be a Java, VM or Runtime worker thread");
 
   // Non-worker small page allocation can never use the reserve
   flags.set_no_reserve();
@@ -193,7 +194,8 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
 }
 
 uintptr_t ZObjectAllocator::alloc_object_for_relocation(size_t size) {
-  assert(ZThread::is_java() || ZThread::is_worker() || ZThread::is_vm(), "Unknown thread");
+  assert(ZThread::is_java() || ZThread::is_vm() || ZThread::is_worker() || ZThread::is_runtime_worker(),
+         "Unknown thread");
 
   ZAllocationFlags flags;
   flags.set_relocation();

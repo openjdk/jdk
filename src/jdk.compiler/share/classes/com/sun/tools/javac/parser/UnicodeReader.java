@@ -64,10 +64,6 @@ public class UnicodeReader {
      */
     protected int unicodeConversionBp = -1;
 
-    /** Control conversion of unicode characters
-     */
-    protected boolean unicodeConversion = true;
-
     protected Log log;
     protected Names names;
 
@@ -158,17 +154,11 @@ public class UnicodeReader {
         return new String(sbuf, 0, sp);
     }
 
-    protected boolean setUnicodeConversion(boolean newState) {
-        boolean oldState = unicodeConversion;
-        unicodeConversion = newState;
-        return oldState;
-    }
-
     /** Convert unicode escape; bp points to initial '\' character
      *  (Spec 3.3).
      */
     protected void convertUnicode() {
-        if (ch == '\\' && unicodeConversion && unicodeConversionBp != bp ) {
+        if (ch == '\\' && unicodeConversionBp != bp ) {
             bp++; ch = buf[bp];
             if (ch == 'u') {
                 do {
@@ -262,24 +252,6 @@ public class UnicodeReader {
 
     protected char peekChar() {
         return buf[bp + 1];
-    }
-
-    protected char peekBack() {
-        return buf[bp];
-    }
-
-    /**
-     * Skips consecutive occurrences of the current character, leaving bp positioned
-     * at the last occurrence. Returns the occurrence count.
-     */
-    protected int skipRepeats() {
-        int start = bp;
-        while (bp < buflen) {
-            if (buf[bp] != buf[bp + 1])
-                break;
-            bp++;
-        }
-        return bp - start;
     }
 
     /**

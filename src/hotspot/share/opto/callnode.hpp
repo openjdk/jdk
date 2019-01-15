@@ -462,6 +462,8 @@ public:
     return !_replaced_nodes.is_empty();
   }
 
+  void disconnect_from_root(PhaseIterGVN *igvn);
+
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
