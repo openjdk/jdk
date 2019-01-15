@@ -190,6 +190,14 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
+    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+      // We are waiting on an Object monitor but Object.wait() isn't the
+      // top-frame, so we should be waiting on a Class initialization monitor.
+      InstanceKlass* k = thread()->class_to_be_initialized();
+      if (k != NULL) {
+        st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());
+      }
+    }
   }
 
   // Print out all monitors that we have locked, or are trying to lock,

@@ -1671,6 +1671,8 @@ void JavaThread::initialize() {
     SafepointMechanism::initialize_header(this);
   }
 
+  _class_to_be_initialized = NULL;
+
   pd_initialize();
 }
 

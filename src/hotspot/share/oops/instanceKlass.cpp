@@ -918,25 +918,28 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   bool wait = false;
 
+  assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
+  JavaThread* jt = (JavaThread*)THREAD;
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
     ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
 
-    Thread *self = THREAD; // it's passed the current thread
-
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then
     // we might end up throwing IE from link/symbol resolution sites
     // that aren't expected to throw.  This would wreak havoc.  See 6320309.
-    while(is_being_initialized() && !is_reentrant_initialization(self)) {
-        wait = true;
-      ol.waitUninterruptibly(CHECK);
+    while (is_being_initialized() && !is_reentrant_initialization(jt)) {
+      wait = true;
+      jt->set_class_to_be_initialized(this);
+      ol.waitUninterruptibly(jt);
+      jt->set_class_to_be_initialized(NULL);
     }
 
     // Step 3
-    if (is_being_initialized() && is_reentrant_initialization(self)) {
+    if (is_being_initialized() && is_reentrant_initialization(jt)) {
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
@@ -966,7 +969,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 6
     set_init_state(being_initialized);
-    set_init_thread(self);
+    set_init_thread(jt);
   }
 
   // Step 7
@@ -1006,8 +1009,6 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   // Step 8
   {
-    assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
-    JavaThread* jt = (JavaThread*)THREAD;
     DTRACE_CLASSINIT_PROBE_WAIT(clinit, -1, wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
@@ -1033,14 +1034,14 @@ void InstanceKlass::initialize_impl(TRAPS) {
     CLEAR_PENDING_EXCEPTION;
     // JVMTI has already reported the pending exception
     // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
-    JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+    JvmtiExport::clear_detected_exception(jt);
     {
       EXCEPTION_MARK;
       set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
-      JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+      JvmtiExport::clear_detected_exception(jt);
     }
     DTRACE_CLASSINIT_PROBE_WAIT(error, -1, wait);
     if (e->is_a(SystemDictionary::Error_klass())) {

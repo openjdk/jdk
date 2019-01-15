@@ -233,4 +233,16 @@ inline void JavaThread::set_terminated_value() {
   OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
 }
 
+// Allow tracking of class initialization monitor use
+inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
+  assert((k == NULL && _class_to_be_initialized != NULL) ||
+         (k != NULL && _class_to_be_initialized == NULL), "incorrect usage");
+  assert(this == Thread::current(), "Only the current thread can set this field");
+  _class_to_be_initialized = k;
+}
+
+inline InstanceKlass* JavaThread::class_to_be_initialized() const {
+  return _class_to_be_initialized;
+}
+
 #endif // SHARE_RUNTIME_THREAD_INLINE_HPP
