@@ -168,9 +168,12 @@ void ciMethodData::load_extra_data() {
     // in the prepare_metadata call above) as we translate the copy:
     // update the copy as we go.
     int tag = dp_src->tag();
-    if (tag != DataLayout::arg_info_data_tag) {
-      memcpy(dp_dst, dp_src, ((intptr_t)MethodData::next_extra(dp_src)) - ((intptr_t)dp_src));
+    size_t entry_size = DataLayout::header_size_in_bytes();
+    if (tag != DataLayout::no_tag) {
+      ProfileData* src_data = dp_src->data_in();
+      entry_size = src_data->size_in_bytes();
     }
+    memcpy(dp_dst, dp_src, entry_size);
 
     switch(tag) {
     case DataLayout::speculative_trap_data_tag: {
