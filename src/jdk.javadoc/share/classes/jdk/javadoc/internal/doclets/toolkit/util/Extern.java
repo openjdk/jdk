@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -276,6 +278,12 @@ public class Extern {
             ModuleElement moduleElement = utils.containingModule(packageElement);
             Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
             item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(packageElement)) : null;
+            if (item == null && isAutomaticModule(moduleElement)) {
+                pkgMap = packageItems.get(utils.getModuleName(null));
+                if (pkgMap != null) {
+                    item = pkgMap.get(utils.getPackageName(packageElement));
+                }
+            }
         }
         return item;
     }
@@ -420,9 +428,22 @@ public class Extern {
                             path), null);
                 }
             } else if (moduleName == null) {
-                throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
-                        path), null);
+                // suppress the error message in the case of automatic modules
+                if (!isAutomaticModule(me)) {
+                    throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
+                            path), null);
+                }
             }
+        }
+    }
+
+    // The following should be replaced by a new method such as Elements.isAutomaticModule
+    private boolean isAutomaticModule(ModuleElement me) {
+        if (me == null) {
+            return false;
+        } else {
+            ModuleSymbol msym = (ModuleSymbol) me;
+            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
         }
     }
 

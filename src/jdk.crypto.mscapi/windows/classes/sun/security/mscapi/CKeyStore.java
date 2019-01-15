@@ -754,7 +754,8 @@ abstract class CKeyStore extends KeyStoreSpi {
                     new KeyEntry(alias, null, certChain));
         } catch (Throwable e) {
             // Ignore the exception and skip this entry
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 
@@ -781,7 +782,8 @@ abstract class CKeyStore extends KeyStoreSpi {
                     certChain));
         } catch (Throwable e) {
             // Ignore the exception and skip this entry
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 
@@ -809,10 +811,14 @@ abstract class CKeyStore extends KeyStoreSpi {
             certCollection.addAll(c);
         } catch (CertificateException e) {
             // Ignore the exception and skip this certificate
-            // TODO - throw CertificateException?
-        } catch (Throwable te) {
+            // If e is thrown, remember to deal with it in
+            // native code.
+        }
+        catch (Throwable te)
+        {
             // Ignore the exception and skip this certificate
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 

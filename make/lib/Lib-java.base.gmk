@@ -56,7 +56,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     LIBS_solaris := -lnsl -lsocket $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib winhttp.lib \
-        delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
+        urlmon.lib delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
     LIBS_macosx := -framework CoreFoundation -framework CoreServices, \
 ))
 

@@ -233,40 +233,6 @@ void Dictionary::clean_cached_protection_domains(DictionaryEntry* probe) {
   }
 }
 
-
-void Dictionary::do_unloading() {
-  assert_locked_or_safepoint(SystemDictionary_lock);
-
-  // The NULL class loader doesn't initiate loading classes from other class loaders
-  if (loader_data() == ClassLoaderData::the_null_class_loader_data()) {
-    return;
-  }
-
-  // Remove unloaded entries and classes from this dictionary
-  DictionaryEntry* probe = NULL;
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry** p = bucket_addr(index); *p != NULL; ) {
-      probe = *p;
-      InstanceKlass* ik = probe->instance_klass();
-      ClassLoaderData* k_def_class_loader_data = ik->class_loader_data();
-
-      // If the klass that this loader initiated is dead,
-      // (determined by checking the defining class loader)
-      // remove this entry.
-      if (k_def_class_loader_data->is_unloading()) {
-        assert(k_def_class_loader_data != loader_data(),
-               "cannot have live defining loader and unreachable klass");
-        *p = probe->next();
-        free_entry(probe);
-        continue;
-      }
-      // Clean pd_set
-      clean_cached_protection_domains(probe);
-      p = probe->next_addr();
-    }
-  }
-}
-
 //   Just the classes from defining class loaders
 void Dictionary::classes_do(void f(InstanceKlass*)) {
   for (int index = 0; index < table_size(); index++) {

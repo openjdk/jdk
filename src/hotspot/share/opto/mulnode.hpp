@@ -289,6 +289,7 @@ public:
 // Multiply shorts into integers and add them.
 // Semantics: I_OUT = S1 * S2 + S3 * S4
 class MulAddS2INode : public Node {
+  virtual uint hash() const;
 public:
   MulAddS2INode(Node* in1, Node *in2, Node *in3, Node* in4) : Node(0, in1, in2, in3, in4) {}
   virtual int Opcode() const;
