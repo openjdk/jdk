@@ -305,6 +305,8 @@ typedef enum {
 #define FLAG_SET_CMDLINE(type, name, value) (JVMFlagEx::setOnCmdLine(FLAG_MEMBER_WITH_TYPE(name, type)), \
                                              JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::COMMAND_LINE))
 #define FLAG_SET_ERGO(type, name, value)    (JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::ERGONOMIC))
+#define FLAG_SET_MGMT(type, name, value)    (JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::MANAGEMENT))
+
 #define FLAG_SET_ERGO_IF_DEFAULT(type, name, value) \
   do {                                              \
     if (FLAG_IS_DEFAULT(name)) {                    \
