@@ -48,6 +48,7 @@ import java.util.Map;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
