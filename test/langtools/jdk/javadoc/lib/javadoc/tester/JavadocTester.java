@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,15 @@
 
 package javadoc.tester;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
@@ -42,36 +39,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnsupportedCharsetException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 
 /**
@@ -250,6 +232,7 @@ public abstract class JavadocTester {
 
     private DirectoryCheck outputDirectoryCheck = DirectoryCheck.EMPTY;
 
+    private boolean automaticCheckAccessibility = false;
     private boolean automaticCheckLinks = true;
 
     /** The current subtest number. Incremented when checking(...) is called. */
@@ -397,8 +380,13 @@ public abstract class JavadocTester {
             }
         });
 
-        if (automaticCheckLinks && exitCode == Exit.OK.code && outputDir.exists()) {
-            checkLinks();
+        if (exitCode == Exit.OK.code && outputDir.exists()) {
+            if (automaticCheckLinks) {
+                checkLinks();
+            }
+            if (automaticCheckAccessibility) {
+                checkAccessibility();
+            }
         }
     }
 
@@ -528,6 +516,23 @@ public abstract class JavadocTester {
                         "found \n" +
                         fileString);
             }
+        }
+    }
+
+    public void checkAccessibility() {
+        checking("Check accessibility");
+        A11yChecker c = new A11yChecker(out, this::readFile);
+        try {
+            c.checkDirectory(outputDir.toPath());
+            c.report();
+            int errors = c.getErrorCount();
+            if (errors == 0) {
+                passed("No accessibility errors found");
+            } else {
+                failed(errors + " errors found when checking accessibility");
+            }
+        } catch (IOException e) {
+            failed("exception thrown when reading files: " + e);
         }
     }
 
@@ -861,7 +866,6 @@ public abstract class JavadocTester {
      * @param baseDir1 the directory in which to locate the first file
      * @param baseDir2 the directory in which to locate the second file
      * @param file the file to compare in the two base directories
-     * @param throwErrorIFNoMatch flag to indicate whether or not to throw
      * an error if the files do not match.
      * @return true if the files are the same and false otherwise.
      */
@@ -981,820 +985,4 @@ public abstract class JavadocTester {
 
     // Support classes for checkLinks
 
-    /**
-     * A basic HTML parser. Override the protected methods as needed to get notified
-     * of significant items in any file that is read.
-     */
-    static abstract class HtmlParser {
-
-        protected final PrintStream out;
-        protected final Function<Path,String> fileReader;
-
-        private Path file;
-        private StringReader in;
-        private int ch;
-        private int lineNumber;
-        private boolean inScript;
-        private boolean xml;
-
-        HtmlParser(PrintStream out, Function<Path,String> fileReader) {
-            this.out = out;
-            this.fileReader = fileReader;
-        }
-
-        /**
-         * Read a file.
-         * @param file the file to be read
-         * @throws IOException if an error occurs while reading the file
-         */
-        void read(Path file) throws IOException {
-            try (StringReader r = new StringReader(fileReader.apply(file))) {
-                this.file = file;
-                this.in = r;
-
-                startFile(file);
-                try {
-                    lineNumber = 1;
-                    xml = false;
-                    nextChar();
-
-                    while (ch != -1) {
-                        switch (ch) {
-
-                            case '<':
-                                html();
-                                break;
-
-                            default:
-                                nextChar();
-                        }
-                    }
-                } finally {
-                    endFile();
-                }
-            } catch (IOException e) {
-                error(file, lineNumber, e);
-            } catch (Throwable t) {
-                error(file, lineNumber, t);
-                t.printStackTrace(out);
-            }
-        }
-
-
-        int getLineNumber() {
-            return lineNumber;
-        }
-
-        /**
-         * Called when a file has been opened, before parsing begins.
-         * This is always the first notification when reading a file.
-         * This implementation does nothing.
-         *
-         * @param file the file
-         */
-        protected void startFile(Path file) { }
-
-        /**
-         * Called when the parser has finished reading a file.
-         * This is always the last notification when reading a file,
-         * unless any errors occur while closing the file.
-         * This implementation does nothing.
-         */
-        protected void endFile() { }
-
-        /**
-         * Called when a doctype declaration is found, at the beginning of the file.
-         * This implementation does nothing.
-         * @param s the doctype declaration
-         */
-        protected void docType(String s) { }
-
-        /**
-         * Called when the opening tag of an HTML element is encountered.
-         * This implementation does nothing.
-         * @param name the name of the tag
-         * @param attrs the attribute
-         * @param selfClosing whether or not this is a self-closing tag
-         */
-        protected void startElement(String name, Map<String,String> attrs, boolean selfClosing) { }
-
-        /**
-         * Called when the closing tag of an HTML tag is encountered.
-         * This implementation does nothing.
-         * @param name the name of the tag
-         */
-        protected void endElement(String name) { }
-
-        /**
-         * Called when an error has been encountered.
-         * @param file the file being read
-         * @param lineNumber the line number of line containing the error
-         * @param message a description of the error
-         */
-        protected void error(Path file, int lineNumber, String message) {
-            out.println(file + ":" + lineNumber + ": " + message);
-        }
-
-        /**
-         * Called when an exception has been encountered.
-         * @param file the file being read
-         * @param lineNumber the line number of the line being read when the exception was found
-         * @param t the exception
-         */
-        protected void error(Path file, int lineNumber, Throwable t) {
-            out.println(file + ":" + lineNumber + ": " + t);
-        }
-
-        private void nextChar() throws IOException {
-            ch = in.read();
-            if (ch == '\n')
-                lineNumber++;
-        }
-
-        /**
-         * Read the start or end of an HTML tag, or an HTML comment
-         * {@literal <identifier attrs> } or {@literal </identifier> }
-         * @throws java.io.IOException if there is a problem reading the file
-         */
-        private void html() throws IOException {
-            nextChar();
-            if (isIdentifierStart((char) ch)) {
-                String name = readIdentifier().toLowerCase(Locale.US);
-                Map<String,String> attrs = htmlAttrs();
-                if (attrs != null) {
-                    boolean selfClosing = false;
-                    if (ch == '/') {
-                        nextChar();
-                        selfClosing = true;
-                    }
-                    if (ch == '>') {
-                        nextChar();
-                        startElement(name, attrs, selfClosing);
-                        if (name.equals("script")) {
-                            inScript = true;
-                        }
-                        return;
-                    }
-                }
-            } else if (ch == '/') {
-                nextChar();
-                if (isIdentifierStart((char) ch)) {
-                    String name = readIdentifier().toLowerCase(Locale.US);
-                    skipWhitespace();
-                    if (ch == '>') {
-                        nextChar();
-                        endElement(name);
-                        if (name.equals("script")) {
-                            inScript = false;
-                        }
-                        return;
-                    }
-                }
-            } else if (ch == '!') {
-                nextChar();
-                if (ch == '-') {
-                    nextChar();
-                    if (ch == '-') {
-                        nextChar();
-                        while (ch != -1) {
-                            int dash = 0;
-                            while (ch == '-') {
-                                dash++;
-                                nextChar();
-                            }
-                            // Strictly speaking, a comment should not contain "--"
-                            // so dash > 2 is an error, dash == 2 implies ch == '>'
-                            // See http://www.w3.org/TR/html-markup/syntax.html#syntax-comments
-                            // for more details.
-                            if (dash >= 2 && ch == '>') {
-                                nextChar();
-                                return;
-                            }
-
-                            nextChar();
-                        }
-                    }
-                } else if (ch == '[') {
-                    nextChar();
-                    if (ch == 'C') {
-                        nextChar();
-                        if (ch == 'D') {
-                            nextChar();
-                            if (ch == 'A') {
-                                nextChar();
-                                if (ch == 'T') {
-                                    nextChar();
-                                    if (ch == 'A') {
-                                        nextChar();
-                                        if (ch == '[') {
-                                            while (true) {
-                                                nextChar();
-                                                if (ch == ']') {
-                                                    nextChar();
-                                                    if (ch == ']') {
-                                                        nextChar();
-                                                        if (ch == '>') {
-                                                            nextChar();
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    while (ch != -1 && ch != '>') {
-                        sb.append((char) ch);
-                        nextChar();
-                    }
-                    Pattern p = Pattern.compile("(?is)doctype\\s+html\\s?.*");
-                    String s = sb.toString();
-                    if (p.matcher(s).matches()) {
-                        docType(s);
-                        return;
-                    }
-                }
-            } else if (ch == '?') {
-                nextChar();
-                if (ch == 'x') {
-                    nextChar();
-                    if (ch == 'm') {
-                        nextChar();
-                        if (ch == 'l') {
-                            Map<String,String> attrs = htmlAttrs();
-                            if (ch == '?') {
-                                nextChar();
-                                if (ch == '>') {
-                                    nextChar();
-                                    xml = true;
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-
-            if (!inScript) {
-                error(file, lineNumber, "bad html");
-            }
-        }
-
-        /**
-         * Read a series of HTML attributes, terminated by {@literal > }.
-         * Each attribute is of the form {@literal identifier[=value] }.
-         * "value" may be unquoted, single-quoted, or double-quoted.
-         */
-        private Map<String,String> htmlAttrs() throws IOException {
-            Map<String, String> map = new LinkedHashMap<>();
-            skipWhitespace();
-
-            loop:
-            while (isIdentifierStart((char) ch)) {
-                String name = readAttributeName().toLowerCase(Locale.US);
-                skipWhitespace();
-                String value = null;
-                if (ch == '=') {
-                    nextChar();
-                    skipWhitespace();
-                    if (ch == '\'' || ch == '"') {
-                        char quote = (char) ch;
-                        nextChar();
-                        StringBuilder sb = new StringBuilder();
-                        while (ch != -1 && ch != quote) {
-                            sb.append((char) ch);
-                            nextChar();
-                        }
-                        value = sb.toString() // hack to replace common entities
-                                .replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&amp;", "&");
-                        nextChar();
-                    } else {
-                        StringBuilder sb = new StringBuilder();
-                        while (ch != -1 && !isUnquotedAttrValueTerminator((char) ch)) {
-                            sb.append((char) ch);
-                            nextChar();
-                        }
-                        value = sb.toString();
-                    }
-                    skipWhitespace();
-                }
-                map.put(name, value);
-            }
-
-            return map;
-        }
-
-        private boolean isIdentifierStart(char ch) {
-            return Character.isUnicodeIdentifierStart(ch);
-        }
-
-        private String readIdentifier() throws IOException {
-            StringBuilder sb = new StringBuilder();
-            sb.append((char) ch);
-            nextChar();
-            while (ch != -1 && Character.isUnicodeIdentifierPart(ch)) {
-                sb.append((char) ch);
-                nextChar();
-            }
-            return sb.toString();
-        }
-
-        private String readAttributeName() throws IOException {
-            StringBuilder sb = new StringBuilder();
-            sb.append((char) ch);
-            nextChar();
-            while (ch != -1 && Character.isUnicodeIdentifierPart(ch)
-                    || ch == '-'
-                    || xml && ch == ':') {
-                sb.append((char) ch);
-                nextChar();
-            }
-            return sb.toString();
-        }
-
-        private boolean isWhitespace(char ch) {
-            return Character.isWhitespace(ch);
-        }
-
-        private void skipWhitespace() throws IOException {
-            while (isWhitespace((char) ch)) {
-                nextChar();
-            }
-        }
-
-        private boolean isUnquotedAttrValueTerminator(char ch) {
-            switch (ch) {
-                case '\f': case '\n': case '\r': case '\t':
-                case ' ':
-                case '"': case '\'': case '`':
-                case '=': case '<': case '>':
-                    return true;
-                default:
-                    return false;
-            }
-        }
-    }
-
-    /**
-     * A class to check the links in a set of HTML files.
-     */
-    static class LinkChecker extends HtmlParser {
-        private final Map<Path, IDTable> allFiles;
-        private final Map<URI, IDTable> allURIs;
-
-        private int files;
-        private int links;
-        private int badSchemes;
-        private int duplicateIds;
-        private int missingIds;
-
-        private Path currFile;
-        private IDTable currTable;
-        private boolean html5;
-        private boolean xml;
-
-        private int errors;
-
-        LinkChecker(PrintStream out, Function<Path,String> fileReader) {
-            super(out, fileReader);
-            allFiles = new HashMap<>();
-            allURIs = new HashMap<>();
-        }
-
-        void checkDirectory(Path dir) throws IOException {
-            checkFiles(List.of(dir), false, Collections.emptySet());
-        }
-
-        void checkFiles(List<Path> files, boolean skipSubdirs, Set<Path> excludeFiles) throws IOException {
-            for (Path file : files) {
-                Files.walkFileTree(file, new SimpleFileVisitor<Path>() {
-                    int depth = 0;
-
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        if ((skipSubdirs && depth > 0) || excludeFiles.contains(dir)) {
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                        depth++;
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path p, BasicFileAttributes attrs) {
-                        if (excludeFiles.contains(p)) {
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        if (Files.isRegularFile(p) && p.getFileName().toString().endsWith(".html")) {
-                            checkFile(p);
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
-                        depth--;
-                        return super.postVisitDirectory(dir, e);
-                    }
-                });
-            }
-        }
-
-        void checkFile(Path file) {
-            try {
-                read(file);
-            } catch (IOException e) {
-                error(file, 0, e);
-            }
-        }
-
-        int getErrorCount() {
-            return errors;
-        }
-
-        public void report() {
-            List<Path> missingFiles = getMissingFiles();
-            if (!missingFiles.isEmpty()) {
-                report("Missing files: (" + missingFiles.size() + ")");
-                missingFiles.stream()
-                        .sorted()
-                        .forEach(this::reportMissingFile);
-
-            }
-
-            if (!allURIs.isEmpty()) {
-                report(false, "External URLs:");
-                allURIs.keySet().stream()
-                        .sorted(new URIComparator())
-                        .forEach(uri -> report(false, "  %s", uri.toString()));
-            }
-
-            int anchors = 0;
-            for (IDTable t : allFiles.values()) {
-                anchors += t.map.values().stream()
-                        .filter(e -> !e.getReferences().isEmpty())
-                        .count();
-            }
-            for (IDTable t : allURIs.values()) {
-                anchors += t.map.values().stream()
-                        .filter(e -> !e.references.isEmpty())
-                        .count();
-            }
-
-            report(false, "Checked " + files + " files.");
-            report(false, "Found " + links + " references to " + anchors + " anchors "
-                    + "in " + allFiles.size() + " files and " + allURIs.size() + " other URIs.");
-            report(!missingFiles.isEmpty(),   "%6d missing files", missingFiles.size());
-            report(duplicateIds > 0, "%6d duplicate ids", duplicateIds);
-            report(missingIds > 0,   "%6d missing ids", missingIds);
-
-            Map<String, Integer> schemeCounts = new TreeMap<>();
-            Map<String, Integer> hostCounts = new TreeMap<>(new HostComparator());
-            for (URI uri : allURIs.keySet()) {
-                String scheme = uri.getScheme();
-                if (scheme != null) {
-                    schemeCounts.put(scheme, schemeCounts.computeIfAbsent(scheme, s -> 0) + 1);
-                }
-                String host = uri.getHost();
-                if (host != null) {
-                    hostCounts.put(host, hostCounts.computeIfAbsent(host, h -> 0) + 1);
-                }
-            }
-
-            if (schemeCounts.size() > 0) {
-                report(false, "Schemes");
-                schemeCounts.forEach((s, n) -> report(!isSchemeOK(s), "%6d %s", n, s));
-            }
-
-            if (hostCounts.size() > 0) {
-                report(false, "Hosts");
-                hostCounts.forEach((h, n) -> report(false, "%6d %s", n, h));
-            }
-        }
-
-        private void report(String message, Object... args) {
-            out.println(String.format(message, args));
-        }
-
-        private void report(boolean highlight, String message, Object... args) {
-            out.print(highlight ? "* " : "  ");
-            out.println(String.format(message, args));
-        }
-
-        private void reportMissingFile(Path file) {
-            report("%s", relativePath(file));
-            IDTable table = allFiles.get(file);
-            Set<Path> refs = new TreeSet<>();
-            for (ID id : table.map.values()) {
-                if (id.references != null) {
-                    for (Position p : id.references) {
-                        refs.add(p.path);
-                    }
-                }
-            }
-            int n = 0;
-            int MAX_REFS = 10;
-            for (Path ref : refs) {
-                report("    in " + relativePath(ref));
-                if (++n == MAX_REFS) {
-                    report("    ... and %d more", refs.size() - n);
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public void startFile(Path path) {
-            currFile = path.toAbsolutePath().normalize();
-            currTable = allFiles.computeIfAbsent(currFile, p -> new IDTable(p));
-            html5 = false;
-            files++;
-        }
-
-        @Override
-        public void endFile() {
-            currTable.check();
-        }
-
-        @Override
-        public void docType(String doctype) {
-            html5 = doctype.matches("(?i)<\\?doctype\\s+html>");
-        }
-
-        @Override @SuppressWarnings("fallthrough")
-        public void startElement(String name, Map<String, String> attrs, boolean selfClosing) {
-            int line = getLineNumber();
-            switch (name) {
-                case "a":
-                    String nameAttr = html5 ? null : attrs.get("name");
-                    if (nameAttr != null) {
-                        foundAnchor(line, nameAttr);
-                    }
-                    // fallthrough
-                case "link":
-                    String href = attrs.get("href");
-                    if (href != null) {
-                        foundReference(line, href);
-                    }
-                    break;
-            }
-
-            String idAttr = attrs.get("id");
-            if (idAttr != null) {
-                foundAnchor(line, idAttr);
-            }
-        }
-
-        @Override
-        public void endElement(String name) { }
-
-        private void foundAnchor(int line, String name) {
-            currTable.addID(line, name);
-        }
-
-        private void foundReference(int line, String ref) {
-            links++;
-            try {
-                URI uri = new URI(ref);
-                if (uri.isAbsolute()) {
-                    foundReference(line, uri);
-                } else {
-                    Path p;
-                    String uriPath = uri.getPath();
-                    if (uriPath == null || uriPath.isEmpty()) {
-                        p = currFile;
-                    } else {
-                        p = currFile.getParent().resolve(uriPath).normalize();
-                    }
-                    foundReference(line, p, uri.getFragment());
-                }
-            } catch (URISyntaxException e) {
-                error(currFile, line, "invalid URI: " + e);
-            }
-        }
-
-        private void foundReference(int line, Path p, String fragment) {
-            IDTable t = allFiles.computeIfAbsent(p, key -> new IDTable(key));
-            t.addReference(fragment, currFile, line);
-        }
-
-        private void foundReference(int line, URI uri) {
-            if (!isSchemeOK(uri.getScheme())) {
-                error(currFile, line, "bad scheme in URI");
-                badSchemes++;
-            }
-
-            String fragment = uri.getFragment();
-            try {
-                URI noFrag = new URI(uri.toString().replaceAll("#\\Q" + fragment + "\\E$", ""));
-                IDTable t = allURIs.computeIfAbsent(noFrag, key -> new IDTable(key.toString()));
-                t.addReference(fragment, currFile, line);
-            } catch (URISyntaxException e) {
-                throw new Error(e);
-            }
-        }
-
-        private boolean isSchemeOK(String uriScheme) {
-            if (uriScheme == null) {
-                return true;
-            }
-
-            switch (uriScheme) {
-                case "file":
-                case "ftp":
-                case "http":
-                case "https":
-                case "javascript":
-                case "mailto":
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        private List<Path> getMissingFiles() {
-            return allFiles.entrySet().stream()
-                    .filter(e -> !Files.exists(e.getKey()))
-                    .map(e -> e.getKey())
-                    .collect(Collectors.toList());
-        }
-
-        @Override
-        protected void error(Path file, int lineNumber, String message) {
-            super.error(relativePath(file), lineNumber, message);
-            errors++;
-        }
-
-        @Override
-        protected void error(Path file, int lineNumber, Throwable t) {
-            super.error(relativePath(file), lineNumber, t);
-            errors++;
-        }
-
-        private Path relativePath(Path path) {
-            return path.startsWith(currDir) ? currDir.relativize(path) : path;
-        }
-
-        /**
-         * A position in a file, as identified by a file name and line number.
-         */
-        static class Position implements Comparable<Position> {
-            Path path;
-            int line;
-
-            Position(Path path, int line) {
-                this.path = path;
-                this.line = line;
-            }
-
-            @Override
-            public int compareTo(Position o) {
-                int v = path.compareTo(o.path);
-                return v != 0 ? v : Integer.compare(line, o.line);
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                } else if (obj == null || getClass() != obj.getClass()) {
-                    return false;
-                } else {
-                    final Position other = (Position) obj;
-                    return Objects.equals(this.path, other.path)
-                            && this.line == other.line;
-                }
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hashCode(path) * 37 + line;
-            }
-        }
-
-        /**
-         * Infor for an ID within an HTML file, and a set of positions that reference it.
-         */
-        static class ID {
-            boolean declared;
-            Set<Position> references;
-
-            Set<Position> getReferences() {
-                return (references) == null ? Collections.emptySet() : references;
-            }
-        }
-
-        /**
-         * A table for the set of IDs in an HTML file.
-         */
-        class IDTable {
-            private String name;
-            private boolean checked;
-            private final Map<String, ID> map = new HashMap<>();
-
-            IDTable(Path p) {
-                this(relativePath(p).toString());
-            }
-
-            IDTable(String name) {
-                this.name = name;
-            }
-
-            void addID(int line, String name) {
-                if (checked) {
-                    throw new IllegalStateException("Adding ID after file has been read");
-                }
-                Objects.requireNonNull(name);
-                ID id = map.computeIfAbsent(name, x -> new ID());
-                if (id.declared) {
-                    error(currFile, line, "name already declared: " + name);
-                    duplicateIds++;
-                } else {
-                    id.declared = true;
-                }
-            }
-
-            void addReference(String name, Path from, int line) {
-                if (checked) {
-                    if (name != null) {
-                        ID id = map.get(name);
-                        if (id == null || !id.declared) {
-                            error(from, line, "id not found: " + this.name + "#" + name);
-                        }
-                    }
-                } else {
-                    ID id = map.computeIfAbsent(name, x -> new ID());
-                    if (id.references == null) {
-                        id.references = new TreeSet<>();
-                    }
-                    id.references.add(new Position(from, line));
-                }
-            }
-
-            void check() {
-                map.forEach((name, id) -> {
-                    if (name != null && !id.declared) {
-                        //log.error(currFile, 0, "id not declared: " + name);
-                        for (Position ref : id.references) {
-                            error(ref.path, ref.line, "id not found: " + this.name + "#" + name);
-                        }
-                        missingIds++;
-                    }
-                });
-                checked = true;
-            }
-        }
-
-        static class URIComparator implements Comparator<URI> {
-            final HostComparator hostComparator = new HostComparator();
-
-            @Override
-            public int compare(URI o1, URI o2) {
-                if (o1.isOpaque() || o2.isOpaque()) {
-                    return o1.compareTo(o2);
-                }
-                String h1 = o1.getHost();
-                String h2 = o2.getHost();
-                String s1 = o1.getScheme();
-                String s2 = o2.getScheme();
-                if (h1 == null || h1.isEmpty() || s1 == null || s1.isEmpty()
-                        || h2 == null || h2.isEmpty() || s2 == null || s2.isEmpty()) {
-                    return o1.compareTo(o2);
-                }
-                int v = hostComparator.compare(h1, h2);
-                if (v != 0) {
-                    return v;
-                }
-                v = s1.compareTo(s2);
-                if (v != 0) {
-                    return v;
-                }
-                return o1.compareTo(o2);
-            }
-        }
-
-        static class HostComparator implements Comparator<String> {
-            @Override
-            public int compare(String h1, String h2) {
-                List<String> l1 = new ArrayList<>(Arrays.asList(h1.split("\\.")));
-                Collections.reverse(l1);
-                String r1 = String.join(".", l1);
-                List<String> l2 = new ArrayList<>(Arrays.asList(h2.split("\\.")));
-                Collections.reverse(l2);
-                String r2 = String.join(".", l2);
-                return r1.compareTo(r2);
-            }
-        }
-
-    }
 }
