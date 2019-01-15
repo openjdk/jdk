@@ -920,7 +920,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     noRetrievalMethodLoops
 
 #
-# Serialization process-wide filter
+# Serialization system-wide filter
 #
 # A filter, if configured, is used by java.io.ObjectInputStream during
 # deserialization to check the contents of the stream.

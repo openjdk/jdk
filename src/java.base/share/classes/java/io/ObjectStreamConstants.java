@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public interface ObjectStreamConstants {
                     new SerializablePermission("enableSubclassImplementation");
 
     /**
-     * Enable setting the process-wide serial filter.
+     * Enable setting the system-wide serial filter.
      *
      * @see java.io.ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter)
      * @since 9
