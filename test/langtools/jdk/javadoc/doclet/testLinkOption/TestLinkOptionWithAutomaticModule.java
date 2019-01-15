@@ -25,12 +25,12 @@
  * @test
  * @bug 8212233
  * @summary The code being documented uses modules but the packages defined in $URL are in the unnamed module.
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester toolbox.JarTask toolbox.JavacTask toolbox.ModuleBuilder toolbox.ToolBox
+ * @build javadoc.tester.* toolbox.JarTask toolbox.JavacTask toolbox.ModuleBuilder toolbox.ToolBox
  * @run main TestLinkOptionWithAutomaticModule
  */
 
@@ -42,6 +42,8 @@ import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinkOptionWithAutomaticModule extends JavadocTester {
 
