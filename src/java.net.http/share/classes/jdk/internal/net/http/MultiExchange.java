@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,8 @@ class MultiExchange<T> {
                 result.complete(this.response);
             }
         });
-        return result;
+        // ensure that the connection is closed or returned to the pool.
+        return result.whenComplete(exch::nullBody);
     }
 
     private CompletableFuture<HttpResponse<T>>
