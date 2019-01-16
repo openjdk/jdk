@@ -27,8 +27,8 @@
 
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/os.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class WorkerManager : public AllStatic {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 
-#include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/iterator.hpp"
 
