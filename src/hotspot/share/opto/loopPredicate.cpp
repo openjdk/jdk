@@ -160,7 +160,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   // When called from beautify_loops() idom is not constructed yet.
   if (_idom != NULL) {
     Node* ridom = idom(rgn);
-    Node* nrdom = dom_lca(ridom, new_iff);
+    Node* nrdom = dom_lca_internal(ridom, new_iff);
     set_idom(rgn, nrdom, dom_depth(rgn));
   }
 

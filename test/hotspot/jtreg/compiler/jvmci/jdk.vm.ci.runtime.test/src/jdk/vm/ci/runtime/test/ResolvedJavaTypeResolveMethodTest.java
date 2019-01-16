@@ -168,6 +168,26 @@ public class ResolvedJavaTypeResolveMethodTest {
 
     }
 
+    static class ClassType {
+    }
+
+    interface InterfaceType {
+    }
+
+    @Test
+    public void testCloneAccessibility() {
+        /*
+         * The resolution machinery for clone on arrays has some hacks in that show up in odd places
+         * so make sure that resolveMethod works as expected.
+         */
+        ResolvedJavaType interfaceType = getType(InterfaceType.class);
+        ResolvedJavaType classType = getType(ClassType.class);
+        ResolvedJavaType arrayType = getType(double[].class);
+        ResolvedJavaMethod cloneMethod = getMethod(getType(Object.class), "clone");
+        assertEquals("Can't resolve clone for class", cloneMethod, arrayType.resolveMethod(cloneMethod, classType));
+        assertEquals("Can't resolve clone for interface", cloneMethod, arrayType.resolveMethod(cloneMethod, interfaceType));
+    }
+
     static ResolvedJavaMethod getMethod(ResolvedJavaType type, String methodName) {
         for (ResolvedJavaMethod method : type.getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {

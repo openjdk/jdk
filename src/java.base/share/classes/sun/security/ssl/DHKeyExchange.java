@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,8 @@ final class DHKeyExchange {
         public byte[] encode() {
             // Note: the DH public value is encoded as a big-endian integer
             // and padded to the left with zeros to the size of p in bytes.
-            byte[] encoded = publicKey.getY().toByteArray();
-            int pSize = KeyUtil.getKeySize(publicKey);
+            byte[] encoded = Utilities.toByteArray(publicKey.getY());
+            int pSize = (KeyUtil.getKeySize(publicKey) + 7) >>> 3;
             if (pSize > 0 && encoded.length < pSize) {
                 byte[] buffer = new byte[pSize];
                 System.arraycopy(encoded, 0,
