@@ -272,8 +272,9 @@ public final class Class<T> implements java.io.Serializable,
 
             TypeVariable<?>[] typeparms = component.getTypeParameters();
             if (typeparms.length > 0) {
-                sb.append(Stream.of(typeparms).map(Class::typeVarBounds).
-                          collect(Collectors.joining(",", "<", ">")));
+                sb.append(Arrays.stream(typeparms)
+                          .map(Class::typeVarBounds)
+                          .collect(Collectors.joining(",", "<", ">")));
             }
 
             for (int i = 0; i < arrayDepth; i++)
@@ -289,8 +290,9 @@ public final class Class<T> implements java.io.Serializable,
             return typeVar.getName();
         } else {
             return typeVar.getName() + " extends " +
-                Stream.of(bounds).map(Type::getTypeName).
-                collect(Collectors.joining(" & "));
+                Arrays.stream(bounds)
+                .map(Type::getTypeName)
+                .collect(Collectors.joining(" & "));
         }
     }
 
@@ -3419,8 +3421,9 @@ public final class Class<T> implements java.io.Serializable,
         StringBuilder sb = new StringBuilder();
         sb.append(getName() + "." + name + "(");
         if (argTypes != null) {
-            sb.append(Stream.of(argTypes).map(c -> {return (c == null) ? "null" : c.getName();}).
-                      collect(Collectors.joining(",")));
+            sb.append(Arrays.stream(argTypes)
+                      .map(c -> (c == null) ? "null" : c.getName())
+                      .collect(Collectors.joining(",")));
         }
         sb.append(")");
         return sb.toString();
