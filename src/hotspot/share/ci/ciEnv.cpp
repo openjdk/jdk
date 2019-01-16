@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,10 +231,6 @@ void ciEnv::cache_jvmti_state() {
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame();
-}
-
-bool ciEnv::should_retain_local_variables() const {
-  return _jvmti_can_access_local_variables || _jvmti_can_pop_frame;
 }
 
 bool ciEnv::jvmti_state_changed() const {
