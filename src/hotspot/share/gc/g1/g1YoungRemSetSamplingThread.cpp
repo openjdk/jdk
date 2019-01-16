@@ -61,9 +61,8 @@ bool G1YoungRemSetSamplingThread::should_start_periodic_gc() {
   }
 
   // Check if enough time has passed since the last GC.
-  uintx time_since_last_gc;
-  if ((G1PeriodicGCInterval == 0) ||
-      ((time_since_last_gc = (uintx)Universe::heap()->millis_since_last_gc()) < G1PeriodicGCInterval)) {
+  uintx time_since_last_gc = (uintx)Universe::heap()->millis_since_last_gc();
+  if ((time_since_last_gc < G1PeriodicGCInterval)) {
     log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
                             time_since_last_gc, G1PeriodicGCInterval);
     return false;
@@ -82,6 +81,10 @@ bool G1YoungRemSetSamplingThread::should_start_periodic_gc() {
 }
 
 void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
+  // If disabled, just return.
+  if (G1PeriodicGCInterval == 0) {
+    return;
+  }
   if ((os::elapsedTime() - _last_periodic_gc_attempt_s) > (G1PeriodicGCInterval / 1000.0)) {
     log_debug(gc, periodic)("Checking for periodic GC.");
     if (should_start_periodic_gc()) {
@@ -93,6 +96,13 @@ void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
 
 void G1YoungRemSetSamplingThread::run_service() {
   double vtime_start = os::elapsedVTime();
+
+  // Print a message about periodic GC configuration.
+  if (G1PeriodicGCInterval != 0) {
+    log_info(gc)("Periodic GC enabled with interval " UINTX_FORMAT "ms", G1PeriodicGCInterval);
+  } else {
+    log_info(gc)("Periodic GC disabled");
+  }
 
   while (!should_terminate()) {
     sample_young_list_rs_lengths();
