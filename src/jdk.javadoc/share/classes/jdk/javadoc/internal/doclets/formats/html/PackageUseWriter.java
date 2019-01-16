@@ -183,7 +183,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
-            Content packageLink = links.createLink(utils.getPackageName(pkg),
+            Content packageLink = links.createLink(getPackageAnchorName(pkg),
                     new StringContent(utils.getPackageName(pkg)));
             Content summary = new ContentBuilder();
             if (pkg != null && !pkg.isUnnamed()) {
@@ -209,9 +209,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
-            if (usingPackage != null) {
-                li.addContent(links.createAnchor(utils.getPackageName(usingPackage)));
-            }
+            li.addContent(links.createAnchor(getPackageAnchorName(usingPackage)));
             String tableSummary = resources.getText("doclet.Use_Table_Summary",
                                                         resources.getText("doclet.classes"));
             Content caption = contents.getContent(
