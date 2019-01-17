@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -516,6 +516,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
+java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 
 ############################################################################
 
