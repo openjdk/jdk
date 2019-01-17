@@ -4707,9 +4707,6 @@ int os::fsync(int fd) {
 static int nonSeekAvailable(int, long *);
 static int stdinAvailable(int, long *);
 
-#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
-
 // This code is a copy of JDK's sysAvailable
 // from src/windows/hpi/src/sys_api_md.c
 
