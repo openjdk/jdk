@@ -34,6 +34,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Base64;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import java.net.http.HttpHeaders;
@@ -258,23 +259,21 @@ class AuthenticationFilter implements HeaderFilter {
 
         boolean proxy = status == PROXY_UNAUTHORIZED;
         String authname = proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
-        String authval = hdrs.firstValue(authname).orElse(null);
-        if (authval == null) {
-            if (exchange.client().authenticator().isPresent()) {
-                throw new IOException(authname + " header missing for response code " + status);
-            } else {
-                // No authenticator? let the caller deal with this.
-                return null;
+        List<String> authvals = hdrs.allValues(authname);
+        if (authvals.isEmpty() && exchange.client().authenticator().isPresent()) {
+            throw new IOException(authname + " header missing for response code " + status);
+        }
+        String authval = null;
+        for (String aval : authvals) {
+            HeaderParser parser = new HeaderParser(aval);
+            String scheme = parser.findKey(0);
+            if (scheme.equalsIgnoreCase("Basic")) {
+                authval = aval;
+                break;
             }
         }
-
-        HeaderParser parser = new HeaderParser(authval);
-        String scheme = parser.findKey(0);
-
-        // TODO: Need to generalise from Basic only. Delegate to a provider class etc.
-
-        if (!scheme.equalsIgnoreCase("Basic")) {
-            return null;   // error gets returned to app
+        if (authval == null) {
+            return null;
         }
 
         if (proxy) {
