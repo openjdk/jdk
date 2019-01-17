@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,8 @@ public class TestSocketFactory extends RMISocketFactory
 
     static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    public static final boolean DEBUG = false;
+    // True to enable logging of matches and replacements.
+    private static volatile boolean debugLogging = false;
 
     /**
      * Debugging output can be synchronized with logging of RMI actions.
@@ -100,8 +101,8 @@ public class TestSocketFactory extends RMISocketFactory
      * @param format a printf format
      * @param args   any args
      */
-    private static void DEBUG(String format, Object... args) {
-        if (DEBUG) {
+    public static void DEBUG(String format, Object... args) {
+        if (debugLogging) {
             System.err.printf(format, args);
         }
     }
@@ -114,6 +115,17 @@ public class TestSocketFactory extends RMISocketFactory
         this.triggerBytes = EMPTY_BYTE_ARRAY;
         this.matchBytes = EMPTY_BYTE_ARRAY;
         this.replaceBytes = EMPTY_BYTE_ARRAY;
+    }
+
+    /**
+     * Set debug to true to generate logging output of matches and substitutions.
+     * @param debug {@code true} to generate logging output
+     * @return the previous value
+     */
+    public static boolean setDebug(boolean debug) {
+        boolean oldDebug = debugLogging;
+        debugLogging = debug;
+        return oldDebug;
     }
 
     /**
