@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 7029048
+ * @bug 7029048 8217340
  * @summary Ensure that the launcher defends against user settings of the
  *          LD_LIBRARY_PATH environment variable on Unixes
+ * @library /test/lib
  * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
  * @run main Test7029048
  */
