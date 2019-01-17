@@ -103,7 +103,7 @@ TEST(globalDefinitions, exact_unit_for_byte_size) {
   EXPECT_STREQ("M", exact_unit_for_byte_size(M));
   EXPECT_STREQ("B", exact_unit_for_byte_size(M + 1));
   EXPECT_STREQ("K", exact_unit_for_byte_size(M + K));
-#ifdef LP64
+#ifdef _LP64
   EXPECT_STREQ("B", exact_unit_for_byte_size(G - 1));
   EXPECT_STREQ("G", exact_unit_for_byte_size(G));
   EXPECT_STREQ("B", exact_unit_for_byte_size(G + 1));
@@ -123,7 +123,7 @@ TEST(globalDefinitions, byte_size_in_exact_unit) {
   EXPECT_EQ(1u, byte_size_in_exact_unit(M));
   EXPECT_EQ(M + 1, byte_size_in_exact_unit(M + 1));
   EXPECT_EQ(K + 1, byte_size_in_exact_unit(M + K));
-#ifdef LP64
+#ifdef _LP64
   EXPECT_EQ(G - 1, byte_size_in_exact_unit(G - 1));
   EXPECT_EQ(1u, byte_size_in_exact_unit(G));
   EXPECT_EQ(G + 1, byte_size_in_exact_unit(G + 1));
