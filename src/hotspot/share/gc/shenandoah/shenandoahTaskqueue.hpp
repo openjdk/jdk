@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -25,7 +25,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
@@ -46,11 +45,7 @@ public:
   // Attempt to pop from the queue. Returns true on success.
   inline bool pop(E &t);
 
-  inline void clear()  {
-    _buf_empty = true;
-    taskqueue_t::set_empty();
-    taskqueue_t::overflow_stack()->clear();
-  }
+  inline void clear();
 
   inline bool is_empty()        const {
     return _buf_empty && taskqueue_t::is_empty();
