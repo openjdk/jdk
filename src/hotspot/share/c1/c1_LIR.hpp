@@ -949,7 +949,6 @@ enum LIR_Code {
       , lir_ushr
       , lir_alloc_array
       , lir_throw
-      , lir_compare_to
       , lir_xadd
       , lir_xchg
   , end_op2
@@ -2127,10 +2126,6 @@ class LIR_List: public CompilationResourceObj {
   }
   void unwind_exception(LIR_Opr exceptionOop) {
     append(new LIR_Op1(lir_unwind, exceptionOop));
-  }
-
-  void compare_to (LIR_Opr left, LIR_Opr right, LIR_Opr dst) {
-    append(new LIR_Op2(lir_compare_to,  left, right, dst));
   }
 
   void push(LIR_Opr opr)                                   { append(new LIR_Op1(lir_push, opr)); }
