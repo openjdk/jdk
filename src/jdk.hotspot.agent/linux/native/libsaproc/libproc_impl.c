@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <thread_db.h>
+#include <sys/procfs.h>
 #include "libproc_impl.h"
+#include "proc_service.h"
 
 #define SA_ALTROOT "SA_ALTROOT"
 
@@ -116,13 +117,6 @@ JNIEXPORT bool JNICALL
 init_libproc(bool debug) {
    // init debug mode
    _libsaproc_debug = debug;
-
-   // initialize the thread_db library
-   if (td_init() != TD_OK) {
-     print_debug("libthread_db's td_init failed\n");
-     return false;
-   }
-
    return true;
 }
 
@@ -256,7 +250,7 @@ const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* p
 }
 
 // add a thread to ps_prochandle
-thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id) {
+thread_info* add_thread_info(struct ps_prochandle* ph, lwpid_t lwp_id) {
    thread_info* newthr;
    if ( (newthr = (thread_info*) calloc(1, sizeof(thread_info))) == NULL) {
       print_debug("can't allocate memory for thread_info\n");
@@ -264,7 +258,6 @@ thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwp
    }
 
    // initialize thread info
-   newthr->pthread_id = pthread_id;
    newthr->lwp_id = lwp_id;
 
    // add new thread to the list
@@ -294,64 +287,6 @@ void delete_thread_info(struct ps_prochandle* ph, thread_info* thr_to_be_removed
     ph->num_threads--;
     free(current_thr);
 }
-
-// struct used for client data from thread_db callback
-struct thread_db_client_data {
-   struct ps_prochandle* ph;
-   thread_info_callback callback;
-};
-
-// callback function for libthread_db
-static int thread_db_callback(const td_thrhandle_t *th_p, void *data) {
-  struct thread_db_client_data* ptr = (struct thread_db_client_data*) data;
-  td_thrinfo_t ti;
-  td_err_e err;
-
-  memset(&ti, 0, sizeof(ti));
-  err = td_thr_get_info(th_p, &ti);
-  if (err != TD_OK) {
-    print_debug("libthread_db : td_thr_get_info failed, can't get thread info\n");
-    return err;
-  }
-
-  print_debug("thread_db : pthread %d (lwp %d)\n", ti.ti_tid, ti.ti_lid);
-
-  if (ti.ti_state == TD_THR_UNKNOWN || ti.ti_state == TD_THR_ZOMBIE) {
-    print_debug("Skipping pthread %d (lwp %d)\n", ti.ti_tid, ti.ti_lid);
-    return TD_OK;
-  }
-
-  if (ptr->callback(ptr->ph, ti.ti_tid, ti.ti_lid) != true)
-    return TD_ERR;
-
-  return TD_OK;
-}
-
-// read thread_info using libthread_db
-bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb) {
-  struct thread_db_client_data mydata;
-  td_thragent_t* thread_agent = NULL;
-  if (td_ta_new(ph, &thread_agent) != TD_OK) {
-     print_debug("can't create libthread_db agent\n");
-     return false;
-  }
-
-  mydata.ph = ph;
-  mydata.callback = cb;
-
-  // we use libthread_db iterator to iterate thru list of threads.
-  if (td_ta_thr_iter(thread_agent, thread_db_callback, &mydata,
-                 TD_THR_ANY_STATE, TD_THR_LOWEST_PRIORITY,
-                 TD_SIGNO_MASK, TD_THR_ANY_USER_FLAGS) != TD_OK) {
-     td_ta_delete(thread_agent);
-     return false;
-  }
-
-  // delete thread agent
-  td_ta_delete(thread_agent);
-  return true;
-}
-
 
 // get number of threads
 int get_num_threads(struct ps_prochandle* ph) {
@@ -484,9 +419,3 @@ ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset) {
   return PS_OK;
 }
 
-// new libthread_db of NPTL seem to require this symbol
-JNIEXPORT ps_err_e JNICALL
-ps_get_thread_area() {
-  print_debug("ps_get_thread_area not implemented\n");
-  return PS_OK;
-}

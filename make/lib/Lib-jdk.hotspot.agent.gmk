@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
-    LIBS_linux := -lthread_db $(LIBDL), \
+    LIBS_linux := $(LIBDL), \
     LIBS_solaris := -ldl -ldemangle -lthread -lproc, \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \

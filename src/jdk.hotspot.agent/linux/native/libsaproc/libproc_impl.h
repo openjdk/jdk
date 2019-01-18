@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ typedef struct lib_info {
 // list of threads
 typedef struct thread_info {
    lwpid_t                  lwp_id;
-   pthread_t                pthread_id; // not used cores, always -1
    struct user_regs_struct  regs;       // not for process, core uses for caching regset
    struct thread_info*      next;
 } thread_info;
@@ -108,11 +107,6 @@ void print_debug(const char* format,...);
 void print_error(const char* format,...);
 bool is_debug();
 
-typedef bool (*thread_info_callback)(struct ps_prochandle* ph, pthread_t pid, lwpid_t lwpid);
-
-// reads thread info using libthread_db and calls above callback for each thread
-bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb);
-
 // deletes a thread from the thread list
 void delete_thread_info(struct ps_prochandle* ph, thread_info* thr);
 
@@ -124,7 +118,7 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
                           uintptr_t base);
 
 // adds a new thread to threads list, returns NULL on failure
-thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
+thread_info* add_thread_info(struct ps_prochandle* ph, lwpid_t lwp_id);
 
 // a test for ELF signature without using libelf
 bool is_elf_file(int fd);
