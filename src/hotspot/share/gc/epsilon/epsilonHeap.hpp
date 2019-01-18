@@ -147,6 +147,10 @@ public:
   virtual void print_on(outputStream* st) const;
   virtual void print_tracing_info() const;
 
+private:
+  void print_heap_info(size_t used) const;
+  void print_metaspace_info() const;
+
 };
 
 #endif // SHARE_GC_EPSILON_EPSILONHEAP_HPP
