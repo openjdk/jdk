@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,9 +470,6 @@ class WindowsFileSystemProvider
         } catch (WindowsException x) {
             x.rethrowAsIOException(file);
         }
-        // DOS hidden attribute not meaningful when set on directories
-        if (attrs.isDirectory())
-            return false;
         return attrs.isHidden();
     }
 
