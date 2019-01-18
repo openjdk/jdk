@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2712,6 +2712,8 @@ public class Check {
             if (type.isErroneous()) return;
             for (List<Type> l = types.interfaces(type); l.nonEmpty(); l = l.tail) {
                 Type it = l.head;
+                if (type.hasTag(CLASS) && !it.hasTag(CLASS)) continue; // JLS 8.1.5
+
                 Type oldit = seensofar.put(it.tsym, it);
                 if (oldit != null) {
                     List<Type> oldparams = oldit.allparams();
@@ -2725,6 +2727,7 @@ public class Check {
                 checkClassBounds(pos, seensofar, it);
             }
             Type st = types.supertype(type);
+            if (type.hasTag(CLASS) && !st.hasTag(CLASS)) return; // JLS 8.1.4
             if (st != Type.noType) checkClassBounds(pos, seensofar, st);
         }
 
