@@ -1257,12 +1257,6 @@ int  java_lang_Class::oop_size(oop java_class) {
   return size;
 }
 
-int  java_lang_Class::oop_size_raw(oop java_class) {
-  assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field_raw(_oop_size_offset);
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  return size;
-}
 
 void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
