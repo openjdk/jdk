@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocketFactory;
 
 /*
  * This class is used for returning some specific JDK information.
@@ -32,7 +33,8 @@ import javax.net.ssl.SSLParameters;
 public class JdkUtils {
 
     public static final String JAVA_RUNTIME_VERSION = "javaRuntimeVersion";
-    public static final String SUPPORTS_EC_KEY = "supportsECKey";
+    public static final String SUPPORTED_PROTOCOLS = "supportedProtocols";
+    public static final String SUPPORTED_CIPHER_SUITES = "supportedCipherSuites";
     public static final String SUPPORTS_SNI = "supportsSNI";
     public static final String SUPPORTS_ALPN = "supportsALPN";
 
@@ -41,15 +43,39 @@ public class JdkUtils {
         return System.getProperty("java.runtime.version");
     }
 
-    // Checks if EC key algorithm is supported by the JDK build.
-    private static boolean supportsECKey() {
-        boolean isSupported = true;
-        try {
-            KeyFactory.getInstance("EC");
-        } catch (NoSuchAlgorithmException e) {
-            isSupported = false;
+    private static String supportedProtocols() {
+        StringBuilder protocols = new StringBuilder();
+        for (String protocol : new String[] {
+                "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }) {
+            if (supportsProtocol(protocol)) {
+                protocols.append(protocol).append(Utils.VALUE_DELIMITER);
+            }
         }
-        return isSupported;
+        return protocols.toString().substring(
+                0, protocols.toString().length() - 1);
+    }
+
+    private static boolean supportsProtocol(String protocol) {
+        boolean supported = true;
+        try {
+            SSLContext.getInstance(protocol);
+        } catch (NoSuchAlgorithmException e) {
+            supported = false;
+        }
+        return supported;
+    }
+
+    private static String supportedCipherSuites() {
+        StringBuilder cipherSuites = new StringBuilder();
+        String[] supportedCipherSuites = ((SSLSocketFactory) SSLSocketFactory
+                .getDefault()).getSupportedCipherSuites();
+        for (int i = 0; i < supportedCipherSuites.length - 1; i++) {
+            cipherSuites.append(supportedCipherSuites[i])
+                    .append(Utils.VALUE_DELIMITER);
+        }
+        cipherSuites.append(
+                supportedCipherSuites[supportedCipherSuites.length - 1]);
+        return cipherSuites.toString();
     }
 
     // Checks if SNI is supported by the JDK build.
@@ -74,10 +100,11 @@ public class JdkUtils {
         return isSupported;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchAlgorithmException {
         System.out.print(Utils.join(Utils.PARAM_DELIMITER,
                 attr(JAVA_RUNTIME_VERSION, javaRuntimeVersion()),
-                attr(SUPPORTS_EC_KEY, supportsECKey()),
+                attr(SUPPORTED_PROTOCOLS, supportedProtocols()),
+                attr(SUPPORTED_CIPHER_SUITES, supportedCipherSuites()),
                 attr(SUPPORTS_SNI, supportsSNI()),
                 attr(SUPPORTS_ALPN, supportsALPN())));
     }
