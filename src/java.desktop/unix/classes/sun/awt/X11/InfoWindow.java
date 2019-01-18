@@ -53,6 +53,7 @@ import java.text.BreakIterator;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import sun.awt.SunToolkit;
+import sun.awt.UNIXToolkit;
 
 /**
  * An utility window class. This is a base class for Tooltip and Balloon.
@@ -437,12 +438,24 @@ public abstract class InfoWindow extends Window {
 
         private void loadGtkImages() {
             if (!gtkImagesLoaded) {
-                errorImage = (Image)Toolkit.getDefaultToolkit().getDesktopProperty(
-                    "gtk.icon.gtk-dialog-error.6.rtl");
-                warnImage = (Image)Toolkit.getDefaultToolkit().getDesktopProperty(
-                    "gtk.icon.gtk-dialog-warning.6.rtl");
-                infoImage = (Image)Toolkit.getDefaultToolkit().getDesktopProperty(
-                    "gtk.icon.gtk-dialog-info.6.rtl");
+                //check whether the gtk version is >= 3.10 as the Icon names were
+                //changed from this release
+                UNIXToolkit tk = (UNIXToolkit) Toolkit.getDefaultToolkit();
+                if (tk.checkGtkVersion(3, 10, 0)) {
+                    errorImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.dialog-error.6.rtl");
+                    warnImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.dialog-warning.6.rtl");
+                    infoImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.dialog-information.6.rtl");
+                } else {
+                    errorImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.gtk-dialog-error.6.rtl");
+                    warnImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.gtk-dialog-warning.6.rtl");
+                    infoImage = (Image) tk.getDesktopProperty(
+                            "gtk.icon.gtk-dialog-info.6.rtl");
+                }
                 gtkImagesLoaded = true;
             }
         }
