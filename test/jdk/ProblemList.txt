@@ -838,8 +838,6 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
-com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
-
 com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
 
 ############################################################################
