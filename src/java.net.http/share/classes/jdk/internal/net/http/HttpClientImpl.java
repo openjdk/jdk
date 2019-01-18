@@ -160,7 +160,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final CookieHandler cookieHandler;
     private final Duration connectTimeout;
     private final Redirect followRedirects;
-    private final Optional<ProxySelector> userProxySelector;
+    private final ProxySelector userProxySelector;
     private final ProxySelector proxySelector;
     private final Authenticator authenticator;
     private final Version version;
@@ -286,12 +286,12 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         connectTimeout = builder.connectTimeout;
         followRedirects = builder.followRedirects == null ?
                 Redirect.NEVER : builder.followRedirects;
-        this.userProxySelector = Optional.ofNullable(builder.proxy);
-        this.proxySelector = userProxySelector
+        this.userProxySelector = builder.proxy;
+        this.proxySelector = Optional.ofNullable(userProxySelector)
                 .orElseGet(HttpClientImpl::getDefaultProxySelector);
         if (debug.on())
             debug.log("proxySelector is %s (user-supplied=%s)",
-                      this.proxySelector, userProxySelector.isPresent());
+                      this.proxySelector, userProxySelector != null);
         authenticator = builder.authenticator;
         if (builder.version == null) {
             version = HttpClient.Version.HTTP_2;
@@ -1149,7 +1149,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     @Override
     public Optional<ProxySelector> proxy() {
-        return this.userProxySelector;
+        return Optional.ofNullable(userProxySelector);
     }
 
     // Return the effective proxy that this client uses.

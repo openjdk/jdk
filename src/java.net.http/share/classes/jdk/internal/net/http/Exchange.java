@@ -33,8 +33,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLPermission;
 import java.security.AccessControlContext;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -123,6 +125,10 @@ final class Exchange<T> {
 
     public HttpRequestImpl request() {
         return request;
+    }
+
+    public Optional<Duration> remainingConnectTimeout() {
+        return multi.remainingConnectTimeout();
     }
 
     HttpClientImpl client() {
