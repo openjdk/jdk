@@ -2374,9 +2374,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 
   Array<Method*>* methods = this->methods();
   int num_methods = methods->length();
-  for (int index2 = 0; index2 < num_methods; ++index2) {
-    methodHandle m(THREAD, methods->at(index2));
-    m->restore_unshareable_info(CHECK);
+  for (int index = 0; index < num_methods; ++index) {
+    methods->at(index)->restore_unshareable_info(CHECK);
   }
   if (JvmtiExport::has_redefined_a_class()) {
     // Reinitialize vtable because RedefineClasses may have changed some
