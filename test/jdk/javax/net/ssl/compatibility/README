@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
 
 ##### Summary #####
 This test is used to check the interop compatibility on JSSE among different
-JDK releases. The oldest version supported by the test is JDK 6. Some of Java
-source files, JdkUtils.java, Parameter.java, Server.java, and Client.java, use
-only JDK 6-compliant language features and APIs, in order to allowing different
-JDK releases can load and run associated classes.
+JDK releases. The oldest version supported by the test is JDK 7. Some of Java
+source files, JdkUtils.java, Server.java, and Client.java, use only JDK 7-compliant
+language features and APIs, in order to allowing different JDK releases can load
+and run associated classes.
 
 ##### Output #####
 The test can generate a report at $JTREG_WORKDIR/scratch/report.html to display
@@ -78,7 +78,7 @@ jtreg [-options] \
 Besides the common jtreg options, like -jdk, this test introduces some more
 properties:
 debug
-    It indicates if the test enable -Djavax.net.ssl=debug. This is a boolean
+    It indicates if the test enable -Djavax.net.debug=all. This is a boolean
     property, and the default value is false.
     It is not mandatory.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class Client {
         Status status = Status.SUCCESS;
         Client client = null;
         try {
-            client = new Client(Cert.getCerts(cipherSuite));
+            client = new Client(Cert.getCerts(CipherSuite.cipherSuite(cipherSuite)));
             client.setEnabledProtocols(protocol);
             client.setEnabledCipherSuites(cipherSuite);
 
