@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8213397
+ * @bug     8213397 8217337
  * @summary Check that the thread dump shows when a thread is blocked
  *          on a class initialization monitor
  *
@@ -33,6 +33,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,8 +52,8 @@ public class TestThreadDumpClassInitMonitor {
      *
      * "TestThread" #22 prio=5 os_prio=0 cpu=1.19ms elapsed=0.80s tid=0x00007f8f9405d800 nid=0x568b in Object.wait()  [0x00007f8fd94d0000]
      *   java.lang.Thread.State: RUNNABLE
-     * Thread: 0x00007f8f9405d800  [0x568b] State: _at_safepoint _has_called_back 0 _at_poll_safepoint 0
-     *   JavaThread state: _thread_blocked
+     * Thread: 0x00007f8f9405d800  [0x568b] State: _at_safepoint _has_called_back 0 _at_poll_safepoint 0  // DEBUG ONLY
+     *   JavaThread state: _thread_blocked                                                                // DEBUG ONLY
      *         at TestThreadDumpClassInitMonitor$Target$1.run(TestThreadDumpClassInitMonitor.java:69)
      *         - waiting on the Class initialization monitor for TestThreadDumpClassInitMonitor$Target
      *
@@ -128,6 +129,8 @@ public class TestThreadDumpClassInitMonitor {
 
         // Now check the output of jstack
         try {
+            // product builds miss 2 lines of information in the stack
+            boolean isProduct = !Platform.isDebugBuild();
             int foundLines = 0;
             parseStack: for (String line : stackDump) {
                 switch(foundLines) {
@@ -145,17 +148,21 @@ public class TestThreadDumpClassInitMonitor {
                     if (!line.trim().equals(THREAD_STATE)) {
                         throw new Error("Unexpected thread state line: " + line);
                     }
-                    foundLines++;
+                    if (isProduct) {
+                        foundLines += 3;
+                    } else {
+                        foundLines++;
+                    }
                     continue;
                 }
-                case 2: {
+                case 2: { // Debug build
                     if (!line.startsWith(THREAD_INFO)) {
                         throw new Error("Unexpected thread info line: " + line);
                     }
                     foundLines++;
                     continue;
                 }
-                case 3: {
+                case 3: { // Debug build
                     if (!line.trim().equals(JAVATHREAD_STATE)) {
                         throw new Error("Unexpected JavaThread state line: " + line);
                     }
