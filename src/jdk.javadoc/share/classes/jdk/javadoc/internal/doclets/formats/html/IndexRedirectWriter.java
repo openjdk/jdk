@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collections;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
@@ -78,6 +80,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
                 .setTimestamp(true)
+                .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet
                 .addDefaultScript(false);
 
         String title = (configuration.windowtitle.length() > 0)

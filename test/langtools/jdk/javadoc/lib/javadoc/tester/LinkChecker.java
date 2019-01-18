@@ -72,7 +72,7 @@ public class LinkChecker extends HtmlChecker {
             missingFiles.stream()
                     .sorted()
                     .forEach(this::reportMissingFile);
-
+            errors += missingFiles.size();
         }
 
         if (!allURIs.isEmpty()) {

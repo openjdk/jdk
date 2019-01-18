@@ -57,6 +57,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
     TestHtmlLandmarkRegions() {
         tb = new ToolBox();
+        setAutomaticCheckLinks(false); // @ignore 8217013
     }
 
     @Test

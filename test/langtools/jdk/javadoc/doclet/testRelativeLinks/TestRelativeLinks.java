@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@
  * @build    javadoc.tester.*
  * @run main TestRelativeLinks
  */
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import javadoc.tester.JavadocTester;
 
@@ -106,5 +110,27 @@ public class TestRelativeLinks extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg", "pkg2");
         checkExit(Exit.OK);
-}
+    }
+
+    @Override
+    public void checkLinks() {
+        // since the test uses explicit links to non-existent files,
+        // we create those files to avoid false positive errors from checkLinks
+        touch("pkg/relative-class-link.html");
+        touch("pkg/relative-field-link.html");
+        touch("pkg/relative-method-link.html");
+        touch("pkg/relative-package-link.html");
+        touch("pkg/relative-multi-line-link.html");
+        super.checkLinks();
+    }
+
+    private void touch(String file) {
+        File f = new File(outputDir, file);
+        out.println("touch " + f);
+        try (FileOutputStream fos = new FileOutputStream(f)) {
+        } catch (IOException e) {
+            checking("Touch file");
+            failed("Error creating file: " + e);
+        }
+    }
 }
