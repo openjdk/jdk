@@ -42,9 +42,9 @@ private:
   size_t _capacity;
   size_t _used;
 
-  void assert_bounds() const PRODUCT_RETURN;
-  void assert_heaplock_owned_by_current_thread() const PRODUCT_RETURN;
-  void assert_heaplock_not_owned_by_current_thread() const PRODUCT_RETURN;
+  void assert_bounds() const NOT_DEBUG_RETURN;
+  void assert_heaplock_owned_by_current_thread() const NOT_DEBUG_RETURN;
+  void assert_heaplock_not_owned_by_current_thread() const NOT_DEBUG_RETURN;
 
   bool is_mutator_free(size_t idx) const;
   bool is_collector_free(size_t idx) const;

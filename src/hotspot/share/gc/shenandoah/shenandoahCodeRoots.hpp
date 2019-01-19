@@ -77,8 +77,8 @@ public:
 
   bool has_cset_oops(ShenandoahHeap* heap);
 
-  void assert_alive_and_correct() PRODUCT_RETURN;
-  void assert_same_oops(GrowableArray<oop*>* oops) PRODUCT_RETURN;
+  void assert_alive_and_correct() NOT_DEBUG_RETURN;
+  void assert_same_oops(GrowableArray<oop*>* oops) NOT_DEBUG_RETURN;
 
   static bool find_with_nmethod(void* nm, ShenandoahNMethod* other) {
     return other->_nm == nm;
