@@ -261,8 +261,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           Deoptimization::DeoptReason reason = morphism == 2 ?
             Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
-              !too_many_traps(caller, bci, reason) &&
-              !too_many_recompiles(caller, bci, reason)
+              !too_many_traps(caller, bci, reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
