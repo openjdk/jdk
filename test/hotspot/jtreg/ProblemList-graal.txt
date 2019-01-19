@@ -165,5 +165,3 @@ org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
 org.graalvm.compiler.hotspot.test.ReservedStackAccessTest        8213567   windows-all
 
 org.graalvm.compiler.replacements.test.StringCompressInflateTest 8213556
-
-org.graalvm.compiler.debug.test.TimerKeyTest                     8213598
