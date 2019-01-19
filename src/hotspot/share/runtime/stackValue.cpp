@@ -206,7 +206,11 @@ void StackValue::print_on(outputStream* st) const {
       break;
 
     case T_OBJECT:
-      _handle_value()->print_value_on(st);
+      if (_handle_value() != NULL) {
+        _handle_value()->print_value_on(st);
+      } else {
+        st->print("NULL");
+      }
       st->print(" <" INTPTR_FORMAT ">", p2i((address)_handle_value()));
      break;
 
