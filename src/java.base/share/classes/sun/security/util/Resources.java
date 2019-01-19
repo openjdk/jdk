@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"Subject.", "Subject:\n"},
         {".Principal.", "\tPrincipal: "},
         {".Public.Credential.", "\tPublic Credential: "},
-        {".Private.Credentials.inaccessible.",
-                "\tPrivate Credentials inaccessible\n"},
         {".Private.Credential.", "\tPrivate Credential: "},
         {".Private.Credential.inaccessible.",
                 "\tPrivate Credential inaccessible\n"},
@@ -89,16 +87,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "invalid null CallbackHandler provided"},
         {"null.subject.logout.called.before.login",
                 "null subject - logout called before login"},
-        {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
-                "unable to instantiate LoginModule, {0}, because it does not provide a no-argument constructor"},
-        {"unable.to.instantiate.LoginModule",
-                "unable to instantiate LoginModule"},
-        {"unable.to.instantiate.LoginModule.",
-                "unable to instantiate LoginModule: "},
-        {"unable.to.find.LoginModule.class.",
-                "unable to find LoginModule class: "},
-        {"unable.to.access.LoginModule.",
-                "unable to access LoginModule: "},
         {"Login.Failure.all.modules.ignored",
                 "Login Failure: all modules ignored"},
 
