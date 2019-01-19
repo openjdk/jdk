@@ -47,7 +47,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _degen_point(ShenandoahHeap::_degenerated_outside_cycle),
   _allocs_seen(0) {
 
-  create_and_start();
+  create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
 }
