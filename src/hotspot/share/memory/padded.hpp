@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_PADDED_HPP
 #define SHARE_MEMORY_PADDED_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 

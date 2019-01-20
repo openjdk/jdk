@@ -25,7 +25,10 @@
 #ifndef SHARE_GC_SHARED_PTRQUEUE_HPP
 #define SHARE_GC_SHARED_PTRQUEUE_HPP
 
+#include "memory/padded.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/lockFreeStack.hpp"
 #include "utilities/sizes.hpp"
 
 class Mutex;
@@ -215,7 +218,7 @@ protected:
 
 class BufferNode {
   size_t _index;
-  BufferNode* _next;
+  BufferNode* volatile _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
   BufferNode() : _index(0), _next(NULL) { }
@@ -225,6 +228,8 @@ class BufferNode {
     return offset_of(BufferNode, _buffer);
   }
 
+  static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
+
 AIX_ONLY(public:)               // xlC 12 on AIX doesn't implement C++ DR45.
   // Allocate a new BufferNode with the "buffer" having size elements.
   static BufferNode* allocate(size_t size);
@@ -233,6 +238,8 @@ AIX_ONLY(public:)               // xlC 12 on AIX doesn't implement C++ DR45.
   static void deallocate(BufferNode* node);
 
 public:
+  typedef LockFreeStack<BufferNode, &next_ptr> Stack;
+
   BufferNode* next() const     { return _next;  }
   void set_next(BufferNode* n) { _next = n;     }
   size_t index() const         { return _index; }
@@ -254,23 +261,52 @@ public:
       reinterpret_cast<char*>(node) + buffer_offset());
   }
 
-  // Free-list based allocator.
-  class Allocator {
-    size_t _buffer_size;
-    Mutex* _lock;
-    BufferNode* _free_list;
-    volatile size_t _free_count;
+  class Allocator;              // Free-list based allocator.
+  class TestSupport;            // Unit test support.
+};
 
-  public:
-    Allocator(size_t buffer_size, Mutex* lock);
-    ~Allocator();
+// Allocation is based on a lock-free free list of nodes, linked through
+// BufferNode::_next (see BufferNode::Stack).  To solve the ABA problem,
+// popping a node from the free list is performed within a GlobalCounter
+// critical section, and pushing nodes onto the free list is done after
+// a GlobalCounter synchronization associated with the nodes to be pushed.
+// This is documented behavior so that other parts of the node life-cycle
+// can depend on and make use of it too.
+class BufferNode::Allocator {
+  friend class TestSupport;
 
-    size_t buffer_size() const { return _buffer_size; }
-    size_t free_count() const;
-    BufferNode* allocate();
-    void release(BufferNode* node);
-    void reduce_free_list();
-  };
+  // Since we don't expect many instances, and measured >15% speedup
+  // on stress gtest, padding seems like a good tradeoff here.
+#define DECLARE_PADDED_MEMBER(Id, Type, Name) \
+  Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_CACHE_LINE_SIZE, sizeof(Type))
+
+  const size_t _buffer_size;
+  char _name[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)]; // Use name as padding.
+  DECLARE_PADDED_MEMBER(1, Stack, _pending_list);
+  DECLARE_PADDED_MEMBER(2, Stack, _free_list);
+  DECLARE_PADDED_MEMBER(3, volatile size_t, _pending_count);
+  DECLARE_PADDED_MEMBER(4, volatile size_t, _free_count);
+  DECLARE_PADDED_MEMBER(5, volatile bool, _transfer_lock);
+
+#undef DECLARE_PADDED_MEMBER
+
+  void delete_list(BufferNode* list);
+  bool try_transfer_pending();
+
+public:
+  Allocator(const char* name, size_t buffer_size);
+  ~Allocator();
+
+  const char* name() const { return _name; }
+  size_t buffer_size() const { return _buffer_size; }
+  size_t free_count() const;
+  BufferNode* allocate();
+  void release(BufferNode* node);
+
+  // Deallocate some of the available buffers.  remove_goal is the target
+  // number to remove.  Returns the number actually deallocated, which may
+  // be less than the goal if there were fewer available.
+  size_t reduce_free_list(size_t remove_goal);
 };
 
 // A PtrQueueSet represents resources common to a set of pointer queues.
