@@ -32,6 +32,7 @@
 #include "opto/node.hpp"
 #include "opto/type.hpp"
 #include "utilities/macros.hpp"
+#include "gc/z/zBarrierSet.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"

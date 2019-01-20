@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 
-#include "classfile/javaClasses.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/iterator.hpp"
 
@@ -42,10 +41,7 @@ public:
   static void parallel_oops_do(OopClosure* cl, uint worker_id);
   static void oops_do_slow(OopClosure* cl);
 
-  static inline bool is_candidate(oop obj) {
-    return java_lang_String::is_instance_inlined(obj) &&
-           java_lang_String::value(obj) != NULL;
-  }
+  static inline bool is_candidate(oop obj);
 private:
   static void unlink_or_oops_do(BoolObjectClosure* is_alive,
                                 OopClosure* keep_alive,

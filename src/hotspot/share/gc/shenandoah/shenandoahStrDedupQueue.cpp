@@ -27,7 +27,7 @@
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStrDedupQueue.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
+#include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
