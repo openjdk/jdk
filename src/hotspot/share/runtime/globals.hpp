@@ -1994,10 +1994,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  develop(intx, CIFireOOMAt,    -1,                                         \
-          "Fire OutOfMemoryErrors throughout CI for testing the compiler "  \
-          "(non-negative value throws OOM after this many CI accesses "     \
-          "in each compile)")                                               \
   notproduct(intx, CICrashAt, -1,                                           \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \

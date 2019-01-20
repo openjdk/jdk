@@ -100,10 +100,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   friend class MemAllocator;
 
  private:
-#ifdef ASSERT
-  static int       _fire_out_of_memory_count;
-#endif
-
   GCHeapLog* _gc_heap_log;
 
   MemRegion _reserved;
@@ -600,12 +596,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
-
-#ifdef ASSERT
-  static int fired_fake_oom() {
-    return (CIFireOOMAt > 1 && _fire_out_of_memory_count >= CIFireOOMAt);
-  }
-#endif
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.

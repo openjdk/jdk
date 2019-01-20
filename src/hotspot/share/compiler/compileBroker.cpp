@@ -2212,15 +2212,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   // the point somewhat) our clearing of the bits must be occurring
   // only after the setting of the bits. See also 14012000 above.
   method->clear_queued_for_compilation();
-
-#ifdef ASSERT
-  if (CollectedHeap::fired_fake_oom()) {
-    // The current compile received a fake OOM during compilation so
-    // go ahead and exit the VM since the test apparently succeeded
-    tty->print_cr("*** Shutting down VM after successful fake OOM");
-    vm_exit(0);
-  }
-#endif
 }
 
 /**
