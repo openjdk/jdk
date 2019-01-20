@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1106,7 +1106,11 @@ public class BytecodeParser implements GraphBuilderContext {
         deopt.updateNodeSourcePosition(() -> createBytecodePosition());
     }
 
+    /**
+     * @return the entry point to exception dispatch
+     */
     private AbstractBeginNode handleException(ValueNode exceptionObject, int bci, boolean deoptimizeOnly) {
+        FixedWithNextNode currentLastInstr = lastInstr;
         assert bci == BytecodeFrame.BEFORE_BCI || bci == bci() : "invalid bci";
         debug.log("Creating exception dispatch edges at %d, exception object=%s, exception seen=%s", bci, exceptionObject, (profilingInfo == null ? "" : profilingInfo.getExceptionSeen(bci)));
 
@@ -1126,18 +1130,25 @@ public class BytecodeParser implements GraphBuilderContext {
             dispatchState.setRethrowException(true);
         }
         this.controlFlowSplit = true;
-        FixedWithNextNode finishedDispatch = finishInstruction(dispatchBegin, dispatchState);
+        FixedWithNextNode afterExceptionLoaded = finishInstruction(dispatchBegin, dispatchState);
 
         if (deoptimizeOnly) {
             DeoptimizeNode deoptimizeNode = graph.add(new DeoptimizeNode(DeoptimizationAction.None, DeoptimizationReason.TransferToInterpreter));
-            dispatchBegin.setNext(BeginNode.begin(deoptimizeNode));
+            afterExceptionLoaded.setNext(BeginNode.begin(deoptimizeNode));
         } else {
-            createHandleExceptionTarget(finishedDispatch, bci, dispatchState);
+            createHandleExceptionTarget(afterExceptionLoaded, bci, dispatchState);
         }
+        assert currentLastInstr == lastInstr;
         return dispatchBegin;
     }
 
-    protected void createHandleExceptionTarget(FixedWithNextNode finishedDispatch, int bci, FrameStateBuilder dispatchState) {
+    protected void createHandleExceptionTarget(FixedWithNextNode afterExceptionLoaded, int bci, FrameStateBuilder dispatchState) {
+        FixedWithNextNode afterInstrumentation = afterExceptionLoaded;
+        for (NodePlugin plugin : graphBuilderConfig.getPlugins().getNodePlugins()) {
+            afterInstrumentation = plugin.instrumentExceptionDispatch(graph, afterInstrumentation);
+            assert afterInstrumentation.next() == null : "exception dispatch instrumentation will be linked to dispatch block";
+        }
+
         BciBlock dispatchBlock = currentBlock.exceptionDispatchBlock();
         /*
          * The exception dispatch block is always for the last bytecode of a block, so if we are not
@@ -1149,7 +1160,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         FixedNode target = createTarget(dispatchBlock, dispatchState);
-        finishedDispatch.setNext(target);
+        afterInstrumentation.setNext(target);
     }
 
     protected ValueNode genLoadIndexed(ValueNode array, ValueNode index, GuardingNode boundsCheck, JavaKind kind) {
