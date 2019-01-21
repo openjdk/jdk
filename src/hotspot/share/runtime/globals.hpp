@@ -1670,9 +1670,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(intx, DontYieldALotInterval,    10,                               \
           "Interval between which yields will be dropped (milliseconds)")   \
                                                                             \
-  develop(intx, ProfilerPCTickThreshold,    15,                             \
-          "Number of ticks in a PC buckets to be a hotspot")                \
-                                                                            \
   notproduct(intx, DeoptimizeALotInterval,     5,                           \
           "Number of exits until DeoptimizeALot kicks in")                  \
                                                                             \
