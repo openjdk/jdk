@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,39 +33,7 @@
 
 #define __ masm->
 
-// CRC32(C) Intrinsics.
-void StubRoutines::ppc64::generate_load_crc_table_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, StubRoutines::_crc_table_adr, R0);
-}
-
-void StubRoutines::ppc64::generate_load_crc_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc_constants, R0);
-}
-
-void StubRoutines::ppc64::generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc_barret_constants, R0);
-}
-
-void StubRoutines::ppc64::generate_load_crc32c_table_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, StubRoutines::_crc32c_table_addr, R0);
-}
-
-void StubRoutines::ppc64::generate_load_crc32c_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc32c_constants, R0);
-}
-
-void StubRoutines::ppc64::generate_load_crc32c_barret_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc32c_barret_constants, R0);
-}
-
-// CRC constants and compute functions
-#define REVERSE_CRC32_POLY  0xEDB88320
-#define REVERSE_CRC32C_POLY 0x82F63B78
-#define INVERSE_REVERSE_CRC32_POLY  0x1aab14226ull
-#define INVERSE_REVERSE_CRC32C_POLY 0x105fd79bdull
-#define UNROLL_FACTOR 2048
-#define UNROLL_FACTOR2 8
-
+// CRC constant compute functions
 static juint fold_word(juint w, juint reverse_poly) {
   for (int i = 0; i < 32; i++) {
     int poly_if_odd = (-(w & 1)) & reverse_poly;
@@ -98,13 +66,13 @@ static julong compute_inverse_poly(julong long_poly) {
 
 // Constants to fold n words as needed by macroAssembler.
 juint* StubRoutines::ppc64::generate_crc_constants(juint reverse_poly) {
-  juint* ptr = (juint*) malloc(sizeof(juint) * 4 * (UNROLL_FACTOR2 - 1 + UNROLL_FACTOR / UNROLL_FACTOR2));
+  juint* ptr = (juint*) malloc(sizeof(juint) * 4 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2));
   guarantee(((intptr_t)ptr & 0xF) == 0, "16-byte alignment needed");
   guarantee(ptr != NULL, "allocation error of a crc table");
 
   // Generate constants for outer loop
   juint v0, v1, v2, v3 = 1;
-  for (int i = 0; i < UNROLL_FACTOR2 - 1; ++i) {
+  for (int i = 0; i < CRC32_UNROLL_FACTOR2 - 1; ++i) {
     v0 = fold_word(v3, reverse_poly);
     v1 = fold_word(v0, reverse_poly);
     v2 = fold_word(v1, reverse_poly);
@@ -123,15 +91,15 @@ juint* StubRoutines::ppc64::generate_crc_constants(juint reverse_poly) {
   }
 
   // Generate constants for inner loop
-  juint* ptr2 = ptr + 4 * (UNROLL_FACTOR2 - 1);
+  juint* ptr2 = ptr + 4 * (CRC32_UNROLL_FACTOR2 - 1);
   v3 = 1; // Restart from scratch.
-  for (int i = 0; i < UNROLL_FACTOR; ++i) {
+  for (int i = 0; i < CRC32_UNROLL_FACTOR; ++i) {
     v0 = fold_word(v3, reverse_poly);
     v1 = fold_word(v0, reverse_poly);
     v2 = fold_word(v1, reverse_poly);
     v3 = fold_word(v2, reverse_poly);
-    if (i % UNROLL_FACTOR2 == 0) {
-      int idx = UNROLL_FACTOR / UNROLL_FACTOR2 - 1 - i / UNROLL_FACTOR2;
+    if (i % CRC32_UNROLL_FACTOR2 == 0) {
+      int idx = CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2 - 1 - i / CRC32_UNROLL_FACTOR2;
       for (int j = 0; j < 4; ++j) {
 #ifdef VM_LITTLE_ENDIAN
         ptr2[4*idx  ] = v3;
@@ -148,16 +116,9 @@ juint* StubRoutines::ppc64::generate_crc_constants(juint reverse_poly) {
     }
   }
 
-  return ptr;
-}
-
-// Constants to reduce 64 to 32 bit as needed by macroAssembler.
-juint* StubRoutines::ppc64::generate_crc_barret_constants(juint reverse_poly) {
-  juint* ptr = (juint*) malloc(sizeof(juint) * CRC32_BARRET_CONSTANTS);
-  guarantee(((intptr_t)ptr & 0xF) == 0, "16-byte alignment needed");
-  guarantee(ptr != NULL, "allocation error of a crc table");
-
-  julong* c = (julong*)ptr;
+  // Constants to reduce 64 to 32 bit as needed by macroAssembler.
+  juint* ptr3 = ptr2 + 4 * (CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
+  julong* c = (julong*)ptr3;
   julong long_poly = (((julong)reverse_poly) << 1) | 1;
   julong inverse_long_poly = compute_inverse_poly(long_poly);
 #ifdef VM_LITTLE_ENDIAN
@@ -177,6 +138,7 @@ juint* StubRoutines::ppc64::generate_crc_barret_constants(juint reverse_poly) {
 #endif
 
   //printf("inv poly: 0x%016llx\n", (long long unsigned int)inverse_long_poly);
+
   return ptr;
 }
 
@@ -772,8 +734,5 @@ juint StubRoutines::ppc64::_crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE] = {
   #endif
   };
 
-juint* StubRoutines::ppc64::_crc_constants    = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32_POLY);
-juint* StubRoutines::ppc64::_crc32c_constants = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32C_POLY);
-
-juint* StubRoutines::ppc64::_crc_barret_constants    = StubRoutines::ppc64::generate_crc_barret_constants(REVERSE_CRC32_POLY);
-juint* StubRoutines::ppc64::_crc32c_barret_constants = StubRoutines::ppc64::generate_crc_barret_constants(REVERSE_CRC32C_POLY);
+juint* StubRoutines::ppc64::_crc_constants = NULL;
+juint* StubRoutines::ppc64::_crc32c_constants = NULL;
