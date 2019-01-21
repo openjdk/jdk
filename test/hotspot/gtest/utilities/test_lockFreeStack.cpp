@@ -46,13 +46,13 @@ public:
   size_t id() const { return _id; }
   void set_id(size_t value) { _id = value; }
 
-  typedef LockFreeStack<Element, &entry_ptr> Stack;
-  typedef LockFreeStack<Element, &entry1_ptr> Stack1;
+  typedef LockFreeStack<Element, &entry_ptr> TestStack;
+  typedef LockFreeStack<Element, &entry1_ptr> TestStack1;
 };
 
 typedef LockFreeStackTestElement Element;
-typedef Element::Stack Stack;
-typedef Element::Stack1 Stack1;
+typedef Element::TestStack TestStack;
+typedef Element::TestStack1 TestStack1;
 
 static void initialize_ids(Element* elements, size_t size) {
   for (size_t i = 0; i < size; ++i) {
@@ -66,7 +66,7 @@ public:
 
   static const size_t nelements = 10;
   Element elements[nelements];
-  Stack stack;
+  TestStack stack;
 
 private:
   void initialize();
@@ -111,7 +111,7 @@ TEST_F(LockFreeStackTestBasics, push_pop) {
 }
 
 TEST_F(LockFreeStackTestBasics, prepend_one) {
-  Stack other_stack;
+  TestStack other_stack;
   ASSERT_TRUE(other_stack.empty());
   ASSERT_TRUE(other_stack.pop() == NULL);
   ASSERT_EQ(0u, other_stack.length());
@@ -138,7 +138,7 @@ TEST_F(LockFreeStackTestBasics, prepend_one) {
 }
 
 TEST_F(LockFreeStackTestBasics, prepend_two) {
-  Stack other_stack;
+  TestStack other_stack;
   ASSERT_TRUE(other_stack.empty());
   ASSERT_EQ(0u, other_stack.length());
   ASSERT_TRUE(other_stack.top() == NULL);
@@ -161,7 +161,7 @@ TEST_F(LockFreeStackTestBasics, prepend_two) {
 }
 
 TEST_F(LockFreeStackTestBasics, two_stacks) {
-  Stack1 stack1;
+  TestStack1 stack1;
   ASSERT_TRUE(stack1.pop() == NULL);
 
   for (size_t id = 0; id < nelements; ++id) {
@@ -201,8 +201,8 @@ TEST_F(LockFreeStackTestBasics, two_stacks) {
 
 class LockFreeStackTestThread : public JavaTestThread {
   uint _id;
-  Stack* _from;
-  Stack* _to;
+  TestStack* _from;
+  TestStack* _to;
   volatile size_t* _processed;
   size_t _process_limit;
   size_t _local_processed;
@@ -211,8 +211,8 @@ class LockFreeStackTestThread : public JavaTestThread {
 public:
   LockFreeStackTestThread(Semaphore* post,
                           uint id,
-                          Stack* from,
-                          Stack* to,
+                          TestStack* from,
+                          TestStack* to,
                           volatile size_t* processed,
                           size_t process_limit) :
     JavaTestThread(post),
@@ -245,10 +245,10 @@ public:
 
 TEST_VM(LockFreeStackTest, stress) {
   Semaphore post;
-  Stack initial_stack;
-  Stack start_stack;
-  Stack middle_stack;
-  Stack final_stack;
+  TestStack initial_stack;
+  TestStack start_stack;
+  TestStack middle_stack;
+  TestStack final_stack;
   volatile size_t stage1_processed = 0;
   volatile size_t stage2_processed = 0;
 
@@ -271,8 +271,8 @@ TEST_VM(LockFreeStackTest, stress) {
   LockFreeStackTestThread* threads[nthreads] = {};
 
   for (uint i = 0; i < ARRAY_SIZE(threads); ++i) {
-    Stack* from = &start_stack;
-    Stack* to = &middle_stack;
+    TestStack* from = &start_stack;
+    TestStack* to = &middle_stack;
     volatile size_t* processed = &stage1_processed;
     if (i >= stage1_threads) {
       from = &middle_stack;
