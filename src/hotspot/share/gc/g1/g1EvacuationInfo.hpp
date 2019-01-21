@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_GC_G1_EVACUATIONINFO_HPP
-#define SHARE_GC_G1_EVACUATIONINFO_HPP
+#ifndef SHARE_GC_G1_G1EVACUATIONINFO_HPP
+#define SHARE_GC_G1_G1EVACUATIONINFO_HPP
 
 #include "memory/allocation.hpp"
 
-class EvacuationInfo : public StackObj {
+class G1EvacuationInfo : public StackObj {
   uint _collectionset_regions;
   uint _allocation_regions;
   size_t _collectionset_used_before;
@@ -37,7 +37,7 @@ class EvacuationInfo : public StackObj {
   uint   _regions_freed;
 
 public:
-  EvacuationInfo() : _collectionset_regions(0), _allocation_regions(0), _collectionset_used_before(0),
+  G1EvacuationInfo() : _collectionset_regions(0), _allocation_regions(0), _collectionset_used_before(0),
                      _collectionset_used_after(0), _alloc_regions_used_before(0),
                      _bytes_copied(0), _regions_freed(0) { }
 
@@ -78,4 +78,4 @@ public:
   uint   regions_freed()             { return _regions_freed; }
 };
 
-#endif // SHARE_GC_G1_EVACUATIONINFO_HPP
+#endif // SHARE_GC_G1_G1EVACUATIONINFO_HPP

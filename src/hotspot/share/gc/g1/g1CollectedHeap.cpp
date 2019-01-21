@@ -2918,7 +2918,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
   // Inner scope for scope based logging, timers, and stats collection
   {
-    EvacuationInfo evacuation_info;
+    G1EvacuationInfo evacuation_info;
 
     if (collector_state()->in_initial_mark_gc()) {
       // We are about to start a marking cycle, so we increment the
@@ -3899,7 +3899,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
   phase_times->record_optional_evacuation((os::elapsedTime() - start_time_sec) * 1000.0);
 }
 
-void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Also cleans the card table from temporary duplicate detection information used
   // during UpdateRS/ScanRS.
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
@@ -4033,7 +4033,7 @@ private:
   // be done serially in a single thread.
   class G1SerialFreeCollectionSetClosure : public HeapRegionClosure {
   private:
-    EvacuationInfo* _evacuation_info;
+    G1EvacuationInfo* _evacuation_info;
     const size_t* _surviving_young_words;
 
     // Bytes used in successfully evacuated regions before the evacuation.
@@ -4048,7 +4048,7 @@ private:
 
     FreeRegionList _local_free_list;
   public:
-    G1SerialFreeCollectionSetClosure(EvacuationInfo* evacuation_info, const size_t* surviving_young_words) :
+    G1SerialFreeCollectionSetClosure(G1EvacuationInfo* evacuation_info, const size_t* surviving_young_words) :
       HeapRegionClosure(),
       _evacuation_info(evacuation_info),
       _surviving_young_words(surviving_young_words),
@@ -4202,7 +4202,7 @@ private:
     policy->cset_regions_freed();
   }
 public:
-  G1FreeCollectionSetTask(G1CollectionSet* collection_set, EvacuationInfo* evacuation_info, const size_t* surviving_young_words) :
+  G1FreeCollectionSetTask(G1CollectionSet* collection_set, G1EvacuationInfo* evacuation_info, const size_t* surviving_young_words) :
     AbstractGangTask("G1 Free Collection Set"),
     _collection_set(collection_set),
     _cl(evacuation_info, surviving_young_words),
@@ -4285,7 +4285,7 @@ public:
   }
 };
 
-void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, EvacuationInfo& evacuation_info, const size_t* surviving_young_words) {
+void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1EvacuationInfo& evacuation_info, const size_t* surviving_young_words) {
   _eden.clear();
 
   double free_cset_start_time = os::elapsedTime();
