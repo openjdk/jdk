@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,15 @@
  * @run main/othervm --limit-modules=java.base SocketOptionTests
  */
 
-import java.nio.channels.*;
-import java.net.*;
 import java.io.IOException;
-import java.util.*;
+import java.net.InetSocketAddress;
+import java.net.SocketOption;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SocketChannel;
+import java.util.Set;
+import sun.net.ext.ExtendedSocketOptions;
 import static java.net.StandardSocketOptions.*;
 import static jdk.net.ExtendedSocketOptions.*;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
-import sun.net.ext.ExtendedSocketOptions;
 
 public class SocketOptionTests {
 
@@ -52,26 +53,26 @@ public class SocketOptionTests {
     }
 
     public static void main(String[] args) throws IOException {
-        SocketChannel sc = SocketChannel.open();
+        try (var channel = SocketChannel.open()) {
+            test(channel);
+        }
+    }
 
-        // check supported options
-        Set<SocketOption<?>> options = sc.supportedOptions();
-
-        List<? extends SocketOption> extOptions = List.of(TCP_KEEPCOUNT,
-                TCP_KEEPIDLE, TCP_KEEPINTERVAL);
-        List<? extends SocketOption> expected;
-        boolean keepAliveOptsupported;
-        if (keepAliveOptsupported=ExtendedSocketOptions.options(SOCK_STREAM)
-                .containsAll(extOptions)) {
-            expected = Arrays.asList(SO_SNDBUF, SO_RCVBUF, SO_KEEPALIVE,
+    static void test(SocketChannel sc) throws IOException {
+        Set<SocketOption<?>> extendedOptions = ExtendedSocketOptions.clientSocketOptions();
+        Set<SocketOption<?>> keepAliveOptions = Set.of(TCP_KEEPCOUNT, TCP_KEEPIDLE, TCP_KEEPINTERVAL);
+        boolean keepAliveOptionsSupported = extendedOptions.containsAll(keepAliveOptions);
+        Set<SocketOption<?>> expected;
+        if (keepAliveOptionsSupported) {
+            expected = Set.of(SO_SNDBUF, SO_RCVBUF, SO_KEEPALIVE,
                     SO_REUSEADDR, SO_LINGER, TCP_NODELAY, TCP_KEEPCOUNT,
                     TCP_KEEPIDLE, TCP_KEEPINTERVAL);
         } else {
-            expected = Arrays.asList(SO_SNDBUF, SO_RCVBUF, SO_KEEPALIVE,
+            expected = Set.of(SO_SNDBUF, SO_RCVBUF, SO_KEEPALIVE,
                     SO_REUSEADDR, SO_LINGER, TCP_NODELAY);
         }
         for (SocketOption opt: expected) {
-            if (!options.contains(opt))
+            if (!sc.supportedOptions().contains(opt))
                 throw new RuntimeException(opt.name() + " should be supported");
         }
 
@@ -133,7 +134,7 @@ public class SocketOptionTests {
             throw new RuntimeException("expected linger to be disabled");
         sc.setOption(TCP_NODELAY, true);        // can't check
         sc.setOption(TCP_NODELAY, false);       // can't check
-        if (keepAliveOptsupported) {
+        if (keepAliveOptionsSupported) {
             sc.setOption(TCP_KEEPIDLE, 1234);
             checkOption(sc, TCP_KEEPIDLE, 1234);
             sc.setOption(TCP_KEEPINTERVAL, 123);

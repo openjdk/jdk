@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 import sun.net.ext.ExtendedSocketOptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_DGRAM;
 
 /*
  * On Unix systems we simply delegate to native methods.
@@ -78,7 +77,7 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        options.addAll(ExtendedSocketOptions.options(SOCK_DGRAM));
+        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
         return options;
     }
 

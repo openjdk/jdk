@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * An implementation of SocketChannels
@@ -282,7 +281,7 @@ class SocketChannelImpl
             // additional options required by socket adaptor
             set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
-            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
+            set.addAll(ExtendedSocketOptions.clientSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }
