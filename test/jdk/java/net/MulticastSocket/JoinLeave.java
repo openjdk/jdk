@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,15 @@
  * questions.
  */
 
-/*
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
+
+import jdk.test.lib.NetworkConfiguration;
+
+/**
  * @test
  * @bug 4091811 4148753 4102731
  * @summary Test java.net.MulticastSocket joinGroup and leaveGroup
@@ -29,18 +37,11 @@
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
  * @run main JoinLeave
+ * @run main/othervm -Djava.net.preferIPv4Stack=true JoinLeave
  */
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import jdk.test.lib.NetworkConfiguration;
-
 public class JoinLeave {
 
-    public static void main(String args[]) throws IOException  {
+    public static void main(String args[]) throws IOException {
         InetAddress ip4Group = InetAddress.getByName("224.80.80.80");
         InetAddress ip6Group = InetAddress.getByName("ff02::a");
 
@@ -49,8 +50,7 @@ public class JoinLeave {
         nc.ip6MulticastInterfaces().forEach(nic -> joinLeave(ip6Group, nic));
     }
 
-    static void joinLeave(InetAddress group, NetworkInterface nif)
-    {
+    static void joinLeave(InetAddress group, NetworkInterface nif) {
         System.out.println("Joining:" + group + " on " + nif);
         try (MulticastSocket soc = new MulticastSocket()) {
             soc.setNetworkInterface(nif);

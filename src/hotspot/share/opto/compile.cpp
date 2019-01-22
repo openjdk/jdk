@@ -2188,13 +2188,16 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
 // They were inserted during parsing (see add_safepoint()) to make
 // infinite loops without calls or exceptions visible to root, i.e.,
 // useful.
-void Compile::remove_root_to_sfpts_edges() {
+void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
   Node *r = root();
   if (r != NULL) {
     for (uint i = r->req(); i < r->len(); ++i) {
       Node *n = r->in(i);
       if (n != NULL && n->is_SafePoint()) {
         r->rm_prec(i);
+        if (n->outcnt() == 0) {
+          igvn.remove_dead_node(n);
+        }
         --i;
       }
     }
@@ -2263,7 +2266,7 @@ void Compile::Optimize() {
 
   // Now that all inlining is over, cut edge from root to loop
   // safepoints
-  remove_root_to_sfpts_edges();
+  remove_root_to_sfpts_edges(igvn);
 
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,30 @@ JVMCIEnv::JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter
 {
   // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
-  _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
-  _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
-  _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
+  _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint() ? 1 : 0;
+  _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables() ? 1 : 0;
+  _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions() ? 1 : 0;
+  _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame() ? 1 : 0;
+}
+
+bool JVMCIEnv::jvmti_state_changed() const {
+  if (!jvmti_can_access_local_variables() &&
+      JvmtiExport::can_access_local_variables()) {
+    return true;
+  }
+  if (!jvmti_can_hotswap_or_post_breakpoint() &&
+      JvmtiExport::can_hotswap_or_post_breakpoint()) {
+    return true;
+  }
+  if (!jvmti_can_post_on_exceptions() &&
+      JvmtiExport::can_post_on_exceptions()) {
+    return true;
+  }
+  if (!jvmti_can_pop_frame() &&
+      JvmtiExport::can_pop_frame()) {
+    return true;
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------
@@ -413,11 +434,9 @@ methodHandle JVMCIEnv::get_method_by_index(const constantPoolHandle& cpool,
 JVMCIEnv::CodeInstallResult JVMCIEnv::validate_compile_task_dependencies(Dependencies* dependencies, Handle compiled_code,
                                                                          JVMCIEnv* env, char** failure_detail) {
   // If JVMTI capabilities were enabled during compile, the compilation is invalidated.
-  if (env != NULL) {
-    if (!env->_jvmti_can_hotswap_or_post_breakpoint && JvmtiExport::can_hotswap_or_post_breakpoint()) {
-      *failure_detail = (char*) "Hotswapping or breakpointing was enabled during compilation";
-      return JVMCIEnv::dependencies_failed;
-    }
+  if (env != NULL && env->jvmti_state_changed()) {
+    *failure_detail = (char*) "Jvmti state change during compilation invalidated dependencies";
+    return JVMCIEnv::dependencies_failed;
   }
 
   // Dependencies must be checked when the system dictionary changes

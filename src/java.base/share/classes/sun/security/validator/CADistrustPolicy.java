@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,19 @@ import sun.security.util.Debug;
 enum CADistrustPolicy {
     /**
      * Distrust TLS Server certificates anchored by a Symantec root CA and
-     * issued after April 16, 2019. If enabled, this policy is currently
-     * enforced by the PKIX and SunX509 TrustManager implementations of the
-     * SunJSSE provider implementation.
+     * issued after April 16, 2019 (with exceptions for a couple of subordinate
+     * CAs, see the jdk.security.caDistrustPolicies definition in the
+     * java.security file for more details). If enabled, this policy is
+     * currently enforced by the PKIX and SunX509 TrustManager implementations
+     * of the SunJSSE provider implementation.
      */
     SYMANTEC_TLS {
-        void checkDistrust(String variant, X509Certificate anchor,
-                           X509Certificate ee) throws ValidatorException {
+        void checkDistrust(String variant, X509Certificate[] chain)
+                           throws ValidatorException {
             if (!variant.equals(Validator.VAR_TLS_SERVER)) {
                 return;
             }
-            SymantecTLSPolicy.checkDistrust(anchor, ee);
+            SymantecTLSPolicy.checkDistrust(chain);
         }
     };
 
@@ -57,13 +59,13 @@ enum CADistrustPolicy {
      * Checks if the end-entity certificate is distrusted.
      *
      * @param variant the type of certificate being checked
-     * @param anchor the trust anchor certificate
-     * @param ee the end-entity certificate to check
+     * @param chain the end-entity's certificate chain. The end entity cert
+     *              is at index 0, the trust anchor at index n-1.
      * @throws ValidatorException if the end-entity certificate is distrusted
      */
     abstract void checkDistrust(String variant,
-                                X509Certificate anchor,
-                                X509Certificate ee) throws ValidatorException;
+                                X509Certificate[] chain)
+                                throws ValidatorException;
 
     // The policies set in the jdk.security.caDistrustPolicies property.
     static final EnumSet<CADistrustPolicy> POLICIES = parseProperty();

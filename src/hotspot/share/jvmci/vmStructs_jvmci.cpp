@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,13 +182,17 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   long)                                  \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
+  nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _reserved_stack_activation,                    address)                               \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
                                                                                                                                      \
   nonstatic_field(JVMCIEnv,                    _task,                                         CompileTask*)                          \
-  nonstatic_field(JVMCIEnv,                    _jvmti_can_hotswap_or_post_breakpoint,         bool)                                  \
+  nonstatic_field(JVMCIEnv,                    _jvmti_can_hotswap_or_post_breakpoint,         jbyte)                                 \
+  nonstatic_field(JVMCIEnv,                    _jvmti_can_access_local_variables,             jbyte)                                 \
+  nonstatic_field(JVMCIEnv,                    _jvmti_can_post_on_exceptions,                 jbyte)                                 \
+  nonstatic_field(JVMCIEnv,                    _jvmti_can_pop_frame,                          jbyte)                                 \
                                                                                                                                      \
   nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
                                                                                                                                      \

@@ -559,9 +559,7 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
 
-java/net/MulticastSocket/Test.java                              7145658,8207404 macosx-all,aix-all
-java/net/MulticastSocket/JoinLeave.java                         8207404 aix-all
-java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
+java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 

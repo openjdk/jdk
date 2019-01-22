@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,31 @@
  * questions.
  */
 
-/*
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
+
+import jdk.test.lib.NetworkConfiguration;
+
+/**
  * @test
  * @bug 4488458
  * @summary IPv4 and IPv6 multicasting broken on Linux
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ * @run main Test
+ * @run main/othervm -Djava.net.preferIPv4Stack=true Test
  */
-import java.net.*;
-import java.io.IOException;
-import java.util.Enumeration;
-
 public class Test {
 
     static int count = 0;
     static int failures = 0;
 
-    static boolean isSolaris = System.getProperty("os.name")
-        .toLowerCase()
-        .startsWith("sunos");
-
-    void doTest(String address) throws Exception {
+    void doTest(String address) throws IOException {
         boolean failed = false;
 
         InetAddress ia = InetAddress.getByName(address);
@@ -65,7 +71,7 @@ public class Test {
 
                 /* packets should be received */
 
-                for (int j=0; j<2; j++) {
+                for (int j = 0; j < 2; j++) {
                     p.setAddress(ia);
                     p.setPort(port);
 
@@ -127,67 +133,26 @@ public class Test {
         }
     }
 
-    static boolean isValidIpv6Address(InetAddress addr) {
-        if (! (addr instanceof Inet6Address))
-            return false;
-        if (!isSolaris)
-            return true;
-        return !(addr.isAnyLocalAddress() || addr.isLoopbackAddress());
-    }
+    void allTests() throws IOException {
+        NetworkConfiguration nc = NetworkConfiguration.probe();
 
-    void allTests() throws Exception {
-
-        /*
-         * Assume machine has IPv4 address
-         */
+        // unconditionally test IPv4 address
         doTest("224.80.80.80");
 
-        /*
-         * Check if IPv6 is enabled and the scope of the addresses
-         */
-        boolean has_ipv6 = false;
-        boolean has_siteaddress = false;
-        boolean has_linklocaladdress = false;
-        boolean has_globaladdress = false;
-
-        Enumeration nifs = NetworkInterface.getNetworkInterfaces();
-        while (nifs.hasMoreElements()) {
-            NetworkInterface ni = (NetworkInterface)nifs.nextElement();
-            Enumeration addrs = ni.getInetAddresses();
-
-            while (addrs.hasMoreElements()) {
-                InetAddress ia = (InetAddress)addrs.nextElement();
-
-                if (isValidIpv6Address(ia)) {
-                    has_ipv6 = true;
-                    if (ia.isLinkLocalAddress()) has_linklocaladdress = true;
-                    if (ia.isSiteLocalAddress()) has_siteaddress = true;
-
-                    if (!ia.isLinkLocalAddress() &&
-                        !ia.isSiteLocalAddress() &&
-                        !ia.isLoopbackAddress()) {
-                        has_globaladdress = true;
-                    }
-                }
-            }
-        }
-
-        /*
-         * If IPv6 is enabled perform multicast tests with various scopes
-         */
-        if (has_ipv6) {
+        // If IPv6 is enabled perform multicast tests with various scopes
+        if (nc.hasTestableIPv6Address()) {
             doTest("ff01::a");
         }
 
-        if (has_linklocaladdress) {
+        if (nc.hasLinkLocalAddress()) {
             doTest("ff02::a");
         }
 
-        if (has_siteaddress) {
+        if (nc.hasSiteLocalAddress()) {
             doTest("ff05::a");
         }
 
-        if (has_globaladdress) {
+        if (nc.has_globaladdress()) {
             doTest("ff0e::a");
         }
     }
@@ -198,7 +163,7 @@ public class Test {
         if (args.length == 0) {
             t.allTests();
         } else {
-            for (int i=0; i<args.length; i++) {
+            for (int i = 0; i < args.length; i++) {
                 t.doTest(args[i]);
             }
         }
