@@ -110,6 +110,18 @@ public class LockUnlock {
         factorial = fact(10);
     }
 
+    /**
+     * Same as {@link #testRecursiveSynchronization()} but the first call
+     * to this method will generate the identity hashcode for this object
+     * which effectively disables biased locking as they occupy the same
+     * bits in the object header.
+     */
+    @Benchmark
+    public void testRecursiveSynchronizationNoBias() {
+        System.identityHashCode(this);
+        factorial = fact(10);
+    }
+
     private synchronized int fact(int n) {
         if (n == 0) {
             return 1;

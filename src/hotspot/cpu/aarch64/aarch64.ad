@@ -3417,37 +3417,21 @@ encode %{
       __ biased_locking_enter(box, oop, disp_hdr, tmp, true, cont);
     }
 
-    // Handle existing monitor
+    // Check for existing monitor
     __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
 
-    // Set displaced_header to be (markOop of object | UNLOCK_VALUE).
-    __ orr(disp_hdr, disp_hdr, markOopDesc::unlocked_value);
-
-    // Load Compare Value application register.
+    // Set tmp to be (markOop of object | UNLOCK_VALUE).
+    __ orr(tmp, disp_hdr, markOopDesc::unlocked_value);
 
     // Initialize the box. (Must happen before we update the object mark!)
-    __ str(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markOop with mark and if equal exchange scratch1
-    // with object markOop.
-    if (UseLSE) {
-      __ mov(tmp, disp_hdr);
-      __ casal(Assembler::xword, tmp, box, oop);
-      __ cmp(tmp, disp_hdr);
-      __ br(Assembler::EQ, cont);
-    } else {
-      Label retry_load;
-      if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
-        __ prfm(Address(oop), PSTL1STRM);
-      __ bind(retry_load);
-      __ ldaxr(tmp, oop);
-      __ cmp(tmp, disp_hdr);
-      __ br(Assembler::NE, cas_failed);
-      // use stlxr to ensure update is immediately visible
-      __ stlxr(tmp, box, oop);
-      __ cbzw(tmp, cont);
-      __ b(retry_load);
-    }
+    // Compare object markOop with an unlocked value (tmp) and if
+    // equal exchange the stack address of our box with object markOop.
+    // On failure disp_hdr contains the possibly locked markOop.
+    __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+               /*release*/ true, /*weak*/ false, disp_hdr);
+    __ br(Assembler::EQ, cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -3464,38 +3448,21 @@ encode %{
     __ mov(tmp, (address) (~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place));
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
-    __ ands(tmp/*==0?*/, disp_hdr, tmp);
+    __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
     __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Handle existing monitor.
     __ b(cont);
 
+    // Handle existing monitor.
     __ bind(object_has_monitor);
+
     // The object's monitor m is unlocked iff m->owner == NULL,
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
     __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
-    __ mov(disp_hdr, zr);
-
-    if (UseLSE) {
-      __ mov(rscratch1, disp_hdr);
-      __ casal(Assembler::xword, rscratch1, rthread, tmp);
-      __ cmp(rscratch1, disp_hdr);
-    } else {
-      Label retry_load, fail;
-      if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH)) {
-        __ prfm(Address(tmp), PSTL1STRM);
-      }
-      __ bind(retry_load);
-      __ ldaxr(rscratch1, tmp);
-      __ cmp(disp_hdr, rscratch1);
-      __ br(Assembler::NE, fail);
-      // use stlxr to ensure update is immediately visible
-      __ stlxr(rscratch1, rthread, tmp);
-      __ cbnzw(rscratch1, retry_load);
-      __ bind(fail);
-    }
+    __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
+               /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
@@ -3539,24 +3506,9 @@ encode %{
     // see the stack address of the basicLock in the markOop of the
     // object.
 
-    if (UseLSE) {
-      __ mov(tmp, box);
-      __ casl(Assembler::xword, tmp, disp_hdr, oop);
-      __ cmp(tmp, box);
-      __ b(cont);
-    } else {
-      Label retry_load;
-      if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
-        __ prfm(Address(oop), PSTL1STRM);
-      __ bind(retry_load);
-      __ ldxr(tmp, oop);
-      __ cmp(box, tmp);
-      __ br(Assembler::NE, cont);
-      // use stlxr to ensure update is immediately visible
-      __ stlxr(tmp, disp_hdr, oop);
-      __ cbzw(tmp, cont);
-      __ b(retry_load);
-    }
+    __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+               /*release*/ true, /*weak*/ false, tmp);
+    __ b(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -3567,13 +3519,13 @@ encode %{
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
     __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
-    __ cmp(rscratch1, zr);
+    __ cmp(rscratch1, zr); // Sets flags for result
     __ br(Assembler::NE, cont);
 
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
-    __ cmp(rscratch1, zr);
+    __ cmp(rscratch1, zr); // Sets flags for result
     __ cbnz(rscratch1, cont);
     // need a release store here
     __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
