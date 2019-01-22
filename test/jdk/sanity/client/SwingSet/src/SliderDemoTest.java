@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.util.function.Predicate;
 
+import javax.swing.UIManager;
+
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
@@ -52,7 +54,7 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.slider.SliderDemo
- * @run testng SliderDemoTest
+ * @run testng/timeout=600 SliderDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class SliderDemoTest {
@@ -63,9 +65,12 @@ public class SliderDemoTest {
     private static final int HORIZONTAL_MINOR_TICKS_SLIDER_MAXIMUM = 11;
     private static final int VERTICAL_MINOR_TICKS_SLIDER_MINIMUM = 0;
     private static final int VERTICAL_MINOR_TICKS_SLIDER_MAXIMUM = 100;
+    private String currentLookAndFeel;
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
+        currentLookAndFeel = lookAndFeel;
         new ClassReference(SliderDemo.class.getCanonicalName()).startApplication();
         JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
         plain(frame, HORIZONTAL_PLAIN_SLIDER);
@@ -143,6 +148,7 @@ public class SliderDemoTest {
     }
 
     private void checkKeyboard(JSliderOperator jso) {
+        boolean isMotif = currentLookAndFeel.equals("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         checkKeyPress(jso, KeyEvent.VK_HOME,
                 jSlider -> jSlider.getValue() == jso.getMinimum());
 
@@ -156,7 +162,7 @@ public class SliderDemoTest {
             checkKeyPress(jso, KeyEvent.VK_RIGHT,
                     jSlider -> jSlider.getValue() >= expectedValue);
         }
-        {
+        if (!isMotif) {
             int expectedValue = jso.getValue() + 11;
             checkKeyPress(jso, KeyEvent.VK_PAGE_UP,
                     jSlider -> jSlider.getValue() >= expectedValue);
@@ -175,7 +181,7 @@ public class SliderDemoTest {
             checkKeyPress(jso, KeyEvent.VK_LEFT,
                     jSlider -> jSlider.getValue() <= expectedValue);
         }
-        {
+        if (!isMotif) {
             int expectedValue = jso.getValue() - 11;
             checkKeyPress(jso, KeyEvent.VK_PAGE_DOWN,
                     jSlider -> jSlider.getValue() <= expectedValue);
