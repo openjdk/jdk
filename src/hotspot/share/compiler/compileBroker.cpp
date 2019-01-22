@@ -2045,6 +2045,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
   const char* failure_reason = NULL;
+  bool failure_reason_on_C_heap = false;
   const char* retry_message = NULL;
 
   int system_dictionary_modification_counter;
@@ -2071,6 +2072,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         jvmci->compile_method(method, osr_bci, &env);
 
         failure_reason = env.failure_reason();
+        failure_reason_on_C_heap = env.failure_reason_on_C_heap();
         if (!env.retryable()) {
           retry_message = "not retryable";
           compilable = ciEnv::MethodCompilable_not_at_tier;
@@ -2146,7 +2148,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   pop_jni_handle_block();
 
   if (failure_reason != NULL) {
-    task->set_failure_reason(failure_reason);
+    task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (_compilation_log != NULL) {
       _compilation_log->log_failure(thread, task, failure_reason, retry_message);
     }

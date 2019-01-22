@@ -99,8 +99,11 @@ private:
   int              _system_dictionary_modification_counter;
 
   // Compilation result values
-  const char*      _failure_reason;
   bool             _retryable;
+  const char*      _failure_reason;
+
+  // Specifies if _failure_reason is on the C heap.
+  bool             _failure_reason_on_C_heap;
 
   // Cache JVMTI state
   bool  _jvmti_can_hotswap_or_post_breakpoint;
@@ -145,10 +148,12 @@ public:
   CompileTask* task() { return _task; }
 
   const char* failure_reason() { return _failure_reason; }
+  bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }
   bool retryable() { return _retryable; }
 
-  void set_failure(const char* reason, bool retryable) {
+  void set_failure(bool retryable, const char* reason, bool reason_on_C_heap = false) {
     _failure_reason = reason;
+    _failure_reason_on_C_heap = reason_on_C_heap;
     _retryable = retryable;
   }
 
