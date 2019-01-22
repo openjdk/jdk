@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,6 +574,20 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[bootcyclePrebuiltName].default_make_targets = [ "product-images" ];
         });
 
+    // JCov profiles build JCov-instrumented JDK image based on images provided through dependencies.
+    [ "linux-x64", "macosx-x64", "solaris-sparcv9", "windows-x64"]
+        .forEach(function (name) {
+            var jcovName = name + "-jcov";
+            profiles[jcovName] = clone(common.main_profile_base);
+            profiles[jcovName].target_os = profiles[name].target_os
+            profiles[jcovName].target_cpu = profiles[name].target_cpu
+            profiles[jcovName].default_make_targets = [ "jcov-bundles" ];
+            profiles[jcovName].dependencies = concat(profiles[jcovName].dependencies,
+                [ name + ".jdk", "devkit" ]);
+            profiles[jcovName].configure_args = concat(profiles[jcovName].configure_args,
+                ["--with-jcov-input-jdk=" + input.get(name + ".jdk", "home_path")]);
+        });
+
     //
     // Define artifacts for profiles
     //
@@ -706,6 +720,26 @@ var getJibProfilesProfiles = function (input, common, data) {
             delete profiles[cmpBaselineName].artifacts;
         });
     });
+
+    // Artifacts of JCov profiles
+    [ "linux-x64", "macosx-x64", "solaris-sparcv9", "windows-x64"]
+        .forEach(function (name) {
+            var o = artifactData[name]
+            var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+            var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
+            var pf = o.platform
+            var jcovName = name + "-jcov";
+            profiles[jcovName].artifacts = {
+                jdk: {
+                    local: "bundles/\\(jdk-jcov.*bin." + jdk_suffix + "\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-jcov-" + data.version + "_" + pf + "_bin." + jdk_suffix
+                    ],
+                    subdir: jdk_subdir,
+                    exploded: "images/jdk-jcov"
+                }
+            };
+        });
 
     // Profiles used to run tests.
     var testOnlyProfiles = {
