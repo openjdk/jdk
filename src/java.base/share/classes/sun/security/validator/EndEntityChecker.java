@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,27 +132,26 @@ class EndEntityChecker {
         return new EndEntityChecker(type, variant);
     }
 
-    void check(X509Certificate cert, Object parameter,
-            boolean checkUnresolvedCritExts, X509Certificate anchor)
-            throws CertificateException {
+    void check(X509Certificate[] chain, Object parameter,
+            boolean checkUnresolvedCritExts) throws CertificateException {
 
         if (variant.equals(Validator.VAR_GENERIC)) {
             return; // no checks
         }
 
-        Set<String> exts = getCriticalExtensions(cert);
+        Set<String> exts = getCriticalExtensions(chain[0]);
         if (variant.equals(Validator.VAR_TLS_SERVER)) {
-            checkTLSServer(cert, (String)parameter, exts);
+            checkTLSServer(chain[0], (String)parameter, exts);
         } else if (variant.equals(Validator.VAR_TLS_CLIENT)) {
-            checkTLSClient(cert, exts);
+            checkTLSClient(chain[0], exts);
         } else if (variant.equals(Validator.VAR_CODE_SIGNING)) {
-            checkCodeSigning(cert, exts);
+            checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_JCE_SIGNING)) {
-            checkCodeSigning(cert, exts);
+            checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING)) {
-            checkCodeSigning(cert, exts);
+            checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_TSA_SERVER)) {
-            checkTSAServer(cert, exts);
+            checkTSAServer(chain[0], exts);
         } else {
             throw new CertificateException("Unknown variant: " + variant);
         }
@@ -165,7 +164,7 @@ class EndEntityChecker {
         // check if certificate should be distrusted according to policies
         // set in the jdk.security.caDistrustPolicies security property
         for (CADistrustPolicy policy : CADistrustPolicy.POLICIES) {
-            policy.checkDistrust(variant, anchor, cert);
+            policy.checkDistrust(variant, chain);
         }
     }
 
