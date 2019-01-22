@@ -71,10 +71,11 @@ bool java_lang_String::is_latin1(oop java_string) {
   assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
   return coder == CODER_LATIN1;
 }
-int java_lang_String::length(oop java_string) {
+int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  assert(oopDesc::equals_raw(value, java_lang_String::value(java_string)),
+         "value must be same as java_lang_String::value(java_string)");
   if (value == NULL) {
     return 0;
   }
@@ -84,6 +85,12 @@ int java_lang_String::length(oop java_string) {
     arr_length >>= 1; // convert number of bytes to number of elements
   }
   return arr_length;
+}
+int java_lang_String::length(oop java_string) {
+  assert(initialized, "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  return length(java_string, value);
 }
 
 bool java_lang_String::is_instance_inlined(oop obj) {
