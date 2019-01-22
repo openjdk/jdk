@@ -92,7 +92,6 @@ int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int NET_SocketClose(int s);
 int NET_Dup2(int oldfd, int newfd);
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
-int NET_SocketAvailable(int s, jint *pbytes);
 
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,

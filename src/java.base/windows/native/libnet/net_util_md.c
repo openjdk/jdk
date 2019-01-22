@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,6 +396,17 @@ NET_GetSockOpt(int s, int level, int optname, void *optval,
     }
 
     return rv;
+}
+
+JNIEXPORT int JNICALL
+NET_SocketAvailable(int s, int *pbytes) {
+    u_long arg;
+    if (ioctlsocket((SOCKET)s, FIONREAD, &arg) == SOCKET_ERROR) {
+        return -1;
+    } else {
+        *pbytes = (int) arg;
+        return 0;
+    }
 }
 
 /*

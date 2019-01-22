@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,6 +548,17 @@ Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow) {
     if (shutdown(fdval(env, fdo), how) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "shutdown");
     }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
+{
+    int count = 0;
+    if (NET_SocketAvailable(fdval(env, fdo), &count) != 0) {
+        handleSocketError(env, WSAGetLastError());
+        return IOS_THROWN;
+    }
+    return (jint) count;
 }
 
 JNIEXPORT jint JNICALL
