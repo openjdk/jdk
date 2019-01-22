@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
  * @bug 6435300
  * @summary Check using IPv6 address does not crash the VM
+ * @run main/othervm UseDGWithIPv6
+ * @run main/othervm -Djava.net.preferIPv4Stack=true UseDGWithIPv6
  */
 
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.UnsupportedAddressTypeException;
 
 public class UseDGWithIPv6 {
     static String[] targets = {
@@ -57,6 +60,8 @@ public class UseDGWithIPv6 {
             try {
                 int n = dgChannel.send(data, sa);
                 System.out.println("DG_Sent " + n + " bytes");
+            } catch (UnsupportedAddressTypeException e) {
+                System.out.println("Ignoring unsupported address type");
             } catch (IOException e) {
                 //This regression test is to check vm crash only, so ioe is OK.
                 e.printStackTrace();
