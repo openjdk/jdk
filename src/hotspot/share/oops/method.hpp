@@ -969,7 +969,7 @@ class Method : public Metadata {
 #endif
 
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods, bool idempotent = false, bool set_idnums = true);
+  static void sort_methods(Array<Method*>* methods, bool set_idnums = true);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);
