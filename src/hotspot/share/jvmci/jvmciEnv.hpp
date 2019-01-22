@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCIENV_HPP
-#define SHARE_VM_JVMCI_JVMCIENV_HPP
+#ifndef SHARE_JVMCI_JVMCIENV_HPP
+#define SHARE_JVMCI_JVMCIENV_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
@@ -99,8 +99,11 @@ private:
   int              _system_dictionary_modification_counter;
 
   // Compilation result values
-  const char*      _failure_reason;
   bool             _retryable;
+  const char*      _failure_reason;
+
+  // Specifies if _failure_reason is on the C heap.
+  bool             _failure_reason_on_C_heap;
 
   // Cache JVMTI state
   bool  _jvmti_can_hotswap_or_post_breakpoint;
@@ -145,10 +148,12 @@ public:
   CompileTask* task() { return _task; }
 
   const char* failure_reason() { return _failure_reason; }
+  bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }
   bool retryable() { return _retryable; }
 
-  void set_failure(const char* reason, bool retryable) {
+  void set_failure(bool retryable, const char* reason, bool reason_on_C_heap = false) {
     _failure_reason = reason;
+    _failure_reason_on_C_heap = reason_on_C_heap;
     _retryable = retryable;
   }
 
@@ -181,4 +186,4 @@ public:
   static InstanceKlass* get_instance_klass_for_declared_method_holder(Klass* klass);
 };
 
-#endif // SHARE_VM_JVMCI_JVMCIENV_HPP
+#endif // SHARE_JVMCI_JVMCIENV_HPP

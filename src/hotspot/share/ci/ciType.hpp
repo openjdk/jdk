@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CITYPE_HPP
-#define SHARE_VM_CI_CITYPE_HPP
+#ifndef SHARE_CI_CITYPE_HPP
+#define SHARE_CI_CITYPE_HPP
 
 #include "ci/ciMetadata.hpp"
 
@@ -112,4 +112,4 @@ public:
   static ciReturnAddress* make(int bci);
 };
 
-#endif // SHARE_VM_CI_CITYPE_HPP
+#endif // SHARE_CI_CITYPE_HPP

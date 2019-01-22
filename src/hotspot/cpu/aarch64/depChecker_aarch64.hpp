@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,9 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_DEPCHECKER_AARCH64_HPP
-#define CPU_AARCH64_VM_DEPCHECKER_AARCH64_HPP
+#ifndef CPU_AARCH64_DEPCHECKER_AARCH64_HPP
+#define CPU_AARCH64_DEPCHECKER_AARCH64_HPP
 
 // Nothing to do on aarch64
 
-#endif // CPU_AARCH64_VM_DEPCHECKER_AARCH64_HPP
+#endif // CPU_AARCH64_DEPCHECKER_AARCH64_HPP

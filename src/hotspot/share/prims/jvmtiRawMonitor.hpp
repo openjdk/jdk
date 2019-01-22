@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIRAWMONITOR_HPP
-#define SHARE_VM_PRIMS_JVMTIRAWMONITOR_HPP
+#ifndef SHARE_PRIMS_JVMTIRAWMONITOR_HPP
+#define SHARE_PRIMS_JVMTIRAWMONITOR_HPP
 
 #include "runtime/objectMonitor.hpp"
 #include "utilities/growableArray.hpp"
@@ -104,4 +104,4 @@ public:
   static void transition_raw_monitors();
 };
 
-#endif // SHARE_VM_PRIMS_JVMTIRAWMONITOR_HPP
+#endif // SHARE_PRIMS_JVMTIRAWMONITOR_HPP

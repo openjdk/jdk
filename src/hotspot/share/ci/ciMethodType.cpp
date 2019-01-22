@@ -26,7 +26,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciMethodType.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 
 ciType* ciMethodType::class_to_citype(oop klass_oop) const {
   if (java_lang_Class::is_primitive(klass_oop)) {

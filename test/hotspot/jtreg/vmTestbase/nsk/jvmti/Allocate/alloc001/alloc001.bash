@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ aix | bsd | linux | solaris)
         max_ulimit=1048576
         max_heap=256m
     else
-        max_ulimit=4194304
+        # AIX requires a 32-bit value here.
+        max_ulimit=4194303
         max_heap=512m
     fi
 
@@ -74,6 +75,7 @@ esac
 
 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$TESTNATIVEPATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TESTNATIVEPATH
+export LIBPATH=$LIBPATH:$TESTNATIVEPATH
 export PATH=$PATH:$TESTNATIVEPATH
 
 echo $JAVA ${JAVA_OPTS} nsk.jvmti.Allocate.alloc001

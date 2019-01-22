@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_VERIFIER_HPP
-#define SHARE_VM_CLASSFILE_VERIFIER_HPP
+#ifndef SHARE_CLASSFILE_VERIFIER_HPP
+#define SHARE_CLASSFILE_VERIFIER_HPP
 
 #include "classfile/verificationType.hpp"
 #include "oops/klass.hpp"
@@ -463,4 +463,4 @@ inline int ClassVerifier::change_sig_to_verificationType(
   }
 }
 
-#endif // SHARE_VM_CLASSFILE_VERIFIER_HPP
+#endif // SHARE_CLASSFILE_VERIFIER_HPP

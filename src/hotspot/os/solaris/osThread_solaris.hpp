@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_OSTHREAD_SOLARIS_HPP
-#define OS_SOLARIS_VM_OSTHREAD_SOLARIS_HPP
+#ifndef OS_SOLARIS_OSTHREAD_SOLARIS_HPP
+#define OS_SOLARIS_OSTHREAD_SOLARIS_HPP
 
 // This is embedded via include into the class OSThread
  public:
@@ -85,4 +85,4 @@ private:
   void pd_initialize();
   void pd_destroy();
 
-#endif // OS_SOLARIS_VM_OSTHREAD_SOLARIS_HPP
+#endif // OS_SOLARIS_OSTHREAD_SOLARIS_HPP

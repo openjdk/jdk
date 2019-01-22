@@ -163,8 +163,7 @@ public class CookieExtension {
             try {
                 spec = new CookieSpec(buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             shc.handshakeExtensions.put(SSLExtension.CH_COOKIE, spec);
@@ -201,9 +200,8 @@ public class CookieExtension {
             HelloCookieManager hcm =
                 shc.sslContext.getHelloCookieManager(shc.negotiatedProtocol);
             if (!hcm.isCookieValid(shc, clientHello, spec.cookie)) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "unrecognized cookie");
-                return;     // fatal() always throws, make the compiler happy.
             }
         }
     }
@@ -270,8 +268,7 @@ public class CookieExtension {
             try {
                 spec = new CookieSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             chc.handshakeExtensions.put(SSLExtension.HRR_COOKIE, spec);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_INTERPRETERRT_S390_HPP
-#define CPU_S390_VM_INTERPRETERRT_S390_HPP
+#ifndef CPU_S390_INTERPRETERRT_S390_HPP
+#define CPU_S390_INTERPRETERRT_S390_HPP
 
 // This is included in the middle of class Interpreter.
 // Do not include files here.
@@ -62,4 +62,4 @@ static address get_result_handler(JavaThread* thread, Method* method);
 
 static address get_signature(JavaThread* thread, Method* method);
 
-#endif // CPU_S390_VM_INTERPRETERRT_S390_HPP
+#endif // CPU_S390_INTERPRETERRT_S390_HPP

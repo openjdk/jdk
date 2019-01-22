@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_BSD_VM_GLOBALS_BSD_HPP
-#define OS_BSD_VM_GLOBALS_BSD_HPP
+#ifndef OS_BSD_GLOBALS_BSD_HPP
+#define OS_BSD_GLOBALS_BSD_HPP
 
 //
 // Defines Bsd specific flags. They are not available on other platforms.
@@ -56,4 +56,4 @@ define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
 
-#endif // OS_BSD_VM_GLOBALS_BSD_HPP
+#endif // OS_BSD_GLOBALS_BSD_HPP

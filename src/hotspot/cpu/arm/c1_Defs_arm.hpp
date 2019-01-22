@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_C1_DEFS_ARM_HPP
-#define CPU_ARM_VM_C1_DEFS_ARM_HPP
+#ifndef CPU_ARM_C1_DEFS_ARM_HPP
+#define CPU_ARM_C1_DEFS_ARM_HPP
 
 // native word offsets from memory address (little endian)
 enum {
@@ -78,4 +78,4 @@ enum {
 #define CARDTABLEBARRIERSET_POST_BARRIER_HELPER
 #define GENERATE_ADDRESS_IS_PREFERRED
 
-#endif // CPU_ARM_VM_C1_DEFS_ARM_HPP
+#endif // CPU_ARM_C1_DEFS_ARM_HPP

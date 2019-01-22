@@ -230,7 +230,8 @@ define SetupGenBuffer
   endif
 
   $$($1_DST): $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.buffer.dir
-	$(TOOL_SPP) < $$($1_SRC) > $$($1_OUT).tmp \
+	$(RM) $$($1_OUT).tmp
+	$(TOOL_SPP) -i$$($1_SRC) -o$$($1_OUT).tmp \
 	    -K$$($1_type) \
 	    -K$$($1_category) \
 	    -K$$($1_streams) \
@@ -260,12 +261,12 @@ define SetupGenBuffer
         ifeq ($$($1_BIN), 1)
 	  $(SED) -e '/#BIN/,$$$$d' < $$($1_OUT) > $$($1_DST).tmp
 	  $(RM) $$($1_OUT)
-	  $$($1_char_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
-	  $$($1_short_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
-	  $$($1_int_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
-	  $$($1_long_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
-	  $$($1_float_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
-	  $$($1_double_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	  $$($1_char_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
+	  $$($1_short_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
+	  $$($1_int_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
+	  $$($1_long_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
+	  $$($1_float_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
+	  $$($1_double_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
 	  $(PRINTF) "}\n" >> $$($1_DST).tmp
 	  mv $$($1_DST).tmp $$($1_DST)
         endif

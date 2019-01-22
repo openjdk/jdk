@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_THREAD_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_VM_THREAD_BSD_ZERO_HPP
+#ifndef OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP
 
  private:
   ZeroStack  _zero_stack;
@@ -116,4 +116,4 @@
   static void enable_register_stack_guard() {}
   static void disable_register_stack_guard() {}
 
-#endif // OS_CPU_BSD_ZERO_VM_THREAD_BSD_ZERO_HPP
+#endif // OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP

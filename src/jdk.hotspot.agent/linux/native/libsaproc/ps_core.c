@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include <elf.h>
 #include <link.h>
 #include "libproc_impl.h"
+#include "proc_service.h"
 #include "salibelf.h"
 #include "cds.h"
 
@@ -510,8 +511,7 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
    prstatus_t* prstat = (prstatus_t*) buf;
    thread_info* newthr;
    print_debug("got integer regset for lwp %d\n", prstat->pr_pid);
-   // we set pthread_t to -1 for core dump
-   if((newthr = add_thread_info(ph, (pthread_t) -1,  prstat->pr_pid)) == NULL)
+   if((newthr = add_thread_info(ph, prstat->pr_pid)) == NULL)
       return false;
 
    // copy regs

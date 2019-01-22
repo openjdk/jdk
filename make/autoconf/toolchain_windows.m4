@@ -115,7 +115,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
         VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
-            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+            VC/Auxiliary/Build/vcvarsx86_amd64.bat VC/Auxiliary/Build/vcvars64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
@@ -222,7 +222,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
       [C:/Program Files/$VS_INSTALL_DIR], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
       [C:/Program Files (x86)/$VS_INSTALL_DIR], [well-known name])
-
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
       TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
@@ -273,7 +272,26 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval USE_UCRT="\${VS_USE_UCRT_${VS_VERSION}}"
     eval VS_SUPPORTED="\${VS_SUPPORTED_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
-    VS_PATH="$TOOLCHAIN_PATH:$PATH"
+
+    # The TOOLCHAIN_PATH from a devkit is in Unix format. In WSL we need a
+    # windows version of the complete VS_PATH as VS_PATH_WINDOWS
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+      # Convert the toolchain path
+      OLDIFS="$IFS"
+      IFS=":"
+      VS_PATH_WINDOWS=""
+      for i in $TOOLCHAIN_PATH; do
+        path=$i
+        BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([path])
+        VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$path"
+      done
+      IFS="$OLDIFS"
+      # Append the current path from Windows env
+      WINDOWS_PATH="`$CMD /c echo %PATH%`"
+      VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$WINDOWS_PATH"
+    else
+      VS_PATH="$TOOLCHAIN_PATH:$PATH"
+    fi
 
     # Convert DEVKIT_VS_INCLUDE into windows style VS_INCLUDE so that it
     # can still be exported as INCLUDE for compiler invocations without
@@ -339,7 +357,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 [
   # Store path to cygwin link.exe to help excluding it when searching for
   # VS linker. This must be done before changing the PATH when looking for VS.
-  AC_PATH_PROG(CYGWIN_LINK, link)
+  AC_PATH_PROG(CYGWIN_LINK, link.exe)
   if test "x$CYGWIN_LINK" != x; then
     AC_MSG_CHECKING([if the first found link.exe is actually the Cygwin link tool])
     "$CYGWIN_LINK" --version > /dev/null
@@ -372,8 +390,13 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Instead create a shell script which will set the relevant variables when run.
       WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
       BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_VS_ENV_CMD])
-      WINPATH_BASH="$BASH"
-      BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
+
+      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+        WINPATH_BASH="bash"
+      else
+        WINPATH_BASH="$BASH"
+        BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
+      fi
 
       # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
       # script (executable by bash) that will setup the important variables.
@@ -381,40 +404,64 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
       # This will end up something like:
       # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
-      $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "call \"$WINPATH_VS_ENV_CMD\" $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
       # In some cases, the VS_ENV_CMD will change directory, change back so
       # the set-vs-env.sh ends up in the right place.
       $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
-      # These will end up something like:
-      # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
-      # The trailing space for everyone except PATH is no typo, but is needed due
-      # to trailing \ in the Windows paths. These will be stripped later.
-      $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
+      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+        # These will end up something like:
+        # echo VS_PATH=\"$PATH\" > set-vs-env.sh
+        # The trailing space for everyone except PATH is no typo, but is needed due
+        # to trailing \ in the Windows paths. These will be stripped later.
+        # Trying pure CMD extract. This results in windows paths that need to
+        # be converted post extraction, but a simpler script.
+        $ECHO 'echo VS_PATH="%PATH%" > set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO 'echo VS_INCLUDE="%INCLUDE% " >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO 'echo VS_LIB="%LIB% " >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO 'echo VCINSTALLDIR="%VCINSTALLDIR% " >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO 'echo WindowsSdkDir="%WindowsSdkDir% " >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO 'echo WINDOWSSDKDIR="%WINDOWSSDKDIR% " >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+      else
+        # These will end up something like:
+        # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
+        # The trailing space for everyone except PATH is no typo, but is needed due
+        # to trailing \ in the Windows paths. These will be stripped later.
+        $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+        $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' \
+            >> $EXTRACT_VC_ENV_BAT_FILE
+      fi
 
       # Now execute the newly created bat file.
       # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
       # Change directory so we don't need to mess with Windows paths in redirects.
       cd $VS_ENV_TMP_DIR
-      cmd /c extract-vs-env.bat | $CAT
+      $CMD /c extract-vs-env.bat | $CAT
       cd $CURDIR
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
-        AC_MSG_NOTICE([Could not succesfully extract the envionment variables needed for the VS setup.])
+        AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
         AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
         AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
         AC_MSG_ERROR([Cannot continue])
       fi
+
+      # Remove windows line endings
+      $SED -i -e 's|\r||g' $VS_ENV_TMP_DIR/set-vs-env.sh
 
       # Now set all paths and other env variables. This will allow the rest of
       # the configure script to find and run the compiler in the proper way.
@@ -422,6 +469,34 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       . $VS_ENV_TMP_DIR/set-vs-env.sh
       # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
       # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
+
+      # In WSL, the extracted VS_PATH is Windows style. This needs to be
+      # rewritten as Unix style and the Windows style version is saved
+      # in VS_PATH_WINDOWS.
+      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+        OLDIFS="$IFS"
+        IFS=";"
+        # Convert VS_PATH to unix style
+        VS_PATH_WINDOWS="$VS_PATH"
+        VS_PATH=""
+        for i in $VS_PATH_WINDOWS; do
+          path=$i
+          # Only process non-empty elements
+          if test "x$path" != x; then
+            IFS="$OLDIFS"
+            # Check that directory exists before calling fixup_path
+            testpath=$path
+            BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([testpath])
+            if test -d "$testpath"; then
+              BASIC_FIXUP_PATH([path])
+              BASIC_APPEND_TO_PATH(VS_PATH, $path)
+            fi
+            IFS=";"
+          fi
+        done
+        IFS="$OLDIFS"
+      fi
+
     else
       # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
       AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
@@ -490,6 +565,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
         fi
       done
       IFS="$OLDIFS"
+
+      AC_SUBST(VS_PATH_WINDOWS)
     fi
   else
     AC_MSG_RESULT([not found])
@@ -600,10 +677,10 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
       BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VS_TOOLS_DIR)
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x64/ | $HEAD --lines 1`
+        | $GREP -i /x64/ | $HEAD --lines 1`
       else
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x86/ | $HEAD --lines 1`
+        | $GREP -i /x86/ | $HEAD --lines 1`
       fi
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
           [search of VS100COMNTOOLS])
@@ -616,14 +693,14 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x64 | $HEAD --lines 1`
+        | $GREP x64 | $HEAD --lines 1`
       else
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
         if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
           POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	      | $HEAD --lines 1`
+          | $HEAD --lines 1`
         fi
       fi
 
@@ -693,7 +770,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   if test "x$USE_UCRT" = "xtrue"; then
     AC_MSG_CHECKING([for UCRT DLL dir])
     if test "x$with_ucrt_dll_dir" != x; then
-      if test -z "$(ls -d "$with_ucrt_dll_dir/*.dll" 2> /dev/null)"; then
+      if test -z "$(ls -d $with_ucrt_dll_dir/*.dll 2> /dev/null)"; then
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([Could not find any dlls in $with_ucrt_dll_dir])
       else
@@ -713,8 +790,16 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       fi
       UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/Redist/ucrt/DLLs/$dll_subdir"
       if test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
-        AC_MSG_RESULT([no])
-        AC_MSG_ERROR([Could not find any dlls in $UCRT_DLL_DIR])
+        # Try with version subdir
+        UCRT_DLL_DIR="`ls -d $CYGWIN_WINDOWSSDKDIR/Redist/*/ucrt/DLLs/$dll_subdir \
+            2> /dev/null | $SORT -d | $HEAD -n1`"
+        if test -z "$UCRT_DLL_DIR" \
+            || test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
+          AC_MSG_RESULT([no])
+          AC_MSG_ERROR([Could not find any dlls in $UCRT_DLL_DIR])
+        else
+          AC_MSG_RESULT($UCRT_DLL_DIR)
+        fi
       else
         AC_MSG_RESULT($UCRT_DLL_DIR)
       fi

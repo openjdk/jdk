@@ -26,8 +26,11 @@
  * @bug 8207954
  * @summary Verify that CreateSymbols can handle classfiles from the current release.
  * @library /tools/lib /tools/javac/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api:+open
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.jvm:+open
+ *          jdk.compiler/com.sun.tools.javac.util:+open
+ *          jdk.jdeps/com.sun.tools.classfile:+open
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.Task
  * @run main CanHandleClassFilesTest
  */
@@ -36,6 +39,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import javax.tools.StandardLocation;
 
@@ -93,8 +97,16 @@ public class CanHandleClassFilesTest {
                 }
             };
 
+            // open the non-exported packages needed by CreateSymbols to its module
+            Module targetModule = cl.getUnnamedModule();
+            Stream.of("jdk.compiler/com.sun.tools.javac.api",
+                      "jdk.compiler/com.sun.tools.javac.jvm",
+                      "jdk.compiler/com.sun.tools.javac.util",
+                      "jdk.jdeps/com.sun.tools.classfile")
+                    .forEach(p -> open(p, targetModule));
+
             var createSymbolsClass = Class.forName("build.tools.symbolgenerator.CreateSymbols", false, cl);
-            var main = createSymbolsClass.getDeclaredMethod("main", String[].class);
+            var main = createSymbolsClass.getMethod("main", String[].class);
             var symbols = targetDir.resolve("symbols");
 
             try (Writer w = Files.newBufferedWriter(symbols)) {}
@@ -110,6 +122,13 @@ public class CanHandleClassFilesTest {
                                                symbols.toAbsolutePath().toString(),
                                                targetDir.resolve("ct.sym").toAbsolutePath().toString()});
         }
+    }
+
+    void open(String moduleAndPackage, Module target) {
+        String[] s = moduleAndPackage.split("/");
+        var moduleName = s[0];
+        var packageName = s[1];
+        ModuleLayer.boot().findModule(moduleName).orElseThrow().addOpens(packageName, target);
     }
 
 }

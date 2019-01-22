@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_METASPACESHARED_INLINE_HPP
-#define SHARE_VM_MEMORY_METASPACESHARED_INLINE_HPP
+#ifndef SHARE_MEMORY_METASPACESHARED_INLINE_HPP
+#define SHARE_MEMORY_METASPACESHARED_INLINE_HPP
 
 #include "memory/metaspaceShared.hpp"
 #if INCLUDE_G1GC
@@ -36,4 +36,4 @@ bool MetaspaceShared::is_archive_object(oop p) {
 }
 #endif
 
-#endif // SHARE_VM_MEMORY_METASPACESHARED_INLINE_HPP
+#endif // SHARE_MEMORY_METASPACESHARED_INLINE_HPP

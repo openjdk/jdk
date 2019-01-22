@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_VALUESET_HPP
-#define SHARE_VM_C1_C1_VALUESET_HPP
+#ifndef SHARE_C1_C1_VALUESET_HPP
+#define SHARE_C1_C1_VALUESET_HPP
 
 #include "c1/c1_Instruction.hpp"
 #include "memory/allocation.hpp"
@@ -52,4 +52,4 @@ class ValueSet: public CompilationResourceObj {
   bool equals  (ValueSet* other);
 };
 
-#endif // SHARE_VM_C1_C1_VALUESET_HPP
+#endif // SHARE_C1_C1_VALUESET_HPP

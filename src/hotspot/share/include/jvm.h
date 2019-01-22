@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ extern "C" {
  *    class.
  */
 
-#define JVM_INTERFACE_VERSION 5
+#define JVM_INTERFACE_VERSION 6
 
 JNIEXPORT jint JNICALL
 JVM_GetInterfaceVersion(void);
@@ -450,7 +450,7 @@ JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module);
  */
 
 JNIEXPORT jstring JNICALL
-JVM_GetClassName(JNIEnv *env, jclass cls);
+JVM_InitClassName(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
@@ -624,6 +624,15 @@ JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 JNIEXPORT jobject JNICALL
 JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
+
+/*
+ * Ensure that code doing a stackwalk and using javaVFrame::locals() to
+ * get the value will see a materialized value and not a scalar-replaced
+ * null value.
+ */
+#define JVM_EnsureMaterializedForStackWalk(env, value) \
+    do {} while(0) // Nothing to do.  The fact that the value escaped
+                   // through a native method is enough.
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);

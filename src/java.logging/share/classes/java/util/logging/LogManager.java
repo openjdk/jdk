@@ -76,8 +76,8 @@ import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
  * the initial configuration, as specified in the {@link #readConfiguration()}
  * method:
  * <ul>
- * <li>"java.util.logging.config.class"
- * <li>"java.util.logging.config.file"
+ * <li>{@systemProperty java.util.logging.config.class}
+ * <li>{@systemProperty java.util.logging.config.file}
  * </ul>
  * <p>
  * These two system properties may be specified on the command line to the "java"

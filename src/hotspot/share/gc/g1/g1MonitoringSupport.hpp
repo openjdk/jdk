@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
-#define SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
+#ifndef SHARE_GC_G1_G1MONITORINGSUPPORT_HPP
+#define SHARE_GC_G1_G1MONITORINGSUPPORT_HPP
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
@@ -259,4 +259,4 @@ public:
   G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected);
 };
 
-#endif // SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
+#endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP

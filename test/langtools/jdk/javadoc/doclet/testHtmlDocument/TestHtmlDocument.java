@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 6851834
  * @summary This test verifies the HTML document generation for javadoc output.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.util
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @author Bhavesh Patel
  * @run main TestHtmlDocument
  */
@@ -43,6 +43,8 @@ import static jdk.javadoc.internal.doclets.toolkit.util.DocletConstants.NL;
  * The class reads each file, complete with newlines, into a string to easily
  * compare the existing markup with the generated markup.
  */
+import javadoc.tester.JavadocTester;
+
 public class TestHtmlDocument extends JavadocTester {
 
     // Entry point
@@ -52,7 +54,7 @@ public class TestHtmlDocument extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         checking("markup");
         // Check whether the generated markup is same as the existing markup.
         String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);

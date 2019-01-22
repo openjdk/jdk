@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "opto/node.hpp"
 #include "opto/type.hpp"
 #include "utilities/macros.hpp"
+#include "gc/z/zBarrierSet.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
@@ -189,6 +190,15 @@ LoadBarrierNode::LoadBarrierNode(Compile* C,
   bs->register_potential_barrier_node(this);
 }
 
+uint LoadBarrierNode::size_of() const {
+  return sizeof(*this);
+}
+
+uint LoadBarrierNode::cmp(const Node& n) const {
+  ShouldNotReachHere();
+  return 0;
+}
+
 const Type *LoadBarrierNode::bottom_type() const {
   const Type** floadbarrier = (const Type **)(Compile::current()->type_arena()->Amalloc_4((Number_of_Outputs)*sizeof(Type*)));
   Node* in_oop = in(Oop);
@@ -196,6 +206,11 @@ const Type *LoadBarrierNode::bottom_type() const {
   floadbarrier[Memory] = Type::MEMORY;
   floadbarrier[Oop] = in_oop == NULL ? Type::TOP : in_oop->bottom_type();
   return TypeTuple::make(Number_of_Outputs, floadbarrier);
+}
+
+const TypePtr* LoadBarrierNode::adr_type() const {
+  ShouldNotReachHere();
+  return NULL;
 }
 
 const Type *LoadBarrierNode::Value(PhaseGVN *phase) const {
@@ -439,6 +454,11 @@ Node *LoadBarrierNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return NULL;
+}
+
+uint LoadBarrierNode::match_edge(uint idx) const {
+  ShouldNotReachHere();
+  return 0;
 }
 
 void LoadBarrierNode::fix_similar_in_uses(PhaseIterGVN* igvn) {
@@ -1151,7 +1171,7 @@ static bool split_barrier_thru_phi(PhaseIdealLoop* phase, LoadBarrierNode* lb) {
   if (lb->in(LoadBarrierNode::Oop)->is_Phi()) {
     Node* oop_phi = lb->in(LoadBarrierNode::Oop);
 
-    if (oop_phi->in(2) == oop_phi) {
+    if ((oop_phi->req() != 3) || (oop_phi->in(2) == oop_phi)) {
       // Ignore phis with only one input
       return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
-#define SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
+#ifndef SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
+#define SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "oops/access.inline.hpp"
@@ -174,6 +174,29 @@ inline bool java_lang_Class::is_instance(oop obj) {
   return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
 }
 
+inline bool java_lang_Class::is_primitive(oop java_class) {
+  // should assert:
+  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  bool is_primitive = (java_class->metadata_field(_klass_offset) == NULL);
+
+#ifdef ASSERT
+  if (is_primitive) {
+    Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
+    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
+        "Should be either the T_VOID primitive or a java primitive");
+  }
+#endif
+
+  return is_primitive;
+}
+
+inline int java_lang_Class::oop_size_raw(oop java_class) {
+  assert(_oop_size_offset != 0, "must be set");
+  int size = java_class->int_field_raw(_oop_size_offset);
+  assert(size > 0, "Oop size must be greater than zero, not %d", size);
+  return size;
+}
+
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
@@ -242,4 +265,4 @@ inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int versio
   }
 }
 
-#endif // SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
+#endif // SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP

@@ -427,7 +427,24 @@ public class HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem writing the file
      */
     public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
-            Content body) throws DocFileIOException {
+                                  Content body) throws DocFileIOException {
+        printHtmlDocument(metakeywords, includeScript, new ContentBuilder(), body);
+    }
+
+    /**
+     * Generates the HTML document tree and prints it out.
+     *
+     * @param metakeywords Array of String keywords for META tag. Each element
+     *                     of the array is assigned to a separate META tag.
+     *                     Pass in null for no array
+     * @param includeScript true if printing windowtitle script
+     *                      false for files that appear in the left-hand frames
+     * @param extraContent any additional content to be included in the HEAD element
+     * @param body the body htmltree to be included in the document
+     * @throws DocFileIOException if there is a problem writing the file
+     */
+    public void printHtmlDocument(List<String> metakeywords, boolean includeScript, Content extraContent,
+                                  Content body) throws DocFileIOException {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
@@ -437,7 +454,8 @@ public class HtmlDocletWriter {
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
                 .setUseModuleDirectories(configuration.useModuleDirectories)
-                .setIndex(configuration.createindex, mainBodyScript);
+                .setIndex(configuration.createindex, mainBodyScript)
+                .addContent(extraContent);
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);

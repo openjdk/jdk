@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     private native static void init0()
                                 throws DebuggerException;
     private native void setSAAltRoot0(String altroot);
-    private native void attach0(int pid, boolean isInContainer)
+    private native void attach0(int pid)
                                 throws DebuggerException;
     private native void attach0(String execName, String coreName)
                                 throws DebuggerException;
@@ -321,9 +321,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
         class AttachTask implements WorkerThreadTask {
            int pid;
-           boolean isInContainer;
            public void doit(LinuxDebuggerLocal debugger) {
-              debugger.attach0(pid, isInContainer);
+              debugger.attach0(pid);
               debugger.attached = true;
               debugger.isCore = false;
               findABIVersion();
@@ -332,7 +331,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
         AttachTask task = new AttachTask();
         task.pid = processID;
-        task.isInContainer = (processID != NSpid);
         workerThread.execute(task);
     }
 

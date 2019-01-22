@@ -26,11 +26,13 @@
  * @bug      6786688 8008164 8162363 8169819 8183037 8182765 8184205
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestHtmlTableTags
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlTableTags extends JavadocTester {
 
@@ -46,7 +48,7 @@ public class TestHtmlTableTags extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
@@ -60,7 +62,7 @@ public class TestHtmlTableTags extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

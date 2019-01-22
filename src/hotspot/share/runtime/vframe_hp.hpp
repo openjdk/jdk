@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VFRAME_HP_HPP
-#define SHARE_VM_RUNTIME_VFRAME_HP_HPP
+#ifndef SHARE_RUNTIME_VFRAME_HP_HPP
+#define SHARE_RUNTIME_VFRAME_HP_HPP
 
 #include "runtime/vframe.hpp"
 
@@ -71,6 +71,9 @@ class compiledVFrame: public javaVFrame {
 
   // Returns the scopeDesc
   ScopeDesc* scope() const { return _scope; }
+
+  // Return the compiledVFrame for the desired scope
+  compiledVFrame* at_scope(int decode_offset, int vframe_id);
 
   // Returns SynchronizationEntryBCI or bci() (used for synchronization)
   int raw_bci() const;
@@ -159,4 +162,4 @@ class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
 
 };
 
-#endif // SHARE_VM_RUNTIME_VFRAME_HP_HPP
+#endif // SHARE_RUNTIME_VFRAME_HP_HPP

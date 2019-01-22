@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_X86_VM_BYTES_SOLARIS_X86_INLINE_HPP
-#define OS_CPU_SOLARIS_X86_VM_BYTES_SOLARIS_X86_INLINE_HPP
+#ifndef OS_CPU_SOLARIS_X86_BYTES_SOLARIS_X86_INLINE_HPP
+#define OS_CPU_SOLARIS_X86_BYTES_SOLARIS_X86_INLINE_HPP
 
 // For Sun Studio - implementation is in solaris_i486.il.
 // For gcc - implementation is just below.
@@ -61,4 +61,4 @@ inline u8   Bytes::swap_u8_base(u4 x, u4 y) {
 }
 #endif // !AMD64
 
-#endif // OS_CPU_SOLARIS_X86_VM_BYTES_SOLARIS_X86_INLINE_HPP
+#endif // OS_CPU_SOLARIS_X86_BYTES_SOLARIS_X86_INLINE_HPP

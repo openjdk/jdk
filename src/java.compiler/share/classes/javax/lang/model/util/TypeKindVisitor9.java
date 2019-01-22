@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.*;
  * A visitor of types based on their {@linkplain TypeKind kind} with
  * default behavior appropriate for source versions {@link
  * SourceVersion#RELEASE_9 RELEASE_9} through {@link
- * SourceVersion#RELEASE_12 RELEASE_12}.
+ * SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * For {@linkplain
  * TypeMirror types} <code><i>Xyz</i></code> that may have more than one
@@ -77,7 +77,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public class TypeKindVisitor9<R, P> extends TypeKindVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}

@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBrooksPointer.hpp"
@@ -62,4 +62,4 @@ inline oop ShenandoahBrooksPointer::try_update_forwardee(oop obj, oop update) {
   return result;
 }
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_INLINE_HPP

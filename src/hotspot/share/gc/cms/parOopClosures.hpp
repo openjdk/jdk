@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_PAROOPCLOSURES_HPP
-#define SHARE_VM_GC_CMS_PAROOPCLOSURES_HPP
+#ifndef SHARE_GC_CMS_PAROOPCLOSURES_HPP
+#define SHARE_GC_CMS_PAROOPCLOSURES_HPP
 
 #include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -143,4 +143,4 @@ class ParEvacuateFollowersClosure: public VoidClosure {
   virtual void do_void();
 };
 
-#endif // SHARE_VM_GC_CMS_PAROOPCLOSURES_HPP
+#endif // SHARE_GC_CMS_PAROOPCLOSURES_HPP

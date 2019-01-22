@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
-#define SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
+#ifndef SHARE_GC_CMS_CMSOOPCLOSURES_HPP
+#define SHARE_GC_CMS_CMSOOPCLOSURES_HPP
 
 #include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -38,6 +38,8 @@ class CMSMarkStack;
 class CMSCollector;
 class MarkFromRootsClosure;
 class ParMarkFromRootsClosure;
+
+class Mutex;
 
 // Decode the oop and call do_oop on it.
 #define DO_OOP_WORK_DEFN                             \
@@ -328,4 +330,4 @@ class CMSParKeepAliveClosure: public MetadataVisitingOopIterateClosure {
   virtual void do_oop(narrowOop* p);
 };
 
-#endif // SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
+#endif // SHARE_GC_CMS_CMSOOPCLOSURES_HPP

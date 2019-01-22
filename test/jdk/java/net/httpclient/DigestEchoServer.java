@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -77,6 +78,8 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
 
     public static final boolean DEBUG =
             Boolean.parseBoolean(System.getProperty("test.debug", "false"));
+    public static final boolean NO_LINGER =
+            Boolean.parseBoolean(System.getProperty("test.nolinger", "false"));
     public enum HttpAuthType {
         SERVER, PROXY, SERVER307, PROXY305
         /* add PROXY_AND_SERVER and SERVER_PROXY_NONE */
@@ -1603,6 +1606,11 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                     Socket toClose;
                     try {
                         toClose = clientConnection = ss.accept();
+                        if (NO_LINGER) {
+                            // can be useful to trigger "Connection reset by peer"
+                            // errors on the client side.
+                            clientConnection.setOption(StandardSocketOptions.SO_LINGER, 0);
+                        }
                     } catch (IOException io) {
                         if (DEBUG || !stopped) io.printStackTrace(System.out);
                         break;

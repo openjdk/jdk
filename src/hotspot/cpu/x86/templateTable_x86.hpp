@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_TEMPLATETABLE_X86_HPP
-#define CPU_X86_VM_TEMPLATETABLE_X86_HPP
+#ifndef CPU_X86_TEMPLATETABLE_X86_HPP
+#define CPU_X86_TEMPLATETABLE_X86_HPP
 
   static void prepare_invoke(int byte_no,
                              Register method,         // linked method (or i-klass)
@@ -43,4 +43,4 @@
                                         Register obj, Register off, Register flags);
   static void fast_storefield_helper(Address field, Register rax);
 
-#endif // CPU_X86_VM_TEMPLATETABLE_X86_HPP
+#endif // CPU_X86_TEMPLATETABLE_X86_HPP

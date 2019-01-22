@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ JTREG_TEST_GROUPS += $(sort $(foreach root, $(JTREG_TESTROOTS), \
 # Add Jtreg test groups to list of named tests (test groups, test list, etc)
 # ALL_NAMED_TESTS might have been set by a custom extension
 ALL_NAMED_TESTS += $(JTREG_TEST_GROUPS)
+JCOV_NAMED_TESTS += $(JTREG_TEST_GROUPS)
 
 # Add Gtest
 ALL_NAMED_TESTS += gtest

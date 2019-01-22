@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 
 #include "code/codeCache.hpp"
 #include "gc/shared/oopStorageParState.hpp"
@@ -123,4 +123,4 @@ public:
   // Number of worker threads used by the root processor.
   uint n_workers() const;
 };
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP

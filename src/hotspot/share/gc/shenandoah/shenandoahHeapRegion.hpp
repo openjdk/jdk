@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 
 #include "gc/shared/space.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
@@ -428,4 +428,4 @@ private:
   inline void internal_increase_live_data(size_t s);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP

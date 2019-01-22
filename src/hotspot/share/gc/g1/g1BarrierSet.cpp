@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
                       make_barrier_set_c2<G1BarrierSetC2>(),
                       card_table,
                       BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
-  _satb_mark_queue_buffer_allocator(G1SATBBufferSize, SATB_Q_FL_lock),
-  _dirty_card_queue_buffer_allocator(G1UpdateBufferSize, DirtyCardQ_FL_lock),
+  _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
+  _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(),
   _dirty_card_queue_set()
 {}

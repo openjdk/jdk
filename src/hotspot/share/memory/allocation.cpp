@@ -162,78 +162,81 @@ void ResourceObj::operator delete [](void* p) {
 
 #ifdef ASSERT
 void ResourceObj::set_allocation_type(address res, allocation_type type) {
-    // Set allocation type in the resource object
-    uintptr_t allocation = (uintptr_t)res;
-    assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least: " INTPTR_FORMAT, p2i(res));
-    assert(type <= allocation_mask, "incorrect allocation type");
-    ResourceObj* resobj = (ResourceObj *)res;
-    resobj->_allocation_t[0] = ~(allocation + type);
-    if (type != STACK_OR_EMBEDDED) {
-      // Called from operator new() and CollectionSetChooser(),
-      // set verification value.
-      resobj->_allocation_t[1] = (uintptr_t)&(resobj->_allocation_t[1]) + type;
-    }
+  // Set allocation type in the resource object
+  uintptr_t allocation = (uintptr_t)res;
+  assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least: " INTPTR_FORMAT, p2i(res));
+  assert(type <= allocation_mask, "incorrect allocation type");
+  ResourceObj* resobj = (ResourceObj *)res;
+  resobj->_allocation_t[0] = ~(allocation + type);
+  if (type != STACK_OR_EMBEDDED) {
+    // Called from operator new() and CollectionSetChooser(),
+    // set verification value.
+    resobj->_allocation_t[1] = (uintptr_t)&(resobj->_allocation_t[1]) + type;
+  }
 }
 
 ResourceObj::allocation_type ResourceObj::get_allocation_type() const {
-    assert(~(_allocation_t[0] | allocation_mask) == (uintptr_t)this, "lost resource object");
-    return (allocation_type)((~_allocation_t[0]) & allocation_mask);
+  assert(~(_allocation_t[0] | allocation_mask) == (uintptr_t)this, "lost resource object");
+  return (allocation_type)((~_allocation_t[0]) & allocation_mask);
 }
 
 bool ResourceObj::is_type_set() const {
-    allocation_type type = (allocation_type)(_allocation_t[1] & allocation_mask);
-    return get_allocation_type()  == type &&
-           (_allocation_t[1] - type) == (uintptr_t)(&_allocation_t[1]);
+  allocation_type type = (allocation_type)(_allocation_t[1] & allocation_mask);
+  return get_allocation_type()  == type &&
+         (_allocation_t[1] - type) == (uintptr_t)(&_allocation_t[1]);
 }
 
-ResourceObj::ResourceObj() { // default constructor
-    if (~(_allocation_t[0] | allocation_mask) != (uintptr_t)this) {
-      // Operator new() is not called for allocations
-      // on stack and for embedded objects.
-      set_allocation_type((address)this, STACK_OR_EMBEDDED);
-    } else if (allocated_on_stack()) { // STACK_OR_EMBEDDED
-      // For some reason we got a value which resembles
-      // an embedded or stack object (operator new() does not
-      // set such type). Keep it since it is valid value
-      // (even if it was garbage).
-      // Ignore garbage in other fields.
-    } else if (is_type_set()) {
-      // Operator new() was called and type was set.
-      assert(!allocated_on_stack(),
-             "not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-             p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
-    } else {
-      // Operator new() was not called.
-      // Assume that it is embedded or stack object.
-      set_allocation_type((address)this, STACK_OR_EMBEDDED);
-    }
-    _allocation_t[1] = 0; // Zap verification value
-}
-
-ResourceObj::ResourceObj(const ResourceObj& r) { // default copy constructor
-    // Used in ClassFileParser::parse_constant_pool_entries() for ClassFileStream.
-    // Note: garbage may resembles valid value.
-    assert(~(_allocation_t[0] | allocation_mask) != (uintptr_t)this || !is_type_set(),
-           "embedded or stack only, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-           p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
+// This whole business of passing information from ResourceObj::operator new
+// to the ResourceObj constructor via fields in the "object" is technically UB.
+// But it seems to work within the limitations of HotSpot usage (such as no
+// multiple inheritance) with the compilers and compiler options we're using.
+// And it gives some possibly useful checking for misuse of ResourceObj.
+void ResourceObj::initialize_allocation_info() {
+  if (~(_allocation_t[0] | allocation_mask) != (uintptr_t)this) {
+    // Operator new() is not called for allocations
+    // on stack and for embedded objects.
     set_allocation_type((address)this, STACK_OR_EMBEDDED);
-    _allocation_t[1] = 0; // Zap verification value
+  } else if (allocated_on_stack()) { // STACK_OR_EMBEDDED
+    // For some reason we got a value which resembles
+    // an embedded or stack object (operator new() does not
+    // set such type). Keep it since it is valid value
+    // (even if it was garbage).
+    // Ignore garbage in other fields.
+  } else if (is_type_set()) {
+    // Operator new() was called and type was set.
+    assert(!allocated_on_stack(),
+           "not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+           p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
+  } else {
+    // Operator new() was not called.
+    // Assume that it is embedded or stack object.
+    set_allocation_type((address)this, STACK_OR_EMBEDDED);
+  }
+  _allocation_t[1] = 0; // Zap verification value
 }
 
-ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assignment
-    // Used in InlineTree::ok_to_inline() for WarmCallInfo.
-    assert(allocated_on_stack(),
-           "copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-           p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
-    // Keep current _allocation_t value;
-    return *this;
+ResourceObj::ResourceObj() {
+  initialize_allocation_info();
+}
+
+ResourceObj::ResourceObj(const ResourceObj&) {
+  // Initialize _allocation_t as a new object, ignoring object being copied.
+  initialize_allocation_info();
+}
+
+ResourceObj& ResourceObj::operator=(const ResourceObj& r) {
+  assert(allocated_on_stack(),
+         "copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+         p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
+  // Keep current _allocation_t value;
+  return *this;
 }
 
 ResourceObj::~ResourceObj() {
-    // allocated_on_C_heap() also checks that encoded (in _allocation) address == this.
-    if (!allocated_on_C_heap()) { // ResourceObj::delete() will zap _allocation for C_heap.
-      _allocation_t[0] = (uintptr_t)badHeapOopVal; // zap type
-    }
+  // allocated_on_C_heap() also checks that encoded (in _allocation) address == this.
+  if (!allocated_on_C_heap()) { // ResourceObj::delete() will zap _allocation for C_heap.
+    _allocation_t[0] = (uintptr_t)badHeapOopVal; // zap type
+  }
 }
 #endif // ASSERT
 

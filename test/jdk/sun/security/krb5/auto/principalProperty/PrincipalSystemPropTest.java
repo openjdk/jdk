@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8075301
- * @library /sun/security/krb5/auto
+ * @library /sun/security/krb5/auto /test/lib
  * @summary New test for sun.security.krb5.principal system property.
  * The principal can set using the system property sun.security.krb5.principal.
  * This property is checked during login. If this property is not set,

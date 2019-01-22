@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ $(eval $(call SetupJavaCompiler, MICROBENCHMARK_JAVA_COMPILER, \
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     SETUP := MICROBENCHMARK_JAVA_COMPILER, \
-    ADD_JAVAC_FLAGS := -cp $(MICROBENCHMARK_CLASSPATH) -Xlint -Werror, \
+    ADD_JAVAC_FLAGS := -cp $(MICROBENCHMARK_CLASSPATH) -Xlint -Xlint:-processing -Werror, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
 ))

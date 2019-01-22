@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_LIRASSEMBLER_HPP
-#define SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#ifndef SHARE_C1_C1_LIRASSEMBLER_HPP
+#define SHARE_C1_C1_LIRASSEMBLER_HPP
 
 #include "c1/c1_CodeStubs.hpp"
 #include "ci/ciMethodData.hpp"
@@ -279,4 +279,4 @@ class LIR_Assembler: public CompilationResourceObj {
   }
 };
 
-#endif // SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#endif // SHARE_C1_C1_LIRASSEMBLER_HPP

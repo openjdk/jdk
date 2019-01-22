@@ -86,7 +86,7 @@ final class NewSessionTicket {
             //     Extension extensions<0..2^16-2>;
             // } NewSessionTicket;
             if (m.remaining() < 14) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid NewSessionTicket message: no sufficient data");
             }
 
@@ -95,18 +95,18 @@ final class NewSessionTicket {
             this.ticketNonce = Record.getBytes8(m);
 
             if (m.remaining() < 5) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid NewSessionTicket message: no sufficient data");
             }
 
             this.ticket = Record.getBytes16(m);
             if (ticket.length == 0) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "No ticket in the NewSessionTicket handshake message");
             }
 
             if (m.remaining() < 2) {
-                context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid NewSessionTicket message: no sufficient data");
             }
 

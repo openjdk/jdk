@@ -36,6 +36,8 @@ import java.util.Set;
 
 import sun.util.logging.PlatformLogger;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * The Attributes class maps Manifest attribute names to associated string
  * values. Valid attribute names are case-insensitive, are restricted to
@@ -298,25 +300,16 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Writes the current attributes to the specified data output stream.
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
-     @SuppressWarnings("deprecation")
-     void write(DataOutputStream os) throws IOException {
-         for (Entry<Object, Object> e : entrySet()) {
-             StringBuffer buffer = new StringBuffer(
-                                         ((Name) e.getKey()).toString());
-             buffer.append(": ");
-
-             String value = (String) e.getValue();
-             if (value != null) {
-                 byte[] vb = value.getBytes("UTF8");
-                 value = new String(vb, 0, 0, vb.length);
-             }
-             buffer.append(value);
-
-             Manifest.make72Safe(buffer);
-             buffer.append("\r\n");
-             os.writeBytes(buffer.toString());
-         }
-        os.writeBytes("\r\n");
+    void write(DataOutputStream out) throws IOException {
+        StringBuilder buffer = new StringBuilder(72);
+        for (Entry<Object, Object> e : entrySet()) {
+            buffer.setLength(0);
+            buffer.append(e.getKey().toString());
+            buffer.append(": ");
+            buffer.append(e.getValue());
+            Manifest.println72(out, buffer.toString());
+        }
+        Manifest.println(out); // empty line after individual section
     }
 
     /*
@@ -326,9 +319,9 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      *
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
-    @SuppressWarnings("deprecation")
-    void writeMain(DataOutputStream out) throws IOException
-    {
+    void writeMain(DataOutputStream out) throws IOException {
+        StringBuilder buffer = new StringBuilder(72);
+
         // write out the *-Version header first, if it exists
         String vername = Name.MANIFEST_VERSION.toString();
         String version = getValue(vername);
@@ -338,7 +331,11 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         }
 
         if (version != null) {
-            out.writeBytes(vername+": "+version+"\r\n");
+            buffer.append(vername);
+            buffer.append(": ");
+            buffer.append(version);
+            out.write(buffer.toString().getBytes(UTF_8));
+            Manifest.println(out);
         }
 
         // write out all attributes except for the version
@@ -346,34 +343,24 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         for (Entry<Object, Object> e : entrySet()) {
             String name = ((Name) e.getKey()).toString();
             if ((version != null) && !(name.equalsIgnoreCase(vername))) {
-
-                StringBuffer buffer = new StringBuffer(name);
+                buffer.setLength(0);
+                buffer.append(name);
                 buffer.append(": ");
-
-                String value = (String) e.getValue();
-                if (value != null) {
-                    byte[] vb = value.getBytes("UTF8");
-                    value = new String(vb, 0, 0, vb.length);
-                }
-                buffer.append(value);
-
-                Manifest.make72Safe(buffer);
-                buffer.append("\r\n");
-                out.writeBytes(buffer.toString());
+                buffer.append(e.getValue());
+                Manifest.println72(out, buffer.toString());
             }
         }
-        out.writeBytes("\r\n");
+
+        Manifest.println(out); // empty line after main attributes section
     }
 
     /*
      * Reads attributes from the specified input stream.
-     * XXX Need to handle UTF8 values.
      */
     void read(Manifest.FastInputStream is, byte[] lbuf) throws IOException {
         read(is, lbuf, null, 0);
     }
 
-    @SuppressWarnings("deprecation")
     int read(Manifest.FastInputStream is, byte[] lbuf, String filename, int lineNumber) throws IOException {
         String name = null, value;
         byte[] lastline = null;
@@ -409,7 +396,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                     lastline = buf;
                     continue;
                 }
-                value = new String(buf, 0, buf.length, "UTF8");
+                value = new String(buf, 0, buf.length, UTF_8);
                 lastline = null;
             } else {
                 while (lbuf[i++] != ':') {
@@ -422,13 +409,13 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                     throw new IOException("invalid header field ("
                                 + Manifest.getErrorPosition(filename, lineNumber) + ")");
                 }
-                name = new String(lbuf, 0, 0, i - 2);
+                name = new String(lbuf, 0, i - 2, UTF_8);
                 if (is.peek() == ' ') {
                     lastline = new byte[len - i];
                     System.arraycopy(lbuf, i, lastline, 0, len - i);
                     continue;
                 }
-                value = new String(lbuf, i, len - i, "UTF8");
+                value = new String(lbuf, i, len - i, UTF_8);
             }
             try {
                 if ((putValue(name, value) != null) && (!lineContinued)) {

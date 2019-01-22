@@ -26,11 +26,13 @@
  * @bug      8017191 8182765 8200432
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @author   jjg
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestSeeTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestSeeTag extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestSeeTag extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -67,7 +69,7 @@ public class TestSeeTag extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,
@@ -86,7 +88,7 @@ public class TestSeeTag extends JavadocTester {
     }
 
     @Test
-    void testBadReference() {
+    public void testBadReference() {
         javadoc("-d", "out-badref",
                 "-sourcepath", testSrc,
                 "badref");

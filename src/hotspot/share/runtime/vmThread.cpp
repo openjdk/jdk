@@ -206,7 +206,7 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = (os::javaTimeMillis() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("VM operation took too long: " SIZE_FORMAT " ms (timeout: " SIZE_FORMAT " ms)",
+      fatal("VM operation took too long: " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
             delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
@@ -284,8 +284,6 @@ void VMThread::destroy() {
 
 void VMThread::run() {
   assert(this == vm_thread(), "check");
-
-  this->initialize_named_thread();
 
   // Notify_lock wait checks on active_handles() to rewait in
   // case of spurious wakeup, it should wait on the last

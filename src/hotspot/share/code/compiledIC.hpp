@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_COMPILEDIC_HPP
-#define SHARE_VM_CODE_COMPILEDIC_HPP
+#ifndef SHARE_CODE_COMPILEDIC_HPP
+#define SHARE_CODE_COMPILEDIC_HPP
 
 #include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -454,4 +454,4 @@ private:
   virtual const char* name() const { return "CompiledDirectStaticCall"; }
 };
 
-#endif // SHARE_VM_CODE_COMPILEDIC_HPP
+#endif // SHARE_CODE_COMPILEDIC_HPP

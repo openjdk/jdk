@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_JAVAASSERTIONS_HPP
-#define SHARE_VM_CLASSFILE_JAVAASSERTIONS_HPP
+#ifndef SHARE_CLASSFILE_JAVAASSERTIONS_HPP
+#define SHARE_CLASSFILE_JAVAASSERTIONS_HPP
 
 #include "oops/objArrayOop.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -104,4 +104,4 @@ inline void JavaAssertions::setSystemClassDefault(bool enabled) {
   _sysDefault = enabled;
 }
 
-#endif // SHARE_VM_CLASSFILE_JAVAASSERTIONS_HPP
+#endif // SHARE_CLASSFILE_JAVAASSERTIONS_HPP

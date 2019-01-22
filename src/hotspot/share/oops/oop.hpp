@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_HPP
-#define SHARE_VM_OOPS_OOP_HPP
+#ifndef SHARE_OOPS_OOP_HPP
+#define SHARE_OOPS_OOP_HPP
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
@@ -308,9 +308,6 @@ class oopDesc {
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
 
-  // Alternate hashing code if string table is rehashed
-  unsigned int new_hash(juint seed);
-
   // marks are forwarded to stack when object is locked
   inline bool    has_displaced_mark_raw() const;
   inline markOop displaced_mark_raw() const;
@@ -334,4 +331,4 @@ class oopDesc {
   static oop   oop_or_null(address addr);
 };
 
-#endif // SHARE_VM_OOPS_OOP_HPP
+#endif // SHARE_OOPS_OOP_HPP

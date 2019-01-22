@@ -43,12 +43,14 @@ typedef uint64_t DecoratorSet;
 template <DecoratorSet decorators, DecoratorSet decorator>
 struct HasDecorator: public IntegralConstant<bool, (decorators & decorator) != 0> {};
 
+// == General Decorators ==
+// * DECORATORS_NONE: This is the name for the empty decorator set (in absence of other decorators).
+const DecoratorSet DECORATORS_NONE                   = UCONST64(0);
+
 // == Internal Decorators - do not use ==
-// * INTERNAL_EMPTY: This is the name for the empty decorator set (in absence of other decorators).
 // * INTERNAL_CONVERT_COMPRESSED_OOPS: This is an oop access that will require converting an oop
 //   to a narrowOop or vice versa, if UseCompressedOops is known to be set.
 // * INTERNAL_VALUE_IS_OOP: Remember that the involved access is on oop rather than primitive.
-const DecoratorSet INTERNAL_EMPTY                    = UCONST64(0);
 const DecoratorSet INTERNAL_CONVERT_COMPRESSED_OOP   = UCONST64(1) << 1;
 const DecoratorSet INTERNAL_VALUE_IS_OOP             = UCONST64(1) << 2;
 
@@ -231,13 +233,13 @@ namespace AccessInternal {
     // If no reference strength has been picked, then strong will be picked
     static const DecoratorSet ref_strength_default = input_decorators |
       (((ON_DECORATOR_MASK & input_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
-       ON_STRONG_OOP_REF : INTERNAL_EMPTY);
+       ON_STRONG_OOP_REF : DECORATORS_NONE);
     // If no memory ordering has been picked, unordered will be picked
     static const DecoratorSet memory_ordering_default = ref_strength_default |
-      ((MO_DECORATOR_MASK & ref_strength_default) == 0 ? MO_UNORDERED : INTERNAL_EMPTY);
+      ((MO_DECORATOR_MASK & ref_strength_default) == 0 ? MO_UNORDERED : DECORATORS_NONE);
     // If no barrier strength has been picked, normal will be used
     static const DecoratorSet barrier_strength_default = memory_ordering_default |
-      ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
+      ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : DECORATORS_NONE);
     static const DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
   };
 
@@ -247,13 +249,13 @@ namespace AccessInternal {
     // If no reference strength has been picked, then strong will be picked
     DecoratorSet ref_strength_default = input_decorators |
       (((ON_DECORATOR_MASK & input_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
-       ON_STRONG_OOP_REF : INTERNAL_EMPTY);
+       ON_STRONG_OOP_REF : DECORATORS_NONE);
     // If no memory ordering has been picked, unordered will be picked
     DecoratorSet memory_ordering_default = ref_strength_default |
-      ((MO_DECORATOR_MASK & ref_strength_default) == 0 ? MO_UNORDERED : INTERNAL_EMPTY);
+      ((MO_DECORATOR_MASK & ref_strength_default) == 0 ? MO_UNORDERED : DECORATORS_NONE);
     // If no barrier strength has been picked, normal will be used
     DecoratorSet barrier_strength_default = memory_ordering_default |
-      ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
+      ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : DECORATORS_NONE);
     DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
     return value;
   }

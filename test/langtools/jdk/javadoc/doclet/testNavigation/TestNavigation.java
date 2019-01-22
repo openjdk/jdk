@@ -28,9 +28,9 @@
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox JavadocTester
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestNavigation
  */
 
@@ -38,7 +38,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import toolbox.*;
+import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestNavigation extends JavadocTester {
 
@@ -53,7 +54,7 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    void test(Path ignore) {
+    public void test(Path ignore) {
         javadoc("-d", "out",
                 "-overview", testSrc("overview.html"),
                 "--frames",
@@ -110,7 +111,7 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    void test_html4(Path ignore) {
+    public void test_html4(Path ignore) {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-overview", testSrc("overview.html"),
@@ -151,7 +152,7 @@ public class TestNavigation extends JavadocTester {
 
     // Test for checking additional padding to offset the fixed navigation bar in HTML5.
     @Test
-    void test1(Path ignore) {
+    public void test1(Path ignore) {
         javadoc("-d", "out-1",
                 "-html5",
                 "--frames",
@@ -185,7 +186,7 @@ public class TestNavigation extends JavadocTester {
 
     // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified for HTML4.
     @Test
-    void test2(Path ignore) {
+    public void test2(Path ignore) {
         javadoc("-d", "out-2",
                 "-nonavbar",
                 "--frames",
@@ -217,7 +218,7 @@ public class TestNavigation extends JavadocTester {
 
     // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified for HTML5.
     @Test
-    void test3(Path ignore) {
+    public void test3(Path ignore) {
         javadoc("-d", "out-3",
                 "-html5",
                 "-nonavbar",
@@ -251,7 +252,7 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    void test4(Path base) throws IOException {
+    public void test4(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "package pkg1; public class A {\n"

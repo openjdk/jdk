@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,7 +468,8 @@ public abstract class SubscriberWrapper
           .append(" outputQ size: ").append(Integer.toString(outputQ.size()))
           //.append(" outputQ: ").append(outputQ.toString())
           .append(" cf: ").append(cf.toString())
-          .append(" downstreamSubscription: ").append(downstreamSubscription.toString());
+          .append(" downstreamSubscription: ").append(downstreamSubscription)
+          .append(" downstreamSubscriber: ").append(downstreamSubscriber);
 
         return sb.toString();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP
-#define SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP
+#ifndef SHARE_PRIMS_JVMTIGETLOADEDCLASSES_HPP
+#define SHARE_PRIMS_JVMTIGETLOADEDCLASSES_HPP
 
 #include "jvmtifiles/jvmtiEnv.hpp"
 
@@ -34,4 +34,4 @@ public:
                                           jint* classCountPtr, jclass** classesPtr);
 };
 
-#endif // SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP
+#endif // SHARE_PRIMS_JVMTIGETLOADEDCLASSES_HPP

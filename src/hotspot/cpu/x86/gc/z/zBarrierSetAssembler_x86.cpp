@@ -357,7 +357,7 @@ static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register radd
   // Create stub name
   char name[64];
   const bool weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  os::snprintf(name, sizeof(name), "load_barrier%s_stub_%s", weak ? "_weak" : "", raddr->name());
+  os::snprintf(name, sizeof(name), "zgc_load_barrier%s_stub_%s", weak ? "_weak" : "", raddr->name());
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(cgen, "StubRoutines", os::strdup(name, mtCode));
@@ -393,7 +393,7 @@ static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register radd
   }
 
   // Setup arguments
-  if (c_rarg1 != raddr) {
+  if (raddr != c_rarg1) {
     __ movq(c_rarg1, raddr);
   }
   __ movq(c_rarg0, Address(raddr, 0));
@@ -442,19 +442,22 @@ static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register radd
 
 #undef __
 
-void ZBarrierSetAssembler::barrier_stubs_init() {
-  // Load barrier stubs
-  int stub_code_size = 256 * 16; // Rough estimate of code size
+static void barrier_stubs_init_inner(const char* label, const DecoratorSet decorators, address* stub) {
+  const int nregs = RegisterImpl::number_of_registers;
+  const int code_size = nregs * 128; // Rough estimate of code size
 
   ResourceMark rm;
-  BufferBlob* bb = BufferBlob::create("zgc_load_barrier_stubs", stub_code_size);
-  CodeBuffer buf(bb);
+
+  CodeBuffer buf(BufferBlob::create(label, code_size));
   StubCodeGenerator cgen(&buf);
 
-  Register rr = as_Register(0);
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
-    _load_barrier_slow_stub[i] = generate_load_barrier_stub(&cgen, rr, ON_STRONG_OOP_REF);
-    _load_barrier_weak_slow_stub[i] = generate_load_barrier_stub(&cgen, rr, ON_WEAK_OOP_REF);
-    rr = rr->successor();
+  for (int i = 0; i < nregs; i++) {
+    const Register reg = as_Register(i);
+    stub[i] = generate_load_barrier_stub(&cgen, reg, decorators);
   }
+}
+
+void ZBarrierSetAssembler::barrier_stubs_init() {
+  barrier_stubs_init_inner("zgc_load_barrier_stubs", ON_STRONG_OOP_REF, _load_barrier_slow_stub);
+  barrier_stubs_init_inner("zgc_load_barrier_weak_stubs", ON_WEAK_OOP_REF, _load_barrier_weak_slow_stub);
 }

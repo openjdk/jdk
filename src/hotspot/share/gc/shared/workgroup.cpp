@@ -297,7 +297,6 @@ void AbstractGangWorker::run() {
 }
 
 void AbstractGangWorker::initialize() {
-  this->initialize_named_thread();
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());

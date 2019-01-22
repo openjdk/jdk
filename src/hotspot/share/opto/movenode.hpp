@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_MOVENODE_HPP
-#define SHARE_VM_OPTO_MOVENODE_HPP
+#ifndef SHARE_OPTO_MOVENODE_HPP
+#define SHARE_OPTO_MOVENODE_HPP
 
 #include "opto/node.hpp"
 
@@ -152,5 +152,4 @@ class BinaryNode : public Node {
 };
 
 
-#endif // SHARE_VM_OPTO_MOVENODE_HPP
-
+#endif // SHARE_OPTO_MOVENODE_HPP

@@ -43,7 +43,7 @@ public interface MenuElement {
      * source being the receiving element's component. {@code path} is the
      * path of the receiving element in the menu hierarchy including the
      * receiving element itself. {@code manager} is the
-     * {@code MenuSelectionManager}for the menu hierarchy. This method should
+     * {@code MenuSelectionManager} for the menu hierarchy. This method should
      * process the {@code MouseEvent} and change the menu selection if necessary
      * by using {@code MenuSelectionManager}'s API Note: you do not have to
      * forward the event to sub-components. This is done automatically by the

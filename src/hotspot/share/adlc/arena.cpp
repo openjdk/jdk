@@ -34,6 +34,16 @@ void* AllocateHeap(size_t size) {
   return ptr;
 }
 
+void* ReAllocateHeap(void* old_ptr, size_t size) {
+  unsigned char* ptr = (unsigned char*) realloc(old_ptr, size);
+  if (ptr == NULL && size != 0) {
+    fprintf(stderr, "Error: Out of memory in ADLC\n"); // logging can cause crash!
+    fflush(stderr);
+    exit(1);
+  }
+  return ptr;
+}
+
 void* Chunk::operator new(size_t requested_size, size_t length) throw() {
   return CHeapObj::operator new(requested_size + length);
 }

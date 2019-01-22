@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHPHASETIMEINGS_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHPHASETIMEINGS_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shared/workerDataArray.hpp"
@@ -89,7 +89,6 @@ class outputStream;
   f(purge_class_unload,                             "    Unload Classes")               \
   f(purge_par,                                      "    Parallel Cleanup")             \
   f(purge_cldg,                                     "    CLDG")                         \
-  f(purge_string_dedup,                             "    String Dedup")                 \
   f(complete_liveness,                              "  Complete Liveness")              \
   f(prepare_evac,                                   "  Prepare Evacuation")             \
   f(recycle_regions,                                "  Recycle regions")                \
@@ -255,7 +254,6 @@ class outputStream;
   f(full_gc_purge_class_unload,                      "      Unload Classes")            \
   f(full_gc_purge_par,                               "    Parallel Cleanup")            \
   f(full_gc_purge_cldg,                              "    CLDG")                        \
-  f(full_gc_purge_string_dedup,                      "    String Dedup")                \
   f(full_gc_calculate_addresses,                     "  Calculate Addresses")           \
   f(full_gc_calculate_addresses_regular,             "    Regular Objects")             \
   f(full_gc_calculate_addresses_humong,              "    Humongous Objects")           \
@@ -395,4 +393,4 @@ public:
   void print() const;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGCPHASETIMEINGS_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP

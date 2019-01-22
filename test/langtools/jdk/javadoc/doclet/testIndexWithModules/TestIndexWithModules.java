@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8190875
  * @summary modules not listed in overview/index page
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestIndexWithModules
  */
 
@@ -41,6 +41,8 @@ import builder.ClassBuilder;
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
 
+
+import javadoc.tester.JavadocTester;
 
 public class TestIndexWithModules extends JavadocTester {
 
@@ -59,7 +61,7 @@ public class TestIndexWithModules extends JavadocTester {
     }
 
     @Test
-    void testIndexWithOverviewPath(Path base) throws Exception {
+    public void testIndexWithOverviewPath(Path base) throws Exception {
         Path out = base.resolve("out");
 
         tb.writeFile("overview.html",
@@ -80,7 +82,8 @@ public class TestIndexWithModules extends JavadocTester {
 
     //multiple modules with frames
     @Test
-    void testIndexWithMultipleModules1(Path base) throws Exception {
+    public void testIndexWithMultipleModules1(Path base) throws Exception {
+        setAutomaticCheckLinks(false); // @ignore 8217013
         Path out = base.resolve("out");
         javadoc("-d", out.toString(),
                 "--module-source-path", src.toString(),
@@ -96,11 +99,12 @@ public class TestIndexWithModules extends JavadocTester {
                 "<a href=\"m1/module-summary.html\">m1</a>",
                 "<a href=\"m3/module-summary.html\">m3</a>",
                 "<a href=\"m4/module-summary.html\">m4</a>");
+        setAutomaticCheckLinks(true); // @ignore 8217013
     }
 
     //multiple modules with out frames
     @Test
-    void testIndexWithMultipleModules2(Path base) throws Exception {
+    public void testIndexWithMultipleModules2(Path base) throws Exception {
         Path out = base.resolve("out");
         javadoc("-d", out.toString(),
                 "--module-source-path", src.toString(),
@@ -116,7 +120,7 @@ public class TestIndexWithModules extends JavadocTester {
     }
 
     @Test
-    void testIndexWithSingleModule(Path base) throws Exception {
+    public void testIndexWithSingleModule(Path base) throws Exception {
         Path out = base.resolve("out");
         javadoc("-d", out.toString(),
                 "--module-source-path", src.toString(),
@@ -129,7 +133,7 @@ public class TestIndexWithModules extends JavadocTester {
 
     //no modules and multiple packages
     @Test
-    void testIndexWithNoModules1(Path base) throws Exception{
+    public void testIndexWithNoModules1(Path base) throws Exception{
         Path out = base.resolve("out");
         new ClassBuilder(tb, "P1.A1")
                 .setModifiers("public","class")
@@ -154,7 +158,7 @@ public class TestIndexWithModules extends JavadocTester {
 
     //no modules and one package
     @Test
-    void testIndexWithNoModules2(Path base) throws Exception{
+    public void testIndexWithNoModules2(Path base) throws Exception{
         Path out = base.resolve("out");
         new ClassBuilder(tb, "P1.A1")
                 .setModifiers("public","class")

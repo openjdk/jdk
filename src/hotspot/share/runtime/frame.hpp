@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_FRAME_HPP
-#define SHARE_VM_RUNTIME_FRAME_HPP
+#ifndef SHARE_RUNTIME_FRAME_HPP
+#define SHARE_RUNTIME_FRAME_HPP
 
 #include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
@@ -39,6 +39,7 @@ typedef class BytecodeInterpreter* interpreterState;
 class CodeBlob;
 class FrameValues;
 class vframeArray;
+class JavaCallWrapper;
 
 
 // A frame represents a physical stack frame (an activation).  Frames
@@ -469,4 +470,4 @@ class StackFrameStream : public StackObj {
   RegisterMap* register_map()     { return &_reg_map; }
 };
 
-#endif // SHARE_VM_RUNTIME_FRAME_HPP
+#endif // SHARE_RUNTIME_FRAME_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_PERFMEMORY_HPP
-#define SHARE_VM_RUNTIME_PERFMEMORY_HPP
+#ifndef SHARE_RUNTIME_PERFMEMORY_HPP
+#define SHARE_RUNTIME_PERFMEMORY_HPP
 
 #include "utilities/exceptions.hpp"
 
@@ -167,4 +167,4 @@ class PerfMemory : AllStatic {
 void perfMemory_init();
 void perfMemory_exit();
 
-#endif // SHARE_VM_RUNTIME_PERFMEMORY_HPP
+#endif // SHARE_RUNTIME_PERFMEMORY_HPP

@@ -26,12 +26,14 @@
  * @bug 4636667 7052425 8016549 8196202
  * @summary  Use <H1, <H2>, and <H3> in proper sequence for accessibility
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main AccessH1
  */
 
+
+import javadoc.tester.JavadocTester;
 
 public class AccessH1 extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class AccessH1 extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-doctitle", "Document Title",
                 "--frames",

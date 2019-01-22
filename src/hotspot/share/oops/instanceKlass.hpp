@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
-#define SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#ifndef SHARE_OOPS_INSTANCEKLASS_HPP
+#define SHARE_OOPS_INSTANCEKLASS_HPP
 
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -71,6 +71,8 @@ class JNIid;
 class JvmtiCachedClassFieldMap;
 class nmethodBucket;
 class SuperTypeClosure;
+class OopMapCache;
+class InterpreterOopMap;
 
 // This is used in iterators below.
 class FieldClosure: public StackObj {
@@ -1017,7 +1019,6 @@ public:
   bool is_leaf_class() const               { return _subklass == NULL; }
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
-  bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
   int oop_size(oop obj)  const             { return size_helper(); }
   // slow because it's a virtual call and used for verifying the layout_helper.
@@ -1242,11 +1243,7 @@ public:
 
 private:
   // initialization state
-#ifdef ASSERT
   void set_init_state(ClassState state);
-#else
-  void set_init_state(ClassState state) { _init_state = (u1)state; }
-#endif
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
@@ -1473,4 +1470,4 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
-#endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#endif // SHARE_OOPS_INSTANCEKLASS_HPP

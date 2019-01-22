@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_C2_GLOBALS_X86_HPP
-#define CPU_X86_VM_C2_GLOBALS_X86_HPP
+#ifndef CPU_X86_C2_GLOBALS_X86_HPP
+#define CPU_X86_C2_GLOBALS_X86_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -99,4 +99,4 @@ define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);
 
-#endif // CPU_X86_VM_C2_GLOBALS_X86_HPP
+#endif // CPU_X86_C2_GLOBALS_X86_HPP

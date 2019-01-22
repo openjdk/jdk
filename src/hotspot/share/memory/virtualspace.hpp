@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
-#define SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+#ifndef SHARE_MEMORY_VIRTUALSPACE_HPP
+#define SHARE_MEMORY_VIRTUALSPACE_HPP
 
 #include "utilities/globalDefinitions.hpp"
+
+class outputStream;
 
 // ReservedSpace is a data structure for reserving a contiguous address range.
 
@@ -234,4 +236,4 @@ class VirtualSpace {
   void print();
 };
 
-#endif // SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+#endif // SHARE_MEMORY_VIRTUALSPACE_HPP

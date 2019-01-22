@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_SCOPEDESC_HPP
-#define SHARE_VM_CODE_SCOPEDESC_HPP
+#ifndef SHARE_CODE_SCOPEDESC_HPP
+#define SHARE_CODE_SCOPEDESC_HPP
 
 #include "code/debugInfo.hpp"
 #include "code/pcDesc.hpp"
@@ -67,6 +67,9 @@ class ScopeDesc : public ResourceObj {
   // avoid a .hpp-.hpp dependency.)
   ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
+  // Direct access to scope
+  ScopeDesc* at_offset(int decode_offset) { return new ScopeDesc(this, decode_offset); }
+
   // JVM state
   Method* method()      const { return _method; }
   int          bci()      const { return _bci;    }
@@ -85,12 +88,16 @@ class ScopeDesc : public ResourceObj {
   // Returns where the scope was decoded
   int decode_offset() const { return _decode_offset; }
 
+  int sender_decode_offset() const { return _sender_decode_offset; }
+
   // Tells whether sender() returns NULL
   bool is_top() const;
 
  private:
-  // Alternative constructor
+  void initialize(const ScopeDesc* parent, int decode_offset);
+  // Alternative constructors
   ScopeDesc(const ScopeDesc* parent);
+  ScopeDesc(const ScopeDesc* parent, int decode_offset);
 
   // JVM state
   Method*       _method;
@@ -134,4 +141,4 @@ class ScopeDesc : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_CODE_SCOPEDESC_HPP
+#endif // SHARE_CODE_SCOPEDESC_HPP

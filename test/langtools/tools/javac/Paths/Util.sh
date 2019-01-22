@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 # Utilities for shell tests
 
 : ${TESTSRC=.} ${TESTCLASSES=.}
-  java="${TESTJAVA+${TESTJAVA}/bin/}java"
- javac="${TESTJAVA+${TESTJAVA}/bin/}javac"
-   jar="${TESTJAVA+${TESTJAVA}/bin/}jar"
-jimage="${TESTJAVA+${TESTJAVA}/bin/}jimage"
+  java="${TESTJAVA+${TESTJAVA}/bin/}java${EXE_SUFFIX}"
+ javac="${TESTJAVA+${TESTJAVA}/bin/}javac${EXE_SUFFIX}"
+   jar="${TESTJAVA+${TESTJAVA}/bin/}jar${EXE_SUFFIX}"
+jimage="${TESTJAVA+${TESTJAVA}/bin/}jimage${EXE_SUFFIX}"
 
 case `uname -s` in
   Windows*|CYGWIN*)

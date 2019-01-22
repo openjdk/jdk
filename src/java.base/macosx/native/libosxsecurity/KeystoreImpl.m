@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,13 +578,15 @@ JNF_COCOA_ENTER(env);
         cssmPerror("_addItemToKeychain: SecKeychainItemImport", err);
     }
 
-    (*env)->ReleaseByteArrayElements(env, rawDataObj, rawData, JNI_ABORT);
-
     if (createdItems != NULL) {
         CFRelease(createdItems);
     }
 
 errOut:
+    if (rawData) {
+        (*env)->ReleaseByteArrayElements(env, rawDataObj, rawData, JNI_ABORT);
+    }
+
     if (passwordStrRef) CFRelease(passwordStrRef);
     if (passwordChars) {
         // clear the password and release

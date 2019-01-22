@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1064,7 +1064,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
 
     /**
      * Returns the insert row or the current row of this
-     * {@code CachedRowSetImpl}object.
+     * {@code CachedRowSetImpl} object.
      *
      * @return the {@code Row} object on which this {@code CachedRowSetImpl}
      * objects's cursor is positioned
@@ -4326,7 +4326,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      *
      * @param columnName a {@code String} object that must match the
      *        SQL name of a column in this rowset, ignoring case
-     * @param c the new column {@code Clob}value
+     * @param c the new column {@code Clob} value
      * @throws SQLException if (1) the given column name does not match the
      *            name of a column in this rowset, (2) the cursor is not on
      *            one of this rowset's rows or its insert row, or (3) this

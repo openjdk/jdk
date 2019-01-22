@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,31 +44,22 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/flags/jvmFlag.hpp"
-#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/growableArray.hpp"
 
-static bool is_disabled_on_command_line() {
-  static const size_t length = strlen("FlightRecorder");
-  static JVMFlag* const flight_recorder_flag = JVMFlag::find_flag("FlightRecorder", length);
-  assert(flight_recorder_flag != NULL, "invariant");
-  return flight_recorder_flag->is_command_line() ? !FlightRecorder : false;
-}
-
 bool JfrRecorder::is_disabled() {
-  return is_disabled_on_command_line();
-}
-
-static bool set_flight_recorder_flag(bool flag_value) {
-  JVMFlag::boolAtPut((char*)"FlightRecorder", &flag_value, JVMFlag::MANAGEMENT);
-  return FlightRecorder;
+  // True if -XX:-FlightRecorder has been explicitly set on the
+  // command line
+  return FLAG_IS_CMDLINE(FlightRecorder) ? !FlightRecorder : false;
 }
 
 static bool _enabled = false;
 
 static bool enable() {
   assert(!_enabled, "invariant");
-  _enabled = set_flight_recorder_flag(true);
+  FLAG_SET_MGMT(bool, FlightRecorder, true);
+  _enabled = FlightRecorder;
+  assert(_enabled, "invariant");
   return _enabled;
 }
 

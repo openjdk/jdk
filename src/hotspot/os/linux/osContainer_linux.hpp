@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_LINUX_VM_OSCONTAINER_LINUX_HPP
-#define OS_LINUX_VM_OSCONTAINER_LINUX_HPP
+#ifndef OS_LINUX_OSCONTAINER_LINUX_HPP
+#define OS_LINUX_OSCONTAINER_LINUX_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -65,4 +65,4 @@ inline bool OSContainer::is_containerized() {
   return _is_containerized;
 }
 
-#endif // OS_LINUX_VM_OSCONTAINER_LINUX_HPP
+#endif // OS_LINUX_OSCONTAINER_LINUX_HPP

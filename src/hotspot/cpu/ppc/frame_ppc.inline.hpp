@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_FRAME_PPC_INLINE_HPP
-#define CPU_PPC_VM_FRAME_PPC_INLINE_HPP
+#ifndef CPU_PPC_FRAME_PPC_INLINE_HPP
+#define CPU_PPC_FRAME_PPC_INLINE_HPP
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
@@ -220,4 +220,4 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *((oop*)map->location(R3->as_VMReg())) = obj;
 }
 
-#endif // CPU_PPC_VM_FRAME_PPC_INLINE_HPP
+#endif // CPU_PPC_FRAME_PPC_INLINE_HPP

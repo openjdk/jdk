@@ -602,6 +602,17 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
       return NULL;
   }
 
+  if (method->name() == vmSymbols::clone_name() &&
+      resolved == SystemDictionary::Object_klass() &&
+      recv_klass->is_array_klass()) {
+    // Resolution of the clone method on arrays always returns Object.clone even though that method
+    // has protected access.  There's some trickery in the access checking to make this all work out
+    // so it's necessary to pass in the array class as the resolved class to properly trigger this.
+    // Otherwise it's impossible to resolve the array clone methods through JVMCI.  See
+    // LinkResolver::check_method_accessability for the matching logic.
+    resolved = recv_klass;
+  }
+
   LinkInfo link_info(resolved, h_name, h_signature, caller_klass);
   methodHandle m;
   // Only do exact lookup if receiver klass has been linked.  Otherwise,

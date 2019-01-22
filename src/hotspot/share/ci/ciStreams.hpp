@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CISTREAMS_HPP
-#define SHARE_VM_CI_CISTREAMS_HPP
+#ifndef SHARE_CI_CISTREAMS_HPP
+#define SHARE_CI_CISTREAMS_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciExceptionHandler.hpp"
@@ -438,4 +438,4 @@ Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NUL
 Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 
-#endif // SHARE_VM_CI_CISTREAMS_HPP
+#endif // SHARE_CI_CISTREAMS_HPP

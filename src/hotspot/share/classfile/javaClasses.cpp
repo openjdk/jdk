@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1257,12 +1257,6 @@ int  java_lang_Class::oop_size(oop java_class) {
   return size;
 }
 
-int  java_lang_Class::oop_size_raw(oop java_class) {
-  assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field_raw(_oop_size_offset);
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  return size;
-}
 
 void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
@@ -1342,6 +1336,26 @@ oop java_lang_Class::module(oop java_class) {
 void java_lang_Class::set_module(oop java_class, oop module) {
   assert(_module_offset != 0, "must be set");
   java_class->obj_field_put(_module_offset, module);
+}
+
+oop java_lang_Class::name(Handle java_class, TRAPS) {
+  assert(_name_offset != 0, "must be set");
+  oop o = java_class->obj_field(_name_offset);
+  if (o == NULL) {
+    o = StringTable::intern(java_lang_Class::as_external_name(java_class()), THREAD);
+    java_class->obj_field_put(_name_offset, o);
+  }
+  return o;
+}
+
+oop java_lang_Class::source_file(oop java_class) {
+  assert(_source_file_offset != 0, "must be set");
+  return java_class->obj_field(_source_file_offset);
+}
+
+void java_lang_Class::set_source_file(oop java_class, oop source_file) {
+  assert(_source_file_offset != 0, "must be set");
+  java_class->obj_field_put(_source_file_offset, source_file);
 }
 
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
@@ -1462,23 +1476,6 @@ void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
 }
 
 
-bool java_lang_Class::is_primitive(oop java_class) {
-  // should assert:
-  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  bool is_primitive = (java_class->metadata_field(_klass_offset) == NULL);
-
-#ifdef ASSERT
-  if (is_primitive) {
-    Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
-        "Should be either the T_VOID primitive or a java primitive");
-  }
-#endif
-
-  return is_primitive;
-}
-
-
 BasicType java_lang_Class::primitive_type(oop java_class) {
   assert(java_lang_Class::is_primitive(java_class), "just checking");
   Klass* ak = ((Klass*)java_class->metadata_field(_array_klass_offset));
@@ -1521,7 +1518,8 @@ int  java_lang_Class::classRedefinedCount_offset = -1;
   macro(classRedefinedCount_offset, k, "classRedefinedCount", int_signature,         false) ; \
   macro(_class_loader_offset,       k, "classLoader",         classloader_signature, false); \
   macro(_component_mirror_offset,   k, "componentType",       class_signature,       false); \
-  macro(_module_offset,             k, "module",              module_signature,      false)
+  macro(_module_offset,             k, "module",              module_signature,      false); \
+  macro(_name_offset,               k, "name",                string_signature,      false); \
 
 void java_lang_Class::compute_offsets() {
   if (offsets_computed) {
@@ -2567,12 +2565,14 @@ void java_lang_StackTraceElement::fill_in(Handle element,
                                           int version, int bci, Symbol* name, TRAPS) {
   assert(element->is_a(SystemDictionary::StackTraceElement_klass()), "sanity check");
 
-  // Fill in class name
   ResourceMark rm(THREAD);
-  const char* str = holder->external_name();
-  oop classname = StringTable::intern(str, CHECK);
+  HandleMark hm(THREAD);
+
+  // Fill in class name
+  Handle java_class(THREAD, holder->java_mirror());
+  oop classname = java_lang_Class::name(java_class, CHECK);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
-  java_lang_StackTraceElement::set_declaringClassObject(element(), holder->java_mirror());
+  java_lang_StackTraceElement::set_declaringClassObject(element(), java_class());
 
   oop loader = holder->class_loader();
   if (loader != NULL) {
@@ -2606,10 +2606,26 @@ void java_lang_StackTraceElement::fill_in(Handle element,
   } else {
     // Fill in source file name and line number.
     Symbol* source = Backtrace::get_source_file_name(holder, version);
-    if (ShowHiddenFrames && source == NULL)
-      source = vmSymbols::unknown_class_name();
-    oop filename = StringTable::intern(source, CHECK);
-    java_lang_StackTraceElement::set_fileName(element(), filename);
+    oop source_file = java_lang_Class::source_file(java_class());
+    if (source != NULL) {
+      // Class was not redefined. We can trust its cache if set,
+      // else we have to initialize it.
+      if (source_file == NULL) {
+        source_file = StringTable::intern(source, CHECK);
+        java_lang_Class::set_source_file(java_class(), source_file);
+      }
+    } else {
+      // Class was redefined. Dump the cache if it was set.
+      if (source_file != NULL) {
+        source_file = NULL;
+        java_lang_Class::set_source_file(java_class(), source_file);
+      }
+      if (ShowHiddenFrames) {
+        source = vmSymbols::unknown_class_name();
+        source_file = StringTable::intern(source, CHECK);
+      }
+    }
+    java_lang_StackTraceElement::set_fileName(element(), source_file);
 
     int line_number = Backtrace::get_line_number(method, bci);
     java_lang_StackTraceElement::set_lineNumber(element(), line_number);
@@ -2617,6 +2633,7 @@ void java_lang_StackTraceElement::fill_in(Handle element,
 }
 
 Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* holder, TRAPS) {
+  HandleMark hm(THREAD);
   Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
   Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mname());
   // we should expand MemberName::name when Throwable uses StackTrace
@@ -2626,6 +2643,7 @@ Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* h
 
 void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS) {
   // set Method* or mid/cpref
+  HandleMark hm(THREAD);
   Handle mname(Thread::current(), stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
   CallInfo info(method(), ik, CHECK);
@@ -2640,6 +2658,7 @@ void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const metho
 
 void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS) {
   ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
   Handle mname(THREAD, stackFrame->obj_field(java_lang_StackFrameInfo::_memberName_offset));
   Klass* clazz = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
   InstanceKlass* holder = InstanceKlass::cast(clazz);
@@ -3980,6 +3999,8 @@ int java_lang_Class::_protection_domain_offset;
 int java_lang_Class::_component_mirror_offset;
 int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
+int java_lang_Class::_name_offset;
+int java_lang_Class::_source_file_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 int java_lang_Throwable::backtrace_offset;

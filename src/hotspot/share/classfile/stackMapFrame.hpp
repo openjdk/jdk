@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
-#define SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
+#ifndef SHARE_CLASSFILE_STACKMAPFRAME_HPP
+#define SHARE_CLASSFILE_STACKMAPFRAME_HPP
 
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
@@ -63,6 +63,7 @@ class StackMapFrame : public ResourceObj {
   ClassVerifier* _verifier;  // the verifier verifying this method
 
   StackMapFrame(const StackMapFrame& cp) :
+      ResourceObj(cp),
       _offset(cp._offset), _locals_size(cp._locals_size),
       _stack_size(cp._stack_size), _stack_mark(cp._stack_mark),
       _max_locals(cp._max_locals), _max_stack(cp._max_stack),
@@ -294,4 +295,4 @@ class StackMapFrame : public ResourceObj {
   void print_on(outputStream* str) const;
 };
 
-#endif // SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
+#endif // SHARE_CLASSFILE_STACKMAPFRAME_HPP

@@ -26,11 +26,13 @@
  * @bug 4638136 7198273 8025633 8081854 8182765
  * @summary  Add ability to skip over nav bar for accessibility
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main AccessSkipNav
  */
+
+import javadoc.tester.JavadocTester;
 
 public class AccessSkipNav extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class AccessSkipNav extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "p1", "p2");
@@ -63,7 +65,7 @@ public class AccessSkipNav extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

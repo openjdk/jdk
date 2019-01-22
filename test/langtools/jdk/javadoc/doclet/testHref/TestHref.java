@@ -26,11 +26,13 @@
  * @bug      4663254 8016328 8025633 8026567 8081854 8182765 8205593
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestHref
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHref extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestHref extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-source", "8",
@@ -83,7 +85,7 @@ public class TestHref extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-html4",
                 "-source", "8",

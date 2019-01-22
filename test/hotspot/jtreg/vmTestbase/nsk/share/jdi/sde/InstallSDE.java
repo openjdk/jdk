@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,18 @@ public class InstallSDE {
     }
 
     public static void install(File inOutClassFile, File attrFile, boolean verbose) throws IOException {
-        File tmpFile = new File(inOutClassFile.getPath() + "tmp");
+        File tmpFile = new File(inOutClassFile.getPath() + "tmp-out");
+        File tmpInOutClassFile = new File(inOutClassFile.getPath() + "tmp-in");
 
-        new InstallSDE(inOutClassFile, attrFile, tmpFile, verbose);
+        // Workaround delayed file deletes on Windows using a tmp file name
+        if (!inOutClassFile.renameTo(tmpInOutClassFile)) {
+            throw new IOException("inOutClassFile.renameTo(tmpInOutClassFile) failed");
+        }
 
-        if (!inOutClassFile.delete()) {
-            throw new IOException("inOutClassFile.delete() failed");
+        new InstallSDE(tmpInOutClassFile, attrFile, tmpFile, verbose);
+
+        if (!tmpInOutClassFile.delete()) {
+            throw new IOException("tmpInOutClassFile.delete() failed");
         }
         if (!tmpFile.renameTo(inOutClassFile)) {
             throw new IOException("tmpFile.renameTo(inOutClassFile) failed");

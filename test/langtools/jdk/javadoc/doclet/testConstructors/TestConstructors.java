@@ -26,11 +26,13 @@
  * @bug 8025524 8031625 8081854 8175200 8186332 8182765
  * @summary Test for constructor name which should be a non-qualified name.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestConstructors
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestConstructors extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestConstructors extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg1");
@@ -90,7 +92,7 @@ public class TestConstructors extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

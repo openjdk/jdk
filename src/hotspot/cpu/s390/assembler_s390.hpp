@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_ASSEMBLER_S390_HPP
-#define CPU_S390_VM_ASSEMBLER_S390_HPP
+#ifndef CPU_S390_ASSEMBLER_S390_HPP
+#define CPU_S390_ASSEMBLER_S390_HPP
 
 #undef  LUCY_DBG
 
@@ -3284,4 +3284,4 @@ class Assembler : public AbstractAssembler {
 
 };
 
-#endif // CPU_S390_VM_ASSEMBLER_S390_HPP
+#endif // CPU_S390_ASSEMBLER_S390_HPP

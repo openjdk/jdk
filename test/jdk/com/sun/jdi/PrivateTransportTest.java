@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@
  * @run main/othervm PrivateTransportTest
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -71,17 +73,8 @@ public class PrivateTransportTest {
             }
             transportLib = foundLib.get();
         }
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            pathSep = ";";
-            pathEnvVar = "PATH";
-        } else {
-            pathSep = ":";
-            if (System.getProperty("os.name").equals("AIX")) {
-                pathEnvVar = "LIBPATH";
-            } else {
-                pathEnvVar = "LD_LIBRARY_PATH";
-            }
-        }
+        pathEnvVar = Platform.sharedLibraryPathVariableName();
+        pathSep    = File.pathSeparator;
     }
 
     private void test() throws Throwable {

@@ -416,6 +416,18 @@ int Type::uhash( const Type *const t ) {
 
 #define SMALLINT ((juint)3)  // a value too insignificant to consider widening
 
+static double pos_dinf() {
+  union { int64_t i; double d; } v;
+  v.i = CONST64(0x7ff0000000000000);
+  return v.d;
+}
+
+static float pos_finf() {
+  union { int32_t i; float f; } v;
+  v.i = 0x7f800000;
+  return v.f;
+}
+
 //--------------------------Initialize_shared----------------------------------
 void Type::Initialize_shared(Compile* current) {
   // This method does not need to be locked because the first system
@@ -445,9 +457,13 @@ void Type::Initialize_shared(Compile* current) {
 
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
+  TypeF::POS_INF = TypeF::make(pos_finf());
+  TypeF::NEG_INF = TypeF::make(-pos_finf());
 
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
+  TypeD::POS_INF = TypeD::make(pos_dinf());
+  TypeD::NEG_INF = TypeD::make(-pos_dinf());
 
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
@@ -1087,6 +1103,8 @@ void Type::typerr( const Type *t ) const {
 // Convenience common pre-built types.
 const TypeF *TypeF::ZERO;       // Floating point zero
 const TypeF *TypeF::ONE;        // Floating point one
+const TypeF *TypeF::POS_INF;    // Floating point positive infinity
+const TypeF *TypeF::NEG_INF;    // Floating point negative infinity
 
 //------------------------------make-------------------------------------------
 // Create a float constant
@@ -1195,6 +1213,8 @@ bool TypeF::empty(void) const {
 // Convenience common pre-built types.
 const TypeD *TypeD::ZERO;       // Floating point zero
 const TypeD *TypeD::ONE;        // Floating point one
+const TypeD *TypeD::POS_INF;    // Floating point positive infinity
+const TypeD *TypeD::NEG_INF;    // Floating point negative infinity
 
 //------------------------------make-------------------------------------------
 const TypeD *TypeD::make(double d) {

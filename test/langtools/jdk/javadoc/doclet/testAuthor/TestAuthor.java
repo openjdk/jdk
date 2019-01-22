@@ -25,9 +25,9 @@
  * @test
  * @bug      8202947
  * @summary  test the at-author tag, and corresponding option
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox JavadocTester
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestAuthor
  */
 
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 public class TestAuthor extends JavadocTester {
@@ -58,7 +59,7 @@ public class TestAuthor extends JavadocTester {
     }
 
     @Test
-    void testAuthor() {
+    public void testAuthor() {
         javadoc("-d", "out-author",
                 "-sourcepath", src.toString(),
                 "-author",
@@ -69,7 +70,7 @@ public class TestAuthor extends JavadocTester {
     }
 
     @Test
-    void testNoAuthor() {
+    public void testNoAuthor() {
         javadoc("-d", "out-noauthor",
                 "-sourcepath", src.toString(),
                 "pkg");

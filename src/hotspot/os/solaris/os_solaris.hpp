@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_OS_SOLARIS_HPP
-#define OS_SOLARIS_VM_OS_SOLARIS_HPP
+#ifndef OS_SOLARIS_OS_SOLARIS_HPP
+#define OS_SOLARIS_OS_SOLARIS_HPP
 
 // Solaris_OS defines the interface to Solaris operating systems
 
@@ -335,4 +335,4 @@ class PlatformParker : public CHeapObj<mtInternal> {
   }
 };
 
-#endif // OS_SOLARIS_VM_OS_SOLARIS_HPP
+#endif // OS_SOLARIS_OS_SOLARIS_HPP

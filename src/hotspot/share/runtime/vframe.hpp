@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VFRAME_HPP
-#define SHARE_VM_RUNTIME_VFRAME_HPP
+#ifndef SHARE_RUNTIME_VFRAME_HPP
+#define SHARE_RUNTIME_VFRAME_HPP
 
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
@@ -278,12 +278,16 @@ class MonitorInfo : public ResourceObj {
 class vframeStreamCommon : StackObj {
  protected:
   // common
+  frame        _prev_frame;
   frame        _frame;
   JavaThread*  _thread;
   RegisterMap  _reg_map;
   enum { interpreted_mode, compiled_mode, at_end_mode } _mode;
 
+  // For compiled_mode
+  int _decode_offset;
   int _sender_decode_offset;
+  int _vframe_id;
 
   // Cached information
   Method* _method;
@@ -320,6 +324,8 @@ class vframeStreamCommon : StackObj {
       return (CompiledMethod*) cb();
   }
 
+  javaVFrame* asJavaVFrame();
+
   // Frame type
   inline bool is_interpreted_frame() const;
   inline bool is_entry_frame() const;
@@ -348,4 +354,4 @@ class vframeStream : public vframeStreamCommon {
   vframeStream(JavaThread* thread, frame top_frame, bool stop_at_java_call_stub = false);
 };
 
-#endif // SHARE_VM_RUNTIME_VFRAME_HPP
+#endif // SHARE_RUNTIME_VFRAME_HPP

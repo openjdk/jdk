@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@
 #endif
 #ifdef COMPILER2
 #include "code/compiledIC.hpp"
-#include "compiler/methodLiveness.hpp"
 #include "opto/compile.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/runtime.hpp"
@@ -258,10 +257,6 @@ void print_statistics() {
   if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
-
-  if (TimeLivenessAnalysis) {
-    MethodLiveness::print_times();
-  }
 #ifdef ASSERT
   if (CollectIndexSetStatistics) {
     IndexSet::print_statistics();
@@ -292,9 +287,6 @@ void print_statistics() {
 
   print_method_profiling_data();
 
-  if (TimeCompilationPolicy) {
-    CompilationPolicy::policy()->print_time();
-  }
   if (TimeOopMap) {
     GenerateOopMap::print_time();
   }

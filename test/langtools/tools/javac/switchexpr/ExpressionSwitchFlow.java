@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8212982
  * @summary Verify a compile-time error is produced if switch expression does not provide a value
- * @compile/fail/ref=ExpressionSwitchFlow.out --enable-preview -source 12 -XDrawDiagnostics ExpressionSwitchFlow.java
+ * @compile/fail/ref=ExpressionSwitchFlow.out --enable-preview -source 13 -XDrawDiagnostics ExpressionSwitchFlow.java
  */
 
 public class ExpressionSwitchFlow {

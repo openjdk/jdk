@@ -171,14 +171,14 @@ final class CertificateRequest {
             //     DistinguishedName certificate_authorities<0..2^16-1>;
             // } CertificateRequest;
             if (m.remaining() < 4) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Incorrect CertificateRequest message: no sufficient data");
             }
             this.types = Record.getBytes8(m);
 
             int listLen = Record.getInt16(m);
             if (listLen > m.remaining()) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Incorrect CertificateRequest message:no sufficient data");
             }
 
@@ -407,7 +407,7 @@ final class CertificateRequest {
             this.types = ClientCertificateType.CERT_TYPES;
 
             if (signatureSchemes == null || signatureSchemes.isEmpty()) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "No signature algorithms specified for " +
                         "CertificateRequest hanshake message");
             }
@@ -437,7 +437,7 @@ final class CertificateRequest {
 
             // certificate_authorities
             if (m.remaining() < 8) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "no sufficient data");
             }
@@ -445,14 +445,14 @@ final class CertificateRequest {
 
             // supported_signature_algorithms
             if (m.remaining() < 6) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "no sufficient data");
             }
 
             byte[] algs = Record.getBytes16(m);
             if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "incomplete signature algorithms");
             }
@@ -466,14 +466,14 @@ final class CertificateRequest {
 
             // certificate_authorities
             if (m.remaining() < 2) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "no sufficient data");
             }
 
             int listLen = Record.getInt16(m);
             if (listLen > m.remaining()) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Invalid CertificateRequest message: no sufficient data");
             }
 
@@ -597,7 +597,7 @@ final class CertificateRequest {
 
             if (shc.localSupportedSignAlgs == null ||
                     shc.localSupportedSignAlgs.isEmpty()) {
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No supported signature algorithm");
             }
 
@@ -783,14 +783,14 @@ final class CertificateRequest {
             //      Extension extensions<2..2^16-1>;
             //  } CertificateRequest;
             if (m.remaining() < 5) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "no sufficient data");
             }
             this.requestContext = Record.getBytes8(m);
 
             if (m.remaining() < 4) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "no sufficient extensions data");
             }

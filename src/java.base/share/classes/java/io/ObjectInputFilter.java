@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ import jdk.internal.access.SharedSecrets;
  * to use other filters without forcing either allowed or rejected status.
  *
  * <p>
- * Typically, a custom filter should check if a process-wide filter
+ * Typically, a custom filter should check if a system-wide filter
  * is configured and defer to it if so. For example,
  * <pre>{@code
  * ObjectInputFilter.Status checkInput(FilterInfo info) {
@@ -80,7 +80,7 @@ import jdk.internal.access.SharedSecrets;
  *     if (serialFilter != null) {
  *         ObjectInputFilter.Status status = serialFilter.checkInput(info);
  *         if (status != ObjectInputFilter.Status.UNDECIDED) {
- *             // The process-wide filter overrides this filter
+ *             // The system-wide filter overrides this filter
  *             return status;
  *         }
  *     }
@@ -196,8 +196,8 @@ public interface ObjectInputFilter {
     }
 
     /**
-     * A utility class to set and get the process-wide filter or create a filter
-     * from a pattern string. If a process-wide filter is set, it will be
+     * A utility class to set and get the system-wide filter or create a filter
+     * from a pattern string. If a system-wide filter is set, it will be
      * used for each {@link ObjectInputStream} that does not set its own filter.
      * <p>
      * When setting the filter, it should be stateless and idempotent,
@@ -222,7 +222,7 @@ public interface ObjectInputFilter {
         private Config() {}
 
         /**
-         * Lock object for process-wide filter.
+         * Lock object for system-wide filter.
          */
         private final static Object serialFilterLock = new Object();
 
@@ -241,13 +241,13 @@ public interface ObjectInputFilter {
         }
 
         /**
-         * The name for the process-wide deserialization filter.
+         * The name for the system-wide deserialization filter.
          * Used as a system property and a java.security.Security property.
          */
         private final static String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
 
         /**
-         * The process-wide filter; may be null.
+         * The system-wide filter; may be null.
          * Lookup the filter in java.security.Security or
          * the system property.
          */
@@ -286,9 +286,9 @@ public interface ObjectInputFilter {
         private static ObjectInputFilter serialFilter = configuredFilter;
 
         /**
-         * Returns the process-wide serialization filter or {@code null} if not configured.
+         * Returns the system-wide serialization filter or {@code null} if not configured.
          *
-         * @return the process-wide serialization filter or {@code null} if not configured
+         * @return the system-wide serialization filter or {@code null} if not configured
          */
         public static ObjectInputFilter getSerialFilter() {
             synchronized (serialFilterLock) {
@@ -297,9 +297,9 @@ public interface ObjectInputFilter {
         }
 
         /**
-         * Set the process-wide filter if it has not already been configured or set.
+         * Set the system-wide filter if it has not already been configured or set.
          *
-         * @param filter the serialization filter to set as the process-wide filter; not null
+         * @param filter the serialization filter to set as the system-wide filter; not null
          * @throws SecurityException if there is security manager and the
          *       {@code SerializablePermission("serialFilter")} is not granted
          * @throws IllegalStateException if the filter has already been set {@code non-null}
@@ -401,7 +401,7 @@ public interface ObjectInputFilter {
 
         /**
          * Implementation of ObjectInputFilter that performs the checks of
-         * the process-wide serialization filter. If configured, it will be
+         * the system-wide serialization filter. If configured, it will be
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */

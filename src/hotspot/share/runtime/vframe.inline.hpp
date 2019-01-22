@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VFRAME_INLINE_HPP
-#define SHARE_VM_RUNTIME_VFRAME_INLINE_HPP
+#ifndef SHARE_RUNTIME_VFRAME_INLINE_HPP
+#define SHARE_RUNTIME_VFRAME_INLINE_HPP
 
 #include "runtime/frame.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -44,6 +44,7 @@ inline void vframeStreamCommon::next() {
 
   // handle general case
   do {
+    _prev_frame = _frame;
     _frame = _frame.sender(&_reg_map);
   } while (!fill_from_frame());
 }
@@ -59,6 +60,7 @@ inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stu
 
   _frame = _thread->last_frame();
   while (!fill_from_frame()) {
+    _prev_frame = _frame;
     _frame = _frame.sender(&_reg_map);
   }
 }
@@ -68,12 +70,14 @@ inline bool vframeStreamCommon::fill_in_compiled_inlined_sender() {
     return false;
   }
   fill_from_compiled_frame(_sender_decode_offset);
+  ++_vframe_id;
   return true;
 }
 
 
 inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
   _mode = compiled_mode;
+  _decode_offset = decode_offset;
 
   // Range check to detect ridiculous offsets.
   if (decode_offset == DebugInformationRecorder::serialized_null ||
@@ -118,6 +122,8 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
 inline void vframeStreamCommon::fill_from_compiled_native_frame() {
   _mode = compiled_mode;
   _sender_decode_offset = DebugInformationRecorder::serialized_null;
+  _decode_offset = DebugInformationRecorder::serialized_null;
+  _vframe_id = 0;
   _method = nm()->method();
   _bci = 0;
 }
@@ -187,6 +193,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
         decode_offset = pc_desc->scope_decode_offset();
       }
       fill_from_compiled_frame(decode_offset);
+      _vframe_id = 0;
     }
     return true;
   }
@@ -221,4 +228,4 @@ inline void vframeStreamCommon::fill_from_interpreter_frame() {
   _bci    = bci;
 }
 
-#endif // SHARE_VM_RUNTIME_VFRAME_INLINE_HPP
+#endif // SHARE_RUNTIME_VFRAME_INLINE_HPP

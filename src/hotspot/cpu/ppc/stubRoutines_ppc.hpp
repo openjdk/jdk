@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_STUBROUTINES_PPC_HPP
-#define CPU_PPC_VM_STUBROUTINES_PPC_HPP
+#ifndef CPU_PPC_STUBROUTINES_PPC_HPP
+#define CPU_PPC_STUBROUTINES_PPC_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
@@ -45,8 +45,14 @@ enum platform_dependent_constants {
 #else
   #define CRC32_TABLES 1
 #endif
-#define CRC32_CONSTANTS_SIZE 1084
-#define CRC32_BARRET_CONSTANTS 10
+
+#define REVERSE_CRC32_POLY  0xEDB88320
+#define REVERSE_CRC32C_POLY 0x82F63B78
+#define INVERSE_REVERSE_CRC32_POLY  0x1aab14226ull
+#define INVERSE_REVERSE_CRC32C_POLY 0x105fd79bdull
+#define CRC32_UNROLL_FACTOR 2048
+#define CRC32_UNROLL_FACTOR2 8
+
 
 class ppc64 {
  friend class StubGenerator;
@@ -56,20 +62,15 @@ class ppc64 {
   // CRC32 Intrinsics.
   static juint _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
   static juint _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
-  static juint *_crc_constants, *_crc_barret_constants;
-  static juint *_crc32c_constants, *_crc32c_barret_constants;
+  static juint *_crc_constants;
+  static juint *_crc32c_constants;
 
  public:
 
   // CRC32 Intrinsics.
-  static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
-  static void generate_load_crc_constants_addr(MacroAssembler* masm, Register table);
-  static void generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table);
-  static void generate_load_crc32c_table_addr(MacroAssembler* masm, Register table);
-  static void generate_load_crc32c_constants_addr(MacroAssembler* masm, Register table);
-  static void generate_load_crc32c_barret_constants_addr(MacroAssembler* masm, Register table);
+  static address crc_constants() { return (address)_crc_constants; }
+  static address crc32c_constants() { return (address)_crc32c_constants; }
   static juint* generate_crc_constants(juint reverse_poly);
-  static juint* generate_crc_barret_constants(juint reverse_poly);
 };
 
-#endif // CPU_PPC_VM_STUBROUTINES_PPC_HPP
+#endif // CPU_PPC_STUBROUTINES_PPC_HPP

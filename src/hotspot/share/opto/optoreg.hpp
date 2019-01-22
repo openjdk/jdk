@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_OPTOREG_HPP
-#define SHARE_VM_OPTO_OPTOREG_HPP
+#ifndef SHARE_OPTO_OPTOREG_HPP
+#define SHARE_OPTO_OPTOREG_HPP
 
 #include "utilities/macros.hpp"
 
@@ -207,4 +207,4 @@ public:
   OptoRegPair() { _second = OptoReg::Bad; _first = OptoReg::Bad; }
 };
 
-#endif // SHARE_VM_OPTO_OPTOREG_HPP
+#endif // SHARE_OPTO_OPTOREG_HPP

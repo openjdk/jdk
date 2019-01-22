@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_X86_VM_COUNTTRAILINGZEROS_HPP
-#define OS_CPU_SOLARIS_X86_VM_COUNTTRAILINGZEROS_HPP
+#ifndef OS_CPU_SOLARIS_X86_COUNT_TRAILING_ZEROS_SOLARIS_X86_HPP
+#define OS_CPU_SOLARIS_X86_COUNT_TRAILING_ZEROS_SOLARIS_X86_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -34,4 +34,4 @@ inline unsigned count_trailing_zeros(uintx x) {
   return result;
 }
 
-#endif // include guard
+#endif // OS_CPU_SOLARIS_X86_COUNT_TRAILING_ZEROS_SOLARIS_X86_HPP

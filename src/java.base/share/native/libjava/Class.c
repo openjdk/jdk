@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ extern jboolean VerifyFixClassname(char *utf_name);
 #define BA  "[B"
 
 static JNINativeMethod methods[] = {
-    {"getName0",         "()" STR,          (void *)&JVM_GetClassName},
+    {"initClassName",    "()" STR,          (void *)&JVM_InitClassName},
     {"getSuperclass",    "()" CLS,          NULL},
     {"getInterfaces0",   "()[" CLS,         (void *)&JVM_GetClassInterfaces},
     {"isInterface",      "()Z",             (void *)&JVM_IsInterface},

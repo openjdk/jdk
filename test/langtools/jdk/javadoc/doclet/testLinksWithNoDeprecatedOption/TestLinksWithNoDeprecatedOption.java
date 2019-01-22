@@ -25,12 +25,12 @@
  * @test
  * @bug 8202627
  * @summary javadoc generates broken links to deprecated items when -nodeprecated is used
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestLinksWithNoDeprecatedOption
  */
 
@@ -42,6 +42,8 @@ import builder.ClassBuilder;
 import builder.ClassBuilder.FieldBuilder;
 import builder.ClassBuilder.MethodBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinksWithNoDeprecatedOption extends JavadocTester {
 
@@ -57,7 +59,7 @@ public class TestLinksWithNoDeprecatedOption extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(base, srcDir);
 

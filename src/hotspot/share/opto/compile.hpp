@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_COMPILE_HPP
-#define SHARE_VM_OPTO_COMPILE_HPP
+#ifndef SHARE_OPTO_COMPILE_HPP
+#define SHARE_OPTO_COMPILE_HPP
 
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
@@ -1088,6 +1088,7 @@ class Compile : public Phase {
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
+  void remove_root_to_sfpts_edges();
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }
@@ -1362,4 +1363,4 @@ class Compile : public Phase {
   void          set_clone_map(Dict* d);
 };
 
-#endif // SHARE_VM_OPTO_COMPILE_HPP
+#endif // SHARE_OPTO_COMPILE_HPP

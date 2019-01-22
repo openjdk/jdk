@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_DICTIONARY_HPP
-#define SHARE_VM_CLASSFILE_DICTIONARY_HPP
+#ifndef SHARE_CLASSFILE_DICTIONARY_HPP
+#define SHARE_CLASSFILE_DICTIONARY_HPP
 
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -170,7 +170,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                                 current != NULL;
                                 current = current->_next) {
-      guarantee(oopDesc::is_oop(current->_pd_cache->object_no_keepalive()), "Invalid oop");
+      guarantee(oopDesc::is_oop_or_null(current->_pd_cache->object_no_keepalive()), "Invalid oop");
     }
   }
 
@@ -304,4 +304,4 @@ public:
     return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
   }
 };
-#endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP
+#endif // SHARE_CLASSFILE_DICTIONARY_HPP

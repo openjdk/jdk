@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OS_HPP
-#define SHARE_VM_RUNTIME_OS_HPP
+#ifndef SHARE_RUNTIME_OS_HPP
+#define SHARE_RUNTIME_OS_HPP
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -51,11 +51,10 @@ typedef void (*dll_func)(...);
 
 class Thread;
 class JavaThread;
-class Event;
-class DLL;
-class FileHandle;
 class NativeCallStack;
 class methodHandle;
+class OSThread;
+class Mutex;
 
 template<class E> class GrowableArray;
 
@@ -474,6 +473,7 @@ class os: AllStatic {
   // Ignores Thread.interrupt() (so keep it short).
   // ms = 0, will sleep for the least amount of time allowed by the OS.
   static void naked_short_sleep(jlong ms);
+  static void naked_short_nanosleep(jlong ns);
   static void infinite_sleep(); // never returns, use with CAUTION
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
@@ -539,9 +539,8 @@ class os: AllStatic {
 
   //File i/o operations
 
-  static size_t read(int fd, void *buf, unsigned int nBytes);
-  static size_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static size_t restartable_read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
   static size_t write(int fd, const void *buf, unsigned int nBytes);
 
   // Reading directories.
@@ -995,4 +994,4 @@ template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {
 
 extern "C" int SpinPause();
 
-#endif // SHARE_VM_RUNTIME_OS_HPP
+#endif // SHARE_RUNTIME_OS_HPP

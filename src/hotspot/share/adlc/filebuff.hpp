@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ADLC_FILEBUFF_HPP
-#define SHARE_VM_ADLC_FILEBUFF_HPP
+#ifndef SHARE_ADLC_FILEBUFF_HPP
+#define SHARE_ADLC_FILEBUFF_HPP
 
 // FILEBUFF.HPP - Definitions for parser file buffering routines
 
@@ -78,4 +78,4 @@ class FileBuff {
   // when the pointer is valid (i.e. just obtained from getline()).
   long getoff(const char* s) { return _bufoff + (long)(s - _buf); }
 };
-#endif // SHARE_VM_ADLC_FILEBUFF_HPP
+#endif // SHARE_ADLC_FILEBUFF_HPP

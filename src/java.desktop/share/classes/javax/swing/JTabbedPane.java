@@ -24,15 +24,39 @@
  */
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Component;
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Cursor;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.FocusListener;
+
 import java.beans.JavaBean;
 import java.beans.BeanProperty;
 import java.beans.Transient;
-import java.util.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.accessibility.*;
+
+import java.util.Locale;
+import java.util.ArrayList;
+
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
+import javax.swing.plaf.TabbedPaneUI;
+import javax.swing.plaf.UIResource;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
 
 import sun.swing.SwingUtilities2;
 
@@ -923,6 +947,13 @@ public class JTabbedPane extends JComponent
         }
     }
 
+    private void clearAccessibleParent(Component c) {
+        AccessibleContext ac = c.getAccessibleContext();
+        if (ac != null) {
+            ac.setAccessibleParent(null);
+        }
+    }
+
     /**
      * Removes the tab at <code>index</code>.
      * After the component associated with <code>index</code> is removed,
@@ -1005,6 +1036,7 @@ public class JTabbedPane extends JComponent
                 if (components[i] == component) {
                     super.remove(i);
                     component.setVisible(true);
+                    clearAccessibleParent(component);
                     break;
                 }
             }
@@ -1552,6 +1584,7 @@ public class JTabbedPane extends JComponent
                     for (int i = 0; i < count; i++) {
                         if (children[i] == page.component) {
                             super.remove(i);
+                            clearAccessibleParent(children[i]);
                         }
                     }
                 }

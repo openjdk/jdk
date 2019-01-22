@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_OS_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_VM_OS_BSD_ZERO_HPP
+#ifndef OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP
 
   static void setup_fpu() {}
 
@@ -53,4 +53,4 @@
 #endif
   }
 
-#endif // OS_CPU_BSD_ZERO_VM_OS_BSD_ZERO_HPP
+#endif // OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_REGISTER_AARCH64_HPP
-#define CPU_AARCH64_VM_REGISTER_AARCH64_HPP
+#ifndef CPU_AARCH64_REGISTER_AARCH64_HPP
+#define CPU_AARCH64_REGISTER_AARCH64_HPP
 
 #include "asm/register.hpp"
 
@@ -258,4 +258,4 @@ public:
   uint32_t bits() const { return _bitset; }
 };
 
-#endif // CPU_AARCH64_VM_REGISTER_AARCH64_HPP
+#endif // CPU_AARCH64_REGISTER_AARCH64_HPP

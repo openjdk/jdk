@@ -720,101 +720,86 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 #define MAX_THREADS 500
 
 typedef struct ThreadStats {
-  int number_threads;
+  int thread_count;
   int counts[MAX_THREADS];
-  int not_helper_counts[MAX_THREADS];
-  int index[MAX_THREADS];
-  jthread threads[MAX_THREADS];
-
-  int method_resolution_problem;
+  char* threads[MAX_THREADS];
 } ThreadStats;
 
 static ThreadStats thread_stats;
 
-static void add_thread_count(jthread thread, int lock, int helper) {
-  int i;
+JNIEXPORT jboolean JNICALL
+Java_MyPackage_HeapMonitorThreadDisabledTest_checkThreadSamplesOnlyFrom(
+    JNIEnv* env, jclass cls, jthread thread) {
   jvmtiThreadInfo info;
-  const char* name;
-  char* end;
-  int idx;
-  int err;
+  jvmtiError err;
+  char* expected_name;
+  int found_thread = FALSE;
 
-  if (lock) {
-    event_storage_lock(&global_event_storage);
+  err = (*jvmti)->GetThreadInfo(jvmti, thread, &info);
+  expected_name = info.name;
+
+  if (err != JVMTI_ERROR_NONE) {
+    fprintf(stderr, "Failed to get thread information\n");
+    return FALSE;
   }
 
-  for (i = 0; i < thread_stats.number_threads; i++) {
-    if (thread_stats.threads[i] == thread) {
-      if (helper) {
-        thread_stats.counts[i]++;
-      } else {
-        thread_stats.not_helper_counts[i]++;
-      }
+  if (thread_stats.thread_count != 1) {
+    fprintf(stderr, "Wrong thread number: %d (expected 1)\n",
+            thread_stats.thread_count);
+    return FALSE;
+  }
 
-      if (lock) {
-        event_storage_unlock(&global_event_storage);
-      }
+  if (strcmp(expected_name, thread_stats.threads[0]) != 0) {
+    fprintf(stderr, "Unexpected thread name: '%s' (expected '%s')\n",
+            thread_stats.threads[0], expected_name);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static void add_thread_count(jthread thread) {
+  int i;
+  jvmtiThreadInfo info;
+  jvmtiError err;
+
+  err = (*jvmti)->GetThreadInfo(jvmti, thread, &info);
+  if (err != JVMTI_ERROR_NONE) {
+    fprintf(stderr, "Thread info for %p failed, ignoring thread count\n",
+            thread);
+    return;
+  }
+
+  event_storage_lock(&global_event_storage);
+  for (i = 0; i < thread_stats.thread_count; i++) {
+    if (!strcmp(thread_stats.threads[i], info.name)) {
+      thread_stats.counts[i]++;
+      event_storage_unlock(&global_event_storage);
       return;
     }
   }
 
-  thread_stats.threads[thread_stats.number_threads] = thread;
+  thread_stats.threads[thread_stats.thread_count] = info.name;
+  thread_stats.counts[thread_stats.thread_count]++;
+  thread_stats.thread_count++;
+  event_storage_unlock(&global_event_storage);
+}
 
-  err = (*jvmti)->GetThreadInfo(jvmti, thread, &info);
-  if (err != JVMTI_ERROR_NONE) {
-    if (lock) {
-      event_storage_unlock(&global_event_storage);
-    }
-
-    // Just to have it accounted as an error...
-    info.name = "Allocator99";
-  }
-
-  if (!strstr(info.name, "Allocator")) {
-    if (lock) {
-      event_storage_unlock(&global_event_storage);
-    }
-
-    // Just to have it accounted as an error...
-    info.name = "Allocator98";
-  }
-
-  name = info.name + 9;
-  end = NULL;
-  idx = strtol(name, &end, 0);
-
-  if (*end == '\0') {
-    if (helper) {
-      thread_stats.counts[thread_stats.number_threads]++;
-    } else {
-      thread_stats.not_helper_counts[thread_stats.number_threads]++;
-    }
-
-    thread_stats.index[thread_stats.number_threads] = idx;
-    thread_stats.number_threads++;
-  } else {
-    fprintf(stderr, "Problem with thread name...: %p %s\n", thread, name);
-  }
-
-  if (PRINT_OUT) {
-    fprintf(stderr, "Added %s - %p - %d - lock: %d\n", info.name, thread, idx, lock);
-  }
-
-  if (lock) {
-    event_storage_unlock(&global_event_storage);
-  }
+JNIEXPORT void JNICALL
+Java_MyPackage_HeapMonitorThreadDisabledTest_enableSamplingEvents(
+    JNIEnv* env, jclass cls, jthread thread) {
+  fprintf(stderr, "Enabling for %p\n", thread);
+  check_error((*jvmti)->SetEventNotificationMode(
+      jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, thread),
+              "Set event notifications for a single thread");
 }
 
 static void print_thread_stats() {
   int i;
   event_storage_lock(&global_event_storage);
-  fprintf(stderr, "Method resolution problem: %d\n", thread_stats.method_resolution_problem);
   fprintf(stderr, "Thread count:\n");
-  for (i = 0; i < thread_stats.number_threads; i++) {
-    fprintf(stderr, "\t%p: %d: %d - %d\n", thread_stats.threads[i],
-            thread_stats.index[i],
-            thread_stats.counts[i],
-            thread_stats.not_helper_counts[i]);
+  for (i = 0; i < thread_stats.thread_count; i++) {
+    fprintf(stderr, "\t%s: %d\n", thread_stats.threads[i], thread_stats.counts[i]);
   }
   event_storage_unlock(&global_event_storage);
 }
@@ -826,7 +811,7 @@ void JNICALL SampledObjectAlloc(jvmtiEnv *jvmti_env,
                                 jobject object,
                                 jclass object_klass,
                                 jlong size) {
-  add_thread_count(thread, 1, 1);
+  add_thread_count(thread);
 
   if (event_storage_get_compaction_required(&global_event_storage)) {
     event_storage_compact(&global_event_storage, jni_env);
@@ -862,29 +847,6 @@ static int enable_notifications() {
   return check_error((*jvmti)->SetEventNotificationMode(
       jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
                      "Set event notifications");
-}
-
-static int enable_notifications_for_two_threads(jthread first, jthread second) {
-  if (check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
-                           "Set event notifications")) {
-    return 0;
-  }
-
-  if (check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, first),
-                  "Set event notifications")) {
-    return 0;
-  }
-
-  // Second thread should fail.
-  if (check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, second),
-                  "Set event notifications")) {
-    return 0;
-  }
-
-  return 1;
 }
 
 static
@@ -968,14 +930,6 @@ Java_MyPackage_HeapMonitor_getEventStorageElementCount(JNIEnv* env, jclass cls) 
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_enableSamplingEvents(JNIEnv* env, jclass cls) {
   enable_notifications();
-}
-
-JNIEXPORT jboolean JNICALL
-Java_MyPackage_HeapMonitor_enableSamplingEventsForTwoThreads(JNIEnv* env,
-                                                             jclass cls,
-                                                             jthread first,
-                                                             jthread second) {
-  return enable_notifications_for_two_threads(first, second);
 }
 
 JNIEXPORT void JNICALL
@@ -1130,10 +1084,9 @@ typedef struct sThreadsFound {
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_HeapMonitorThreadTest_checkSamples(JNIEnv* env, jclass cls,
                                                   jint num_threads) {
-
   print_thread_stats();
   // Ensure we got stacks from at least num_threads.
-  return thread_stats.number_threads >= num_threads;
+  return thread_stats.thread_count >= num_threads;
 }
 
 JNIEXPORT

@@ -50,11 +50,13 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.replacements.nodes.arithmetic.IntegerExactArithmeticNode;
 import org.graalvm.compiler.replacements.nodes.arithmetic.IntegerExactArithmeticSplitNode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+@Ignore
 @RunWith(Parameterized.class)
 public class IntegerExactFoldTest extends GraalCompilerTest {
     private final long lowerBoundA;

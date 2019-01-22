@@ -86,7 +86,7 @@ function MetaInlines(value) {
 function change_title(type, value) {
     if (type === 'MetaInlines') {
         if (value[0].t === 'Str') {
-            var match = value[0].c.match(/^([A-Z]+)\([0-9]+\)$/);
+            var match = value[0].c.match(/^([A-Z0-9]+)\([0-9]+\)$/);
             if (match) {
                 return MetaInlines([
                         Str("The"), Space(),

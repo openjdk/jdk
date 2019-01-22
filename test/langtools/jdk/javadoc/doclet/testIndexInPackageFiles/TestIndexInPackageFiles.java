@@ -25,14 +25,16 @@
  * @test
  * @bug 8213957 8213958
  * @summary Test use of at-index in package-iinfo and doc-files
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox JavadocTester
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestIndexInPackageFiles
  */
 
 import java.io.IOException;
 import java.nio.file.Path;
+
+import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 public class TestIndexInPackageFiles extends JavadocTester {

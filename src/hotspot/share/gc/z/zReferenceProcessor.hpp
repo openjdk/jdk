@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,11 @@ private:
   const char* reference_type_name(ReferenceType type) const;
   volatile oop* reference_referent_addr(oop obj) const;
   oop reference_referent(oop obj) const;
-  bool is_reference_inactive(oop obj) const;
+  bool is_inactive_final_reference(oop obj, ReferenceType type) const;
   bool is_referent_strongly_alive_or_null(oop obj, ReferenceType type) const;
   bool is_referent_softly_alive(oop obj, ReferenceType type) const;
   bool should_drop_reference(oop obj, ReferenceType type) const;
   bool should_mark_referent(ReferenceType type) const;
-  bool should_clear_referent(ReferenceType type) const;
   void keep_referent_alive(oop obj, ReferenceType type) const;
 
   void discover(oop obj, ReferenceType type);

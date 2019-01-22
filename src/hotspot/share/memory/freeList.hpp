@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_FREELIST_HPP
-#define SHARE_VM_MEMORY_FREELIST_HPP
+#ifndef SHARE_MEMORY_FREELIST_HPP
+#define SHARE_MEMORY_FREELIST_HPP
 
 // A class for maintaining a free list of Chunk's.  The FreeList
 // maintains a the structure of the list (head, tail, etc.) plus
@@ -173,4 +173,4 @@ class FreeList {
   void print_on(outputStream* st, const char* c = NULL) const;
 };
 
-#endif // SHARE_VM_MEMORY_FREELIST_HPP
+#endif // SHARE_MEMORY_FREELIST_HPP

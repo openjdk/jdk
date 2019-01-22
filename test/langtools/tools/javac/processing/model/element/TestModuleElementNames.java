@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163989
+ * @bug 8163989 8208371
  * @summary Test basic workings of naming methods on ModuleElement
  * @library /tools/javac/lib
  * @modules java.compiler

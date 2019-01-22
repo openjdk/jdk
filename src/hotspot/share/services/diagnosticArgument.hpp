@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_DIAGNOSTICARGUMENT_HPP
-#define SHARE_VM_SERVICES_DIAGNOSTICARGUMENT_HPP
+#ifndef SHARE_SERVICES_DIAGNOSTICARGUMENT_HPP
+#define SHARE_SERVICES_DIAGNOSTICARGUMENT_HPP
 
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
@@ -134,4 +134,4 @@ public:
   void value_as_str(char *buf, size_t len) const { to_string(_value, buf, len);}
 };
 
-#endif  /* SHARE_VM_SERVICES_DIAGNOSTICARGUMENT_HPP */
+#endif // SHARE_SERVICES_DIAGNOSTICARGUMENT_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3512,6 +3512,43 @@ void os::naked_short_sleep(jlong ms) {
   Sleep(ms);
 }
 
+void os::naked_short_nanosleep(jlong ns) {
+  assert(ns > -1 && ns < NANOUNITS, "Un-interruptable sleep, short time use only");
+  LARGE_INTEGER hundreds_nanos = { 0 };
+  HANDLE wait_timer = ::CreateWaitableTimer(NULL /* attributes*/,
+                                            true /* manual reset */,
+                                            NULL /* name */ );
+  if (wait_timer == NULL) {
+    log_warning(os)("Failed to CreateWaitableTimer: %u", GetLastError());
+    return;
+  }
+
+  // We need a minimum of one hundred nanos.
+  ns = ns > 100 ? ns : 100;
+
+  // Round ns to the nearst hundred of nanos.
+  // Negative values indicate relative time.
+  hundreds_nanos.QuadPart = -((ns + 50) / 100);
+
+  if (::SetWaitableTimer(wait_timer /* handle */,
+                         &hundreds_nanos /* due time */,
+                         0 /* period */,
+                         NULL /* comp func */,
+                         NULL /* comp func args */,
+                         FALSE /* resume */)) {
+    DWORD res = ::WaitForSingleObject(wait_timer /* handle */, INFINITE /* timeout */);
+    if (res != WAIT_OBJECT_0) {
+      if (res == WAIT_FAILED) {
+        log_warning(os)("Failed to WaitForSingleObject: %u", GetLastError());
+      } else {
+        log_warning(os)("Unexpected return from WaitForSingleObject: %s",
+                        res == WAIT_ABANDONED ? "WAIT_ABANDONED" : "WAIT_TIMEOUT");
+      }
+    }
+  }
+  ::CloseHandle(wait_timer /* handle */);
+}
+
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -4502,7 +4539,7 @@ jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
 }
 
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   OVERLAPPED ov;
   DWORD nread;
   BOOL result;
@@ -4669,9 +4706,6 @@ int os::fsync(int fd) {
 
 static int nonSeekAvailable(int, long *);
 static int stdinAvailable(int, long *);
-
-#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
 
 // This code is a copy of JDK's sysAvailable
 // from src/windows/hpi/src/sys_api_md.c

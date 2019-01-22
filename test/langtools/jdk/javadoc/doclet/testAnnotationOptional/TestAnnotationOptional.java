@@ -27,11 +27,13 @@
  * @summary  Make sure that annotations types with optional elements have
  *           element headers
  * @author   Mahmood Ali
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestAnnotationOptional
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestAnnotationOptional extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestAnnotationOptional extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -52,7 +54,7 @@ public class TestAnnotationOptional extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

@@ -28,7 +28,9 @@ package build.tools.generatecurrencydata;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -134,18 +136,43 @@ public class GenerateCurrencyData {
     private static String currenciesWithMinorUnitsUndefined;
 
     public static void main(String[] args) {
-
+        InputStream in = System.in;
         // Look for "-o outputfilename" option
-        if ( args.length == 2 && args[0].equals("-o") ) {
-            try {
-                out = new DataOutputStream(new FileOutputStream(args[1]));
-            } catch ( FileNotFoundException e ) {
-                System.err.println("Error: " + e.getMessage());
-                e.printStackTrace(System.err);
+        for (int n = 0; n < args.length; ++n) {
+            if (args[n].equals("-o")) {
+                ++n;
+                if (n >= args.length) {
+                    System.err.println("Error: Invalid argument format");
+                    System.exit(1);
+                }
+                try {
+                    out = new DataOutputStream(new FileOutputStream(args[n]));
+                } catch ( FileNotFoundException e ) {
+                    System.err.println("Error: " + e.getMessage());
+                    e.printStackTrace(System.err);
+                    System.exit(1);
+                }
+            } else if (args[n].equals("-i")) {
+                ++n;
+                if (n >= args.length) {
+                    System.err.println("Error: Invalid argument format");
+                    System.exit(1);
+                }
+                try {
+                    in = new FileInputStream(args[n]);
+                } catch ( FileNotFoundException e ) {
+                    System.err.println("Error: " + e.getMessage());
+                    e.printStackTrace(System.err);
+                    System.exit(1);
+                }
+            } else {
+                System.err.println("Error: Invalid argument " + args[n]);
                 System.exit(1);
             }
-        } else {
-            System.err.println("Error: Illegal arg count");
+        }
+
+        if (out == null) {
+            System.err.println("Error: Invalid argument format");
             System.exit(1);
         }
 
@@ -154,7 +181,7 @@ public class GenerateCurrencyData {
         format.setLenient(false);
 
         try {
-            readInput();
+            readInput(in);
             buildMainAndSpecialCaseTables();
             buildOtherTables();
             writeOutput();
@@ -167,9 +194,9 @@ public class GenerateCurrencyData {
         }
     }
 
-    private static void readInput() throws IOException {
+    private static void readInput(InputStream in) throws IOException {
         currencyData = new Properties();
-        currencyData.load(System.in);
+        currencyData.load(in);
 
         // initialize other lookup strings
         formatVersion = (String) currencyData.get("formatVersion");

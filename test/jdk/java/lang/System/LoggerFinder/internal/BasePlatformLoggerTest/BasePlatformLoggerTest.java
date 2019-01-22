@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import sun.util.logging.PlatformLogger;
  *   Tests a naive implementation of System.Logger, and in particular
  *   the default mapping provided by PlatformLogger.
  * @modules java.base/sun.util.logging
- * @build CustomSystemClassLoader BasePlatformLoggerTest
+ * @build CustomSystemClassLoader BaseLoggerFinder BasePlatformLoggerTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest NOSECURITY
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest NOPERMISSIONS
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest WITHPERMISSIONS
@@ -90,7 +90,7 @@ public class BasePlatformLoggerTest {
     static final Class<?> providerClass;
     static {
         try {
-            providerClass = ClassLoader.getSystemClassLoader().loadClass("BasePlatformLoggerTest$BaseLoggerFinder");
+            providerClass = ClassLoader.getSystemClassLoader().loadClass("BaseLoggerFinder");
         } catch (ClassNotFoundException ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -328,23 +328,6 @@ public class BasePlatformLoggerTest {
         }
 
         public Logger getLogger(String name, Module caller);
-    }
-
-    public static class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
-        @Override
-        public Logger getLogger(String name, Module caller) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
-            PrivilegedAction<ClassLoader> pa = () -> caller.getClassLoader();
-            ClassLoader callerLoader = AccessController.doPrivileged(pa);
-            if (callerLoader == null) {
-                return system.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            } else {
-                return user.computeIfAbsent(name, (n) -> new LoggerImpl(n));
-            }
-        }
     }
 
     static PlatformLogger getPlatformLogger(String name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
@@ -1057,21 +1058,14 @@ JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
 
-JVM_ENTRY(jstring, JVM_GetClassName(JNIEnv *env, jclass cls))
+JVM_ENTRY(jstring, JVM_InitClassName(JNIEnv *env, jclass cls))
   assert (cls != NULL, "illegal class");
-  JVMWrapper("JVM_GetClassName");
+  JVMWrapper("JVM_InitClassName");
   JvmtiVMObjectAllocEventCollector oam;
   ResourceMark rm(THREAD);
-  const char* name;
-  if (java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
-    name = type2name(java_lang_Class::primitive_type(JNIHandles::resolve(cls)));
-  } else {
-    // Consider caching interned string in Klass
-    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-    assert(k->is_klass(), "just checking");
-    name = k->external_name();
-  }
-  oop result = StringTable::intern((char*) name, CHECK_NULL);
+  HandleMark hm(THREAD);
+  Handle java_class(THREAD, JNIHandles::resolve(cls));
+  oop result = java_lang_Class::name(java_class, CHECK_NULL);
   return (jstring) JNIHandles::make_local(env, result);
 JVM_END
 
@@ -1229,11 +1223,10 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   oop protection_domain = NULL;
 
   // Iterate through Java frames
-  RegisterMap reg_map(thread);
-  javaVFrame *vf = thread->last_java_vframe(&reg_map);
-  for (; vf != NULL; vf = vf->java_sender()) {
+  vframeStream vfst(thread);
+  for(; !vfst.at_end(); vfst.next()) {
     // get method of frame
-    Method* method = vf->method();
+    Method* method = vfst.method();
 
     // stop at the first privileged frame
     if (method->method_holder() == SystemDictionary::AccessController_klass() &&
@@ -1242,13 +1235,15 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
       // this frame is privileged
       is_privileged = true;
 
-      javaVFrame *priv = vf;                        // executePrivileged
-      javaVFrame *caller_fr = priv->java_sender();  // doPrivileged
-      caller_fr = caller_fr->java_sender();         // caller
+      javaVFrame *priv = vfst.asJavaVFrame();       // executePrivileged
 
       StackValueCollection* locals = priv->locals();
-      privileged_context = locals->obj_at(1);
-      Handle caller      = locals->obj_at(2);
+      StackValue* ctx_sv = locals->at(1); // AccessControlContext context
+      StackValue* clr_sv = locals->at(2); // Class<?> caller
+      assert(!ctx_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      assert(!clr_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      privileged_context    = ctx_sv->get_obj();
+      Handle caller         = clr_sv->get_obj();
 
       Klass *caller_klass = java_lang_Class::as_Klass(caller());
       protection_domain  = caller_klass->protection_domain();

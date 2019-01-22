@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_HPP
-#define OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_HPP
+#ifndef OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
 
 #include "runtime/os.hpp"
 
@@ -128,4 +128,4 @@ inline void Atomic::PlatformStore<8>::operator()(T store_value,
   os::atomic_copy64(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
-#endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_HPP
+#endif // OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP

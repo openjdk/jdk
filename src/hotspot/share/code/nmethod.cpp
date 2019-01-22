@@ -1159,6 +1159,19 @@ void nmethod::log_state_change() const {
   }
 }
 
+void nmethod::unlink_from_method(bool acquire_lock) {
+  // We need to check if both the _code and _from_compiled_code_entry_point
+  // refer to this nmethod because there is a race in setting these two fields
+  // in Method* as seen in bugid 4947125.
+  // If the vep() points to the zombie nmethod, the memory for the nmethod
+  // could be flushed and the compiler and vtable stubs could still call
+  // through it.
+  if (method() != NULL && (method()->code() == this ||
+                           method()->from_compiled_entry() == verified_entry_point())) {
+    method()->clear_code(acquire_lock);
+  }
+}
+
 /**
  * Common functionality for both make_not_entrant and make_zombie
  */
@@ -1246,17 +1259,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     JVMCI_ONLY(maybe_invalidate_installed_code());
 
     // Remove nmethod from method.
-    // We need to check if both the _code and _from_compiled_code_entry_point
-    // refer to this nmethod because there is a race in setting these two fields
-    // in Method* as seen in bugid 4947125.
-    // If the vep() points to the zombie nmethod, the memory for the nmethod
-    // could be flushed and the compiler and vtable stubs could still call
-    // through it.
-    if (method() != NULL && (method()->code() == this ||
-                             method()->from_compiled_entry() == verified_entry_point())) {
-      HandleMark hm;
-      method()->clear_code(false /* already owns Patching_lock */);
-    }
+    unlink_from_method(false /* already owns Patching_lock */);
   } // leave critical region under Patching_lock
 
 #ifdef ASSERT
@@ -1281,6 +1284,13 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
         Universe::heap()->unregister_nmethod(this);
       }
       flush_dependencies(/*delete_immediately*/true);
+    }
+
+    // Clear ICStubs to prevent back patching stubs of zombie or flushed
+    // nmethods during the next safepoint (see ICStub::finalize).
+    {
+      CompiledICLocker ml(this);
+      clear_ic_stubs();
     }
 
     // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
@@ -2533,6 +2543,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::section_word_type:     return "section_word";
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
+        case relocInfo::trampoline_stub_type:  return "trampoline_stub";
         case relocInfo::type_mask:             return "type_bit_mask";
 
         default:

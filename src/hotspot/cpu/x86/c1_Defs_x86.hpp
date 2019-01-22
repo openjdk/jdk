@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_C1_DEFS_X86_HPP
-#define CPU_X86_VM_C1_DEFS_X86_HPP
+#ifndef CPU_X86_C1_DEFS_X86_HPP
+#define CPU_X86_C1_DEFS_X86_HPP
 
 // native word offsets from memory address (little endian)
 enum {
@@ -75,4 +75,4 @@ enum {
   pd_float_saved_as_double = true
 };
 
-#endif // CPU_X86_VM_C1_DEFS_X86_HPP
+#endif // CPU_X86_C1_DEFS_X86_HPP

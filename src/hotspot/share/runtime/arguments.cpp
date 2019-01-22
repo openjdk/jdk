@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/arguments_ext.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/flags/jvmFlagWriteableList.hpp"
@@ -533,13 +532,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
-  { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-
-#if defined(_ALLBSD_SOURCE)
-  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-#endif
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -553,21 +545,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "AssumeMP",                      JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "UnlinkSymbolsALot",             JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "AllowNonVirtualCalls",          JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatistics",      JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatisticsTimeout",JDK_Version::jdk(11),    JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatisticsCount", JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "TransmitErrorReport",           JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "ErrorReportServer",             JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "EmitSync",                      JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "SyncVerbose",                   JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "SyncFlags",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "SyncKnobs",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "MonitorInUseLists",             JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "AggressiveOpts",                JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -2062,6 +2039,9 @@ bool Arguments::check_vm_args_consistency() {
       log_warning(arguments) ("NUMA support for Heap depends on the file system when AllocateHeapAt option is used.\n");
     }
   }
+
+  status = status && GCArguments::check_args_consistency();
+
   return status;
 }
 
@@ -2953,6 +2933,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   }
 #endif // LINUX
   fix_appclasspath();
+
   return JNI_OK;
 }
 
@@ -3107,6 +3088,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
+
+    // Compilation is already disabled if the user specifies -Xshare:dump.
+    // Disable compilation in case user specifies -XX:+DumpSharedSpaces instead of -Xshare:dump.
+    set_mode_flags(_int);
   }
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
@@ -3298,11 +3283,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   memset(buf, 0, bytes_alloc);
 
   // Fill buffer
-  // Use ::read() instead of os::read because os::read()
-  // might do a thread state transition
-  // and it is too early for that here
-
-  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ssize_t bytes_read = os::read(fd, (void *)buf, (unsigned)bytes_alloc);
   os::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
@@ -3544,9 +3525,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
 
   for (int index = 0; index < args->nOptions; index++) {
     const JavaVMOption* option = args->options + index;
-    if (ArgumentsExt::process_options(option)) {
-      continue;
-    }
     if (match_option(option, "-XX:Flags=", &tail)) {
       Arguments::set_jvm_flags_file(tail);
       continue;
@@ -3811,9 +3789,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION(AllocateHeapAt);
+  UNSUPPORTED_OPTION(AllocateOldGenAt);
 #endif
-
-  ArgumentsExt::report_unsupported_options();
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {

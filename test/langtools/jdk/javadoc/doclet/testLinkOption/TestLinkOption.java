@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestLinkOption
  */
 
 import java.io.File;
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinkOption extends JavadocTester {
     /**
@@ -50,7 +52,7 @@ public class TestLinkOption extends JavadocTester {
     // it generates. Therefore we run everything serially in a single @Test
     // method and not in independent @Test methods.
     @Test
-    void test() {
+    public void test() {
         String mylib = "mylib";
         String[] javacArgs = {
             "-d", mylib, testSrc + "/extra/StringBuilder.java"
@@ -113,6 +115,7 @@ public class TestLinkOption extends JavadocTester {
         );
 
         String out1_html4 = "out1-html4";
+        setAutomaticCheckLinks(false); // The example code has toy/bad links
         javadoc("-d", out1_html4,
                 "-source", "8",
                 "-html4",
@@ -131,6 +134,8 @@ public class TestLinkOption extends JavadocTester {
                 "<div class=\"block\">is equivalent to invoking <code>"
                 + "<a href=\"#createTempFile-java.lang.String-java.lang.String-java.io.File-\">"
                 + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>");
+
+        setAutomaticCheckLinks(true); // re-enable checks
 
         // Generate the documentation using -linkoffline and a relative path as the first parameter.
         // We will try linking to the docs generated in test 1 with a relative path.
@@ -180,6 +185,7 @@ public class TestLinkOption extends JavadocTester {
         );
 
         // check multiple linkoffline options
+        setAutomaticCheckLinks(false); // The example code has toy/bad links
         javadoc("-d", "out6",
                 "-sourcepath", testSrc,
                 "-linkoffline", "../copy/out1", "out1",
@@ -198,6 +204,8 @@ public class TestLinkOption extends JavadocTester {
                         + "title=\"class or interface in mylib.lang\" class=\"externalLink\">"
                         + "<code>link to mylib.lang.StringBuilderChild</code></a>.</div>\n"
         );
+
+        setAutomaticCheckLinks(true); // re-enable checks
     }
 
     /*

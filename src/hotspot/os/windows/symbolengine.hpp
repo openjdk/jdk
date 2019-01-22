@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_SYMBOLENGINE_HPP
-#define OS_WINDOWS_VM_SYMBOLENGINE_HPP
+#ifndef OS_WINDOWS_SYMBOLENGINE_HPP
+#define OS_WINDOWS_SYMBOLENGINE_HPP
 
 class outputStream;
 
@@ -58,6 +58,4 @@ namespace SymbolEngine {
 
 };
 
-#endif // #ifndef OS_WINDOWS_VM_SYMBOLENGINE_HPP
-
-
+#endif // OS_WINDOWS_SYMBOLENGINE_HPP

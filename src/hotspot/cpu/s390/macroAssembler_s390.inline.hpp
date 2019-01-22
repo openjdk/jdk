@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_MACROASSEMBLER_S390_INLINE_HPP
-#define CPU_S390_VM_MACROASSEMBLER_S390_INLINE_HPP
+#ifndef CPU_S390_MACROASSEMBLER_S390_INLINE_HPP
+#define CPU_S390_MACROASSEMBLER_S390_INLINE_HPP
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
@@ -311,4 +311,4 @@ inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame_static(
   set_top_ijava_frame_at_SP_as_last_Java_frame(sp, tmp1, true);
 }
 
-#endif // CPU_S390_VM_MACROASSEMBLER_S390_INLINE_HPP
+#endif // CPU_S390_MACROASSEMBLER_S390_INLINE_HPP

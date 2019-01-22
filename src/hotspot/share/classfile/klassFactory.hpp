@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
 *
 */
 
-#ifndef SHARE_VM_CLASSFILE_KLASSFACTORY_HPP
-#define SHARE_VM_CLASSFILE_KLASSFACTORY_HPP
+#ifndef SHARE_CLASSFILE_KLASSFACTORY_HPP
+#define SHARE_CLASSFILE_KLASSFACTORY_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
@@ -83,4 +83,4 @@ class KlassFactory : AllStatic {
                                           Handle protection_domain, TRAPS);
 };
 
-#endif // SHARE_VM_CLASSFILE_KLASSFACTORY_HPP
+#endif // SHARE_CLASSFILE_KLASSFACTORY_HPP

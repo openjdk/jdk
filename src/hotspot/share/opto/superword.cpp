@@ -1445,7 +1445,7 @@ void SuperWord::order_def_uses(Node_List* p) {
     Node* t1 = s1->fast_out(i);
 
     // Only allow operand swap on commuting operations
-    if (!t1->is_Add() && !t1->is_Mul()) {
+    if (!t1->is_Add() && !t1->is_Mul() && !VectorNode::is_muladds2i(t1)) {
       break;
     }
 
@@ -1500,9 +1500,23 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
       if ((i1 == (3-i2)) && (u2->is_Add() || u2->is_Mul())) {
         // Further analysis relies on operands position matching.
         u2->swap_edges(i1, i2);
+      } else if (VectorNode::is_muladds2i(u2) && u1 != u2) {
+        if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
+          u2->swap_edges(1, 2);
+          u2->swap_edges(3, 4);
+        }
+        if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
+          u2->swap_edges(2, 3);
+          u2->swap_edges(1, 4);
+        }
+        return false; // Just swap the edges, the muladds2i nodes get packed in follow_use_defs
       } else {
         return false;
       }
+    } else if (i1 == i2 && VectorNode::is_muladds2i(u2) && u1 != u2) {
+      u2->swap_edges(1, 3);
+      u2->swap_edges(2, 4);
+      return false; // Just swap the edges, the muladds2i nodes get packed in follow_use_defs
     }
   } while (i1 < ct);
   return true;

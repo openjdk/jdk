@@ -28,11 +28,13 @@
  *      8184205 8214468
  * @summary Test the search feature of javadoc.
  * @author bpatel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestSearch
  */
+import javadoc.tester.JavadocTester;
+
 public class TestSearch extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -41,7 +43,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-sourcepath",
                 "-use",
@@ -63,7 +65,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
@@ -90,7 +92,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test2_html4() {
+    public void test2_html4() {
         javadoc("-d", "out-2-html4",
                 "-html4",
                 "-Xdoclint:none",
@@ -102,7 +104,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test2a() {
+    public void test2a() {
         javadoc("-d", "out-2a",
                 "-Xdoclint:all",
                 "-sourcepath", testSrc,
@@ -128,7 +130,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test2a_html4() {
+    public void test2a_html4() {
         javadoc("-d", "out-2a-html4",
                 "-html4",
                 "-Xdoclint:all",
@@ -139,7 +141,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out-3",
                 "-noindex",
                 "-Xdoclint:none",
@@ -165,7 +167,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test4() {
+    public void test4() {
         javadoc("-d", "out-4",
                 "-html5",
                 "-Xdoclint:none",
@@ -191,7 +193,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test5() {
+    public void test5() {
         javadoc("-d", "out-5",
                 "-html5",
                 "-noindex",
@@ -216,7 +218,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test6() {
+    public void test6() {
         javadoc("-d", "out-6",
                 "-nocomment",
                 "-Xdoclint:none",
@@ -241,7 +243,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test7() {
+    public void test7() {
         javadoc("-d", "out-7",
                 "-nodeprecated",
                 "-Xdoclint:none",
@@ -267,7 +269,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test8() {
+    public void test8() {
         javadoc("-d", "out-8",
                 "-splitindex",
                 "-Xdoclint:none",
@@ -294,7 +296,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void test9() {
+    public void test9() {
         javadoc("-d", "out-9",
                 "-sourcepath", testSrc,
                 "-javafx",
@@ -321,7 +323,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void testNoModuleDirectories() {
+    public void testNoModuleDirectories() {
         javadoc("-d", "out-noMdlDir",
                 "--no-module-directories",
                 "-Xdoclint:none",
@@ -335,7 +337,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void testURLEncoding() {
+    public void testURLEncoding() {
         javadoc("-d", "out-encode-html5",
                 "--no-module-directories",
                 "-Xdoclint:none",
@@ -348,7 +350,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void testURLEncoding_html4() {
+    public void testURLEncoding_html4() {
         javadoc("-d", "out-encode-html4",
                 "-html4",
                 "--no-module-directories",
@@ -363,7 +365,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void testJapaneseLocale() {
+    public void testJapaneseLocale() {
         javadoc("-locale", "ja_JP",
                 "-d", "out-jp",
                 "--no-module-directories",
@@ -382,7 +384,7 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    void testChineseLocale() {
+    public void testChineseLocale() {
         javadoc("-locale", "zh_CN",
                 "-d", "out-cn",
                 "--no-module-directories",
@@ -686,7 +688,7 @@ public class TestSearch extends JavadocTester {
                 + "            return ui.item.m + slash;\n"
                 + "        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {\n"
                 + "            $.each(packageSearchIndex, function(index, item) {\n"
-                + "                if (ui.item.p == item.l) {\n"
+                + "                if (item.m && ui.item.p == item.l) {\n"
                 + "                    urlPrefix = item.m + slash;\n"
                 + "                }\n"
                 + "            });\n"

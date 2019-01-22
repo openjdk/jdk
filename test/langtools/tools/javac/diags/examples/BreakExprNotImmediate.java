@@ -33,7 +33,7 @@
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
 // key: compiler.note.note
-// options: --enable-preview -source 12
+// options: --enable-preview -source 13
 // run: backdoor
 
 class BreakExprNotImmediate {

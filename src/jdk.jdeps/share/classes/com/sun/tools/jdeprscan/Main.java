@@ -106,7 +106,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
     // Keep these updated manually until there's a compiler API
     // that allows querying of supported releases.
     final Set<String> releasesWithoutForRemoval = Set.of("6", "7", "8");
-    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11", "12");
+    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11", "12", "13");
 
     final Set<String> validReleases;
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP
-#define SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP
+#ifndef SHARE_GC_SHARED_GCUTIL_INLINE_HPP
+#define SHARE_GC_SHARED_GCUTIL_INLINE_HPP
 
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.inline.hpp"
@@ -32,4 +32,4 @@ inline void* AdaptivePaddedAverage::operator new(size_t size) throw() {
   return CHeapObj<mtGC>::operator new(size);
 }
 
-#endif // SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP
+#endif // SHARE_GC_SHARED_GCUTIL_INLINE_HPP

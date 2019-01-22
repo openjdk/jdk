@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_RELOCINFO_S390_HPP
-#define CPU_S390_VM_RELOCINFO_S390_HPP
+#ifndef CPU_S390_RELOCINFO_S390_HPP
+#define CPU_S390_RELOCINFO_S390_HPP
 
 //----------------------------
 //  relocInfo layout
@@ -118,4 +118,4 @@
   // Return indication if update happened.
   static bool update_oop_pool(address begin, address end, address newTarget, CodeBlob* cb);
 
-#endif // CPU_S390_VM_RELOCINFO_S390_HPP
+#endif // CPU_S390_RELOCINFO_S390_HPP

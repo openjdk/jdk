@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_OS_AIX_HPP
-#define OS_AIX_VM_OS_AIX_HPP
+#ifndef OS_AIX_OS_AIX_HPP
+#define OS_AIX_OS_AIX_HPP
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return false; }
@@ -212,4 +212,4 @@ class Aix {
 
 };
 
-#endif // OS_AIX_VM_OS_AIX_HPP
+#endif // OS_AIX_OS_AIX_HPP

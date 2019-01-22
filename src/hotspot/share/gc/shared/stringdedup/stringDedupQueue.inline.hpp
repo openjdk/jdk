@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
-#define SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
+#ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
+#define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/stringdedup/stringDedupQueue.hpp"
@@ -51,4 +51,4 @@ oop StringDedupQueue::pop() {
   return queue()->pop_impl();
 }
 
-#endif // SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
+#endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP

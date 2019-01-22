@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,6 @@ void GCTaskThread::print_task_time_stamps() {
 // for tasks to be enqueued for execution.
 
 void GCTaskThread::run() {
-  this->initialize_named_thread();
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {
     log_trace(gc, task, thread)("GCTaskThread::run: binding to processor %u", processor_id());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
-#define SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
+#ifndef SHARE_INTERPRETER_INVOCATIONCOUNTER_HPP
+#define SHARE_INTERPRETER_INVOCATIONCOUNTER_HPP
 
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
@@ -127,7 +127,7 @@ class InvocationCounter {
 
   // Miscellaneous
   static ByteSize counter_offset()               { return byte_offset_of(InvocationCounter, _counter); }
-  static void reinitialize(bool delay_overflow);
+  static void reinitialize();
 
  private:
   static int         _init  [number_of_states];  // the counter limits
@@ -153,4 +153,4 @@ inline void InvocationCounter::decay() {
 }
 
 
-#endif // SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
+#endif // SHARE_INTERPRETER_INVOCATIONCOUNTER_HPP

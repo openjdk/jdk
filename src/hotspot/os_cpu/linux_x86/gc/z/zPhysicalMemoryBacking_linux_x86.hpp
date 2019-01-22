@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_X86_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
+#ifndef OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
 
 #include "gc/z/zBackingFile_linux_x86.hpp"
 #include "gc/z/zMemory.hpp"
@@ -62,4 +62,4 @@ public:
   void flip(ZPhysicalMemory pmem, uintptr_t offset) const;
 };
 
-#endif // OS_CPU_LINUX_X86_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
+#endif // OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP

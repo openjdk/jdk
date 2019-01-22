@@ -60,7 +60,8 @@ final class SSLExtensions {
             int extId = Record.getInt16(m);
             int extLen = Record.getInt16(m);
             if (extLen > m.remaining()) {
-                hm.handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw hm.handshakeContext.conContext.fatal(
+                        Alert.ILLEGAL_PARAMETER,
                         "Error parsing extension (" + extId +
                         "): no sufficient data");
             }
@@ -86,7 +87,7 @@ final class SSLExtensions {
                                 "in the ServerHello handshake message");
                     }
                 } else {
-                    hm.handshakeContext.conContext.fatal(
+                    throw hm.handshakeContext.conContext.fatal(
                         Alert.UNSUPPORTED_EXTENSION,
                         "extension (" + extId +
                         ") should not be presented in " + handshakeType.name);
@@ -102,7 +103,7 @@ final class SSLExtensions {
                     }
 
                     if (extension.handshakeType != handshakeType) {
-                        hm.handshakeContext.conContext.fatal(
+                        throw hm.handshakeContext.conContext.fatal(
                                 Alert.UNSUPPORTED_EXTENSION,
                                 "extension (" + extId + ") should not be " +
                                 "presented in " + handshakeType.name);

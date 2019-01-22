@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_CLASSLOADERDATAGRAPH_HPP
-#define SHARE_VM_CLASSFILE_CLASSLOADERDATAGRAPH_HPP
+#ifndef SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP
+#define SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
@@ -185,4 +185,4 @@ class ClassLoaderDataGraphMetaspaceIterator : public StackObj {
   bool repeat() { return _data != NULL; }
   ClassLoaderMetaspace* get_next();
 };
-#endif // SHARE_VM_CLASSFILE_CLASSLOADERDATAGRAPH_HPP
+#endif // SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP

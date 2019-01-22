@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 import javax.tools.JavaFileManager;
 
@@ -1797,7 +1798,7 @@ public class Check {
         if (!isDeprecatedOverrideIgnorable(other, origin)) {
             Lint prevLint = setLint(lint.augment(m));
             try {
-                checkDeprecated(TreeInfo.diagnosticPositionFor(m, tree), m, other);
+                checkDeprecated(() -> TreeInfo.diagnosticPositionFor(m, tree), m, other);
             } finally {
                 setLint(prevLint);
             }
@@ -2711,6 +2712,8 @@ public class Check {
             if (type.isErroneous()) return;
             for (List<Type> l = types.interfaces(type); l.nonEmpty(); l = l.tail) {
                 Type it = l.head;
+                if (type.hasTag(CLASS) && !it.hasTag(CLASS)) continue; // JLS 8.1.5
+
                 Type oldit = seensofar.put(it.tsym, it);
                 if (oldit != null) {
                     List<Type> oldparams = oldit.allparams();
@@ -2724,6 +2727,7 @@ public class Check {
                 checkClassBounds(pos, seensofar, it);
             }
             Type st = types.supertype(type);
+            if (type.hasTag(CLASS) && !st.hasTag(CLASS)) return; // JLS 8.1.4
             if (st != Type.noType) checkClassBounds(pos, seensofar, st);
         }
 
@@ -3259,10 +3263,14 @@ public class Check {
     }
 
     void checkDeprecated(final DiagnosticPosition pos, final Symbol other, final Symbol s) {
+        checkDeprecated(() -> pos, other, s);
+    }
+
+    void checkDeprecated(Supplier<DiagnosticPosition> pos, final Symbol other, final Symbol s) {
         if ( (s.isDeprecatedForRemoval()
                 || s.isDeprecated() && !other.isDeprecated())
                 && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)) {
-            deferredLintHandler.report(() -> warnDeprecated(pos, s));
+            deferredLintHandler.report(() -> warnDeprecated(pos.get(), s));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
-#define SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
+#ifndef SHARE_UTILITIES_BITMAP_INLINE_HPP
+#define SHARE_UTILITIES_BITMAP_INLINE_HPP
 
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
@@ -287,4 +287,4 @@ inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index,
   _map.at_put(bit, value);
 }
 
-#endif // SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
+#endif // SHARE_UTILITIES_BITMAP_INLINE_HPP

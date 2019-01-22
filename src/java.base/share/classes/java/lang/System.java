@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,7 +984,7 @@ public final class System {
      * <p>If a security manager exists, its
      * {@link SecurityManager#checkPermission checkPermission}
      * method is called with a
-     * {@code {@link RuntimePermission}("getenv."+name)}
+     * {@link RuntimePermission RuntimePermission("getenv."+name)}
      * permission.  This may result in a {@link SecurityException}
      * being thrown.  If no exception is thrown the value of the
      * variable {@code name} is returned.
@@ -1055,7 +1055,7 @@ public final class System {
      * <p>If a security manager exists, its
      * {@link SecurityManager#checkPermission checkPermission}
      * method is called with a
-     * {@code {@link RuntimePermission}("getenv.*")} permission.
+     * {@link RuntimePermission RuntimePermission("getenv.*")} permission.
      * This may result in a {@link SecurityException} being thrown.
      *
      * <p>When passing information to a Java subprocess,

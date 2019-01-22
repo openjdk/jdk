@@ -37,6 +37,7 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/regmask.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -1310,6 +1311,9 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (dead->Opcode() == Op_SafePoint) {
+      dead->as_SafePoint()->disconnect_from_root(igvn);
+    }
     if (dead->outcnt() > 0) {
       // Keep dead node on stack until all uses are processed.
       nstack.push(dead);
@@ -1367,7 +1371,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
         igvn->C->remove_range_check_cast(cast);
       }
       if (dead->Opcode() == Op_Opaque4) {
-        igvn->C->remove_range_check_cast(dead);
+        igvn->C->remove_opaque4_node(dead);
       }
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       bs->unregister_potential_barrier_node(dead);

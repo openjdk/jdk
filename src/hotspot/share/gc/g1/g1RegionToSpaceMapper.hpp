@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
-#define SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+#ifndef SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+#define SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP
 
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "memory/allocation.hpp"
@@ -70,6 +70,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
     return _commit_map.at(idx);
   }
 
+  void commit_and_set_special();
   virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
@@ -87,6 +88,37 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
                                               size_t region_granularity,
                                               size_t byte_translation_factor,
                                               MemoryType type);
+
+  static G1RegionToSpaceMapper* create_heap_mapper(ReservedSpace rs,
+                                                   size_t actual_size,
+                                                   size_t page_size,
+                                                   size_t region_granularity,
+                                                   size_t byte_translation_factor,
+                                                   MemoryType type);
 };
 
-#endif // SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+// G1RegionToSpaceMapper implementation where
+// part of space is mapped to dram and part to nv-dimm
+class G1RegionToHeteroSpaceMapper : public G1RegionToSpaceMapper {
+private:
+  size_t _pages_per_region;
+  ReservedSpace _rs;
+  G1RegionToSpaceMapper* _dram_mapper;
+  uint _num_committed_dram;
+  uint _num_committed_nvdimm;
+  uint _start_index_of_nvdimm;
+  uint _start_index_of_dram;
+  size_t _page_size;
+  size_t _commit_factor;
+  MemoryType _type;
+
+public:
+  G1RegionToHeteroSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemoryType type);
+  bool initialize();
+  uint num_committed_dram() const;
+  uint num_committed_nvdimm() const;
+
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL);
+  virtual void uncommit_regions(uint start_idx, size_t num_regions = 1);
+};
+#endif // SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP

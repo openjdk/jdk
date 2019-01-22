@@ -25,13 +25,13 @@
  * @test
  * @bug 8162353 8164747 8173707 8196202 8204303 8184205
  * @summary javadoc should provide a way to disable use of frames
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ModuleBuilder toolbox.ToolBox
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestFramesNoFrames
  */
 
@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestFramesNoFrames extends JavadocTester {
 
@@ -156,7 +158,7 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    void testClass(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws Exception {
+    public void testClass(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws Exception {
         javadoc(base, fKind, oKind, hKind,
             gensrcPackages.resolve("p1/P1C1.java").toString());
 
@@ -166,7 +168,7 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    void testClasses(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
+    public void testClasses(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
             gensrcPackages.resolve("p1/P1C1.java").toString(),
             gensrcPackages.resolve("p1/P1C2.java").toString(),
@@ -178,7 +180,7 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    void testPackage(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
+    public void testPackage(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
             "-sourcepath", gensrcPackages.toString(),
             "p1");
@@ -189,7 +191,7 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    void testPackages(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
+    public void testPackages(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
             "-sourcepath", gensrcPackages.toString(),
             "p1", "p2", "p3");
@@ -202,7 +204,7 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
+    public void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
             "--module-source-path", gensrcModules.toString(),
             "--module", "m1,m2,m3");

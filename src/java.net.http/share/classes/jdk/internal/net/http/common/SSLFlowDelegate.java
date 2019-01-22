@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -109,6 +110,7 @@ public class SSLFlowDelegate {
     volatile boolean close_notify_received;
     final CompletableFuture<Void> readerCF;
     final CompletableFuture<Void> writerCF;
+    final CompletableFuture<Void> stopCF;
     final Consumer<ByteBuffer> recycler;
     static AtomicInteger scount = new AtomicInteger(1);
     final int id;
@@ -149,8 +151,7 @@ public class SSLFlowDelegate {
         this.writerCF = reader.completion();
         readerCF.exceptionally(this::stopOnError);
         writerCF.exceptionally(this::stopOnError);
-
-        CompletableFuture.allOf(reader.completion(), writer.completion())
+        this.stopCF = CompletableFuture.allOf(reader.completion(), writer.completion())
             .thenRun(this::normalStop);
         this.alpnCF = new MinimalFuture<>();
 
@@ -302,7 +303,9 @@ public class SSLFlowDelegate {
             return "READER: " + super.toString() + ", readBuf: " + readBuf.toString()
                     + ", count: " + count.toString() + ", scheduler: "
                     + (scheduler.isStopped() ? "stopped" : "running")
-                    + ", status: " + lastUnwrapStatus;
+                    + ", status: " + lastUnwrapStatus
+                    + ", handshakeState: " + handshakeState.get()
+                    + ", engine: " + engine.getHandshakeStatus();
         }
 
         private void reallocReadBuf() {
@@ -429,6 +432,8 @@ public class SSLFlowDelegate {
                         if (complete && result.status() == Status.CLOSED) {
                             if (debugr.on()) debugr.log("Closed: completing");
                             outgoing(Utils.EMPTY_BB_LIST, true);
+                            // complete ALPN if not yet completed
+                            setALPN();
                             return;
                         }
                         if (result.handshaking()) {
@@ -437,11 +442,7 @@ public class SSLFlowDelegate {
                             if (doHandshake(result, READER)) continue; // need unwrap
                             else break; // doHandshake will have triggered the write scheduler if necessary
                         } else {
-                            if ((handshakeState.getAndSet(NOT_HANDSHAKING) & ~DOING_TASKS) == HANDSHAKING) {
-                                handshaking = false;
-                                applicationBufferSize = engine.getSession().getApplicationBufferSize();
-                                packetBufferSize = engine.getSession().getPacketBufferSize();
-                                setALPN();
+                            if (trySetALPN()) {
                                 resumeActivity();
                             }
                         }
@@ -741,6 +742,8 @@ public class SSLFlowDelegate {
                         if (!upstreamCompleted) {
                             upstreamCompleted = true;
                             upstreamSubscription.cancel();
+                            // complete ALPN if not yet completed
+                            setALPN();
                         }
                         if (result.bytesProduced() <= 0)
                             return;
@@ -758,10 +761,7 @@ public class SSLFlowDelegate {
                         doHandshake(result, WRITER);  // ok to ignore return
                         handshaking = true;
                     } else {
-                        if ((handshakeState.getAndSet(NOT_HANDSHAKING) & ~DOING_TASKS) == HANDSHAKING) {
-                            applicationBufferSize = engine.getSession().getApplicationBufferSize();
-                            packetBufferSize = engine.getSession().getPacketBufferSize();
-                            setALPN();
+                        if (trySetALPN()) {
                             resumeActivity();
                         }
                     }
@@ -914,11 +914,25 @@ public class SSLFlowDelegate {
         stopped = true;
         reader.stop();
         writer.stop();
+        // make sure the alpnCF is completed.
+        if (!alpnCF.isDone()) {
+            Throwable alpn = new SSLHandshakeException(
+                    "Connection closed before successful ALPN negotiation");
+            alpnCF.completeExceptionally(alpn);
+        }
         if (isMonitored) Monitor.remove(monitor);
     }
 
-    private Void stopOnError(Throwable currentlyUnused) {
+    private Void stopOnError(Throwable error) {
         // maybe log, etc
+        // ensure the ALPN is completed
+        // We could also do this in SSLTube.SSLSubscriberWrapper
+        // onError/onComplete - with the caveat that the ALP CF
+        // would get completed externally. Doing it here keeps
+        // it all inside SSLFlowDelegate.
+        if (!alpnCF.isDone()) {
+            alpnCF.completeExceptionally(error);
+        }
         normalStop();
         return null;
     }
@@ -1070,11 +1084,27 @@ public class SSLFlowDelegate {
                     }
                 } while (true);
                 if (debug.on()) debug.log("finished task execution");
+                HandshakeStatus hs = engine.getHandshakeStatus();
+                if (hs == HandshakeStatus.FINISHED || hs == HandshakeStatus.NOT_HANDSHAKING) {
+                    // We're no longer handshaking, try setting ALPN
+                    trySetALPN();
+                }
                 resumeActivity();
             } catch (Throwable t) {
                 handleError(t);
             }
         });
+    }
+
+    boolean trySetALPN() {
+        // complete ALPN CF if needed.
+        if ((handshakeState.getAndSet(NOT_HANDSHAKING) & ~DOING_TASKS) == HANDSHAKING) {
+            applicationBufferSize = engine.getSession().getApplicationBufferSize();
+            packetBufferSize = engine.getSession().getPacketBufferSize();
+            setALPN();
+            return true;
+        }
+        return false;
     }
 
     // FIXME: acknowledge a received CLOSE request from peer

@@ -26,11 +26,13 @@
  * @bug      6227616 8043186 8196202
  * @summary  Test the new -top option.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestTopOption
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestTopOption extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class TestTopOption extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-overview", testSrc("overview.html"),
                 "-use",
                 "-top", "TOP TEXT",
@@ -64,7 +66,7 @@ public class TestTopOption extends JavadocTester {
     }
 
     @Test
-    void testDocRootRewrite() {
+    public void testDocRootRewrite() {
         javadoc("-overview", testSrc("overview.html"),
                 "-use",
                 "-top", "\u0130{@docroot}TOP TEXT",

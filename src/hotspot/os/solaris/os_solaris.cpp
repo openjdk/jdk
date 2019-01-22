@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2842,43 +2842,6 @@ bool os::can_commit_large_page_memory() {
 
 bool os::can_execute_large_page_memory() {
   return true;
-}
-
-// Read calls from inside the vm need to perform state transitions
-size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
-  ThreadBlockInVM tbiv(thread);
-  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
-  size_t res;
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
-  ThreadBlockInVM tbiv(thread);
-  RESTARTABLE(::pread(fd, buf, (size_t) nBytes, offset), res);
-  return res;
-}
-
-size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
-void os::naked_short_sleep(jlong ms) {
-  assert(ms < 1000, "Un-interruptable sleep, short time use only");
-
-  // usleep is deprecated and removed from POSIX, in favour of nanosleep, but
-  // Solaris requires -lrt for this.
-  usleep((ms * 1000));
-
-  return;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION

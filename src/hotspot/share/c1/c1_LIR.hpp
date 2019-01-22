@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_LIR_HPP
-#define SHARE_VM_C1_C1_LIR_HPP
+#ifndef SHARE_C1_C1_LIR_HPP
+#define SHARE_C1_C1_LIR_HPP
 
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_ValueType.hpp"
@@ -949,7 +949,6 @@ enum LIR_Code {
       , lir_ushr
       , lir_alloc_array
       , lir_throw
-      , lir_compare_to
       , lir_xadd
       , lir_xchg
   , end_op2
@@ -2129,10 +2128,6 @@ class LIR_List: public CompilationResourceObj {
     append(new LIR_Op1(lir_unwind, exceptionOop));
   }
 
-  void compare_to (LIR_Opr left, LIR_Opr right, LIR_Opr dst) {
-    append(new LIR_Op2(lir_compare_to,  left, right, dst));
-  }
-
   void push(LIR_Opr opr)                                   { append(new LIR_Op1(lir_push, opr)); }
   void pop(LIR_Opr reg)                                    { append(new LIR_Op1(lir_pop,  reg)); }
 
@@ -2469,4 +2464,4 @@ class LIR_OpVisitState: public StackObj {
 
 inline LIR_Opr LIR_OprDesc::illegalOpr()   { return LIR_OprFact::illegalOpr; };
 
-#endif // SHARE_VM_C1_C1_LIR_HPP
+#endif // SHARE_C1_C1_LIR_HPP

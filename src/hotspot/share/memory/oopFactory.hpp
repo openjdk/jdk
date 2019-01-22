@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_OOPFACTORY_HPP
-#define SHARE_VM_MEMORY_OOPFACTORY_HPP
+#ifndef SHARE_MEMORY_OOPFACTORY_HPP
+#define SHARE_MEMORY_OOPFACTORY_HPP
 
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -72,4 +72,4 @@ class oopFactory: AllStatic {
   static typeArrayHandle new_byteArray_handle(int length, TRAPS);
 };
 
-#endif // SHARE_VM_MEMORY_OOPFACTORY_HPP
+#endif // SHARE_MEMORY_OOPFACTORY_HPP

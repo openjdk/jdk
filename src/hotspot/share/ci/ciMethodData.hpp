@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIMETHODDATA_HPP
-#define SHARE_VM_CI_CIMETHODDATA_HPP
+#ifndef SHARE_CI_CIMETHODDATA_HPP
+#define SHARE_CI_CIMETHODDATA_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciKlass.hpp"
@@ -475,6 +475,7 @@ private:
     return (address) _data;
   }
 
+  void prepare_metadata();
   void load_extra_data();
   ciProfileData* bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots);
 
@@ -602,4 +603,4 @@ public:
   void dump_replay_data(outputStream* out);
 };
 
-#endif // SHARE_VM_CI_CIMETHODDATA_HPP
+#endif // SHARE_CI_CIMETHODDATA_HPP

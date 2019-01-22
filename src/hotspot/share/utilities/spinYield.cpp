@@ -27,12 +27,13 @@
 #include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
 
-SpinYield::SpinYield(uint spin_limit, uint yield_limit) :
+SpinYield::SpinYield(uint spin_limit, uint yield_limit, uint sleep_ns) :
   _sleep_time(),
   _spins(0),
   _yields(0),
   _spin_limit(os::is_MP() ? spin_limit : 0),
-  _yield_limit(yield_limit)
+  _yield_limit(yield_limit),
+  _sleep_ns(sleep_ns)
 {}
 
 void SpinYield::yield_or_sleep() {
@@ -41,7 +42,7 @@ void SpinYield::yield_or_sleep() {
     os::naked_yield();
   } else {
     Ticks sleep_start = Ticks::now();
-    os::naked_short_sleep(1);
+    os::naked_short_nanosleep(_sleep_ns);
     _sleep_time += Ticks::now() - sleep_start;
   }
 }

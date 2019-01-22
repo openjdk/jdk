@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
-#define SHARE_VM_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
+#ifndef SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
+#define SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
 
 // This file contains the platform-independent parts
 // of the template interpreter generator.
@@ -75,4 +75,4 @@ class CppInterpreterGenerator: public AbstractInterpreterGenerator {
 };
 
 #endif // CC_INTERP
-#endif // SHARE_VM_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
+#endif // SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP

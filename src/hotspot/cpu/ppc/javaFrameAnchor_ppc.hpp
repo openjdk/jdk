@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_JAVAFRAMEANCHOR_PPC_HPP
-#define CPU_PPC_VM_JAVAFRAMEANCHOR_PPC_HPP
+#ifndef CPU_PPC_JAVAFRAMEANCHOR_PPC_HPP
+#define CPU_PPC_JAVAFRAMEANCHOR_PPC_HPP
 
 public:
   // Each arch must define reset, save, restore
@@ -75,4 +75,4 @@ public:
 
   void set_last_Java_sp(intptr_t* sp) { OrderAccess::release(); _last_Java_sp = sp; }
 
-#endif // CPU_PPC_VM_JAVAFRAMEANCHOR_PPC_HPP
+#endif // CPU_PPC_JAVAFRAMEANCHOR_PPC_HPP

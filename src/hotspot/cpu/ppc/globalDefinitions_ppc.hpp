@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
-#define CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
+#ifndef CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
+#define CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
 
 #ifdef CC_INTERP
 #error "CC_INTERP is no longer supported. Removed in change 8145117."
@@ -60,4 +60,4 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // Define the condition to use this -XX flag.
 #define USE_POLL_BIT_ONLY UseSIGTRAP
 
-#endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
+#endif // CPU_PPC_GLOBALDEFINITIONS_PPC_HPP

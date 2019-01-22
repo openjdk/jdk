@@ -27,11 +27,13 @@
  * @summary  Make sure that the abstract method is identified correctly
  *           if the abstract modifier is present explicitly or implicitly.
  * @author   bpatel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestAbstractMethod
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestAbstractMethod extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestAbstractMethod extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

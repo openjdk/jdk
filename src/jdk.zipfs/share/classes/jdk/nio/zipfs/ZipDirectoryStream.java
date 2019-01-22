@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package jdk.nio.zipfs;
 
-import java.nio.file.DirectoryStream;
+import java.io.IOException;
 import java.nio.file.ClosedDirectoryStreamException;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.io.IOException;
 
 /**
  *
- * @author  Xueming Shen, Rajendra Gutupalli, Jaya Hangal
+ * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
-
 class ZipDirectoryStream implements DirectoryStream<Path> {
 
     private final ZipFileSystem zipfs;
@@ -68,10 +68,10 @@ class ZipDirectoryStream implements DirectoryStream<Path> {
         try {
             itr = zipfs.iteratorOf(dir, filter);
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new DirectoryIteratorException(e);
         }
+
         return new Iterator<Path>() {
-            private Path next;
             @Override
             public boolean hasNext() {
                 if (isClosed)
@@ -97,5 +97,4 @@ class ZipDirectoryStream implements DirectoryStream<Path> {
     public synchronized void close() throws IOException {
         isClosed = true;
     }
-
 }

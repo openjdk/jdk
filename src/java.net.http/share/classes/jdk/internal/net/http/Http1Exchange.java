@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
@@ -381,6 +382,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     CompletableFuture<Void> ignoreBody() {
         return response.ignoreBody(executor);
     }
+
+    // Used for those response codes that have no body associated
+    @Override
+    public void nullBody(HttpResponse<T> resp, Throwable t) {
+       response.nullBody(resp, t);
+    }
+
 
     ByteBuffer drainLeftOverBytes() {
         synchronized (lock) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,6 +647,7 @@ static void initLocalIfs () {
     unsigned char staddr [16];
     char ifname [33];
     struct localinterface *lif=0;
+    struct localinterface *localifsTemp;
     int index, x1, x2, x3;
     unsigned int u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,ua,ub,uc,ud,ue,uf;
 
@@ -675,13 +676,17 @@ static void initLocalIfs () {
         staddr[15] = (unsigned char)uf;
         nifs ++;
         if (nifs > localifsSize) {
-            localifs = (struct localinterface *) realloc (
+            localifsTemp = (struct localinterface *) realloc(
                         localifs, sizeof (struct localinterface)* (localifsSize+5));
-            if (localifs == 0) {
+            if (localifsTemp == 0) {
+                free(localifs);
+                localifs = 0;
+                localifsSize = 0;
                 nifs = 0;
-                fclose (f);
+                fclose(f);
                 return;
             }
+            localifs = localifsTemp;
             lif = localifs + localifsSize;
             localifsSize += 5;
         } else {
@@ -805,12 +810,8 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
 
 #ifdef __linux__
         /*
-         * On Linux if we are connecting to a
-         *
-         *   - link-local address
-         *   - multicast interface-local or link-local address
-         *
-         * we need to specify the interface in the scope_id.
+         * On Linux if we are connecting to a link-local address
+         * we need to specify the interface in the scope_id (2.4 kernel only)
          *
          * If the scope was cached then we use the cached value. If not cached but
          * specified in the Inet6Address we use that, but we first check if the
@@ -820,9 +821,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
          * we try to determine a value from the routing table. In all these
          * cases the used value is cached for further use.
          */
-        if (IN6_IS_ADDR_LINKLOCAL(&sa->sa6.sin6_addr)
-            || IN6_IS_ADDR_MC_NODELOCAL(&sa->sa6.sin6_addr)
-            || IN6_IS_ADDR_MC_LINKLOCAL(&sa->sa6.sin6_addr)) {
+        if (IN6_IS_ADDR_LINKLOCAL(&sa->sa6.sin6_addr)) {
             unsigned int cached_scope_id = 0, scope_id = 0;
 
             if (ia6_cachedscopeidID) {

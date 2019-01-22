@@ -59,3 +59,12 @@ Java_java_security_AccessController_getInheritedAccessControlContext(
 {
     return JVM_GetInheritedAccessControlContext(env, this);
 }
+
+JNIEXPORT void JNICALL
+Java_java_security_AccessController_ensureMaterializedForStackWalk(
+                                                              JNIEnv *env,
+                                                              jclass cls,
+                                                              jobject value)
+{
+    JVM_EnsureMaterializedForStackWalk(env, value);
+}

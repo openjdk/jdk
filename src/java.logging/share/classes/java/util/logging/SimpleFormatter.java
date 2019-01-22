@@ -39,7 +39,7 @@ import jdk.internal.logger.SurrogateLogger;
  * <a id="formatting">
  * <b>Configuration:</b></a>
  * The {@code SimpleFormatter} is initialized with the format string
- * specified in the {@code java.util.logging.SimpleFormatter.format}
+ * specified in the {@systemProperty java.util.logging.SimpleFormatter.format}
  * property to {@linkplain #format(LogRecord) format} the log messages.
  * This property can be defined
  * in the {@linkplain LogManager#getProperty logging properties}

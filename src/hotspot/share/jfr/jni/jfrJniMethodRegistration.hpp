@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP
-#define SHARE_VM_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP
+#ifndef SHARE_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP
+#define SHARE_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP
 
 #include "jni.h"
 #include "memory/allocation.hpp"
@@ -36,4 +36,4 @@ class JfrJniMethodRegistration : public StackObj {
   JfrJniMethodRegistration(JNIEnv* env);
 };
 
-#endif // SHARE_VM_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP
+#endif // SHARE_JFR_JNI_JFRJNIMETHODREGISTRATION_HPP

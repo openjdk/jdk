@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIENV_HPP
-#define SHARE_VM_CI_CIENV_HPP
+#ifndef SHARE_CI_CIENV_HPP
+#define SHARE_CI_CIENV_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
@@ -46,6 +46,7 @@ class ciEnv : StackObj {
 
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
+  friend class PrepareExtraDataClosure;
 
 private:
   Arena*           _arena;       // Alias for _ciEnv_arena except in init_shared_objects()
@@ -186,6 +187,10 @@ private:
     } else {
       return _factory->get_metadata(o);
     }
+  }
+
+  ciMetadata* cached_metadata(Metadata* o) {
+    return _factory->cached_metadata(o);
   }
 
   ciInstance* get_instance(oop o) {
@@ -338,7 +343,9 @@ public:
   // Cache Jvmti state
   void  cache_jvmti_state();
   bool  jvmti_state_changed() const;
-  bool  should_retain_local_variables() const;
+  bool  should_retain_local_variables() const {
+    return _jvmti_can_access_local_variables || _jvmti_can_pop_frame;
+  }
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
 
@@ -466,4 +473,4 @@ public:
   void dump_compile_data(outputStream* out);
 };
 
-#endif // SHARE_VM_CI_CIENV_HPP
+#endif // SHARE_CI_CIENV_HPP

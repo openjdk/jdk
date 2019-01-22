@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPACER_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHPACER_HPP
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "memory/allocation.hpp"
@@ -96,4 +96,4 @@ private:
   size_t update_and_get_progress_history();
 };
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_HPP

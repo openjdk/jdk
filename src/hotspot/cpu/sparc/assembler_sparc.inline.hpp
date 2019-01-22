@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
-#define CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+#ifndef CPU_SPARC_ASSEMBLER_SPARC_INLINE_HPP
+#define CPU_SPARC_ASSEMBLER_SPARC_INLINE_HPP
 
 #include "asm/assembler.hpp"
 
@@ -1127,4 +1127,4 @@ inline void Assembler::mpmul(int uimm5) {
   emit_int32(op(arith_op) | rd(0) | op3(mpmul_op3) | rs1(0) | opf(mpmul_opf) | uimm(uimm5, 5));
 }
 
-#endif // CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+#endif // CPU_SPARC_ASSEMBLER_SPARC_INLINE_HPP

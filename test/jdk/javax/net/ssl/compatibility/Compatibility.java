@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  *     Note that, this is a manual test. For more details about the test and
  *     its usages, please look through README.
  *
- * @library /test/lib
- * @compile -source 1.7 -target 1.7 JdkUtils.java Parameter.java Server.java Client.java
+ * @library /test/lib ../TLSCommon
+ * @compile -source 1.7 -target 1.7 JdkUtils.java Server.java Client.java
  * @run main/manual Compatibility
  */
 
@@ -81,20 +81,16 @@ public class Compatibility {
 
             for (UseCase useCase : UseCase.getAllUseCases()) {
                 for (JdkInfo serverJdk : jdkInfos) {
-                    if (useCase.ignoredByJdk(serverJdk)) {
-                        continue;
-                    }
-
                     Map<String, String> props = new LinkedHashMap<>();
                     if (debug) {
-                        props.put("javax.net.debug", "ssl");
+                        props.put("javax.net.debug", "all");
                     }
                     props.put("java.security.properties", javaSecurityFile);
 
-                    props.put(Utils.PROP_PROTOCOL, useCase.protocol.version);
+                    props.put(Utils.PROP_PROTOCOL, useCase.protocol.name);
                     props.put(Utils.PROP_CIPHER_SUITE, useCase.cipherSuite.name());
-                    props.put(Utils.PROP_CLIENT_AUTH, useCase.clientAuth.name());
-                    if (useCase.appProtocol != AppProtocol.NONE) {
+                    props.put(Utils.PROP_CLIENT_AUTH, String.valueOf(useCase.clientAuth));
+                    if (useCase.appProtocol != UseCase.AppProtocol.NONE) {
                         props.put(Utils.PROP_APP_PROTOCOLS,
                                 Utils.join(Utils.VALUE_DELIMITER,
                                         useCase.appProtocol.appProtocols));
@@ -109,14 +105,10 @@ public class Compatibility {
                             serverJdk.supportsALPN + "");
 
                     for (JdkInfo clientJdk : jdkInfos) {
-                        if (useCase.ignoredByJdk(clientJdk)) {
-                            continue;
-                        }
-
                         TestCase testCase = new TestCase(serverJdk, clientJdk,
                                 useCase);
                         System.out.println(Utils.anchorName(testCase.toString(),
-                                "----- Case start -----"));
+                                "===== Case start ====="));
                         System.out.println(testCase.toString());
 
                         props.put(Utils.PROP_NEGATIVE_CASE_ON_SERVER,
@@ -138,7 +130,7 @@ public class Compatibility {
                                 clientJdk.supportsSNI + "");
                         props.put(Utils.PROP_SUPPORTS_ALPN_ON_CLIENT,
                                 clientJdk.supportsALPN + "");
-                        if (useCase.serverName != ServerName.NONE) {
+                        if (useCase.serverName != UseCase.ServerName.NONE) {
                             props.put(Utils.PROP_SERVER_NAME,
                                     useCase.serverName.name);
                         }
@@ -158,7 +150,7 @@ public class Compatibility {
                                 "ServerStatus=%s, ClientStatus=%s, CaseStatus=%s%n",
                                 serverStatus, clientStatus, testCase.getStatus());
 
-                        System.out.println("----- Case end -----");
+                        System.out.println("===== Case end =====");
                     }
                 }
             }
@@ -309,14 +301,14 @@ public class Compatibility {
                             i + ""),
                     testCase.serverJdk.version,
                     testCase.clientJdk.version,
-                    testCase.useCase.protocol.version,
+                    testCase.useCase.protocol.name,
                     testCase.useCase.cipherSuite,
                     Utils.boolToStr(
-                            testCase.useCase.clientAuth == ClientAuth.TRUE),
+                            testCase.useCase.clientAuth),
                     Utils.boolToStr(
-                            testCase.useCase.serverName == ServerName.EXAMPLE),
+                            testCase.useCase.serverName == UseCase.ServerName.EXAMPLE),
                     Utils.boolToStr(
-                            testCase.useCase.appProtocol == AppProtocol.EXAMPLE),
+                            testCase.useCase.appProtocol == UseCase.AppProtocol.EXAMPLE),
                     testCase.getStatus()));
             failed = failed
                     || testCase.getStatus() == Status.FAIL

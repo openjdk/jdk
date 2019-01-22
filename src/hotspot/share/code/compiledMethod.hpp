@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_COMPILEDMETHOD_HPP
-#define SHARE_VM_CODE_COMPILEDMETHOD_HPP
+#ifndef SHARE_CODE_COMPILEDMETHOD_HPP
+#define SHARE_CODE_COMPILEDMETHOD_HPP
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
@@ -36,6 +36,8 @@ class AbstractCompiler;
 class xmlStream;
 class CompiledStaticCall;
 class NativeCallWrapper;
+class ScopeDesc;
+class CompiledIC;
 
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
@@ -412,4 +414,4 @@ protected:
   nmethod* _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
 };
 
-#endif //SHARE_VM_CODE_COMPILEDMETHOD_HPP
+#endif // SHARE_CODE_COMPILEDMETHOD_HPP

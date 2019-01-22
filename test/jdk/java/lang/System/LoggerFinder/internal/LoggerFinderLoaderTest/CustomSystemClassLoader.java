@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -48,9 +49,8 @@ public class CustomSystemClassLoader extends ClassLoader {
 
 
     final List<String> finderClassNames =
-            Arrays.asList("LoggerFinderLoaderTest$BaseLoggerFinder",
-                    "LoggerFinderLoaderTest$BaseLoggerFinder2");
-    final Map<String, Class<?>> finderClasses = new HashMap<>();
+            Arrays.asList("BaseLoggerFinder", "BaseLoggerFinder2");
+    final Map<String, Class<?>> finderClasses = new ConcurrentHashMap<>();
     Class<?> testLoggerFinderClass;
 
     public CustomSystemClassLoader() {
@@ -62,9 +62,13 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     private Class<?> defineFinderClass(String name)
         throws ClassNotFoundException {
+        Class<?> finderClass =  finderClasses.get(name);
+        if (finderClass != null) return finderClass;
+
         final Object obj = getClassLoadingLock(name);
         synchronized(obj) {
-            if (finderClasses.get(name) != null) return finderClasses.get(name);
+            finderClass =  finderClasses.get(name);
+            if (finderClass != null) return finderClass;
             if (testLoggerFinderClass == null) {
                 // Hack: we  load testLoggerFinderClass to get its code source.
                 //       we can't use this.getClass() since we are in the boot.
@@ -77,7 +81,7 @@ public class CustomSystemClassLoader extends ClassLoader {
                     byte[] b = Files.readAllBytes(file.toPath());
                     Permissions perms = new Permissions();
                     perms.add(new AllPermission());
-                    Class<?> finderClass = defineClass(
+                    finderClass = defineClass(
                             name, b, 0, b.length, new ProtectionDomain(
                             this.getClass().getProtectionDomain().getCodeSource(),
                             perms));
@@ -95,9 +99,13 @@ public class CustomSystemClassLoader extends ClassLoader {
         }
     }
 
+    private static boolean matches(String prefix, String name) {
+        return prefix.equals(name) || name.startsWith(prefix + "$");
+    }
+
     @Override
     public synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (finderClassNames.contains(name)) {
+        if (finderClassNames.stream().anyMatch(n -> matches(n, name))) {
             Class<?> c = defineFinderClass(name);
             if (resolve) {
                 resolveClass(c);
@@ -109,7 +117,7 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if (finderClassNames.contains(name)) {
+        if (finderClassNames.stream().anyMatch(n -> matches(n, name))) {
             return defineFinderClass(name);
         }
         return super.findClass(name);

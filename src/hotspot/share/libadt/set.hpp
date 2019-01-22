@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_LIBADT_SET_HPP
-#define SHARE_VM_LIBADT_SET_HPP
+#ifndef SHARE_LIBADT_SET_HPP
+#define SHARE_LIBADT_SET_HPP
 
 #include "memory/allocation.hpp"
 
@@ -112,16 +112,15 @@ class SetI_;
 
 //------------------------------Set--------------------------------------------
 class Set : public ResourceObj {
- public:
+ protected:
 
   // Creates a new, empty set.
-  // DO NOT CONSTRUCT A Set.  THIS IS AN ABSTRACT CLASS, FOR INHERITENCE ONLY
   Set(Arena *arena) : _set_arena(arena) {};
 
   // Creates a new set from an existing set
-  // DO NOT CONSTRUCT A Set.  THIS IS AN ABSTRACT CLASS, FOR INHERITENCE ONLY
-  Set(const Set &) {};
+  Set(const Set & s) : ResourceObj(s) {};
 
+ public:
   // Set assignment; deep-copy guts
   virtual Set &operator =(const Set &s)=0;
   virtual Set &clone(void) const=0;
@@ -245,4 +244,4 @@ public:
   int test(void) { return impl->test(); }
 };
 
-#endif // SHARE_VM_LIBADT_SET_HPP
+#endif // SHARE_LIBADT_SET_HPP

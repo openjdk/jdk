@@ -710,6 +710,13 @@ public final class AccessController {
     }
 
     /**
+     * The value needs to be physically located in the frame, so that it
+     * can be found by a stack walk.
+     */
+    @Hidden
+    private static native void ensureMaterializedForStackWalk(Object o);
+
+    /**
      * Sanity check that the caller context is indeed privileged.
      *
      * Used by executePrivileged to make sure the frame is properly
@@ -734,6 +741,11 @@ public final class AccessController {
                           AccessControlContext context,
                           Class<?> caller)
     {
+        // Ensure context has a physical value in the frame
+        if (context != null) {
+            ensureMaterializedForStackWalk(context);
+        }
+
         assert isPrivileged(); // sanity check invariant
         T result = action.run();
         assert isPrivileged(); // sanity check invariant
@@ -742,7 +754,6 @@ public final class AccessController {
         // retrieved by getStackAccessControlContext().
         Reference.reachabilityFence(context);
         Reference.reachabilityFence(caller);
-        Reference.reachabilityFence(action);
         return result;
     }
 
@@ -761,6 +772,11 @@ public final class AccessController {
                           Class<?> caller)
         throws Exception
     {
+        // Ensure context has a physical value in the frame
+        if (context != null) {
+            ensureMaterializedForStackWalk(context);
+        }
+
         assert isPrivileged(); // sanity check invariant
         T result = action.run();
         assert isPrivileged(); // sanity check invariant
@@ -769,7 +785,6 @@ public final class AccessController {
         // retrieved by getStackAccessControlContext().
         Reference.reachabilityFence(context);
         Reference.reachabilityFence(caller);
-        Reference.reachabilityFence(action);
         return result;
     }
 

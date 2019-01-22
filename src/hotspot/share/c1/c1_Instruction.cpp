@@ -827,9 +827,16 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
       for_each_local_value(existing_state, index, existing_value) {
         Value new_value = new_state->local_at(index);
         if (new_value == NULL || new_value->type()->tag() != existing_value->type()->tag()) {
-          // The old code invalidated the phi function here
-          // Because dead locals are replaced with NULL, this is a very rare case now, so simply bail out
-          return false; // BAILOUT in caller
+          Phi* existing_phi = existing_value->as_Phi();
+          if (existing_phi == NULL) {
+            return false; // BAILOUT in caller
+          }
+          // Invalidate the phi function here. This case is very rare except for
+          // JVMTI capability "can_access_local_variables".
+          // In really rare cases we will bail out in LIRGenerator::move_to_phi.
+          existing_phi->make_illegal();
+          existing_state->invalidate_local(index);
+          TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
         }
       }
 

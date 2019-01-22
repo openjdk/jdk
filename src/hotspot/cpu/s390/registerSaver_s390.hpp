@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_REGISTERSAVER_S390_HPP
-#define CPU_S390_VM_REGISTERSAVER_S390_HPP
+#ifndef CPU_S390_REGISTERSAVER_S390_HPP
+#define CPU_S390_REGISTERSAVER_S390_HPP
 
 class RegisterSaver {
   // Used for saving volatile registers.
@@ -79,4 +79,4 @@ class RegisterSaver {
 
 };
 
-#endif // CPU_S390_VM_REGISTERSAVER_S390_HPP
+#endif // CPU_S390_REGISTERSAVER_S390_HPP

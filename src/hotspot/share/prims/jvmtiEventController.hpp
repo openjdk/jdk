@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP
-#define SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP
+#ifndef SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
+#define SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
@@ -241,4 +241,4 @@ public:
   static void vm_death();
 };
 
-#endif // SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP
+#endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP

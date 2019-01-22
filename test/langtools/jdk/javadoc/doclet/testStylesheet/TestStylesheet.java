@@ -27,11 +27,13 @@
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestStylesheet
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestStylesheet extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestStylesheet extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -242,7 +244,7 @@ public class TestStylesheet extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

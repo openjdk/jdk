@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_RELOCINFO_SPARC_HPP
-#define CPU_SPARC_VM_RELOCINFO_SPARC_HPP
+#ifndef CPU_SPARC_RELOCINFO_SPARC_HPP
+#define CPU_SPARC_RELOCINFO_SPARC_HPP
 
   // machine-dependent parts of class relocInfo
  private:
@@ -54,4 +54,4 @@
 // 1.9 99/07/16 11:12:11 relocInfo_i486.hpp
 //End
 
-#endif // CPU_SPARC_VM_RELOCINFO_SPARC_HPP
+#endif // CPU_SPARC_RELOCINFO_SPARC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_DEFAULTMETHODS_HPP
-#define SHARE_VM_CLASSFILE_DEFAULTMETHODS_HPP
+#ifndef SHARE_CLASSFILE_DEFAULTMETHODS_HPP
+#define SHARE_CLASSFILE_DEFAULTMETHODS_HPP
 
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
@@ -45,4 +45,4 @@ class DefaultMethods : AllStatic {
   static void generate_default_methods(
       InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS);
 };
-#endif // SHARE_VM_CLASSFILE_DEFAULTMETHODS_HPP
+#endif // SHARE_CLASSFILE_DEFAULTMETHODS_HPP

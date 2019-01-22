@@ -77,8 +77,8 @@ public class TestLookForUntestedEvents {
     // NOTE: if the event is not covered, a bug should be open, and bug number
     // noted in the comments for this set.
     private static final Set<String> knownNotCoveredEvents = new HashSet<>(
-        // DumpReason: JDK-8213918, Shutdown: JDK-8213917
-        Arrays.asList("DumpReason", "Shutdown")
+        // DumpReason: JDK-8213918
+        Arrays.asList("DumpReason")
     );
 
 

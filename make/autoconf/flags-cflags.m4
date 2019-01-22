@@ -183,7 +183,8 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       # Additional warnings that are not activated by -Wall and -Wextra
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
-          -Wunused-function -Wundef -Wunused-value -Wreturn-type"
+          -Wunused-function -Wundef -Wunused-value -Wreturn-type \
+          -Wtrampolines"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
@@ -559,7 +560,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS="-errshort=tags"
 
     TOOLCHAIN_CFLAGS_JDK="-mt $TOOLCHAIN_FLAGS"
-    TOOLCHAIN_CFLAGS_JDK_CONLY="-xc99=%none -xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
+    TOOLCHAIN_CFLAGS_JDK_CONLY="-xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
     TOOLCHAIN_CFLAGS_JDK_CXXONLY="-features=no%except -norunpath -xnolib" # CXX only
     TOOLCHAIN_CFLAGS_JVM="-template=no%extdef -features=no%split_init \
         -library=stlport4 -mt -features=no%except $TOOLCHAIN_FLAGS"
@@ -571,10 +572,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # Suggested additions: -qsrcmsg to get improved error reporting
-    TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt"  # add on both CFLAGS
+    TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
     TOOLCHAIN_CFLAGS_JVM="-qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
-        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"

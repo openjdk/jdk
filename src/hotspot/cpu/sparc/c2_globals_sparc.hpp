@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_C2_GLOBALS_SPARC_HPP
-#define CPU_SPARC_VM_C2_GLOBALS_SPARC_HPP
+#ifndef CPU_SPARC_C2_GLOBALS_SPARC_HPP
+#define CPU_SPARC_C2_GLOBALS_SPARC_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -91,4 +91,4 @@ define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);
 
-#endif // CPU_SPARC_VM_C2_GLOBALS_SPARC_HPP
+#endif // CPU_SPARC_C2_GLOBALS_SPARC_HPP

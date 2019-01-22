@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_HEAPREGIONSET_HPP
-#define SHARE_VM_GC_G1_HEAPREGIONSET_HPP
+#ifndef SHARE_GC_G1_HEAPREGIONSET_HPP
+#define SHARE_GC_G1_HEAPREGIONSET_HPP
 
 #include "gc/g1/heapRegion.hpp"
 #include "utilities/macros.hpp"
@@ -194,6 +194,8 @@ public:
   void remove_starting_at(HeapRegion* first, uint num_regions);
 
   virtual void verify();
+
+  uint num_of_regions_in_range(uint start, uint end) const;
 };
 
 // Iterator class that provides a convenient way to iterate over the
@@ -228,4 +230,4 @@ public:
   }
 };
 
-#endif // SHARE_VM_GC_G1_HEAPREGIONSET_HPP
+#endif // SHARE_GC_G1_HEAPREGIONSET_HPP

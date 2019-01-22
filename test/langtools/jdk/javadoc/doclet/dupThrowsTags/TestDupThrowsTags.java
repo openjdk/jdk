@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug 4525364
  * @summary Determine if duplicate throws tags can be used.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestDupThrowsTags
  */
+import javadoc.tester.JavadocTester;
+
 public class TestDupThrowsTags extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -39,7 +41,7 @@ public class TestDupThrowsTags extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 testSrc("TestDupThrowsTags.java"));
         checkExit(Exit.ERROR);

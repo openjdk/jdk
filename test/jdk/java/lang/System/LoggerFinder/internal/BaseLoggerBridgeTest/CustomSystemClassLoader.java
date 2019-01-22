@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.nio.file.Files;
 import java.security.AllPermission;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
-
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A custom ClassLoader to load the concrete LoggerFinder class
@@ -39,7 +39,7 @@ import java.security.ProtectionDomain;
 public class CustomSystemClassLoader extends ClassLoader {
 
 
-    Class<?> finderClass = null;
+    private final ConcurrentHashMap<String, Class<?>> classes = new ConcurrentHashMap<>();
 
     public CustomSystemClassLoader() {
         super();
@@ -50,8 +50,13 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     private Class<?> defineFinderClass(String name)
         throws ClassNotFoundException {
+        Class<?> finderClass = classes.get(name);
+        if (finderClass != null) return finderClass;
+
         final Object obj = getClassLoadingLock(name);
+
         synchronized(obj) {
+            finderClass = classes.get(name);
             if (finderClass != null) return finderClass;
 
             URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
@@ -66,6 +71,7 @@ public class CustomSystemClassLoader extends ClassLoader {
                             this.getClass().getProtectionDomain().getCodeSource(),
                             perms));
                     System.out.println("Loaded " + name);
+                    classes.put(name, finderClass);
                     return finderClass;
                 } catch (Throwable ex) {
                     ex.printStackTrace();
@@ -80,7 +86,7 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     @Override
     public synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name.endsWith("$BaseLoggerFinder")) {
+        if (name.equals("BaseLoggerFinder") || name.startsWith("BaseLoggerFinder$")) {
             Class<?> c = defineFinderClass(name);
             if (resolve) {
                 resolveClass(c);
@@ -92,7 +98,7 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if (name.endsWith("$BaseLoggerFinder")) {
+        if (name.equals("BaseLoggerFinder") || name.startsWith("BaseLoggerFinder$")) {
             return defineFinderClass(name);
         }
         return super.findClass(name);

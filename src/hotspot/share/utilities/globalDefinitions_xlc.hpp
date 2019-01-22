@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
-#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#define SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
 
 #include "jni.h"
 
@@ -126,10 +126,6 @@ inline int g_isfinite(jdouble f)                 { return finite(f); }
 inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 
-// Portability macros
-#define PRAGMA_INTERFACE             #pragma interface
-#define PRAGMA_IMPLEMENTATION        #pragma implementation
-
 // Formatting.
 #ifdef _LP64
 #define FORMAT64_MODIFIER "l"
@@ -166,4 +162,4 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define NOINLINE     __attribute__((__noinline__))
 #define ALWAYSINLINE inline __attribute__((__always_inline__))
 
-#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
+#endif // SHARE_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

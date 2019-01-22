@@ -517,7 +517,7 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
-ifneq ($(PANDOC), )
+ifeq ($(ENABLE_PANDOC), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html, if we have pandoc (otherwise we'll just skip this).
 

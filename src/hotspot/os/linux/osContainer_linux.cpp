@@ -31,6 +31,24 @@
 #include "logging/log.hpp"
 #include "osContainer_linux.hpp"
 
+/*
+ * PER_CPU_SHARES has been set to 1024 because CPU shares' quota
+ * is commonly used in cloud frameworks like Kubernetes[1],
+ * AWS[2] and Mesos[3] in a similar way. They spawn containers with
+ * --cpu-shares option values scaled by PER_CPU_SHARES. Thus, we do
+ * the inverse for determining the number of possible available
+ * CPUs to the JVM inside a container. See JDK-8216366.
+ *
+ * [1] https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+ *     In particular:
+ *        When using Docker:
+ *          The spec.containers[].resources.requests.cpu is converted to its core value, which is potentially
+ *          fractional, and multiplied by 1024. The greater of this number or 2 is used as the value of the
+ *          --cpu-shares flag in the docker run command.
+ * [2] https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html
+ * [3] https://github.com/apache/mesos/blob/3478e344fb77d931f6122980c6e94cd3913c441d/src/docker/docker.cpp#L648
+ *     https://github.com/apache/mesos/blob/3478e344fb77d931f6122980c6e94cd3913c441d/src/slave/containerizer/mesos/isolators/cgroups/constants.hpp#L30
+ */
 #define PER_CPU_SHARES 1024
 
 bool  OSContainer::_is_initialized   = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP
-#define SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP
+#ifndef SHARE_GC_CMS_PAROOPCLOSURES_INLINE_HPP
+#define SHARE_GC_CMS_PAROOPCLOSURES_INLINE_HPP
 
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/parNewGeneration.hpp"
@@ -143,4 +143,4 @@ inline void ParScanWithBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do
 inline void ParScanWithoutBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, false, false); }
 inline void ParScanWithoutBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, false, false); }
 
-#endif // SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP
+#endif // SHARE_GC_CMS_PAROOPCLOSURES_INLINE_HPP

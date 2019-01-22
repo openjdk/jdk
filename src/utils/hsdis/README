@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   
 The Universal Permissive License (UPL), Version 1.0
@@ -114,17 +114,14 @@ will build the Win32 cross compiled version of hsdis based on 2.31.1.
 
 * Installing
 
-Products are named like build/$OS-$LIBARCH/hsdis-$LIBARCH.so.  You can
-install them on your LD_LIBRARY_PATH, or inside of your JRE/JDK.  The
-search path in the JVM is:
+Products are named like build/$OS-$LIBARCH/hsdis-$LIBARCH.so. You can
+install them next to your libjvm.so inside your JRE/JDK or alternatively
+put it anywhere on your LD_LIBRARY_PATH. The search path in the JVM is:
 
-1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so
-2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
-3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+1. <home>/lib/<vm>/libhsdis-<arch>.so
+2. <home>/lib/<vm>/hsdis-<arch>.so
+3. <home>/lib/hsdis-<arch>.so
 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
-
-Note that there's a bug in hotspot versions prior to hs22 that causes
-steps 2 and 3 to fail when used with JDK7.
 
 Now test:
 

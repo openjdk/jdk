@@ -55,7 +55,7 @@ GENDATA_CURDATA := $(JDK_OUTPUTDIR)/modules/java.base/java/util/currency.data
 $(GENDATA_CURDATA): $(TOPDIR)/make/data/currency/CurrencyData.properties $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(RM) $@
-	$(TOOL_GENERATECURRENCYDATA) -o $@.tmp < $<
+	$(TOOL_GENERATECURRENCYDATA) -o $@.tmp -i $<
 	$(MV) $@.tmp $@
 	$(CHMOD) 444 $@
 

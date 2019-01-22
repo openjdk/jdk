@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
@@ -549,4 +549,4 @@ inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
   return _marking_context;
 }
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP

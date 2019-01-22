@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  *           be created.
  *           Make sure classname is not include in javadoc usage message.
  * @author   jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestNotifications
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestNotifications extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestNotifications extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         String outDir = "out";
 
         // Notify that the destination directory must be created.
@@ -61,7 +63,7 @@ public class TestNotifications extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         //Make sure classname is not include in javadoc usage message.
         setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         javadoc("-help");

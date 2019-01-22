@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
-#define OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
+#ifndef OS_SOLARIS_OS_SHARE_SOLARIS_HPP
+#define OS_SOLARIS_OS_SHARE_SOLARIS_HPP
 
 // Defines the interfaces to Solaris operating systems that vary across platforms
 
@@ -39,4 +39,4 @@ void continue_with_dump(void);
 
 #define PROCFILE_LENGTH 128
 
-#endif // OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
+#endif // OS_SOLARIS_OS_SHARE_SOLARIS_HPP

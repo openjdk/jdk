@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP
-#define SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP
+#ifndef SHARE_PRIMS_JNIFASTGETFIELD_HPP
+#define SHARE_PRIMS_JNIFASTGETFIELD_HPP
 
 #include "memory/allocation.hpp"
 #include "prims/jvm_misc.hpp"
@@ -99,4 +99,4 @@ class JNI_FastGetField : AllStatic {
   static address find_slowcase_pc(address pc);
 };
 
-#endif // SHARE_VM_PRIMS_JNIFASTGETFIELD_HPP
+#endif // SHARE_PRIMS_JNIFASTGETFIELD_HPP

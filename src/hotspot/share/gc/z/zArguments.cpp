@@ -19,7 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include "precompiled.hpp"
@@ -91,6 +90,9 @@ void ZArguments::initialize() {
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
+
+  // Initialize platform specific arguments
+  initialize_platform();
 }
 
 CollectedHeap* ZArguments::create_heap() {

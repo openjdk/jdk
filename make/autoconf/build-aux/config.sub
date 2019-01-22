@@ -29,7 +29,13 @@
 
 DIR=`dirname $0`
 
-# First, filter out everything that doesn't begin with "aarch64-"
+# Allow wsl
+if echo $* | grep x86_64-pc-wsl >/dev/null ; then
+    echo $*
+    exit
+fi
+
+# Filter out everything that doesn't begin with "aarch64-"
 if ! echo $* | grep '^aarch64-' >/dev/null ; then
     . $DIR/autoconf-config.sub "$@"
     # autoconf-config.sub exits, so we never reach here, but just in

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,11 @@ public class SSLTube implements FlowTube {
 
         @Override
         public String toString() {
-            return "DelegateWrapper:" + delegate.toString();
+            return "DelegateWrapper[subscribedCalled: " + subscribedCalled
+                    +", subscribedDone: " + subscribedDone
+                    +", completed: " + completed
+                    +", error: " + error
+                    +"]: " + delegate;
         }
 
     }
@@ -287,6 +291,20 @@ public class SSLTube implements FlowTube {
         private volatile boolean onCompleteReceived;
         private final AtomicReference<Throwable> errorRef
                 = new AtomicReference<>();
+
+        @Override
+        public String toString() {
+            DelegateWrapper sub = subscribed;
+            DelegateWrapper pend = pendingDelegate.get();
+            // Though final sslFD may be null if called from within
+            // SSLFD::connect() as SSLTube is not fully constructed yet.
+            SSLFlowDelegate sslFD = sslDelegate;
+            return "SSLSubscriberWrapper[" + SSLTube.this
+                    + ", delegate: " + (sub == null ? pend  :sub)
+                    + ", getALPN: " + (sslFD == null ? null : sslFD.alpn())
+                    + ", onCompleteReceived: " + onCompleteReceived
+                    + ", onError: " + errorRef.get() + "]";
+        }
 
         // setDelegate can be called asynchronously when the SSLTube flow
         // is connected. At this time the permanent subscriber (this class)
@@ -319,6 +337,9 @@ public class SSLTube implements FlowTube {
                     debug.log("SSLSubscriberWrapper (reader) no subscription yet");
                 return;
             }
+            // sslDelegate field should have been initialized by the
+            // the time we reach here, as there can be no subscriber
+            // until SSLTube is fully constructed.
             if (handleNow || !sslDelegate.resumeReader()) {
                 processPendingSubscriber();
             }
@@ -429,7 +450,8 @@ public class SSLTube implements FlowTube {
             Throwable failed;
             boolean completed;
             // reset any demand that may have been made by the previous
-            // subscriber
+            // subscriber. sslDelegate field should have been initialized,
+            // since we only reach here when there is a subscriber.
             sslDelegate.resetReaderDemand();
             // send the subscription to the subscriber.
             subscriberImpl.onSubscribe(subscription);

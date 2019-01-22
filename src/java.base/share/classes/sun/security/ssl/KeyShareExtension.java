@@ -337,8 +337,7 @@ final class KeyShareExtension {
             try {
                 spec = new CHKeyShareSpec(buffer);
             } catch (IOException ioe) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             List<SSLCredentials> credentials = new LinkedList<>();
@@ -610,16 +609,14 @@ final class KeyShareExtension {
             if (chc.clientRequestedNamedGroups == null ||
                     chc.clientRequestedNamedGroups.isEmpty()) {
                 // No supported groups.
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected key_share extension in ServerHello");
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.SH_KEY_SHARE)) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in ServerHello");
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             // Parse the extension
@@ -627,25 +624,22 @@ final class KeyShareExtension {
             try {
                 spec = new SHKeyShareSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             KeyShareEntry keyShare = spec.serverShare;
             NamedGroup ng = NamedGroup.valueOf(keyShare.namedGroupId);
             if (ng == null || !SupportedGroups.isActivatable(
                     chc.sslConfig.algorithmConstraints, ng)) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported named group: " +
                         NamedGroup.nameOf(keyShare.namedGroupId));
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             SSLKeyExchange ke = SSLKeyExchange.valueOf(ng);
             if (ke == null) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "No key exchange for named group " + ng.name);
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             SSLCredentials credentials = null;
@@ -657,7 +651,7 @@ final class KeyShareExtension {
                         if (!chc.algorithmConstraints.permits(
                                 EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                                 ecdhec.popPublicKey)) {
-                            chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                            throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                                     "ECDHE key share entry does not " +
                                     "comply to algorithm constraints");
                         } else {
@@ -665,7 +659,7 @@ final class KeyShareExtension {
                         }
                     }
                 } catch (IOException | GeneralSecurityException ex) {
-                    chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Cannot decode named group: " +
                             NamedGroup.nameOf(keyShare.namedGroupId));
                 }
@@ -677,7 +671,7 @@ final class KeyShareExtension {
                         if (!chc.algorithmConstraints.permits(
                                 EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                                 dhec.popPublicKey)) {
-                            chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                            throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                                     "DHE key share entry does not " +
                                     "comply to algorithm constraints");
                         } else {
@@ -685,18 +679,18 @@ final class KeyShareExtension {
                         }
                     }
                 } catch (IOException | GeneralSecurityException ex) {
-                    chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Cannot decode named group: " +
                             NamedGroup.nameOf(keyShare.namedGroupId));
                 }
             } else {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported named group: " +
                         NamedGroup.nameOf(keyShare.namedGroupId));
             }
 
             if (credentials == null) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported named group: " + ng.name);
             }
 
@@ -794,17 +788,15 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_KEY_SHARE)) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
-                return null;    // make the compiler happy.
             }
 
             if (shc.clientRequestedNamedGroups == null ||
                     shc.clientRequestedNamedGroups.isEmpty()) {
                 // No supported groups.
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected key_share extension in HelloRetryRequest");
-                return null;    // make the compiler happy.
             }
 
             NamedGroup selectedGroup = null;
@@ -823,9 +815,8 @@ final class KeyShareExtension {
             }
 
             if (selectedGroup == null) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        new IOException("No common named group"));
-                return null;    // make the complier happy
+                throw shc.conContext.fatal(
+                        Alert.UNEXPECTED_MESSAGE, "No common named group");
             }
 
             byte[] extdata = new byte[] {
@@ -861,9 +852,8 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_KEY_SHARE)) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
-                return null;    // make the compiler happy.
             }
 
             CHKeyShareSpec spec = (CHKeyShareSpec)shc.handshakeExtensions.get(
@@ -903,17 +893,15 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.HRR_KEY_SHARE)) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
-                return;     // make the compiler happy.
             }
 
             if (chc.clientRequestedNamedGroups == null ||
                     chc.clientRequestedNamedGroups.isEmpty()) {
                 // No supported groups.
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected key_share extension in HelloRetryRequest");
-                return;     // make the compiler happy.
             }
 
             // Parse the extension
@@ -921,23 +909,20 @@ final class KeyShareExtension {
             try {
                 spec = new HRRKeyShareSpec(buffer);
             } catch (IOException ioe) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-                return;     // fatal() always throws, make the compiler happy.
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
 
             NamedGroup serverGroup = NamedGroup.valueOf(spec.selectedGroup);
             if (serverGroup == null) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported HelloRetryRequest selected group: " +
                                 NamedGroup.nameOf(spec.selectedGroup));
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             if (!chc.clientRequestedNamedGroups.contains(serverGroup)) {
-                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected HelloRetryRequest selected group: " +
                                 serverGroup.name);
-                return;     // fatal() always throws, make the compiler happy.
             }
 
             // update the context

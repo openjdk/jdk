@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OBJARRAYKLASS_HPP
-#define SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+#ifndef SHARE_OOPS_OBJARRAYKLASS_HPP
+#define SHARE_OOPS_OBJARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -70,7 +70,6 @@ class ObjArrayKlass : public ArrayKlass {
   bool can_be_primary_super_slow() const;
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
-  bool compute_is_subtype_of(Klass* k);
   DEBUG_ONLY(bool is_objArray_klass_slow()  const  { return true; })
   int oop_size(oop obj) const;
 
@@ -175,4 +174,4 @@ class ObjArrayKlass : public ArrayKlass {
   void oop_verify_on(oop obj, outputStream* st);
 };
 
-#endif // SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+#endif // SHARE_OOPS_OBJARRAYKLASS_HPP

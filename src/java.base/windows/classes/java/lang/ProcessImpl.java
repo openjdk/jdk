@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ final class ProcessImpl extends Process {
         FileOutputStream f2 = null;
 
         try {
+            boolean forceNullOutputStream = false;
             long[] stdHandles;
             if (redirects == null) {
                 stdHandles = new long[] { -1L, -1L, -1L };
@@ -129,6 +130,9 @@ final class ProcessImpl extends Process {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
                 } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
+                    // Force getInputStream to return a null stream,
+                    // the handle is directly assigned to the next process.
+                    forceNullOutputStream = true;
                 } else {
                     f1 = newFileOutputStream(redirects[1].file(),
                                              redirects[1].append());
@@ -149,7 +153,7 @@ final class ProcessImpl extends Process {
             }
 
             Process p = new ProcessImpl(cmdarray, envblock, dir,
-                                   stdHandles, redirectErrorStream);
+                                   stdHandles, forceNullOutputStream, redirectErrorStream);
             if (redirects != null) {
                 // Copy the handles's if they are to be redirected to another process
                 if (stdHandles[0] >= 0
@@ -349,6 +353,7 @@ final class ProcessImpl extends Process {
                         final String envblock,
                         final String path,
                         final long[] stdHandles,
+                        boolean forceNullOutputStream,
                         final boolean redirectErrorStream)
         throws IOException
     {
@@ -437,7 +442,7 @@ final class ProcessImpl extends Process {
                     new FileOutputStream(stdin_fd));
             }
 
-            if (stdHandles[1] == -1L)
+            if (stdHandles[1] == -1L || forceNullOutputStream)
                 stdout_stream = ProcessBuilder.NullInputStream.INSTANCE;
             else {
                 FileDescriptor stdout_fd = new FileDescriptor();

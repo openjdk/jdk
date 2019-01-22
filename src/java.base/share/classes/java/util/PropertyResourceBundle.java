@@ -115,7 +115,7 @@ import sun.util.ResourceBundleEnumeration;
  * input stream, then the {@code PropertyResourceBundle} instance resets to the state
  * before the exception, re-reads the input stream in {@code ISO-8859-1}, and
  * continues reading. If the system property
- * {@code java.util.PropertyResourceBundle.encoding} is set to either
+ * {@systemProperty java.util.PropertyResourceBundle.encoding} is set to either
  * "ISO-8859-1" or "UTF-8", the input stream is solely read in that encoding,
  * and throws the exception if it encounters an invalid sequence.
  * If "ISO-8859-1" is specified, characters that cannot be represented in

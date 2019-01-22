@@ -28,11 +28,13 @@
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestMemberInheritance
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestMemberInheritance extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestMemberInheritance extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg", "diamond", "inheritDist", "pkg1");
@@ -105,7 +107,7 @@ public class TestMemberInheritance extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,

@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/parallel/heterogeneousGenerationSizer.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
@@ -93,5 +94,9 @@ void ParallelArguments::initialize() {
 }
 
 CollectedHeap* ParallelArguments::create_heap() {
-  return create_heap_with_policy<ParallelScavengeHeap, GenerationSizer>();
+  if (AllocateOldGenAt != NULL) {
+    return create_heap_with_policy<ParallelScavengeHeap, HeterogeneousGenerationSizer>();
+  } else {
+    return create_heap_with_policy<ParallelScavengeHeap, GenerationSizer>();
+  }
 }

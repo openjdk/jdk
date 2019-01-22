@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     [self.javaPlatformWindow setJObject:nil withEnv:env];
-
+    self.javaPlatformWindow = nil;
     self.nsWindow = nil;
     self.ownerWindow = nil;
     [super dealloc];
@@ -965,11 +965,6 @@ AWT_ASSERT_APPKIT_THREAD;
                     // Currently, no need to deliver the whole NSEvent.
                     static JNF_MEMBER_CACHE(jm_deliverNCMouseDown, jc_CPlatformWindow, "deliverNCMouseDown", "()V");
                     JNFCallVoidMethod(env, platformWindow, jm_deliverNCMouseDown);
-                    // Deliver double click on title bar
-                    if ([event clickCount] > 1) {
-                        static JNF_MEMBER_CACHE(jm_deliverDoubleClickOnTitlebar, jc_CPlatformWindow, "deliverDoubleClickOnTitlebar", "()V");
-                        JNFCallVoidMethod(env, platformWindow, jm_deliverDoubleClickOnTitlebar);
-                    }
                     (*env)->DeleteLocalRef(env, platformWindow);
                 }
             }

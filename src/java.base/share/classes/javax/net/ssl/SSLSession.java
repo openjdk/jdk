@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ public interface SSLSession {
      * Removes the object bound to the given name in the session's
      * application layer data.  Does nothing if there is no object
      * bound to the given name.  If the bound existing object
-     * implements the {@code SessionBindingListener} interface,
+     * implements the {@code SSLSessionBindingListener} interface,
      * it is notified appropriately.
      * <p>
      * For security reasons, the same named values may not be

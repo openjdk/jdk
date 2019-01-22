@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SEMAPHORE_INLINE_HPP
-#define SHARE_VM_RUNTIME_SEMAPHORE_INLINE_HPP
+#ifndef SHARE_RUNTIME_SEMAPHORE_INLINE_HPP
+#define SHARE_RUNTIME_SEMAPHORE_INLINE_HPP
 
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.hpp"
@@ -38,4 +38,4 @@ inline void Semaphore::wait_with_safepoint_check(JavaThread* thread) {
   _impl.wait();
 }
 
-#endif // SHARE_VM_RUNTIME_SEMAPHORE_INLINE_HPP
+#endif // SHARE_RUNTIME_SEMAPHORE_INLINE_HPP

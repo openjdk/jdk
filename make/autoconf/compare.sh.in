@@ -31,6 +31,7 @@
 
 export LEGACY_BUILD_DIR=@OPENJDK_TARGET_OS@-@OPENJDK_TARGET_CPU_LEGACY@
 
+export OPENJDK_BUILD_OS_ENV="@OPENJDK_BUILD_OS_ENV@"
 export OPENJDK_TARGET_OS="@OPENJDK_TARGET_OS@"
 export OPENJDK_TARGET_CPU="@OPENJDK_TARGET_CPU@"
 export DEBUG_LEVEL="@DEBUG_LEVEL@"
@@ -73,18 +74,23 @@ export TOPDIR="@TOPDIR@"
 export OUTPUTDIR="@OUTPUTDIR@"
 
 if [ "@COMPILE_TYPE@" != "cross" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUTDIR/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUTDIR/jdk/bin/jimage"
+  export JAVAP="@FIXPATH@ $OUTPUTDIR/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+  export JIMAGE="@FIXPATH@ $OUTPUTDIR/jdk/bin/jimage"
 elif [ "@CREATE_BUILDJDK@" = "true" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jimage"
+  export JAVAP="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+  export JIMAGE="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jimage"
 else
-    export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
+  export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+  export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-  export PATH="@VS_PATH@"
+  if [ "$OPENJDK_BUILD_OS_ENV" = "windows.wsl" ]; then
+    export FIXPATH_PATH="@VS_PATH_WINDOWS@"
+    export WSLENV="$WSLENV:FIXPATH_PATH:DEBUG_FIXPATH"
+  else
+    export PATH="@VS_PATH@"
+  fi
 fi
 
 # Now locate the main script and run it.

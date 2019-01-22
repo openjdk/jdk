@@ -649,7 +649,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_FLOAT: {
       if (dest->is_single_xmm()) {
-        if (LP64_ONLY(UseAVX < 2 &&) c->is_zero_float()) {
+        if (LP64_ONLY(UseAVX <= 2 &&) c->is_zero_float()) {
           __ xorps(dest->as_xmm_float_reg(), dest->as_xmm_float_reg());
         } else {
           __ movflt(dest->as_xmm_float_reg(),
@@ -671,7 +671,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_DOUBLE: {
       if (dest->is_double_xmm()) {
-        if (LP64_ONLY(UseAVX < 2 &&) c->is_zero_double()) {
+        if (LP64_ONLY(UseAVX <= 2 &&) c->is_zero_double()) {
           __ xorpd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg());
         } else {
           __ movdbl(dest->as_xmm_double_reg(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_C2_GLOBALS_SOLARIS_HPP
-#define OS_SOLARIS_VM_C2_GLOBALS_SOLARIS_HPP
+#ifndef OS_SOLARIS_C2_GLOBALS_SOLARIS_HPP
+#define OS_SOLARIS_C2_GLOBALS_SOLARIS_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -33,4 +33,4 @@
 // server compiler. (see c2_globals.hpp)
 //
 
-#endif // OS_SOLARIS_VM_C2_GLOBALS_SOLARIS_HPP
+#endif // OS_SOLARIS_C2_GLOBALS_SOLARIS_HPP

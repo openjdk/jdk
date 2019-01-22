@@ -36,7 +36,6 @@ public class Resources extends java.util.ListResourceBundle {
 
         // shared (from jarsigner)
         {"SPACE", " "},
-        {"2SPACE", "  "},
         {"6SPACE", "      "},
         {"COMMA", ", "},
 
@@ -196,7 +195,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "Certificate chain not found in the file specified."},
         {"found.non.X.509.certificate.in.signer.s.chain",
                 "found non-X.509 certificate in signer's chain"},
-        {"incomplete.certificate.chain", "incomplete certificate chain"},
         {"Enter.key.password.for.alias.", "Enter key password for {0}: "},
         {"unable.to.recover.key.from.keystore",
                 "unable to recover key from keystore"},
@@ -240,8 +238,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "This jar contains entries whose signer certificate is not yet valid. "},
         {"This.jar.contains.entries.whose.signer.certificate.is.self.signed.",
                 "This jar contains entries whose signer certificate is self-signed."},
-        {"Re.run.with.the.verbose.option.for.more.details.",
-                "Re-run with the -verbose option for more details."},
         {"Re.run.with.the.verbose.and.certs.options.for.more.details.",
                 "Re-run with the -verbose and -certs options for more details."},
         {"The.signer.certificate.has.expired.",

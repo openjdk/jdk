@@ -89,7 +89,7 @@ public class SwitchExpressionSimpleVisitorTest {
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("--enable-preview", "-source", "12"), null,
+            List.of("--enable-preview", "-source", "13"), null,
             Arrays.asList(new MyFileObject(code)));
         return ct.parse().iterator().next();
     }

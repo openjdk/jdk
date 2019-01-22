@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,6 @@ void JVMCICompiler::initialize() {
   }
 
   set_state(initialized);
-
-  // JVMCI is considered as application code so we need to
-  // stop the VM deferring compilation now.
-  CompilationPolicy::completed_vm_startup();
 }
 
 void JVMCICompiler::bootstrap(TRAPS) {
@@ -126,6 +122,7 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   if (_bootstrapping && is_osr) {
       // no OSR compilations during bootstrap - the compiler is just too slow at this point,
       // and we know that there are no endless loops
+      env->set_failure(true, "No OSR during boostrap");
       return;
   }
 
@@ -164,17 +161,21 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
       CLEAR_PENDING_EXCEPTION;
     }
 
-    env->set_failure("exception throw", false);
+    env->set_failure(false, "unexpected exception thrown");
   } else {
     oop result_object = (oop) result.get_jobject();
     if (result_object != NULL) {
       oop failure_message = HotSpotCompilationRequestResult::failureMessage(result_object);
       if (failure_message != NULL) {
+        // Copy failure reason into resource memory first ...
         const char* failure_reason = java_lang_String::as_utf8_string(failure_message);
-        env->set_failure(failure_reason, HotSpotCompilationRequestResult::retry(result_object) != 0);
+        // ... and then into the C heap.
+        failure_reason = os::strdup(failure_reason, mtCompiler);
+        bool retryable = HotSpotCompilationRequestResult::retry(result_object) != 0;
+        env->set_failure(retryable, failure_reason, true);
       } else {
         if (env->task()->code() == NULL) {
-          env->set_failure("no nmethod produced", true);
+          env->set_failure(true, "no nmethod produced");
         } else {
           env->task()->set_num_inlined_bytecodes(HotSpotCompilationRequestResult::inlinedBytecodes(result_object));
           Atomic::inc(&_methods_compiled);

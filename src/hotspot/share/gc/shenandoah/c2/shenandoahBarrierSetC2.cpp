@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,9 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "opto/arraycopynode.hpp"
@@ -983,7 +985,7 @@ void ShenandoahBarrierSetC2::clone_barrier_at_expansion(ArrayCopyNode* ac, Node*
   Node* c = new ProjNode(call,TypeFunc::Control);
   c = igvn.transform(c);
   Node* m = new ProjNode(call, TypeFunc::Memory);
-  c = igvn.transform(m);
+  m = igvn.transform(m);
 
   Node* dest = ac->in(ArrayCopyNode::Dest);
   assert(dest->is_AddP(), "bad input");

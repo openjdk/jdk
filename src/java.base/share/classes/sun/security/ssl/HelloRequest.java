@@ -59,7 +59,7 @@ final class HelloRequest {
                 ByteBuffer m) throws IOException {
             super(handshakeContext);
             if (m.hasRemaining()) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Error parsing HelloRequest message: not empty");
             }
         }
@@ -185,7 +185,7 @@ final class HelloRequest {
             if (!chc.kickstartMessageDelivered) {
                 if (!chc.conContext.secureRenegotiation &&
                         !HandshakeContext.allowUnsafeRenegotiation) {
-                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Unsafe renegotiation is not allowed");
                 }
 

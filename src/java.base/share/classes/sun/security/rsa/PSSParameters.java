@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,7 @@ import static java.security.spec.PSSParameterSpec.DEFAULT;
 
 public final class PSSParameters extends AlgorithmParametersSpi {
 
-    private String mdName;
-    private MGF1ParameterSpec mgfSpec;
-    private int saltLength;
-    private int trailerField;
-
-    private static final ObjectIdentifier OID_MGF1 =
-           ObjectIdentifier.newInternal(new int[] {1,2,840,113549,1,1,8});
+    private PSSParameterSpec spec;
 
     public PSSParameters() {
     }
@@ -71,9 +65,9 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 ("Inappropriate parameter specification");
         }
         PSSParameterSpec spec = (PSSParameterSpec) paramSpec;
-        this.mdName = spec.getDigestAlgorithm();
+
         String mgfName = spec.getMGFAlgorithm();
-        if (!mgfName.equalsIgnoreCase("MGF1")) {
+        if (!spec.getMGFAlgorithm().equalsIgnoreCase("MGF1")) {
             throw new InvalidParameterSpecException("Unsupported mgf " +
                 mgfName + "; MGF1 only");
         }
@@ -82,31 +76,30 @@ public final class PSSParameters extends AlgorithmParametersSpi {
             throw new InvalidParameterSpecException("Inappropriate mgf " +
                 "parameters; non-null MGF1ParameterSpec only");
         }
-        this.mgfSpec = (MGF1ParameterSpec) mgfSpec;
-        this.saltLength = spec.getSaltLength();
-        this.trailerField = spec.getTrailerField();
+        this.spec = spec;
     }
 
     @Override
     protected void engineInit(byte[] encoded) throws IOException {
         // first initialize with the DEFAULT values before
         // retrieving from the encoding bytes
-        this.mdName = DEFAULT.getDigestAlgorithm();
-        this.mgfSpec = (MGF1ParameterSpec) DEFAULT.getMGFParameters();
-        this.saltLength = DEFAULT.getSaltLength();
-        this.trailerField = DEFAULT.getTrailerField();
+        String mdName = DEFAULT.getDigestAlgorithm();
+        MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec) DEFAULT.getMGFParameters();
+        int saltLength = DEFAULT.getSaltLength();
+        int trailerField = DEFAULT.getTrailerField();
 
         DerInputStream der = new DerInputStream(encoded);
         DerValue[] datum = der.getSequence(4);
+
         for (DerValue d : datum) {
             if (d.isContextSpecific((byte) 0x00)) {
                 // hash algid
-                this.mdName = AlgorithmId.parse
+                mdName = AlgorithmId.parse
                     (d.data.getDerValue()).getName();
             } else if (d.isContextSpecific((byte) 0x01)) {
                 // mgf algid
                 AlgorithmId val = AlgorithmId.parse(d.data.getDerValue());
-                if (!val.getOID().equals(OID_MGF1)) {
+                if (!val.getOID().equals(AlgorithmId.mgf1_oid)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
                 AlgorithmId params = AlgorithmId.parse(
@@ -114,25 +107,25 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 String mgfDigestName = params.getName();
                 switch (mgfDigestName) {
                 case "SHA-1":
-                    this.mgfSpec = MGF1ParameterSpec.SHA1;
+                    mgfSpec = MGF1ParameterSpec.SHA1;
                     break;
                 case "SHA-224":
-                    this.mgfSpec = MGF1ParameterSpec.SHA224;
+                    mgfSpec = MGF1ParameterSpec.SHA224;
                     break;
                 case "SHA-256":
-                    this.mgfSpec = MGF1ParameterSpec.SHA256;
+                    mgfSpec = MGF1ParameterSpec.SHA256;
                     break;
                 case "SHA-384":
-                    this.mgfSpec = MGF1ParameterSpec.SHA384;
+                    mgfSpec = MGF1ParameterSpec.SHA384;
                     break;
                 case "SHA-512":
-                    this.mgfSpec = MGF1ParameterSpec.SHA512;
+                    mgfSpec = MGF1ParameterSpec.SHA512;
                     break;
                 case "SHA-512/224":
-                    this.mgfSpec = MGF1ParameterSpec.SHA512_224;
+                    mgfSpec = MGF1ParameterSpec.SHA512_224;
                     break;
                 case "SHA-512/256":
-                    this.mgfSpec = MGF1ParameterSpec.SHA512_256;
+                    mgfSpec = MGF1ParameterSpec.SHA512_256;
                     break;
                 default:
                     throw new IOException
@@ -141,21 +134,24 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 }
             } else if (d.isContextSpecific((byte) 0x02)) {
                 // salt length
-                this.saltLength = d.data.getDerValue().getInteger();
-                if (this.saltLength < 0) {
+                saltLength = d.data.getDerValue().getInteger();
+                if (saltLength < 0) {
                     throw new IOException("Negative value for saltLength");
                 }
             } else if (d.isContextSpecific((byte) 0x03)) {
                 // trailer field
-                this.trailerField = d.data.getDerValue().getInteger();
-                if (this.trailerField != 1) {
+                trailerField = d.data.getDerValue().getInteger();
+                if (trailerField != 1) {
                     throw new IOException("Unsupported trailerField value " +
-                    this.trailerField);
+                    trailerField);
                 }
             } else {
                 throw new IOException("Invalid encoded PSSParameters");
             }
         }
+
+        this.spec = new PSSParameterSpec(mdName, "MGF1", mgfSpec,
+                saltLength, trailerField);
     }
 
     @Override
@@ -173,9 +169,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
             T engineGetParameterSpec(Class<T> paramSpec)
             throws InvalidParameterSpecException {
         if (PSSParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return paramSpec.cast(
-                new PSSParameterSpec(mdName, "MGF1", mgfSpec,
-                                     saltLength, trailerField));
+            return paramSpec.cast(spec);
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
@@ -184,54 +178,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
     @Override
     protected byte[] engineGetEncoded() throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
-        DerOutputStream tmp2, tmp3;
-
-        // MD
-        AlgorithmId mdAlgId;
-        try {
-            mdAlgId = AlgorithmId.get(mdName);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new IOException("AlgorithmId " + mdName +
-                                  " impl not found");
-        }
-        tmp2 = new DerOutputStream();
-        mdAlgId.derEncode(tmp2);
-        tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0),
-                      tmp2);
-
-        // MGF
-        tmp2 = new DerOutputStream();
-        tmp2.putOID(OID_MGF1);
-        AlgorithmId mgfDigestId;
-        try {
-            mgfDigestId = AlgorithmId.get(mgfSpec.getDigestAlgorithm());
-        } catch (NoSuchAlgorithmException nase) {
-            throw new IOException("AlgorithmId " +
-                    mgfSpec.getDigestAlgorithm() + " impl not found");
-        }
-        mgfDigestId.encode(tmp2);
-        tmp3 = new DerOutputStream();
-        tmp3.write(DerValue.tag_Sequence, tmp2);
-        tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)1),
-                  tmp3);
-
-        // SaltLength
-        tmp2 = new DerOutputStream();
-        tmp2.putInteger(saltLength);
-        tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)2),
-                  tmp2);
-
-        // TrailerField
-        tmp2 = new DerOutputStream();
-        tmp2.putInteger(trailerField);
-        tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
-                  tmp2);
-
-        // Put all together under a SEQUENCE tag
-        DerOutputStream out = new DerOutputStream();
-        out.write(DerValue.tag_Sequence, tmp);
-        return out.toByteArray();
+        return getEncoded(spec);
     }
 
     @Override
@@ -245,11 +192,83 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
     @Override
     protected String engineToString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MD: " + mdName + "\n")
-            .append("MGF: MGF1" + mgfSpec.getDigestAlgorithm() + "\n")
-            .append("SaltLength: " + saltLength + "\n")
-            .append("TrailerField: " + trailerField + "\n");
-        return sb.toString();
+        return spec.toString();
+    }
+
+    /**
+     * Returns the encoding of a {@link PSSParameterSpec} object. This method
+     * is used in this class and {@link AlgorithmId}.
+     *
+     * @param spec a {@code PSSParameterSpec} object
+     * @return its DER encoding
+     * @throws IOException if the name of a MessageDigest or MaskGenAlgorithm
+     *          is unsupported
+     */
+    public static byte[] getEncoded(PSSParameterSpec spec) throws IOException {
+
+        AlgorithmParameterSpec mgfSpec = spec.getMGFParameters();
+        if (!(mgfSpec instanceof MGF1ParameterSpec)) {
+            throw new IOException("Cannot encode " + mgfSpec);
+        }
+
+        MGF1ParameterSpec mgf1Spec = (MGF1ParameterSpec)mgfSpec;
+
+        DerOutputStream tmp = new DerOutputStream();
+        DerOutputStream tmp2, tmp3;
+
+        // MD
+        AlgorithmId mdAlgId;
+        try {
+            mdAlgId = AlgorithmId.get(spec.getDigestAlgorithm());
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new IOException("AlgorithmId " + spec.getDigestAlgorithm() +
+                    " impl not found");
+        }
+        if (!mdAlgId.getOID().equals(AlgorithmId.SHA_oid)) {
+            tmp2 = new DerOutputStream();
+            mdAlgId.derEncode(tmp2);
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0),
+                    tmp2);
+        }
+
+        // MGF
+        AlgorithmId mgfDigestId;
+        try {
+            mgfDigestId = AlgorithmId.get(mgf1Spec.getDigestAlgorithm());
+        } catch (NoSuchAlgorithmException nase) {
+            throw new IOException("AlgorithmId " +
+                    mgf1Spec.getDigestAlgorithm() + " impl not found");
+        }
+
+        if (!mgfDigestId.getOID().equals(AlgorithmId.SHA_oid)) {
+            tmp2 = new DerOutputStream();
+            tmp2.putOID(AlgorithmId.mgf1_oid);
+            mgfDigestId.encode(tmp2);
+            tmp3 = new DerOutputStream();
+            tmp3.write(DerValue.tag_Sequence, tmp2);
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 1),
+                    tmp3);
+        }
+
+        // SaltLength
+        if (spec.getSaltLength() != 20) {
+            tmp2 = new DerOutputStream();
+            tmp2.putInteger(spec.getSaltLength());
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 2),
+                    tmp2);
+        }
+
+        // TrailerField
+        if (spec.getTrailerField() != PSSParameterSpec.TRAILER_FIELD_BC) {
+            tmp2 = new DerOutputStream();
+            tmp2.putInteger(spec.getTrailerField());
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 3),
+                    tmp2);
+        }
+
+        // Put all together under a SEQUENCE tag
+        DerOutputStream out = new DerOutputStream();
+        out.write(DerValue.tag_Sequence, tmp);
+        return out.toByteArray();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,11 +339,6 @@ static char * fgets_no_cr(char * buf, int n, FILE *fp)
    return rslt;
 }
 
-// callback for read_thread_info
-static bool add_new_thread(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id) {
-  return add_thread_info(ph, pthread_id, lwp_id) != NULL;
-}
-
 static bool read_lib_info(struct ps_prochandle* ph) {
   char fname[32];
   char buf[PATH_MAX];
@@ -443,7 +438,7 @@ static ps_prochandle_ops process_ops = {
 
 // attach to the process. One and only one exposed stuff
 JNIEXPORT struct ps_prochandle* JNICALL
-Pgrab(pid_t pid, char* err_buf, size_t err_buf_len, bool is_in_container) {
+Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   struct ps_prochandle* ph = NULL;
   thread_info* thr = NULL;
   attach_state_t attach_status = ATTACH_SUCCESS;
@@ -464,6 +459,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len, bool is_in_container) {
 
   // initialize ps_prochandle
   ph->pid = pid;
+  add_thread_info(ph, ph->pid);
 
   // initialize vtable
   ph->ops = &process_ops;
@@ -473,33 +469,30 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len, bool is_in_container) {
   // the list of threads within the same process.
   read_lib_info(ph);
 
-  // read thread info
-  if (is_in_container) {
-    /*
-     * If the process is running in the container, SA scans all tasks in
-     * /proc/<PID>/task to read all threads info.
-     */
-    char taskpath[PATH_MAX];
-    DIR *dirp;
-    struct dirent *entry;
+  /*
+   * Read thread info.
+   * SA scans all tasks in /proc/<PID>/task to read all threads info.
+   */
+  char taskpath[PATH_MAX];
+  DIR *dirp;
+  struct dirent *entry;
 
-    snprintf(taskpath, PATH_MAX, "/proc/%d/task", ph->pid);
-    dirp = opendir(taskpath);
-    int lwp_id;
-    while ((entry = readdir(dirp)) != NULL) {
-      if (*entry->d_name == '.') {
-        continue;
-      }
-      lwp_id = atoi(entry->d_name);
-      if (lwp_id == ph->pid) {
-        continue;
-      }
-      add_new_thread(ph, -1, lwp_id);
+  snprintf(taskpath, PATH_MAX, "/proc/%d/task", ph->pid);
+  dirp = opendir(taskpath);
+  int lwp_id;
+  while ((entry = readdir(dirp)) != NULL) {
+    if (*entry->d_name == '.') {
+      continue;
     }
-    closedir(dirp);
-  } else {
-    read_thread_info(ph, add_new_thread);
+    lwp_id = atoi(entry->d_name);
+    if (lwp_id == ph->pid) {
+      continue;
+    }
+    if (!process_doesnt_exist(lwp_id)) {
+      add_thread_info(ph, lwp_id);
+    }
   }
+  closedir(dirp);
 
   // attach to the threads
   thr = ph->threads;

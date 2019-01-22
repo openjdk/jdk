@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,17 +124,9 @@ public class Utils {
         PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(
                 hexToBytes(cert.privKeyMaterials));
         KeyFactory keyFactory = KeyFactory.getInstance(
-                getKeyAlgorithm(cert.signatureAlgorithm));
+                cert.keyAlgorithm.name);
         PrivateKey privKey = keyFactory.generatePrivate(privKeySpec);
         return privKey;
-    }
-
-    private static String getKeyAlgorithm(
-            SignatureAlgorithm signatureAlgorithm) {
-        String signatureAlogrithmName = signatureAlgorithm.name();
-        return signatureAlogrithmName.equals(SignatureAlgorithm.ECDSA.name())
-               ? "EC"
-               : signatureAlogrithmName;
     }
 
     public static byte[] hexToBytes(String hex) {

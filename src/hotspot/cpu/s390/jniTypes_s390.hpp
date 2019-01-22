@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_JNITYPES_S390_HPP
-#define CPU_S390_VM_JNITYPES_S390_HPP
+#ifndef CPU_S390_JNITYPES_S390_HPP
+#define CPU_S390_JNITYPES_S390_HPP
 
 // This file holds platform-dependent routines used to write primitive
 // jni types to the array of arguments passed into JavaCalls::call.
@@ -138,4 +138,4 @@ class JNITypes : AllStatic {
   }
 };
 
-#endif // CPU_S390_VM_JNITYPES_S390_HPP
+#endif // CPU_S390_JNITYPES_S390_HPP

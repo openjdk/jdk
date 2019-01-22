@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP
-#define CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP
+#ifndef CPU_AARCH64_C1_LIRASSEMBLER_AARCH64_HPP
+#define CPU_AARCH64_C1_LIRASSEMBLER_AARCH64_HPP
 
 // ArrayCopyStub needs access to bailout
 friend class ArrayCopyStub;
@@ -81,4 +81,4 @@ public:
   void store_parameter(jint c,     int offset_from_esp_in_words);
   void store_parameter(jobject c,  int offset_from_esp_in_words);
 
-#endif // CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP
+#endif // CPU_AARCH64_C1_LIRASSEMBLER_AARCH64_HPP

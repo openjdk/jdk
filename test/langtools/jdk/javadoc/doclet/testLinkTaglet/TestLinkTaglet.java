@@ -27,11 +27,13 @@
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestLinkTaglet
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestLinkTaglet extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestLinkTaglet extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-sourcepath", testSrc,
@@ -75,7 +77,7 @@ public class TestLinkTaglet extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
+    public void test_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-html4",
                 "-html4",

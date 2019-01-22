@@ -184,7 +184,7 @@ JNF_COCOA_ENTER(env);
         return;
     }
 
-    [wrapper setJObject:NULL withEnv:env]; // more efficiant to pre-clear
+    [wrapper setJObject:NULL withEnv:env]; // more efficient to pre-clear
     [wrapper release];
 
 JNF_COCOA_EXIT(env);

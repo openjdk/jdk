@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
-#define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#ifndef SHARE_UTILITIES_CONSTANTTAG_HPP
+#define SHARE_UTILITIES_CONSTANTTAG_HPP
 
 #include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
 
-// constant tags in Java .class files
 
+class outputStream;
+
+// constant tags in Java .class files
 
 enum {
   // See jvm.h for shared JVM_CONSTANT_XXX tags
@@ -139,4 +141,4 @@ class constantTag {
   void print_on(outputStream* st) const PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#endif // SHARE_UTILITIES_CONSTANTTAG_HPP

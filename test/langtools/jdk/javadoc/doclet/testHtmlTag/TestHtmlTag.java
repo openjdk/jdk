@@ -26,13 +26,15 @@
  * @bug 6786682 4649116 8182765
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHtmlTag
  */
 
 import java.util.Locale;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlTag extends JavadocTester {
     private static final String defaultLanguage = Locale.getDefault().getLanguage();
@@ -41,7 +43,7 @@ public class TestHtmlTag extends JavadocTester {
         tester.runTests();
     }
     @Test
-    void test_default() {
+    public void test_default() {
         javadoc("-locale", defaultLanguage,
                 "-d", "out-default",
                 "-sourcepath", testSrc,
@@ -60,7 +62,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_ja() {
+    public void test_ja() {
         // TODO: why does this test need/use pkg2; why can't it use pkg1
         // like the other two tests, so that we can share the check methods?
         javadoc("-locale", "ja",
@@ -80,7 +82,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_en_US() {
+    public void test_en_US() {
         javadoc("-locale", "en_US",
                 "-d", "out-en_US",
                 "-sourcepath", testSrc,
@@ -98,7 +100,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_other() {
+    public void test_other() {
         javadoc("-locale", "en_US",
                 "-d", "out-other",
                 "-sourcepath", testSrc,
@@ -195,7 +197,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_other_html4() {
+    public void test_other_html4() {
         javadoc("-locale", "en_US",
                 "-d", "out-other-html4",
                 "-html4",

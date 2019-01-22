@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
  *    begin their comment without a leading star without leading
  *    spaces stripped
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main LeadingSpaces
  */
+
+import javadoc.tester.JavadocTester;
 
 public class LeadingSpaces extends JavadocTester {
     /**
@@ -47,7 +49,7 @@ public class LeadingSpaces extends JavadocTester {
     }
 
     @Test
-    void testLeadingSpaces() {
+    public void testLeadingSpaces() {
         javadoc("-d", "out", "-sourcepath", testSrc,
                 testSrc("LeadingSpaces.java"));
         checkExit(Exit.OK);

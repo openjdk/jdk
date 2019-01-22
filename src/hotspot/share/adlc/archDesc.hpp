@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ADLC_ARCHDESC_HPP
-#define SHARE_VM_ADLC_ARCHDESC_HPP
+#ifndef SHARE_ADLC_ARCHDESC_HPP
+#define SHARE_ADLC_ARCHDESC_HPP
 
 // Definitions for Error Flags
 #define  WARN   0
@@ -410,4 +410,4 @@ public:
   virtual void record_position(OutputMap::position place, int index) {}
 };
 
-#endif // SHARE_VM_ADLC_ARCHDESC_HPP
+#endif // SHARE_ADLC_ARCHDESC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_HEAPINSPECTION_HPP
-#define SHARE_VM_MEMORY_HEAPINSPECTION_HPP
+#ifndef SHARE_MEMORY_HEAPINSPECTION_HPP
+#define SHARE_MEMORY_HEAPINSPECTION_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/objArrayOop.hpp"
@@ -234,7 +234,6 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
 
 class KlassInfoTable: public StackObj {
  private:
-  int _size;
   static const int _num_buckets = 20011;
   size_t _size_of_instances_in_words;
 
@@ -366,4 +365,4 @@ class HeapInspection : public StackObj {
   void iterate_over_heap(KlassInfoTable* cit, BoolObjectClosure* filter = NULL);
 };
 
-#endif // SHARE_VM_MEMORY_HEAPINSPECTION_HPP
+#endif // SHARE_MEMORY_HEAPINSPECTION_HPP

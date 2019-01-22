@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_GLOBALS_WINDOWS_HPP
-#define OS_WINDOWS_VM_GLOBALS_WINDOWS_HPP
+#ifndef OS_WINDOWS_GLOBALS_WINDOWS_HPP
+#define OS_WINDOWS_GLOBALS_WINDOWS_HPP
 
 //
 // Defines Windows specific flags. They are not available on other platforms.
@@ -49,4 +49,4 @@ define_pd_global(bool, UseLargePagesIndividualAllocation, true);
 define_pd_global(bool, UseOSErrorReporting, false);  // for now.
 define_pd_global(bool, UseThreadPriorities, true) ;
 
-#endif // OS_WINDOWS_VM_GLOBALS_WINDOWS_HPP
+#endif // OS_WINDOWS_GLOBALS_WINDOWS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_VMSTRUCTS_SPARC_HPP
-#define CPU_SPARC_VM_VMSTRUCTS_SPARC_HPP
+#ifndef CPU_SPARC_VMSTRUCTS_SPARC_HPP
+#define CPU_SPARC_VMSTRUCTS_SPARC_HPP
 
 // These are the CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -119,4 +119,4 @@
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 
-#endif // CPU_SPARC_VM_VMSTRUCTS_SPARC_HPP
+#endif // CPU_SPARC_VMSTRUCTS_SPARC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_ADAPTIVEFREELIST_HPP
-#define SHARE_VM_GC_CMS_ADAPTIVEFREELIST_HPP
+#ifndef SHARE_GC_CMS_ADAPTIVEFREELIST_HPP
+#define SHARE_GC_CMS_ADAPTIVEFREELIST_HPP
 
 #include "gc/cms/allocationStats.hpp"
 #include "memory/freeList.hpp"
@@ -226,4 +226,4 @@ class AdaptiveFreeList : public FreeList<Chunk> {
 #endif  // NOT PRODUCT
 };
 
-#endif // SHARE_VM_GC_CMS_ADAPTIVEFREELIST_HPP
+#endif // SHARE_GC_CMS_ADAPTIVEFREELIST_HPP

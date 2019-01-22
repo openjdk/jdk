@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ADLC_DICT2_HPP
-#define SHARE_VM_ADLC_DICT2_HPP
+#ifndef SHARE_ADLC_DICT2_HPP
+#define SHARE_ADLC_DICT2_HPP
 
 // Dictionaries - An Abstract Data Type
 
@@ -118,4 +118,4 @@ class DictI {
   int test(void) { return _i<_d->_size;} // Test for end of iteration
 };
 
-#endif // SHARE_VM_ADLC_DICT2_HPP
+#endif // SHARE_ADLC_DICT2_HPP

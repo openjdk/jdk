@@ -26,15 +26,17 @@
  * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407 8182765
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHtmlDefinitionListTag
  */
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlDefinitionListTag extends JavadocTester {
 
@@ -44,7 +46,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_Comment_Deprecated() {
+    public void test_Comment_Deprecated() {
 //        tester.run(ARGS1, TEST_ALL, NEGATED_TEST_NO_C5);
 //        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
 //        tester.runTestsOnHTML(TEST_CMNT_DEPR, NO_TEST);
@@ -58,7 +60,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_Comment_Deprecated_html4() {
+    public void test_Comment_Deprecated_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-1-html4",
                 "-html4",
@@ -69,7 +71,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_NoComment_Deprecated() {
+    public void test_NoComment_Deprecated() {
 //        tester.run(ARGS2, TEST_ALL, NEGATED_TEST_NO_C5);
 //        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
 //        tester.runTestsOnHTML(NO_TEST, TEST_CMNT_DEPR);
@@ -84,7 +86,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_NoComment_Deprecated_html4() {
+    public void test_NoComment_Deprecated_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-2-html4",
                 "-html4",
@@ -96,7 +98,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_Comment_NoDeprecated() {
+    public void test_Comment_NoDeprecated() {
 //        tester.run(ARGS3, TEST_ALL, NEGATED_TEST_NO_C5);
 //        tester.runTestsOnHTML(TEST_NODEPR, TEST_NOCMNT_NODEPR);
         javadoc("-Xdoclint:none",
@@ -111,7 +113,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void test_Comment_NoDeprecated_html4() {
+    public void test_Comment_NoDeprecated_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-3-html4",
                 "-html4",
@@ -124,7 +126,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void testNoCommentNoDeprecated() {
+    public void testNoCommentNoDeprecated() {
 //        tester.run(ARGS4, TEST_ALL, NEGATED_TEST_NO_C5);
 //        tester.runTestsOnHTML(TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
         javadoc("-Xdoclint:none",
@@ -140,7 +142,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     }
 
     @Test
-    void testNoCommentNoDeprecated_html4() {
+    public void testNoCommentNoDeprecated_html4() {
         javadoc("-Xdoclint:none",
                 "-d", "out-4-html4",
                 "-html4",

@@ -181,7 +181,7 @@ public class DNSName implements GeneralNameInterface {
      * For example, www.host.example.com would satisfy the constraint but
      * host1.example.com would not.
      * <p>
-     * draft-ietf-pkix-new-part1-00.txt:  DNSName restrictions are expressed as foo.bar.com.
+     * RFC 5280:  DNSName restrictions are expressed as foo.bar.com.
      * Any DNSName that
      * can be constructed by simply adding to the left hand side of the name
      * satisfies the name constraint. For example, www.foo.bar.com would

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_JNITYPES_X86_HPP
-#define CPU_X86_VM_JNITYPES_X86_HPP
+#ifndef CPU_X86_JNITYPES_X86_HPP
+#define CPU_X86_JNITYPES_X86_HPP
 
 #include "jni.h"
 #include "memory/allocation.hpp"
@@ -130,4 +130,4 @@ public:
 #undef _JNI_SLOT_OFFSET
 };
 
-#endif // CPU_X86_VM_JNITYPES_X86_HPP
+#endif // CPU_X86_JNITYPES_X86_HPP

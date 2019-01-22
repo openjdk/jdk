@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
  * @test
  * @bug 8213942
  * @summary URLStreamHandler initialization race
+ * @modules java.base/java.net:open
  * @run main/othervm RacyHandler
  * @run main/othervm RacyHandler
  * @run main/othervm RacyHandler

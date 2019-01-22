@@ -29,8 +29,8 @@
 // It is needed, among other things, to provide dladdr(3), which is
 // missing on AIX.
 
-#ifndef OS_AIX_VM_LOADLIB_AIX_HPP
-#define OS_AIX_VM_LOADLIB_AIX_HPP
+#ifndef OS_AIX_LOADLIB_AIX_HPP
+#define OS_AIX_LOADLIB_AIX_HPP
 
 #include <stddef.h>
 
@@ -101,4 +101,4 @@ class LoadedLibraries
 
 };
 
-#endif // OS_AIX_VM_LOADLIB_AIX_HPP
+#endif // OS_AIX_LOADLIB_AIX_HPP

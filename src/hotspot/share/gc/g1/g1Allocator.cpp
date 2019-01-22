@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -57,7 +58,7 @@ bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
+void G1Allocator::reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
                                             OldGCAllocRegion* old,
                                             HeapRegion** retained_old) {
   HeapRegion* retained_region = *retained_old;
@@ -90,7 +91,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
   }
 }
 
-void G1Allocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
+void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
   assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
@@ -103,7 +104,7 @@ void G1Allocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
                             &_retained_old_gc_alloc_region);
 }
 
-void G1Allocator::release_gc_alloc_regions(EvacuationInfo& evacuation_info) {
+void G1Allocator::release_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
   evacuation_info.set_allocation_regions(survivor_gc_alloc_region()->count() +
                                          old_gc_alloc_region()->count());
   survivor_gc_alloc_region()->release();

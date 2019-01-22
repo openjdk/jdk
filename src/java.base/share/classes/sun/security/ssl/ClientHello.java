@@ -144,8 +144,8 @@ final class ClientHello {
                     if (id == SSLExtension.CH_PRE_SHARED_KEY.id) {
                         // ensure pre_shared_key is the last extension
                         if (remaining > 0) {
-                            tc.fatal(Alert.ILLEGAL_PARAMETER,
-                            "pre_shared_key extension is not last");
+                            throw tc.fatal(Alert.ILLEGAL_PARAMETER,
+                                    "pre_shared_key extension is not last");
                         }
                         // read only up to the IDs
                         Record.getBytes16(m);
@@ -169,7 +169,8 @@ final class ClientHello {
             try {
                 sessionId.checkLength(clientVersion);
             } catch (SSLProtocolException ex) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER, ex);
+                throw handshakeContext.conContext.fatal(
+                        Alert.ILLEGAL_PARAMETER, ex);
             }
             if (isDTLS) {
                 this.cookie = Record.getBytes8(m);
@@ -179,8 +180,9 @@ final class ClientHello {
 
             byte[] encodedIds = Record.getBytes16(m);
             if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
-                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Invalid ClientHello message");
+                throw handshakeContext.conContext.fatal(
+                        Alert.ILLEGAL_PARAMETER,
+                        "Invalid ClientHello message");
             }
 
             this.cipherSuiteIds = new int[encodedIds.length >> 1];
@@ -702,7 +704,8 @@ final class ClientHello {
                     try {
                         chc.kickstart();
                     } catch (IOException ioe) {
-                        chc.conContext.fatal(Alert.HANDSHAKE_FAILURE, ioe);
+                        throw chc.conContext.fatal(
+                                Alert.HANDSHAKE_FAILURE, ioe);
                     }
 
                     // The handshake message has been delivered.
@@ -790,7 +793,7 @@ final class ClientHello {
             // clean up this consumer
             shc.handshakeConsumers.remove(SSLHandshake.CLIENT_HELLO.id);
             if (!shc.handshakeConsumers.isEmpty()) {
-                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "No more handshake message allowed " +
                         "in a ClientHello flight");
             }
@@ -877,7 +880,7 @@ final class ClientHello {
                     context.activeProtocols, chv);
             if (pv == null || pv == ProtocolVersion.NONE ||
                     pv == ProtocolVersion.SSL20Hello) {
-                context.conContext.fatal(Alert.PROTOCOL_VERSION,
+                throw context.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "Client requested protocol " +
                     ProtocolVersion.nameOf(clientHelloVersion) +
                     " is not enabled or supported in server context");
@@ -910,13 +913,11 @@ final class ClientHello {
             }
 
             // No protocol version can be negotiated.
-            context.conContext.fatal(Alert.PROTOCOL_VERSION,
+            throw context.conContext.fatal(Alert.PROTOCOL_VERSION,
                 "The client supported protocol versions " + Arrays.toString(
                     ProtocolVersion.toStringArray(clientSupportedVersions)) +
                 " are not accepted by server preferences " +
                 context.activeProtocols);
-
-            return null;        // make the compiler happy
         }
     }
 
@@ -957,13 +958,13 @@ final class ClientHello {
             if (shc.conContext.isNegotiated) {
                 if (!shc.conContext.secureRenegotiation &&
                         !HandshakeContext.allowUnsafeRenegotiation) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Unsafe renegotiation is not allowed");
                 }
 
                 if (ServerHandshakeContext.rejectClientInitiatedRenego &&
                         !shc.kickstartMessageDelivered) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Client initiated renegotiation is not allowed");
                 }
             }
@@ -1170,13 +1171,13 @@ final class ClientHello {
                     handshakeProducer.produce(shc, clientHello);
             } else {
                 // unlikely
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No HelloRetryRequest producer: " + shc.handshakeProducers);
             }
 
             if (!shc.handshakeProducers.isEmpty()) {
                 // unlikely, but please double check.
-                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "unknown handshake producers: " + shc.handshakeProducers);
             }
         }
@@ -1264,13 +1265,13 @@ final class ClientHello {
             if (shc.conContext.isNegotiated) {
                 if (!shc.conContext.secureRenegotiation &&
                         !HandshakeContext.allowUnsafeRenegotiation) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Unsafe renegotiation is not allowed");
                 }
 
                 if (ServerHandshakeContext.rejectClientInitiatedRenego &&
                         !shc.kickstartMessageDelivered) {
-                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Client initiated renegotiation is not allowed");
                 }
             }

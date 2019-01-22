@@ -26,11 +26,13 @@
  * @bug 4636655 8196202
  * @summary  Add title attribute to <FRAME> tags for accessibility
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main AccessFrameTitle
  */
+
+import javadoc.tester.JavadocTester;
 
 public class AccessFrameTitle extends JavadocTester {
 
@@ -40,7 +42,7 @@ public class AccessFrameTitle extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "--frames",
                 "-sourcepath", testSrc,

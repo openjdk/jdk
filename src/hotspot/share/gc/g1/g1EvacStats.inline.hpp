@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1EVACSTATS_INLINE_HPP
-#define SHARE_VM_GC_G1_G1EVACSTATS_INLINE_HPP
+#ifndef SHARE_GC_G1_G1EVACSTATS_INLINE_HPP
+#define SHARE_GC_G1_G1EVACSTATS_INLINE_HPP
 
 #include "gc/g1/g1EvacStats.hpp"
 #include "runtime/atomic.hpp"
@@ -42,4 +42,4 @@ inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {
   Atomic::add(waste, &_failure_waste);
 }
 
-#endif // SHARE_VM_GC_G1_G1EVACSTATS_INLINE_HPP
+#endif // SHARE_GC_G1_G1EVACSTATS_INLINE_HPP

@@ -25,11 +25,13 @@
  * @test
  * @bug      5093723
  * @summary  REGRESSION: ClassCastException in SingleIndexWriter
- * @library ../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @library  ../../lib
+ * @modules  jdk.javadoc/jdk.javadoc.internal.tool
+ * @build    javadoc.tester.*
  * @run main T5093723
  */
+
+import javadoc.tester.JavadocTester;
 
 public class T5093723 extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class T5093723 extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         setAutomaticCheckLinks(false); // @ignore JDK-8202617
         javadoc("-d", "out",
                 "-Xdoclint:none",

@@ -138,13 +138,13 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     char *args = NULL;
     jstring cmdexe = NULL;
     char fn[32];
-    struct stat stat_buf;
+    struct stat64 stat_buf;
 
     /*
      * Stat /proc/<pid> to get the user id
      */
     snprintf(fn, sizeof fn, "/proc/%d", pid);
-    if (stat(fn, &stat_buf) == 0) {
+    if (stat64(fn, &stat_buf) == 0) {
         unix_getUserInfo(env, jinfo, stat_buf.st_uid);
         JNU_CHECK_EXCEPTION(env);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
 
 /*
  * @test
- * @bug      4749567 8071982 8175200 8186332 8185371 8182765
+ * @bug      4749567 8071982 8175200 8186332 8185371 8182765 8217034
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree,
  *           -stylesheetfile, --main-stylesheet, --add-stylesheet options.
  * @author   Bhavesh Patel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestOptions
  */
 
 import java.io.File;
+
+import javadoc.tester.JavadocTester;
 
 public class TestOptions extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testHeaderFooter() {
+    public void testHeaderFooter() {
         javadoc("-d", "out-1",
                 "-header", "Test header",
                 "-footer", "Test footer",
@@ -57,7 +59,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testNoOverview() {
+    public void testNoOverview() {
         javadoc("-d", "out-4",
                 "-nooverview",
                 "-sourcepath", testSrc,
@@ -69,7 +71,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testNoDeprecatedList() {
+    public void testNoDeprecatedList() {
         javadoc("-d", "out-5",
                 "-nodeprecatedlist",
                 "-sourcepath", testSrc,
@@ -80,7 +82,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testNoNavbar() {
+    public void testNoNavbar() {
         javadoc("-d", "out-6",
                 "-nonavbar",
                 "-bottom", "Bottom text",
@@ -93,7 +95,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testNoTree() {
+    public void testNoTree() {
         javadoc("-d", "out-7",
                 "-notree",
                 "-sourcepath", testSrc,
@@ -106,7 +108,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testStylesheetFile() {
+    public void testStylesheetFile() {
         javadoc("-d", "out-8",
                 "-stylesheetfile", new File(testSrc, "custom-stylesheet.css").getAbsolutePath(),
                 "-sourcepath", testSrc,
@@ -119,7 +121,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testStylesheetFileAltOption() {
+    public void testStylesheetFileAltOption() {
         javadoc("-d", "out-stylesheet-file",
                 "--main-stylesheet", new File(testSrc, "custom-stylesheet.css").getAbsolutePath(),
                 "-sourcepath", testSrc,
@@ -132,7 +134,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testAdditionalStylesheetFile() {
+    public void testAdditionalStylesheetFile() {
         javadoc("-d", "out-additional-css",
                 "--add-stylesheet", new File(testSrc, "additional-stylesheet-1.css").getAbsolutePath(),
                 "--add-stylesheet", new File(testSrc, "additional-stylesheet-2.css").getAbsolutePath(),
@@ -151,7 +153,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testInvalidStylesheetFile() {
+    public void testInvalidStylesheetFile() {
         javadoc("-d", "out-invalid-css",
                 "--main-stylesheet", new File(testSrc, "custom-stylesheet-1.css").getAbsolutePath(),
                 "-sourcepath", testSrc,
@@ -164,7 +166,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testInvalidAdditionalStylesheetFiles() {
+    public void testInvalidAdditionalStylesheetFiles() {
         javadoc("-d", "out-invalid-additional-css",
                 "--add-stylesheet", new File(testSrc, "additional-stylesheet-4.css").getAbsolutePath(),
                 "-sourcepath", testSrc,
@@ -177,7 +179,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testLinkSource() {
+    public void testLinkSource() {
         javadoc("-d", "out-9",
                 "-linksource",
                 "-javafx",
@@ -250,7 +252,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testLinkSource_html4() {
+    public void testLinkSource_html4() {
         javadoc("-d", "out-9-html4",
                 "-html4",
                 "-linksource",
@@ -285,7 +287,7 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    void testNoQualifier() {
+    public void testNoQualifier() {
         javadoc("-d", "out-10",
                 "-noqualifier", "pkg",
                 "-sourcepath", testSrc,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_ALLOCATIONSTATS_HPP
-#define SHARE_VM_GC_CMS_ALLOCATIONSTATS_HPP
+#ifndef SHARE_GC_CMS_ALLOCATIONSTATS_HPP
+#define SHARE_GC_CMS_ALLOCATIONSTATS_HPP
 
 #include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
@@ -150,4 +150,4 @@ class AllocationStats {
   )
 };
 
-#endif // SHARE_VM_GC_CMS_ALLOCATIONSTATS_HPP
+#endif // SHARE_GC_CMS_ALLOCATIONSTATS_HPP

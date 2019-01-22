@@ -32,8 +32,8 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @clean T1 T2
- * @compile -source 11 -target 12 T1.java
- * @compile -source 11 -target 12 T2.java
+ * @compile -source 12 -target 13 T1.java
+ * @compile -source 12 -target 13 T2.java
  * @run main/othervm T6330997
  */
 

@@ -25,6 +25,8 @@
 
 package build.tools.spp;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.*;
 import java.util.regex.*;
 
@@ -69,6 +71,8 @@ public class Spp {
         Set<String> keys = new HashSet<>();
         boolean be = false;
         boolean el = true;
+        String inputFile = null;
+        String outputFile = null;
 
         for (String arg:args) {
             if (arg.startsWith("-D")) {
@@ -76,6 +80,10 @@ public class Spp {
                 vars.put(arg.substring(2, i),arg.substring(i+1));
             } else if (arg.startsWith("-K")) {
                 keys.add(arg.substring(2));
+            } else if (arg.startsWith("-i")) {
+                inputFile = arg.substring(2);
+            } else if (arg.startsWith("-o")) {
+                outputFile = arg.substring(2);
             } else if ("-be".equals(arg)) {
                 be = true;
             } else if ("-nel".equals(arg)) {
@@ -87,11 +95,11 @@ public class Spp {
         }
 
         StringBuffer out = new StringBuffer();
-        new Spp().spp(new Scanner(System.in),
+        new Spp().spp(new Scanner(new FileInputStream(inputFile)),
                       out, "",
                       keys, vars, be, el,
                       false);
-        System.out.print(out.toString());
+        new FileOutputStream(outputFile, true).write(out.toString().getBytes());
     }
 
     static final String LNSEP = System.getProperty("line.separator");

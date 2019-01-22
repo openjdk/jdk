@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,13 +120,6 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   // Must share this for correct bootstrapping!
   set_secondary_supers(Universe::the_array_interfaces_array());
   return NULL;
-}
-
-bool ArrayKlass::compute_is_subtype_of(Klass* k) {
-  // An array is a subtype of Serializable, Clonable, and Object
-  return    k == SystemDictionary::Object_klass()
-         || k == SystemDictionary::Cloneable_klass()
-         || k == SystemDictionary::Serializable_klass();
 }
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {

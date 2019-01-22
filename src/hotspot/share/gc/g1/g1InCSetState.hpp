@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1INCSETSTATE_HPP
-#define SHARE_VM_GC_G1_G1INCSETSTATE_HPP
+#ifndef SHARE_GC_G1_G1INCSETSTATE_HPP
+#define SHARE_GC_G1_G1INCSETSTATE_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -139,4 +139,4 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
   void clear(const HeapRegion* hr) { return set_by_index(hr->hrm_index(), InCSetState::NotInCSet); }
 };
 
-#endif // SHARE_VM_GC_G1_G1INCSETSTATE_HPP
+#endif // SHARE_GC_G1_G1INCSETSTATE_HPP

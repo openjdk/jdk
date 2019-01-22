@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahPacer.hpp"
 #include "runtime/atomic.hpp"
@@ -56,4 +56,4 @@ inline void ShenandoahPacer::report_progress_internal(size_t words) {
   Atomic::add((intptr_t)words, &_progress);
 }
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class TestDriver {
                 "-agentlib:retransform003-03=id=3 can_retransform_classes=1",
                 nsk.jvmti.RetransformClasses.retransform003.class.getName()
         );
-        String envName = Platform.isWindows() ? "PATH" :
-                (Platform.isOSX() ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH");
+
+        String envName = Platform.sharedLibraryPathVariableName();
         pb.environment()
           .merge(envName, ".", (x, y) -> y + File.pathSeparator + x);
 

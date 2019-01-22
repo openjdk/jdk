@@ -27,11 +27,13 @@
  * @summary Determine if overridden methods are properly documented when
  * -protected (default) visibility flag is used.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestOverriddenPrivateMethodsWithPrivateFlag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-private",

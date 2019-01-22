@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3974,7 +3974,7 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
  * Emits code to update CRC-32 with a 4-byte value according to constants in table
  * Implementation according to jdk/src/share/native/java/util/zip/zlib-1.2.8/crc32.c
  */
-// A not on the lookup table address(es):
+// A note on the lookup table address(es):
 // The lookup table consists of two sets of four columns each.
 // The columns {0..3} are used for little-endian machines.
 // The columns {4..7} are used for big-endian machines.
@@ -4147,57 +4147,50 @@ void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len
  * @param len             register containing number of bytes
  * @param table           register pointing to CRC table
  * @param constants       register pointing to CRC table for 128-bit aligned memory
- * @param barretConstants register pointing to table for barrett reduction
- * @param t0-t4           temp registers
+ * @param t0-t5           temp registers
  */
-void MacroAssembler::kernel_crc32_1word_vpmsum(Register crc, Register buf, Register len, Register table,
-                                               Register constants, Register barretConstants,
-                                               Register t0, Register t1, Register t2, Register t3, Register t4,
-                                               bool invertCRC) {
+void MacroAssembler::kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register table,
+                                         Register constants, Register t0, Register t1, Register t2,
+                                         Register t3, Register t4, Register t5, bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
-  Label L_alignedHead, L_tail;
+  Label L_tail;
 
-  BLOCK_COMMENT("kernel_crc32_1word_vpmsum {");
+  BLOCK_COMMENT("kernel_crc32_vpmsum {");
 
-  // 1. ~c
   if (invertCRC) {
     nand(crc, crc, crc);                      // 1s complement of crc
   }
 
-  // 2. use kernel_crc32_1word for short len
+  // Enforce 32 bit.
   clrldi(len, len, 32);
-  cmpdi(CCR0, len, 512);
-  blt(CCR0, L_tail);
 
-  // 3. calculate from 0 to first aligned address
-  const int alignment = 16;
+  // Align if we have enough bytes for the fast version.
+  const int alignment = 16,
+            threshold = 32;
   Register prealign = t0;
 
-  andi_(prealign, buf, alignment - 1);
-  beq(CCR0, L_alignedHead);
-  subfic(prealign, prealign, alignment);
+  neg(prealign, buf);
+  addi(t1, len, -threshold);
+  andi(prealign, prealign, alignment - 1);
+  cmpw(CCR0, t1, prealign);
+  blt(CCR0, L_tail); // len - prealign < threshold?
 
   subf(len, prealign, len);
   update_byteLoop_crc32(crc, buf, prealign, table, t2, false);
 
-  // 4. calculate from first aligned address as far as possible
-  BIND(L_alignedHead);
-  kernel_crc32_1word_aligned(crc, buf, len, constants, barretConstants, t0, t1, t2, t3, t4);
+  // Calculate from first aligned address as far as possible.
+  kernel_crc32_vpmsum_aligned(crc, buf, len, constants, t0, t1, t2, t3, t4, t5);
 
-  // 5. remaining bytes
+  // Remaining bytes.
   BIND(L_tail);
-  Register tc0 = t4;
-  Register tc1 = constants;
-  Register tc2 = barretConstants;
-  kernel_crc32_1word(crc, buf, len, table, t0, t1, t2, t3, tc0, tc1, tc2, table, false);
+  update_byteLoop_crc32(crc, buf, len, table, t2, false);
 
-  // 6. ~c
   if (invertCRC) {
     nand(crc, crc, crc);                      // 1s complement of crc
   }
 
-  BLOCK_COMMENT("} kernel_crc32_1word_vpmsum");
+  BLOCK_COMMENT("} kernel_crc32_vpmsum");
 }
 
 /**
@@ -4205,13 +4198,10 @@ void MacroAssembler::kernel_crc32_1word_vpmsum(Register crc, Register buf, Regis
  * @param buf             register pointing to input byte buffer (byte*)
  * @param len             register containing number of bytes (will get updated to remaining bytes)
  * @param constants       register pointing to CRC table for 128-bit aligned memory
- * @param barretConstants register pointing to table for barrett reduction
- * @param t0-t4           temp registers
- * Precondition: len should be >= 512. Otherwise, nothing will be done.
+ * @param t0-t5           temp registers
  */
-void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
-    Register constants, Register barretConstants,
-    Register t0, Register t1, Register t2, Register t3, Register t4) {
+void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len,
+    Register constants, Register t0, Register t1, Register t2, Register t3, Register t4, Register t5) {
 
   // Save non-volatile vector registers (frameless).
   Register offset = t1;
@@ -4228,7 +4218,6 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   offsetInt -= 8; std(R14, offsetInt, R1_SP);
   offsetInt -= 8; std(R15, offsetInt, R1_SP);
   offsetInt -= 8; std(R16, offsetInt, R1_SP);
-  offsetInt -= 8; std(R17, offsetInt, R1_SP);
 
   // Implementation uses an inner loop which uses between 256 and 16 * unroll_factor
   // bytes per iteration. The basic scheme is:
@@ -4239,14 +4228,17 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   // Outer loop performs the CRC shifts needed to combine the unroll_factor2 vectors.
 
   // Using 16 * unroll_factor / unroll_factor_2 bytes for constants.
-  const int unroll_factor = 2048;
-  const int unroll_factor2 = 8;
+  const int unroll_factor = CRC32_UNROLL_FACTOR,
+            unroll_factor2 = CRC32_UNROLL_FACTOR2;
+
+  const int outer_consts_size = (unroll_factor2 - 1) * 16,
+            inner_consts_size = (unroll_factor / unroll_factor2) * 16;
 
   // Support registers.
-  Register offs[] = { noreg, t0, t1, t2, t3, t4, crc /* will live in VCRC */, R14 };
-  Register num_bytes = R15,
-           loop_count = R16,
-           cur_const = R17;
+  Register offs[] = { noreg, t0, t1, t2, t3, t4, t5, crc /* will live in VCRC */ };
+  Register num_bytes = R14,
+           loop_count = R15,
+           cur_const = R16;
   // Constant array for outer loop: unroll_factor2 - 1 registers,
   // Constant array for inner loop: unroll_factor / unroll_factor2 registers.
   VectorRegister consts0[] = { VR16, VR17, VR18, VR19, VR20, VR21, VR22 },
@@ -4268,7 +4260,7 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
     mtdscr(t0);
   }
 
-  mtvrwz(VCRC, crc); // crc lives lives in VCRC, now
+  mtvrwz(VCRC, crc); // crc lives in VCRC, now
 
   for (int i = 1; i < unroll_factor2; ++i) {
     li(offs[i], 16 * i);
@@ -4279,10 +4271,8 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   for (int i = 1; i < unroll_factor2 - 1; ++i) {
     lvx(consts0[i], offs[i], constants);
   }
-  addi(constants, constants, (unroll_factor2 - 1) * 16);
 
   load_const_optimized(num_bytes, 16 * unroll_factor);
-  load_const_optimized(loop_count, unroll_factor / (2 * unroll_factor2) - 1); // One double-iteration peeled off.
 
   // Reuse data registers outside of the loop.
   VectorRegister Vtmp = data1[0];
@@ -4310,13 +4300,15 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   cmpd(CCR0, len, num_bytes);
   blt(CCR0, L_last);
 
+  addi(cur_const, constants, outer_consts_size); // Point to consts for inner loop
+  load_const_optimized(loop_count, unroll_factor / (2 * unroll_factor2) - 1); // One double-iteration peeled off.
+
   // ********** Main loop start **********
   align(32);
   bind(L_outer_loop);
 
   // Begin of unrolled first iteration (no xor).
   lvx(data1[0], buf);
-  mr(cur_const, constants);
   for (int i = 1; i < unroll_factor2 / 2; ++i) {
     lvx(data1[i], offs[i], buf);
   }
@@ -4369,6 +4361,8 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   }
   bdnz(L_inner_loop);
 
+  addi(cur_const, constants, outer_consts_size); // Reset
+
   // Tail of last iteration (no loads).
   for (int i = 0; i < unroll_factor2 / 2; ++i) {
     BE_swap_bytes(data1[i + unroll_factor2 / 2]);
@@ -4397,15 +4391,15 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   // Last chance with lower num_bytes.
   bind(L_last);
   srdi(loop_count, len, exact_log2(16 * 2 * unroll_factor2)); // Use double-iterations.
-  add_const_optimized(constants, constants, 16 * (unroll_factor / unroll_factor2)); // Point behind last one.
+  // Point behind last const for inner loop.
+  add_const_optimized(cur_const, constants, outer_consts_size + inner_consts_size);
   sldi(R0, loop_count, exact_log2(16 * 2)); // Bytes of constants to be used.
   clrrdi(num_bytes, len, exact_log2(16 * 2 * unroll_factor2));
-  subf(constants, R0, constants); // Point to constant to be used first.
+  subf(cur_const, R0, cur_const); // Point to constant to be used first.
 
   addic_(loop_count, loop_count, -1); // One double-iteration peeled off.
   bgt(CCR0, L_outer_loop);
   // ********** Main loop end **********
-#undef BE_swap_bytes
 
   // Restore DSCR pre-fetch value.
   if (VM_Version::has_mfdscr()) {
@@ -4413,13 +4407,45 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
     mtdscr(t0);
   }
 
+  // ********** Simple loop for remaining 16 byte blocks **********
+  {
+    Label L_loop, L_done;
+
+    srdi_(t0, len, 4); // 16 bytes per iteration
+    clrldi(len, len, 64-4);
+    beq(CCR0, L_done);
+
+    // Point to const (same as last const for inner loop).
+    add_const_optimized(cur_const, constants, outer_consts_size + inner_consts_size - 16);
+    mtctr(t0);
+    lvx(Vtmp2, cur_const);
+
+    align(32);
+    bind(L_loop);
+
+    lvx(Vtmp, buf);
+    addi(buf, buf, 16);
+    vpermxor(VCRC, VCRC, VCRC, Vc); // xor both halves to 64 bit result.
+    BE_swap_bytes(Vtmp);
+    vxor(VCRC, VCRC, Vtmp);
+    vpmsumw(VCRC, VCRC, Vtmp2);
+    bdnz(L_loop);
+
+    bind(L_done);
+  }
+  // ********** Simple loop end **********
+#undef BE_swap_bytes
+
+  // Point to Barrett constants
+  add_const_optimized(cur_const, constants, outer_consts_size + inner_consts_size);
+
   vspltisb(zeroes, 0);
 
   // Combine to 64 bit result.
   vpermxor(VCRC, VCRC, VCRC, Vc); // xor both halves to 64 bit result.
 
   // Reduce to 32 bit CRC: Remainder by multiply-high.
-  lvx(Vtmp, barretConstants);
+  lvx(Vtmp, cur_const);
   vsldoi(Vtmp2, zeroes, VCRC, 12);  // Extract high 32 bit.
   vpmsumd(Vtmp2, Vtmp2, Vtmp);      // Multiply by inverse long poly.
   vsldoi(Vtmp2, zeroes, Vtmp2, 12); // Extract high 32 bit.
@@ -4445,7 +4471,20 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   offsetInt -= 8;  ld(R14, offsetInt, R1_SP);
   offsetInt -= 8;  ld(R15, offsetInt, R1_SP);
   offsetInt -= 8;  ld(R16, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R17, offsetInt, R1_SP);
+}
+
+void MacroAssembler::crc32(Register crc, Register buf, Register len, Register t0, Register t1, Register t2,
+                           Register t3, Register t4, Register t5, Register t6, Register t7, bool is_crc32c) {
+  load_const_optimized(t0, is_crc32c ? StubRoutines::crc32c_table_addr()
+                                     : StubRoutines::crc_table_addr()   , R0);
+
+  if (VM_Version::has_vpmsumb()) {
+    load_const_optimized(t1, is_crc32c ? StubRoutines::ppc64::crc32c_constants()
+                                       : StubRoutines::ppc64::crc_constants()   , R0);
+    kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
+  } else {
+    kernel_crc32_1word(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, t0, !is_crc32c);
+  }
 }
 
 void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp, bool invertCRC) {
