@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -206,13 +206,13 @@ static void define_javabase_module(jobject module, jstring version,
       package_table->verify_javabase_packages(pkg_list);
 
       // loop through and add any new packages for java.base
-      PackageEntry* pkg;
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
-        if (package_table->lookup_only(pkg_list->at(x)) == NULL) {
-          pkg = package_table->locked_create_entry_or_null(pkg_list->at(x), ModuleEntryTable::javabase_moduleEntry());
-          assert(pkg != NULL, "Unable to create a " JAVA_BASE_NAME " package entry");
-        }
+        PackageEntry* pkg =
+          package_table->locked_create_entry_or_null(pkg_list->at(x),
+                                                     ModuleEntryTable::javabase_moduleEntry());
+        assert(pkg != NULL || package_table->locked_lookup_only(pkg_list->at(x)) != NULL,
+               "Unable to create a " JAVA_BASE_NAME " package entry");
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
         // the Symbol* that was created above for each package. The refcount was incremented
         // by SymbolTable::new_symbol and as well by the PackageEntry creation.
@@ -388,7 +388,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
       // Check that none of the packages exist in the class loader's package table.
       for (int x = 0; x < pkg_list->length(); x++) {
-        existing_pkg = package_table->lookup_only(pkg_list->at(x));
+        existing_pkg = package_table->locked_lookup_only(pkg_list->at(x));
         if (existing_pkg != NULL) {
           // This could be because the module was already defined.  If so,
           // report that error instead of the package error.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,7 @@ void PackageEntryTable::add_entry(int index, PackageEntry* new_entry) {
 PackageEntry* PackageEntryTable::locked_create_entry_or_null(Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
   // Check if package already exists.  Return NULL if it does.
-  if (lookup_only(name) != NULL) {
+  if (locked_lookup_only(name) != NULL) {
     return NULL;
   } else {
     PackageEntry* entry = new_entry(compute_hash(name), name, module);
@@ -227,7 +227,7 @@ PackageEntry* PackageEntryTable::locked_create_entry_or_null(Symbol* name, Modul
 
 PackageEntry* PackageEntryTable::lookup(Symbol* name, ModuleEntry* module) {
   MutexLocker ml(Module_lock);
-  PackageEntry* p = lookup_only(name);
+  PackageEntry* p = locked_lookup_only(name);
   if (p != NULL) {
     return p;
   } else {
@@ -239,7 +239,13 @@ PackageEntry* PackageEntryTable::lookup(Symbol* name, ModuleEntry* module) {
 }
 
 PackageEntry* PackageEntryTable::lookup_only(Symbol* name) {
-  MutexLockerEx ml(Module_lock->owned_by_self() ? NULL : Module_lock);
+  assert(!Module_lock->owned_by_self(), "should not have the Module_lock - use locked_lookup_only");
+  MutexLockerEx ml(Module_lock);
+  return locked_lookup_only(name);
+}
+
+PackageEntry* PackageEntryTable::locked_lookup_only(Symbol* name) {
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   int index = index_for(name);
   for (PackageEntry* p = bucket(index); p != NULL; p = p->next()) {
     if (p->name()->fast_compare(name) == 0) {

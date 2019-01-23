@@ -250,11 +250,17 @@ public:
   // If entry already exists, return null.  Assume Module lock was taken by caller.
   PackageEntry* locked_create_entry_or_null(Symbol* name, ModuleEntry* module);
 
-  // lookup Package with loader's package entry table, if not found add
+  // Lookup Package with loader's package entry table, add it if not found.
+  // This will acquire the Module lock.
   PackageEntry* lookup(Symbol* name, ModuleEntry* module);
 
   // Only lookup Package within loader's package entry table.
+  // This will acquire the Module lock.
   PackageEntry* lookup_only(Symbol* Package);
+
+  // Only lookup Package within loader's package entry table.  Assume Module lock
+  // was taken by caller.
+  PackageEntry* locked_lookup_only(Symbol* Package);
 
   void verify_javabase_packages(GrowableArray<Symbol*> *pkg_list);
 
