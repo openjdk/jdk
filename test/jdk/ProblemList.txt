@@ -516,6 +516,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
+java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 
 ############################################################################
 
