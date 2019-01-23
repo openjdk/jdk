@@ -29,18 +29,35 @@
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
+uint8_t test_popcnt_bitsInByte[BITS_IN_BYTE_ARRAY_SIZE] = {
+        0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+        4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
+};
 
 TEST(population_count, sparse) {
-  extern uint8_t bitsInByte[BITS_IN_BYTE_ARRAY_SIZE];
   // Step through the entire input range from a random starting point,
   // verify population_count return values against the lookup table
   // approach used historically
   uint32_t step = 4711;
   for (uint32_t value = os::random() % step; value < UINT_MAX - step; value += step) {
-    uint32_t lookup = bitsInByte[(value >> 24) & 0xff] +
-                      bitsInByte[(value >> 16) & 0xff] +
-                      bitsInByte[(value >> 8)  & 0xff] +
-                      bitsInByte[ value        & 0xff];
+    uint32_t lookup = test_popcnt_bitsInByte[(value >> 24) & 0xff] +
+                      test_popcnt_bitsInByte[(value >> 16) & 0xff] +
+                      test_popcnt_bitsInByte[(value >> 8)  & 0xff] +
+                      test_popcnt_bitsInByte[ value        & 0xff];
 
     EXPECT_EQ(lookup, population_count(value))
         << "value = " << value;
