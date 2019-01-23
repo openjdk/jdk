@@ -101,10 +101,8 @@ public interface ClassDesc
             return of(className);
         }
         validateMemberName(requireNonNull(className), false);
-        return ofDescriptor(String.format("L%s%s%s;",
-                                          binaryToInternal(packageName),
-                                          (packageName.length() > 0 ? "/" : ""),
-                                          className));
+        return ofDescriptor("L" + binaryToInternal(packageName) +
+                (packageName.length() > 0 ? "/" : "") + className + ";");
     }
 
     /**
@@ -134,12 +132,14 @@ public interface ClassDesc
     static ClassDesc ofDescriptor(String descriptor) {
         requireNonNull(descriptor);
         if (descriptor.isEmpty()) {
-            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
+            throw new IllegalArgumentException(
+                    "not a valid reference type descriptor: " + descriptor);
         }
         int depth = ConstantUtils.arrayDepth(descriptor);
         if (depth > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
-                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+            throw new IllegalArgumentException(
+                    "Cannot create an array type descriptor with more than " +
+                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
         return (descriptor.length() == 1)
                ? new PrimitiveClassDescImpl(descriptor)
@@ -157,8 +157,9 @@ public interface ClassDesc
     default ClassDesc arrayType() {
         int depth = ConstantUtils.arrayDepth(descriptorString());
         if (depth >= ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalStateException(String.format("Cannot create an array type descriptor with more than %d dimensions",
-                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+            throw new IllegalStateException(
+                    "Cannot create an array type descriptor with more than " +
+                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
         return arrayType(1);
     }
@@ -201,7 +202,7 @@ public interface ClassDesc
         validateMemberName(nestedName, false);
         if (!isClassOrInterface())
             throw new IllegalStateException("Outer class is not a class or interface type");
-        return ClassDesc.ofDescriptor(String.format("%s$%s;", dropLastChar(descriptorString()), nestedName));
+        return ClassDesc.ofDescriptor(dropLastChar(descriptorString()) + "$" + nestedName + ";");
     }
 
     /**
