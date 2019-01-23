@@ -1628,6 +1628,7 @@ bool ZBarrierSetC2::escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN
         conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
         return true;
       }
+      break;
     }
     case Op_Proj: {
       if (n->as_Proj()->_con == LoadBarrierNode::Oop && n->in(0)->is_LoadBarrier()) {
