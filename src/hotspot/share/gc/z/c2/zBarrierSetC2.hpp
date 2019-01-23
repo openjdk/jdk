@@ -31,7 +31,7 @@
 
 class LoadBarrierNode : public MultiNode {
 private:
-  bool _weak;
+  bool _weak;               // On strong or weak oop reference
   bool _writeback;          // Controls if the barrier writes the healed oop back to memory
                             // A swap on a memory location must never write back the healed oop
   bool _oop_reload_allowed; // Controls if the barrier are allowed to reload the oop from memory
@@ -104,8 +104,8 @@ public:
                          const TypePtr *at,
                          const TypePtr* t,
                          MemOrd mo,
-                         ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+                         ControlDependency control_dependency = DependsOnlyOnTest) :
+      LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
     init_class_id(Class_LoadBarrierSlowReg);
   }
 
@@ -128,8 +128,8 @@ public:
                              const TypePtr *at,
                              const TypePtr* t,
                              MemOrd mo,
-                             ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+                             ControlDependency control_dependency = DependsOnlyOnTest) :
+      LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
     init_class_id(Class_LoadBarrierWeakSlowReg);
   }
 
@@ -221,7 +221,6 @@ public:
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const;
-
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP
