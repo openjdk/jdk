@@ -77,6 +77,11 @@ static void setConnectionReset(SOCKET s, BOOL enable) {
              NULL, 0, &bytesReturned, NULL, NULL);
 }
 
+jint handleSocketError(JNIEnv *env, int errorValue)
+{
+    NET_ThrowNew(env, errorValue, NULL);
+    return IOS_THROWN;
+}
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
@@ -607,6 +612,59 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     return rv;
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong timeout)
+{
+    int optError = 0;
+    int result;
+    int n = sizeof(int);
+    jint fd = fdval(env, fdo);
+    fd_set wr, ex;
+    struct timeval t;
+
+    FD_ZERO(&wr);
+    FD_ZERO(&ex);
+    FD_SET((u_int)fd, &wr);
+    FD_SET((u_int)fd, &ex);
+
+    if (timeout >= 0) {
+        t.tv_sec = (long)(timeout / 1000);
+        t.tv_usec = (timeout % 1000) * 1000;
+    }
+
+    result = select(fd+1, 0, &wr, &ex, (timeout >= 0) ? &t : NULL);
+
+    if (result == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
+        return IOS_THROWN;
+    } else if (result == 0) {
+        return 0;
+    } else {
+        // connection established if writable and no error to check
+        if (FD_ISSET(fd, &wr) && !FD_ISSET(fd, &ex)) {
+            return 1;
+        }
+        result = getsockopt((SOCKET)fd,
+                            SOL_SOCKET,
+                            SO_ERROR,
+                            (char *)&optError,
+                            &n);
+        if (result == SOCKET_ERROR) {
+            int lastError = WSAGetLastError();
+            if (lastError == WSAEINPROGRESS) {
+                return IOS_UNAVAILABLE;
+            }
+            NET_ThrowNew(env, lastError, "getsockopt");
+            return IOS_THROWN;
+        }
+        if (optError != NO_ERROR) {
+            handleSocketError(env, optError);
+            return IOS_THROWN;
+        }
+        return 0;
+    }
+}
+
 JNIEXPORT jshort JNICALL
 Java_sun_nio_ch_Net_pollinValue(JNIEnv *env, jclass this)
 {
@@ -641,4 +699,20 @@ JNIEXPORT jshort JNICALL
 Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
 {
     return (jshort)POLLCONN;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
+{
+    int n = send(fdval(env, fdo), (const char*)&b, 1, MSG_OOB);
+    if (n == SOCKET_ERROR) {
+        if (WSAGetLastError() == WSAEWOULDBLOCK) {
+            return IOS_UNAVAILABLE;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "send failed");
+            return IOS_THROWN;
+        }
+    } else {
+        return n;
+    }
 }

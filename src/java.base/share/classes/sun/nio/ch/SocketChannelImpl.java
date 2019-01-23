@@ -65,7 +65,7 @@ class SocketChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // Our file descriptor object
     private final FileDescriptor fd;
@@ -517,10 +517,10 @@ class SocketChannelImpl
                 beginWrite(blocking);
                 if (blocking) {
                     do {
-                        n = sendOutOfBandData(fd, b);
+                        n = Net.sendOOB(fd, b);
                     } while (n == IOStatus.INTERRUPTED && isOpen());
                 } else {
-                    n = sendOutOfBandData(fd, b);
+                    n = Net.sendOOB(fd, b);
                 }
             } finally {
                 endWrite(blocking, n > 0);
@@ -772,10 +772,10 @@ class SocketChannelImpl
                         int n = 0;
                         if (blocking) {
                             do {
-                                n = checkConnect(fd, true);
+                                n = Net.pollConnect(fd, -1);
                             } while ((n == 0 || n == IOStatus.INTERRUPTED) && isOpen());
                         } else {
-                            n = checkConnect(fd, false);
+                            n = Net.pollConnect(fd, 0);
                         }
                         connected = (n > 0);
                     } finally {
@@ -1112,19 +1112,4 @@ class SocketChannelImpl
         sb.append(']');
         return sb.toString();
     }
-
-
-    // -- Native methods --
-
-    private static native int checkConnect(FileDescriptor fd, boolean block)
-        throws IOException;
-
-    private static native int sendOutOfBandData(FileDescriptor fd, byte data)
-        throws IOException;
-
-    static {
-        IOUtil.load();
-        nd = new SocketDispatcher();
-    }
-
 }

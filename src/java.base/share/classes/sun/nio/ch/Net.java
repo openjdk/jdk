@@ -525,9 +525,26 @@ public class Net {
         throws IOException;
 
     /**
+     * Polls a connecting socket to test if the connection has been established.
+     *
+     * @apiNote This method is public to allow it be used by code in jdk.sctp.
+     *
+     * @param timeout the timeout to wait; 0 to not wait, -1 to wait indefinitely
+     * @return 1 if connected, 0 if not connected, or IOS_INTERRUPTED
+     */
+    public static native int pollConnect(FileDescriptor fd, long timeout)
+        throws IOException;
+
+    /**
      * Return the number of bytes in the socket input buffer.
      */
     static native int available(FileDescriptor fd) throws IOException;
+
+    /**
+     * Send one byte of urgent data (MSG_OOB) on the socket.
+     */
+    static native int sendOOB(FileDescriptor fd, byte data) throws IOException;
+
 
     // -- Multicast support --
 

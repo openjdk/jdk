@@ -478,7 +478,7 @@ public class SctpChannelImpl extends SctpChannel
                             }
                             if (!isBlocking()) {
                                 for (;;) {
-                                    n = checkConnect(fd, false, readyToConnect);
+                                    n = Net.pollConnect(fd, 0);
                                     if (  (n == IOStatus.INTERRUPTED)
                                           && isOpen())
                                         continue;
@@ -486,7 +486,7 @@ public class SctpChannelImpl extends SctpChannel
                                 }
                             } else {
                                 for (;;) {
-                                    n = checkConnect(fd, true, readyToConnect);
+                                    n = Net.pollConnect(fd, -1);
                                     if (n == 0) {
                                         // Loop in case of
                                         // spurious notifications
@@ -1103,9 +1103,6 @@ public class SctpChannelImpl extends SctpChannel
     static native int send0(int fd, long address, int length,
             InetAddress addr, int port, int assocId, int streamNumber,
             boolean unordered, int ppid) throws IOException;
-
-    private static native int checkConnect(FileDescriptor fd, boolean block,
-            boolean ready) throws IOException;
 
     static {
         IOUtil.load();   /* loads nio & net native libraries */
