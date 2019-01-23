@@ -33,35 +33,6 @@
 #define RM_SIZE _RM_SIZE /* a constant private to the class RegMask */
 
 //-------------Non-zero bit search methods used by RegMask---------------------
-// Find lowest 1, or return 32 if empty
-int find_lowest_bit( uint32_t mask ) {
-  int n = 0;
-  if( (mask & 0xffff) == 0 ) {
-    mask >>= 16;
-    n += 16;
-  }
-  if( (mask & 0xff) == 0 ) {
-    mask >>= 8;
-    n += 8;
-  }
-  if( (mask & 0xf) == 0 ) {
-    mask >>= 4;
-    n += 4;
-  }
-  if( (mask & 0x3) == 0 ) {
-    mask >>= 2;
-    n += 2;
-  }
-  if( (mask & 0x1) == 0 ) {
-    mask >>= 1;
-     n += 1;
-  }
-  if( mask == 0 ) {
-    n = 32;
-  }
-  return n;
-}
-
 // Find highest 1, or return 32 if empty
 int find_highest_bit( uint32_t mask ) {
   int n = 0;
