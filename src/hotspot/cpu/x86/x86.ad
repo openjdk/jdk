@@ -1638,6 +1638,7 @@ bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, Ve
     // Cheap to find it by looking for screwy base.
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
+        LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
       address_visited.set(adr->_idx); // Flag as address_visited
