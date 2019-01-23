@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,18 @@
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #endif // COMPILER1
 
-#undef __
-#define __ masm->
+ZBarrierSetAssembler::ZBarrierSetAssembler() :
+    _load_barrier_slow_stub(),
+    _load_barrier_weak_slow_stub() {}
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
 #define BLOCK_COMMENT(str) __ block_comment(str)
 #endif
+
+#undef __
+#define __ masm->
 
 static void call_vm(MacroAssembler* masm,
                     address entry_point,
@@ -460,4 +464,12 @@ static void barrier_stubs_init_inner(const char* label, const DecoratorSet decor
 void ZBarrierSetAssembler::barrier_stubs_init() {
   barrier_stubs_init_inner("zgc_load_barrier_stubs", ON_STRONG_OOP_REF, _load_barrier_slow_stub);
   barrier_stubs_init_inner("zgc_load_barrier_weak_stubs", ON_WEAK_OOP_REF, _load_barrier_weak_slow_stub);
+}
+
+address ZBarrierSetAssembler::load_barrier_slow_stub(Register reg) {
+  return _load_barrier_slow_stub[reg->encoding()];
+}
+
+address ZBarrierSetAssembler::load_barrier_weak_slow_stub(Register reg) {
+  return _load_barrier_weak_slow_stub[reg->encoding()];
 }
