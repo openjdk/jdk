@@ -578,7 +578,7 @@ Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
 }
 
 int java_lang_String::utf8_length(oop java_string, typeArrayOop value) {
-  assert(oopDesc::equals_raw(value, java_lang_String::value(java_string)),
+  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   int length = java_lang_String::length(java_string, value);
   if (length == 0) {
@@ -610,7 +610,7 @@ char* java_lang_String::as_utf8_string(oop java_string) {
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen) {
-  assert(oopDesc::equals_raw(value, java_lang_String::value(java_string)),
+  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   int     length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
@@ -642,7 +642,7 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen) {
-  assert(oopDesc::equals_raw(value, java_lang_String::value(java_string)),
+  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   assert(start + len <= java_lang_String::length(java_string), "just checking");
   bool is_latin1 = java_lang_String::is_latin1(java_string);

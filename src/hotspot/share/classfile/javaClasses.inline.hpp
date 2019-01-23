@@ -74,7 +74,7 @@ bool java_lang_String::is_latin1(oop java_string) {
 int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  assert(oopDesc::equals_raw(value, java_lang_String::value(java_string)),
+  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   if (value == NULL) {
     return 0;
