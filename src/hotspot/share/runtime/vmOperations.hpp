@@ -445,7 +445,7 @@ class VM_ThreadDump : public VM_Operation {
   bool                           _with_locked_monitors;
   bool                           _with_locked_synchronizers;
 
-  ThreadSnapshot* snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl);
+  void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl);
 
  public:
   VM_ThreadDump(ThreadDumpResult* result,

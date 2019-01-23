@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,8 +503,25 @@ ThreadDumpResult::~ThreadDumpResult() {
   }
 }
 
+ThreadSnapshot* ThreadDumpResult::add_thread_snapshot() {
+  ThreadSnapshot* ts = new ThreadSnapshot();
+  link_thread_snapshot(ts);
+  return ts;
+}
 
-void ThreadDumpResult::add_thread_snapshot(ThreadSnapshot* ts) {
+ThreadSnapshot* ThreadDumpResult::add_thread_snapshot(JavaThread* thread) {
+  // Note: it is very important that the ThreadSnapshot* gets linked before
+  // ThreadSnapshot::initialize gets called. This is to ensure that
+  // ThreadSnapshot::oops_do can get called prior to the field
+  // ThreadSnapshot::_threadObj being assigned a value (to prevent a dangling
+  // oop).
+  ThreadSnapshot* ts = new ThreadSnapshot();
+  link_thread_snapshot(ts);
+  ts->initialize(t_list(), thread);
+  return ts;
+}
+
+void ThreadDumpResult::link_thread_snapshot(ThreadSnapshot* ts) {
   assert(_num_threads == 0 || _num_snapshots < _num_threads,
          "_num_snapshots must be less than _num_threads");
   _num_snapshots++;
@@ -831,12 +848,9 @@ ThreadStatistics::ThreadStatistics() {
   memset((void*) _perf_recursion_counts, 0, sizeof(_perf_recursion_counts));
 }
 
-ThreadSnapshot::ThreadSnapshot(ThreadsList * t_list, JavaThread* thread) {
+void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _thread = thread;
   _threadObj = thread->threadObj();
-  _stack_trace = NULL;
-  _concurrent_locks = NULL;
-  _next = NULL;
 
   ThreadStatistics* stat = thread->get_thread_stat();
   _contended_enter_ticks = stat->contended_enter_ticks();
@@ -845,9 +859,6 @@ ThreadSnapshot::ThreadSnapshot(ThreadsList * t_list, JavaThread* thread) {
   _monitor_wait_count = stat->monitor_wait_count();
   _sleep_ticks = stat->sleep_ticks();
   _sleep_count = stat->sleep_count();
-
-  _blocker_object = NULL;
-  _blocker_object_owner = NULL;
 
   _thread_status = java_lang_Thread::get_thread_status(_threadObj);
   _is_ext_suspended = thread->is_being_ext_suspended();
