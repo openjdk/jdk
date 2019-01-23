@@ -6267,6 +6267,11 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   Node* dp = argument(5);
   Node* isURL = argument(6);
 
+  src = must_be_not_null(src, true);
+  src = access_resolve(src, ACCESS_READ);
+  dest = must_be_not_null(dest, true);
+  dest = access_resolve(dest, ACCESS_WRITE);
+
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
   assert(src_start, "source array is NULL");
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);

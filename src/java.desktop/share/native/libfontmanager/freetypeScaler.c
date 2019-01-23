@@ -754,7 +754,10 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     /* generate bitmap if it is not done yet
      e.g. if algorithmic styling is performed and style was added to outline */
     if (ftglyph->format == FT_GLYPH_FORMAT_OUTLINE) {
-        FT_Render_Glyph(ftglyph, FT_LOAD_TARGET_MODE(target));
+        error = FT_Render_Glyph(ftglyph, FT_LOAD_TARGET_MODE(target));
+        if (error != 0) {
+            return ptr_to_jlong(getNullGlyphImage());
+        }
     }
 
     width  = (UInt16) ftglyph->bitmap.width;
