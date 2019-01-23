@@ -129,19 +129,13 @@ define SetupAotModuleBody
   $1_AOT_LIB := $$($1_BIN)/$$(call SHARED_LIBRARY,$$($1_MODULE))
   $1_AOT_CCLIST := $$(wildcard $$(TOPDIR)/test/hotspot/jtreg/compiler/aot/scripts/$$($1_MODULE)-list.txt)
 
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    $1_LD := $$(addsuffix $$(EXE_SUFFIX), $$(filter-out $$(FIXPATH), $$(LD)))
-  else
-    $1_LD := $$(LD)
-  endif
-
   # Create jaotc flags.
   # VM flags which don't affect AOT code generation are filtered out: -Xcomp, -XX:+-TieredCompilation
   $1_JAOTC_OPTS := \
       -J-Xmx4g --info \
       $$(addprefix -J, $$(filter-out -Xcomp %TieredCompilation, $$($1_VM_OPTIONS))) \
       $$(addprefix --compile-commands$(SPACE), $$($1_AOT_CCLIST)) \
-      --linker-path $$($1_LD) \
+      --linker-path $$(LD_JAOTC) \
       #
 
   ifneq ($$(filter -ea, $$($1_VM_OPTIONS)), )
@@ -155,12 +149,14 @@ define SetupAotModuleBody
 	$$(call MakeTargetDir)
 	$$(call ExecuteWithLog, $$@, \
 	    $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/jaotc \
-	    $$($1_JAOTC_OPTS) --output $$@ --module $$($1_MODULE) \
+	        $$($1_JAOTC_OPTS) --output $$@ --module $$($1_MODULE) \
 	)
 	$$(call ExecuteWithLog, $$@.check, \
-	  $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java \
-	  $$($1_VM_OPTIONS) -XX:+PrintAOT -XX:+UseAOTStrictLoading -XX:AOTLibrary=$$@ -version \
-	  > $$@.verify-aot \
+	    $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java \
+	        $$($1_VM_OPTIONS) -XX:+UnlockDiagnosticVMOptions \
+	        -XX:+PrintAOT -XX:+UseAOTStrictLoading \
+	        -XX:AOTLibrary=$$@ -version \
+	         > $$@.verify-aot \
 	)
 
   $1_AOT_OPTIONS += -XX:AOTLibrary=$$($1_AOT_LIB)

@@ -254,26 +254,22 @@ endif
 # Setup LD for AOT support
 ifneq ($(DEVKIT_HOME), )
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    LD := $(DEVKIT_HOME)/VC/bin/x64/link
+    LD_JAOTC := $(DEVKIT_HOME)/VC/bin/x64/link.exe
     LIBRARY_PREFIX :=
     SHARED_LIBRARY_SUFFIX := .dll
-    EXE_SUFFIX := .exe
   else ifeq ($(OPENJDK_TARGET_OS), linux)
-    LD := $(DEVKIT_HOME)/bin/ld
+    LD_JAOTC := $(DEVKIT_HOME)/bin/ld
     LIBRARY_PREFIX := lib
     SHARED_LIBRARY_SUFFIX := .so
-    EXE_SUFFIX :=
   else ifeq ($(OPENJDK_TARGET_OS), macosx)
-    LD := $(DEVKIT_HOME)/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
+    LD_JAOTC := $(DEVKIT_HOME)/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
     LIBRARY_PREFIX := lib
     SHARED_LIBRARY_SUFFIX := .dylib
-    EXE_SUFFIX :=
   else ifeq ($(OPENJDK_TARGET_OS), solaris)
     # Prefer system linker for AOT on Solaris.
-    LD := ld
+    LD_JAOTC := ld
     LIBRARY_PREFIX := lib
     SHARED_LIBRARY_SUFFIX := .so
-    EXE_SUFFIX :=
   endif
 else
   LD := ld
@@ -315,10 +311,9 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     OPENJDK_TARGET_CPU_ENDIAN := $(OPENJDK_TARGET_CPU_ENDIAN), \
     NUM_CORES := $(NUM_CORES), \
     MEMORY_SIZE := $(MEMORY_SIZE), \
-    LD := $(LD), \
+    LD_JAOTC := $(LD_JAOTC), \
     LIBRARY_PREFIX := $(LIBRARY_PREFIX), \
     SHARED_LIBRARY_SUFFIX := $(SHARED_LIBRARY_SUFFIX), \
-    EXE_SUFFIX := $(EXE_SUFFIX), \
     include $(TOPDIR)/make/RunTestsPrebuiltSpec.gmk, \
     $(CUSTOM_NEW_SPEC_LINE), \
 )
