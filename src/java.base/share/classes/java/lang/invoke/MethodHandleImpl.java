@@ -33,6 +33,7 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
@@ -681,7 +682,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         return SimpleMethodHandle.make(srcType, form);
     }
 
-    @LambdaForm.Hidden
+    @Hidden
     static
     MethodHandle selectAlternative(boolean testResult, MethodHandle target, MethodHandle fallback) {
         if (testResult) {
@@ -692,7 +693,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     // Intrinsified by C2. Counters are used during parsing to calculate branch frequencies.
-    @LambdaForm.Hidden
+    @Hidden
     @jdk.internal.HotSpotIntrinsicCandidate
     static
     boolean profileBoolean(boolean result, int[] counters) {
@@ -708,7 +709,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     // Intrinsified by C2. Returns true if obj is a compile-time constant.
-    @LambdaForm.Hidden
+    @Hidden
     @jdk.internal.HotSpotIntrinsicCandidate
     static
     boolean isCompileConstant(Object obj) {
@@ -1054,7 +1055,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * Intrinsified during LambdaForm compilation
      * (see {@link InvokerBytecodeGenerator#emitGuardWithCatch emitGuardWithCatch}).
      */
-    @LambdaForm.Hidden
+    @Hidden
     static Object guardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher,
                                  Object... av) throws Throwable {
         // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
@@ -1067,7 +1068,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     /** Prepend elements to an array. */
-    @LambdaForm.Hidden
+    @Hidden
     private static Object[] prepend(Object[] array, Object... elems) {
         int nArray = array.length;
         int nElems = elems.length;
@@ -1265,7 +1266,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                           null, null);
 
             // Suppress invoker method in stack traces.
-            AnnotationVisitor av0 = mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+            AnnotationVisitor av0 = mv.visitAnnotation(InvokerBytecodeGenerator.HIDDEN_SIG, true);
             av0.visitEnd();
 
             mv.visitCode();
@@ -1969,7 +1970,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * Intrinsified during LambdaForm compilation
      * (see {@link InvokerBytecodeGenerator#emitLoop(int)}).
      */
-    @LambdaForm.Hidden
+    @Hidden
     static Object loop(BasicType[] localTypes, LoopClauses clauseData, Object... av) throws Throwable {
         final MethodHandle[] init = clauseData.clauses[0];
         final MethodHandle[] step = clauseData.clauses[1];
@@ -2174,7 +2175,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * Intrinsified during LambdaForm compilation
      * (see {@link InvokerBytecodeGenerator#emitTryFinally emitTryFinally}).
      */
-    @LambdaForm.Hidden
+    @Hidden
     static Object tryFinally(MethodHandle target, MethodHandle cleanup, Object... av) throws Throwable {
         Throwable t = null;
         Object r = null;

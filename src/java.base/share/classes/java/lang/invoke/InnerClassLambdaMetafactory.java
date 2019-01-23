@@ -77,6 +77,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION = "(Ljava/lang/String;)V";
     private static final String[] SER_HOSTILE_EXCEPTIONS = new String[] {NAME_NOT_SERIALIZABLE_EXCEPTION};
 
+    private static final String DESCR_HIDDEN = "Ljdk/internal/vm/annotation/Hidden;";
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -279,7 +280,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // Forward the SAM method
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, samMethodName,
                                           samMethodType.toMethodDescriptorString(), null, null);
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+        mv.visitAnnotation(DESCR_HIDDEN, true);
         new ForwardingMethodGenerator(mv).generate(samMethodType);
 
         // Forward the bridges
@@ -287,7 +288,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             for (MethodType mt : additionalBridges) {
                 mv = cw.visitMethod(ACC_PUBLIC|ACC_BRIDGE, samMethodName,
                                     mt.toMethodDescriptorString(), null, null);
-                mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+                mv.visitAnnotation(DESCR_HIDDEN, true);
                 new ForwardingMethodGenerator(mv).generate(mt);
             }
         }
