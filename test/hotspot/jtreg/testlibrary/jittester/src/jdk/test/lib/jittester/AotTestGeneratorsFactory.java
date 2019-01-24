@@ -32,7 +32,7 @@ public class AotTestGeneratorsFactory implements Function<String[], List<TestsGe
     private static final String AOT_COMPILER_BUILD_ACTION
             = "@build compiler.aot.AotCompiler";
     private static final String AOT_COMPILER_RUN_ACTION_PREFIX
-            = "@run driver compiler.aot.AotCompiler -libname aottest.so -class ";
+            = "@run driver compiler.aot.AotCompiler -extraopt -Xmixed -libname aottest.so -class ";
 
     @Override
     public List<TestsGenerator> apply(String[] input) {
