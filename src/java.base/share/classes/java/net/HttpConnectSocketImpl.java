@@ -197,14 +197,4 @@ import java.util.Set;
         else
             return super.getPort();
     }
-
-    @Override
-    protected int getLocalPort() {
-        if (socket != null)
-            return super.getLocalPort();
-        if (external_address != null)
-            return external_address.getPort();
-        else
-            return super.getLocalPort();
-    }
 }
