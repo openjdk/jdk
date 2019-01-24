@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   if (depth() == 1) {
     assert(C->is_osr_compilation() == this->is_osr_parse(), "OSR in sync");
     if (C->tf() != tf()) {
-      MutexLockerEx ml(Compile_lock, Mutex::_no_safepoint_check_flag);
       assert(C->env()->system_dictionary_modification_counter_changed(),
              "Must invalidate if TypeFuncs differ");
     }
@@ -1041,7 +1040,6 @@ void Parse::do_exits() {
       // not compilable. Just using an assertion instead would be dangerous
       // as this could lead to an infinite compile loop in non-debug builds.
       {
-        MutexLockerEx ml(Compile_lock, Mutex::_no_safepoint_check_flag);
         if (C->env()->system_dictionary_modification_counter_changed()) {
           C->record_failure(C2Compiler::retry_class_loading_during_parsing());
         } else {

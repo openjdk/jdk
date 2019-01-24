@@ -292,6 +292,8 @@ private:
   // respect to method dependencies (e.g. concurrent class loading).
   void validate_compile_task_dependencies(ciMethod* target);
 
+  // Call internally when Compile_lock is already held.
+  bool system_dictionary_modification_counter_changed_locked();
 public:
   enum {
     MethodCompilable,
