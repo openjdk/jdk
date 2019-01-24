@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 8081778
  * @summary Add C2 x86 intrinsic for BigInteger::mulAdd() method
+ * @comment the test disables intrinsics, so it can't be run w/ AOT'ed java.base
+ * @requires !vm.aot.enabled
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-UseSquareToLenIntrinsic -XX:-UseMultiplyToLenIntrinsic
