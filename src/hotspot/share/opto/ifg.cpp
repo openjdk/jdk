@@ -67,20 +67,6 @@ int PhaseIFG::add_edge( uint a, uint b ) {
   return _adjs[a].insert( b );
 }
 
-// Add an edge between 'a' and everything in the vector.
-void PhaseIFG::add_vector( uint a, IndexSet *vec ) {
-  // IFG is triangular, so do the inserts where 'a' < 'b'.
-  assert( !_is_square, "only on triangular" );
-  IndexSet *adjs_a = &_adjs[a];
-  if( !vec->count() ) return;
-
-  IndexSetIterator elements(vec);
-  uint neighbor;
-  while ((neighbor = elements.next()) != 0) {
-    add_edge( a, neighbor );
-  }
-}
-
 // Is there an edge between a and b?
 int PhaseIFG::test_edge( uint a, uint b ) const {
   // Sort a and b, so that a is larger

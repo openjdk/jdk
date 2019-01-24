@@ -110,7 +110,6 @@ public:
 
   // Expose internals for speed-critical fast iterators
   uint word_size() const { return size; }
-  uint32_t* EXPOSE() const { return data; }
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if( visited[idx] ) return;
