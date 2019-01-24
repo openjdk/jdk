@@ -61,9 +61,11 @@ public class TestShutdownEvent {
              new TestVMCrash(),
              new TestUnhandledException(),
              new TestRuntimeHalt(),
-             new TestSig("TERM"),
-             new TestSig("HUP"),
-             new TestSig("INT")};
+             // exclude until JDK-8217744 is fixed
+             // new TestSig("TERM"),
+             // new TestSig("HUP"),
+             // new TestSig("INT")
+    };
 
     public static void main(String[] args) throws Throwable {
         for (int i = 0; i < subTests.length; ++i) {
