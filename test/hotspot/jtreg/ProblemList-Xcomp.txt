@@ -28,4 +28,3 @@
 #############################################################################
 
 vmTestbase/vm/mlvm/meth/stress/jni/nativeAndMH/Test.java 8208235 solaris-all
-runtime/appcds/cacheObject/DifferentHeapSizes.java 8210102 solaris-all

@@ -28,4 +28,3 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
-java/lang/Class/forName/modules/TestDriver.java 8205526 solaris-all
