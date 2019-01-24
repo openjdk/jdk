@@ -560,19 +560,14 @@ public class StandardGraphBuilderPlugins {
     }
 
     private static boolean createIntegerExactOperation(GraphBuilderContext b, JavaKind kind, ValueNode x, ValueNode y, IntegerExactOp op) {
-        if (x.isConstant() && y.isConstant()) {
-            b.addPush(kind, createIntegerExactArithmeticNode(x, y, null, op));
+        BytecodeExceptionKind exceptionKind = kind == JavaKind.Int ? BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW : BytecodeExceptionKind.LONG_EXACT_OVERFLOW;
+        AbstractBeginNode exceptionEdge = b.genExplicitExceptionEdge(exceptionKind);
+        if (exceptionEdge != null) {
+            IntegerExactArithmeticSplitNode split = b.addPush(kind, createIntegerExactSplit(x, y, exceptionEdge, op));
+            split.setNext(b.add(new BeginNode()));
             return true;
-        } else {
-            BytecodeExceptionKind exceptionKind = kind == JavaKind.Int ? BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW : BytecodeExceptionKind.LONG_EXACT_OVERFLOW;
-            AbstractBeginNode exceptionEdge = b.genExplicitExceptionEdge(exceptionKind);
-            if (exceptionEdge != null) {
-                IntegerExactArithmeticSplitNode split = b.addPush(kind, createIntegerExactSplit(x, y, exceptionEdge, op));
-                split.setNext(b.add(new BeginNode()));
-                return true;
-            }
-            return false;
         }
+        return false;
     }
 
     private static void registerMathPlugins(InvocationPlugins plugins, boolean allowDeoptimization) {
