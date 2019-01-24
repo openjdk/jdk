@@ -57,7 +57,7 @@ private:
   static void sweeper_wait_for_iteration();
 
   static bool register_entry(ZNMethodTableEntry* table, size_t size, ZNMethodTableEntry entry);
-  static bool unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
+  static void unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
 
   static void rebuild(size_t new_size);
   static void rebuild_if_needed();
