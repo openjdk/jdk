@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,21 +333,10 @@ class Stream<T> extends ExchangeImpl<T> {
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
-        responseBodyCF = new MinimalFuture<>();
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
-        executor.execute(() -> {
-            try {
-                bodySubscriber.getBody().whenComplete((T body, Throwable t) -> {
-                    if (t == null)
-                        responseBodyCF.complete(body);
-                    else
-                        responseBodyCF.completeExceptionally(t);
-                });
-            } catch(Throwable t) {
-                cancelImpl(t);
-            }
-        });
+        responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
+                new MinimalFuture<>(), this::cancelImpl);
 
         if (isCanceled()) {
             Throwable t = getCancelCause();
