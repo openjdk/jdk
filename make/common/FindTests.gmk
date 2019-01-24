@@ -68,7 +68,6 @@ JTREG_TEST_GROUPS += $(sort $(foreach root, $(JTREG_TESTROOTS), \
 # Add Jtreg test groups to list of named tests (test groups, test list, etc)
 # ALL_NAMED_TESTS might have been set by a custom extension
 ALL_NAMED_TESTS += $(JTREG_TEST_GROUPS)
-JCOV_NAMED_TESTS += $(JTREG_TEST_GROUPS)
 
 # Add Gtest
 ALL_NAMED_TESTS += gtest

@@ -479,10 +479,11 @@ ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 
 define DeclareRunTestRecipe
   test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$1")
 
   exploded-test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$1" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 endef
 
@@ -490,21 +491,11 @@ endef
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
 ALL_TEST_TARGETS := $(addprefix test-, $(ALL_NAMED_TESTS))
 
-define DeclareRunJCovTestRecipe
-  jcov-test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
-	    TEST="$1" TEST_OPTS_JCOV=true)
-endef
-
-# jcov-test only makes sense for some of the tests
-$(foreach t, $(JCOV_NAMED_TESTS), $(eval $(call DeclareRunJCovTestRecipe,$t)))
-ALL_JCOV_TEST_TARGETS := $(addprefix jcov-test-, $(JCOV_NAMED_TESTS))
-
 # We only support the "exploded-test-gtest" shortcut
 ALL_EXPLODED_TESTS := gtest
 ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_EXPLODED_TESTS))
 
-ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS) $(ALL_JCOV_TEST_TARGETS)
+ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
 ################################################################################
 # Build tests and microbenchmarks
@@ -571,10 +562,11 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
 # Run tests
 
 test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$(TEST)")
 
 exploded-test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
 jcov-test:
@@ -891,7 +883,6 @@ else
   # Declare dependency for all generated test targets
   $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
   $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
-  $(ALL_JCOV_TEST_TARGETS): jcov-image test-image
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))

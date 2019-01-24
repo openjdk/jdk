@@ -556,7 +556,7 @@ define SetupRunGtestTestBody
     ))
   endif
 
-  run-test-$1: $$($1_AOT_TARGETS)
+  run-test-$1: pre-run-test $$($1_AOT_TARGETS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -596,7 +596,11 @@ define SetupRunGtestTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  TARGETS += run-test-$1 parse-test-$1
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1 run-test-$1 parse-test-$1
+  TEST_TARGETS += parse-test-$1
+
 endef
 
 ################################################################################
@@ -662,7 +666,7 @@ define SetupRunMicroTestBody
     $1_MICRO_WARMUP_TIME := -w $$(MICRO_WARMUP_TIME)
   endif
 
-  run-test-$1:
+  run-test-$1: pre-run-test
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -702,7 +706,11 @@ define SetupRunMicroTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  TARGETS += run-test-$1 parse-test-$1
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1 run-test-$1 parse-test-$1
+  TEST_TARGETS += parse-test-$1
+
 endef
 
 ################################################################################
@@ -872,7 +880,7 @@ define SetupRunJtregTestBody
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 
-  run-test-$1: clean-workdir-$1 $$($1_AOT_TARGETS)
+  run-test-$1: pre-run-test clean-workdir-$1 $$($1_AOT_TARGETS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -921,7 +929,11 @@ define SetupRunJtregTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  TARGETS += run-test-$1 parse-test-$1
+  $1: run-test-$1 parse-test-$1 clean-workdir-$1
+
+  TARGETS += $1 run-test-$1 parse-test-$1 clean-workdir-$1
+  TEST_TARGETS += parse-test-$1
+
 endef
 
 ################################################################################
@@ -959,7 +971,7 @@ define SetupRunSpecialTestBody
     $$(error Invalid special test specification: $$($1_TEST_NAME))
   endif
 
-  run-test-$1: $(TEST_PREREQS)
+  run-test-$1: pre-run-test
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -983,7 +995,11 @@ define SetupRunSpecialTestBody
 	$$(eval $1_ERROR := 0)
 	$$(eval $1_TOTAL := 0)
 
-  TARGETS += run-test-$1 parse-test-$1
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1 run-test-$1 parse-test-$1
+  TEST_TARGETS += parse-test-$1
+
 endef
 
 ################################################################################
@@ -1045,12 +1061,36 @@ endif
 # The main target for RunTests.gmk
 ################################################################################
 
-# The SetupRun*Test functions have populated TARGETS.
+#
+# Provide hooks for adding functionality before and after all tests are run.
+#
 
+$(call LogInfo, RunTest setup starting)
+
+# This target depends on all actual test having been run (TEST_TARGETS has beeen
+# populated by the SetupRun*Test functions). If you need to provide a teardown
+# hook, you must let it depend on this target.
+run-all-tests: $(TEST_TARGETS)
+	$(call LogInfo, RunTest teardown starting)
+
+# This is an abstract target that will be run before any actual tests. Add your
+# target as a dependency to thisif you need "setup" type functionality executed
+# before all tests.
+pre-run-test:
+	$(call LogInfo, RunTest setup done)
+
+# This is an abstract target that will be run after all actual tests, but before
+# the test summary. If you need "teardown" type functionality, add your target
+# as a dependency on this, and let the teardown target depend on run-all-tests.
+post-run-test: run-all-tests
+	$(call LogInfo, RunTest teardown done)
+
+#
+# Create and print a table of the result of all tests run
+#
 TEST_FAILURE := false
 
-run-test: $(TARGETS)
-        # Create and print a table of the result of all tests run
+run-test-report: post-run-test
 	$(RM) $(TEST_SUMMARY).old 2> /dev/null
 	$(MV) $(TEST_SUMMARY) $(TEST_SUMMARY).old 2> /dev/null || true
 	$(RM) $(TEST_LAST_IDS).old 2> /dev/null
@@ -1094,6 +1134,11 @@ run-test: $(TARGETS)
 	$(CAT) $(TEST_SUMMARY)
 	$(ECHO)
 
+# The main run-test target
+run-test: run-test-report
+
+TARGETS += run-all-tests pre-run-test post-run-test run-test-report run-test
+
 ################################################################################
 # Setup JCov
 ################################################################################
@@ -1132,14 +1177,21 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(call LogWarn, Stopping JCov Grabber...)
 	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600
 
-  jcov-gen-report: run-test jcov-stop-grabber
+  jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
 	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE)
 
-  $(TARGETS): jcov-start-grabber
-  all: jcov-gen-report
+  TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \
+      jcov-gen-report
+
+  # Hook this into the framework at appropriate places
+  pre-run-test: jcov-start-grabber
+
+  post-run-test: jcov-gen-report
+
+  jcov-gen-report: run-all-tests
 
 endif
 
@@ -1147,4 +1199,4 @@ endif
 
 all: run-test
 
-.PHONY: default all run-test $(TARGETS)
+.PHONY: default all $(TARGETS)
