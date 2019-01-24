@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1560,6 +1560,15 @@ charset x-IBM964 IBM964
     alias   ibm-964
     alias   ibm-euctw
     alias   964
+
+charset x-IBM29626C IBM29626C
+    package sun.nio.cs.ext
+    type    template
+    alias   cp29626c            # JDK historical
+    alias   ibm29626c
+    alias   ibm-29626c
+    alias   29626c
+    alias   ibm-eucjp
 
 charset x-IBM33722 IBM33722
     package sun.nio.cs.ext
