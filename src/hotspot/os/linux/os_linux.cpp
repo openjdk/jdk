@@ -2436,26 +2436,6 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
-  struct timespec ts;
-  // Semaphore's are always associated with CLOCK_REALTIME
-  os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-  // see os_posix.cpp for discussion on overflow checking
-  if (sec >= MAX_SECS) {
-    ts.tv_sec += MAX_SECS;
-    ts.tv_nsec = 0;
-  } else {
-    ts.tv_sec += sec;
-    ts.tv_nsec += nsec;
-    if (ts.tv_nsec >= NANOSECS_PER_SEC) {
-      ts.tv_nsec -= NANOSECS_PER_SEC;
-      ++ts.tv_sec; // note: this must be <= max_secs
-    }
-  }
-
-  return ts;
-}
-
 extern "C" {
   typedef void (*sa_handler_t)(int);
   typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
@@ -4327,7 +4307,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+    if (sr_semaphore.timedwait(2)) {
       break;
     } else {
       // timeout
@@ -4361,7 +4341,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }

@@ -2565,7 +2565,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(2)) {
       break;
     } else {
       // timeout
@@ -2599,7 +2599,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }

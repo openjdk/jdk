@@ -132,6 +132,8 @@ public:
   static bool supports_monotonic_clock() { return false; }
 
 #endif
+
+  static void to_RTC_abstime(timespec* abstime, int64_t millis);
 };
 
 /*

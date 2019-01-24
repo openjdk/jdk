@@ -2011,13 +2011,6 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
-  struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
-
-  return ts;
-}
-
 extern "C" {
   typedef void (*sa_handler_t)(int);
   typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
@@ -3493,7 +3486,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2000 * NANOSECS_PER_MILLISEC))) {
+    if (sr_semaphore.timedwait(2000)) {
       break;
     } else {
       // timeout
@@ -3527,7 +3520,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }
@@ -4112,6 +4105,9 @@ void os::init(void) {
     Solaris::_pthread_setname_np =  // from 11.3
         (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
   }
+
+  // Shared Posix initialization
+  os::Posix::init();
 }
 
 // To install functions for atexit system call
@@ -4217,6 +4213,9 @@ jint os::init_2(void) {
 
   // Init pset_loadavg function pointer
   init_pset_getloadavg_ptr();
+
+  // Shared Posix initialization
+  os::Posix::init_2();
 
   return JNI_OK;
 }
