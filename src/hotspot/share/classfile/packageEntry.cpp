@@ -211,17 +211,22 @@ void PackageEntryTable::add_entry(int index, PackageEntry* new_entry) {
   Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
-// Create package in loader's package entry table and return the entry.
-// If entry already exists, return null.  Assume Module lock was taken by caller.
-PackageEntry* PackageEntryTable::locked_create_entry_or_null(Symbol* name, ModuleEntry* module) {
+// Create package entry in loader's package entry table.  Assume Module lock
+// was taken by caller.
+void PackageEntryTable::locked_create_entry(Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  // Check if package already exists.  Return NULL if it does.
-  if (locked_lookup_only(name) != NULL) {
-    return NULL;
-  } else {
-    PackageEntry* entry = new_entry(compute_hash(name), name, module);
-    add_entry(index_for(name), entry);
-    return entry;
+  assert(locked_lookup_only(name) == NULL, "Package entry already exists");
+  PackageEntry* entry = new_entry(compute_hash(name), name, module);
+  add_entry(index_for(name), entry);
+}
+
+// Create package entry in loader's package entry table if it does not already
+// exist.  Assume Module lock was taken by caller.
+void PackageEntryTable::locked_create_entry_if_not_exist(Symbol* name, ModuleEntry* module) {
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
+  // Check if package entry already exists.  If not, create it.
+  if (locked_lookup_only(name) == NULL) {
+    locked_create_entry(name, module);
   }
 }
 

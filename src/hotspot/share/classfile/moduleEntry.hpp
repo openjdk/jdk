@@ -236,14 +236,14 @@ public:
     return (ModuleEntry*)Hashtable<Symbol*, mtModule>::bucket(i);
   }
 
-  // Create module in loader's module entry table, if already exists then
-  // return null.  Assume Module_lock has been locked by caller.
-  ModuleEntry* locked_create_entry_or_null(Handle module_handle,
-                                           bool is_open,
-                                           Symbol* module_name,
-                                           Symbol* module_version,
-                                           Symbol* module_location,
-                                           ClassLoaderData* loader_data);
+  // Create module in loader's module entry table.  Assume Module_lock
+  // has been locked by caller.
+  ModuleEntry* locked_create_entry(Handle module_handle,
+                                   bool is_open,
+                                   Symbol* module_name,
+                                   Symbol* module_version,
+                                   Symbol* module_location,
+                                   ClassLoaderData* loader_data);
 
   // Only lookup module within loader's module entry table.  The table read is lock-free.
   ModuleEntry* lookup_only(Symbol* name);
@@ -253,7 +253,10 @@ public:
 
   // Special handling for java.base
   static ModuleEntry* javabase_moduleEntry()                   { return _javabase_module; }
-  static void set_javabase_moduleEntry(ModuleEntry* java_base) { _javabase_module = java_base; }
+  static void set_javabase_moduleEntry(ModuleEntry* java_base) {
+    assert(_javabase_module == NULL, "_javabase_module is already defined");
+    _javabase_module = java_base;
+  }
 
   static bool javabase_defined() { return ((_javabase_module != NULL) &&
                                            (_javabase_module->module() != NULL)); }

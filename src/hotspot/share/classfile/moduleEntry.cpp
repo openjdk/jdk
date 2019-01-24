@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,23 +398,22 @@ void ModuleEntryTable::add_entry(int index, ModuleEntry* new_entry) {
   Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
-ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,
-                                                           bool is_open,
-                                                           Symbol* module_name,
-                                                           Symbol* module_version,
-                                                           Symbol* module_location,
-                                                           ClassLoaderData* loader_data) {
-  assert(module_name != NULL, "ModuleEntryTable locked_create_entry_or_null should never be called for unnamed module.");
+// Create an entry in the class loader's module_entry_table.  It is the
+// caller's responsibility to ensure that the entry has not already been
+// created.
+ModuleEntry* ModuleEntryTable::locked_create_entry(Handle module_handle,
+                                                   bool is_open,
+                                                   Symbol* module_name,
+                                                   Symbol* module_version,
+                                                   Symbol* module_location,
+                                                   ClassLoaderData* loader_data) {
+  assert(module_name != NULL, "ModuleEntryTable locked_create_entry should never be called for unnamed module.");
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  // Check if module already exists.
-  if (lookup_only(module_name) != NULL) {
-    return NULL;
-  } else {
-    ModuleEntry* entry = new_entry(compute_hash(module_name), module_handle, is_open, module_name,
-                                   module_version, module_location, loader_data);
-    add_entry(index_for(module_name), entry);
-    return entry;
-  }
+  assert(lookup_only(module_name) == NULL, "Module already exists");
+  ModuleEntry* entry = new_entry(compute_hash(module_name), module_handle, is_open, module_name,
+                                 module_version, module_location, loader_data);
+  add_entry(index_for(module_name), entry);
+  return entry;
 }
 
 // lookup_only by Symbol* to find a ModuleEntry.

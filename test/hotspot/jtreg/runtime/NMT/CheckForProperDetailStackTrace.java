@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class CheckForProperDetailStackTrace {
     public static String stackTraceDefault =
         ".*Hashtable.*allocate_new_entry.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*locked_create_entry_or_null.*\n" +
+        ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
     /* The stack trace we look for on Solaris and Windows slowdebug builds. For some
@@ -50,12 +50,12 @@ public class CheckForProperDetailStackTrace {
     public static String stackTraceAllocateHeap =
         ".*AllocateHeap.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*locked_create_entry_or_null.*\n" +
+        ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
     /* A symbol that should always be present in NMT detail output. */
     private static String expectedSymbol =
-        "locked_create_entry_or_null";
+        "locked_create_entry";
 
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
