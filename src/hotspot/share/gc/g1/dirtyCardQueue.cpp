@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -55,72 +56,6 @@ public:
   }
 };
 
-// Represents a set of free small integer ids.
-class FreeIdSet : public CHeapObj<mtGC> {
-  enum {
-    end_of_list = UINT_MAX,
-    claimed = UINT_MAX - 1
-  };
-
-  uint _size;
-  Monitor* _mon;
-
-  uint* _ids;
-  uint _hd;
-  uint _waiters;
-  uint _claimed;
-
-public:
-  FreeIdSet(uint size, Monitor* mon);
-  ~FreeIdSet();
-
-  // Returns an unclaimed parallel id (waiting for one to be released if
-  // necessary).
-  uint claim_par_id();
-
-  void release_par_id(uint id);
-};
-
-FreeIdSet::FreeIdSet(uint size, Monitor* mon) :
-  _size(size), _mon(mon), _hd(0), _waiters(0), _claimed(0)
-{
-  guarantee(size != 0, "must be");
-  _ids = NEW_C_HEAP_ARRAY(uint, size, mtGC);
-  for (uint i = 0; i < size - 1; i++) {
-    _ids[i] = i+1;
-  }
-  _ids[size-1] = end_of_list; // end of list.
-}
-
-FreeIdSet::~FreeIdSet() {
-  FREE_C_HEAP_ARRAY(uint, _ids);
-}
-
-uint FreeIdSet::claim_par_id() {
-  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  while (_hd == end_of_list) {
-    _waiters++;
-    _mon->wait(Mutex::_no_safepoint_check_flag);
-    _waiters--;
-  }
-  uint res = _hd;
-  _hd = _ids[res];
-  _ids[res] = claimed;  // For debugging.
-  _claimed++;
-  return res;
-}
-
-void FreeIdSet::release_par_id(uint id) {
-  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  assert(_ids[id] == claimed, "Precondition.");
-  _ids[id] = _hd;
-  _hd = id;
-  _claimed--;
-  if (_waiters > 0) {
-    _mon->notify_all();
-  }
-}
-
 DirtyCardQueue::DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
@@ -144,6 +79,10 @@ DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   _all_active = true;
 }
 
+DirtyCardQueueSet::~DirtyCardQueueSet() {
+  delete _free_ids;
+}
+
 // Determines how many mutator threads can process the buffers in parallel.
 uint DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
@@ -156,7 +95,7 @@ void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
   PtrQueueSet::initialize(cbl_mon, allocator);
   _shared_dirty_card_queue.set_lock(lock);
   if (init_free_ids) {
-    _free_ids = new FreeIdSet(num_par_ids(), cbl_mon);
+    _free_ids = new G1FreeIdSet(0, num_par_ids());
   }
 }
 
