@@ -756,6 +756,16 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           lrg._is_float = 1;
         }
 
+        // Check for twice prior spilling.  Once prior spilling might have
+        // spilled 'soft', 2nd prior spill should have spilled 'hard' and
+        // further spilling is unlikely to make progress.
+        if (_spilled_once.test(n->_idx)) {
+          lrg._was_spilled1 = 1;
+          if (_spilled_twice.test(n->_idx)) {
+            lrg._was_spilled2 = 1;
+          }
+        }
+
 #ifndef PRODUCT
         // Collect bits not used by product code, but which may be useful for
         // debugging.
@@ -766,16 +776,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           uint clidx = _lrg_map.live_range_id(n->in(idx));
           LRG& copy_src = lrgs(clidx);
           copy_src._has_copy = 1;
-        }
-
-        // Check for twice prior spilling.  Once prior spilling might have
-        // spilled 'soft', 2nd prior spill should have spilled 'hard' and
-        // further spilling is unlikely to make progress.
-        if (_spilled_once.test(n->_idx)) {
-          lrg._was_spilled1 = 1;
-          if (_spilled_twice.test(n->_idx)) {
-            lrg._was_spilled2 = 1;
-          }
         }
 
         if (trace_spilling() && lrg._def != NULL) {
