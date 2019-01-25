@@ -72,7 +72,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             ) \
         ))
     export _NT_SYMBOL_PATH
-    $(info _NT_SYMBOL_PATH=$(_NT_SYMBOL_PATH))
+    $(call LogDebug, Rewriting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
   endif
 endif
 
@@ -80,6 +80,9 @@ endif
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, RunTests.gmk))
 ################################################################################
+
+# This is the JDK that we will test
+JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -108,6 +111,24 @@ GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
     $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher))
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
+
+ifeq ($(TEST_OPTS_JCOV), true)
+  JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
+  JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
+  JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
+  JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
+  JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
+
+  ifneq ($(JCOV_IMAGE_DIR), )
+    # Replace our normal test JDK with the JCov image, if present.
+    JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
+  endif
+
+  JCOV_ENVIRONMENT := JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
+      _JAVA_OPTIONS="$(JCOV_MEM_OPTIONS)"
+  JTREG_JCOV_OPTIONS := -e:JAVA_TOOL_OPTIONS='$(JCOV_MEM_OPTIONS)' \
+      -e:_JAVA_OPTIONS='$(JCOV_MEM_OPTIONS)'
+endif
 
 ################################################################################
 # Optionally create AOT libraries for specified modules before running tests.
@@ -145,17 +166,17 @@ define SetupAotModuleBody
     $1_JAOTC_OPTS += --compile-with-assertions
   endif
 
-  $$($1_AOT_LIB): $$(JDK_IMAGE_DIR)/release \
+  $$($1_AOT_LIB): $$(JDK_UNDER_TEST)/release \
       $$(call DependOnVariable, $1_JAOTC_OPTS) \
-      $$(call DependOnVariable, JDK_IMAGE_DIR)
+      $$(call DependOnVariable, JDK_UNDER_TEST)
 	$$(call LogWarn, Generating $$(patsubst $$(OUTPUTDIR)/%, %, $$@))
 	$$(call MakeTargetDir)
 	$$(call ExecuteWithLog, $$@, \
-	    $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/jaotc \
+	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/jaotc \
 	        $$($1_JAOTC_OPTS) --output $$@ --module $$($1_MODULE) \
 	)
 	$$(call ExecuteWithLog, $$@.check, \
-	    $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java \
+	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/java \
 	        $$($1_VM_OPTIONS) -XX:+UnlockDiagnosticVMOptions \
 	        -XX:+PrintAOT -XX:+UseAOTStrictLoading \
 	        -XX:AOTLibrary=$$@ -version \
@@ -562,7 +583,7 @@ define SetupRunGtestTestBody
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
-	        -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
+	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
 	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
 	        $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
 	        $$(GTEST_JAVA_OPTIONS) $$($1_AOT_OPTIONS) \
@@ -634,7 +655,7 @@ define SetupRunMicroTestBody
   $1_TEST_NAME := $$(strip $$(patsubst micro:%, %, $$($1_TEST)))
 
   $$(eval $$(call SetMicroValue,$1,MICRO_BENCHMARKS_JAR,$$(TEST_IMAGE_DIR)/micro/benchmarks.jar))
-  $$(eval $$(call SetMicroValue,$1,MICRO_TEST_JDK,$$(JDK_IMAGE_DIR)))
+  $$(eval $$(call SetMicroValue,$1,MICRO_TEST_JDK,$$(JDK_UNDER_TEST)))
   $$(eval $$(call SetMicroValue,$1,MICRO_JAVA_OPTIONS))
 
   # Current tests needs to open java.io
@@ -889,7 +910,7 @@ define SetupRunJtregTestBody
 	    $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
 	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
 	        $$($1_JTREG_BASIC_OPTIONS) \
-	        -testjdk:$$(JDK_IMAGE_DIR) \
+	        -testjdk:$$(JDK_UNDER_TEST) \
 	        -dir:$$(JTREG_TOPDIR) \
 	        -reportDir:$$($1_TEST_RESULTS_DIR) \
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
@@ -1144,21 +1165,6 @@ TARGETS += run-all-tests pre-run-test post-run-test run-test-report run-test
 ################################################################################
 
 ifeq ($(TEST_OPTS_JCOV), true)
-
-  JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
-  JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
-  JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
-  JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
-  JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
-
-  ifneq ($(JCOV_IMAGE_DIR), )
-    JDK_IMAGE_DIR := $(JCOV_IMAGE_DIR)
-  endif
-
-  JCOV_ENVIRONMENT := JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
-      _JAVA_OPTIONS="$(JCOV_MEM_OPTIONS)"
-  JTREG_JCOV_OPTIONS := -e:JAVA_TOOL_OPTIONS='$(JCOV_MEM_OPTIONS)' \
-      -e:_JAVA_OPTIONS='$(JCOV_MEM_OPTIONS)'
 
   jcov-do-start-grabber:
 	$(call MakeDir, $(JCOV_OUTPUT_DIR))
