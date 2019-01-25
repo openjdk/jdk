@@ -3859,31 +3859,20 @@ void MacroAssembler::load_reverse_32(Register dst, Register src) {
 // Due to register shortage, setting tc3 may overwrite table. With the return offset
 // at hand, the original table address can be easily reconstructed.
 int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3) {
+  assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
+  // Point to 4 byte folding tables (byte-reversed version for Big Endian)
+  // Layout: See StubRoutines::generate_crc_constants.
 #ifdef VM_LITTLE_ENDIAN
-  // This is what we implement (the DOLIT4 part):
-  // ========================================================================= */
-  // #define DOLIT4 c ^= *buf4++; \
-  //         c = crc_table[3][c & 0xff] ^ crc_table[2][(c >> 8) & 0xff] ^ \
-  //             crc_table[1][(c >> 16) & 0xff] ^ crc_table[0][c >> 24]
-  // #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
-  // ========================================================================= */
-  const int ix0 = 3*(4*CRC32_COLUMN_SIZE);
-  const int ix1 = 2*(4*CRC32_COLUMN_SIZE);
-  const int ix2 = 1*(4*CRC32_COLUMN_SIZE);
-  const int ix3 = 0*(4*CRC32_COLUMN_SIZE);
+  const int ix0 = 3 * CRC32_TABLE_SIZE;
+  const int ix1 = 2 * CRC32_TABLE_SIZE;
+  const int ix2 = 1 * CRC32_TABLE_SIZE;
+  const int ix3 = 0 * CRC32_TABLE_SIZE;
 #else
-  // This is what we implement (the DOBIG4 part):
-  // =========================================================================
-  // #define DOBIG4 c ^= *++buf4; \
-  //         c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ \
-  //             crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
-  // #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
-  // =========================================================================
-  const int ix0 = 4*(4*CRC32_COLUMN_SIZE);
-  const int ix1 = 5*(4*CRC32_COLUMN_SIZE);
-  const int ix2 = 6*(4*CRC32_COLUMN_SIZE);
-  const int ix3 = 7*(4*CRC32_COLUMN_SIZE);
+  const int ix0 = 1 * CRC32_TABLE_SIZE;
+  const int ix1 = 2 * CRC32_TABLE_SIZE;
+  const int ix2 = 3 * CRC32_TABLE_SIZE;
+  const int ix3 = 4 * CRC32_TABLE_SIZE;
 #endif
   assert_different_registers(table, tc0, tc1, tc2);
   assert(table == tc3, "must be!");
@@ -3898,7 +3887,7 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
 
 /**
  * uint32_t crc;
- * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
+ * table[crc & 0xFF] ^ (crc >> 8);
  */
 void MacroAssembler::fold_byte_crc32(Register crc, Register val, Register table, Register tmp) {
   assert_different_registers(crc, table, tmp);
@@ -3914,14 +3903,6 @@ void MacroAssembler::fold_byte_crc32(Register crc, Register val, Register table,
   }
   lwzx(tmp, table, tmp);
   xorr(crc, crc, tmp);
-}
-
-/**
- * uint32_t crc;
- * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
- */
-void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp) {
-  fold_byte_crc32(crc, crc, table, tmp);
 }
 
 /**
@@ -3975,9 +3956,7 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
  * Implementation according to jdk/src/share/native/java/util/zip/zlib-1.2.8/crc32.c
  */
 // A note on the lookup table address(es):
-// The lookup table consists of two sets of four columns each.
-// The columns {0..3} are used for little-endian machines.
-// The columns {4..7} are used for big-endian machines.
+// The implementation uses 4 table columns (byte-reversed versions for Big Endian).
 // To save the effort of adding the column offset to the table address each time
 // a table element is looked up, it is possible to pass the pre-calculated
 // column addresses.
@@ -4112,47 +4091,16 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
 }
 
 /**
- * @param crc   register containing existing CRC (32-bit)
- * @param buf   register pointing to input byte buffer (byte*)
- * @param len   register containing number of bytes
- * @param table register pointing to CRC table
- *
- * Uses R7_ARG5, R8_ARG6 as work registers.
- */
-void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3,
-                                        bool invertCRC) {
-  assert_different_registers(crc, buf, len, table);
-
-  Register  data = t0;                   // Holds the current byte to be folded into crc.
-
-  BLOCK_COMMENT("kernel_crc32_1byte {");
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                      // 1s complement of crc
-  }
-
-  // Process all bytes in a single-byte loop.
-  update_byteLoop_crc32(crc, buf, len, table, data, true);
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                      // 1s complement of crc
-  }
-  BLOCK_COMMENT("} kernel_crc32_1byte");
-}
-
-/**
  * @param crc             register containing existing CRC (32-bit)
  * @param buf             register pointing to input byte buffer (byte*)
  * @param len             register containing number of bytes
- * @param table           register pointing to CRC table
- * @param constants       register pointing to CRC table for 128-bit aligned memory
- * @param t0-t5           temp registers
+ * @param constants       register pointing to precomputed constants
+ * @param t0-t6           temp registers
  */
-void MacroAssembler::kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register table,
-                                         Register constants, Register t0, Register t1, Register t2,
-                                         Register t3, Register t4, Register t5, bool invertCRC) {
-  assert_different_registers(crc, buf, len, table);
+void MacroAssembler::kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
+                                         Register t0, Register t1, Register t2, Register t3,
+                                         Register t4, Register t5, Register t6, bool invertCRC) {
+  assert_different_registers(crc, buf, len, constants);
 
   Label L_tail;
 
@@ -4177,14 +4125,16 @@ void MacroAssembler::kernel_crc32_vpmsum(Register crc, Register buf, Register le
   blt(CCR0, L_tail); // len - prealign < threshold?
 
   subf(len, prealign, len);
-  update_byteLoop_crc32(crc, buf, prealign, table, t2, false);
+  update_byteLoop_crc32(crc, buf, prealign, constants, t2, false);
 
   // Calculate from first aligned address as far as possible.
-  kernel_crc32_vpmsum_aligned(crc, buf, len, constants, t0, t1, t2, t3, t4, t5);
+  addi(constants, constants, CRC32_TABLE_SIZE); // Point to vector constants.
+  kernel_crc32_vpmsum_aligned(crc, buf, len, constants, t0, t1, t2, t3, t4, t5, t6);
+  addi(constants, constants, -CRC32_TABLE_SIZE); // Point to table again.
 
   // Remaining bytes.
   BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, t2, false);
+  update_byteLoop_crc32(crc, buf, len, constants, t2, false);
 
   if (invertCRC) {
     nand(crc, crc, crc);                      // 1s complement of crc
@@ -4198,10 +4148,10 @@ void MacroAssembler::kernel_crc32_vpmsum(Register crc, Register buf, Register le
  * @param buf             register pointing to input byte buffer (byte*)
  * @param len             register containing number of bytes (will get updated to remaining bytes)
  * @param constants       register pointing to CRC table for 128-bit aligned memory
- * @param t0-t5           temp registers
+ * @param t0-t6           temp registers
  */
-void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len,
-    Register constants, Register t0, Register t1, Register t2, Register t3, Register t4, Register t5) {
+void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len, Register constants,
+    Register t0, Register t1, Register t2, Register t3, Register t4, Register t5, Register t6) {
 
   // Save non-volatile vector registers (frameless).
   Register offset = t1;
@@ -4217,7 +4167,6 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
 #endif
   offsetInt -= 8; std(R14, offsetInt, R1_SP);
   offsetInt -= 8; std(R15, offsetInt, R1_SP);
-  offsetInt -= 8; std(R16, offsetInt, R1_SP);
 
   // Implementation uses an inner loop which uses between 256 and 16 * unroll_factor
   // bytes per iteration. The basic scheme is:
@@ -4235,10 +4184,10 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
             inner_consts_size = (unroll_factor / unroll_factor2) * 16;
 
   // Support registers.
-  Register offs[] = { noreg, t0, t1, t2, t3, t4, t5, crc /* will live in VCRC */ };
+  Register offs[] = { noreg, t0, t1, t2, t3, t4, t5, t6 };
   Register num_bytes = R14,
            loop_count = R15,
-           cur_const = R16;
+           cur_const = crc; // will live in VCRC
   // Constant array for outer loop: unroll_factor2 - 1 registers,
   // Constant array for inner loop: unroll_factor / unroll_factor2 registers.
   VectorRegister consts0[] = { VR16, VR17, VR18, VR19, VR20, VR21, VR22 },
@@ -4470,7 +4419,6 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
 #endif
   offsetInt -= 8;  ld(R14, offsetInt, R1_SP);
   offsetInt -= 8;  ld(R15, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R16, offsetInt, R1_SP);
 }
 
 void MacroAssembler::crc32(Register crc, Register buf, Register len, Register t0, Register t1, Register t2,
@@ -4479,27 +4427,9 @@ void MacroAssembler::crc32(Register crc, Register buf, Register len, Register t0
                                      : StubRoutines::crc_table_addr()   , R0);
 
   if (VM_Version::has_vpmsumb()) {
-    load_const_optimized(t1, is_crc32c ? StubRoutines::ppc64::crc32c_constants()
-                                       : StubRoutines::ppc64::crc_constants()   , R0);
     kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
   } else {
     kernel_crc32_1word(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, t0, !is_crc32c);
-  }
-}
-
-void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp, bool invertCRC) {
-  assert_different_registers(crc, buf, /* len,  not used!! */ table, tmp);
-
-  BLOCK_COMMENT("kernel_crc32_singleByte:");
-  if (invertCRC) {
-    nand(crc, crc, crc);                // 1s complement of crc
-  }
-
-  lbz(tmp, 0, buf);                     // Byte from buffer, zero-extended.
-  update_byte_crc32(crc, tmp, table);
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                // 1s complement of crc
   }
 }
 

@@ -3496,19 +3496,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr = (address)StubRoutines::ppc64::_crc_table;
-      if (VM_Version::has_vpmsumb()) {
-        StubRoutines::ppc64::_crc_constants = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32_POLY);
-      }
+      StubRoutines::_crc_table_adr = StubRoutines::generate_crc_constants(REVERSE_CRC32_POLY);
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes(false);
     }
 
     // CRC32C Intrinsics.
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = (address)StubRoutines::ppc64::_crc32c_table;
-      if (VM_Version::has_vpmsumb()) {
-        StubRoutines::ppc64::_crc32c_constants = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32C_POLY);
-      }
+      StubRoutines::_crc32c_table_addr = StubRoutines::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
   }

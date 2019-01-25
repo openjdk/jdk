@@ -1815,25 +1815,23 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     // R15_esp is callers operand stack pointer, i.e. it points to the parameters.
     const Register argP    = R15_esp;
     const Register crc     = R3_ARG1;  // crc value
-    const Register data    = R4_ARG2;  // address of java byte value (kernel_crc32 needs address)
-    const Register dataLen = R5_ARG3;  // source data len (1 byte). Not used because calling the single-byte emitter.
-    const Register table   = R6_ARG4;  // address of crc32 table
-    const Register tmp     = dataLen;  // Reuse unused len register to show we don't actually need a separate tmp here.
+    const Register data    = R4_ARG2;
+    const Register table   = R5_ARG3;  // address of crc32 table
 
     BLOCK_COMMENT("CRC32_update {");
 
     // Arguments are reversed on java expression stack
 #ifdef VM_LITTLE_ENDIAN
-    __ addi(data, argP, 0+1*wordSize); // (stack) address of byte value. Emitter expects address, not value.
+    int data_offs = 0+1*wordSize;      // (stack) address of byte value. Emitter expects address, not value.
                                        // Being passed as an int, the single byte is at offset +0.
 #else
-    __ addi(data, argP, 3+1*wordSize); // (stack) address of byte value. Emitter expects address, not value.
+    int data_offs = 3+1*wordSize;      // (stack) address of byte value. Emitter expects address, not value.
                                        // Being passed from java as an int, the single byte is at offset +3.
 #endif
-    __ lwz(crc,  2*wordSize, argP);    // Current crc state, zero extend to 64 bit to have a clean register.
-
+    __ lwz(crc, 2*wordSize, argP);     // Current crc state, zero extend to 64 bit to have a clean register.
+    __ lbz(data, data_offs, argP);     // Byte from buffer, zero-extended.
     __ load_const_optimized(table, StubRoutines::crc_table_addr(), R0);
-    __ kernel_crc32_singleByte(crc, data, dataLen, table, tmp, true);
+    __ kernel_crc32_singleByteReg(crc, data, table, true);
 
     // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
     __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
