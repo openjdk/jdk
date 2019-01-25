@@ -147,6 +147,7 @@ org.graalvm.compiler.core.test.CheckGraalInvariants                             
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
 org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
 org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
+org.graalvm.compiler.debug.test.DebugContextTest                                 8205081
 
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 
