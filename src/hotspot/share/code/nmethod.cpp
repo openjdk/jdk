@@ -1100,7 +1100,11 @@ void nmethod::make_unloaded() {
          "must be at safepoint");
 
   // Unregister must be done before the state change
-  Universe::heap()->unregister_nmethod(this);
+  {
+    MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
+                     Mutex::_no_safepoint_check_flag);
+    Universe::heap()->unregister_nmethod(this);
+  }
 
   // Log the unloading.
   log_state_change();

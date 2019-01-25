@@ -83,9 +83,9 @@ TESTLIBRARY_SRC_FILES = $(TESTLIBRARY_SRC_DIR)/Asserts.java \
 
 .PHONY: cleantmp
 
-all: JAR
+all: $(DIST_JAR)
 
-JAR: INIT COMPILE manifest
+$(DIST_JAR): INIT COMPILE manifest
 	$(JAR) cfm $(DIST_JAR) $(MANIFEST) -C $(CLASSES_DIR) .
 
 manifest:
@@ -107,7 +107,7 @@ filelist: $(SRC_FILES)
 INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
 
-install: clean_testbase testgroup testroot copytestlibrary copyaot JAR cleantmp
+install: clean_testbase testgroup testroot copytestlibrary copyaot $(DIST_JAR) cleantmp
 	$(JAVA) --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
 
 clean_testbase:

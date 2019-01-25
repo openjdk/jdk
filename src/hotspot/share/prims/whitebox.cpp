@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
+#if INCLUDE_AOT
+#include "aot/aotLoader.hpp"
+#endif // INCLUDE_AOT
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
@@ -2118,6 +2121,14 @@ WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
   return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
 WB_END
 
+WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
+  jint result = 0;
+#if INCLUDE_AOT
+  result = (jint) AOTLoader::heaps_count();
+#endif
+  return result;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2350,6 +2361,7 @@ static JNINativeMethod methods[] = {
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodRemovedCount",     CC"()I",       (void*)&WB_ResolvedMethodRemovedCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
+  {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
 };
 
 

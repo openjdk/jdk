@@ -39,7 +39,7 @@ class ByteCodeGenerator extends TestsGenerator {
     private static final String DEFAULT_SUFFIX = "bytecode_tests";
 
     ByteCodeGenerator() {
-        super(DEFAULT_SUFFIX);
+        super(DEFAULT_SUFFIX, s -> new String[0], "-Xcomp");
     }
 
     ByteCodeGenerator(String suffix, Function<String, String[]> preRunActions, String jtDriverOptions) {
