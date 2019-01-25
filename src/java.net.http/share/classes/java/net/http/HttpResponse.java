@@ -47,6 +47,7 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscription;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLSession;
 import jdk.internal.net.http.BufferingSubscriber;
@@ -1282,17 +1283,26 @@ public interface HttpResponse<T> {
          *
          * <p> The mapping function is executed using the client's {@linkplain
          * HttpClient#executor() executor}, and can therefore be used to map any
-         * response body type, including blocking {@link InputStream}, as shown
-         * in the following example which uses a well-known JSON parser to
+         * response body type, including blocking {@link InputStream}.
+         * However, performing any blocking operation in the mapper function
+         * runs the risk of blocking the executor's thread for an unknown
+         * amount of time (at least until the blocking operation finishes),
+         * which may end up starving the executor of available threads.
+         * Therefore, in the case where mapping to the desired type might
+         * block (e.g. by reading on the {@code InputStream}), then mapping
+         * to a {@link java.util.function.Supplier Supplier} of the desired
+         * type and deferring the blocking operation until {@link Supplier#get()
+         * Supplier::get} is invoked by the caller's thread should be preferred,
+         * as shown in the following example which uses a well-known JSON parser to
          * convert an {@code InputStream} into any annotated Java type.
          *
          * <p>For example:
-         * <pre> {@code  public static <W> BodySubscriber<W> asJSON(Class<W> targetType) {
+         * <pre> {@code  public static <W> BodySubscriber<Supplier<W>> asJSON(Class<W> targetType) {
          *     BodySubscriber<InputStream> upstream = BodySubscribers.ofInputStream();
          *
-         *     BodySubscriber<W> downstream = BodySubscribers.mapping(
+         *     BodySubscriber<Supplier<W>> downstream = BodySubscribers.mapping(
          *           upstream,
-         *           (InputStream is) -> {
+         *           (InputStream is) -> () -> {
          *               try (InputStream stream = is) {
          *                   ObjectMapper objectMapper = new ObjectMapper();
          *                   return objectMapper.readValue(stream, targetType);
@@ -1301,7 +1311,7 @@ public interface HttpResponse<T> {
          *               }
          *           });
          *    return downstream;
-         * } }</pre>
+         *  } }</pre>
          *
          * @param <T> the upstream body type
          * @param <U> the type of the body subscriber returned
