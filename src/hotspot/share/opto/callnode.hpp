@@ -683,6 +683,8 @@ public:
   void  set_override_symbolic_info(bool f) { _override_symbolic_info = f; }
   bool  override_symbolic_info() const     { return _override_symbolic_info; }
 
+  DEBUG_ONLY( bool validate_symbolic_info() const; )
+
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
   virtual void  dump_compact_spec(outputStream *st) const;
