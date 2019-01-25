@@ -39,8 +39,6 @@ compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generi
 
 compiler/graalunit/JttThreadsTest.java                          8208066   generic-all
 
-compiler/intrinsics/mathexact/LongMulOverflowTest.java          8217796   generic-all
-
 compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
 
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
