@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -896,7 +896,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             if (moreInfo && bound != null && !isPrintingBound)
                 try {
                     isPrintingBound = true;
-                    s.append("{:").append(bound.bound).append(":}");
+                    s.append("{:").append(bound.getUpperBound()).append(":}");
                 } finally {
                     isPrintingBound = false;
                 }
@@ -1607,7 +1607,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
          *  itself. Furthermore, the erasure_field of the class
          *  points to the first class or interface bound.
          */
-        public Type bound = null;
+        private Type _bound = null;
 
         /** The lower bound of this type variable.
          *  TypeVars don't normally have a lower bound, so it is normally set
@@ -1620,7 +1620,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             super(null, TypeMetadata.EMPTY);
             Assert.checkNonNull(lower);
             tsym = new TypeVariableSymbol(0, name, this, owner);
-            this.bound = null;
+            this.setUpperBound(null);
             this.lower = lower;
         }
 
@@ -1632,15 +1632,20 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                        TypeMetadata metadata) {
             super(tsym, metadata);
             Assert.checkNonNull(lower);
-            this.bound = bound;
+            this.setUpperBound(bound);
             this.lower = lower;
         }
 
         @Override
         public TypeVar cloneWithMetadata(TypeMetadata md) {
-            return new TypeVar(tsym, bound, lower, md) {
+            return new TypeVar(tsym, getUpperBound(), lower, md) {
                 @Override
                 public Type baseType() { return TypeVar.this.baseType(); }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Type getUpperBound() { return TypeVar.this.getUpperBound(); }
+
+                public void setUpperBound(Type bound) { TypeVar.this.setUpperBound(bound); }
             };
         }
 
@@ -1655,12 +1660,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public Type getUpperBound() {
-            if ((bound == null || bound.hasTag(NONE)) && this != tsym.type) {
-                bound = tsym.type.getUpperBound();
-            }
-            return bound;
-        }
+        public Type getUpperBound() { return _bound; }
+
+        public void setUpperBound(Type bound) { this._bound = bound; }
 
         int rank_field = -1;
 
@@ -1709,7 +1711,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                             WildcardType wildcard) {
             super(name, owner, lower);
             this.lower = Assert.checkNonNull(lower);
-            this.bound = upper;
+            this.setUpperBound(upper);
             this.wildcard = wildcard;
         }
 
@@ -1725,9 +1727,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         @Override
         public CapturedType cloneWithMetadata(TypeMetadata md) {
-            return new CapturedType(tsym, bound, bound, lower, wildcard, md) {
+            return new CapturedType(tsym, getUpperBound(), getUpperBound(), lower, wildcard, md) {
                 @Override
                 public Type baseType() { return CapturedType.this.baseType(); }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Type getUpperBound() { return CapturedType.this.getUpperBound(); }
+
+                public void setUpperBound(Type bound) { CapturedType.this.setUpperBound(bound); }
             };
         }
 
@@ -1832,7 +1839,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public void complete() {
             for (List<Type> l = tvars; l.nonEmpty(); l = l.tail) {
-                ((TypeVar)l.head).bound.complete();
+                ((TypeVar)l.head).getUpperBound().complete();
             }
             qtype.complete();
         }

@@ -798,7 +798,7 @@ public class Attr extends JCTree.Visitor {
         for (JCTypeParameter tvar : typarams) {
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
-            a.bound = Type.noType;
+            a.setUpperBound(Type.noType);
             if (!tvar.bounds.isEmpty()) {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
@@ -4520,9 +4520,9 @@ public class Attr extends JCTree.Visitor {
             annotate.annotateTypeParameterSecondStage(tree, tree.annotations);
         }
 
-        if (!typeVar.bound.isErroneous()) {
+        if (!typeVar.getUpperBound().isErroneous()) {
             //fixup type-parameter bound computed in 'attribTypeVariables'
-            typeVar.bound = checkIntersection(tree, tree.bounds);
+            typeVar.setUpperBound(checkIntersection(tree, tree.bounds));
         }
     }
 
