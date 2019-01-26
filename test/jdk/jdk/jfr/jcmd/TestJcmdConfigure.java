@@ -26,9 +26,12 @@
 package jdk.jfr.jcmd;
 
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.jfr.internal.Repository;
+import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Options;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
@@ -40,7 +43,7 @@ import jdk.test.lib.Utils;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main/othervm jdk.jfr.jcmd.TestJcmdConfigure
+ * @run main/othervm -Xlog:jfr=info:file=jfr_info.txt jdk.jfr.jcmd.TestJcmdConfigure
  */
 public class TestJcmdConfigure {
 
@@ -52,6 +55,13 @@ public class TestJcmdConfigure {
     private static final String MAX_CHUNK_SIZE = "maxchunksize";
     private static final String SAMPLE_THREADS = "samplethreads";
     private static final String UNSUPPORTED_OPTION = "unsupportedoption";
+
+    private static final String REPOSITORYPATH_1 = "./repo1";
+    private static final String REPOSITORYPATH_2 = "./repo2";
+
+    private static final String REPOSITORYPATH_SETTING_1 = "repositorypath="+REPOSITORYPATH_1;
+    private static final String REPOSITORYPATH_SETTING_2 = "repositorypath="+REPOSITORYPATH_2;
+    private static final String JFR_UNIFIED_LOG_FILE = "jfr_info.txt";
 
     public static void main(String[] args) throws Exception {
         //
@@ -75,6 +85,8 @@ public class TestJcmdConfigure {
         test(SAMPLE_THREADS, true);
         testNegative(UNSUPPORTED_OPTION, 100000);
         testNegative(MAX_CHUNK_SIZE, -500);
+
+        testRepository();
 
         if (!testExceptions.isEmpty()) {
             for (Exception e : testExceptions) {
@@ -116,6 +128,30 @@ public class TestJcmdConfigure {
             case MAX_CHUNK_SIZE: return Options.getMaxChunkSize();
             case SAMPLE_THREADS: return Options.getSampleThreads();
             default: throw new RuntimeException("Unknown option " + name);
+        }
+    }
+
+    private static void testRepository(){
+        final String findWhat = "[info][jfr] Same base repository path " + REPOSITORYPATH_1 + " is set";
+
+        try {
+            JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_1);
+            SafePath initialPath = Repository.getRepository().getRepositoryPath();
+
+            JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_1);
+            SafePath samePath = Repository.getRepository().getRepositoryPath();
+            Asserts.assertTrue(samePath.equals(initialPath));
+
+            List<String> lines = Files.readAllLines(Paths.get(JFR_UNIFIED_LOG_FILE));
+            Asserts.assertTrue(lines.stream().anyMatch(l->l.contains(findWhat)));
+
+            JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_2);
+            SafePath changedPath = Repository.getRepository().getRepositoryPath();
+
+            Asserts.assertFalse(changedPath.equals(initialPath));
+
+        } catch(Exception e) {
+            testExceptions.add(e);
         }
     }
 }

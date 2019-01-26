@@ -56,6 +56,11 @@ public final class Repository {
     }
 
     public synchronized void setBasePath(SafePath baseLocation) throws Exception {
+
+        if(baseLocation.equals(this.baseLocation)) {
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Same base repository path " + baseLocation.toString() + " is set");
+            return;
+        }
         // Probe to see if repository can be created, needed for fail fast
         // during JVM startup or JFR.configure
         this.repository = createRepository(baseLocation);
