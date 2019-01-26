@@ -26,22 +26,22 @@ source_hpp %{
 %}
 
 encode %{
-  enc_class aarch64_enc_cmpxchg_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  enc_class aarch64_enc_cmpxchg_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, iRegINoSp res) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg);
+                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
   %}
 
-  enc_class aarch64_enc_cmpxchg_acq_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  enc_class aarch64_enc_cmpxchg_acq_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, iRegINoSp res) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
   %}
 %}
 
@@ -66,11 +66,9 @@ instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, i
 
   format %{
     "cmpxchg_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
 
-  ins_encode(aarch64_enc_cmpxchg_oop_shenandoah(mem, oldval, newval, tmp),
-             aarch64_enc_cset_eq(res));
+  ins_encode(aarch64_enc_cmpxchg_oop_shenandoah(mem, oldval, newval, tmp, res));
 
   ins_pipe(pipe_slow);
 %}
@@ -84,14 +82,12 @@ instruct compareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, i
 
   format %{
     "cmpxchgw_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
 
   ins_encode %{
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ false, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg);
-    __ cset($res$$Register, Assembler::EQ);
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -107,11 +103,9 @@ instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval
 
   format %{
     "cmpxchg_acq_shenandoah_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
 
-  ins_encode(aarch64_enc_cmpxchg_acq_oop_shenandoah(mem, oldval, newval, tmp),
-             aarch64_enc_cset_eq(res));
+  ins_encode(aarch64_enc_cmpxchg_acq_oop_shenandoah(mem, oldval, newval, tmp, res));
 
   ins_pipe(pipe_slow);
 %}
@@ -126,14 +120,12 @@ instruct compareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN oldval
 
  format %{
     "cmpxchgw_acq_shenandoah_narrow_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
  %}
 
   ins_encode %{
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ true, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg);
-    __ cset($res$$Register, Assembler::EQ);
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -150,7 +142,7 @@ instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldva
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /* encode*/ false, noreg, noreg, rscratch2, $res$$Register);
+                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -166,7 +158,7 @@ instruct compareAndExchangeP_shenandoah(iRegPNoSp res, indirect mem, iRegP oldva
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg, rscratch2, $res$$Register);
+                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -183,7 +175,7 @@ instruct compareAndExchangeNAcq_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /* encode*/ false, noreg, noreg, rscratch2, $res$$Register);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -200,7 +192,7 @@ instruct compareAndExchangePAcq_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*encode*/ false, noreg, noreg, rscratch2, $res$$Register);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -217,8 +209,7 @@ instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldva
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*encode*/ false, noreg, noreg);
-    __ csetw($res$$Register, Assembler::EQ);
+                                                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -229,14 +220,12 @@ instruct weakCompareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldva
   effect(TEMP tmp, KILL cr);
   format %{
     "cmpxchg_shenandoah $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*encode*/ false, noreg, noreg);
-    __ csetw($res$$Register, Assembler::EQ);
+                                                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -254,8 +243,7 @@ instruct weakCompareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN ol
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*encode*/ false, noreg, noreg);
-    __ csetw($res$$Register, Assembler::EQ);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -273,9 +261,7 @@ instruct weakCompareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP ol
     Register tmp = $tmp$$Register;
     __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*encode*/ false, noreg, noreg);
-    __ csetw($res$$Register, Assembler::EQ);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
-
