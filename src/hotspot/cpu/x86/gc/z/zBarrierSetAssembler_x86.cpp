@@ -284,7 +284,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
     ref_addr = stub->ref_addr()->as_pointer_register();
   } else {
     // Load address into tmp register
-    ce->leal(stub->ref_addr(), stub->tmp(), stub->patch_code(), stub->patch_info());
+    ce->leal(stub->ref_addr(), stub->tmp());
     ref_addr = stub->tmp()->as_pointer_register();
   }
 

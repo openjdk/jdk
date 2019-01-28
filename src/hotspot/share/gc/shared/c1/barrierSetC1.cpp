@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,13 @@ LIR_Opr BarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_registe
 
   if (resolve_in_register) {
     LIR_Opr resolved_addr = gen->new_pointer_register();
-    __ leal(addr_opr, resolved_addr);
-    resolved_addr = LIR_OprFact::address(new LIR_Address(resolved_addr, access.type()));
-    return resolved_addr;
+    if (needs_patching) {
+      __ leal(addr_opr, resolved_addr, lir_patch_normal, access.patch_emit_info());
+      access.clear_decorators(C1_NEEDS_PATCHING);
+    } else {
+      __ leal(addr_opr, resolved_addr);
+    }
+    return LIR_OprFact::address(new LIR_Address(resolved_addr, access.type()));
   } else {
     return addr_opr;
   }

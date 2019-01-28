@@ -63,7 +63,7 @@ public class UseCompressedOops {
         testCompressedOopsModes(args, "-XX:+UseParallelGC");
         testCompressedOopsModes(args, "-XX:+UseParallelOldGC");
         if (GC.Shenandoah.isSupported()) {
-            testCompressedOopsModes(args, "-XX:+UseShenandoahGC");
+            testCompressedOopsModes(args, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseShenandoahGC");
         }
     }
 
