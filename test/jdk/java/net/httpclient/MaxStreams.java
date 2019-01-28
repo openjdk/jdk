@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ public class MaxStreams {
 
     @Test(dataProvider = "uris", timeOut=20000)
     void testAsString(String uri) throws Exception {
+        System.err.println("Semaphore acquire");
         canStartTestRun.acquire();
         latch = new CountDownLatch(1);
         handler.setLatch(latch);
@@ -116,16 +117,19 @@ public class MaxStreams {
                                          .GET()
                                          .build();
         // send warmup to ensure we only have one Http2Connection
+        System.err.println("Sending warmup request");
         HttpResponse<String> warmup = client.send(request, BodyHandlers.ofString());
         if (warmup.statusCode() != 200 || !warmup.body().equals(RESPONSE))
             throw new RuntimeException();
 
         for (int i=0;i<MAX_STREAMS+1; i++) {
+            System.err.println("Sending request " + i);
             responses.add(client.sendAsync(request, BodyHandlers.ofString()));
         }
 
         // wait until we get local exception before allow server to proceed
         try {
+            System.err.println("Waiting for first exception");
             CompletableFuture.anyOf(responses.toArray(new CompletableFuture<?>[0])).join();
         } catch (Exception ee) {
             System.err.println("Expected exception 1 " + ee);
@@ -135,6 +139,7 @@ public class MaxStreams {
 
         // check the first MAX_STREAMS requests succeeded
         try {
+            System.err.println("Waiting for second exception");
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).join();
             System.err.println("Did not get Expected exception 2 ");
         } catch (Exception ee) {
@@ -161,6 +166,7 @@ public class MaxStreams {
             throw new RuntimeException(msg);
         }
 
+        System.err.println("Sending last request");
         // make sure it succeeds now as number of streams == 0 now
         HttpResponse<String> warmdown = client.send(request, BodyHandlers.ofString());
         if (warmdown.statusCode() != 200 || !warmdown.body().equals(RESPONSE))
@@ -183,8 +189,8 @@ public class MaxStreams {
         http2TestServer.start();
 
         https2TestServer = new Http2TestServer("localhost", true, 0, exec, 10, props, ctx);
-        https2TestServer.addHandler(handler, "/http2/fixed");
-        https2FixedURI = "https://" + https2TestServer.serverAuthority()+ "/http2/fixed";
+        https2TestServer.addHandler(handler, "/https2/fixed");
+        https2FixedURI = "https://" + https2TestServer.serverAuthority()+ "/https2/fixed";
         https2TestServer.start();
     }
 
@@ -196,7 +202,7 @@ public class MaxStreams {
 
     class Http2FixedHandler implements Http2Handler {
         final AtomicInteger counter = new AtomicInteger(0);
-        CountDownLatch latch;
+        volatile CountDownLatch latch;
 
         synchronized void setLatch(CountDownLatch latch) {
             this.latch = latch;
@@ -218,9 +224,9 @@ public class MaxStreams {
                     // Wait for latch.
                     try {
                         // don't send any replies until all requests are sent
-                        System.err.println("latch await");
+                        System.err.println("Latch await");
                         getLatch().await();
-                        System.err.println("latch resume");
+                        System.err.println("Latch resume");
                     } catch (InterruptedException ee) {}
                 }
                 t.sendResponseHeaders(200, RESPONSE.length());
@@ -230,6 +236,7 @@ public class MaxStreams {
                 // but server should only see MAX_STREAMS + 2 in total. One is rejected by client
                 // counter c captured before increment so final value is MAX_STREAMS + 1
                 if (c == MAX_STREAMS + 1) {
+                    System.err.println("Semaphore release");
                     counter.set(0);
                     canStartTestRun.release();
                 }
