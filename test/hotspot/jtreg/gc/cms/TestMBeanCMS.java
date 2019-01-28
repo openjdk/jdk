@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.cms;
+
 /*
  * @test TestMBeanCMS.java
  * @bug 6581734
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary CMS Old Gen's collection usage is zero after GC which is incorrect
  * @modules java.management
- * @run main/othervm -Xmx512m -verbose:gc -XX:+UseConcMarkSweepGC TestMBeanCMS
+ * @run main/othervm -Xmx512m -verbose:gc -XX:+UseConcMarkSweepGC gc.cms.TestMBeanCMS
  *
  */
 

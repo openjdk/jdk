@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.startup_warnings;
+
 /*
 * @test TestShenandoah
 * @key gc
@@ -30,6 +32,7 @@
 * @library /test/lib
 * @modules java.base/jdk.internal.misc
 *          java.management
+* @run main gc.startup_warnings.TestShenandoah
 */
 
 import jdk.test.lib.process.ProcessTools;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  *
  */
 
+package gc.stress.gclocker;
+
 /*
  * @test TestGCLockerWithSerial
  * @key gc
+ * @library /
  * @requires vm.gc.Serial
  * @requires vm.flavor != "minimal"
  * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xmx1500m -Xmx1500m -XX:+UseSerialGC TestGCLockerWithSerial
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xmx1500m -Xmx1500m -XX:+UseSerialGC gc.stress.gclocker.TestGCLockerWithSerial
  */
 public class TestGCLockerWithSerial {
     public static void main(String[] args) {

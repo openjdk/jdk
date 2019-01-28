@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Red Hat, Inc. and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +22,15 @@
  * questions.
  */
 
-package gc.startup_warnings;
+package gc;
 
-/*
-* @test TestParallelScavengeSerialOld
-* @key gc
-* @bug 8006398
-* @summary Test that the ParallelScavenge+SerialOld combination does not print a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-* @run main gc.startup_warnings.TestParallelScavengeSerialOld
-*/
+public class CriticalNative {
+    static {
+        System.loadLibrary("CriticalNative");
+    }
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
-
-public class TestParallelScavengeSerialOld {
-
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParallelGC", "-XX:-UseParallelOldGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
+    public static native boolean isNull(int[] a);
+    public static native long sum1(long[] a);
+    // More than 6 parameters
+    public static native long sum2(long a1, int[] a2, int[] a3, long[] a4, int[] a5);
 }

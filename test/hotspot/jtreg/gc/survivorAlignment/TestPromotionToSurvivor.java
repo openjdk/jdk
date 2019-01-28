@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8031323
@@ -38,37 +40,37 @@
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 10m 9 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 10m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 20m 47 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 20m 47 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 8m 9 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 8m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 20m 87 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 20m 87 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=384m  -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 10m 9 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 10m 9 SURVIVOR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128 -XX:OldSize=128m
  *                   -XX:MaxHeapSize=256m -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionToSurvivor 20m 147 SURVIVOR
+ *                   gc.survivorAlignment.TestPromotionToSurvivor 20m 147 SURVIVOR
  */
 public class TestPromotionToSurvivor {
     public static void main(String args[]) {

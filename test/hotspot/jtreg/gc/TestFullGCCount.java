@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc;
+
 /**
  * @test TestFullGCCount.java
  * @bug 7072527
@@ -29,7 +31,7 @@
  * @comment Shenandoah has "ExplicitGCInvokesConcurrent" on by default
  * @requires !(vm.gc == "Shenandoah"    & vm.opt.ExplicitGCInvokesConcurrent != false)
  * @modules java.management
- * @run main/othervm -Xlog:gc TestFullGCCount
+ * @run main/othervm -Xlog:gc gc.TestFullGCCount
  */
 
 import java.lang.management.GarbageCollectorMXBean;

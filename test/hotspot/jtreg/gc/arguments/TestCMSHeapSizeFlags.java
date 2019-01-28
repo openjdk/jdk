@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 /*
  * @test TestCMSHeapSizeFlags
  * @key gc
@@ -28,12 +30,13 @@
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Tests argument processing for initial and maximum heap size for the CMS collector
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm TestCMSHeapSizeFlags
+ * @run main/othervm gc.arguments.TestCMSHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 

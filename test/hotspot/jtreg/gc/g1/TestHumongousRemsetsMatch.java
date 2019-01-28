@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestHumongousRemSetsMatch
  * @bug 8205426
@@ -30,7 +32,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmx512M -Xms512M -Xmn10M -XX:ParallelGCThreads=2 -XX:-UseDynamicNumberOfGCThreads -XX:+UseG1GC -XX:+WhiteBoxAPI -XX:G1HeapRegionSize=1M -XX:+VerifyAfterGC -Xlog:gc,gc+remset+tracking=trace TestHumongousRemsetsMatch
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmx512M -Xms512M -Xmn10M -XX:ParallelGCThreads=2 -XX:-UseDynamicNumberOfGCThreads -XX:+UseG1GC -XX:+WhiteBoxAPI -XX:G1HeapRegionSize=1M -XX:+VerifyAfterGC -Xlog:gc,gc+remset+tracking=trace gc.g1.TestHumongousRemsetsMatch
  */
 
 import sun.hotspot.WhiteBox;

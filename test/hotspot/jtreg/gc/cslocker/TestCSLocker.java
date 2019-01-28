@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.cslocker;
+
 /*
  * @test TestCSLocker
  * @key gc
@@ -28,7 +30,7 @@
  * @summary This short test check RFE 6186200 changes. One thread locked
  * @summary completely in JNI CS, while other is trying to allocate memory
  * @summary provoking GC. OOM means FAIL, deadlock means PASS.
- * @run main/native/othervm -Xmx256m TestCSLocker
+ * @run main/native/othervm -Xmx256m gc.cslocker.TestCSLocker
  */
 
 public class TestCSLocker extends Thread

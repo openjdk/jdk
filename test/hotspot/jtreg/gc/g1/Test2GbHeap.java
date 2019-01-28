@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test Test2GbHeap
  * @key gc regression
@@ -32,6 +34,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run main gc.g1.Test2GbHeap
  */
 
 import java.util.ArrayList;

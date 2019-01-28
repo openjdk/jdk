@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+package gc;
+
 /* @test TestNoPerfCounter
  * @bug 8210265
  * @requires vm.gc=="null"
  * @library /test/lib /
  * @summary Tests that disabling perf counters does not crash the VM
- * @run main/othervm -XX:-UsePerfData TestNoPerfCounter
+ * @run main/othervm -XX:-UsePerfData gc.TestNoPerfCounter
  */
 
 public class TestNoPerfCounter {

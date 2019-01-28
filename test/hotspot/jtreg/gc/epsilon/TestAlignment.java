@@ -21,16 +21,18 @@
  * questions.
  */
 
+package gc.epsilon;
+
 /**
  * @test TestAlignment
  * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Check Epsilon runs fine with (un)usual alignments
  * @bug 8212005
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:+UseTLAB TestAlignment
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:-UseTLAB TestAlignment
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:+UseTLAB -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16 TestAlignment
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:-UseTLAB -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16 TestAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:+UseTLAB gc.epsilon.TestAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:-UseTLAB gc.epsilon.TestAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:+UseTLAB -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16 gc.epsilon.TestAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:-UseTLAB -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16 gc.epsilon.TestAlignment
  */
 
 public class TestAlignment {

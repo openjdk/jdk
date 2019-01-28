@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.cms;
+
 /*
  * @test TestCriticalPriority
  * @key gc
  * @bug 8217378
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Test critical priority is accepted
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+UnlockExperimentalVMOptions -XX:+UseCriticalCMSThreadPriority TestCriticalPriority
+ * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+UnlockExperimentalVMOptions -XX:+UseCriticalCMSThreadPriority gc.cms.TestCriticalPriority
  */
 
 public class TestCriticalPriority {

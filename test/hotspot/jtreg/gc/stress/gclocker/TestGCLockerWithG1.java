@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  *
  */
 
+package gc.stress.gclocker;
+
 /*
  * @test TestGCLockerWithG1
  * @key gc
+ * @library /
  * @requires vm.gc.G1
  * @summary Stress G1's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseG1GC TestGCLockerWithG1
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseG1GC gc.stress.gclocker.TestGCLockerWithG1
  */
 public class TestGCLockerWithG1 {
     public static void main(String[] args) {

@@ -26,8 +26,10 @@
  * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Basic sanity test for Epsilon
- * @run main/othervm -Xmx1g -XX:+AlwaysPreTouch -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestAlwaysPretouch
+ * @run main/othervm -Xmx1g -XX:+AlwaysPreTouch -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestAlwaysPretouch
  */
+
+package gc.epsilon;
 
 public class TestAlwaysPretouch {
   public static void main(String[] args) throws Exception {

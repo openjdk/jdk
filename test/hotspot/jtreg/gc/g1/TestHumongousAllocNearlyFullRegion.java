@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestHumongousAllocNearlyFullRegion
  * @bug 8143587
@@ -29,7 +31,7 @@
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestHumongousAllocNearlyFullRegion
+ * @run driver gc.g1.TestHumongousAllocNearlyFullRegion
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

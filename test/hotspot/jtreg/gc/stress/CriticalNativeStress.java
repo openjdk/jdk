@@ -20,46 +20,43 @@
  * questions.
  *
  */
+package gc.stress;
 
 import java.util.Random;
+
+import gc.CriticalNative;
 
 /*
  * @test CriticalNativeStressEpsilon
  * @key gc
  * @bug 8199868
+ * @library /
  * @requires (os.arch =="x86_64" | os.arch == "amd64") & vm.gc.Epsilon & !vm.graal.enabled
  * @summary test argument pinning by nmethod wrapper of critical native method
- * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx1G -XX:+CriticalJNINatives CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx1G -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  */
 
 /*
  * @test CriticalNativeStressShenandoah
  * @key gc
  * @bug 8199868
+ * @library /
  * @requires (os.arch =="x86_64" | os.arch == "amd64") & vm.gc.Shenandoah & !vm.graal.enabled
  * @summary test argument pinning by nmethod wrapper of critical native method
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeStress
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeStress
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC                                       -Xcomp -Xmx256M -XX:+CriticalJNINatives CriticalNativeStress
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal  -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC                                       -Xcomp -Xmx256M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal  -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  */
 public class CriticalNativeStress {
     private static Random rand = new Random();
-    static {
-        System.loadLibrary("CriticalNative");
-    }
 
     // CYCLES and THREAD_PER_CASE are used to tune the tests for different GC settings,
     // so that they can execrise enough GC cycles and not OOM
     private static int CYCLES = Integer.getInteger("cycles", 3);
     private static int THREAD_PER_CASE = Integer.getInteger("threadPerCase", 1);
-
-    static native long sum1(long[] a);
-
-    // More than 6 parameters
-    static native long sum2(long a1, int[] a2, int[] a3, long[] a4, int[] a5);
 
     static long sum(long[] a) {
         long sum = 0;
@@ -112,7 +109,7 @@ public class CriticalNativeStress {
         }
 
         // Compare results for correctness.
-        long native_sum = sum1(arr);
+        long native_sum = CriticalNative.sum1(arr);
         long java_sum = sum(arr);
         if (native_sum != java_sum) {
             StringBuffer sb = new StringBuffer("Sums do not match: native = ")
@@ -158,7 +155,7 @@ public class CriticalNativeStress {
         }
 
         // Compare results for correctness.
-        long native_sum = sum2(a1, a2, a3, a4, a5);
+        long native_sum = CriticalNative.sum2(a1, a2, a3, a4, a5);
         long java_sum = a1 + sum(a2) + sum(a3) + sum(a4) + sum(a5);
         if (native_sum != java_sum) {
             StringBuffer sb = new StringBuffer("Sums do not match: native = ")

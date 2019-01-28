@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  *
  */
 
+package gc.stress.systemgc;
+
 /*
  * @test TestSystemGCWithCMS
  * @key gc stress
  * @bug 8190703
+ * @library /
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Stress the CMS GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UseConcMarkSweepGC TestSystemGCWithCMS 270
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UseConcMarkSweepGC gc.stress.systemgc.TestSystemGCWithCMS 270
  */
 public class TestSystemGCWithCMS {
     public static void main(String[] args) throws Exception {

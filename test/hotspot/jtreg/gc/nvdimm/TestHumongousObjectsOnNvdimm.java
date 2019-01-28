@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /*
  * @test TestHumongousObjectsOnNvdimm
  * @summary Check that humongous objects reside in nv-dimm
@@ -28,7 +30,7 @@
  * @requires vm.gc=="null" & os.family != "aix"
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main gc.nvdimm.TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                                  -XX:+WhiteBoxAPI
  */
 

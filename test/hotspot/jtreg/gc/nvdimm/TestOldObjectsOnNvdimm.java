@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /*
  * @test TestOldObjectsOnNvdimm
  * @summary Check that objects in old generation reside in dram.
@@ -28,7 +30,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestOldObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main gc.nvdimm.TestOldObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                                  -XX:+WhiteBoxAPI
  */
 
