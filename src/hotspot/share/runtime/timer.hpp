@@ -72,23 +72,6 @@ class TimeStamp {
   jlong ticks_since_update() const;
 };
 
-class TraceCPUTime: public StackObj {
- private:
-  bool _active;                 // true if times will be measured and printed
-  bool _print_cr;               // if true print carriage return at end
-  double _starting_user_time;   // user time at start of measurement
-  double _starting_system_time; // system time at start of measurement
-  double _starting_real_time;   // real time at start of measurement
-  outputStream* _logfile;       // output is printed to this stream
-  bool _error;                  // true if an error occurred, turns off output
-
- public:
-  TraceCPUTime(bool doit = true,
-               bool print_cr = true,
-               outputStream *logfile = NULL);
-  ~TraceCPUTime();
-};
-
 class TimeHelper {
  public:
   static double counter_to_seconds(jlong counter);
