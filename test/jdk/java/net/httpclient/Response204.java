@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,17 @@ public class Response204 {
         logger.addHandler (c);
         logger.setLevel (Level.WARNING);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetSocketAddress addr = new InetSocketAddress (InetAddress.getLoopbackAddress(), 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
 
-        URI uri = new URI("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
+        URI uri = new URI("http", null,
+                server.getAddress().getHostString(),
+                server.getAddress().getPort(),
+                "/test/foo.html", null, null);
 
         try {
             HttpClient client = HttpClient.newHttpClient();
