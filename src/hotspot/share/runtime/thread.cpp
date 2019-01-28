@@ -2392,8 +2392,19 @@ void JavaThread::java_suspend() {
     }
   }
 
-  VM_ThreadSuspend vm_suspend;
-  VMThread::execute(&vm_suspend);
+  if (Thread::current() == this) {
+    // Safely self-suspend.
+    // If we don't do this explicitly it will implicitly happen
+    // before we transition back to Java, and on some other thread-state
+    // transition paths, but not as we exit a JVM TI SuspendThread call.
+    // As SuspendThread(current) must not return (until resumed) we must
+    // self-suspend here.
+    ThreadBlockInVM tbivm(this);
+    java_suspend_self();
+  } else {
+    VM_ThreadSuspend vm_suspend;
+    VMThread::execute(&vm_suspend);
+  }
 }
 
 // Part II of external suspension.
