@@ -95,12 +95,12 @@ endef
 # $1: The output file name
 # $2..$N: The lines to output to the file
 define CreateNewSpec
-  $(if $(strip $(31)), \
+  $(if $(strip $(33)), \
     $(error Internal makefile error: \
       Too many arguments to macro, please update CreateNewSpec in RunTestsPrebuilt.gmk) \
   ) \
   $(shell $(RM) $1) \
-  $(foreach i, $(call sequence, 2, 30), \
+  $(foreach i, $(call sequence, 2, 32), \
     $(if $(strip $($i)), \
       $(call AppendFile, $(strip $($i)), $1) \
     ) \
@@ -275,6 +275,14 @@ else
   LD := ld
 endif
 
+ifneq ($(wildcard $(JDK_IMAGE_DIR)/template.xml), )
+  TEST_OPTS_JCOV := true
+  JCOV_IMAGE_DIR := $(JDK_IMAGE_DIR)
+else
+  TEST_OPTS_JCOV := false
+  JCOV_IMAGE_DIR :=
+endif
+
 ################################################################################
 # Generate the ephemeral spec file
 ################################################################################
@@ -295,6 +303,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     BOOT_JDK := $(BOOT_JDK), \
     JT_HOME := $(JT_HOME), \
     JDK_IMAGE_DIR := $(JDK_IMAGE_DIR), \
+    JCOV_IMAGE_DIR := $(JCOV_IMAGE_DIR), \
     TEST_IMAGE_DIR := $(TEST_IMAGE_DIR), \
     SYMBOLS_IMAGE_DIR := $(SYMBOLS_IMAGE_DIR), \
     MAKE := $(MAKE), \
@@ -315,6 +324,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     LIBRARY_PREFIX := $(LIBRARY_PREFIX), \
     SHARED_LIBRARY_SUFFIX := $(SHARED_LIBRARY_SUFFIX), \
     include $(TOPDIR)/make/RunTestsPrebuiltSpec.gmk, \
+    TEST_OPTS_JCOV := $(TEST_OPTS_JCOV), \
     $(CUSTOM_NEW_SPEC_LINE), \
 )
 

@@ -119,10 +119,8 @@ ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
   JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
 
-  ifneq ($(JCOV_IMAGE_DIR), )
-    # Replace our normal test JDK with the JCov image, if present.
-    JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
-  endif
+  # Replace our normal test JDK with the JCov image.
+  JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
 
   JCOV_ENVIRONMENT := JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
       _JAVA_OPTIONS="$(JCOV_MEM_OPTIONS)"
