@@ -263,6 +263,15 @@ public final class Utils {
                       : ! PROXY_AUTH_DISABLED_SCHEMES.isEmpty();
     }
 
+    // WebSocket connection Upgrade headers
+    private static final String HEADER_CONNECTION = "Connection";
+    private static final String HEADER_UPGRADE    = "Upgrade";
+
+    public static final void setWebSocketUpgradeHeaders(HttpRequestImpl request) {
+        request.setSystemHeader(HEADER_UPGRADE, "websocket");
+        request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
+    }
+
     public static IllegalArgumentException newIAE(String message, Object... args) {
         return new IllegalArgumentException(format(message, args));
     }
