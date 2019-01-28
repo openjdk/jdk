@@ -27,6 +27,7 @@
 
 #include "code/vmreg.hpp"
 #include "opto/optoreg.hpp"
+#include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
 // Some fun naming (textual) substitutions:
@@ -50,8 +51,10 @@
 static int find_lowest_bit(uint32_t mask) {
   return count_trailing_zeros(mask);
 }
-// Find highest 1, or return 32 if empty
-int find_highest_bit( uint32_t mask );
+// Find highest 1, undefined if empty/0
+static int find_highest_bit(uint32_t mask) {
+  return count_leading_zeros(mask) ^ 31;
+}
 
 //------------------------------RegMask----------------------------------------
 // The ADL file describes how to print the machine-specific registers, as well

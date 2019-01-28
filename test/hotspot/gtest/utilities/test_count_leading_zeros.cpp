@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,35 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/count_trailing_zeros.hpp"
+#include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
-TEST(count_trailing_zeros, one_or_two_set_bits) {
-  unsigned i = 0;               // Position of a set bit.
-  for (uintx ix = 1; ix != 0; ix <<= 1, ++i) {
-    unsigned j = 0;             // Position of a set bit.
-    for (uintx jx = 1; jx != 0; jx <<= 1, ++j) {
-      uintx value = ix | jx;
-      EXPECT_EQ(MIN2(i, j), count_trailing_zeros(value))
+TEST(count_leading_zeros, one_or_two_set_bits) {
+  unsigned i = 0;                  // Position of a set bit.
+  for (uint32_t ix = 1; ix != 0; ix <<= 1, ++i) {
+    unsigned j = 0;                // Position of a set bit.
+    for (uint32_t jx = 1; jx != 0; jx <<= 1, ++j) {
+      uint32_t value = ix | jx;
+      EXPECT_EQ(31u - MAX2(i, j), count_leading_zeros(value))
         << "value = " << value;
     }
   }
 }
 
-TEST(count_trailing_zeros, high_zeros_low_ones) {
-  uintx value = ~(uintx)0;
-  for ( ; value != 0; value >>= 1) {
-    EXPECT_EQ(0u, count_trailing_zeros(value))
+TEST(count_leading_zeros, high_zeros_low_ones) {
+  unsigned i = 0;                  // Number of leading zeros
+  uint32_t value = ~(uint32_t)0;
+  for ( ; value != 0; value >>= 1, ++i) {
+    EXPECT_EQ(i, count_leading_zeros(value))
       << "value = " << value;
   }
 }
 
-TEST(count_trailing_zeros, high_ones_low_zeros) {
-  unsigned i = 0;               // Index of least significant set bit.
-  uintx value = ~(uintx)0;
-  for ( ; value != 0; value <<= 1, ++i) {
-    EXPECT_EQ(i, count_trailing_zeros(value))
+TEST(count_leading_zeros, high_ones_low_zeros) {
+  uint32_t value = ~(uint32_t)0;
+  for ( ; value != 0; value <<= 1) {
+    EXPECT_EQ(0u, count_leading_zeros(value))
       << "value = " << value;
   }
 }

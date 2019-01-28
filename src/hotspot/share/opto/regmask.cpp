@@ -32,36 +32,6 @@
 
 #define RM_SIZE _RM_SIZE /* a constant private to the class RegMask */
 
-//-------------Non-zero bit search methods used by RegMask---------------------
-// Find highest 1, or return 32 if empty
-int find_highest_bit( uint32_t mask ) {
-  int n = 0;
-  if( mask > 0xffff ) {
-    mask >>= 16;
-    n += 16;
-  }
-  if( mask > 0xff ) {
-    mask >>= 8;
-    n += 8;
-  }
-  if( mask > 0xf ) {
-    mask >>= 4;
-    n += 4;
-  }
-  if( mask > 0x3 ) {
-    mask >>= 2;
-    n += 2;
-  }
-  if( mask > 0x1 ) {
-    mask >>= 1;
-    n += 1;
-  }
-  if( mask == 0 ) {
-    n = 32;
-  }
-  return n;
-}
-
 //------------------------------dump-------------------------------------------
 
 #ifndef PRODUCT
