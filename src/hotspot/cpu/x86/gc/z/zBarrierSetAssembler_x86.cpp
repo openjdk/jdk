@@ -279,13 +279,13 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
 
-  if (stub->ref_addr()->is_register()) {
-    // Address already in register
-    ref_addr = stub->ref_addr()->as_pointer_register();
-  } else {
+  if (stub->tmp()->is_valid()) {
     // Load address into tmp register
     ce->leal(stub->ref_addr(), stub->tmp());
     ref_addr = stub->tmp()->as_pointer_register();
+  } else {
+    // Address already in register
+    ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
   }
 
   assert_different_registers(ref, ref_addr, noreg);
