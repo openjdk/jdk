@@ -403,10 +403,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
   bool get(Thread* thread, LOOKUP_FUNC& lookup_f, FOUND_FUNC& foundf,
            bool* grow_hint = NULL);
 
-  // Return a copy of an item found with LOOKUP_FUNC.
-  template <typename LOOKUP_FUNC>
-  VALUE get_copy(Thread* thread, LOOKUP_FUNC& lookup_f, bool* grow_hint = NULL);
-
   // Returns true true if the item was inserted, duplicates are found with
   // LOOKUP_FUNC.
   template <typename LOOKUP_FUNC>
@@ -474,10 +470,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
     // Called when the hash table needs the hash for a VALUE.
     static uintx get_hash(const VALUE& value, bool* dead) {
       return CONFIG::get_hash(value, dead);
-    }
-    // On get_copy if no value is found then this value is returned.
-    static const VALUE& notfound() {
-      return CONFIG::notfound();
     }
     // Default node allocation.
     static void* allocate_node(size_t size, const VALUE& value);
