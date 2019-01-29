@@ -25,6 +25,7 @@
  * @test TestOldObjectsOnNvdimm
  * @summary Check that objects in old generation reside in dram.
  * @requires vm.gc=="null" & os.family != "aix"
+ * @requires test.vm.gc.nvdimm
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

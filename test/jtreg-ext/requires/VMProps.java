@@ -97,6 +97,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.compiler2.enabled", isCompiler2Enabled());
         map.put("docker.support", dockerSupport());
         map.put("release.implementor", implementor());
+        map.put("test.vm.gc.nvdimm", isNvdimmTestEnabled());
         vmGC(map); // vm.gc.X = true/false
         vmOptFinalFlags(map);
 
@@ -468,6 +469,15 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         return null;
     }
+
+    private String isNvdimmTestEnabled() {
+        String isEnbled = System.getenv("TEST_VM_GC_NVDIMM");
+        if (isEnbled != null && isEnbled.toLowerCase().equals("true")) {
+            return "true";
+        }
+        return "false";
+    }
+
 
 
     /**
