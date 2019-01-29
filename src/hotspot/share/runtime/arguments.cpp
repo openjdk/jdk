@@ -328,10 +328,6 @@ void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
   _agentList.add(agentLib);
 }
 
-void Arguments::add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib));
-}
-
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
   return ((strncmp(option, property, len) == 0) &&

@@ -148,9 +148,6 @@ class frame {
   // returns the sending frame
   frame sender(RegisterMap* map) const;
 
-  // for Profiling - acting on another frame. walks sender frames
-  // if valid.
-  frame profile_find_Java_sender_frame(JavaThread *thread);
   bool safe_for_sender(JavaThread *thread);
 
   // returns the sender, but skips conversion frames

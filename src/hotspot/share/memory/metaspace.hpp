@@ -333,7 +333,6 @@ class MetaspaceUtils : AllStatic {
   // Utils to check if a pointer or range is part of a committed metaspace region
   // without acquiring any locks.
   static metaspace::VirtualSpaceNode* find_enclosing_virtual_space(const void* p);
-  static bool is_in_committed(const void* p);
   static bool is_range_in_committed(const void* from, const void* to);
 
 public:
@@ -387,9 +386,6 @@ public:
   }
 
   static size_t min_chunk_size_words();
-  static size_t min_chunk_size_bytes() {
-    return min_chunk_size_words() * BytesPerWord;
-  }
 
   // Flags for print_report().
   enum ReportFlag {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1284,14 +1284,6 @@ uintptr_t Universe::verify_mark_bits() {
   return bits;
 }
 #endif // PRODUCT
-
-
-void Universe::compute_verify_oop_data() {
-  verify_oop_mask();
-  verify_oop_bits();
-  verify_mark_mask();
-  verify_mark_bits();
-}
 
 
 void LatestMethodCache::init(Klass* k, Method* m) {

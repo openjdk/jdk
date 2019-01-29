@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,15 +355,4 @@ void StatSampler::create_sampled_perfdata() {
   PerfSampleHelper* psh = new HighResTimeSampler();
   PerfDataManager::create_counter(SUN_OS, "hrt.ticks",
                                   PerfData::U_Ticks, psh, CHECK);
-}
-
-/*
- * the statSampler_exit() function is called from os_init.cpp on
- * exit of the vm.
- */
-void statSampler_exit() {
-
-  if (!UsePerfData) return;
-
-  StatSampler::destroy();
 }

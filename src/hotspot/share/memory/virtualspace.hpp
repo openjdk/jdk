@@ -88,7 +88,6 @@ class ReservedSpace {
   static size_t page_align_size_up(size_t size);
   static size_t page_align_size_down(size_t size);
   static size_t allocation_align_size_up(size_t size);
-  static size_t allocation_align_size_down(size_t size);
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }

@@ -218,10 +218,6 @@ char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
 }
 
-char* MetaspaceShared::read_only_space_top() {
-  return _ro_region.top();
-}
-
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   assert(UseSharedSpaces, "Must be called when UseSharedSpaces is enabled");
 

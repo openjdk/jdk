@@ -111,14 +111,6 @@ inline intptr_t* frame::id(void) const {
   return _fp;
 }
 
-// Return true if this frame is younger (more recent activation) than
-// the frame represented by id.
-inline bool frame::is_younger(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
-  // Stack grows towards smaller addresses on z/Architecture.
-  return this->id() < id;
-}
-
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {

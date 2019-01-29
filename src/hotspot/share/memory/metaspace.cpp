@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -871,19 +871,6 @@ metaspace::VirtualSpaceNode* MetaspaceUtils::find_enclosing_virtual_space(const 
     vsn = Metaspace::class_space_list()->find_enclosing_space(p);
   }
   return vsn;
-}
-
-bool MetaspaceUtils::is_in_committed(const void* p) {
-#if INCLUDE_CDS
-  if (UseSharedSpaces) {
-    for (int idx = MetaspaceShared::ro; idx <= MetaspaceShared::mc; idx++) {
-      if (FileMapInfo::current_info()->is_in_shared_region(p, idx)) {
-        return true;
-      }
-    }
-  }
-#endif
-  return find_enclosing_virtual_space(p) != NULL;
 }
 
 bool MetaspaceUtils::is_range_in_committed(const void* from, const void* to) {

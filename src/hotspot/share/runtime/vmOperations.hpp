@@ -121,7 +121,6 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(ThreadSuspend)                         \
-  template(CTWThreshold)                          \
   template(ThreadsSuspendJVMTI)                   \
   template(ICBufferFull)                          \
   template(ScavengeMonitors)                      \
@@ -270,12 +269,6 @@ class VM_ForceSafepoint: public VM_Operation {
 class VM_ThreadSuspend: public VM_ForceSafepoint {
  public:
   VMOp_Type type() const { return VMOp_ThreadSuspend; }
-};
-
-// empty vm op, when forcing a safepoint due to ctw threshold is reached for the sweeper
-class VM_CTWThreshold: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_CTWThreshold; }
 };
 
 // empty vm op, when forcing a safepoint to suspend threads from jvmti
