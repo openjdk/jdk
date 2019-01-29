@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8202088 8207152
+ * @bug 8202088 8207152 8217609
  * @summary Test the localized Japanese new era name (May 1st. 2019-)
  *      is retrieved no matter CLDR provider contains the name or not.
  * @modules jdk.localedata
@@ -53,8 +53,8 @@ public class JapaneseEraNameTest {
             // type,    locale,  name
             { LONG,     JAPAN,   "\u5143\u53f7" }, // NewEra
             { LONG,     US,      "NewEra" },
-            { SHORT,    JAPAN,   "N" },
-            { SHORT,    US,      "N" },
+            { SHORT,    JAPAN,   "\u5143\u53f7" },
+            { SHORT,    US,      "NewEra" },
         };
     }
 
