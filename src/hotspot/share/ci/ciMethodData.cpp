@@ -208,15 +208,17 @@ void ciMethodData::load_data() {
   // Snapshot the data -- actually, take an approximate snapshot of
   // the data.  Any concurrently executing threads may be changing the
   // data as we copy it.
-  Copy::disjoint_words((HeapWord*) mdo,
-                       (HeapWord*) &_orig,
-                       sizeof(_orig) / HeapWordSize);
+  Copy::disjoint_words_atomic((HeapWord*) mdo,
+                              (HeapWord*) &_orig,
+                              sizeof(_orig) / HeapWordSize);
   Arena* arena = CURRENT_ENV->arena();
   _data_size = mdo->data_size();
   _extra_data_size = mdo->extra_data_size();
   int total_size = _data_size + _extra_data_size;
   _data = (intptr_t *) arena->Amalloc(total_size);
-  Copy::disjoint_words((HeapWord*) mdo->data_base(), (HeapWord*) _data, total_size / HeapWordSize);
+  Copy::disjoint_words_atomic((HeapWord*) mdo->data_base(),
+                              (HeapWord*) _data,
+                              total_size / HeapWordSize);
 
   // Traverse the profile data, translating any oops into their
   // ci equivalents.
