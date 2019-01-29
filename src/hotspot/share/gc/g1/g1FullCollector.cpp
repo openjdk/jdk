@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,10 +224,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(&_is_alive, purged_class);
-  } else {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: String and Symbol Tables Cleanup", scope()->timer());
-    // If no class unloading just clean out strings.
-    _heap->partial_cleaning(&_is_alive, true, G1StringDedup::is_enabled());
+  } else if (G1StringDedup::is_enabled()) {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: String Dedup Cleanup", scope()->timer());
+    // If no class unloading just clean out string deduplication data.
+    _heap->string_dedup_cleaning(&_is_alive, NULL);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);

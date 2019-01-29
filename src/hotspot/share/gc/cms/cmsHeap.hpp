@@ -91,8 +91,7 @@ public:
                          ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* root_closure,
-                         CLDClosure* cld_closure,
-                         OopStorage::ParState<false, false>* par_state_string = NULL);
+                         CLDClosure* cld_closure);
 
   GCMemoryManager* old_manager() const { return _old_manager; }
 

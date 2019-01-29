@@ -1923,8 +1923,7 @@ void ShenandoahHeap::unload_classes_and_cleanup_tables(bool full_gc) {
                             ShenandoahPhaseTimings::full_gc_purge_par :
                             ShenandoahPhaseTimings::purge_par);
     uint active = _workers->active_workers();
-    StringDedupUnlinkOrOopsDoClosure dedup_cl(is_alive, NULL);
-    ParallelCleaningTask unlink_task(is_alive, &dedup_cl, active, purged_class);
+    ParallelCleaningTask unlink_task(is_alive, active, purged_class, true);
     _workers->run_task(&unlink_task);
   }
 

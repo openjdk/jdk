@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,53 +89,3 @@ void G1StringDedup::enqueue_from_evacuation(bool from_young, bool to_young, uint
   }
 }
 
-void G1StringDedup::oops_do(OopClosure* keep_alive) {
-  assert(is_enabled(), "String deduplication not enabled");
-  unlink_or_oops_do(NULL, keep_alive, true /* allow_resize_and_rehash */);
-}
-
-void G1StringDedup::parallel_unlink(G1StringDedupUnlinkOrOopsDoClosure* unlink, uint worker_id) {
-  assert(is_enabled(), "String deduplication not enabled");
-  StringDedupQueue::unlink_or_oops_do(unlink);
-  StringDedupTable::unlink_or_oops_do(unlink, worker_id);
-}
-
-//
-// Task for parallel unlink_or_oops_do() operation on the deduplication queue
-// and table.
-//
-class G1StringDedupUnlinkOrOopsDoTask : public AbstractGangTask {
-private:
-  G1StringDedupUnlinkOrOopsDoClosure _cl;
-  G1GCPhaseTimes* _phase_times;
-
-public:
-  G1StringDedupUnlinkOrOopsDoTask(BoolObjectClosure* is_alive,
-                                  OopClosure* keep_alive,
-                                  bool allow_resize_and_rehash,
-                                  G1GCPhaseTimes* phase_times) :
-    AbstractGangTask("G1StringDedupUnlinkOrOopsDoTask"),
-    _cl(is_alive, keep_alive, allow_resize_and_rehash), _phase_times(phase_times) { }
-
-  virtual void work(uint worker_id) {
-    {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupQueueFixup, worker_id);
-      StringDedupQueue::unlink_or_oops_do(&_cl);
-    }
-    {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupTableFixup, worker_id);
-      StringDedupTable::unlink_or_oops_do(&_cl, worker_id);
-    }
-  }
-};
-
-void G1StringDedup::unlink_or_oops_do(BoolObjectClosure* is_alive,
-                                      OopClosure* keep_alive,
-                                      bool allow_resize_and_rehash,
-                                      G1GCPhaseTimes* phase_times) {
-  assert(is_enabled(), "String deduplication not enabled");
-
-  G1StringDedupUnlinkOrOopsDoTask task(is_alive, keep_alive, allow_resize_and_rehash, phase_times);
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->workers()->run_task(&task);
-}

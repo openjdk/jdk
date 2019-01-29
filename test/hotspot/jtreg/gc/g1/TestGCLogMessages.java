@@ -108,7 +108,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("StringTable Roots", Level.TRACE),
         new LogMessageWithLevel("Universe Roots", Level.TRACE),
         new LogMessageWithLevel("JNI Handles Roots", Level.TRACE),
         new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
@@ -126,7 +125,9 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Redirtied Cards", Level.TRACE),
         // Misc Top-level
         new LogMessageWithLevel("Code Roots Purge", Level.DEBUG),
-        new LogMessageWithLevel("String Dedup Fixup", Level.DEBUG),
+        new LogMessageWithLevel("String Deduplication", Level.DEBUG),
+        new LogMessageWithLevel("Queue Fixup", Level.DEBUG),
+        new LogMessageWithLevel("Table Fixup", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
@@ -145,6 +146,9 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing
         new LogMessageWithLevel("Weak Processing", Level.DEBUG),
+        new LogMessageWithLevel("JNI weak processing", Level.DEBUG),
+        new LogMessageWithLevel("StringTable weak processing", Level.DEBUG),
+        new LogMessageWithLevel("VM weak processing", Level.DEBUG),
 
         new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),

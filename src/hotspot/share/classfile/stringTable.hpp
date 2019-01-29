@@ -128,20 +128,10 @@ private:
     the_table()->add_items_to_clean(ndead);
   }
 
-  //   Delete pointers to otherwise-unreachable objects.
-  static void unlink(BoolObjectClosure* cl) {
-    unlink_or_oops_do(cl);
-  }
-  static void unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f = NULL,
-                                size_t* processed = NULL, size_t* removed = NULL);
-
   // Serially invoke "f->do_oop" on the locations of all oops in the table.
   static void oops_do(OopClosure* f);
 
   // Possibly parallel versions of the above
-  static void possibly_parallel_unlink(
-     OopStorage::ParState<false /* concurrent */, false /* const*/>* par_state_string,
-     BoolObjectClosure* cl, size_t* processed, size_t* removed);
   static void possibly_parallel_oops_do(
      OopStorage::ParState<false /* concurrent */, false /* const*/>* par_state_string,
      OopClosure* f);
