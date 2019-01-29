@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,29 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.awt.print.*;
+import java.awt.Component;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.Rectangle;
+import java.awt.Transparency;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.VolatileImage;
+import java.awt.print.PageFormat;
 
-public class CPrinterGraphicsConfig extends GraphicsConfiguration {
+public final class CPrinterGraphicsConfig extends GraphicsConfiguration {
+
     public static CPrinterGraphicsConfig getConfig(PageFormat pf) {
         return new CPrinterGraphicsConfig(pf);
     }
 
-    GraphicsDevice gd;
-    PageFormat pf;
+    private final GraphicsDevice device;
+    private final PageFormat pf;
 
     public CPrinterGraphicsConfig(PageFormat pf) {
-        this.gd = new CPrinterDevice(this);
+        this.device = new CPrinterDevice(this);
         this.pf = pf;
     }
 
@@ -53,8 +61,9 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * @return a {@code GraphicsDevice} object that is
      * associated with this {@code GraphicsConfiguration}.
      */
+    @Override
     public GraphicsDevice getDevice() {
-        return gd;
+        return device;
     }
 
     /**
@@ -70,6 +79,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * @return a {@code BufferedImage} whose data layout and color
      * model is compatible with this {@code GraphicsConfiguration}.
      */
+    @Override
     public BufferedImage createCompatibleImage(int width, int height) {
         return createCompatibleImage(width, height, Transparency.OPAQUE);
     }
@@ -87,11 +97,13 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * model is compatible with this {@code GraphicsConfiguration}.
      * @see Component#createVolatileImage(int, int)
      */
+    @Override
     public VolatileImage createCompatibleVolatileImage(int width, int height) {
         return createCompatibleVolatileImage(width, height, Transparency.OPAQUE);
     }
 
     // empty implementation (this should not be called)
+    @Override
     public VolatileImage createCompatibleVolatileImage(int width, int height, int transparency) {
         return null;
     }
@@ -114,6 +126,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * @see Transparency#BITMASK
      * @see Transparency#TRANSLUCENT
      */
+    @Override
     public BufferedImage createCompatibleImage(int width, int height, int transparency) {
         //+++gdb what to do?
         return null;
@@ -125,6 +138,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * @return a {@code ColorModel} object that is associated with
      * this {@code GraphicsConfiguration}.
      */
+    @Override
     public ColorModel getColorModel() {
         return getColorModel(Transparency.OPAQUE);
     }
@@ -138,6 +152,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * this {@code GraphicsConfiguration} and supports the
      * specified transparency.
      */
+    @Override
     public ColorModel getColorModel(int transparency) {
         return ColorModel.getRGBdefault();
     }
@@ -161,6 +176,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * @return the default {@code AffineTransform} for this
      * {@code GraphicsConfiguration}.
      */
+    @Override
     public AffineTransform getDefaultTransform() {
         return new AffineTransform();
     }
@@ -192,6 +208,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * default {@code AffineTransform} so that 72 units in user
      * space is mapped to 1 inch in device space.
      */
+    @Override
     public AffineTransform getNormalizingTransform() {
         return new AffineTransform();
     }
@@ -205,6 +222,7 @@ public class CPrinterGraphicsConfig extends GraphicsConfiguration {
      * {@code GraphicsConfiguration}.
      * @since 1.3
      */
+    @Override
     public Rectangle getBounds() {
         return new Rectangle(0, 0, (int)pf.getWidth(), (int)pf.getHeight());
     }

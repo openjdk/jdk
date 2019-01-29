@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 
 package sun.awt.image;
 
-import java.awt.AWTException;
 import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
-import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
@@ -38,12 +36,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
-import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 
-public class BufferedImageGraphicsConfig
-    extends GraphicsConfiguration
-{
+public final class BufferedImageGraphicsConfig extends GraphicsConfiguration {
+
     private static final int numconfigs = BufferedImage.TYPE_BYTE_BINARY;
     private static BufferedImageGraphicsConfig[] standardConfigs =
         new BufferedImageGraphicsConfig[numconfigs];
@@ -77,24 +73,20 @@ public class BufferedImageGraphicsConfig
         return ret;
     }
 
-    GraphicsDevice gd;
-    ColorModel model;
-    Raster raster;
+    private final GraphicsDevice device;
+    private final ColorModel model;
+    private final Raster raster;
     private final double scaleX;
     private final double scaleY;
-
-    public BufferedImageGraphicsConfig(BufferedImage bufImg, Component comp) {
-        this(bufImg, comp, 1, 1);
-    }
 
     public BufferedImageGraphicsConfig(BufferedImage bufImg, Component comp,
                                        double scaleX, double scaleY)
     {
         if (comp == null) {
-            this.gd = new BufferedImageDevice(this);
+            device = new BufferedImageDevice(this);
         } else {
             Graphics2D g2d = (Graphics2D)comp.getGraphics();
-            this.gd = g2d.getDeviceConfiguration().getDevice();
+            device = g2d.getDeviceConfiguration().getDevice();
         }
         this.model = bufImg.getColorModel();
         this.raster = bufImg.getRaster().createCompatibleWritableRaster(1, 1);
@@ -105,8 +97,9 @@ public class BufferedImageGraphicsConfig
     /**
      * Return the graphics device associated with this configuration.
      */
+    @Override
     public GraphicsDevice getDevice() {
-        return gd;
+        return device;
     }
 
     /**
@@ -118,6 +111,7 @@ public class BufferedImageGraphicsConfig
      * that is closest to this native device configuration and thus
      * can be optimally blitted to this device.
      */
+    @Override
     public BufferedImage createCompatibleImage(int width, int height) {
         WritableRaster wr = raster.createCompatibleWritableRaster(width, height);
         return new BufferedImage(model, wr, model.isAlphaPremultiplied(), null);
@@ -126,6 +120,7 @@ public class BufferedImageGraphicsConfig
     /**
      * Returns the color model associated with this configuration.
      */
+    @Override
     public ColorModel getColorModel() {
         return model;
     }
@@ -134,6 +129,7 @@ public class BufferedImageGraphicsConfig
      * Returns the color model associated with this configuration that
      * supports the specified transparency.
      */
+    @Override
     public ColorModel getColorModel(int transparency) {
 
         if (model.getTransparency() == transparency) {
@@ -160,6 +156,7 @@ public class BufferedImageGraphicsConfig
      * increasing to the right and Y coordinates increasing downwards.
      * For image buffers, this Transform will be the Identity transform.
      */
+    @Override
     public AffineTransform getDefaultTransform() {
         return AffineTransform.getScaleInstance(scaleX, scaleY);
     }
@@ -183,10 +180,12 @@ public class BufferedImageGraphicsConfig
      * For image buffers, this Transform will be the Identity transform,
      * since there is no valid distance measurement.
      */
+    @Override
     public AffineTransform getNormalizingTransform() {
         return new AffineTransform();
     }
 
+    @Override
     public Rectangle getBounds() {
         return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,6 @@ jboolean awtLockInited = JNI_FALSE;
     } while (0)
 
 struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
-struct X11GraphicsDeviceIDs x11GraphicsDeviceIDs;
 
 #ifndef HEADLESS
 int awtCreateX11Colormap(AwtGraphicsConfigDataPtr adata);
@@ -152,30 +151,18 @@ Java_sun_awt_X11GraphicsConfig_initIDs (JNIEnv *env, jclass cls)
 {
     x11GraphicsConfigIDs.aData = NULL;
     x11GraphicsConfigIDs.bitsPerPixel = NULL;
-    x11GraphicsConfigIDs.screen = NULL;
 
     x11GraphicsConfigIDs.aData = (*env)->GetFieldID (env, cls, "aData", "J");
     CHECK_NULL(x11GraphicsConfigIDs.aData);
     x11GraphicsConfigIDs.bitsPerPixel = (*env)->GetFieldID (env, cls, "bitsPerPixel", "I");
     CHECK_NULL(x11GraphicsConfigIDs.bitsPerPixel);
-    x11GraphicsConfigIDs.screen = (*env)->GetFieldID (env, cls, "screen", "Lsun/awt/X11GraphicsDevice;");
-    CHECK_NULL(x11GraphicsConfigIDs.screen);
 
     if (x11GraphicsConfigIDs.aData == NULL ||
-            x11GraphicsConfigIDs.bitsPerPixel == NULL ||
-        x11GraphicsConfigIDs.screen == NULL) {
+            x11GraphicsConfigIDs.bitsPerPixel == NULL) {
 
             JNU_ThrowNoSuchFieldError(env, "Can't find a field");
             return;
         }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_awt_X11GraphicsDevice_initIDs (JNIEnv *env, jclass cls)
-{
-    x11GraphicsDeviceIDs.screen = NULL;
-    x11GraphicsDeviceIDs.screen = (*env)->GetFieldID (env, cls, "screen", "I");
-    DASSERT(x11GraphicsDeviceIDs.screen);
 }
 
 #ifndef HEADLESS

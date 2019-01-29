@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     private volatile Rectangle bounds;
     private volatile int scale;
 
-    // Array of all GraphicsConfig instances for this device
-    private final GraphicsConfiguration[] configs;
-
-    // Default config (temporarily hard coded)
-    private final int DEFAULT_CONFIG = 0;
+    private final GraphicsConfiguration config;
 
     private static AWTPermission fullScreenExclusivePermission;
 
@@ -64,9 +60,7 @@ public final class CGraphicsDevice extends GraphicsDevice
 
     public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
-        configs = new GraphicsConfiguration[] {
-            CGLGraphicsConfig.getConfig(this, displayID, 0)
-        };
+        config = CGLGraphicsConfig.getConfig(this, displayID, 0);
     }
 
     /**
@@ -74,7 +68,7 @@ public final class CGraphicsDevice extends GraphicsDevice
      */
     @Override
     public GraphicsConfiguration[] getConfigurations() {
-        return configs.clone();
+        return new GraphicsConfiguration[]{config};
     }
 
     /**
@@ -82,7 +76,7 @@ public final class CGraphicsDevice extends GraphicsDevice
      */
     @Override
     public GraphicsConfiguration getDefaultConfiguration() {
-        return configs[DEFAULT_CONFIG];
+        return config;
     }
 
     /**

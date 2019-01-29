@@ -104,8 +104,6 @@ import sun.awt.image.SunVolatileImage;
  * implements the interface for that capability.
  *
  */
-
-
 public abstract class GraphicsConfiguration {
 
     private static BufferCapabilities defaultBufferCaps;

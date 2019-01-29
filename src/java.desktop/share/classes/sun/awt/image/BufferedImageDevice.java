@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 
 package sun.awt.image;
 
-import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 
-public class BufferedImageDevice extends GraphicsDevice
-{
-    GraphicsConfiguration gc;
+public final class BufferedImageDevice extends GraphicsDevice {
 
-    public BufferedImageDevice(BufferedImageGraphicsConfig gc) {
-        this.gc = gc;
+    private final GraphicsConfiguration config;
+
+    public BufferedImageDevice(final BufferedImageGraphicsConfig config) {
+        this.config = config;
     }
 
     /**
@@ -44,6 +44,7 @@ public class BufferedImageDevice extends GraphicsDevice
      * @see #TYPE_PRINTER
      * @see #TYPE_IMAGE_BUFFER
      */
+    @Override
     public int getType() {
         return GraphicsDevice.TYPE_IMAGE_BUFFER;
     }
@@ -54,6 +55,7 @@ public class BufferedImageDevice extends GraphicsDevice
      * @return a {@code String} that is the identification
      * of this {@code GraphicsDevice}.
      */
+    @Override
     public String getIDstring() {
         return ("BufferedImage");
     }
@@ -65,8 +67,9 @@ public class BufferedImageDevice extends GraphicsDevice
      * objects that are associated with this
      * {@code GraphicsDevice}.
      */
+    @Override
     public GraphicsConfiguration[] getConfigurations() {
-        return new GraphicsConfiguration[] { gc };
+        return new GraphicsConfiguration[]{config};
     }
 
     /**
@@ -75,7 +78,8 @@ public class BufferedImageDevice extends GraphicsDevice
      * @return the default {@code GraphicsConfiguration}
      * of this {@code GraphicsDevice}.
      */
+    @Override
     public GraphicsConfiguration getDefaultConfiguration() {
-        return gc;
+        return config;
     }
 }
