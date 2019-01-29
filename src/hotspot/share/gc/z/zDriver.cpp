@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
@@ -98,9 +97,6 @@ public:
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
     ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
-
-    // JVMTI support
-    SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
 
     // Setup GC id
     GCIdMark gcid(_gc_id);
