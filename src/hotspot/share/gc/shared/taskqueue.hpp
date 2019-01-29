@@ -467,11 +467,18 @@ protected:
   virtual void yield();
   void sleep(uint millis);
 
+  // Called when exiting termination is requested.
+  // When the request is made, terminator may have already terminated
+  // (e.g. all threads are arrived and offered termination). In this case,
+  // it should ignore the request and complete the termination.
+  // Return true if termination is completed. Otherwise, return false.
+  bool complete_or_exit_termination();
 public:
 
   // "n_threads" is the number of threads to be terminated.  "queue_set" is a
   // queue sets of work queues of other threads.
   ParallelTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  virtual ~ParallelTaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
   // else is.  If returns "true", all threads are terminated.  If returns
