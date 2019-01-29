@@ -52,6 +52,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.newBuilder;
@@ -305,5 +306,10 @@ public class WebSocketProxyTest {
                 System.out.println("caught expected exception:" + expected);
             }
         }
+    }
+
+    @BeforeMethod
+    public void breakBetweenTests() {
+        System.out.println("\n-------\n");
     }
 }
