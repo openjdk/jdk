@@ -451,7 +451,10 @@ class ParallelTaskTerminator: public CHeapObj<mtGC> {
 protected:
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
+
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   volatile uint _offered_termination;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
 
 #ifdef TRACESPINNING
   static uint _total_yields;
