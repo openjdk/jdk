@@ -278,11 +278,12 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
+  Register tmp = noreg;
 
   if (stub->tmp()->is_valid()) {
     // Load address into tmp register
     ce->leal(stub->ref_addr(), stub->tmp());
-    ref_addr = stub->tmp()->as_pointer_register();
+    ref_addr = tmp = stub->tmp()->as_pointer_register();
   } else {
     // Address already in register
     ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
@@ -290,8 +291,8 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   assert_different_registers(ref, ref_addr, noreg);
 
-  // Save rax unless it is the result register
-  if (ref != rax) {
+  // Save rax unless it is the result or tmp register
+  if (ref != rax && tmp != rax) {
     __ push(rax);
   }
 
@@ -305,9 +306,13 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   // Verify result
   __ verify_oop(rax, "Bad oop");
 
-  // Restore rax unless it is the result register
+  // Move result into place
   if (ref != rax) {
     __ movptr(ref, rax);
+  }
+
+  // Restore rax unless it is the result or tmp register
+  if (ref != rax && tmp != rax) {
     __ pop(rax);
   }
 
