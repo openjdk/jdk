@@ -137,10 +137,6 @@ typedef XineramaScreenInfo* XineramaQueryScreensFunc(Display*, int*);
 typedef Status XineramaGetInfoFunc(Display* display, int screen_number,
          XRectangle* framebuffer_rects, unsigned char* framebuffer_hints,
          int* num_framebuffers);
-typedef Status XineramaGetCenterHintFunc(Display* display, int screen_number,
-                                         int* x, int* y);
-
-XineramaGetCenterHintFunc* XineramaSolarisCenterFunc = NULL;
 #endif
 
 Bool usingXinerama = False;
@@ -632,16 +628,12 @@ static void xinerama_init_solaris()
     int32_t locNumScr = 0;
     /* load and run XineramaGetInfo */
     char* XineramaGetInfoName = "XineramaGetInfo";
-    char* XineramaGetCenterHintName = "XineramaGetCenterHint";
     XineramaGetInfoFunc* XineramaSolarisFunc = NULL;
 
     /* load library */
     libHandle = dlopen(JNI_LIB_NAME("Xext"), RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle != NULL) {
         XineramaSolarisFunc = (XineramaGetInfoFunc*)dlsym(libHandle, XineramaGetInfoName);
-        XineramaSolarisCenterFunc =
-            (XineramaGetCenterHintFunc*)dlsym(libHandle, XineramaGetCenterHintName);
-
         if (XineramaSolarisFunc != NULL) {
             DTRACE_PRINTLN("calling XineramaGetInfo func on Solaris");
             if ((*XineramaSolarisFunc)(awt_display, 0, &fbrects[0],
@@ -1575,38 +1567,6 @@ Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama(JNIEnv *env,
     return usingXinerama ? JNI_TRUE : JNI_FALSE;
 #endif /* HEADLESS */
 }
-
-/*
- * Can return NULL.
- *
- * Class:     sun_awt_X11GraphicsEnvironment
- * Method:    getXineramaCenterPoint
- * Signature: ()Ljava/awt/Point
- */
-JNIEXPORT jobject JNICALL
-Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
-    jobject this)
-{
-    jobject point = NULL;
-#ifndef HEADLESS    /* return NULL in HEADLESS, Linux */
-#if !defined(__linux__) && !defined(MACOSX)
-    int x,y;
-
-    AWT_LOCK();
-    DASSERT(usingXinerama);
-    if (XineramaSolarisCenterFunc != NULL) {
-        (XineramaSolarisCenterFunc)(awt_display, 0, &x, &y);
-        point = JNU_NewObjectByName(env, "java/awt/Point","(II)V", x, y);
-        DASSERT(point);
-    } else {
-        DTRACE_PRINTLN("unable to call XineramaSolarisCenterFunc: symbol is null");
-    }
-    AWT_FLUSH_UNLOCK();
-#endif /* __linux __ || MACOSX */
-#endif /* HEADLESS */
-    return point;
-}
-
 
 /**
  * Begin DisplayMode/FullScreen support
