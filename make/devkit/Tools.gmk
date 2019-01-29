@@ -103,7 +103,7 @@ endif
 GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
 BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.xz
 CCACHE := https://samba.org/ftp/ccache/$(ccache_ver).tar.xz
-MPFR := http://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
+MPFR := https://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
 GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
 MPC := http://ftp.gnu.org/pub/gnu/mpc/${mpc_ver}.tar.gz
 GDB := http://ftp.gnu.org/gnu/gdb/${gdb_ver}.tar.xz
@@ -355,6 +355,7 @@ $(gcc) \
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
 # Makefile creation. Simply run configure in build dir.
+# Setting CFLAGS to -O2 generates a much faster ld.
 $(bfdmakes) \
 $(BUILDDIR)/$(binutils_ver)/Makefile \
     : $(BINUTILS_CFG)
@@ -362,7 +363,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	@mkdir -p $(@D)
 	( \
 	  cd $(@D) ; \
-	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
 	      $(BINUTILS_CFG) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
@@ -370,6 +371,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	      --program-prefix=$(TARGET)- \
 	      --enable-multilib \
 	      --enable-gold \
+	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
