@@ -42,9 +42,6 @@ private:
   void print_impl(outputStream* st);
 
 public:
-  // Is this ciObject a Java Language Object?  That is,
-  // is the ciObject an instance or an array
-  bool is_java_object() { return true; }
 
   // What kind of ciObject is this?
   bool is_null_object() const { return true; }

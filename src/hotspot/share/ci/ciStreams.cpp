@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,14 +224,6 @@ int ciBytecodeStream::get_constant_pool_index() const {
 }
 
 // ------------------------------------------------------------------
-// ciBytecodeStream::get_constant_cache_index
-// Return the CP cache index, or -1 if there isn't any.
-int ciBytecodeStream::get_constant_cache_index() const {
-  // work-alike for Bytecode_loadconstant::cache_index()
-  return has_cache_index() ? get_constant_raw_index() : -1;
-}
-
-// ------------------------------------------------------------------
 // ciBytecodeStream::get_constant
 //
 // If this bytecode is one of the ldc variants, get the referenced
@@ -315,19 +307,6 @@ int ciBytecodeStream::get_field_holder_index() {
     ConstantPool* cpool = _holder->get_instanceKlass()->constants();
     return cpool->klass_ref_index_at(get_field_index());
   )
-}
-
-// ------------------------------------------------------------------
-// ciBytecodeStream::get_field_signature_index
-//
-// Get the constant pool index of the signature of the field
-// referenced by the current bytecode.  Used for generating
-// deoptimization information.
-int ciBytecodeStream::get_field_signature_index() {
-  VM_ENTRY_MARK;
-  ConstantPool* cpool = _holder->get_instanceKlass()->constants();
-  int nt_index = cpool->name_and_type_ref_index_at(get_field_index());
-  return cpool->signature_ref_index_at(nt_index);
 }
 
 // ------------------------------------------------------------------
@@ -474,13 +453,3 @@ int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool
   )
 }
 
-// ------------------------------------------------------------------
-// ciBytecodeStream::get_resolved_references
-ciObjArray* ciBytecodeStream::get_resolved_references() {
-    VM_ENTRY_MARK;
-    // Get the constant pool.
-  ConstantPool*        cpool   = _holder->get_instanceKlass()->constants();
-
-  // Create a resolved references array and return it.
-  return CURRENT_ENV->get_object(cpool->resolved_references())->as_obj_array();
-  }

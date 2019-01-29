@@ -73,7 +73,6 @@ public:
 
   // What kind of ciObject is this?
   bool is_array()        { return true; }
-  bool is_java_object()  { return true; }
 };
 
 #endif // SHARE_CI_CIARRAY_HPP

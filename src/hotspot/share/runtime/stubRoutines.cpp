@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ address StubRoutines::_d2l_wrapper                              = NULL;
 
 jint    StubRoutines::_fpu_cntrl_wrd_std                        = 0;
 jint    StubRoutines::_fpu_cntrl_wrd_24                         = 0;
-jint    StubRoutines::_fpu_cntrl_wrd_64                         = 0;
 jint    StubRoutines::_fpu_cntrl_wrd_trunc                      = 0;
 jint    StubRoutines::_mxcsr_std                                = 0;
 jint    StubRoutines::_fpu_subnormal_bias1[3]                   = { 0, 0, 0 };
@@ -162,11 +161,6 @@ address StubRoutines::_dlibm_sin_cos_huge = NULL;
 address StubRoutines::_dlibm_reduce_pi04l = NULL;
 address StubRoutines::_dlibm_tan_cot_huge = NULL;
 address StubRoutines::_dtan = NULL;
-
-double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
-double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
-double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
-double (* StubRoutines::_intrinsic_tan   )(double) = NULL;
 
 address StubRoutines::_safefetch32_entry                 = NULL;
 address StubRoutines::_safefetch32_fault_pc              = NULL;

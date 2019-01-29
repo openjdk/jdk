@@ -115,7 +115,6 @@ public:
   // What kind of ciObject is this?
   virtual bool is_null_object()       const { return false; }
   virtual bool is_call_site()         const { return false; }
-  virtual bool is_cpcache()           const { return false; }
   virtual bool is_instance()                { return false; }
   virtual bool is_member_name()       const { return false; }
   virtual bool is_method_handle()     const { return false; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,10 +535,6 @@ bool ciMethodData::has_escape_info() {
 
 void ciMethodData::set_eflag(MethodData::EscapeFlag f) {
   set_bits(_eflags, f);
-}
-
-void ciMethodData::clear_eflag(MethodData::EscapeFlag f) {
-  clear_bits(_eflags, f);
 }
 
 bool ciMethodData::eflag_set(MethodData::EscapeFlag f) const {
