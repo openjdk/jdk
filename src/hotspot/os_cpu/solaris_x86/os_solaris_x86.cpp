@@ -686,54 +686,6 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     return true;
   }
 
-#ifndef AMD64
-  // Workaround (bug 4900493) for Solaris kernel bug 4966651.
-  // Handle an undefined selector caused by an attempt to assign
-  // fs in libthread getipriptr(). With the current libthread design every 512
-  // thread creations the LDT for a private thread data structure is extended
-  // and thre is a hazard that and another thread attempting a thread creation
-  // will use a stale LDTR that doesn't reflect the structure's growth,
-  // causing a GP fault.
-  // Enforce the probable limit of passes through here to guard against an
-  // infinite loop if some other move to fs caused the GP fault. Note that
-  // this loop counter is ultimately a heuristic as it is possible for
-  // more than one thread to generate this fault at a time in an MP system.
-  // In the case of the loop count being exceeded or if the poll fails
-  // just fall through to a fatal error.
-  // If there is some other source of T_GPFLT traps and the text at EIP is
-  // unreadable this code will loop infinitely until the stack is exausted.
-  // The key to diagnosis in this case is to look for the bottom signal handler
-  // frame.
-
-  if(! IgnoreLibthreadGPFault) {
-    if (sig == SIGSEGV && uc->uc_mcontext.gregs[TRAPNO] == T_GPFLT) {
-      const unsigned char *p =
-                        (unsigned const char *) uc->uc_mcontext.gregs[EIP];
-
-      // Expected instruction?
-
-      if(p[0] == movlfs[0] && p[1] == movlfs[1]) {
-
-        Atomic::inc(&ldtr_refresh);
-
-        // Infinite loop?
-
-        if(ldtr_refresh < ((2 << 16) / PAGESIZE)) {
-
-          // No, force scheduling to get a fresh view of the LDTR
-
-          if(poll(NULL, 0, 10) == 0) {
-
-            // Retry the move
-
-            return false;
-          }
-        }
-      }
-    }
-  }
-#endif // !AMD64
-
   if (!abort_if_unrecognized) {
     // caller wants another chance, so give it to him
     return false;

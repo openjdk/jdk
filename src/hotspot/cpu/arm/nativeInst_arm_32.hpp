@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_NATIVEINST_ARM_32_HPP
-#define CPU_ARM_VM_NATIVEINST_ARM_32_HPP
+#ifndef CPU_ARM_NATIVEINST_ARM_32_HPP
+#define CPU_ARM_NATIVEINST_ARM_32_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
@@ -429,4 +429,4 @@ inline NativeCall* nativeCall_before(address return_address) {
   return (NativeCall *) rawNativeCall_before(return_address);
 }
 
-#endif // CPU_ARM_VM_NATIVEINST_ARM_32_HPP
+#endif // CPU_ARM_NATIVEINST_ARM_32_HPP

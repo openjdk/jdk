@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,13 @@ public class TestCheckedEnsureLocalCapacity {
         { 1, 45 }   // bad: copies >> capacity
     };
 
-    private static final String EXCEED_WARNING =
-        "^WARNING: JNI local refs: \\d++, exceeds capacity:";
+    // Patterns EXCEED_WARNING and WARNING are not anchored to the beginning
+    // of lines to allow matching interleaved output.
 
-    private static final String WARNING = "^WARNING: ";
+    private static final String EXCEED_WARNING =
+        "WARNING: JNI local refs: \\d++, exceeds capacity:";
+
+    private static final String WARNING = "WARNING:";
 
     public static void main(String[] args) throws Throwable {
         if (args.length == 2) {

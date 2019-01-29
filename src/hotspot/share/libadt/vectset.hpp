@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_LIBADT_VECTSET_HPP
-#define SHARE_VM_LIBADT_VECTSET_HPP
+#ifndef SHARE_LIBADT_VECTSET_HPP
+#define SHARE_LIBADT_VECTSET_HPP
 
 #include "libadt/set.hpp"
 
@@ -110,7 +110,6 @@ public:
 
   // Expose internals for speed-critical fast iterators
   uint word_size() const { return size; }
-  uint32_t* EXPOSE() const { return data; }
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if( visited[idx] ) return;
@@ -184,4 +183,4 @@ public:
   int test(void) { return i < s->size; }
 };
 
-#endif // SHARE_VM_LIBADT_VECTSET_HPP
+#endif // SHARE_LIBADT_VECTSET_HPP

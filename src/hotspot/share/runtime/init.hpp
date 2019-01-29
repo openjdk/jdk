@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_INIT_HPP
-#define SHARE_VM_RUNTIME_INIT_HPP
+#ifndef SHARE_RUNTIME_INIT_HPP
+#define SHARE_RUNTIME_INIT_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -42,4 +42,4 @@ void exit_globals();     // call destructors before exit
 bool is_init_completed();     // returns true when bootstrapping has completed
 void set_init_completed();    // set basic init to completed
 
-#endif // SHARE_VM_RUNTIME_INIT_HPP
+#endif // SHARE_RUNTIME_INIT_HPP

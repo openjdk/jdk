@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,8 +537,8 @@ public class Infer {
         for (Type t : todo) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
-            ct.bound = types.glb(inferenceContext.asInstTypes(types.getBounds(ct)));
-            if (ct.bound.isErroneous()) {
+            ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
+            if (ct.getUpperBound().isErroneous()) {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_VM_OS_LINUX_X86_INLINE_HPP
-#define OS_CPU_LINUX_X86_VM_OS_LINUX_X86_INLINE_HPP
+#ifndef OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP
+#define OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP
 
 #include "runtime/os.hpp"
 
@@ -43,4 +43,4 @@ inline jlong os::rdtsc() {
 #endif // AMD64
 }
 
-#endif // OS_CPU_LINUX_X86_VM_OS_LINUX_X86_INLINE_HPP
+#endif // OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP

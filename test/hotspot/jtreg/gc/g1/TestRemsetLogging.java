@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,21 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestRemsetLogging.java
  * @requires vm.gc.G1
  * @bug 8013895 8129977 8145534
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Verify output of -Xlog:gc+remset*=trace
- * @run main TestRemsetLogging
+ * @run main gc.g1.TestRemsetLogging
  *
  * Test the output of -Xlog:gc+remset*=trace in conjunction with G1SummarizeRSetStatsPeriod.
  */

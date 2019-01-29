@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2009, 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_DTRACE_HPP
-#define SHARE_VM_UTILITIES_DTRACE_HPP
+#ifndef SHARE_UTILITIES_DTRACE_HPP
+#define SHARE_UTILITIES_DTRACE_HPP
 
 #if defined(DTRACE_ENABLED)
 
@@ -61,4 +61,4 @@
 
 #endif /* defined(DTRACE_ENABLED) */
 
-#endif // SHARE_VM_UTILITIES_DTRACE_HPP
+#endif // SHARE_UTILITIES_DTRACE_HPP

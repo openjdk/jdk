@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ requires.properties= \
     vm.rtm.cpu \
     vm.rtm.compiler \
     vm.aot \
+    vm.aot.enabled \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.archived.java.heap \

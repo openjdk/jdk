@@ -646,60 +646,7 @@ public class JavaTokenizer {
                         lexError(pos, Errors.UnclosedStrLit);
                     }
                     break loop;
-                case '`':
-                    checkSourceLevel(pos, Feature.RAW_STRING_LITERALS);
-                    // Ensure that the backtick was not a Unicode escape sequence
-                    if (reader.peekBack() != '`') {
-                        reader.scanChar();
-                        lexError(pos, Errors.UnicodeBacktick);
-                        break loop;
-                    }
-                    // Turn off unicode processsing and save previous state
-                    boolean oldState = reader.setUnicodeConversion(false);
-                    // Count the number of backticks in the open quote sequence
-                    int openCount = reader.skipRepeats();
-                    // Skip last backtick
-                    reader.scanChar();
-                    while (reader.bp < reader.buflen) {
-                        // If potential close quote sequence
-                        if (reader.ch == '`') {
-                            // Count number of backticks in sequence
-                            int closeCount = reader.skipRepeats();
-                            // If the counts match we can exit the raw string literal
-                            if (openCount == closeCount) {
-                                break;
-                            }
-                            // Emit non-close backtick sequence
-                            for (int i = 0; i <= closeCount; i++) {
-                                reader.putChar('`', false);
-                            }
-                            // Skip last backtick
-                            reader.scanChar();
-                        } else if (reader.ch == LF) {
-                            reader.putChar(true);
-                            processLineTerminator(pos, reader.bp);
-                        } else if (reader.ch == CR) {
-                            if (reader.peekChar() == LF) {
-                                reader.scanChar();
-                            }
-                            // Translate CR and CRLF sequences to LF
-                            reader.putChar('\n', true);
-                            processLineTerminator(pos, reader.bp);
-                        } else {
-                            reader.putChar(true);
-                        }
-                    }
-                    // Restore unicode processsing
-                    reader.setUnicodeConversion(oldState);
-                    // Ensure the close quote was encountered
-                    if (reader.bp == reader.buflen) {
-                        lexError(pos, Errors.UnclosedStrLit);
-                    } else {
-                        tk = TokenKind.STRINGLITERAL;
-                        reader.scanChar();
-                    }
-                    break loop;
-                default:
+               default:
                     if (isSpecial(reader.ch)) {
                         scanOperator();
                     } else {

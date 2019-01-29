@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_COMMANDLINEFLAGCONSTRAINTSG1_HPP
-#define SHARE_GC_G1_COMMANDLINEFLAGCONSTRAINTSG1_HPP
+#ifndef SHARE_GC_G1_JVMFLAGCONSTRAINTSG1_HPP
+#define SHARE_GC_G1_JVMFLAGCONSTRAINTSG1_HPP
 
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -43,4 +43,4 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose);
 
 size_t MaxSizeForHeapAlignmentG1();
 
-#endif // SHARE_GC_SHARED_COMMANDLINEFLAGCONSTRAINTSG1_HPP
+#endif // SHARE_GC_G1_JVMFLAGCONSTRAINTSG1_HPP

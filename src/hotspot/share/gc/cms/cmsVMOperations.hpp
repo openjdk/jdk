@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_CMSVMOPERATIONS_HPP
-#define SHARE_VM_GC_CMS_CMSVMOPERATIONS_HPP
+#ifndef SHARE_GC_CMS_CMSVMOPERATIONS_HPP
+#define SHARE_GC_CMS_CMSVMOPERATIONS_HPP
 
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -143,4 +143,4 @@ class VM_GenCollectFullConcurrent: public VM_GC_Operation {
   virtual bool evaluate_at_safepoint() const;
 };
 
-#endif // SHARE_VM_GC_CMS_CMSVMOPERATIONS_HPP
+#endif // SHARE_GC_CMS_CMSVMOPERATIONS_HPP

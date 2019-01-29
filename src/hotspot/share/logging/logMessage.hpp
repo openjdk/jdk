@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGMESSAGE_HPP
-#define SHARE_VM_LOGGING_LOGMESSAGE_HPP
+#ifndef SHARE_LOGGING_LOGMESSAGE_HPP
+#define SHARE_LOGGING_LOGMESSAGE_HPP
 
 #include "logging/log.hpp"
 #include "logging/logMessageBuffer.hpp"
@@ -102,4 +102,4 @@ class LogMessageImpl : public LogMessageBuffer {
 #undef LOG_LEVEL
 };
 
-#endif // SHARE_VM_LOGGING_LOGMESSAGE_HPP
+#endif // SHARE_LOGGING_LOGMESSAGE_HPP

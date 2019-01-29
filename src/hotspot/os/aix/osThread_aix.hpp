@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_OSTHREAD_AIX_HPP
-#define OS_AIX_VM_OSTHREAD_AIX_HPP
+#ifndef OS_AIX_OSTHREAD_AIX_HPP
+#define OS_AIX_OSTHREAD_AIX_HPP
 
  public:
   typedef pthread_t thread_id_t;
@@ -150,4 +150,4 @@
     jlong user;
   } _last_cpu_times;
 
-#endif // OS_AIX_VM_OSTHREAD_AIX_HPP
+#endif // OS_AIX_OSTHREAD_AIX_HPP

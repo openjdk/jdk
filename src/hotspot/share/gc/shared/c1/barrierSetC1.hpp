@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,17 +92,18 @@ public:
     load_offset();
   }
 
-  LIRGenerator* gen() const            { return _gen; }
-  CodeEmitInfo*& patch_emit_info()     { return _patch_emit_info; }
-  CodeEmitInfo*& access_emit_info()    { return _access_emit_info; }
-  LIRAddressOpr& base()                { return _base; }
-  LIRAddressOpr& offset()              { return _offset; }
-  BasicType type() const               { return _type; }
-  LIR_Opr resolved_addr() const        { return _resolved_addr; }
-  void set_resolved_addr(LIR_Opr addr) { _resolved_addr = addr; }
-  bool is_oop() const                  { return _type == T_ARRAY || _type == T_OBJECT; }
-  DecoratorSet decorators() const      { return _decorators; }
-  bool is_raw() const                  { return (_decorators & AS_RAW) != 0; }
+  LIRGenerator* gen() const              { return _gen; }
+  CodeEmitInfo*& patch_emit_info()       { return _patch_emit_info; }
+  CodeEmitInfo*& access_emit_info()      { return _access_emit_info; }
+  LIRAddressOpr& base()                  { return _base; }
+  LIRAddressOpr& offset()                { return _offset; }
+  BasicType type() const                 { return _type; }
+  LIR_Opr resolved_addr() const          { return _resolved_addr; }
+  void set_resolved_addr(LIR_Opr addr)   { _resolved_addr = addr; }
+  bool is_oop() const                    { return _type == T_ARRAY || _type == T_OBJECT; }
+  DecoratorSet decorators() const        { return _decorators; }
+  void clear_decorators(DecoratorSet ds) { _decorators &= ~ds; }
+  bool is_raw() const                    { return (_decorators & AS_RAW) != 0; }
 };
 
 // The BarrierSetC1 class is the main entry point for the GC backend of the Access API in C1.

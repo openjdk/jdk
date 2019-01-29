@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_STRINGUTILS_HPP
-#define SHARE_VM_UTILITIES_STRINGUTILS_HPP
+#ifndef SHARE_UTILITIES_STRINGUTILS_HPP
+#define SHARE_UTILITIES_STRINGUTILS_HPP
 
 #include "memory/allocation.hpp"
 
@@ -42,4 +42,4 @@ public:
   static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
 };
 
-#endif // SHARE_VM_UTILITIES_STRINGUTILS_HPP
+#endif // SHARE_UTILITIES_STRINGUTILS_HPP

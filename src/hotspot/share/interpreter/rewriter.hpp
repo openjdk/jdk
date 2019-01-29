@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_REWRITER_HPP
-#define SHARE_VM_INTERPRETER_REWRITER_HPP
+#ifndef SHARE_INTERPRETER_REWRITER_HPP
+#define SHARE_INTERPRETER_REWRITER_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
@@ -213,4 +213,4 @@ class Rewriter: public StackObj {
   static void rewrite(InstanceKlass* klass, TRAPS);
 };
 
-#endif // SHARE_VM_INTERPRETER_REWRITER_HPP
+#endif // SHARE_INTERPRETER_REWRITER_HPP

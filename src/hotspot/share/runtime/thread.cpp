@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1671,6 +1671,8 @@ void JavaThread::initialize() {
     SafepointMechanism::initialize_header(this);
   }
 
+  _class_to_be_initialized = NULL;
+
   pd_initialize();
 }
 
@@ -2390,8 +2392,19 @@ void JavaThread::java_suspend() {
     }
   }
 
-  VM_ThreadSuspend vm_suspend;
-  VMThread::execute(&vm_suspend);
+  if (Thread::current() == this) {
+    // Safely self-suspend.
+    // If we don't do this explicitly it will implicitly happen
+    // before we transition back to Java, and on some other thread-state
+    // transition paths, but not as we exit a JVM TI SuspendThread call.
+    // As SuspendThread(current) must not return (until resumed) we must
+    // self-suspend here.
+    ThreadBlockInVM tbivm(this);
+    java_suspend_self();
+  } else {
+    VM_ThreadSuspend vm_suspend;
+    VMThread::execute(&vm_suspend);
+  }
 }
 
 // Part II of external suspension.
@@ -3716,16 +3729,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TRACETIME_LOG(Info, startuptime));
 
+  // Initialize the os module after parsing the args
+  jint os_init_2_result = os::init_2();
+  if (os_init_2_result != JNI_OK) return os_init_2_result;
+
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
   // Initialize assert poison page mechanism.
   if (ShowRegistersOnAssert) {
     initialize_assert_poison();
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
-
-  // Initialize the os module after parsing the args
-  jint os_init_2_result = os::init_2();
-  if (os_init_2_result != JNI_OK) return os_init_2_result;
 
   SafepointMechanism::initialize();
 

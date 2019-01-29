@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_C1_FRAMEMAP_X86_HPP
-#define CPU_X86_VM_C1_FRAMEMAP_X86_HPP
+#ifndef CPU_X86_C1_FRAMEMAP_X86_HPP
+#define CPU_X86_C1_FRAMEMAP_X86_HPP
 
 //  On i486 the frame looks as follows:
 //
@@ -166,5 +166,4 @@
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }
 
-#endif // CPU_X86_VM_C1_FRAMEMAP_X86_HPP
-
+#endif // CPU_X86_C1_FRAMEMAP_X86_HPP

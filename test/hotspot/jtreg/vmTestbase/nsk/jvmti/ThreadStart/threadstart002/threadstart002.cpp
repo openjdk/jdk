@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ extern "C" {
 
 #define PASSED 0
 #define STATUS_FAILED 2
-#define WAIT_TIME 2000
+#define WAIT_TIME 20000
 
 static jvmtiEnv *jvmti = NULL;
 static jvmtiCapabilities caps;

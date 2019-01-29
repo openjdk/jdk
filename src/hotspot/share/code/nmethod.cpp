@@ -1100,7 +1100,11 @@ void nmethod::make_unloaded() {
          "must be at safepoint");
 
   // Unregister must be done before the state change
-  Universe::heap()->unregister_nmethod(this);
+  {
+    MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
+                     Mutex::_no_safepoint_check_flag);
+    Universe::heap()->unregister_nmethod(this);
+  }
 
   // Log the unloading.
   log_state_change();
@@ -1156,6 +1160,19 @@ void nmethod::log_state_change() const {
   CompileTask::print_ul(this, state_msg);
   if (PrintCompilation && _state != unloaded) {
     print_on(tty, state_msg);
+  }
+}
+
+void nmethod::unlink_from_method(bool acquire_lock) {
+  // We need to check if both the _code and _from_compiled_code_entry_point
+  // refer to this nmethod because there is a race in setting these two fields
+  // in Method* as seen in bugid 4947125.
+  // If the vep() points to the zombie nmethod, the memory for the nmethod
+  // could be flushed and the compiler and vtable stubs could still call
+  // through it.
+  if (method() != NULL && (method()->code() == this ||
+                           method()->from_compiled_entry() == verified_entry_point())) {
+    method()->clear_code(acquire_lock);
   }
 }
 
@@ -1246,17 +1263,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     JVMCI_ONLY(maybe_invalidate_installed_code());
 
     // Remove nmethod from method.
-    // We need to check if both the _code and _from_compiled_code_entry_point
-    // refer to this nmethod because there is a race in setting these two fields
-    // in Method* as seen in bugid 4947125.
-    // If the vep() points to the zombie nmethod, the memory for the nmethod
-    // could be flushed and the compiler and vtable stubs could still call
-    // through it.
-    if (method() != NULL && (method()->code() == this ||
-                             method()->from_compiled_entry() == verified_entry_point())) {
-      HandleMark hm;
-      method()->clear_code(false /* already owns Patching_lock */);
-    }
+    unlink_from_method(false /* already owns Patching_lock */);
   } // leave critical region under Patching_lock
 
 #ifdef ASSERT

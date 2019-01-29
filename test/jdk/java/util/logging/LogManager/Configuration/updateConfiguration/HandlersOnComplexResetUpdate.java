@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,14 @@ public class HandlersOnComplexResetUpdate {
         }
     }
 
+    public static final double TIMEOUT_FACTOR;
+    static {
+        String toFactor = System.getProperty("test.timeout.factor", "1.0");
+        TIMEOUT_FACTOR = Double.parseDouble(toFactor);
+    }
+    static int adjustCount(int count) {
+        return (int) Math.ceil(TIMEOUT_FACTOR * count);
+    }
 
     private static final String PREFIX =
             "FileHandler-" + UUID.randomUUID() + ".log";
@@ -213,11 +221,11 @@ public class HandlersOnComplexResetUpdate {
                     + barChild.getParent() +"\n\texpected: " + barRef.get());
         }
         Reference<? extends Logger> ref2;
-        int max = 3;
+        int max = adjustCount(3);
         barChild = null;
         while ((ref2 = queue.poll()) == null) {
             System.gc();
-            Thread.sleep(100);
+            Thread.sleep(1000);
             if (--max == 0) break;
         }
 
@@ -328,21 +336,25 @@ public class HandlersOnComplexResetUpdate {
                     throw new RuntimeException(x);
                 }
             });
-            fooChild = null;
-            System.out.println("Setting fooChild to: " + fooChild);
-            while ((ref2 = queue.poll()) == null) {
-                System.gc();
-                Thread.sleep(1000);
-            }
-            if (ref2 != fooRef) {
-                throw new RuntimeException("Unexpected reference: "
-                        + ref2 +"\n\texpected: " + fooRef);
-            }
-            if (ref2.get() != null) {
-                throw new RuntimeException("Referent not cleared: " + ref2.get());
-            }
-            System.out.println("Got fooRef after reset(), fooChild is " + fooChild);
-
+            try {
+                fooChild = null;
+                System.out.println("Setting fooChild to: " + fooChild);
+                while ((ref2 = queue.poll()) == null) {
+                    System.gc();
+                    Thread.sleep(1000);
+                }
+                if (ref2 != fooRef) {
+                    throw new RuntimeException("Unexpected reference: "
+                            + ref2 +"\n\texpected: " + fooRef);
+                }
+                if (ref2.get() != null) {
+                    throw new RuntimeException("Referent not cleared: " + ref2.get());
+                }
+                System.out.println("Got fooRef after reset(), fooChild is " + fooChild);
+             } catch(Throwable t) {
+                if (failed != null) t.addSuppressed(failed);
+                throw t;
+             }
         }
         if (failed != null) {
             // should rarely happen...

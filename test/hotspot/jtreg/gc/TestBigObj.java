@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,13 @@
  * questions.
  */
 
+package gc;
+
 /*
  * @test TestBigObj
  * @bug 6845368
  * @summary ensure gc updates references > 64K bytes from the start of the obj
- * @run main/othervm/timeout=720 -Xmx256m -verbose:gc TestBigObj
+ * @run main/othervm/timeout=720 -Xmx256m -verbose:gc gc.TestBigObj
  */
 
 // Allocate an object with a block of reference fields that starts more

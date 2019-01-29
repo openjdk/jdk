@@ -31,7 +31,6 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
-import sun.security.x509.X509Key;
 
 public class ECUtil {
 
@@ -103,7 +102,7 @@ public class ECUtil {
             ECParameterSpec params) throws InvalidKeySpecException {
         KeyFactory keyFactory = getKeyFactory();
         ECPublicKeySpec keySpec = new ECPublicKeySpec(w, params);
-        X509Key key = (X509Key)keyFactory.generatePublic(keySpec);
+        Key key = keyFactory.generatePublic(keySpec);
 
         return key.getEncoded();
     }

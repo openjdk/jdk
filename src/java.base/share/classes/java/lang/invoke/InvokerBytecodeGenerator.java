@@ -721,11 +721,11 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    static final String  LF_HIDDEN_SIG = className("Ljava/lang/invoke/LambdaForm$Hidden;");
-    static final String  LF_COMPILED_SIG = className("Ljava/lang/invoke/LambdaForm$Compiled;");
-    static final String  FORCEINLINE_SIG = className("Ljdk/internal/vm/annotation/ForceInline;");
-    static final String  DONTINLINE_SIG = className("Ljdk/internal/vm/annotation/DontInline;");
-    static final String  INJECTEDPROFILE_SIG = className("Ljava/lang/invoke/InjectedProfile;");
+    static final String      DONTINLINE_SIG = className("Ljdk/internal/vm/annotation/DontInline;");
+    static final String     FORCEINLINE_SIG = className("Ljdk/internal/vm/annotation/ForceInline;");
+    static final String          HIDDEN_SIG = className("Ljdk/internal/vm/annotation/Hidden;");
+    static final String INJECTEDPROFILE_SIG = className("Ljava/lang/invoke/InjectedProfile;");
+    static final String     LF_COMPILED_SIG = className("Ljava/lang/invoke/LambdaForm$Compiled;");
 
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
@@ -748,7 +748,7 @@ class InvokerBytecodeGenerator {
         methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation(LF_HIDDEN_SIG, true);
+        mv.visitAnnotation(HIDDEN_SIG, true);
 
         // Mark this method as a compiled LambdaForm
         mv.visitAnnotation(LF_COMPILED_SIG, true);
@@ -1752,7 +1752,7 @@ class InvokerBytecodeGenerator {
         methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation(LF_HIDDEN_SIG, true);
+        mv.visitAnnotation(HIDDEN_SIG, true);
 
         // Don't inline the interpreter entry.
         mv.visitAnnotation(DONTINLINE_SIG, true);
@@ -1812,7 +1812,7 @@ class InvokerBytecodeGenerator {
         methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation(LF_HIDDEN_SIG, true);
+        mv.visitAnnotation(HIDDEN_SIG, true);
 
         // Force inlining of this invoker method.
         mv.visitAnnotation(FORCEINLINE_SIG, true);

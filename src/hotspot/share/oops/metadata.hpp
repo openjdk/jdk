@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_METADATA_HPP
-#define SHARE_VM_OOPS_METADATA_HPP
+#ifndef SHARE_OOPS_METADATA_HPP
+#define SHARE_OOPS_METADATA_HPP
 
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -76,4 +76,4 @@ class Metadata : public MetaspaceObj {
   static void mark_on_stack(Metadata* m) { m->set_on_stack(true); }
 };
 
-#endif // SHARE_VM_OOPS_METADATA_HPP
+#endif // SHARE_OOPS_METADATA_HPP

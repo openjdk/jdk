@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_ASSEMBLER_ZERO_HPP
-#define CPU_ZERO_VM_ASSEMBLER_ZERO_HPP
+#ifndef CPU_ZERO_ASSEMBLER_ZERO_HPP
+#define CPU_ZERO_ASSEMBLER_ZERO_HPP
 
 // In normal, CPU-specific ports of HotSpot these two classes are used
 // for generating assembly language.  We don't do any of this in zero,
@@ -59,4 +59,4 @@ class MacroAssembler : public Assembler {
 address ShouldNotCallThisStub();
 address ShouldNotCallThisEntry();
 
-#endif // CPU_ZERO_VM_ASSEMBLER_ZERO_HPP
+#endif // CPU_ZERO_ASSEMBLER_ZERO_HPP

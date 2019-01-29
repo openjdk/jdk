@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,9 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
@@ -50,7 +48,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * An implementation of ServerSocketChannels
@@ -193,7 +190,7 @@ class ServerSocketChannelImpl
             if (Net.isReusePortAvailable()) {
                 set.add(StandardSocketOptions.SO_REUSEPORT);
             }
-            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
+            set.addAll(ExtendedSocketOptions.serverSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }

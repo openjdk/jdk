@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_HPP
-#define OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_HPP
+#ifndef OS_CPU_AIX_PPC_ATOMIC_AIX_PPC_HPP
+#define OS_CPU_AIX_PPC_ATOMIC_AIX_PPC_HPP
 
 #ifndef PPC64
 #error "Atomic currently only implemented for PPC64"
@@ -417,4 +417,4 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 #undef strasm_nobarrier
 #undef strasm_nobarrier_clobber_memory
 
-#endif // OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_HPP
+#endif // OS_CPU_AIX_PPC_ATOMIC_AIX_PPC_HPP

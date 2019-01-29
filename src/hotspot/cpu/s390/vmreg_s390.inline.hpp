@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_VMREG_S390_INLINE_HPP
-#define CPU_S390_VM_VMREG_S390_INLINE_HPP
+#ifndef CPU_S390_VMREG_S390_INLINE_HPP
+#define CPU_S390_VMREG_S390_INLINE_HPP
 
 inline VMReg RegisterImpl::as_VMReg() {
   if (this == noreg) {
@@ -41,4 +41,4 @@ inline VMReg ConditionRegisterImpl::as_VMReg() {
   return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_fpr);
 }
 
-#endif // CPU_S390_VM_VMREG_S390_INLINE_HPP
+#endif // CPU_S390_VMREG_S390_INLINE_HPP

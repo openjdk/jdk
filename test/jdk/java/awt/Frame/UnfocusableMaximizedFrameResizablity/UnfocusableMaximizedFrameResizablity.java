@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 4980161 7158623 8204860 8208125
+  @bug 4980161 7158623 8204860 8208125 8215280
   @summary Setting focusable window state to false makes the maximized frame resizable
   @compile UnfocusableMaximizedFrameResizablity.java
   @run main UnfocusableMaximizedFrameResizablity
@@ -47,8 +47,15 @@ public class UnfocusableMaximizedFrameResizablity {
 
     private static void createAndShowFrame() throws Exception {
 
+        //MAXIMIZED_BOTH frame is resizable on Mac OS by default. Nothing to test.
+        if (System.getProperty("os.name").toLowerCase().startsWith("mac")) {
+            cleanup();
+            return;
+        }
+
         //The MAXIMIZED_BOTH state is not supported by the toolkit. Nothing to test.
         if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH)) {
+            cleanup();
             return;
         }
 
@@ -93,7 +100,9 @@ public class UnfocusableMaximizedFrameResizablity {
     }
 
     private static void cleanup() {
-        frame.dispose();
+        if (frame != null) {
+            frame.dispose();
+        }
         isProgInterruption = true;
         mainThread.interrupt();
     }

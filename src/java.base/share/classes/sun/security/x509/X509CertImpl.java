@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.x500.X500Principal;
 
-import java.util.Base64;
 import sun.security.util.*;
 import sun.security.provider.X509Factory;
 
@@ -599,14 +598,10 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
             sigEngine.initSign(key);
 
-            // set parameters after Signature.initSign/initVerify call, so
-            // the deferred provider selection happens when the key is set
-            try {
+            if (signingParams != null) {
+                // set parameters after Signature.initSign/initVerify call, so
+                // the deferred provider selection happens when the key is set
                 sigEngine.setParameter(signingParams);
-            } catch (UnsupportedOperationException e) {
-                // for backward compatibility, only re-throw when
-                // parameters is not null
-                if (signingParams != null) throw e;
             }
 
             // in case the name is reset

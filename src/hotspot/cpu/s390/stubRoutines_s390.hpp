@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_STUBROUTINES_ZARCH_64_64_HPP
-#define CPU_S390_VM_STUBROUTINES_ZARCH_64_64_HPP
+#ifndef CPU_S390_STUBROUTINES_S390_HPP
+#define CPU_S390_STUBROUTINES_S390_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to extend it.
@@ -100,4 +100,4 @@ class zarch {
   static void generate_load_trot_table_addr(MacroAssembler* masm, Register table);
 };
 
-#endif // CPU_S390_VM_STUBROUTINES_ZARCH_64_64_HPP
+#endif // CPU_S390_STUBROUTINES_S390_HPP

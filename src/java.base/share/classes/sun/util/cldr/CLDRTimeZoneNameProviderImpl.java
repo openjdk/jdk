@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,12 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     private void deriveFallbackName(String[] names, int index, Locale locale, boolean noDST) {
         if (exists(names, index)) {
+            if (names[index].equals(NO_INHERITANCE_MARKER)) {
+                // CLDR's "no inheritance marker"
+                names[index] = toGMTFormat(names[INDEX_TZID],
+                                    index == INDEX_DST_LONG || index == INDEX_DST_SHORT,
+                                    index % 2 != 0, locale);
+            }
             return;
         }
 

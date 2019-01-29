@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class StressOptions {
     }
 
     /* Execution time in seconds */
-    @Option(name = "stressTime", default_value = "60", description = "Stress execution time in seconds")
+    @Option(name = "stressTime", default_value = "30", description = "Stress execution time in seconds")
     private long time;
 
     /* Iterations factor */
@@ -79,7 +79,7 @@ public class StressOptions {
      * Create StressOptions with default settings.
      */
     public StressOptions() {
-        time = 60;
+        time = 30;
         iterationsFactor = 1;
         threadsFactor = 1;
         runsFactor = 1;

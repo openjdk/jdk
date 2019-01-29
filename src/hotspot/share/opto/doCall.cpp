@@ -202,9 +202,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     }
 
     // Try using the type profile.
-    if (call_does_dispatch && site_count > 0 && receiver_count > 0) {
+    if (call_does_dispatch && site_count > 0 && UseTypeProfile) {
       // The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.
-      bool have_major_receiver = (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
+      bool have_major_receiver = profile.has_receiver(0) && (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
       ciMethod* receiver_method = NULL;
 
       int morphism = profile.morphism();
@@ -258,8 +258,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             }
           }
           CallGenerator* miss_cg;
-          Deoptimization::DeoptReason reason = morphism == 2 ?
-            Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
+          Deoptimization::DeoptReason reason = (morphism == 2
+                                               ? Deoptimization::Reason_bimorphic
+                                               : Deoptimization::reason_class_check(speculative_receiver_type != NULL));
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
               !too_many_traps(caller, bci, reason)
              ) {
@@ -281,8 +282,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != NULL) {
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
               ciKlass* k = speculative_receiver_type != NULL ? speculative_receiver_type : profile.receiver(0);
+              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, k, site_count, receiver_count);
               float hit_prob = speculative_receiver_type != NULL ? 1.0 : profile.receiver_prob(0);
               CallGenerator* cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);
               if (cg != NULL)  return cg;

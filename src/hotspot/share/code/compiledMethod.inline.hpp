@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_COMPILEDMETHOD_INLINE_HPP
-#define SHARE_VM_CODE_COMPILEDMETHOD_INLINE_HPP
+#ifndef SHARE_CODE_COMPILEDMETHOD_INLINE_HPP
+#define SHARE_CODE_COMPILEDMETHOD_INLINE_HPP
 
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
@@ -77,4 +77,4 @@ address ExceptionCache::handler_at(int index) {
 inline void ExceptionCache::increment_count() { OrderAccess::release_store(&_count, _count + 1); }
 
 
-#endif //SHARE_VM_CODE_COMPILEDMETHOD_INLINE_HPP
+#endif // SHARE_CODE_COMPILEDMETHOD_INLINE_HPP

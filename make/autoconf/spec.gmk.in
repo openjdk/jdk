@@ -487,6 +487,9 @@ CPP:=@FIXPATH@ @CPP@
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
 
+# Linker used by the jaotc tool for AOT compilation.
+LD_JAOTC:=@LD_JAOTC@
+
 # Xcode SDK path
 SDKROOT:=@SDKROOT@
 

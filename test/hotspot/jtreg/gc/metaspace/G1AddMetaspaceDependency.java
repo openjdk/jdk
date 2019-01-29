@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
+package gc.metaspace;
+
 /*
  * @test G1AddMetaspaceDependency
  * @bug 8010196
  * @requires vm.gc.G1
+ * @library /
  * @summary Checks that we don't get locking problems when adding metaspace dependencies with the G1 update buffer monitor
- * @run main/othervm -XX:+UseG1GC -XX:G1UpdateBufferSize=1 G1AddMetaspaceDependency
+ * @run main/othervm -XX:+UseG1GC -XX:G1UpdateBufferSize=1 gc.metaspace.G1AddMetaspaceDependency
  */
 
 import java.io.InputStream;
@@ -47,12 +50,12 @@ public class G1AddMetaspaceDependency {
     }
   }
 
-  static final String a_name = G1AddMetaspaceDependency.class.getName() + "$A";
-  static final String b_name = G1AddMetaspaceDependency.class.getName() + "$B";
+  static final String a_name = A.class.getName();
+  static final String b_name = B.class.getName();
 
   public static void main(String... args) throws Exception {
-    final byte[] a_bytes = getClassBytes(a_name + ".class");
-    final byte[] b_bytes = getClassBytes(b_name + ".class");
+    final byte[] a_bytes = getClassBytes(a_name.replace('.', '/') + ".class");
+    final byte[] b_bytes = getClassBytes(b_name.replace('.', '/') + ".class");
 
     for (int i = 0; i < 1000; i += 1) {
       runTest(a_bytes, b_bytes);

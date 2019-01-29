@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
-#define OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
+#ifndef OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_HPP
 
   //
   // NOTE: we are back in class os here, not win32
@@ -70,4 +70,4 @@ static bool platform_print_native_stack(outputStream* st, const void* context,
                                         char *buf, int buf_size);
 #endif
 
-#endif // OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
+#endif // OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_HPP

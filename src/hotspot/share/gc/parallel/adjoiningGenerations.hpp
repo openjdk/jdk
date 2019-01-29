@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_ADJOININGGENERATIONS_HPP
-#define SHARE_VM_GC_PARALLEL_ADJOININGGENERATIONS_HPP
+#ifndef SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP
+#define SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP
 
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/asPSOldGen.hpp"
@@ -81,4 +81,4 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
   // Return new AdjoiningGenerations instance based on collector policy (specifically - whether heap is heterogeneous).
   static AdjoiningGenerations* create_adjoining_generations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
 };
-#endif // SHARE_VM_GC_PARALLEL_ADJOININGGENERATIONS_HPP
+#endif // SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP

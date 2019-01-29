@@ -53,15 +53,13 @@ compiler/types/correctness/OffTest.java 8066173 generic-all
 
 compiler/c2/Test6852078.java 8194310 generic-all
 
-applications/ctw/modules/java_desktop.java 8189604 windows-all
-applications/ctw/modules/java_desktop_2.java 8189604 windows-all
-applications/ctw/modules/jdk_jconsole.java 8189604 windows-all
-
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
-compiler/loopopts/PeelingZeroTripCount.java 8216135 generic-all
+applications/ctw/modules/java_desktop.java 8217851 windows-all
+applications/ctw/modules/java_desktop_2.java 8217851 windows-all
+applications/ctw/modules/jdk_jconsole.java 8217851 windows-all
 
 #############################################################################
 
@@ -76,19 +74,13 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8177765 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
-gc/logging/TestUnifiedLoggingSwitchStress.java 8208778 macosx-x64
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 #############################################################################
 
 # :hotspot_runtime
 
-runtime/appcds/javaldr/GCSharedStringsDuringDump.java 8208778 macosx-x64
-runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
-runtime/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java 8213299 generic-all
-runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
-runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 
 #############################################################################
@@ -164,35 +156,24 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
-vmTestbase/nsk/jdi/AttachingConnector/attachnosuspend/attachnosuspend001/TestDescription.java 8153613 generic-all
-vmTestbase/nsk/jdi/ThreadReference/frameCount/framecount001/TestDescription.java 6530620 generic-all
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 4903717 generic-all
 vmTestbase/nsk/jdi/ThreadReference/resume/resume001/TestDescription.java 8072701 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x001/TestDescription.java 8013728 generic-all
-vmTestbase/nsk/jdi/BScenarios/multithrd/tc02x004/TestDescription.java 4751860 generic-all
 vmTestbase/nsk/jdi/EventRequest/setEnabled/setenabled003/TestDescription.java 8066993 generic-all
-vmTestbase/nsk/jdi/StackFrame/_bounds_/bounds001/TestDescription.java 6604963 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
 vmTestbase/nsk/jdi/EventQueue/remove_l/remove_l005/TestDescription.java 8068225 generic-all
-vmTestbase/nsk/jdi/stress/ClassPrepareEvents/ClassPrepareEvents001/ClassPrepareEvents001.java 6426321 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk001/TestDescription.java 8016181 generic-all
-vmTestbase/nsk/jvmti/FieldModification/fieldmod001/TestDescription.java 8016181 generic-all
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 7013634 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
-vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java 8016181 generic-all
 vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
-vmTestbase/nsk/jvmti/AttachOnDemand/attach034/TestDescription.java 8042145 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
-vmTestbase/nsk/jvmti/unit/heap/HeapWalkTests/TestDescription.java 8016181 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8208243,8192647 generic-all
 
@@ -200,18 +181,15 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening001/TestDescription.java 8148
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java 8208259 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/indy/stress/java/relinkMutableCallSite/Test.java 8079664 generic-all
-vmTestbase/vm/mlvm/indy/stress/java/relinkVolatileCallSite/Test.java 8079664 generic-all
 vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java 8079642,8208255 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/stress/java/sequences/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8208255 generic-all
 vmTestbase/vm/mlvm/mixed/stress/java/findDeadlock/TestDescription.java 8208278 generic-all
-vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8079650 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all

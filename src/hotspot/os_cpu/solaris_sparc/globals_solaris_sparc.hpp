@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_SPARC_VM_GLOBALS_SOLARIS_SPARC_HPP
-#define OS_CPU_SOLARIS_SPARC_VM_GLOBALS_SOLARIS_SPARC_HPP
+#ifndef OS_CPU_SOLARIS_SPARC_GLOBALS_SOLARIS_SPARC_HPP
+#define OS_CPU_SOLARIS_SPARC_GLOBALS_SOLARIS_SPARC_HPP
 
 //
 // Sets the default values for platform dependent flags used by the runtime system.
@@ -39,4 +39,4 @@ define_pd_global(size_t, HeapBaseMinAddress,     CONST64(6)*G);
 
 
 
-#endif // OS_CPU_SOLARIS_SPARC_VM_GLOBALS_SOLARIS_SPARC_HPP
+#endif // OS_CPU_SOLARIS_SPARC_GLOBALS_SOLARIS_SPARC_HPP

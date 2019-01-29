@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /* @test TestAllocateOldGenAtMultiple.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateOldGenAt option. Has multiple sub-tests to cover different code paths.
- * @requires vm.gc=="null"
+ * @requires vm.gc=="null" & os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.bits == "64"
- * @run main TestAllocateOldGenAtMultiple -XX:+UseG1GC
+ * @run main gc.nvdimm.TestAllocateOldGenAtMultiple -XX:+UseG1GC
  */
 
 import jdk.test.lib.JDKToolFinder;

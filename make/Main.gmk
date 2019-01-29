@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -479,12 +479,12 @@ ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 
 define DeclareRunTestRecipe
   test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$1")
 
   exploded-test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$1" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
-
 endef
 
 # ALL_NAMED_TESTS is defined in FindTests.gmk
@@ -562,13 +562,18 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
 # Run tests
 
 test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$(TEST)")
 
 exploded-test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
-ALL_TARGETS += test exploded-test
+jcov-test:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$(TEST)" TEST_OPTS_JCOV=true)
+
+ALL_TARGETS += test exploded-test jcov-test
 
 ################################################################################
 # Bundles
@@ -868,6 +873,8 @@ else
   test: jdk-image test-image
 
   exploded-test: exploded-image test-image
+
+  jcov-test: jcov-image test-image
 
   test-make: clean-test-make compile-commands
 

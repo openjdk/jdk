@@ -264,21 +264,17 @@ bool ZNMethodTable::register_entry(ZNMethodTableEntry* table, size_t size, ZNMet
   }
 }
 
-bool ZNMethodTable::unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm) {
+void ZNMethodTable::unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm) {
   if (size == 0) {
     // Table is empty
-    return false;
+    return;
   }
 
   size_t index = first_index(nm, size);
 
   for (;;) {
     const ZNMethodTableEntry table_entry = table[index];
-
-    if (!table_entry.registered() && !table_entry.unregistered()) {
-      // Entry not found
-      return false;
-    }
+    assert(table_entry.registered() || table_entry.unregistered(), "Entry not found");
 
     if (table_entry.registered() && table_entry.method() == nm) {
       // Remove entry
@@ -287,7 +283,7 @@ bool ZNMethodTable::unregister_entry(ZNMethodTableEntry* table, size_t size, nme
       // Destroy GC data
       ZNMethodData::destroy(gc_data(nm));
       set_gc_data(nm, NULL);
-      return true;
+      return;
     }
 
     index = next_index(index, size);
@@ -451,8 +447,6 @@ void ZNMethodTable::sweeper_wait_for_iteration() {
     return;
   }
 
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
   while (_iter_table != NULL) {
     MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     os::naked_short_sleep(1);
@@ -460,6 +454,7 @@ void ZNMethodTable::sweeper_wait_for_iteration() {
 }
 
 void ZNMethodTable::unregister_nmethod(nmethod* nm) {
+  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
   ResourceMark rm;
 
   sweeper_wait_for_iteration();
@@ -467,14 +462,9 @@ void ZNMethodTable::unregister_nmethod(nmethod* nm) {
   log_unregister(nm);
 
   // Remove entry
-  if (unregister_entry(_table, _size, nm)) {
-    // Entry was unregistered. When unregister_entry() instead returns
-    // false the nmethod was not in the table (because it didn't have
-    // any oops) so we do not want to decrease the number of registered
-    // entries in that case.
-    _nregistered--;
-    _nunregistered++;
-  }
+  unregister_entry(_table, _size, nm);
+  _nunregistered++;
+  _nregistered--;
 }
 
 void ZNMethodTable::disarm_nmethod(nmethod* nm) {
@@ -611,14 +601,19 @@ public:
       return;
     }
 
+    ZLocker<ZReentrantLock> locker(ZNMethodTable::lock_for_nmethod(nm));
+
     if (nm->is_unloading()) {
       // Unlinking of the dependencies must happen before the
       // handshake separating unlink and purge.
       nm->flush_dependencies(false /* delete_immediately */);
+
+      // We don't need to take the lock when unlinking nmethods from
+      // the Method, because it is only concurrently unlinked by
+      // the entry barrier, which acquires the per nmethod lock.
+      nm->unlink_from_method(false /* acquire_lock */);
       return;
     }
-
-    ZLocker<ZReentrantLock> locker(ZNMethodTable::lock_for_nmethod(nm));
 
     // Heal oops and disarm
     ZNMethodOopClosure cl;

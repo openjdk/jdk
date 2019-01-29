@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_COMPILERINTERFACE_HPP
-#define SHARE_VM_CI_COMPILERINTERFACE_HPP
+#ifndef SHARE_CI_COMPILERINTERFACE_HPP
+#define SHARE_CI_COMPILERINTERFACE_HPP
 
 #include "ci/ciArray.hpp"
 #include "ci/ciArrayKlass.hpp"
@@ -50,4 +50,4 @@
 // This is a dummy file used for including the complete
 // compiler interface.
 
-#endif // SHARE_VM_CI_COMPILERINTERFACE_HPP
+#endif // SHARE_CI_COMPILERINTERFACE_HPP

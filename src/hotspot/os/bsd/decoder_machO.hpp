@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_BSD_VM_DECODER_MACHO_HPP
-#define OS_BSD_VM_DECODER_MACHO_HPP
+#ifndef OS_BSD_DECODER_MACHO_HPP
+#define OS_BSD_DECODER_MACHO_HPP
 
 #ifdef __APPLE__
 
@@ -51,4 +51,4 @@ class MachODecoder : public AbstractDecoder {
 
 #endif
 
-#endif // OS_BSD_VM_DECODER_MACHO_HPP
+#endif // OS_BSD_DECODER_MACHO_HPP

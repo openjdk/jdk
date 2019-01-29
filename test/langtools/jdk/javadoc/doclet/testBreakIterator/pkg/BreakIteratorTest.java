@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,8 @@ public class BreakIteratorTest {
     public void baz(){}
 
     /**
-     * Return methods to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
-     * modifier option</a>.  Second line.
+     * with an anchor for the
+     * <a href="{@docRoot}/index-all.html">top level index</a>.  Second line.
      */
     public void foobar(){}
 

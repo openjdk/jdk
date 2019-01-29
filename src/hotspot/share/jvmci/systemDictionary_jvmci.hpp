@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP
-#define SHARE_VM_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP
+#ifndef SHARE_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP
+#define SHARE_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP
 
 #if !INCLUDE_JVMCI
 #define JVMCI_WK_KLASSES_DO(do_klass)
@@ -91,4 +91,4 @@
   do_klass(Value_klass,                                  jdk_vm_ci_meta_Value                             )
 #endif
 
-#endif // SHARE_VM_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP
+#endif // SHARE_JVMCI_SYSTEMDICTIONARY_JVMCI_HPP

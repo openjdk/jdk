@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_HSPACECOUNTERS_HPP
-#define SHARE_VM_GC_SHARED_HSPACECOUNTERS_HPP
+#ifndef SHARE_GC_SHARED_HSPACECOUNTERS_HPP
+#define SHARE_GC_SHARED_HSPACECOUNTERS_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/perfData.hpp"
@@ -65,4 +65,4 @@ class HSpaceCounters: public CHeapObj<mtGC> {
 
   const char* name_space() const        { return _name_space; }
 };
-#endif // SHARE_VM_GC_SHARED_HSPACECOUNTERS_HPP
+#endif // SHARE_GC_SHARED_HSPACECOUNTERS_HPP

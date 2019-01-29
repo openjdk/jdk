@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_VMSTRUCTS_AIX_HPP
-#define OS_AIX_VM_VMSTRUCTS_AIX_HPP
+#ifndef OS_AIX_VMSTRUCTS_AIX_HPP
+#define OS_AIX_VMSTRUCTS_AIX_HPP
 
 // These are the OS-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -39,4 +39,4 @@
 
 #define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function)
 
-#endif // OS_AIX_VM_VMSTRUCTS_AIX_HPP
+#endif // OS_AIX_VMSTRUCTS_AIX_HPP

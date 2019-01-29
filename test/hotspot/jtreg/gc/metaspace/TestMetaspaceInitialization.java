@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.metaspace;
+
 import java.util.ArrayList;
 
 /* @test TestMetaspaceInitialization
  * @bug 8024945
  * @summary Tests to initialize metaspace with a very low MetaspaceSize
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:MetaspaceSize=0 TestMetaspaceInitialization
+ * @run main/othervm -XX:MetaspaceSize=0 gc.metaspace.TestMetaspaceInitialization
  */
 public class TestMetaspaceInitialization {
     private class Internal {

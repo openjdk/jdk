@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,18 @@
  *
  */
 
+package gc.stress.gcbasher;
+
 import java.io.IOException;
 
 /*
  * @test TestGCBasherWithAllocateHeapAt
  * @key gc stress
+ * @library /
  * @requires vm.gc.G1
  * @requires vm.flavor == "server" & !vm.emulatedClient & os.family != "aix"
  * @summary Stress Java heap allocation with AllocateHeapAt flag using GC basher.
- * @run main/othervm/timeout=500 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC -XX:AllocateHeapAt=. TestGCBasherWithAllocateHeapAt 120000
+ * @run main/othervm/timeout=500 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC -XX:AllocateHeapAt=. gc.stress.gcbasher.TestGCBasherWithAllocateHeapAt 120000
  */
 public class TestGCBasherWithAllocateHeapAt {
     public static void main(String[] args) throws IOException {

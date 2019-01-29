@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_LOGGING_LOGSTREAM_HPP
-#define SHARE_VM_LOGGING_LOGSTREAM_HPP
+#ifndef SHARE_LOGGING_LOGSTREAM_HPP
+#define SHARE_LOGGING_LOGSTREAM_HPP
 
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
@@ -105,4 +105,4 @@ public:
   LogStreamTemplate() : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
 };
 
-#endif // SHARE_VM_LOGGING_LOGSTREAM_HPP
+#endif // SHARE_LOGGING_LOGSTREAM_HPP

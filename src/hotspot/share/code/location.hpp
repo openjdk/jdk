@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_LOCATION_HPP
-#define SHARE_VM_CODE_LOCATION_HPP
+#ifndef SHARE_CODE_LOCATION_HPP
+#define SHARE_CODE_LOCATION_HPP
 
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
@@ -123,4 +123,4 @@ class Location {
   static bool legal_offset_in_bytes(int offset_in_bytes);
 };
 
-#endif // SHARE_VM_CODE_LOCATION_HPP
+#endif // SHARE_CODE_LOCATION_HPP

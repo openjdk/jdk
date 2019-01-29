@@ -482,10 +482,10 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     if (TraceICs) {
       ResourceMark rm(thread);
       assert(info.cached_metadata() == NULL || info.cached_metadata()->is_klass(), "must be");
-      tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to compiled (rcvr klass) %s: %s",
+      tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to compiled (rcvr klass = %s) %s",
         p2i(instruction_address()),
-        ((Klass*)info.cached_metadata())->print_value_string(),
-        (safe) ? "" : "via stub");
+        (info.cached_metadata() != NULL) ? ((Klass*)info.cached_metadata())->print_value_string() : "NULL",
+        (safe) ? "" : " via stub");
     }
   }
   // We can't check this anymore. With lazy deopt we could have already

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
-#define SHARE_VM_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
+#ifndef SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
+#define SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
 
 #include "runtime/handles.inline.hpp"
 
@@ -79,4 +79,4 @@ inline BasicType fieldDescriptor::field_type() const {
   return FieldType::basic_type(signature());
 }
 
-#endif // SHARE_VM_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
+#endif // SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP

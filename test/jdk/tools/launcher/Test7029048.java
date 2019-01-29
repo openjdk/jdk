@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 7029048
- * @summary Checks for LD_LIBRARY_PATH on *nixes
+ * @bug 7029048 8217340
+ * @summary Ensure that the launcher defends against user settings of the
+ *          LD_LIBRARY_PATH environment variable on Unixes
+ * @library /test/lib
  * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
  * @run main Test7029048
  */
 
-/*
- * 7029048: test for LD_LIBRARY_PATH set to different paths which may or
- * may not contain a libjvm.so, but we test to ensure that the launcher
- * behaves correctly in all cases.
- */
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -59,17 +56,13 @@ public class Test7029048 extends TestHelper {
     private static final File srcLibjvmSo = new File(srcServerDir, LIBJVM);
 
     private static final File dstLibDir = new File("lib");
-    private static final File dstLibArchDir =
-            new File(dstLibDir, getJreArch());
-
-    private static final File dstServerDir = new File(dstLibArchDir, "server");
+    private static final File dstServerDir = new File(dstLibDir, "server");
     private static final File dstServerLibjvm = new File(dstServerDir, LIBJVM);
 
-    private static final File dstClientDir = new File(dstLibArchDir, "client");
+    private static final File dstClientDir = new File(dstLibDir, "client");
     private static final File dstClientLibjvm = new File(dstClientDir, LIBJVM);
 
     private static final Map<String, String> env = new HashMap<>();
-
 
     static String getValue(String name, List<String> in) {
         for (String x : in) {
@@ -102,37 +95,34 @@ public class Test7029048 extends TestHelper {
         * print a "null" string.
         */
         if (envValue == null) {
-            System.out.println(tr);
             throw new RuntimeException("NPE, likely a program crash ??");
         }
-        String values[] = envValue.split(File.pathSeparator);
-        if (values.length == nLLPComponents) {
-            System.out.println(caseID + " :OK");
+        int len = (envValue.equals("null")
+                   ? 0 : envValue.split(File.pathSeparator).length);
+        if (len == nLLPComponents) {
+            System.out.println(caseID + ": OK");
             passes++;
         } else {
             System.out.println("FAIL: test7029048, " + caseID);
             System.out.println(" expected " + nLLPComponents
-                    + " but got " + values.length);
+                               + " but got " + len);
             System.out.println(envValue);
-            System.out.println(tr);
             errors++;
         }
     }
 
     /*
-     * A crucial piece, specifies what we should expect, given the conditions.
-     * That is for a given enum type, the value indicates how many absolute
-     * environment variables that can be expected. This value is used to base
-     * the actual expected values by adding the set environment variable usually
-     * it is 1, but it could be more if the test wishes to set more paths in
-     * the future.
+     * Describe the cases that we test.  Each case sets the environment
+     * variable LD_LIBRARY_PATH to a different value.  The value associated
+     * with a case is the number of path elements that we expect the launcher
+     * to add to that variable.
      */
-    private static enum LLP_VAR {
-        LLP_SET_NON_EXISTENT_PATH(0),   // env set, but the path does not exist
-        LLP_SET_EMPTY_PATH(0),          // env set, with a path but no libjvm.so
-        LLP_SET_WITH_JVM(3);            // env set, with a libjvm.so
+    private static enum TestCase {
+        NO_DIR(0),                      // Directory does not exist
+        NO_LIBJVM(0),                   // Directory exists, but no libjvm.so
+        LIBJVM(3);                      // Directory exists, with a libjvm.so
         private final int value;
-        LLP_VAR(int i) {
+        TestCase(int i) {
             this.value = i;
         }
     }
@@ -142,16 +132,16 @@ public class Test7029048 extends TestHelper {
      */
     static void test7029048() throws IOException {
         String desc = null;
-        for (LLP_VAR v : LLP_VAR.values()) {
+        for (TestCase v : TestCase.values()) {
             switch (v) {
-                case LLP_SET_WITH_JVM:
+                case LIBJVM:
                     // copy the files into the directory structures
                     copyFile(srcLibjvmSo, dstServerLibjvm);
                     // does not matter if it is client or a server
                     copyFile(srcLibjvmSo, dstClientLibjvm);
                     desc = "LD_LIBRARY_PATH should be set";
                     break;
-                case LLP_SET_EMPTY_PATH:
+                case NO_LIBJVM:
                     if (!dstClientDir.exists()) {
                         Files.createDirectories(dstClientDir.toPath());
                     } else {
@@ -164,13 +154,23 @@ public class Test7029048 extends TestHelper {
                         Files.deleteIfExists(dstServerLibjvm.toPath());
                     }
 
-                    desc = "LD_LIBRARY_PATH should not be set";
+                    desc = "LD_LIBRARY_PATH should not be set (no libjvm.so)";
+                    if (TestHelper.isAIX) {
+                        System.out.println("Skipping test case \"" + desc +
+                                           "\" because the Aix launcher adds the paths in any case.");
+                        continue;
+                    }
                     break;
-                case LLP_SET_NON_EXISTENT_PATH:
+                case NO_DIR:
                     if (dstLibDir.exists()) {
                         recursiveDelete(dstLibDir);
                     }
-                    desc = "LD_LIBRARY_PATH should not be set";
+                    desc = "LD_LIBRARY_PATH should not be set (no directory)";
+                    if (TestHelper.isAIX) {
+                        System.out.println("Skipping test case \"" + desc +
+                                           "\" because the Aix launcher adds the paths in any case.");
+                        continue;
+                    }
                     break;
                 default:
                     throw new RuntimeException("unknown case");
@@ -181,14 +181,18 @@ public class Test7029048 extends TestHelper {
              */
             env.clear();
             env.put(LD_LIBRARY_PATH, dstServerDir.getAbsolutePath());
-            run(env, v.value + 1, "Case 1: " + desc);
+            run(env,
+                v.value + 1,            // Add one to account for our setting
+                "Case 1: " + desc);
 
             /*
              * Case 2: repeat with client path
              */
             env.clear();
             env.put(LD_LIBRARY_PATH, dstClientDir.getAbsolutePath());
-            run(env, v.value + 1, "Case 2: " + desc);
+            run(env,
+                v.value + 1,            // Add one to account for our setting
+                "Case 2: " + desc);
 
             if (isSolaris) {
                 /*
@@ -197,7 +201,10 @@ public class Test7029048 extends TestHelper {
                  */
                 env.clear();
                 env.put(LD_LIBRARY_PATH_64, dstServerDir.getAbsolutePath());
-                run(env, v.value + 1, "Case 3: " + desc);
+                run(env,
+                    v.value,            // Do not add one, since we didn't set
+                                        // LD_LIBRARY_PATH here
+                    "Case 3: " + desc);
             }
         }
         return;

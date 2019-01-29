@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
- *      8182765 8196202
+ *      8182765 8196202 8202626
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../../lib
@@ -39,7 +39,6 @@ public class TestUseOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestUseOption tester = new TestUseOption();
-        tester.setAutomaticCheckLinks(false); // @ignore JDK-8202626
         tester.runTests();
     }
 
@@ -201,7 +200,7 @@ public class TestUseOption extends JavadocTester {
         checkOutput("package-use.html", true,
                 "<th class=\"colFirst\" scope=\"row\">"
                 + "<a href=\"class-use/UsedInC.html#unnamed.package\">UsedInC</a></th>",
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"#%3CUnnamed%3E\">&lt;Unnamed&gt;</a></th>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>"
         );
     }
@@ -219,7 +218,7 @@ public class TestUseOption extends JavadocTester {
                 "<li class=\"blockList\"><a name=\"unnamed.package\">"
         );
         checkOutput("package-use.html", true,
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"#-Unnamed-\">&lt;Unnamed&gt;</a></th>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>"
         );
     }

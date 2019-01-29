@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
-#define OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
+#ifndef OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP
+#define OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP
 
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
@@ -190,4 +190,4 @@ static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t 
   pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
 }
 
-#endif // OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
+#endif // OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP

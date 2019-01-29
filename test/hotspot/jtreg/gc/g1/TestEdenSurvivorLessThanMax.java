@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestEdenSurvivorLessThanMax
  * @bug 8152724
@@ -30,7 +32,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xlog:gc+heap=debug -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -Xmx64M -Xms64M -Xmn50M -XX:SurvivorRatio=1 TestEdenSurvivorLessThanMax
+ * @run main/othervm -Xbootclasspath/a:. -Xlog:gc+heap=debug -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -Xmx64M -Xms64M -Xmn50M -XX:SurvivorRatio=1 gc.g1.TestEdenSurvivorLessThanMax
  */
 
 import sun.hotspot.WhiteBox;

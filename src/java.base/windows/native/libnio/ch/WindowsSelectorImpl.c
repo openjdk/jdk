@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,10 @@ Java_sun_nio_ch_WindowsSelectorImpl_resetWakeupSocket0(JNIEnv *env, jclass this,
     /* Prepare corresponding buffer if needed, and then read */
     if (bytesToRead > WAKEUP_SOCKET_BUF_SIZE) {
         char* buf = (char*)malloc(bytesToRead);
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return;
+        }
         recv(scinFd, buf, bytesToRead, 0);
         free(buf);
     } else {

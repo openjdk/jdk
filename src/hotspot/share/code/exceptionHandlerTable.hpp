@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_EXCEPTIONHANDLERTABLE_HPP
-#define SHARE_VM_CODE_EXCEPTIONHANDLERTABLE_HPP
+#ifndef SHARE_CODE_EXCEPTIONHANDLERTABLE_HPP
+#define SHARE_CODE_EXCEPTIONHANDLERTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
@@ -163,4 +163,4 @@ public:
   void verify(nmethod *nm) const;
 };
 
-#endif // SHARE_VM_CODE_EXCEPTIONHANDLERTABLE_HPP
+#endif // SHARE_CODE_EXCEPTIONHANDLERTABLE_HPP

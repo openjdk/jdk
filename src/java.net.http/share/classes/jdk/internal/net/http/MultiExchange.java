@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.http.HttpConnectTimeoutException;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.security.AccessControlContext;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionException;
@@ -39,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import java.net.http.HttpClient;
@@ -71,6 +74,7 @@ class MultiExchange<T> {
 
     private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
+    private final ConnectTimeoutTracker connectTimeout; // null if no timeout
     final AccessControlContext acc;
     final HttpClientImpl client;
     final HttpResponse.BodyHandler<T> responseHandler;
@@ -107,6 +111,38 @@ class MultiExchange<T> {
     // RedirectHandler
     volatile int numberOfRedirects = 0;
 
+    // This class is used to keep track of the connection timeout
+    // across retries, when a ConnectException causes a retry.
+    // In that case - we will retry the connect, but we don't
+    // want to double the timeout by starting a new timer with
+    // the full connectTimeout again.
+    // Instead we use the ConnectTimeoutTracker to return a new
+    // duration that takes into account the time spent in the
+    // first connect attempt.
+    // If however, the connection gets connected, but we later
+    // retry the whole operation, then we reset the timer before
+    // retrying (since the connection used for the second request
+    // will not necessarily be the same: it could be a new
+    // unconnected connection) - see getExceptionalCF().
+    private static final class ConnectTimeoutTracker {
+        final Duration max;
+        final AtomicLong startTime = new AtomicLong();
+        ConnectTimeoutTracker(Duration connectTimeout) {
+            this.max = Objects.requireNonNull(connectTimeout);
+        }
+
+        Duration getRemaining() {
+            long now = System.nanoTime();
+            long previous = startTime.compareAndExchange(0, now);
+            if (previous == 0 || max.isZero()) return max;
+            Duration remaining = max.minus(Duration.ofNanos(now - previous));
+            assert remaining.compareTo(max) <= 0;
+            return remaining.isNegative() ? Duration.ZERO : remaining;
+        }
+
+        void reset() { startTime.set(0); }
+    }
+
     /**
      * MultiExchange with one final response.
      */
@@ -135,7 +171,8 @@ class MultiExchange<T> {
         } else {
             pushGroup = null;
         }
-
+        this.connectTimeout = client.connectTimeout()
+                .map(ConnectTimeoutTracker::new).orElse(null);
         this.exchange = new Exchange<>(request, this);
     }
 
@@ -159,6 +196,11 @@ class MultiExchange<T> {
             this.exchange.released();
         }
         this.exchange = exchange;
+    }
+
+    public Optional<Duration> remainingConnectTimeout() {
+        return Optional.ofNullable(connectTimeout)
+                .map(ConnectTimeoutTracker::getRemaining);
     }
 
     private void cancelTimer() {
@@ -229,9 +271,9 @@ class MultiExchange<T> {
     private CompletableFuture<HttpResponse<T>> handleNoBody(Response r, Exchange<T> exch) {
         BodySubscriber<T> bs = responseHandler.apply(new ResponseInfoImpl(r.statusCode(),
                 r.headers(), r.version()));
-        CompletionStage<T> cs = bs.getBody();
         bs.onSubscribe(new NullSubscription());
         bs.onComplete();
+        CompletionStage<T> cs = ResponseSubscribers.getBodyAsync(executor, bs);
         MinimalFuture<HttpResponse<T>> result = new MinimalFuture<>();
         cs.whenComplete((nullBody, exception) -> {
             if (exception != null)
@@ -242,7 +284,8 @@ class MultiExchange<T> {
                 result.complete(this.response);
             }
         });
-        return result;
+        // ensure that the connection is closed or returned to the pool.
+        return result.whenComplete(exch::nullBody);
     }
 
     private CompletableFuture<HttpResponse<T>>
@@ -354,7 +397,7 @@ class MultiExchange<T> {
         return s.isEmpty() ? true : Boolean.parseBoolean(s);
     }
 
-    private static boolean retryConnect() {
+    private static boolean disableRetryConnect() {
         String s = Utils.getNetProperty("jdk.httpclient.disableRetryConnect");
         if (s == null)
             return false;
@@ -364,7 +407,7 @@ class MultiExchange<T> {
     /** True if ALL ( even non-idempotent ) requests can be automatic retried. */
     private static final boolean RETRY_ALWAYS = retryPostValue();
     /** True if ConnectException should cause a retry. Enabled by default */
-    private static final boolean RETRY_CONNECT = retryConnect();
+    private static final boolean RETRY_CONNECT = !disableRetryConnect();
 
     /** Returns true is given request has an idempotent method. */
     private static boolean isIdempotentRequest(HttpRequest request) {
@@ -415,10 +458,13 @@ class MultiExchange<T> {
             Throwable cause = retryCause(t);
 
             if (!(t instanceof ConnectException)) {
+                // we may need to start a new connection, and if so
+                // we want to start with a fresh connect timeout again.
+                if (connectTimeout != null) connectTimeout.reset();
                 if (!canRetryRequest(currentreq)) {
                     return failedFuture(cause); // fails with original cause
                 }
-            }
+            } // ConnectException: retry, but don't reset the connectTimeout.
 
             // allow the retry mechanism to do its work
             retryCause = cause;

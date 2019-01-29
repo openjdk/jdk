@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "unittest.hpp"
+
+// include as last, or otherwise we pull in an incompatible "assert" macro
+#include <vector>
 
 using namespace metaspace;
 
@@ -71,24 +74,55 @@ class ChunkManagerTest {
 
 // removes all the chunks added to the ChunkManager since creation of ChunkManagerRestorer
 class ChunkManagerRestorer {
-  ChunkManager* const _cm;
-  Metachunk* _chunks[NumberOfFreeLists];
- public:
-  ChunkManagerRestorer(ChunkManager* cm) : _cm(cm) {
-    for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
-      ChunkList* l = ChunkManagerTest::free_chunks(_cm, i);
-      _chunks[i] = l->tail();
+  metaspace::ChunkManager* const _cm;
+  std::vector<metaspace::Metachunk*>* _free_chunks[metaspace::NumberOfFreeLists];
+  int _count_pre_existing;
+public:
+  ChunkManagerRestorer(metaspace::ChunkManager* cm) : _cm(cm), _count_pre_existing(0) {
+    _cm->locked_verify();
+    for (metaspace::ChunkIndex i = metaspace::ZeroIndex; i < metaspace::NumberOfFreeLists; i = next_chunk_index(i)) {
+      metaspace::ChunkList* l = ChunkManagerTest::free_chunks(_cm, i);
+      _count_pre_existing += l->count();
+      std::vector<metaspace::Metachunk*> *v = new std::vector<metaspace::Metachunk*>(l->count());
+      metaspace::Metachunk* c = l->head();
+      while (c) {
+        v->push_back(c);
+        c = c->next();
+      }
+      _free_chunks[i] = v;
     }
   }
   ~ChunkManagerRestorer() {
+    _cm->locked_verify();
+    for (metaspace::ChunkIndex i = metaspace::ZeroIndex; i < metaspace::NumberOfFreeLists; i = next_chunk_index(i)) {
+      metaspace::ChunkList* l = ChunkManagerTest::free_chunks(_cm, i);
+      std::vector<metaspace::Metachunk*> *v = _free_chunks[i];
+      ssize_t count = l->count();
+      for (ssize_t j = 0; j < count; j++) {
+        metaspace::Metachunk* c = l->head();
+        while (c) {
+          bool found = false;
+          for (size_t k = 0; k < v->size() && !found; k++) {
+            found = (c == v->at(k));
+          }
+          if (found) {
+            c = c->next();
+          } else {
+            _cm->remove_chunk(c);
+            break;
+          }
+        }
+      }
+      delete _free_chunks[i];
+      _free_chunks[i] = NULL;
+   }
+    int count_after_cleanup = 0;
     for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
       ChunkList* l = ChunkManagerTest::free_chunks(_cm, i);
-      Metachunk* t = l->tail();
-      while (t != _chunks[i]) {
-        _cm->remove_chunk(t);
-        t = l->tail();
-      }
+      count_after_cleanup += l->count();
     }
+    EXPECT_EQ(_count_pre_existing, count_after_cleanup);
+    _cm->locked_verify();
   }
 };
 
@@ -121,7 +155,6 @@ TEST_VM(VirtualSpaceNodeTest, four_pages_vsn_is_committed_some_is_used_by_chunks
 
   // committed - used = words left to retire
   const size_t words_left = page_chunks - SmallChunk - SpecializedChunk;
-
   size_t num_medium_chunks, num_small_chunks, num_spec_chunks;
   chunk_up(words_left, num_medium_chunks, num_small_chunks, num_spec_chunks);
 
@@ -155,7 +188,6 @@ TEST_VM(VirtualSpaceNodeTest, half_vsn_is_committed_humongous_chunk_is_used) {
 
 TEST_VM(VirtualSpaceNodeTest, all_vsn_is_committed_half_is_used_by_chunks) {
   MutexLockerEx ml(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-
   ChunkManager cm(false);
   VirtualSpaceNode vsn(false, vsn_test_size_bytes);
   ChunkManagerRestorer c(Metaspace::get_chunk_manager(false));
@@ -165,6 +197,7 @@ TEST_VM(VirtualSpaceNodeTest, all_vsn_is_committed_half_is_used_by_chunks) {
   vsn.get_chunk_vs(MediumChunk);
   vsn.get_chunk_vs(MediumChunk);
   vsn.retire(&cm);
+
   // DISABLED: checks started to fail after 8198423
   // EXPECT_EQ(2UL, ChunkManagerTest::sum_free_chunks_count(&cm)) << "should have been memory left for 2 chunks";
   // EXPECT_EQ(2UL * MediumChunk, ChunkManagerTest::sum_free_chunks(&cm)) << "sizes should add up";
@@ -172,13 +205,13 @@ TEST_VM(VirtualSpaceNodeTest, all_vsn_is_committed_half_is_used_by_chunks) {
 
 TEST_VM(VirtualSpaceNodeTest, no_committed_memory) {
   MutexLockerEx ml(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-
   ChunkManager cm(false);
   VirtualSpaceNode vsn(false, vsn_test_size_bytes);
   ChunkManagerRestorer c(Metaspace::get_chunk_manager(false));
 
   vsn.initialize();
   vsn.retire(&cm);
+
   ASSERT_EQ(0UL, ChunkManagerTest::sum_free_chunks_count(&cm)) << "did not commit any memory in the VSN";
 }
 

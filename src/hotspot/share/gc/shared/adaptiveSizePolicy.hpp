@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
-#define SHARE_VM_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
+#ifndef SHARE_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
+#define SHARE_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcUtil.hpp"
@@ -473,4 +473,4 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   void print_tenuring_threshold(uint new_tenuring_threshold) const;
 };
 
-#endif // SHARE_VM_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
+#endif // SHARE_GC_SHARED_ADAPTIVESIZEPOLICY_HPP

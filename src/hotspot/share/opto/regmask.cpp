@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,67 +28,9 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
+#include "utilities/population_count.hpp"
 
 #define RM_SIZE _RM_SIZE /* a constant private to the class RegMask */
-
-//-------------Non-zero bit search methods used by RegMask---------------------
-// Find lowest 1, or return 32 if empty
-int find_lowest_bit( uint32_t mask ) {
-  int n = 0;
-  if( (mask & 0xffff) == 0 ) {
-    mask >>= 16;
-    n += 16;
-  }
-  if( (mask & 0xff) == 0 ) {
-    mask >>= 8;
-    n += 8;
-  }
-  if( (mask & 0xf) == 0 ) {
-    mask >>= 4;
-    n += 4;
-  }
-  if( (mask & 0x3) == 0 ) {
-    mask >>= 2;
-    n += 2;
-  }
-  if( (mask & 0x1) == 0 ) {
-    mask >>= 1;
-     n += 1;
-  }
-  if( mask == 0 ) {
-    n = 32;
-  }
-  return n;
-}
-
-// Find highest 1, or return 32 if empty
-int find_hihghest_bit( uint32_t mask ) {
-  int n = 0;
-  if( mask > 0xffff ) {
-    mask >>= 16;
-    n += 16;
-  }
-  if( mask > 0xff ) {
-    mask >>= 8;
-    n += 8;
-  }
-  if( mask > 0xf ) {
-    mask >>= 4;
-    n += 4;
-  }
-  if( mask > 0x3 ) {
-    mask >>= 2;
-    n += 2;
-  }
-  if( mask > 0x1 ) {
-    mask >>= 1;
-    n += 1;
-  }
-  if( mask == 0 ) {
-    n = 32;
-  }
-  return n;
-}
 
 //------------------------------dump-------------------------------------------
 
@@ -140,21 +82,6 @@ int RegMask::num_registers(uint ireg) {
     return 1;
 }
 
-//------------------------------find_first_pair--------------------------------
-// Find the lowest-numbered register pair in the mask.  Return the
-// HIGHEST register number in the pair, or BAD if no pairs.
-OptoReg::Name RegMask::find_first_pair() const {
-  verify_pairs();
-  for( int i = 0; i < RM_SIZE; i++ ) {
-    if( _A[i] ) {               // Found some bits
-      int bit = _A[i] & -_A[i]; // Extract low bit
-      // Convert to bit number, return hi bit in pair
-      return OptoReg::Name((i<<_LogWordBits)+find_lowest_bit(bit)+1);
-    }
-  }
-  return OptoReg::Bad;
-}
-
 //------------------------------ClearToPairs-----------------------------------
 // Clear out partial bits; leave only bit pairs
 void RegMask::clear_to_pairs() {
@@ -162,18 +89,6 @@ void RegMask::clear_to_pairs() {
     int bits = _A[i];
     bits &= ((bits & 0x55555555)<<1); // 1 hi-bit set for each pair
     bits |= (bits>>1);          // Smear 1 hi-bit into a pair
-    _A[i] = bits;
-  }
-  verify_pairs();
-}
-
-//------------------------------SmearToPairs-----------------------------------
-// Smear out partial bits; leave only bit pairs
-void RegMask::smear_to_pairs() {
-  for( int i = 0; i < RM_SIZE; i++ ) {
-    int bits = _A[i];
-    bits |= ((bits & 0x55555555)<<1); // Smear lo bit hi per pair
-    bits |= ((bits & 0xAAAAAAAA)>>1); // Smear hi bit lo per pair
     _A[i] = bits;
   }
   verify_pairs();
@@ -389,14 +304,10 @@ bool RegMask::is_UP() const {
 //------------------------------Size-------------------------------------------
 // Compute size of register mask in bits
 uint RegMask::Size() const {
-  extern uint8_t bitsInByte[BITS_IN_BYTE_ARRAY_SIZE];
   uint sum = 0;
-  for( int i = 0; i < RM_SIZE; i++ )
-    sum +=
-      bitsInByte[(_A[i]>>24) & 0xff] +
-      bitsInByte[(_A[i]>>16) & 0xff] +
-      bitsInByte[(_A[i]>> 8) & 0xff] +
-      bitsInByte[ _A[i]      & 0xff];
+  for (int i = 0; i < RM_SIZE; i++) {
+    sum += population_count(_A[i]);
+  }
   return sum;
 }
 

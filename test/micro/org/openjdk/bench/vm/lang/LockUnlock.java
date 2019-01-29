@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
 
 import java.util.concurrent.TimeUnit;
 
@@ -109,11 +110,35 @@ public class LockUnlock {
         factorial = fact(10);
     }
 
+    /**
+     * Same as {@link #testRecursiveSynchronization()} but the first call
+     * to this method will generate the identity hashcode for this object
+     * which effectively disables biased locking as they occupy the same
+     * bits in the object header.
+     */
+    @Benchmark
+    public void testRecursiveSynchronizationNoBias() {
+        System.identityHashCode(this);
+        factorial = fact(10);
+    }
+
     private synchronized int fact(int n) {
         if (n == 0) {
             return 1;
         } else {
             return fact(n - 1) * n;
+        }
+    }
+
+    /**
+     * With two threads lockObject1 will be contended so should be
+     * inflated.
+     */
+    @Threads(2)
+    @Benchmark
+    public void testContendedLock() {
+        synchronized (lockObject1) {
+            dummyInt1++;
         }
     }
 }

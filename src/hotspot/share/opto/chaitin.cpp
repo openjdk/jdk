@@ -749,14 +749,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
       LRG& lrg = lrgs(vreg);
       if (vreg) {              // No vreg means un-allocable (e.g. memory)
 
-        // Collect has-copy bit
-        if (idx) {
-          lrg._has_copy = 1;
-          uint clidx = _lrg_map.live_range_id(n->in(idx));
-          LRG& copy_src = lrgs(clidx);
-          copy_src._has_copy = 1;
-        }
-
         // Check for float-vs-int live range (used in register-pressure
         // calculations)
         const Type *n_type = n->bottom_type();
@@ -775,6 +767,17 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         }
 
 #ifndef PRODUCT
+        // Collect bits not used by product code, but which may be useful for
+        // debugging.
+
+        // Collect has-copy bit
+        if (idx) {
+          lrg._has_copy = 1;
+          uint clidx = _lrg_map.live_range_id(n->in(idx));
+          LRG& copy_src = lrgs(clidx);
+          copy_src._has_copy = 1;
+        }
+
         if (trace_spilling() && lrg._def != NULL) {
           // collect defs for MultiDef printing
           if (lrg._defs == NULL) {
@@ -1109,8 +1112,6 @@ void PhaseChaitin::set_was_low() {
 #endif
 }
 
-#define REGISTER_CONSTRAINED 16
-
 // Compute cost/area ratio, in case we spill.  Build the lo-degree list.
 void PhaseChaitin::cache_lrg_info( ) {
   Compile::TracePhase tp("chaitinCacheLRG", &timers[_t_chaitinCacheLRG]);
@@ -1143,56 +1144,6 @@ void PhaseChaitin::cache_lrg_info( ) {
       _hi_degree = i;
     }
   }
-}
-
-// Simplify the IFG by removing LRGs of low degree that have NO copies
-void PhaseChaitin::Pre_Simplify( ) {
-
-  // Warm up the lo-degree no-copy list
-  int lo_no_copy = 0;
-  for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
-    if ((lrgs(i).lo_degree() && !lrgs(i)._has_copy) ||
-        !lrgs(i).alive() ||
-        lrgs(i)._must_spill) {
-      lrgs(i)._next = lo_no_copy;
-      lo_no_copy = i;
-    }
-  }
-
-  while( lo_no_copy ) {
-    uint lo = lo_no_copy;
-    lo_no_copy = lrgs(lo)._next;
-    int size = lrgs(lo).num_regs();
-
-    // Put the simplified guy on the simplified list.
-    lrgs(lo)._next = _simplified;
-    _simplified = lo;
-
-    // Yank this guy from the IFG.
-    IndexSet *adj = _ifg->remove_node( lo );
-
-    // If any neighbors' degrees fall below their number of
-    // allowed registers, then put that neighbor on the low degree
-    // list.  Note that 'degree' can only fall and 'numregs' is
-    // unchanged by this action.  Thus the two are equal at most once,
-    // so LRGs hit the lo-degree worklists at most once.
-    IndexSetIterator elements(adj);
-    uint neighbor;
-    while ((neighbor = elements.next()) != 0) {
-      LRG *n = &lrgs(neighbor);
-      assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
-
-      // Check for just becoming of-low-degree
-      if( n->just_lo_degree() && !n->_has_copy ) {
-        assert(!(*_ifg->_yanked)[neighbor],"Cannot move to lo degree twice");
-        // Put on lo-degree list
-        n->_next = lo_no_copy;
-        lo_no_copy = neighbor;
-      }
-    }
-  } // End of while lo-degree no_copy worklist not empty
-
-  // No more lo-degree no-copy live ranges to simplify
 }
 
 // Simplify the IFG by removing LRGs of low degree.
@@ -1614,18 +1565,6 @@ uint PhaseChaitin::Select( ) {
   }
 
   return spill_reg-LRG::SPILL_REG;      // Return number of spills
-}
-
-// Copy 'was_spilled'-edness from the source Node to the dst Node.
-void PhaseChaitin::copy_was_spilled( Node *src, Node *dst ) {
-  if( _spilled_once.test(src->_idx) ) {
-    _spilled_once.set(dst->_idx);
-    lrgs(_lrg_map.find(dst))._was_spilled1 = 1;
-    if( _spilled_twice.test(src->_idx) ) {
-      _spilled_twice.set(dst->_idx);
-      lrgs(_lrg_map.find(dst))._was_spilled2 = 1;
-    }
-  }
 }
 
 // Set the 'spilled_once' or 'spilled_twice' flag on a node.

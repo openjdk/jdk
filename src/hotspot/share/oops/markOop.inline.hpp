@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_MARKOOP_INLINE_HPP
-#define SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+#ifndef SHARE_OOPS_MARKOOP_INLINE_HPP
+#define SHARE_OOPS_MARKOOP_INLINE_HPP
 
 #include "oops/klass.hpp"
 #include "oops/markOop.hpp"
@@ -111,4 +111,4 @@ inline markOop markOopDesc::prototype_for_object(oop obj) {
   return obj->klass()->prototype_header();
 }
 
-#endif // SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+#endif // SHARE_OOPS_MARKOOP_INLINE_HPP

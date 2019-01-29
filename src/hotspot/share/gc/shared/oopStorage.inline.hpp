@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,4 +403,4 @@ inline void OopStorage::weak_oops_do(IsAliveClosure* is_alive, Closure* cl) {
   iterate_safepoint(if_alive_fn(is_alive, oop_fn(cl)));
 }
 
-#endif // include guard
+#endif // SHARE_GC_SHARED_OOPSTORAGE_INLINE_HPP

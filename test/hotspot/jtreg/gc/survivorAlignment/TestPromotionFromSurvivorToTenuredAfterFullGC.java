@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8031323
@@ -28,6 +30,7 @@
  *          during full GC are not aligned to SurvivorAlignmentInBytes value.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
@@ -39,14 +42,14 @@
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=160m -XX:-ResizePLAB
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromSurvivorToTenuredAfterFullGC 20m 47
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 20m 47
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=200m -XX:MaxNewSize=200m
@@ -54,14 +57,14 @@
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=160m
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromSurvivorToTenuredAfterFullGC 20m 87
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 20m 87
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
@@ -69,7 +72,7 @@
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                    TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9
+ *                    gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9
  *                    TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
@@ -77,7 +80,7 @@
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                   TestPromotionFromSurvivorToTenuredAfterFullGC 20m 147
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterFullGC 20m 147
  *                   TENURED
  */
 public class TestPromotionFromSurvivorToTenuredAfterFullGC {

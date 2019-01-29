@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_DEPENDENCIES_HPP
-#define SHARE_VM_CODE_DEPENDENCIES_HPP
+#ifndef SHARE_CODE_DEPENDENCIES_HPP
+#define SHARE_CODE_DEPENDENCIES_HPP
 
 #include "ci/ciCallSite.hpp"
 #include "ci/ciKlass.hpp"
@@ -799,4 +799,4 @@ class CallSiteDepChange : public DepChange {
   oop method_handle() const { return _method_handle(); }
 };
 
-#endif // SHARE_VM_CODE_DEPENDENCIES_HPP
+#endif // SHARE_CODE_DEPENDENCIES_HPP

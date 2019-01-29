@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
-#define SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+#ifndef SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+#define SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP
 
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "memory/allocation.hpp"
@@ -121,4 +121,4 @@ public:
   virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL);
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1);
 };
-#endif // SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP
+#endif // SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP

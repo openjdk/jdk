@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2178,7 +2178,10 @@ void G1CMTask::reset(G1CMBitMap* next_mark_bitmap) {
 }
 
 bool G1CMTask::should_exit_termination() {
-  regular_clock_call();
+  if (!regular_clock_call()) {
+    return true;
+  }
+
   // This is called when we are in the termination protocol. We should
   // quit if, for some reason, this task wants to abort or the global
   // stack is not empty (this means that we can get work from it).
@@ -2189,12 +2192,12 @@ void G1CMTask::reached_limit() {
   assert(_words_scanned >= _words_scanned_limit ||
          _refs_reached >= _refs_reached_limit ,
          "shouldn't have been called otherwise");
-  regular_clock_call();
+  abort_marking_if_regular_check_fail();
 }
 
-void G1CMTask::regular_clock_call() {
+bool G1CMTask::regular_clock_call() {
   if (has_aborted()) {
-    return;
+    return false;
   }
 
   // First, we need to recalculate the words scanned and refs reached
@@ -2205,21 +2208,19 @@ void G1CMTask::regular_clock_call() {
 
   // (1) If an overflow has been flagged, then we abort.
   if (_cm->has_overflown()) {
-    set_has_aborted();
-    return;
+    return false;
   }
 
   // If we are not concurrent (i.e. we're doing remark) we don't need
   // to check anything else. The other steps are only needed during
   // the concurrent marking phase.
   if (!_cm->concurrent()) {
-    return;
+    return true;
   }
 
   // (2) If marking has been aborted for Full GC, then we also abort.
   if (_cm->has_aborted()) {
-    set_has_aborted();
-    return;
+    return false;
   }
 
   double curr_time_ms = os::elapsedVTime() * 1000.0;
@@ -2228,17 +2229,15 @@ void G1CMTask::regular_clock_call() {
   if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
     // responsible for yielding.
-    set_has_aborted();
-    return;
+    return false;
   }
 
   // (5) We check whether we've reached our time quota. If we have,
   // then we abort.
   double elapsed_time_ms = curr_time_ms - _start_time_ms;
   if (elapsed_time_ms > _time_target_ms) {
-    set_has_aborted();
     _has_timed_out = true;
-    return;
+    return false;
   }
 
   // (6) Finally, we check whether there are enough completed STAB
@@ -2247,9 +2246,9 @@ void G1CMTask::regular_clock_call() {
   if (!_draining_satb_buffers && satb_mq_set.process_completed_buffers()) {
     // we do need to process SATB buffers, we'll abort and restart
     // the marking task to do so
-    set_has_aborted();
-    return;
+    return false;
   }
+  return true;
 }
 
 void G1CMTask::recalculate_limits() {
@@ -2404,7 +2403,7 @@ void G1CMTask::drain_satb_buffers() {
   // until we run out of buffers or we need to abort.
   while (!has_aborted() &&
          satb_mq_set.apply_closure_to_completed_buffer(&satb_cl)) {
-    regular_clock_call();
+    abort_marking_if_regular_check_fail();
   }
 
   _draining_satb_buffers = false;
@@ -2647,7 +2646,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
       // If the iteration is successful, give up the region.
       if (mr.is_empty()) {
         giveup_current_region();
-        regular_clock_call();
+        abort_marking_if_regular_check_fail();
       } else if (_curr_region->is_humongous() && mr.start() == _curr_region->bottom()) {
         if (_next_mark_bitmap->is_marked(mr.start())) {
           // The object is marked - apply the closure
@@ -2656,10 +2655,10 @@ void G1CMTask::do_marking_step(double time_target_ms,
         // Even if this task aborted while scanning the humongous object
         // we can (and should) give up the current region.
         giveup_current_region();
-        regular_clock_call();
+        abort_marking_if_regular_check_fail();
       } else if (_next_mark_bitmap->iterate(&bitmap_closure, mr)) {
         giveup_current_region();
-        regular_clock_call();
+        abort_marking_if_regular_check_fail();
       } else {
         assert(has_aborted(), "currently the only way to do so");
         // The only way to abort the bitmap iteration is to return
@@ -2714,7 +2713,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
       // block of empty regions. So we need to call the regular clock
       // method once round the loop to make sure it's called
       // frequently enough.
-      regular_clock_call();
+      abort_marking_if_regular_check_fail();
     }
 
     if (!has_aborted() && _curr_region == NULL) {
@@ -2792,6 +2791,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
       guarantee(_cm->mark_stack_empty(), "only way to reach here");
       guarantee(_task_queue->size() == 0, "only way to reach here");
       guarantee(!_cm->has_overflown(), "only way to reach here");
+      guarantee(!has_aborted(), "should never happen if termination has completed");
     } else {
       // Apparently there's more work to do. Let's abort this task. It
       // will restart it and we can hopefully find more things to do.

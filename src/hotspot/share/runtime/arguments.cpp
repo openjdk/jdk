@@ -3283,11 +3283,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   memset(buf, 0, bytes_alloc);
 
   // Fill buffer
-  // Use ::read() instead of os::read because os::read()
-  // might do a thread state transition
-  // and it is too early for that here
-
-  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ssize_t bytes_read = os::read(fd, (void *)buf, (unsigned)bytes_alloc);
   os::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
@@ -3793,6 +3789,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION(AllocateHeapAt);
+  UNSUPPORTED_OPTION(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT

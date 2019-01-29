@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,17 @@ const TypeFunc* CallGenerator::tf() const {
   return TypeFunc::make(method());
 }
 
-bool CallGenerator::is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* callee) {
-  ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
-  return symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic();
+bool CallGenerator::is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m) {
+  return is_inlined_method_handle_intrinsic(jvms->method(), jvms->bci(), m);
+}
+
+bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m) {
+  ciMethod* symbolic_info = caller->get_method_at_bci(bci);
+  return is_inlined_method_handle_intrinsic(symbolic_info, m);
+}
+
+bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m) {
+  return symbolic_info->is_method_handle_intrinsic() && !m->is_method_handle_intrinsic();
 }
 
 //-----------------------------ParseGenerator---------------------------------
@@ -90,7 +98,6 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   // Grab signature for matching/allocation
 #ifdef ASSERT
   if (parser.tf() != (parser.depth() == 1 ? C->tf() : tf())) {
-    MutexLockerEx ml(Compile_lock, Mutex::_no_safepoint_check_flag);
     assert(C->env()->system_dictionary_modification_counter_changed(),
            "Must invalidate if TypeFuncs differ");
   }
@@ -889,7 +896,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
+            const Type* recv_type = arg_type->join_speculative(sig_type); // keep speculative part
+            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
             kit.set_argument(0, cast_obj);
           }
         }
@@ -901,7 +909,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
+              const Type* narrowed_arg_type = arg_type->join_speculative(sig_type); // keep speculative part
+              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
               kit.set_argument(receiver_skip + j, cast_obj);
             }
           }

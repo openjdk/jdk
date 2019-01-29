@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_SCOPEDESC_HPP
-#define SHARE_VM_CODE_SCOPEDESC_HPP
+#ifndef SHARE_CODE_SCOPEDESC_HPP
+#define SHARE_CODE_SCOPEDESC_HPP
 
 #include "code/debugInfo.hpp"
 #include "code/pcDesc.hpp"
@@ -141,4 +141,4 @@ class ScopeDesc : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_CODE_SCOPEDESC_HPP
+#endif // SHARE_CODE_SCOPEDESC_HPP

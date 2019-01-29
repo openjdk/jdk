@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * Here is the use of link: {@link java.io.File File}
- * Here is the use of docRoot: <a href="{@docRoot}/glossary.html">glossary</a>.
+ * Here is the use of docRoot: <a href="{@docRoot}/index-all.html">index</a>.
  * Here is the use of link: {@link java.io.File Second File Link}
  */
 public class TestDocRootTag {}

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1SATBMARKQUEUE_HPP
-#define SHARE_VM_GC_G1_G1SATBMARKQUEUE_HPP
+#ifndef SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
+#define SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
 
 #include "gc/shared/satbMarkQueue.hpp"
 
@@ -49,4 +49,4 @@ public:
   virtual void filter(SATBMarkQueue* queue);
 };
 
-#endif // SHARE_VM_GC_G1_G1SATBMARKQUEUE_HPP
+#endif // SHARE_GC_G1_G1SATBMARKQUEUESET_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  *
  */
 
+package gc.stress.gcold;
+
 /*
  * @test TestGCOldWithParallel
  * @key gc
+ * @library /
  * @requires vm.gc.Parallel
  * @summary Stress the Parallel GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm -Xmx384M -XX:+UseParallelGC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseParallelGC -XX:-UseParallelOldGC TestGCOld 50 1 20 10 10000
+ * @run main/othervm -Xmx384M -XX:+UseParallelGC gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ * @run main/othervm -Xmx384M -XX:+UseParallelGC -XX:-UseParallelOldGC gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 public class TestGCOldWithParallel {
     public static void main(String[] args) {

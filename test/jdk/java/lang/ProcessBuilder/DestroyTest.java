@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,16 @@
  *          destroyForcibly.
  */
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 abstract class ProcessTest implements Runnable {
     ProcessBuilder bldr;
     Process p;
-
-    public Process killProc(boolean force) throws Exception {
-        if (force) {
-            p.destroyForcibly();
-        } else {
-            p.destroy();
-        }
-        return p;
-    }
-
-    public boolean isAlive() {
-        return p.isAlive();
-    }
 
     public void run() {
         try {
@@ -63,7 +53,17 @@ abstract class ProcessTest implements Runnable {
         }
     }
 
-    public abstract void runTest() throws Exception;
+    public void runTest() throws Exception {
+        // The destroy() method is not tested because
+        // the process streams are closed by the destroy() call.
+        // After a destroy() call, the process terminates with a
+        // SIGPIPE even if it was trapping SIGTERM.
+        // So skip the trap test and go straight to destroyForcibly().
+        p.destroyForcibly();
+        p.waitFor();
+        if (p.isAlive())
+            throw new RuntimeException("Problem terminating the process.");
+    }
 }
 
 class UnixTest extends ProcessTest {
@@ -78,16 +78,10 @@ class UnixTest extends ProcessTest {
 
     void createScript(File processTrapScript) throws IOException {
         processTrapScript.deleteOnExit();
-        FileWriter fstream = new FileWriter(processTrapScript);
-        try (BufferedWriter out = new BufferedWriter(fstream)) {
+        try (FileWriter fstream = new FileWriter(processTrapScript);
+             BufferedWriter out = new BufferedWriter(fstream)) {
             out.write("#!/bin/bash\n" +
-                "echo \\\"ProcessTrap.sh started: trapping SIGTERM/SIGINT\\\"\n" +
-                "trap bashtrap SIGTERM SIGINT\n" +
-                "bashtrap()\n" +
-                "{\n" +
-                "    echo \\\"SIGTERM/SIGINT detected!\\\"\n" +
-                "}\n" +
-                "\n" +
+                "echo \\\"ProcessTrap.sh started\\\"\n" +
                 "while :\n" +
                 "do\n" +
                 "    sleep 1;\n" +
@@ -96,33 +90,6 @@ class UnixTest extends ProcessTest {
         processTrapScript.setExecutable(true, true);
     }
 
-    @Override
-    public void runTest() throws Exception {
-        killProc(false);
-        Thread.sleep(1000);
-        if (!p.isAlive())
-            throw new RuntimeException("Process terminated prematurely.");
-        killProc(true).waitFor();
-        if (p.isAlive())
-            throw new RuntimeException("Problem terminating the process.");
-    }
-}
-
-class MacTest extends UnixTest {
-    public MacTest(File script) throws IOException {
-        super(script);
-    }
-
-    @Override
-    public void runTest() throws Exception {
-        // On Mac, it appears that when we close the processes streams
-        // after a destroy() call, the process terminates with a
-        // SIGPIPE even if it was trapping the SIGTERM, so as with
-        // windows, we skip the trap test and go straight to destroyForcibly().
-        killProc(true).waitFor();
-        if (p.isAlive())
-            throw new RuntimeException("Problem terminating the process.");
-    }
 }
 
 class WindowsTest extends ProcessTest {
@@ -133,10 +100,6 @@ class WindowsTest extends ProcessTest {
         p = bldr.start();
     }
 
-    @Override
-    public void runTest() throws Exception {
-        killProc(true).waitFor();
-    }
 }
 
 public class DestroyTest {
@@ -148,12 +111,11 @@ public class DestroyTest {
         } else {
             File userDir = new File(System.getProperty("user.dir", "."));
             File tempFile = File.createTempFile("ProcessTrap-", ".sh", userDir);
-            if (osName.startsWith("Linux") == true
+            if (osName.startsWith("Linux")
+                    || osName.startsWith("Mac OS")
                     || osName.equals("SunOS")
                     || osName.equals("AIX")) {
                 return new UnixTest(tempFile);
-            } else if (osName.startsWith("Mac OS")) {
-                return new MacTest(tempFile);
             }
         }
         return null;

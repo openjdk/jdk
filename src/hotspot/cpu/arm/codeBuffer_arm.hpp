@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_CODEBUFFER_ARM_HPP
-#define CPU_ARM_VM_CODEBUFFER_ARM_HPP
+#ifndef CPU_ARM_CODEBUFFER_ARM_HPP
+#define CPU_ARM_CODEBUFFER_ARM_HPP
 
 private:
   void pd_initialize() {}
@@ -31,4 +31,4 @@ private:
 public:
   void flush_bundle(bool start_new_bundle) {}
 
-#endif // CPU_ARM_VM_CODEBUFFER_ARM_HPP
+#endif // CPU_ARM_CODEBUFFER_ARM_HPP

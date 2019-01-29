@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /*
  * @test TestHumongousObjectsOnNvdimm
  * @summary Check that humongous objects reside in nv-dimm
  * @library /test/lib /
- * @requires vm.gc=="null"
+ * @requires vm.gc=="null" & os.family != "aix"
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main gc.nvdimm.TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                                  -XX:+WhiteBoxAPI
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1084,7 +1084,7 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
 
     if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                    (const char*)&index, sizeof(index)) < 0) {
-        if (errno == EINVAL && index > 0) {
+        if ((errno == EINVAL || errno == EADDRNOTAVAIL) && index > 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IPV6_MULTICAST_IF failed (interface has IPv4 "
                 "address only?)");

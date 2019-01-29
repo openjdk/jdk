@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,18 @@
  *
  */
 
+package gc.stress.gcbasher;
+
 import java.io.IOException;
 
 /*
  * @test TestGCBasherWithSerial
  * @key gc stress
+ * @library /
  * @requires vm.gc.Serial
  * @requires vm.flavor == "server" & !vm.emulatedClient
  * @summary Stress the Serial GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseSerialGC TestGCBasherWithSerial 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseSerialGC gc.stress.gcbasher.TestGCBasherWithSerial 120000
  */
 public class TestGCBasherWithSerial {
     public static void main(String[] args) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.websocket.OpeningHandshake;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
@@ -157,7 +158,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     /** Returns a new instance suitable for authentication. */
     public static HttpRequestImpl newInstanceForAuthentication(HttpRequestImpl other) {
-        return new HttpRequestImpl(other.uri(), other.method(), other);
+        HttpRequestImpl request = new HttpRequestImpl(other.uri(), other.method(), other);
+        if (request.isWebSocket()) {
+            Utils.setWebSocketUpgradeHeaders(request);
+        }
+        return request;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ADLC_FORMS_HPP
-#define SHARE_VM_ADLC_FORMS_HPP
+#ifndef SHARE_ADLC_FORMS_HPP
+#define SHARE_ADLC_FORMS_HPP
 
 // FORMS.HPP - ADL Parser Generic and Utility Forms Classes
 
@@ -596,4 +596,4 @@ public:
   void dump();
 };
 
-#endif // SHARE_VM_ADLC_FORMS_HPP
+#endif // SHARE_ADLC_FORMS_HPP

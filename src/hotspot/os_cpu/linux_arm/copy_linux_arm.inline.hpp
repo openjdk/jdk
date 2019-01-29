@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_VM_COPY_LINUX_ARM_INLINE_HPP
-#define OS_CPU_LINUX_ARM_VM_COPY_LINUX_ARM_INLINE_HPP
+#ifndef OS_CPU_LINUX_ARM_COPY_LINUX_ARM_INLINE_HPP
+#define OS_CPU_LINUX_ARM_COPY_LINUX_ARM_INLINE_HPP
 
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   _Copy_conjoint_words(from, to, count * HeapWordSize);
@@ -92,4 +92,4 @@ static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t 
   pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
 }
 
-#endif // OS_CPU_LINUX_ARM_VM_COPY_LINUX_ARM_INLINE_HPP
+#endif // OS_CPU_LINUX_ARM_COPY_LINUX_ARM_INLINE_HPP

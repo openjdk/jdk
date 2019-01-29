@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
 
 #include "code/codeCache.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -77,8 +77,8 @@ public:
 
   bool has_cset_oops(ShenandoahHeap* heap);
 
-  void assert_alive_and_correct() PRODUCT_RETURN;
-  void assert_same_oops(GrowableArray<oop*>* oops) PRODUCT_RETURN;
+  void assert_alive_and_correct() NOT_DEBUG_RETURN;
+  void assert_same_oops(GrowableArray<oop*>* oops) NOT_DEBUG_RETURN;
 
   static bool find_with_nmethod(void* nm, ShenandoahNMethod* other) {
     return other->_nm == nm;
@@ -197,4 +197,4 @@ public:
   }
 };
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP

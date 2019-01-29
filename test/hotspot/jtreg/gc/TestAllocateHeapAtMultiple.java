@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc;
+
 /* @test TestAllocateHeapAtMultiple.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateHeapAt option. Has multiple sub-tests to cover different code paths.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.bits == "64" & vm.gc != "Z" & os.family != "aix"
- * @run main/timeout=360 TestAllocateHeapAtMultiple
+ * @run main/timeout=360 gc.TestAllocateHeapAtMultiple
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -53,9 +55,8 @@ public class TestAllocateHeapAtMultiple {
       "-Xmx32m -Xms32m -XX:+UseCompressedOops",     // 1. With compressedoops enabled.
       "-Xmx32m -Xms32m -XX:-UseCompressedOops",     // 2. With compressedoops disabled.
       "-Xmx32m -Xms32m -XX:HeapBaseMinAddress=3g",  // 3. With user specified HeapBaseMinAddress.
-      "-Xmx4g -Xms4g",                              // 4. With larger heap size (UnscaledNarrowOop not possible).
-      "-Xmx4g -Xms4g -XX:+UseLargePages",           // 5. Set UseLargePages.
-      "-Xmx4g -Xms4g -XX:+UseNUMA"                  // 6. Set UseNUMA.
+      "-Xmx32m -Xms32m -XX:+UseLargePages",         // 4. Set UseLargePages.
+      "-Xmx32m -Xms32m -XX:+UseNUMA"                // 5. Set UseNUMA.
     };
 
     for(String extraOpts : extraOptsList) {

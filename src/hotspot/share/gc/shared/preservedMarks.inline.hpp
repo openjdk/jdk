@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
-#define SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+#ifndef SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+#define SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 
 #include "gc/shared/preservedMarks.hpp"
 #include "logging/log.hpp"
@@ -83,4 +83,4 @@ void PreservedMarks::OopAndMarkOop::set_mark() const {
   _o->set_mark_raw(_m);
 }
 
-#endif // SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+#endif // SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

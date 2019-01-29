@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "utilities/debug.hpp"
 
 void ZArguments::initialize_platform() {
+#ifdef COMPILER2
   // The C2 barrier slow path expects vector registers to be least
   // 16 bytes wide, which is the minimum width available on all
   // x86-64 systems. However, the user could have speficied a lower
@@ -37,4 +38,5 @@ void ZArguments::initialize_platform() {
     warning("ZGC requires MaxVectorSize to be at least 16");
     FLAG_SET_DEFAULT(MaxVectorSize, 16);
   }
+#endif
 }

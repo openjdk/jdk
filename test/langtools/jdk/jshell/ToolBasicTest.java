@@ -130,6 +130,18 @@ public class ToolBasicTest extends ReplToolTesting {
         }
     }
 
+    public void testCtrlD() {
+        test(false, new String[]{"--no-startup"},
+                a -> {
+                    if (!a) {
+                        closeCommandInput();
+                    } else {
+                        throw new IllegalStateException();
+                    }
+                }
+        );
+    }
+
     private final Object lock = new Object();
     private PrintWriter out;
     private boolean isStopped;

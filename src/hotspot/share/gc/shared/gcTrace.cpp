@@ -37,7 +37,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/evacuationInfo.hpp"
+#include "gc/g1/g1EvacuationInfo.hpp"
 #endif
 
 void GCTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
@@ -200,7 +200,7 @@ void G1NewTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* tim
   send_g1_young_gc_event();
 }
 
-void G1NewTracer::report_evacuation_info(EvacuationInfo* info) {
+void G1NewTracer::report_evacuation_info(G1EvacuationInfo* info) {
   send_evacuation_info_event(info);
 }
 

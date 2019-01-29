@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A minimal proxy server that supports CONNECT tunneling. It does not do
@@ -37,6 +40,18 @@ public class ProxyServer extends Thread implements Closeable {
     ServerSocket listener;
     int port;
     volatile boolean debug;
+    private final Credentials credentials;  // may be null
+
+    private static class Credentials {
+        private final String name;
+        private final String password;
+        private Credentials(String name, String password) {
+            this.name = name;
+            this.password = password;
+        }
+        public String name() { return name; }
+        public String password() { return password; }
+    }
 
     /**
      * Create proxy on port (zero means don't care). Call getPort()
@@ -46,19 +61,42 @@ public class ProxyServer extends Thread implements Closeable {
         this(port, false);
     }
 
-    public ProxyServer(Integer port, Boolean debug) throws IOException {
+    public ProxyServer(Integer port,
+                       Boolean debug,
+                       String username,
+                       String password)
+        throws IOException
+    {
+        this(port, debug, new Credentials(username, password));
+    }
+
+    public ProxyServer(Integer port,
+                       Boolean debug)
+        throws IOException
+    {
+        this(port, debug, null);
+    }
+
+    public ProxyServer(Integer port,
+                       Boolean debug,
+                       Credentials credentials)
+        throws IOException
+    {
         this.debug = debug;
         listener = new ServerSocket();
         listener.setReuseAddress(false);
         listener.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
         this.port = listener.getLocalPort();
+        this.credentials = credentials;
         setName("ProxyListener");
         setDaemon(true);
         connections = new LinkedList<>();
         start();
     }
 
-    public ProxyServer(String s) {  }
+    public ProxyServer(String s) {
+        credentials = null;
+    }
 
     /**
      * Returns the port number this proxy is listening on
@@ -194,16 +232,69 @@ public class ProxyServer extends Thread implements Closeable {
             return -1;
         }
 
+        // Checks credentials in the request against those allowable by the proxy.
+        private boolean authorized(Credentials credentials,
+                                   List<String> requestHeaders) {
+            List<String> authorization = requestHeaders.stream()
+                    .filter(n -> n.toLowerCase(Locale.US).startsWith("proxy-authorization"))
+                    .collect(toList());
+
+            if (authorization.isEmpty())
+                return false;
+
+            if (authorization.size() != 1) {
+                throw new IllegalStateException("Authorization unexpected count:" + authorization);
+            }
+            String value = authorization.get(0).substring("proxy-authorization".length()).trim();
+            if (!value.startsWith(":"))
+                throw new IllegalStateException("Authorization malformed: " + value);
+            value = value.substring(1).trim();
+
+            if (!value.startsWith("Basic "))
+                throw new IllegalStateException("Authorization not Basic: " + value);
+
+            value = value.substring("Basic ".length());
+            String values = new String(Base64.getDecoder().decode(value), UTF_8);
+            int sep = values.indexOf(':');
+            if (sep < 1) {
+                throw new IllegalStateException("Authorization no colon: " +  values);
+            }
+            String name = values.substring(0, sep);
+            String password = values.substring(sep + 1);
+
+            if (name.equals(credentials.name()) && password.equals(credentials.password()))
+                return true;
+
+            return false;
+        }
+
         public void init() {
             try {
-                byte[] buf = readHeaders(clientIn);
-                int p = findCRLF(buf);
-                if (p == -1) {
-                    close();
-                    return;
+                byte[] buf;
+                while (true) {
+                    buf = readHeaders(clientIn);
+                    if (findCRLF(buf) == -1) {
+                        close();
+                        return;
+                    }
+
+                    List<String> headers = asList(new String(buf, UTF_8).split("\r\n"));
+                    // check authorization credentials, if required by the server
+                    if (credentials != null && !authorized(credentials, headers)) {
+                        String resp = "HTTP/1.1 407 Proxy Authentication Required\r\n" +
+                                      "Content-Length: 0\r\n" +
+                                      "Proxy-Authenticate: Basic realm=\"proxy realm\"\r\n\r\n";
+
+                        clientOut.write(resp.getBytes(UTF_8));
+                    } else {
+                        break;
+                    }
                 }
+
+                int p = findCRLF(buf);
                 String cmd = new String(buf, 0, p, "US-ASCII");
                 String[] params = cmd.split(" ");
+
                 if (params[0].equals("CONNECT")) {
                     doTunnel(params[1]);
                 } else {

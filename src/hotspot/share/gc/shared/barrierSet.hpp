@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_BARRIERSET_HPP
-#define SHARE_VM_GC_SHARED_BARRIERSET_HPP
+#ifndef SHARE_GC_SHARED_BARRIERSET_HPP
+#define SHARE_GC_SHARED_BARRIERSET_HPP
 
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/memRegion.hpp"
@@ -275,11 +275,7 @@ public:
     template <typename T>
     static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                       arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                      size_t length) {
-      return Raw::oop_arraycopy(src_obj, src_offset_in_bytes, src_raw,
-                                dst_obj, dst_offset_in_bytes, dst_raw,
-                                length);
-    }
+                                      size_t length);
 
     // Off-heap oop accesses. These accessors get resolved when
     // IN_HEAP is not set (e.g. when using the NativeAccess API), it is
@@ -325,4 +321,4 @@ inline T* barrier_set_cast(BarrierSet* bs) {
   return static_cast<T*>(bs);
 }
 
-#endif // SHARE_VM_GC_SHARED_BARRIERSET_HPP
+#endif // SHARE_GC_SHARED_BARRIERSET_HPP

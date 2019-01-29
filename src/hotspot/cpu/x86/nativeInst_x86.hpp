@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_NATIVEINST_X86_HPP
-#define CPU_X86_VM_NATIVEINST_X86_HPP
+#ifndef CPU_X86_NATIVEINST_X86_HPP
+#define CPU_X86_NATIVEINST_X86_HPP
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
@@ -753,4 +753,4 @@ inline bool NativeInstruction::is_mov_literal64() {
 #endif // AMD64
 }
 
-#endif // CPU_X86_VM_NATIVEINST_X86_HPP
+#endif // CPU_X86_NATIVEINST_X86_HPP

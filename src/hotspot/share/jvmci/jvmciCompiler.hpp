@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCI_COMPILER_HPP
-#define SHARE_VM_JVMCI_JVMCI_COMPILER_HPP
+#ifndef SHARE_JVMCI_JVMCICOMPILER_HPP
+#define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -107,4 +107,4 @@ public:
   static elapsedTimer* codeInstallTimer() { return &_codeInstallTimer; }
 };
 
-#endif // SHARE_VM_JVMCI_JVMCI_COMPILER_HPP
+#endif // SHARE_JVMCI_JVMCICOMPILER_HPP

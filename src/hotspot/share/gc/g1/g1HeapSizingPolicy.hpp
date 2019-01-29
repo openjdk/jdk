@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1HEAPSIZINGPOLICY_HPP
-#define SHARE_VM_GC_G1_G1HEAPSIZINGPOLICY_HPP
+#ifndef SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
+#define SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 
 #include "memory/allocation.hpp"
 
@@ -60,4 +60,4 @@ public:
   static G1HeapSizingPolicy* create(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 };
 
-#endif // SRC_SHARE_VM_GC_G1_G1HEAPSIZINGPOLICY_HPP
+#endif // SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP

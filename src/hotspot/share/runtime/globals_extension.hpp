@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
-#define SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
+#ifndef SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
+#define SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
@@ -305,6 +305,8 @@ typedef enum {
 #define FLAG_SET_CMDLINE(type, name, value) (JVMFlagEx::setOnCmdLine(FLAG_MEMBER_WITH_TYPE(name, type)), \
                                              JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::COMMAND_LINE))
 #define FLAG_SET_ERGO(type, name, value)    (JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::ERGONOMIC))
+#define FLAG_SET_MGMT(type, name, value)    (JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::MANAGEMENT))
+
 #define FLAG_SET_ERGO_IF_DEFAULT(type, name, value) \
   do {                                              \
     if (FLAG_IS_DEFAULT(name)) {                    \
@@ -334,4 +336,4 @@ class JVMFlagEx : JVMFlag {
   static void setOnCmdLine(JVMFlagsWithType flag);
 };
 
-#endif // SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
+#endif // SHARE_RUNTIME_GLOBALS_EXTENSION_HPP

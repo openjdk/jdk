@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCIJAVACLASSES_HPP
-#define SHARE_VM_JVMCI_JVMCIJAVACLASSES_HPP
+#ifndef SHARE_JVMCI_JVMCIJAVACLASSES_HPP
+#define SHARE_JVMCI_JVMCIJAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "oops/access.hpp"
@@ -381,4 +381,4 @@ COMPILER_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD
 
 void compute_offset(int &dest_offset, Klass* klass, const char* name, const char* signature, bool static_field, TRAPS);
 
-#endif // SHARE_VM_JVMCI_JVMCIJAVACLASSES_HPP
+#endif // SHARE_JVMCI_JVMCIJAVACLASSES_HPP

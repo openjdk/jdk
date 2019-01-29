@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.epsilon;
+
 /**
  * @test TestDieWithOnError
  * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon GC should die on heap exhaustion with error handler attached
  * @library /test/lib
- * @run main TestDieWithOnError
+ * @run main gc.epsilon.TestDieWithOnError
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

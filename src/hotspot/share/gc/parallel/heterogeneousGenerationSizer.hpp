@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP
-#define SHARE_VM_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP
+#ifndef SHARE_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP
+#define SHARE_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP
 
 #include "gc/parallel/generationSizer.hpp"
 
@@ -43,4 +43,4 @@ public:
   virtual size_t heap_reserved_size_bytes() const;
   virtual bool is_hetero_heap() const;
 };
-#endif // SHARE_VM_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP
+#endif // SHARE_GC_PARALLEL_HETEROGENEOUSGENERATIONSIZER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,12 +402,14 @@ MethodLivenessResult ciMethod::raw_liveness_at_bci(int bci) {
 // will return true for all locals in some cases to improve debug
 // information.
 MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
-  MethodLivenessResult result = raw_liveness_at_bci(bci);
   if (CURRENT_ENV->should_retain_local_variables() || DeoptimizeALot) {
     // Keep all locals live for the user's edification and amusement.
-    result.at_put_range(0, result.size(), true);
+    MethodLivenessResult result(_max_locals);
+    result.set_range(0, _max_locals);
+    result.set_is_valid();
+    return result;
   }
-  return result;
+  return raw_liveness_at_bci(bci);
 }
 
 // ciMethod::live_local_oops_at_bci

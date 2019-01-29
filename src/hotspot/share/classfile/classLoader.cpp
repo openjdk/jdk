@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1724,7 +1724,7 @@ void ClassLoader::create_javabase() {
 
   {
     MutexLocker ml(Module_lock, THREAD);
-    ModuleEntry* jb_module = null_cld_modules->locked_create_entry_or_null(Handle(),
+    ModuleEntry* jb_module = null_cld_modules->locked_create_entry(Handle(),
                                false, vmSymbols::java_base(), NULL, NULL, null_cld);
     if (jb_module == NULL) {
       vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);

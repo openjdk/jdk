@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_COMPILERORACLE_HPP
-#define SHARE_VM_COMPILER_COMPILERORACLE_HPP
+#ifndef SHARE_COMPILER_COMPILERORACLE_HPP
+#define SHARE_COMPILER_COMPILERORACLE_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -91,4 +91,4 @@ class CompilerOracle : AllStatic {
   static bool should_print_methods();
 };
 
-#endif // SHARE_VM_COMPILER_COMPILERORACLE_HPP
+#endif // SHARE_COMPILER_COMPILERORACLE_HPP

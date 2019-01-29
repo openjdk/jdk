@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_THREAD_INLINE_HPP
-#define SHARE_VM_RUNTIME_THREAD_INLINE_HPP
+#ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
+#define SHARE_RUNTIME_THREAD_INLINE_HPP
 
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -233,4 +233,16 @@ inline void JavaThread::set_terminated_value() {
   OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
 }
 
-#endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP
+// Allow tracking of class initialization monitor use
+inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
+  assert((k == NULL && _class_to_be_initialized != NULL) ||
+         (k != NULL && _class_to_be_initialized == NULL), "incorrect usage");
+  assert(this == Thread::current(), "Only the current thread can set this field");
+  _class_to_be_initialized = k;
+}
+
+inline InstanceKlass* JavaThread::class_to_be_initialized() const {
+  return _class_to_be_initialized;
+}
+
+#endif // SHARE_RUNTIME_THREAD_INLINE_HPP

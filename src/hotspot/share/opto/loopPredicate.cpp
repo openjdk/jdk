@@ -160,7 +160,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   // When called from beautify_loops() idom is not constructed yet.
   if (_idom != NULL) {
     Node* ridom = idom(rgn);
-    Node* nrdom = dom_lca(ridom, new_iff);
+    Node* nrdom = dom_lca_internal(ridom, new_iff);
     set_idom(rgn, nrdom, dom_depth(rgn));
   }
 
@@ -1308,7 +1308,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
 // range checks between the pre and main loop to validate the value
 // of the main loop induction variable. Make a copy of the predicates
 // here with an opaque node as a place holder for the value (will be
-// updated by PhaseIdealLoop::update_skeleton_predicate()).
+// updated by PhaseIdealLoop::clone_skeleton_predicate()).
 ProjNode* PhaseIdealLoop::insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
                                                     ProjNode* proj, ProjNode *predicate_proj,
                                                     ProjNode* upper_bound_proj,

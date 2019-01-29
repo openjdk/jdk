@@ -1653,11 +1653,6 @@ void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) 
   }
 }
 
-class CleanExtraDataClosure : public StackObj {
-public:
-  virtual bool is_live(Method* m) = 0;
-};
-
 // Check for entries that reference an unloaded method
 class CleanExtraDataKlassClosure : public CleanExtraDataClosure {
   bool _always_clean;

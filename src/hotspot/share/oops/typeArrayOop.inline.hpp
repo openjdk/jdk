@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_TYPEARRAYOOP_INLINE_HPP
-#define SHARE_VM_OOPS_TYPEARRAYOOP_INLINE_HPP
+#ifndef SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
+#define SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
 
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -203,4 +203,4 @@ inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
 #endif // _LP64
 
 
-#endif // SHARE_VM_OOPS_TYPEARRAYOOP_INLINE_HPP
+#endif // SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP

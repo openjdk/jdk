@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VFRAME_HPP
-#define SHARE_VM_RUNTIME_VFRAME_HPP
+#ifndef SHARE_RUNTIME_VFRAME_HPP
+#define SHARE_RUNTIME_VFRAME_HPP
 
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
@@ -354,4 +354,4 @@ class vframeStream : public vframeStreamCommon {
   vframeStream(JavaThread* thread, frame top_frame, bool stop_at_java_call_stub = false);
 };
 
-#endif // SHARE_VM_RUNTIME_VFRAME_HPP
+#endif // SHARE_RUNTIME_VFRAME_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OBJARRAYKLASS_HPP
-#define SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+#ifndef SHARE_OOPS_OBJARRAYKLASS_HPP
+#define SHARE_OOPS_OBJARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -174,4 +174,4 @@ class ObjArrayKlass : public ArrayKlass {
   void oop_verify_on(oop obj, outputStream* st);
 };
 
-#endif // SHARE_VM_OOPS_OBJARRAYKLASS_HPP
+#endif // SHARE_OOPS_OBJARRAYKLASS_HPP

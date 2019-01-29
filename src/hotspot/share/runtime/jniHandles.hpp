@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_JNIHANDLES_HPP
-#define SHARE_VM_RUNTIME_JNIHANDLES_HPP
+#ifndef SHARE_RUNTIME_JNIHANDLES_HPP
+#define SHARE_RUNTIME_JNIHANDLES_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
@@ -206,4 +206,4 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   #endif
 };
 
-#endif // SHARE_VM_RUNTIME_JNIHANDLES_HPP
+#endif // SHARE_RUNTIME_JNIHANDLES_HPP

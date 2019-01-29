@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -365,8 +365,6 @@ JNI_END
 
 
 
-static bool first_time_FindClass = true;
-
 DT_RETURN_MARK_DECL(FindClass, jclass
                     , HOTSPOT_JNI_FINDCLASS_RETURN(_ret_ref));
 
@@ -377,10 +375,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   jclass result = NULL;
   DT_RETURN_MARK(FindClass, jclass, (const jclass&)result);
-
-  // Remember if we are the first invocation of jni_FindClass
-  bool first_time = first_time_FindClass;
-  first_time_FindClass = false;
 
   // Sanity check the name:  it cannot be null or larger than the maximum size
   // name we can fit in the constant pool.
@@ -432,13 +426,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
-  }
-
-  // If we were the first invocation of jni_FindClass, we enable compilation again
-  // rather than just allowing invocation counter to overflow and decay.
-  // Controlled by flag DelayCompilationDuringStartup.
-  if (first_time) {
-    CompilationPolicy::completed_vm_startup();
   }
 
   return result;
@@ -2441,9 +2428,7 @@ JNI_QUICK_ENTRY(jsize, jni_GetStringLength(JNIEnv *env, jstring string))
   HOTSPOT_JNI_GETSTRINGLENGTH_ENTRY(env, string);
   jsize ret = 0;
   oop s = JNIHandles::resolve_non_null(string);
-  if (java_lang_String::value(s) != NULL) {
-    ret = java_lang_String::length(s);
-  }
+  ret = java_lang_String::length(s);
  HOTSPOT_JNI_GETSTRINGLENGTH_RETURN(ret);
   return ret;
 JNI_END
@@ -2457,7 +2442,7 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
   oop s = JNIHandles::resolve_non_null(string);
   typeArrayOop s_value = java_lang_String::value(s);
   if (s_value != NULL) {
-    int s_len = java_lang_String::length(s);
+    int s_len = java_lang_String::length(s, s_value);
     bool is_latin1 = java_lang_String::is_latin1(s);
     buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
     /* JNI Specification states return NULL on OOM */
@@ -2517,11 +2502,8 @@ JNI_END
 JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
   JNIWrapper("GetStringUTFLength");
  HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
-  jsize ret = 0;
   oop java_string = JNIHandles::resolve_non_null(string);
-  if (java_lang_String::value(java_string) != NULL) {
-    ret = java_lang_String::utf8_length(java_string);
-  }
+  jsize ret = java_lang_String::utf8_length(java_string);
   HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN(ret);
   return ret;
 JNI_END
@@ -2532,12 +2514,13 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
  HOTSPOT_JNI_GETSTRINGUTFCHARS_ENTRY(env, string, (uintptr_t *) isCopy);
   char* result = NULL;
   oop java_string = JNIHandles::resolve_non_null(string);
-  if (java_lang_String::value(java_string) != NULL) {
-    size_t length = java_lang_String::utf8_length(java_string);
+  typeArrayOop s_value = java_lang_String::value(java_string);
+  if (s_value != NULL) {
+    size_t length = java_lang_String::utf8_length(java_string, s_value);
     /* JNI Specification states return NULL on OOM */
     result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
     if (result != NULL) {
-      java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
+      java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
       if (isCopy != NULL) {
         *isCopy = JNI_TRUE;
       }
@@ -2722,6 +2705,9 @@ JNI_QUICK_ENTRY(ElementType*, \
   ElementType* result; \
   int len = a->length(); \
   if (len == 0) { \
+    if (isCopy != NULL) { \
+      *isCopy = JNI_FALSE; \
+    } \
     /* Empty array: legal but useless, can't return NULL. \
      * Return a pointer to something useless. \
      * Avoid asserts in typeArrayOop. */ \
@@ -3107,12 +3093,12 @@ JNI_ENTRY(void, jni_GetStringRegion(JNIEnv *env, jstring string, jsize start, js
  HOTSPOT_JNI_GETSTRINGREGION_ENTRY(env, string, start, len, buf);
   DT_VOID_RETURN_MARK(GetStringRegion);
   oop s = JNIHandles::resolve_non_null(string);
-  int s_len = java_lang_String::length(s);
+  typeArrayOop s_value = java_lang_String::value(s);
+  int s_len = java_lang_String::length(s, s_value);
   if (start < 0 || len < 0 || start > s_len - len) {
     THROW(vmSymbols::java_lang_StringIndexOutOfBoundsException());
   } else {
     if (len > 0) {
-      typeArrayOop s_value = java_lang_String::value(s);
       bool is_latin1 = java_lang_String::is_latin1(s);
       if (!is_latin1) {
         ArrayAccess<>::arraycopy_to_native(s_value, typeArrayOopDesc::element_offset<jchar>(start),
@@ -3134,14 +3120,15 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
  HOTSPOT_JNI_GETSTRINGUTFREGION_ENTRY(env, string, start, len, buf);
   DT_VOID_RETURN_MARK(GetStringUTFRegion);
   oop s = JNIHandles::resolve_non_null(string);
-  int s_len = java_lang_String::length(s);
+  typeArrayOop s_value = java_lang_String::value(s);
+  int s_len = java_lang_String::length(s, s_value);
   if (start < 0 || len < 0 || start > s_len - len) {
     THROW(vmSymbols::java_lang_StringIndexOutOfBoundsException());
   } else {
     //%note jni_7
     if (len > 0) {
       // Assume the buffer is large enough as the JNI spec. does not require user error checking
-      java_lang_String::as_utf8_string(s, start, len, buf, INT_MAX);
+      java_lang_String::as_utf8_string(s, s_value, start, len, buf, INT_MAX);
       // as_utf8_string null-terminates the result string
     } else {
       // JDK null-terminates the buffer even in len is zero
@@ -3213,7 +3200,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
     ret = (jchar*) s_value->base(T_CHAR);
   } else {
     // Inflate latin1 encoded string to UTF16
-    int s_len = java_lang_String::length(s);
+    int s_len = java_lang_String::length(s, s_value);
     ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
     /* JNI Specification states return NULL on OOM */
     if (ret != NULL) {

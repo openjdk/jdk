@@ -91,7 +91,9 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
 
 void ThreadLocalAllocBuffer::insert_filler() {
   assert(end() != NULL, "Must not be retired");
-  Universe::heap()->fill_with_dummy_object(top(), hard_end(), true);
+  if (top() < hard_end()) {
+    Universe::heap()->fill_with_dummy_object(top(), hard_end(), true);
+  }
 }
 
 void ThreadLocalAllocBuffer::make_parsable() {

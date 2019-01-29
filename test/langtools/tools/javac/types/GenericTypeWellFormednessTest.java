@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class GenericTypeWellFormednessTest extends TypeHarness {
         typeVars[typeVars.length - 1] = new InstantiableType(null) {
             Type inst(Type clazz) {
                 TypeVar tvar = fac.TypeVariable();
-                tvar.bound = subst(clazz, Mapping(clazz.getTypeArguments().head, tvar));
+                tvar.setUpperBound( subst(clazz, Mapping(clazz.getTypeArguments().head, tvar)) );
                 return tvar;
             }
         };
@@ -204,20 +204,20 @@ public class GenericTypeWellFormednessTest extends TypeHarness {
 
         TypeVar tv4 = fac.TypeVariable();
         Type decl4 = fac.Class(tv4);
-        tv4.bound = decl4;
+        tv4.setUpperBound(decl4);
         tv4.tsym.name = predef.exceptionType.tsym.name;
 
         TypeVar tv5 = fac.TypeVariable();
         Type decl5 = fac.Class(tv5);
-        tv5.bound = subst(decl5, Mapping(tv5, fac.Wildcard(BoundKind.EXTENDS, tv5)));
+        tv5.setUpperBound( subst(decl5, Mapping(tv5, fac.Wildcard(BoundKind.EXTENDS, tv5))) );
 
         TypeVar tv6 = fac.TypeVariable();
         Type decl6 = fac.Class(tv6);
-        tv6.bound = subst(decl6, Mapping(tv6, fac.Wildcard(BoundKind.SUPER, tv6)));
+        tv6.setUpperBound( subst(decl6, Mapping(tv6, fac.Wildcard(BoundKind.SUPER, tv6))) );
 
         TypeVar tv7 = fac.TypeVariable();
         Type decl7 = fac.Class(tv7);
-        tv7.bound = subst(decl7, Mapping(tv7, fac.Wildcard(BoundKind.UNBOUND, predef.objectType)));
+        tv7.setUpperBound( subst(decl7, Mapping(tv7, fac.Wildcard(BoundKind.UNBOUND, predef.objectType))) );
 
         columns = new Type[] {
             decl1, decl2, decl3, decl4, decl5, decl6, decl7

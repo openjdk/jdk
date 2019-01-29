@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_PARALLELCLEANING_HPP
-#define SHARE_VM_GC_SHARED_PARALLELCLEANING_HPP
+#ifndef SHARE_GC_SHARED_PARALLELCLEANING_HPP
+#define SHARE_GC_SHARED_PARALLELCLEANING_HPP
 
-#include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -115,4 +116,4 @@ public:
   void work(uint worker_id);
 };
 
-#endif // SHARE_VM_GC_SHARED_PARALLELCLEANING_HPP
+#endif // SHARE_GC_SHARED_PARALLELCLEANING_HPP

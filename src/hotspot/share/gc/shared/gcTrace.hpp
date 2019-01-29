@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCTRACE_HPP
-#define SHARE_VM_GC_SHARED_GCTRACE_HPP
+#ifndef SHARE_GC_SHARED_GCTRACE_HPP
+#define SHARE_GC_SHARED_GCTRACE_HPP
 
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -38,7 +38,7 @@
 #include "gc/g1/g1YCTypes.hpp"
 #endif
 
-class EvacuationInfo;
+class G1EvacuationInfo;
 class GCHeapSummary;
 class MetaspaceChunkFreeListSummary;
 class MetaspaceSummary;
@@ -248,7 +248,7 @@ class G1NewTracer : public YoungGCTracer {
 
   void report_yc_type(G1YCType type);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
-  void report_evacuation_info(EvacuationInfo* info);
+  void report_evacuation_info(G1EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);
 
   void report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const;
@@ -268,7 +268,7 @@ class G1NewTracer : public YoungGCTracer {
                                        bool prediction_active);
  private:
   void send_g1_young_gc_event();
-  void send_evacuation_info_event(EvacuationInfo* info);
+  void send_evacuation_info_event(G1EvacuationInfo* info);
   void send_evacuation_failed_event(const EvacuationFailedInfo& ef_info) const;
 
   void send_young_evacuation_statistics(const G1EvacSummary& summary) const;
@@ -309,4 +309,4 @@ class G1OldTracer : public OldGCTracer {
   void set_gc_cause(GCCause::Cause cause);
 };
 
-#endif // SHARE_VM_GC_SHARED_GCTRACE_HPP
+#endif // SHARE_GC_SHARED_GCTRACE_HPP

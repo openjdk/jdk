@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,22 +85,6 @@ bool TieredThresholdPolicy::loop_predicate_helper(int i, int b, double scale, Me
 bool TieredThresholdPolicy::is_trivial(Method* method) {
   if (method->is_accessor() ||
       method->is_constant_getter()) {
-    return true;
-  }
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
-    if (TieredCompilation && comp != NULL && comp->is_trivial(method)) {
-      return true;
-    }
-  }
-#endif
-  if (method->has_loops() || method->code_size() >= 15) {
-    return false;
-  }
-  MethodData* mdo = method->method_data();
-  if (mdo != NULL && !mdo->would_profile() &&
-      (method->code_size() < 5  || (mdo->num_blocks() < 4))) {
     return true;
   }
   return false;
@@ -872,7 +856,7 @@ CompLevel TieredThresholdPolicy::loop_event(Method* method, CompLevel cur_level,
 }
 
 bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
-  if (UseAOT && !delay_compilation_during_startup()) {
+  if (UseAOT) {
     if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
       // If the current level is full profile or interpreter and we're switching to any other level,
       // activate the AOT code back first so that we won't waste time overprofiling.

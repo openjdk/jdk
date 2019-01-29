@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  */
 
 import java.util.Map;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -47,7 +48,7 @@ public class JniInvocationTest {
         ProcessBuilder pb = new ProcessBuilder(launcher.toString());
         Map<String, String> env = pb.environment();
         String libdir = Paths.get(Utils.TEST_JDK).resolve("lib").toAbsolutePath().toString();
-        env.compute("DYLD_LIBRARY_PATH", (k, v) -> (k == null) ? libdir : v + ":" + libdir);
+        env.compute(Platform.sharedLibraryPathVariableName(), (k, v) -> (k == null) ? libdir : v + ":" + libdir);
         OutputAnalyzer outputf = new OutputAnalyzer(pb.start());
         outputf.shouldHaveExitValue(0);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP
-#define OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP
+#ifndef OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
 
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -335,4 +335,4 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
   return old;
 }
 
-#endif // OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP
+#endif // OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP

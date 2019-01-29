@@ -2120,12 +2120,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_LambdaForm_Compiled;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Hidden_signature): {
-      if (_location != _in_method)  break;  // only allow for methods
-      if (!privileged)              break;  // only allow in privileged code
-      return _method_Hidden;
-    }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_security_AccessController_Hidden_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Hidden_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_Hidden;
@@ -4486,33 +4481,6 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   }
 }
 
-// Attach super classes and interface classes to class loader data
-static void record_defined_class_dependencies(const InstanceKlass* defined_klass,
-                                              TRAPS) {
-  assert(defined_klass != NULL, "invariant");
-
-  ClassLoaderData* const defining_loader_data = defined_klass->class_loader_data();
-  if (defining_loader_data->is_the_null_class_loader_data()) {
-      // Dependencies to null class loader data are implicit.
-      return;
-  } else {
-    // add super class dependency
-    Klass* const super = defined_klass->super();
-    if (super != NULL) {
-      defining_loader_data->record_dependency(super);
-    }
-
-    // add super interface dependencies
-    const Array<InstanceKlass*>* const local_interfaces = defined_klass->local_interfaces();
-    if (local_interfaces != NULL) {
-      const int length = local_interfaces->length();
-      for (int i = 0; i < length; i++) {
-        defining_loader_data->record_dependency(local_interfaces->at(i));
-      }
-    }
-  }
-}
-
 // utility methods for appending an array with check for duplicates
 
 static void append_interfaces(GrowableArray<InstanceKlass*>* result,
@@ -5718,9 +5686,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
       JvmtiExport::add_default_read_edges(module_handle, THREAD);
     }
   }
-
-  // Update the loader_data graph.
-  record_defined_class_dependencies(ik, CHECK);
 
   ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
 

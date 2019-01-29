@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
 
 #include "gc/shared/accessBarrierSupport.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -293,4 +293,4 @@ struct BarrierSet::GetType<BarrierSet::ShenandoahBarrierSet> {
   typedef ::ShenandoahBarrierSet type;
 };
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP

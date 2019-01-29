@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
-#define CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
+#ifndef CPU_AARCH64_NATIVEINST_AARCH64_HPP
+#define CPU_AARCH64_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
@@ -703,4 +703,4 @@ inline NativeLdSt *NativeLdSt_at(address addr) {
   assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
   return (NativeLdSt*)addr;
 }
-#endif // CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
+#endif // CPU_AARCH64_NATIVEINST_AARCH64_HPP

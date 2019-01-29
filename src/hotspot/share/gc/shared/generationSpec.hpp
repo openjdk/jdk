@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GENERATIONSPEC_HPP
-#define SHARE_VM_GC_SHARED_GENERATIONSPEC_HPP
+#ifndef SHARE_GC_SHARED_GENERATIONSPEC_HPP
+#define SHARE_GC_SHARED_GENERATIONSPEC_HPP
 
 #include "gc/shared/generation.hpp"
 #include "utilities/align.hpp"
@@ -58,4 +58,4 @@ public:
 
 typedef GenerationSpec* GenerationSpecPtr;
 
-#endif // SHARE_VM_GC_SHARED_GENERATIONSPEC_HPP
+#endif // SHARE_GC_SHARED_GENERATIONSPEC_HPP

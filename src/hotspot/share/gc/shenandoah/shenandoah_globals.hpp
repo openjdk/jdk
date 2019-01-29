@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 
 #define GC_SHENANDOAH_FLAGS(develop,                                        \
                             develop_pd,                                     \
@@ -184,6 +184,9 @@
           "The time period for one step in control loop interval "          \
           "adjustment. Lower values make adjustments faster, at the "       \
           "expense of higher perf overhead. Time is in milliseconds.")      \
+                                                                            \
+  experimental(bool, ShenandoahCriticalControlThreadPriority, false,        \
+          "Shenandoah control thread runs at critical scheduling priority.")\
                                                                             \
   diagnostic(bool, ShenandoahVerify, false,                                 \
           "Verify the Shenandoah garbage collector")                        \
@@ -414,4 +417,4 @@
   experimental(bool, ShenandoahLoopOptsAfterExpansion, true,                \
           "Attempt more loop opts after write barrier expansion")           \
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

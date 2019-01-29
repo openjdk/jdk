@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_SEMAPHORE_WINDOWS_HPP
-#define OS_WINDOWS_VM_SEMAPHORE_WINDOWS_HPP
+#ifndef OS_WINDOWS_SEMAPHORE_WINDOWS_HPP
+#define OS_WINDOWS_SEMAPHORE_WINDOWS_HPP
 
 #include "memory/allocation.hpp"
 
@@ -49,4 +49,4 @@ class WindowsSemaphore : public CHeapObj<mtInternal> {
 
 typedef WindowsSemaphore SemaphoreImpl;
 
-#endif // OS_WINDOWS_VM_SEMAPHORE_WINDOWS_HPP
+#endif // OS_WINDOWS_SEMAPHORE_WINDOWS_HPP

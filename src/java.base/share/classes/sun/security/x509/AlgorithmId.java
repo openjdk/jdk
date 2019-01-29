@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,14 @@
 package sun.security.x509;
 
 import java.io.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.util.*;
 import java.security.*;
 
+import sun.security.rsa.PSSParameters;
 import sun.security.util.*;
 
 
@@ -190,7 +195,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
             } else {
                 bytes.putNull();
             }*/
-            bytes.putNull();
+            if (algid.equals(RSASSA_PSS_oid)) {
+                // RFC 4055 3.3: when an RSASSA-PSS key does not require
+                // parameter validation, field is absent.
+            } else {
+                bytes.putNull();
+            }
         } else {
             bytes.putDerValue(params);
         }
@@ -689,6 +699,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
                                             oid(1, 2, 840, 113549, 1, 1, 1);
     public static final ObjectIdentifier RSAES_OAEP_oid =
                                             oid(1, 2, 840, 113549, 1, 1, 7);
+    public static final ObjectIdentifier mgf1_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 8);
     public static final ObjectIdentifier RSASSA_PSS_oid =
                                             oid(1, 2, 840, 113549, 1, 1, 10);
 
@@ -1060,6 +1072,81 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     + "withRSA";
             default:
                 return null;
+        }
+    }
+
+    // Most commonly used PSSParameterSpec and AlgorithmId
+    private static class PSSParamsHolder {
+
+        final static PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
+                "SHA-256", "MGF1",
+                new MGF1ParameterSpec("SHA-256"),
+                32, PSSParameterSpec.TRAILER_FIELD_BC);
+        final static PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
+                "SHA-384", "MGF1",
+                new MGF1ParameterSpec("SHA-384"),
+                48, PSSParameterSpec.TRAILER_FIELD_BC);
+        final static PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
+                "SHA-512", "MGF1",
+                new MGF1ParameterSpec("SHA-512"),
+                64, PSSParameterSpec.TRAILER_FIELD_BC);
+
+        final static AlgorithmId PSS_256_ID;
+        final static AlgorithmId PSS_384_ID;
+        final static AlgorithmId PSS_512_ID;
+
+        static {
+            try {
+                PSS_256_ID = new AlgorithmId(RSASSA_PSS_oid,
+                        new DerValue(PSSParameters.getEncoded(PSS_256_SPEC)));
+                PSS_384_ID = new AlgorithmId(RSASSA_PSS_oid,
+                        new DerValue(PSSParameters.getEncoded(PSS_384_SPEC)));
+                PSS_512_ID = new AlgorithmId(RSASSA_PSS_oid,
+                        new DerValue(PSSParameters.getEncoded(PSS_512_SPEC)));
+            } catch (IOException e) {
+                throw new AssertionError("Should not happen", e);
+            }
+        }
+    }
+
+    public static AlgorithmId getWithParameterSpec(String algName,
+            AlgorithmParameterSpec spec) throws NoSuchAlgorithmException {
+
+        if (spec == null) {
+            return AlgorithmId.get(algName);
+        } else if (spec == PSSParamsHolder.PSS_256_SPEC) {
+            return PSSParamsHolder.PSS_256_ID;
+        } else if (spec == PSSParamsHolder.PSS_384_SPEC) {
+            return PSSParamsHolder.PSS_384_ID;
+        } else if (spec == PSSParamsHolder.PSS_512_SPEC) {
+            return PSSParamsHolder.PSS_512_ID;
+        } else {
+            try {
+                AlgorithmParameters result =
+                        AlgorithmParameters.getInstance(algName);
+                result.init(spec);
+                return get(result);
+            } catch (InvalidParameterSpecException | NoSuchAlgorithmException e) {
+                throw new ProviderException(e);
+            }
+        }
+    }
+
+    public static PSSParameterSpec getDefaultAlgorithmParameterSpec(
+            String sigAlg, PrivateKey k) {
+        if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
+            switch (ifcFfcStrength(KeyUtil.getKeySize(k))) {
+                case "SHA256":
+                    return PSSParamsHolder.PSS_256_SPEC;
+                case "SHA384":
+                    return PSSParamsHolder.PSS_384_SPEC;
+                case "SHA512":
+                    return PSSParamsHolder.PSS_512_SPEC;
+                default:
+                    throw new AssertionError("Should not happen");
+            }
+        } else {
+            return null;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_IPHLP_INTERFACE_HPP
-#define OS_WINDOWS_VM_IPHLP_INTERFACE_HPP
+#ifndef OS_WINDOWS_IPHLP_INTERFACE_HPP
+#define OS_WINDOWS_IPHLP_INTERFACE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
@@ -48,4 +48,4 @@ class IphlpDll : public AllStatic {
   static bool       IphlpDetach(void);
 };
 
-#endif // OS_WINDOWS_VM_IPHLP_INTERFACE_HPP
+#endif // OS_WINDOWS_IPHLP_INTERFACE_HPP

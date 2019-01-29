@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_ESCAPE_HPP
-#define SHARE_VM_OPTO_ESCAPE_HPP
+#ifndef SHARE_OPTO_ESCAPE_HPP
+#define SHARE_OPTO_ESCAPE_HPP
 
 #include "opto/addnode.hpp"
 #include "opto/node.hpp"
@@ -615,4 +615,4 @@ inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, 
   assert(n != NULL && es != UnknownEscape, "sanity");
 }
 
-#endif // SHARE_VM_OPTO_ESCAPE_HPP
+#endif // SHARE_OPTO_ESCAPE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGSELECTION_HPP
-#define SHARE_VM_LOGGING_LOGSELECTION_HPP
+#ifndef SHARE_LOGGING_LOGSELECTION_HPP
+#define SHARE_LOGGING_LOGSELECTION_HPP
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
@@ -71,4 +71,4 @@ class LogSelection : public StackObj {
   double similarity(const LogSelection& other) const;
 };
 
-#endif // SHARE_VM_LOGGING_LOGSELECTION_HPP
+#endif // SHARE_LOGGING_LOGSELECTION_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_INTERPRETERFRAME_ZERO_HPP
-#define CPU_ZERO_VM_INTERPRETERFRAME_ZERO_HPP
+#ifndef CPU_ZERO_INTERPRETERFRAME_ZERO_HPP
+#define CPU_ZERO_INTERPRETERFRAME_ZERO_HPP
 
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "oops/method.hpp"
@@ -81,4 +81,4 @@ class InterpreterFrame : public ZeroFrame {
 };
 #endif // CC_INTERP
 
-#endif // CPU_ZERO_VM_INTERPRETERFRAME_ZERO_HPP
+#endif // CPU_ZERO_INTERPRETERFRAME_ZERO_HPP

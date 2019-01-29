@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP
-#define OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP
+#ifndef OS_CPU_LINUX_SPARC_PREFETCH_LINUX_SPARC_INLINE_HPP
+#define OS_CPU_LINUX_SPARC_PREFETCH_LINUX_SPARC_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
 
@@ -35,4 +35,4 @@ inline void Prefetch::write(void *loc, intx interval) {
   __asm__ volatile("prefetch [%0+%1], 2" : : "r" (loc), "r" (interval) : "memory" );
 }
 
-#endif // OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP
+#endif // OS_CPU_LINUX_SPARC_PREFETCH_LINUX_SPARC_INLINE_HPP

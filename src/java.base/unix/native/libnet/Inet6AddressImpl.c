@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,17 +142,18 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
      */
     struct ifaddrs *iter = ifa;
     while (iter) {
-        int family = iter->ifa_addr->sa_family;
-        if (iter->ifa_name[0] != '\0' && iter->ifa_addr)
-        {
-            jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
-            if (family == AF_INET) {
-                addrs4++;
-                if (isLoopback) numV4Loopbacks++;
-            } else if (family == AF_INET6 && includeV6) {
-                addrs6++;
-                if (isLoopback) numV6Loopbacks++;
-            } // else we don't care, e.g. AF_LINK
+        if (iter->ifa_addr != NULL) {
+            int family = iter->ifa_addr->sa_family;
+            if (iter->ifa_name[0] != '\0') {
+                jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
+                if (family == AF_INET) {
+                    addrs4++;
+                    if (isLoopback) numV4Loopbacks++;
+                } else if (family == AF_INET6 && includeV6) {
+                    addrs6++;
+                    if (isLoopback) numV6Loopbacks++;
+                } // else we don't care, e.g. AF_LINK
+            }
         }
         iter = iter->ifa_next;
     }
@@ -180,28 +181,30 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     // Now loop around the ifaddrs
     iter = ifa;
     while (iter != NULL) {
-        jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
-        int family = iter->ifa_addr->sa_family;
+        if (iter->ifa_addr != NULL) {
+            jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
+            int family = iter->ifa_addr->sa_family;
 
-        if (iter->ifa_name[0] != '\0' && iter->ifa_addr &&
-            (family == AF_INET || (family == AF_INET6 && includeV6)) &&
-            (!isLoopback || includeLoopback))
-        {
-            int port;
-            int index = (family == AF_INET) ? i++ : j++;
-            jobject o = NET_SockaddrToInetAddress(env,
-                            (SOCKETADDRESS *)iter->ifa_addr, &port);
-            if (!o) {
-                freeifaddrs(ifa);
-                if (!(*env)->ExceptionCheck(env))
-                    JNU_ThrowOutOfMemoryError(env, "Object allocation failed");
-                return NULL;
+            if (iter->ifa_name[0] != '\0' &&
+                (family == AF_INET || (family == AF_INET6 && includeV6)) &&
+                (!isLoopback || includeLoopback))
+            {
+                int port;
+                int index = (family == AF_INET) ? i++ : j++;
+                jobject o = NET_SockaddrToInetAddress(env,
+                                (SOCKETADDRESS *)iter->ifa_addr, &port);
+                if (!o) {
+                    freeifaddrs(ifa);
+                    if (!(*env)->ExceptionCheck(env))
+                        JNU_ThrowOutOfMemoryError(env, "Object allocation failed");
+                    return NULL;
+                }
+                setInetAddress_hostName(env, o, name);
+                if ((*env)->ExceptionCheck(env))
+                    goto done;
+                (*env)->SetObjectArrayElement(env, result, index, o);
+                (*env)->DeleteLocalRef(env, o);
             }
-            setInetAddress_hostName(env, o, name);
-            if ((*env)->ExceptionCheck(env))
-                goto done;
-            (*env)->SetObjectArrayElement(env, result, index, o);
-            (*env)->DeleteLocalRef(env, o);
         }
         iter = iter->ifa_next;
     }

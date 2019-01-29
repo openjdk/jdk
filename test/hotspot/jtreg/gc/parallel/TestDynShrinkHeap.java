@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.parallel;
+
 /**
  * @test TestDynShrinkHeap
  * @bug 8016479
@@ -29,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management
  * @library /test/lib /
- * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc TestDynShrinkHeap
+ * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc gc.parallel.TestDynShrinkHeap
  */
 import jdk.test.lib.management.DynamicVMOption;
 import java.lang.management.ManagementFactory;

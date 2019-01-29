@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_LIBADT_SET_HPP
-#define SHARE_VM_LIBADT_SET_HPP
+#ifndef SHARE_LIBADT_SET_HPP
+#define SHARE_LIBADT_SET_HPP
 
 #include "memory/allocation.hpp"
 
@@ -244,4 +244,4 @@ public:
   int test(void) { return impl->test(); }
 };
 
-#endif // SHARE_VM_LIBADT_SET_HPP
+#endif // SHARE_LIBADT_SET_HPP

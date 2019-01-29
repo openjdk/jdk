@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
 #include "gc/shared/markBitMap.hpp"
 #include "memory/allocation.hpp"
@@ -184,4 +184,4 @@ public:
   void verify_generic(VerifyOption option);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

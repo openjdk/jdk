@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_STUBROUTINES_SPARC_HPP
-#define CPU_SPARC_VM_STUBROUTINES_SPARC_HPP
+#ifndef CPU_SPARC_STUBROUTINES_SPARC_HPP
+#define CPU_SPARC_STUBROUTINES_SPARC_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
@@ -73,4 +73,4 @@ class Sparc {
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 };
 
-#endif // CPU_SPARC_VM_STUBROUTINES_SPARC_HPP
+#endif // CPU_SPARC_STUBROUTINES_SPARC_HPP

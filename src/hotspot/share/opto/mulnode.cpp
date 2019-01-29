@@ -1401,3 +1401,12 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
   return TypeF::make(fma(f1, f2, f3));
 #endif
 }
+
+//=============================================================================
+//------------------------------hash-------------------------------------------
+// Hash function for MulAddS2INode.  Operation is commutative with commutative pairs.
+// The hash function must return the same value when edge swapping is performed.
+uint MulAddS2INode::hash() const {
+  return (uintptr_t)in(1) + (uintptr_t)in(2) + (uintptr_t)in(3) + (uintptr_t)in(4) + Opcode();
+}
+

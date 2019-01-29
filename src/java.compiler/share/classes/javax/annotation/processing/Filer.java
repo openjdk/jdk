@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import java.io.IOException;
  * by {@code '/'}; {@code '.'} and {@code '..'} are invalid path
  * segments.  A valid relative name must match the
  * &quot;path-rootless&quot; rule of <a
- * href="http://www.ietf.org/rfc/rfc3986.txt">RFC 3986</a>, section
+ * href="http://www.ietf.org/html/rfc3986.txt">RFC 3986</a>, section
  * 3.3.
  *
  * <p>The file creation methods take a variable number of arguments to

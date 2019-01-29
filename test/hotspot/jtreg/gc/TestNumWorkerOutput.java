@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc;
+
 /*
  * @test TestNumWorkerOutput
  * @bug 8165292
@@ -31,7 +33,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseG1GC TestNumWorkerOutput UseG1GC
+ * @run main/othervm -XX:+UseG1GC gc.TestNumWorkerOutput UseG1GC
  */
 
 /*
@@ -44,7 +46,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseConcMarkSweepGC TestNumWorkerOutput UseConcMarkSweepGC
+ * @run main/othervm -XX:+UseConcMarkSweepGC gc.TestNumWorkerOutput UseConcMarkSweepGC
  */
 
 import sun.hotspot.WhiteBox;

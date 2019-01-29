@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_VALUEMAP_HPP
-#define SHARE_VM_C1_C1_VALUEMAP_HPP
+#ifndef SHARE_C1_C1_VALUEMAP_HPP
+#define SHARE_C1_C1_VALUEMAP_HPP
 
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_ValueSet.hpp"
@@ -257,4 +257,4 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   void          substitute(Instruction* instr);  // substitute instruction if it is contained in current value map
 };
 
-#endif // SHARE_VM_C1_C1_VALUEMAP_HPP
+#endif // SHARE_C1_C1_VALUEMAP_HPP

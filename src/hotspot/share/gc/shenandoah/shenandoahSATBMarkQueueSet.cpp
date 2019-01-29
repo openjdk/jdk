@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -29,7 +29,7 @@
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet() :
   _heap(NULL),
-  _satb_mark_queue_buffer_allocator(ShenandoahSATBBufferSize, SATB_Q_FL_lock)
+  _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize)
 {}
 
 void ShenandoahSATBMarkQueueSet::initialize(ShenandoahHeap* const heap,

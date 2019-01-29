@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_METHODLIVENESS_HPP
-#define SHARE_VM_COMPILER_METHODLIVENESS_HPP
+#ifndef SHARE_COMPILER_METHODLIVENESS_HPP
+#define SHARE_COMPILER_METHODLIVENESS_HPP
 
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
@@ -222,41 +222,6 @@ class MethodLiveness : public ResourceObj {
   BasicBlock *work_list_get();
   void work_list_add(BasicBlock *block);
 
-  // -- Timing and Statistics.
-
-
-  // Timers
-  static elapsedTimer _time_build_graph;
-  static elapsedTimer _time_gen_kill;
-  static elapsedTimer _time_flow;
-  static elapsedTimer _time_query;
-  static elapsedTimer _time_total;
-
-#ifndef PRODUCT
-
-  // Counts
-  static long _total_bytes;
-  static int  _total_methods;
-
-  static long _total_blocks;
-  static int  _max_method_blocks;
-
-  static long _total_edges;
-  static int  _max_block_edges;
-
-  static long _total_exc_edges;
-  static int  _max_block_exc_edges;
-
-  static long _total_method_locals;
-  static int  _max_method_locals;
-
-  static long _total_locals_queried;
-  static long _total_live_locals_queried;
-
-  static long _total_visits;
-
-#endif
-
  public:
   // Create a liveness analyzer for a method
   MethodLiveness(Arena* arena, ciMethod* method);
@@ -271,7 +236,6 @@ class MethodLiveness : public ResourceObj {
   const BitMap& get_bci_block_start() const { return _bci_block_start; }
 #endif // COMPILER1
 
-  static void print_times() PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_COMPILER_METHODLIVENESS_HPP
+#endif // SHARE_COMPILER_METHODLIVENESS_HPP

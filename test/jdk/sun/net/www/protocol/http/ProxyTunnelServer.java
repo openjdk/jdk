@@ -38,38 +38,50 @@ import sun.net.www.*;
 
 public class ProxyTunnelServer extends Thread {
 
-    private static ServerSocket ss = null;
+    private final ServerSocket ss;
     /*
      * holds the registered user's username and password
      * only one such entry is maintained
      */
-    private String userPlusPass;
+    private volatile String userPlusPass;
 
     // client requesting for a tunnel
-    private Socket clientSocket = null;
+    private volatile Socket clientSocket = null;
 
     /*
      * Origin server's address and port that the client
      * wants to establish the tunnel for communication.
      */
-    private InetAddress serverInetAddr;
-    private int serverPort;
+    private volatile InetAddress serverInetAddr;
+    private volatile int serverPort;
 
     /*
      * denote whether the proxy needs to authorize
      * CONNECT requests.
      */
-    static boolean needAuth = false;
+
+    volatile boolean needAuth = false;
 
     public ProxyTunnelServer() throws IOException {
-        if (ss == null) {
-          ss = (ServerSocket) ServerSocketFactory.getDefault().
-          createServerSocket(0);
+        ss = new ServerSocket(0);
+    }
+
+    static private void close(Closeable c) {
+        try {
+            if (c != null)
+                c.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public void needUserAuth(boolean auth) {
         needAuth = auth;
+    }
+
+    public void terminate() {
+        close(ss);
+        close(clientSocket);
     }
 
     /*
@@ -81,10 +93,16 @@ public class ProxyTunnelServer extends Thread {
         userPlusPass = uname + ":" + passwd;
     }
 
+    volatile boolean makeTunnel;
+
+    public void doTunnel(boolean tunnel) {
+        makeTunnel = tunnel;
+    }
+
     public void run() {
         try {
             clientSocket = ss.accept();
-            processRequests();
+            processRequests(makeTunnel);
         } catch (Exception e) {
             System.out.println("Proxy Failed: " + e);
             e.printStackTrace();
@@ -105,7 +123,7 @@ public class ProxyTunnelServer extends Thread {
      * if there is a match, connection is set in tunneling mode. If
      * needAuth is set to false, Proxy-Authorization checks are not made
      */
-    private void processRequests() throws Exception {
+    private void processRequests(boolean makeTunnel) throws Exception {
 
         InputStream in = clientSocket.getInputStream();
         MessageHeader mheader = new MessageHeader(in);
@@ -125,6 +143,13 @@ public class ProxyTunnelServer extends Thread {
                    }
                 }
             }
+
+            if (makeTunnel) {
+                retrieveConnectInfo(statusLine);
+                doTunnel();
+                return;
+            }
+
             respondForConnect(needAuth);
 
             // connection set to the tunneling mode
@@ -178,6 +203,9 @@ public class ProxyTunnelServer extends Thread {
      * direction.
      */
     private void doTunnel() throws Exception {
+        OutputStream out = clientSocket.getOutputStream();
+        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+        out.flush();
 
         Socket serverSocket = new Socket(serverInetAddr, serverPort);
         ProxyTunnel clientToServer = new ProxyTunnel(
@@ -202,10 +230,10 @@ public class ProxyTunnelServer extends Thread {
      * socket, until both sockets are open and EOF has not been received.
      */
     class ProxyTunnel extends Thread {
-        Socket sockIn;
-        Socket sockOut;
-        InputStream input;
-        OutputStream output;
+        final Socket sockIn;
+        final Socket sockOut;
+        final InputStream input;
+        final OutputStream output;
 
         public ProxyTunnel(Socket sockIn, Socket sockOut)
         throws Exception {

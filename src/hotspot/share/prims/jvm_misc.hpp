@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVM_MISC_HPP
-#define SHARE_VM_PRIMS_JVM_MISC_HPP
+#ifndef SHARE_PRIMS_JVM_MISC_HPP
+#define SHARE_PRIMS_JVM_MISC_HPP
 
 #include "jni.h"
 #include "runtime/handles.hpp"
@@ -78,4 +78,4 @@ address jni_GetLongField_addr();
 address jni_GetFloatField_addr();
 address jni_GetDoubleField_addr();
 
-#endif // SHARE_VM_PRIMS_JVM_MISC_HPP
+#endif // SHARE_PRIMS_JVM_MISC_HPP

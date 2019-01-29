@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
 
 // Major contributions by ML, AHa.
 
-#ifndef CPU_S390_VM_FRAME_S390_HPP
-#define CPU_S390_VM_FRAME_S390_HPP
+#ifndef CPU_S390_FRAME_S390_HPP
+#define CPU_S390_FRAME_S390_HPP
 
 #include "runtime/synchronizer.hpp"
 
@@ -554,4 +554,4 @@
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
-#endif // CPU_S390_VM_FRAME_S390_HPP
+#endif // CPU_S390_FRAME_S390_HPP

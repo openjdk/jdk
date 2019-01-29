@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include <jni.h>
 #include "libproc.h"
+#include "proc_service.h"
 
 #include <elf.h>
 #include <sys/types.h>
@@ -241,10 +242,10 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_se
 /*
  * Class:     sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal
  * Method:    attach0
- * Signature: (IZ)V
+ * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_attach0__IZ
-  (JNIEnv *env, jobject this_obj, jint jpid, jboolean is_in_container) {
+JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_attach0__I
+  (JNIEnv *env, jobject this_obj, jint jpid) {
 
   // For bitness checking, locate binary at /proc/jpid/exe
   char buf[PATH_MAX];
@@ -254,7 +255,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
 
   char err_buf[200];
   struct ps_prochandle* ph;
-  if ((ph = Pgrab(jpid, err_buf, sizeof(err_buf), is_in_container)) == NULL) {
+  if ((ph = Pgrab(jpid, err_buf, sizeof(err_buf))) == NULL) {
     char msg[230];
     snprintf(msg, sizeof(msg), "Can't attach to the process: %s", err_buf);
     THROW_NEW_DEBUGGER_EXCEPTION(msg);

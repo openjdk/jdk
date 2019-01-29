@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
+#ifndef SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
+#define SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 
 #include "memory/memRegion.hpp"
 #include "memory/iterator.hpp"
@@ -117,4 +117,4 @@ void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end)
   }
 }
 
-#endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
+#endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

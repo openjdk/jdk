@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.cms;
+
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.LinkedList;
@@ -35,7 +37,7 @@ import java.util.ListIterator;
  *          stays nearly full.
  * @run main/othervm
  *  -XX:+UseConcMarkSweepGC -XX:-CMSYield -XX:-CMSPrecleanRefLists1
- *  -XX:CMSInitiatingOccupancyFraction=0 -Xmx80m TestBubbleUpRef 16000 50 10000
+ *  -XX:CMSInitiatingOccupancyFraction=0 -Xmx80m gc.cms.TestBubbleUpRef 16000 50 10000
  */
 
 /**

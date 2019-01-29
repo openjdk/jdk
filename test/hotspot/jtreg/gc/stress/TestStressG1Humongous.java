@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.stress;
+
 /*
  * @test TestStressG1Humongous
  * @key gc stress
@@ -29,7 +31,7 @@
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=1300 TestStressG1Humongous
+ * @run driver/timeout=1300 gc.stress.TestStressG1Humongous
  */
 
 import java.util.ArrayList;

@@ -21,15 +21,17 @@
  * questions.
  */
 
+package gc.epsilon;
+
 /**
  * @test TestElasticTLABDecay
  * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to work with/without elastic TLABs
  *
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:-EpsilonElasticTLABDecay                               TestElasticTLABDecay
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:+EpsilonElasticTLABDecay -XX:EpsilonTLABDecayTime=1    TestElasticTLABDecay
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:+EpsilonElasticTLABDecay -XX:EpsilonTLABDecayTime=100  TestElasticTLABDecay
+ * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:-EpsilonElasticTLABDecay                               gc.epsilon.TestElasticTLABDecay
+ * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:+EpsilonElasticTLABDecay -XX:EpsilonTLABDecayTime=1    gc.epsilon.TestElasticTLABDecay
+ * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:+EpsilonElasticTLABDecay -XX:EpsilonTLABDecayTime=100  gc.epsilon.TestElasticTLABDecay
  */
 
 import java.util.Random;

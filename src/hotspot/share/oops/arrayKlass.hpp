@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_ARRAYKLASS_HPP
-#define SHARE_VM_OOPS_ARRAYKLASS_HPP
+#ifndef SHARE_OOPS_ARRAYKLASS_HPP
+#define SHARE_OOPS_ARRAYKLASS_HPP
 
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
@@ -144,4 +144,4 @@ class ArrayKlass: public Klass {
   void oop_verify_on(oop obj, outputStream* st);
 };
 
-#endif // SHARE_VM_OOPS_ARRAYKLASS_HPP
+#endif // SHARE_OOPS_ARRAYKLASS_HPP

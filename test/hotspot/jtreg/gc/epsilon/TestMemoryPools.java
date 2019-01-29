@@ -22,6 +22,8 @@
  *
  */
 
+package gc.epsilon;
+
 /**
  * @test TestMemoryPools
  * @key gc
@@ -29,7 +31,7 @@
  * @summary Test JMX memory pools
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx1g -Xms1g TestMemoryPools
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx1g -Xms1g gc.epsilon.TestMemoryPools
  */
 
 import java.lang.management.*;

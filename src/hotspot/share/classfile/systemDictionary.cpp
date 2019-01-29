@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,8 +860,15 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
         check_constraints(d_hash, k, class_loader, false, THREAD);
 
         // Need to check for a PENDING_EXCEPTION again; check_constraints
-        // can throw and doesn't use the CHECK macro.
+        // can throw but we may have to remove entry from the placeholder table below.
         if (!HAS_PENDING_EXCEPTION) {
+          // Record dependency for non-parent delegation.
+          // This recording keeps the defining class loader of the klass (k) found
+          // from being unloaded while the initiating class loader is loaded
+          // even if the reference to the defining class loader is dropped
+          // before references to the initiating class loader.
+          loader_data->record_dependency(k);
+
           { // Grabbing the Compile_lock prevents systemDictionary updates
             // during compilations.
             MutexLocker mu(Compile_lock, THREAD);
@@ -1787,14 +1794,17 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
   assert(k != NULL, "just checking");
   assert_locked_or_safepoint(Compile_lock);
 
-  // Link into hierachy. Make sure the vtables are initialized before linking into
+  k->set_init_state(InstanceKlass::loaded);
+  // make sure init_state store is already done.
+  // The compiler reads the hierarchy outside of the Compile_lock.
+  // Access ordering is used to add to hierarchy.
+
+  // Link into hierachy.
   k->append_to_sibling_list();                    // add to superklass/sibling list
   k->process_interfaces(THREAD);                  // handle all "implements" declarations
-  k->set_init_state(InstanceKlass::loaded);
+
   // Now flush all code that depended on old class hierarchy.
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-  // Also, first reinitialize vtable because it may have gotten out of synch
-  // while the new class wasn't connected to the class hierarchy.
   CodeCache::flush_dependents_on(k);
 }
 
@@ -2176,6 +2186,7 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
     InstanceKlass* sd_check = find_class(d_hash, name, dictionary);
     if (sd_check == NULL) {
       dictionary->add_klass(d_hash, name, k);
+
       notice_modification();
     }
   #ifdef ASSERT

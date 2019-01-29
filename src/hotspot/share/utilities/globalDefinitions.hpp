@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
-#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+#ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
+#define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
@@ -230,15 +230,20 @@ const int NANOUNITS     = 1000000000;   // nano units per base unit
 const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
 
+// Proper units routines try to maintain at least three significant digits.
+// In worst case, it would print five significant digits with lower prefix.
+// G is close to MAX_SIZE on 32-bit platforms, so its product can easily overflow,
+// and therefore we need to be careful.
+
 inline const char* proper_unit_for_byte_size(size_t s) {
 #ifdef _LP64
-  if (s >= 10*G) {
+  if (s >= 100*G) {
     return "G";
   }
 #endif
-  if (s >= 10*M) {
+  if (s >= 100*M) {
     return "M";
-  } else if (s >= 10*K) {
+  } else if (s >= 100*K) {
     return "K";
   } else {
     return "B";
@@ -248,13 +253,13 @@ inline const char* proper_unit_for_byte_size(size_t s) {
 template <class T>
 inline T byte_size_in_proper_unit(T s) {
 #ifdef _LP64
-  if (s >= 10*G) {
+  if (s >= 100*G) {
     return (T)(s/G);
   }
 #endif
-  if (s >= 10*M) {
+  if (s >= 100*M) {
     return (T)(s/M);
-  } else if (s >= 10*K) {
+  } else if (s >= 100*K) {
     return (T)(s/K);
   } else {
     return s;
@@ -1096,4 +1101,4 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 }
 
 
-#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+#endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

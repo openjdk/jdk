@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,16 +423,15 @@ class ZipFileSystem extends FileSystem {
             List<Path> list = new ArrayList<>();
             IndexNode child = inode.child;
             while (child != null) {
-                // (1) assume all path from zip file itself is "normalized"
+                // (1) Assume each path from the zip file itself is "normalized"
                 // (2) IndexNode.name is absolute. see IndexNode(byte[],int,int)
-                // (3) if parent "dir" is relative when ZipDirectoryStream
+                // (3) If parent "dir" is relative when ZipDirectoryStream
                 //     is created, the returned child path needs to be relative
                 //     as well.
                 byte[] cname = child.name;
-                if (!dir.isAbsolute()) {
-                    cname = Arrays.copyOfRange(cname, 1, cname.length);
-                }
-                ZipPath zpath = new ZipPath(this, cname, true);
+                ZipPath childPath = new ZipPath(this, cname, true);
+                ZipPath childFileName = childPath.getFileName();
+                ZipPath zpath = dir.resolve(childFileName);
                 if (filter == null || filter.accept(zpath))
                     list.add(zpath);
                 child = child.sibling;

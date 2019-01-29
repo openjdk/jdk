@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,21 @@
  * questions.
  */
 
+package gc.arguments;
+
 /**
  * @test TestMinInitialErgonomics
  * @key gc
  * @bug 8006088
  * @summary Test ergonomics decisions related to minimum and initial heap size.
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm TestMinInitialErgonomics
+ * @run main/othervm gc.arguments.TestMinInitialErgonomics
  * @author thomas.schatzl@oracle.com
  */
 

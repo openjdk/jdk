@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCIENV_HPP
-#define SHARE_VM_JVMCI_JVMCIENV_HPP
+#ifndef SHARE_JVMCI_JVMCIENV_HPP
+#define SHARE_JVMCI_JVMCIENV_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
@@ -99,13 +99,19 @@ private:
   int              _system_dictionary_modification_counter;
 
   // Compilation result values
-  const char*      _failure_reason;
   bool             _retryable;
+  const char*      _failure_reason;
 
-  // Cache JVMTI state
-  bool  _jvmti_can_hotswap_or_post_breakpoint;
-  bool  _jvmti_can_access_local_variables;
-  bool  _jvmti_can_post_on_exceptions;
+  // Specifies if _failure_reason is on the C heap.
+  bool             _failure_reason_on_C_heap;
+
+  // Cache JVMTI state. Defined as bytes so that reading them from Java
+  // via Unsafe is well defined (the C++ type for bool is implementation
+  // defined and may not be the same as a Java boolean).
+  jbyte  _jvmti_can_hotswap_or_post_breakpoint;
+  jbyte  _jvmti_can_access_local_variables;
+  jbyte  _jvmti_can_post_on_exceptions;
+  jbyte  _jvmti_can_pop_frame;
 
   // Implementation methods for loading and constant pool access.
   static Klass* get_klass_by_name_impl(Klass* accessing_klass,
@@ -144,11 +150,19 @@ private:
 public:
   CompileTask* task() { return _task; }
 
+  bool  jvmti_state_changed() const;
+  bool  jvmti_can_hotswap_or_post_breakpoint() const { return  _jvmti_can_hotswap_or_post_breakpoint != 0; }
+  bool  jvmti_can_access_local_variables() const     { return  _jvmti_can_access_local_variables != 0; }
+  bool  jvmti_can_post_on_exceptions() const         { return  _jvmti_can_post_on_exceptions != 0; }
+  bool  jvmti_can_pop_frame() const                  { return  _jvmti_can_pop_frame != 0; }
+
   const char* failure_reason() { return _failure_reason; }
+  bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }
   bool retryable() { return _retryable; }
 
-  void set_failure(const char* reason, bool retryable) {
+  void set_failure(bool retryable, const char* reason, bool reason_on_C_heap = false) {
     _failure_reason = reason;
+    _failure_reason_on_C_heap = reason_on_C_heap;
     _retryable = retryable;
   }
 
@@ -181,4 +195,4 @@ public:
   static InstanceKlass* get_instance_klass_for_declared_method_holder(Klass* klass);
 };
 
-#endif // SHARE_VM_JVMCI_JVMCIENV_HPP
+#endif // SHARE_JVMCI_JVMCIENV_HPP

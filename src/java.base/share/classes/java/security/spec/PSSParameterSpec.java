@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.security.spec;
 
 import java.util.Objects;
-import java.security.spec.MGF1ParameterSpec;
 
 /**
  * This class specifies a parameter spec for RSASSA-PSS signature scheme,
@@ -217,5 +216,15 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      */
     public int getTrailerField() {
         return trailerField;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("MD: " + mdName + "\n")
+                .append("MGF: " + mgfSpec + "\n")
+                .append("SaltLength: " + saltLen + "\n")
+                .append("TrailerField: " + trailerField + "\n");
+        return sb.toString();
     }
 }

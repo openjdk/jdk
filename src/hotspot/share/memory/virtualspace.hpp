@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
-#define SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+#ifndef SHARE_MEMORY_VIRTUALSPACE_HPP
+#define SHARE_MEMORY_VIRTUALSPACE_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -236,4 +236,4 @@ class VirtualSpace {
   void print();
 };
 
-#endif // SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+#endif // SHARE_MEMORY_VIRTUALSPACE_HPP

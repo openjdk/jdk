@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_X86_ZBACKINGFILE_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_ZBACKINGFILE_LINUX_X86_HPP
+#ifndef OS_CPU_LINUX_X86_GC_Z_ZBACKINGFILE_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_GC_Z_ZBACKINGFILE_LINUX_X86_HPP
 
 #include "memory/allocation.hpp"
 
@@ -60,4 +60,4 @@ public:
   size_t try_expand(size_t offset, size_t length, size_t alignment) const;
 };
 
-#endif // OS_CPU_LINUX_X86_ZBACKINGFILE_LINUX_X86_HPP
+#endif // OS_CPU_LINUX_X86_GC_Z_ZBACKINGFILE_LINUX_X86_HPP

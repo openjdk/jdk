@@ -3850,6 +3850,13 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
                                 method, bci());
     slow_call->set_optimized_virtual(true);
   }
+  if (CallGenerator::is_inlined_method_handle_intrinsic(this->method(), bci(), callee())) {
+    // To be able to issue a direct call (optimized virtual or virtual)
+    // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
+    // about the method being invoked should be attached to the call site to
+    // make resolution logic work (see SharedRuntime::resolve_{virtual,opt_virtual}_call_C).
+    slow_call->set_override_symbolic_info(true);
+  }
   set_arguments_for_java_call(slow_call);
   set_edges_for_java_call(slow_call);
   return slow_call;
@@ -6266,6 +6273,11 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   Node* dest = argument(4);
   Node* dp = argument(5);
   Node* isURL = argument(6);
+
+  src = must_be_not_null(src, true);
+  src = access_resolve(src, ACCESS_READ);
+  dest = must_be_not_null(dest, true);
+  dest = access_resolve(dest, ACCESS_WRITE);
 
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
   assert(src_start, "source array is NULL");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_JAVAFRAMEANCHOR_SPARC_HPP
-#define CPU_SPARC_VM_JAVAFRAMEANCHOR_SPARC_HPP
+#ifndef CPU_SPARC_JAVAFRAMEANCHOR_SPARC_HPP
+#define CPU_SPARC_JAVAFRAMEANCHOR_SPARC_HPP
 
 private:
   volatile int _flags;
@@ -99,4 +99,4 @@ private:
     OrderAccess::fence();
   }
 
-#endif // CPU_SPARC_VM_JAVAFRAMEANCHOR_SPARC_HPP
+#endif // CPU_SPARC_JAVAFRAMEANCHOR_SPARC_HPP

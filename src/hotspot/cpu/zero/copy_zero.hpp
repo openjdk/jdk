@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_COPY_ZERO_HPP
-#define CPU_ZERO_VM_COPY_ZERO_HPP
+#ifndef CPU_ZERO_COPY_ZERO_HPP
+#define CPU_ZERO_COPY_ZERO_HPP
 
 // Inline functions for memory copy and fill.
 
@@ -180,4 +180,4 @@ static void pd_zero_to_bytes(void* to, size_t count) {
   memset(to, 0, count);
 }
 
-#endif // CPU_ZERO_VM_COPY_ZERO_HPP
+#endif // CPU_ZERO_COPY_ZERO_HPP

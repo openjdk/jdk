@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_RELOCINFO_HPP
-#define SHARE_VM_CODE_RELOCINFO_HPP
+#ifndef SHARE_CODE_RELOCINFO_HPP
+#define SHARE_CODE_RELOCINFO_HPP
 
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
 class nmethod;
+class CodeBlob;
 class CompiledMethod;
 class Metadata;
 class NativeMovConstReg;
@@ -1391,4 +1392,4 @@ inline RelocIterator::RelocIterator(CompiledMethod* nm, address begin, address l
   initialize(nm, begin, limit);
 }
 
-#endif // SHARE_VM_CODE_RELOCINFO_HPP
+#endif // SHARE_CODE_RELOCINFO_HPP

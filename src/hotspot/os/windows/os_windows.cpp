@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4539,7 +4539,7 @@ jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
 }
 
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   OVERLAPPED ov;
   DWORD nread;
   BOOL result;
@@ -4706,9 +4706,6 @@ int os::fsync(int fd) {
 
 static int nonSeekAvailable(int, long *);
 static int stdinAvailable(int, long *);
-
-#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
 
 // This code is a copy of JDK's sysAvailable
 // from src/windows/hpi/src/sys_api_md.c

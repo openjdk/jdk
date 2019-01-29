@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import javax.xml.XMLConstants;
@@ -1729,12 +1730,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
      */
     private boolean isDefaultNamespace(String uri) {
         String defaultNamespace = fInternalNamespaceContext.getURI(DEFAULT_PREFIX);
-
-        if (uri.equals(defaultNamespace)) {
-            return true;
-        }
-
-        return false;
+        return Objects.equals(uri, defaultNamespace);
     }
 
     /**

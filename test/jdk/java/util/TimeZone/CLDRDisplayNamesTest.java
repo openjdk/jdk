@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ public class CLDRDisplayNamesTest {
         },
     };
 
+    private static final String NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
+
     public static void main(String[] args) {
         // Make sure that localized time zone names of CLDR are used
         // if specified.
@@ -131,5 +133,27 @@ public class CLDRDisplayNamesTest {
         if (errors > 0) {
             throw new RuntimeException("test failed");
         }
+
+        // 8217366: No "no inheritance marker" should be left in the returned array
+        // from DateFormatSymbols.getZoneStrings()
+        List.of(Locale.ROOT,
+                Locale.CHINA,
+                Locale.GERMANY,
+                Locale.JAPAN,
+                Locale.UK,
+                Locale.US,
+                Locale.forLanguageTag("hi-IN"),
+                Locale.forLanguageTag("es-419")).stream()
+            .peek(System.out::println)
+            .map(l -> DateFormatSymbols.getInstance(l).getZoneStrings())
+            .flatMap(zoneStrings -> Arrays.stream(zoneStrings))
+            .filter(namesArray -> Arrays.stream(namesArray)
+                .anyMatch(aName -> aName.equals(NO_INHERITANCE_MARKER)))
+            .findAny()
+            .ifPresentOrElse(marker -> {
+                    throw new RuntimeException("No inheritance marker detected with tzid: "
+                                                + marker[0]);
+                },
+                () -> System.out.println("Success: No \"no inheritance marker\" detected."));
     }
 }

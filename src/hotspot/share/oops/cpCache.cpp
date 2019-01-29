@@ -253,11 +253,21 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
   if (byte_no == 1) {
     assert(invoke_code != Bytecodes::_invokevirtual &&
            invoke_code != Bytecodes::_invokeinterface, "");
+    bool do_resolve = true;
     // Don't mark invokespecial to method as resolved if sender is an interface.  The receiver
     // has to be checked that it is a subclass of the current class every time this bytecode
     // is executed.
-    if (invoke_code != Bytecodes::_invokespecial || !sender_is_interface ||
-        method->name() == vmSymbols::object_initializer_name()) {
+    if (invoke_code == Bytecodes::_invokespecial && sender_is_interface &&
+        method->name() != vmSymbols::object_initializer_name()) {
+      do_resolve = false;
+    }
+    // Don't mark invokestatic to method as resolved if the holder class has not yet completed
+    // initialization. An invokestatic must only proceed if the class is initialized, but if
+    // we resolve it before then that class initialization check is skipped.
+    if (invoke_code == Bytecodes::_invokestatic && !method->method_holder()->is_initialized()) {
+      do_resolve = false;
+    }
+    if (do_resolve) {
       set_bytecode_1(invoke_code);
     }
   } else if (byte_no == 2)  {

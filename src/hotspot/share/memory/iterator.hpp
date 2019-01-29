@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_ITERATOR_HPP
-#define SHARE_VM_MEMORY_ITERATOR_HPP
+#ifndef SHARE_MEMORY_ITERATOR_HPP
+#define SHARE_MEMORY_ITERATOR_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -362,4 +362,4 @@ class OopIteratorClosureDispatch {
   template <typename OopClosureType> static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass);
 };
 
-#endif // SHARE_VM_MEMORY_ITERATOR_HPP
+#endif // SHARE_MEMORY_ITERATOR_HPP

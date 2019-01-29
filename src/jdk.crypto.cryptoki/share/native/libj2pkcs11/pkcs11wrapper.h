@@ -151,6 +151,8 @@
 #undef  P11_ENABLE_C_GETFUNCTIONSTATUS
 #undef  P11_ENABLE_C_CANCELFUNCTION
 #undef  P11_ENABLE_C_WAITFORSLOTEVENT
+#define P11_ENABLE_GETNATIVEKEYINFO
+#define P11_ENABLE_CREATENATIVEKEY
 
 /* include the platform dependent part of the header */
 #include "p11_md.h"
@@ -203,6 +205,8 @@
 #define ckULongToJInt(x)        ((jint) x)
 #define ckULongToJSize(x)       ((jsize) x)
 #define unsignedIntToCKULong(x) ((CK_ULONG) x)
+
+//#define P11_DEBUG
 
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }

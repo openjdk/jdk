@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ final class ReferenceClassDescImpl implements ClassDesc {
      */
     ReferenceClassDescImpl(String descriptor) {
         requireNonNull(descriptor);
-        int len = ConstantUtils.matchSig(descriptor, 0, descriptor.length());
+        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false);
         if (len == 0 || len == 1
             || len != descriptor.length())
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));

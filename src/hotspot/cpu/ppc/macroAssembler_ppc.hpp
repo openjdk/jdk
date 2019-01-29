@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
-#define CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
+#ifndef CPU_PPC_MACROASSEMBLER_PPC_HPP
+#define CPU_PPC_MACROASSEMBLER_PPC_HPP
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
@@ -828,7 +828,6 @@ class MacroAssembler: public Assembler {
   void load_reverse_32(Register dst, Register src);
   int  crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3);
   void fold_byte_crc32(Register crc, Register val, Register table, Register tmp);
-  void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
                              Register data, bool loopAlignment);
@@ -839,19 +838,16 @@ class MacroAssembler: public Assembler {
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3,
                           bool invertCRC);
-  void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3,
-                          bool invertCRC);
-  void kernel_crc32_1word_vpmsum(Register crc, Register buf, Register len, Register table,
-                          Register constants, Register barretConstants,
-                          Register t0,  Register t1, Register t2, Register t3, Register t4,
-                          bool invertCRC);
-  void kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
-                          Register constants, Register barretConstants,
-                          Register t0, Register t1, Register t2, Register t3, Register t4);
+  void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
+                           Register t0, Register t1, Register t2, Register t3, Register t4,
+                           Register t5, Register t6, bool invertCRC);
+  void kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len, Register constants,
+                                   Register t0, Register t1, Register t2, Register t3, Register t4,
+                                   Register t5, Register t6);
+  // Version which internally decides what to use.
+  void crc32(Register crc, Register buf, Register len, Register t0, Register t1, Register t2,
+             Register t3, Register t4, Register t5, Register t6, Register t7, bool is_crc32c);
 
-  void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp,
-                               bool invertCRC);
   void kernel_crc32_singleByteReg(Register crc, Register val, Register table,
                                   bool invertCRC);
 
@@ -970,4 +966,4 @@ class SkipIfEqualZero : public StackObj {
    ~SkipIfEqualZero();
 };
 
-#endif // CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
+#endif // CPU_PPC_MACROASSEMBLER_PPC_HPP

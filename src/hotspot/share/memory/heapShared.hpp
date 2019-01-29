@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_HEAPSHARED_HPP
-#define SHARE_VM_MEMORY_HEAPSHARED_HPP
+#ifndef SHARE_MEMORY_HEAPSHARED_HPP
+#define SHARE_MEMORY_HEAPSHARED_HPP
 
 #include "classfile/compactHashtable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -342,4 +342,4 @@ private:
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 };
-#endif // SHARE_VM_MEMORY_HEAPSHARED_HPP
+#endif // SHARE_MEMORY_HEAPSHARED_HPP

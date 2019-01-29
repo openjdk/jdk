@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1BLOCKOFFSETTABLE_HPP
-#define SHARE_VM_GC_G1_G1BLOCKOFFSETTABLE_HPP
+#ifndef SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP
+#define SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
@@ -232,4 +232,4 @@ public:
   void print_on(outputStream* out) PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_GC_G1_G1BLOCKOFFSETTABLE_HPP
+#endif // SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP

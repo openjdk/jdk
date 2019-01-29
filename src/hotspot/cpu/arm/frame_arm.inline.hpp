@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_FRAME_ARM_INLINE_HPP
-#define CPU_ARM_VM_FRAME_ARM_INLINE_HPP
+#ifndef CPU_ARM_FRAME_ARM_INLINE_HPP
+#define CPU_ARM_FRAME_ARM_INLINE_HPP
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
@@ -228,4 +228,4 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *result_adr = obj;
 }
 
-#endif // CPU_ARM_VM_FRAME_ARM_INLINE_HPP
+#endif // CPU_ARM_FRAME_ARM_INLINE_HPP

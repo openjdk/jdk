@@ -1376,6 +1376,14 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   }
 #endif
 
+  // Do not patch call site for static call when the class is not
+  // fully initialized.
+  if (invoke_code == Bytecodes::_invokestatic &&
+      !callee_method->method_holder()->is_initialized()) {
+    assert(callee_method->method_holder()->is_linked(), "must be");
+    return callee_method;
+  }
+
   // JSR 292 key invariant:
   // If the resolved method is a MethodHandle invoke target, the call
   // site must be a MethodHandle call site, because the lambda form might tail-call

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oacle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oacle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public abstract class AbstractElementVisitor7<R, P> extends AbstractElementVisit
      * @deprecated Release 7 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="12")
     protected AbstractElementVisitor7(){
         super(); // Superclass constructor deprecated too
     }

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_LEAKPROFILER_LEAKPROFILER_HPP
-#define SHARE_VM_JFR_LEAKPROFILER_LEAKPROFILER_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
+#define SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
 
 #include "memory/allocation.hpp"
 
@@ -64,4 +64,4 @@ class LeakProfiler : public AllStatic {
   static void oops_do(BoolObjectClosure* is_alive, OopClosure* f);
 };
 
-#endif // SHARE_VM_JFR_LEAKPROFILER_LEAKPROFILER_HPP
+#endif // SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_SYMBOL_HPP
-#define SHARE_VM_OOPS_SYMBOL_HPP
+#ifndef SHARE_OOPS_SYMBOL_HPP
+#define SHARE_OOPS_SYMBOL_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/exceptions.hpp"
@@ -271,4 +271,4 @@ int Symbol::fast_compare(const Symbol* other) const {
  return (((uintptr_t)this < (uintptr_t)other) ? -1
    : ((uintptr_t)this == (uintptr_t) other) ? 0 : 1);
 }
-#endif // SHARE_VM_OOPS_SYMBOL_HPP
+#endif // SHARE_OOPS_SYMBOL_HPP

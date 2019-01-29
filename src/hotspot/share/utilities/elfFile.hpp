@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_ELF_FILE_HPP
-#define SHARE_VM_UTILITIES_ELF_FILE_HPP
+#ifndef SHARE_UTILITIES_ELFFILE_HPP
+#define SHARE_UTILITIES_ELFFILE_HPP
 
 #if !defined(_WINDOWS) && !defined(__APPLE__) && !defined(_AIX)
 
@@ -214,4 +214,4 @@ public:
 
 #endif // !_WINDOWS && !__APPLE__
 
-#endif // SHARE_VM_UTILITIES_ELF_FILE_HPP
+#endif // SHARE_UTILITIES_ELFFILE_HPP

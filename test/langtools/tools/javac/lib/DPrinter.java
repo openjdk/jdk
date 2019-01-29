@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1336,8 +1336,8 @@ public class DPrinter {
             // null or bot. So, only print the bound for subtypes of TypeVar,
             // or if the bound is (erroneously) not null or bot.
             if (!type.hasTag(TypeTag.TYPEVAR)
-                    || !(type.bound == null || type.bound.hasTag(TypeTag.BOT))) {
-                printType("bound", type.bound, Details.FULL);
+                    || !(type.getUpperBound() == null || type.getUpperBound().hasTag(TypeTag.BOT))) {
+                printType("bound", type.getUpperBound(), Details.FULL);
             }
             printType("lower", type.lower, Details.FULL);
             return visitType(type, null);

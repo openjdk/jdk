@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 class LoadBarrierNode : public MultiNode {
 private:
-  bool _weak;
+  bool _weak;               // On strong or weak oop reference
   bool _writeback;          // Controls if the barrier writes the healed oop back to memory
                             // A swap on a memory location must never write back the healed oop
   bool _oop_reload_allowed; // Controls if the barrier are allowed to reload the oop from memory
@@ -62,10 +62,14 @@ public:
                   bool oop_reload_allowed);
 
   virtual int Opcode() const;
+  virtual uint size_of() const;
+  virtual uint cmp(const Node& n) const;
   virtual const Type *bottom_type() const;
+  virtual const TypePtr* adr_type() const;
   virtual const Type *Value(PhaseGVN *phase) const;
   virtual Node *Identity(PhaseGVN *phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual uint match_edge(uint idx) const;
 
   LoadBarrierNode* has_dominating_barrier(PhaseIdealLoop* phase,
                                           bool linear_only,
@@ -100,8 +104,8 @@ public:
                          const TypePtr *at,
                          const TypePtr* t,
                          MemOrd mo,
-                         ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+                         ControlDependency control_dependency = DependsOnlyOnTest) :
+      LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
     init_class_id(Class_LoadBarrierSlowReg);
   }
 
@@ -124,8 +128,8 @@ public:
                              const TypePtr *at,
                              const TypePtr* t,
                              MemOrd mo,
-                             ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+                             ControlDependency control_dependency = DependsOnlyOnTest) :
+      LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
     init_class_id(Class_LoadBarrierWeakSlowReg);
   }
 
@@ -217,7 +221,6 @@ public:
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const;
-
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

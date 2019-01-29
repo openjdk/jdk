@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGDECORATORS_HPP
-#define SHARE_VM_LOGGING_LOGDECORATORS_HPP
+#ifndef SHARE_LOGGING_LOGDECORATORS_HPP
+#define SHARE_LOGGING_LOGDECORATORS_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -115,4 +115,4 @@ class LogDecorators {
   bool parse(const char* decorator_args, outputStream* errstream = NULL);
 };
 
-#endif // SHARE_VM_LOGGING_LOGDECORATORS_HPP
+#endif // SHARE_LOGGING_LOGDECORATORS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected int engineGenerateSecret(byte[] sharedSecret, int
             offset) throws IllegalStateException, ShortBufferException {
-        if (offset + secretLen > sharedSecret.length) {
+        if (secretLen > sharedSecret.length - offset) {
             throw new ShortBufferException("Need " + secretLen
                 + " bytes, only " + (sharedSecret.length - offset)
                 + " available");

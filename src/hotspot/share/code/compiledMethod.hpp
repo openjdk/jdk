@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_COMPILEDMETHOD_HPP
-#define SHARE_VM_CODE_COMPILEDMETHOD_HPP
+#ifndef SHARE_CODE_COMPILEDMETHOD_HPP
+#define SHARE_CODE_COMPILEDMETHOD_HPP
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
@@ -414,4 +414,4 @@ protected:
   nmethod* _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
 };
 
-#endif //SHARE_VM_CODE_COMPILEDMETHOD_HPP
+#endif // SHARE_CODE_COMPILEDMETHOD_HPP

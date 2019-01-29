@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,8 +298,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
     private long lastBecomeMainTime; // this is necessary to preserve right siblings order
-    private boolean maximizedBothState = false;
-    private boolean frameResizibilityChanged = false;
 
     public CPlatformWindow() {
         super(0, true);
@@ -402,7 +400,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // Either java.awt.Frame or java.awt.Dialog can be resizable, however java.awt.Window is never resizable
         {
-            final boolean resizable = isTargetResizable();
+            final boolean resizable = isFrame ? ((Frame)target).isResizable() : (isDialog ? ((Dialog)target).isResizable() : false);
             styleBits = SET(styleBits, RESIZABLE, resizable);
             if (!resizable) {
                 styleBits = SET(styleBits, ZOOMABLE, false);
@@ -614,8 +612,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             setBounds(maximizedBounds.x, maximizedBounds.y,
                     maximizedBounds.width, maximizedBounds.height);
         }
-        setFrameResizibilityChanged(true);
-        updateResizableAndMaximizeState(true);
     }
 
     private void unmaximize() {
@@ -712,9 +708,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // Manage the extended state when showing
         if (visible) {
             /* Frame or Dialog should be set property WINDOW_FULLSCREENABLE to true if the
-            Frame resizable and Frame state is not MAXIMIZED_BOTH or Dialog is resizable.
+            Frame or Dialog is resizable.
             **/
-            if (isTargetResizable()) {
+            final boolean resizable = (target instanceof Frame) ? ((Frame)target).isResizable() :
+            ((target instanceof Dialog) ? ((Dialog)target).isResizable() : false);
+            if (resizable) {
                 setCanFullscreen(true);
             }
 
@@ -728,11 +726,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     if ((frameState & Frame.ICONIFIED) != 0) {
                         // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
                         frameState = Frame.ICONIFIED;
-                    }
-
-                    if (isFrameResizibilityChanged()) {
-                        updateResizableAndMaximizeState(false);
-                        setFrameResizibilityChanged(false);
                     }
 
                     switch (frameState) {
@@ -854,10 +847,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void setResizable(final boolean resizable) {
-        boolean windowResizable = resizable && !isMaximizedBoth();
-        setCanFullscreen(windowResizable);
-        setStyleBits(RESIZABLE, windowResizable);
-        setStyleBits(ZOOMABLE, windowResizable);
+        setCanFullscreen(resizable);
+        setStyleBits(RESIZABLE, resizable);
+        setStyleBits(ZOOMABLE, resizable);
     }
 
     @Override
@@ -964,11 +956,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if ((windowState & Frame.ICONIFIED) != 0) {
             // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
             windowState = Frame.ICONIFIED;
-        }
-
-        if (isFrameResizibilityChanged()) {
-            updateResizableAndMaximizeState(false);
-            setFrameResizibilityChanged(false);
         }
 
         switch (windowState) {
@@ -1174,21 +1161,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     /*
-     * Resizibility of frame with state MAXIMIZED_BOTH is set to true to zoom
-     * the frame on double click on title bar and set to false later. This is
-     * required as frame won't zoom if resizibility of frame is false.
-     */
-    private void deliverDoubleClickOnTitlebar() {
-        if ((peer != null) && (target instanceof Frame)) {
-            if (isMaximizedBoth()) {
-                updateResizableAndMaximizeState(false);
-                execute(CWrapper.NSWindow::zoom);
-                updateResizableAndMaximizeState(true);
-            }
-        }
-    }
-
-    /*
      * Our focus model is synthetic and only non-simple window
      * may become natively focusable window.
      */
@@ -1353,33 +1325,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
         return false;
     }
-
-    private boolean isTargetResizable() {
-        if (target instanceof Frame) {
-            return ((Frame)target).isResizable() && !isMaximizedBoth();
-        } else if (target instanceof Dialog) {
-            return ((Dialog)target).isResizable();
-        }
-        return false;
-    }
-
-    private void updateResizableAndMaximizeState(boolean maximizeState) {
-        maximizedBothState = maximizeState;
-        setResizable(!maximizeState);
-    }
-
-    private boolean isMaximizedBoth() {
-        return maximizedBothState;
-    }
-
-    private void setFrameResizibilityChanged(boolean resize) {
-        frameResizibilityChanged = resize;
-    }
-
-    private boolean isFrameResizibilityChanged() {
-        return frameResizibilityChanged;
-    }
-
     // ----------------------------------------------------------------------
     //                          NATIVE CALLBACKS
     // ----------------------------------------------------------------------

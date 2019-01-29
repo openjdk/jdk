@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_STACK_ZERO_INLINE_HPP
-#define CPU_ZERO_VM_STACK_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_STACK_ZERO_INLINE_HPP
+#define CPU_ZERO_STACK_ZERO_INLINE_HPP
 
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
@@ -54,4 +54,4 @@ inline int ZeroStack::abi_stack_available(Thread *thread) const {
   return stack_free;
 }
 
-#endif // CPU_ZERO_VM_STACK_ZERO_INLINE_HPP
+#endif // CPU_ZERO_STACK_ZERO_INLINE_HPP

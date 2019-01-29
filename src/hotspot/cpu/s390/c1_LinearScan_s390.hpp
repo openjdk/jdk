@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_C1_LINEARSCAN_S390_HPP
-#define CPU_S390_VM_C1_LINEARSCAN_S390_HPP
+#ifndef CPU_S390_C1_LINEARSCAN_S390_HPP
+#define CPU_S390_C1_LINEARSCAN_S390_HPP
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
   // unallocated: Z_thread, Z_fp, Z_SP, Z_R0_scratch, Z_R1_scratch, Z_R14
@@ -61,4 +61,4 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
   return false; // No special case behaviours.
 }
 
-#endif // CPU_S390_VM_C1_LINEARSCAN_S390_HPP
+#endif // CPU_S390_C1_LINEARSCAN_S390_HPP

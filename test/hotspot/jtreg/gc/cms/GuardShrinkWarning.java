@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.cms;
+
 /**
  * @test GuardShrinkWarning
  * @key gc regression
@@ -30,7 +32,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm GuardShrinkWarning
+ * @run main/othervm gc.cms.GuardShrinkWarning
  * @author jon.masamitsu@oracle.com
  */
 
@@ -44,7 +46,7 @@ public class GuardShrinkWarning {
       "-showversion",
       "-XX:+UseConcMarkSweepGC",
       "-XX:+ExplicitGCInvokesConcurrent",
-      "GuardShrinkWarning$SystemGCCaller"
+      SystemGCCaller.class.getName()
       );
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

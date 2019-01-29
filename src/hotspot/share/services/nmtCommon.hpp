@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_NMT_COMMON_HPP
-#define SHARE_VM_SERVICES_NMT_COMMON_HPP
+#ifndef SHARE_SERVICES_NMTCOMMON_HPP
+#define SHARE_SERVICES_NMTCOMMON_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/align.hpp"
@@ -78,4 +78,4 @@ class NMTUtil : AllStatic {
 };
 
 
-#endif
+#endif // SHARE_SERVICES_NMTCOMMON_HPP

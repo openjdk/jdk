@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
 
 // Major contributions by LS
 
-#ifndef CPU_S390_VM_COPY_S390_HPP
-#define CPU_S390_VM_COPY_S390_HPP
+#ifndef CPU_S390_COPY_S390_HPP
+#define CPU_S390_COPY_S390_HPP
 
 // Inline functions for memory copy and fill.
 
@@ -1131,4 +1131,4 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 #endif
 }
 
-#endif // CPU_S390_VM_COPY_S390_HPP
+#endif // CPU_S390_COPY_S390_HPP

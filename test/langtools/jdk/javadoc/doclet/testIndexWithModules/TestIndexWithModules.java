@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ public class TestIndexWithModules extends JavadocTester {
     //multiple modules with frames
     @Test
     public void testIndexWithMultipleModules1(Path base) throws Exception {
+        setAutomaticCheckLinks(false); // @ignore 8217013
         Path out = base.resolve("out");
         javadoc("-d", out.toString(),
                 "--module-source-path", src.toString(),
@@ -98,6 +99,7 @@ public class TestIndexWithModules extends JavadocTester {
                 "<a href=\"m1/module-summary.html\">m1</a>",
                 "<a href=\"m3/module-summary.html\">m3</a>",
                 "<a href=\"m4/module-summary.html\">m4</a>");
+        setAutomaticCheckLinks(true); // @ignore 8217013
     }
 
     //multiple modules with out frames

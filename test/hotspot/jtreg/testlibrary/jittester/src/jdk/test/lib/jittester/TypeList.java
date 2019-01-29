@@ -23,11 +23,6 @@
 
 package jdk.test.lib.jittester;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Predicate;
-
 import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.types.TypeByte;
 import jdk.test.lib.jittester.types.TypeChar;
@@ -38,6 +33,11 @@ import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.types.TypeLong;
 import jdk.test.lib.jittester.types.TypeShort;
 import jdk.test.lib.jittester.types.TypeVoid;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class TypeList {
     public static final TypeVoid VOID = new TypeVoid();
@@ -56,7 +56,7 @@ public class TypeList {
     private static final List<Type> BUILTIN_TYPES = new ArrayList<>();
     private static final List<Type> BUILTIN_INT_TYPES = new ArrayList<>();
     private static final List<Type> BUILTIN_FP_TYPES = new ArrayList<>();
-    private static final List<Type> REFERENCE_TYPES = new ArrayList<>();
+    private static final List<TypeKlass> REFERENCE_TYPES = new ArrayList<>();
 
     static {
         BUILTIN_INT_TYPES.add(BOOLEAN);
@@ -99,7 +99,7 @@ public class TypeList {
         return BUILTIN_FP_TYPES;
     }
 
-    protected static Collection<Type> getReferenceTypes() {
+    protected static Collection<TypeKlass> getReferenceTypes() {
         return REFERENCE_TYPES;
     }
 
@@ -148,7 +148,7 @@ public class TypeList {
         return null;
     }
 
-    public static void add(Type t) {
+    public static void add(TypeKlass t) {
         REFERENCE_TYPES.add(t);
         TYPES.add(t);
     }
@@ -159,8 +159,12 @@ public class TypeList {
     }
 
     public static void removeAll() {
-        Predicate<? super Type> isNotBasic = t -> t.getName().startsWith("Test_");
-        TYPES.removeIf(isNotBasic);
-        REFERENCE_TYPES.removeIf(isNotBasic);
+        Predicate<? super String> isNotBasic = s -> s.startsWith("Test_");
+        Predicate<? super Type> isNotBasicType = t -> isNotBasic.test(t.getName());
+        REFERENCE_TYPES.stream()
+                       .map(TypeKlass::getChildrenNames)
+                       .forEach(l -> l.removeIf(isNotBasic));
+        TYPES.removeIf(isNotBasicType);
+        REFERENCE_TYPES.removeIf(isNotBasicType);
     }
 }

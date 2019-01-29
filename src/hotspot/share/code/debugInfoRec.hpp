@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_DEBUGINFOREC_HPP
-#define SHARE_VM_CODE_DEBUGINFOREC_HPP
+#ifndef SHARE_CODE_DEBUGINFOREC_HPP
+#define SHARE_CODE_DEBUGINFOREC_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -208,4 +208,4 @@ class DebugInformationRecorder: public ResourceObj {
   enum { serialized_null = 0 };
 };
 
-#endif // SHARE_VM_CODE_DEBUGINFOREC_HPP
+#endif // SHARE_CODE_DEBUGINFOREC_HPP

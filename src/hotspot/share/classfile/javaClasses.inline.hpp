@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
-#define SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
+#ifndef SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
+#define SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "oops/access.inline.hpp"
@@ -71,10 +71,11 @@ bool java_lang_String::is_latin1(oop java_string) {
   assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
   return coder == CODER_LATIN1;
 }
-int java_lang_String::length(oop java_string) {
+int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
+         "value must be same as java_lang_String::value(java_string)");
   if (value == NULL) {
     return 0;
   }
@@ -84,6 +85,12 @@ int java_lang_String::length(oop java_string) {
     arr_length >>= 1; // convert number of bytes to number of elements
   }
   return arr_length;
+}
+int java_lang_String::length(oop java_string) {
+  assert(initialized, "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  return length(java_string, value);
 }
 
 bool java_lang_String::is_instance_inlined(oop obj) {
@@ -190,6 +197,13 @@ inline bool java_lang_Class::is_primitive(oop java_class) {
   return is_primitive;
 }
 
+inline int java_lang_Class::oop_size_raw(oop java_class) {
+  assert(_oop_size_offset != 0, "must be set");
+  int size = java_class->int_field_raw(_oop_size_offset);
+  assert(size > 0, "Oop size must be greater than zero, not %d", size);
+  return size;
+}
+
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
@@ -258,4 +272,4 @@ inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int versio
   }
 }
 
-#endif // SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
+#endif // SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP

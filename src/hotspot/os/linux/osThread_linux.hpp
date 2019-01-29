@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_LINUX_VM_OSTHREAD_LINUX_HPP
-#define OS_LINUX_VM_OSTHREAD_LINUX_HPP
+#ifndef OS_LINUX_OSTHREAD_LINUX_HPP
+#define OS_LINUX_OSTHREAD_LINUX_HPP
  public:
   typedef pid_t thread_id_t;
 
@@ -132,4 +132,4 @@ private:
 // osThread_solaris.hpp 1.24 99/08/27 13:11:54
 // End
 
-#endif // OS_LINUX_VM_OSTHREAD_LINUX_HPP
+#endif // OS_LINUX_OSTHREAD_LINUX_HPP

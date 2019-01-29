@@ -239,6 +239,8 @@ public class GraalUnitTestLauncher {
         javaFlags.add("-Djava.awt.headless=true");
         javaFlags.add("-esa");
         javaFlags.add("-ea");
+        // Make sure exception message is never null
+        javaFlags.add("-XX:-OmitStackTraceInFastThrow");
 
 
         // generate class path

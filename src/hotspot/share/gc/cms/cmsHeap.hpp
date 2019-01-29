@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_CMSHEAP_HPP
-#define SHARE_VM_GC_CMS_CMSHEAP_HPP
+#ifndef SHARE_GC_CMS_CMSHEAP_HPP
+#define SHARE_GC_CMS_CMSHEAP_HPP
 
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/parNewGeneration.hpp"
@@ -139,4 +139,4 @@ private:
   void collect_mostly_concurrent(GCCause::Cause cause);
 };
 
-#endif // SHARE_VM_GC_CMS_CMSHEAP_HPP
+#endif // SHARE_GC_CMS_CMSHEAP_HPP

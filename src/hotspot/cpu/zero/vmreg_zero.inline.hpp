@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_VMREG_ZERO_INLINE_HPP
-#define CPU_ZERO_VM_VMREG_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_VMREG_ZERO_INLINE_HPP
+#define CPU_ZERO_VMREG_ZERO_INLINE_HPP
 
 inline VMReg RegisterImpl::as_VMReg() {
   return VMRegImpl::as_VMReg(encoding());
@@ -34,4 +34,4 @@ inline VMReg FloatRegisterImpl::as_VMReg() {
   return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_gpr);
 }
 
-#endif // CPU_ZERO_VM_VMREG_ZERO_INLINE_HPP
+#endif // CPU_ZERO_VMREG_ZERO_INLINE_HPP

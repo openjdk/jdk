@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZFORWARDING_INLINE_HPP
-#define SHARE_GC_Z_ZFORWARDING_INLINE_HPP
+#ifndef SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP
+#define SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP
 
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -106,4 +106,4 @@ inline uintptr_t ZForwardingTable::insert(uintptr_t from_index, uintptr_t to_off
   }
 }
 
-#endif // SHARE_GC_Z_ZFORWARDING_INLINE_HPP
+#endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

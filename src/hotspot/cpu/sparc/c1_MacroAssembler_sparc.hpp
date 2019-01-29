@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
-#define CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
+#ifndef CPU_SPARC_C1_MACROASSEMBLER_SPARC_HPP
+#define CPU_SPARC_C1_MACROASSEMBLER_SPARC_HPP
 
   void pd_init() { /* nothing to do */ }
 
@@ -95,4 +95,4 @@
   void save_live_registers_no_oop_map(bool save_fpu_registers);
   void restore_live_registers(bool restore_fpu_registers);
 
-#endif // CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
+#endif // CPU_SPARC_C1_MACROASSEMBLER_SPARC_HPP

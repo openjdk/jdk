@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP
-#define SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP
+#ifndef SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
+#define SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
 
 #include "memory/resourceArea.hpp"
 
@@ -40,4 +40,4 @@ inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failm
   return (char*)Amalloc(size, alloc_failmode);
 }
 
-#endif // SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP
+#endif // SHARE_MEMORY_RESOURCEAREA_INLINE_HPP

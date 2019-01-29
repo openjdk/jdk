@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP
-#define SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP
+#ifndef SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP
+#define SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "code/stubs.hpp"
@@ -333,4 +333,4 @@ class AbstractInterpreterGenerator: public StackObj {
   AbstractInterpreterGenerator(StubQueue* _code);
 };
 
-#endif // SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP
+#endif // SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP

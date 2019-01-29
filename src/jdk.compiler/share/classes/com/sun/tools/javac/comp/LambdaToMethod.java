@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -989,7 +989,7 @@ public class LambdaToMethod extends TreeTranslator {
                 // use the SAM parameter type
                 if (checkForIntersection && descPTypes.head.getKind() == TypeKind.TYPEVAR) {
                     TypeVar tv = (TypeVar) descPTypes.head;
-                    if (tv.bound.getKind() == TypeKind.INTERSECTION) {
+                    if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
                         parmType = samPTypes.head;
                     }
                 }
@@ -2375,7 +2375,7 @@ public class LambdaToMethod extends TreeTranslator {
                         return true;
                     case TYPEVAR:
                         TypeVar tv = (TypeVar) t;
-                        return isIntersectionOrUnionType(tv.bound);
+                        return isIntersectionOrUnionType(tv.getUpperBound());
                 }
                 return false;
             }

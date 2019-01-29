@@ -26,7 +26,7 @@
 
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "unittest.hpp"

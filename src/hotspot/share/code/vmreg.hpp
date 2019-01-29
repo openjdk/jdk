@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_VMREG_HPP
-#define SHARE_VM_CODE_VMREG_HPP
+#ifndef SHARE_CODE_VMREG_HPP
+#define SHARE_CODE_VMREG_HPP
 
 #include "asm/register.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -197,4 +197,4 @@ public:
   VMRegPair() { _second = VMRegImpl::Bad(); _first = VMRegImpl::Bad(); }
 };
 
-#endif // SHARE_VM_CODE_VMREG_HPP
+#endif // SHARE_CODE_VMREG_HPP

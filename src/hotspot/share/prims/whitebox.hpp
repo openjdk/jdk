@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_WHITEBOX_HPP
-#define SHARE_VM_PRIMS_WHITEBOX_HPP
+#ifndef SHARE_PRIMS_WHITEBOX_HPP
+#define SHARE_PRIMS_WHITEBOX_HPP
 
 #include "jni.h"
 
@@ -70,4 +70,4 @@ class WhiteBox : public AllStatic {
   static bool compile_method(Method* method, int comp_level, int bci, Thread* THREAD);
 };
 
-#endif // SHARE_VM_PRIMS_WHITEBOX_HPP
+#endif // SHARE_PRIMS_WHITEBOX_HPP

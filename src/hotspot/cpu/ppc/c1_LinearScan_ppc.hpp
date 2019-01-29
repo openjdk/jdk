@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_C1_LINEARSCAN_PPC_HPP
-#define CPU_PPC_VM_C1_LINEARSCAN_PPC_HPP
+#ifndef CPU_PPC_C1_LINEARSCAN_PPC_HPP
+#define CPU_PPC_C1_LINEARSCAN_PPC_HPP
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
   assert(FrameMap::R0_opr->cpu_regnr() == FrameMap::last_cpu_reg() + 1, "wrong assumption below");
@@ -70,4 +70,4 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
   return false;
 }
 
-#endif // CPU_PPC_VM_C1_LINEARSCAN_PPC_HPP
+#endif // CPU_PPC_C1_LINEARSCAN_PPC_HPP

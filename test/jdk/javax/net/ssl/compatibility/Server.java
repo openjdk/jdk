@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class Server {
         Status status = Status.SUCCESS;
         Server server = null;
         try {
-            server = new Server(Cert.getCerts(cipherSuite));
+            server = new Server(Cert.getCerts(CipherSuite.cipherSuite(cipherSuite)));
             System.out.println("port=" + server.getPort());
             server.setNeedClientAuth(clientAuth);
             server.setEnabledProtocols(protocol);
@@ -146,14 +146,18 @@ public class Server {
                 server.close();
             }
 
-            // Cleanups port log.
-            if (!new File(Utils.PORT_LOG).delete()) {
-                throw new RuntimeException("Cannot delete port log");
-            }
+            deletePortFile();
         }
 
         System.out.println("STATUS: " + status);
         System.out.println("----- Server end -----");
+    }
+
+    private static void deletePortFile() {
+        File portFile = new File(Utils.PORT_LOG);
+        if (portFile.exists() && !portFile.delete()) {
+            throw new RuntimeException("Cannot delete port log");
+        }
     }
 
     private static void savePort(int port) throws IOException {

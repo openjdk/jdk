@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_VMREG_SPARC_HPP
-#define CPU_SPARC_VM_VMREG_SPARC_HPP
+#ifndef CPU_SPARC_VMREG_SPARC_HPP
+#define CPU_SPARC_VMREG_SPARC_HPP
 
 inline bool is_Register() { return value() >= 0 && value() < ConcreteRegisterImpl::max_gpr; }
 inline bool is_FloatRegister() { return value() >= ConcreteRegisterImpl::max_gpr &&
@@ -55,4 +55,4 @@ inline   bool is_concrete() {
   return false;
 }
 
-#endif // CPU_SPARC_VM_VMREG_SPARC_HPP
+#endif // CPU_SPARC_VMREG_SPARC_HPP

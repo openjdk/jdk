@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
 
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
@@ -45,4 +45,4 @@ public:
   void print_on(outputStream* out) const;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP

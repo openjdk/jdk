@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -988,7 +988,7 @@ static void create_default_methods( InstanceKlass* klass,
   for (int index = 0; index < new_size; index++ ) {
     total_default_methods->at_put(index, new_methods->at(index));
   }
-  Method::sort_methods(total_default_methods, false, false);
+  Method::sort_methods(total_default_methods, /*set_idnums=*/false);
 
   klass->set_default_methods(total_default_methods);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestEagerReclaimHumongousRegionsClearMarkBits
  * @bug 8051973
@@ -31,6 +33,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run main gc.g1.TestEagerReclaimHumongousRegionsClearMarkBits
  */
 
 import java.util.ArrayList;
@@ -48,7 +51,7 @@ class ObjectWithSomeRefs {
     public ObjectWithSomeRefs other4;
 }
 
-class ReclaimRegionFast {
+class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
     public static final long MAX_MILLIS_FOR_RUN = 50 * 1000; // The maximum runtime for the actual test.
 
     public static final int M = 1024*1024;
@@ -127,7 +130,7 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
             "-XX:ConcGCThreads=1", // Want to make marking as slow as possible.
             "-XX:+IgnoreUnrecognizedVMOptions", // G1VerifyBitmaps is develop only.
             "-XX:+G1VerifyBitmaps",
-            ReclaimRegionFast.class.getName());
+            TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

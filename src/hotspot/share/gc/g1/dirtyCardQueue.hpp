@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
-#define SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
+#ifndef SHARE_GC_G1_DIRTYCARDQUEUE_HPP
+#define SHARE_GC_G1_DIRTYCARDQUEUE_HPP
 
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
-class FreeIdSet;
 class DirtyCardQueueSet;
+class G1FreeIdSet;
 class JavaThread;
 class Monitor;
 
@@ -103,8 +103,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
 
   bool mut_process_buffer(BufferNode* node);
 
-  // Protected by the _cbl_mon.
-  FreeIdSet* _free_ids;
+  G1FreeIdSet* _free_ids;
 
   // The number of completed buffers processed by mutator and rs thread,
   // respectively.
@@ -118,6 +117,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
 
 public:
   DirtyCardQueueSet(bool notify_when_complete = true);
+  ~DirtyCardQueueSet();
 
   void initialize(Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
@@ -164,4 +164,4 @@ public:
 
 };
 
-#endif // SHARE_VM_GC_G1_DIRTYCARDQUEUE_HPP
+#endif // SHARE_GC_G1_DIRTYCARDQUEUE_HPP

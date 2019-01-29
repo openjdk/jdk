@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_EPSILON_BARRIERSET_HPP
-#define SHARE_VM_GC_EPSILON_BARRIERSET_HPP
+#ifndef SHARE_GC_EPSILON_EPSILONBARRIERSET_HPP
+#define SHARE_GC_EPSILON_EPSILONBARRIERSET_HPP
 
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -54,4 +54,4 @@ struct BarrierSet::GetType<BarrierSet::EpsilonBarrierSet> {
   typedef ::EpsilonBarrierSet type;
 };
 
-#endif // SHARE_VM_GC_EPSILON_BARRIERSET_HPP
+#endif // SHARE_GC_EPSILON_EPSILONBARRIERSET_HPP

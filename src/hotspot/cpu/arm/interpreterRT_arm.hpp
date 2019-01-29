@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_INTERPRETERRT_ARM_HPP
-#define CPU_ARM_VM_INTERPRETERRT_ARM_HPP
+#ifndef CPU_ARM_INTERPRETERRT_ARM_HPP
+#define CPU_ARM_INTERPRETERRT_ARM_HPP
 
 // native method calls
 
@@ -60,4 +60,4 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 // sharing). See normalize_fast_native_fingerprint
 #define SHARING_FAST_NATIVE_FINGERPRINTS
 
-#endif // CPU_ARM_VM_INTERPRETERRT_ARM_HPP
+#endif // CPU_ARM_INTERPRETERRT_ARM_HPP

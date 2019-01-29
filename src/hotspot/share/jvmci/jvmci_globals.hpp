@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCIGLOBALS_HPP
-#define SHARE_VM_JVMCI_JVMCIGLOBALS_HPP
+#ifndef SHARE_JVMCI_JVMCI_GLOBALS_HPP
+#define SHARE_JVMCI_JVMCI_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
 
@@ -140,4 +140,4 @@ class JVMCIGlobals {
   // Check and exit VM with error if selected GC is not supported by JVMCI.
   static void check_jvmci_supported_gc();
 };
-#endif // SHARE_VM_JVMCI_JVMCIGLOBALS_HPP
+#endif // SHARE_JVMCI_JVMCI_GLOBALS_HPP

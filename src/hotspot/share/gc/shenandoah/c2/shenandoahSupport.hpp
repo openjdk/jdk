@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAH_SUPPORT_HPP
-#define SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAH_SUPPORT_HPP
+#ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
+#define SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
 
 #include "gc/shenandoah/shenandoahBrooksPointer.hpp"
 #include "memory/allocation.hpp"
@@ -382,4 +382,4 @@ public:
   virtual int Opcode() const;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAH_SUPPORT_HPP
+#endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP

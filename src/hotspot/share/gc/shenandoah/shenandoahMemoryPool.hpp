@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_SHENANDOAHMEMORYPOOL_HPP
-#define SHARE_VM_SERVICES_SHENANDOAHMEMORYPOOL_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
 
 #ifndef SERIALGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -41,4 +41,4 @@ public:
   size_t max_size() const             { return _heap->max_capacity(); }
 };
 
-#endif //SHARE_VM_SERVICES_SHENANDOAHMEMORYPOOL_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP

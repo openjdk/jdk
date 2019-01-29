@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,8 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
 OSReturn os::set_priority(Thread* thread, ThreadPriority p) {
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
-  if (p >= MinPriority && p <= MaxPriority) {
+  if ((p >= MinPriority && p <= MaxPriority) ||
+      (p == CriticalPriority && thread->is_ConcurrentGC_thread())) {
     int priority = java_to_os_priority[p];
     return set_native_priority(thread, priority);
   } else {

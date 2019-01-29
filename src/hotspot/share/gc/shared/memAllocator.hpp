@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_MEM_ALLOCATOR_HPP
-#define SHARE_GC_SHARED_MEM_ALLOCATOR_HPP
+#ifndef SHARE_GC_SHARED_MEMALLOCATOR_HPP
+#define SHARE_GC_SHARED_MEMALLOCATOR_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/memRegion.hpp"
@@ -107,4 +107,4 @@ public:
   virtual oop initialize(HeapWord* mem) const;
 };
 
-#endif // SHARE_GC_SHARED_MEM_ALLOCATOR_HPP
+#endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP

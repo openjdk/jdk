@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP
-#define OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP
+#ifndef OS_CPU_AIX_PPC_BYTES_AIX_PPC_INLINE_HPP
+#define OS_CPU_AIX_PPC_BYTES_AIX_PPC_INLINE_HPP
 
 #if defined(VM_LITTLE_ENDIAN)
 // Aix is not little endian.
 #endif // VM_LITTLE_ENDIAN
 
-#endif // OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP
+#endif // OS_CPU_AIX_PPC_BYTES_AIX_PPC_INLINE_HPP

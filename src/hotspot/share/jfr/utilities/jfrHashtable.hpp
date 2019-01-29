@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_UTILITIES_JFRHASHTABLE_HPP
-#define SHARE_VM_JFR_UTILITIES_JFRHASHTABLE_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
+#define SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 
 #include "memory/allocation.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -280,4 +280,4 @@ Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::new_ent
   return entry;
 }
 
-#endif // SHARE_VM_JFR_UTILITIES_JFRHASHTABLE_HPP
+#endif // SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP

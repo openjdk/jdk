@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.concurrent_phase_control;
+
 /*
  * @test TestConcurrentPhaseControlSerial
  * @bug 8169517
@@ -35,7 +37,7 @@
  * @run main/othervm -XX:+UseSerialGC
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   TestConcurrentPhaseControlSerial
+ *   gc.concurrent_phase_control.TestConcurrentPhaseControlSerial
  */
 
 import gc.concurrent_phase_control.CheckUnsupported;

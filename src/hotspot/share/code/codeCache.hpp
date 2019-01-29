@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_CODECACHE_HPP
-#define SHARE_VM_CODE_CODECACHE_HPP
+#ifndef SHARE_CODE_CODECACHE_HPP
+#define SHARE_CODE_CODECACHE_HPP
 
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
@@ -430,4 +430,4 @@ struct NMethodFilter {
 typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter> CompiledMethodIterator;
 typedef CodeBlobIterator<nmethod, NMethodFilter> NMethodIterator;
 
-#endif // SHARE_VM_CODE_CODECACHE_HPP
+#endif // SHARE_CODE_CODECACHE_HPP

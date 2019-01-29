@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_CONCURRENT_HASH_TABLE_INLINE_HPP
-#define SHARE_UTILITIES_CONCURRENT_HASH_TABLE_INLINE_HPP
+#ifndef SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
+#define SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
 
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -193,8 +193,12 @@ inline ConcurrentHashTable<VALUE, CONFIG, F>::
 {
   assert(_log2_size >= SIZE_SMALL_LOG2 && _log2_size <= SIZE_BIG_LOG2,
          "Bad size");
-  void* memory = NEW_C_HEAP_ARRAY(Bucket, _size, F);
-  _buckets = new (memory) Bucket[_size];
+  _buckets = NEW_C_HEAP_ARRAY(Bucket, _size, F);
+  // Use placement new for each element instead of new[] which could use more
+  // memory than allocated.
+  for (size_t i = 0; i < _size; ++i) {
+    new (_buckets + i) Bucket();
+  }
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
@@ -874,78 +878,6 @@ inline VALUE* ConcurrentHashTable<VALUE, CONFIG, F>::
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
-template <typename LOOKUP_FUNC, typename VALUE_FUNC, typename CALLBACK_FUNC>
-inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
-  internal_get_insert(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE_FUNC& value_f,
-                      CALLBACK_FUNC& callback_f, bool* grow_hint, bool* clean_hint)
-{
-  bool ret = false;
-  bool clean = false;
-  bool locked;
-  size_t loops = 0;
-  size_t i = 0;
-  Node* new_node = NULL;
-  uintx hash = lookup_f.get_hash();
-  while (true) {
-    {
-      ScopedCS cs(thread, this); /* protected the table/bucket */
-      Bucket* bucket = get_bucket(hash);
-
-      Node* first_at_start = bucket->first();
-      Node* old = get_node(bucket, lookup_f, &clean, &loops);
-      if (old == NULL) {
-        // No duplicate found.
-        if (new_node == NULL) {
-          new_node = Node::create_node(value_f(), first_at_start);
-        } else {
-          new_node->set_next(first_at_start);
-        }
-        if (bucket->cas_first(new_node, first_at_start)) {
-          callback_f(true, new_node->value());
-          new_node = NULL;
-          ret = true;
-          break; /* leave critical section */
-        }
-        // CAS failed we must leave critical section and retry.
-        locked = bucket->is_locked();
-      } else {
-        // There is a duplicate.
-        callback_f(false, old->value());
-        break; /* leave critical section */
-      }
-    } /* leave critical section */
-    i++;
-    if (locked) {
-      os::naked_yield();
-    } else {
-      SpinPause();
-    }
-  }
-
-  if (new_node != NULL) {
-    // CAS failed and a duplicate was inserted, we must free this node.
-    Node::destroy_node(new_node);
-  } else if (i == 0 && clean) {
-    // We only do cleaning on fast inserts.
-    Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
-    delete_in_bucket(thread, bucket, lookup_f);
-    bucket->unlock();
-
-    clean = false;
-  }
-
-  if (grow_hint != NULL) {
-    *grow_hint = loops > _grow_hint;
-  }
-
-  if (clean_hint != NULL) {
-    *clean_hint = clean;
-  }
-
-  return ret;
-}
-
-template <typename VALUE, typename CONFIG, MEMFLAGS F>
 template <typename LOOKUP_FUNC>
 inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
@@ -1351,4 +1283,4 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   return true;
 }
 
-#endif // include guard
+#endif // SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP

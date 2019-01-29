@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file SpecialStatic.java
- * @run junit test.java.lang.invoke.lookup.SpecialStatic
+ * @run testng test.java.lang.invoke.lookup.SpecialStatic
  */
 package test.java.lang.invoke.lookup;
 
@@ -34,9 +34,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.org.objectweb.asm.*;
-import org.junit.Test;
+import org.testng.annotations.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
 
 /**
  * Test case:

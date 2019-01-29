@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTITHREADSTATE_INLINE_HPP
-#define SHARE_VM_PRIMS_JVMTITHREADSTATE_INLINE_HPP
+#ifndef SHARE_PRIMS_JVMTITHREADSTATE_INLINE_HPP
+#define SHARE_PRIMS_JVMTITHREADSTATE_INLINE_HPP
 
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -95,4 +95,4 @@ inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread) {
   return state;
 }
 
-#endif // SHARE_VM_PRIMS_JVMTITHREADSTATE_INLINE_HPP
+#endif // SHARE_PRIMS_JVMTITHREADSTATE_INLINE_HPP

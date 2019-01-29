@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_AIX_VM_PORTING_AIX_HPP
-#define OS_AIX_VM_PORTING_AIX_HPP
+#ifndef OS_AIX_PORTING_AIX_HPP
+#define OS_AIX_PORTING_AIX_HPP
 
 #include <stddef.h>
 
@@ -107,5 +107,4 @@ class AixMisc {
 
 };
 
-#endif // OS_AIX_VM_PORTING_AIX_HPP
-
+#endif // OS_AIX_PORTING_AIX_HPP

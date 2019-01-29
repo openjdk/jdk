@@ -577,13 +577,7 @@ class TransportContext implements ConnectionContext {
             } else if (!isOutboundClosed()) {
                 // Special case that the inbound was closed, but outbound open.
                 return HandshakeStatus.NEED_WRAP;
-            }
-        } else if (isOutboundClosed() && !isInboundClosed()) {
-            // Special case that the outbound was closed, but inbound open.
-            return HandshakeStatus.NEED_UNWRAP;
-        } else if (!isOutboundClosed() && isInboundClosed()) {
-            // Special case that the inbound was closed, but outbound open.
-            return HandshakeStatus.NEED_WRAP;
+            }   // Otherwise, both inbound and outbound are closed.
         }
 
         return HandshakeStatus.NOT_HANDSHAKING;

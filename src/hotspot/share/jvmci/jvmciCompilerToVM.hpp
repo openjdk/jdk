@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
-#define SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
+#ifndef SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
+#define SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 
 #include "jni.h"
 #include "runtime/javaCalls.hpp"
@@ -242,4 +242,4 @@ class JNIHandleMark : public StackObj {
     static void pop_jni_handle_block();
 };
 
-#endif // SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
+#endif // SHARE_JVMCI_JVMCICOMPILERTOVM_HPP

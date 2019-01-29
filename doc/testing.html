@@ -34,6 +34,7 @@
 </ul></li>
 <li><a href="#test-results-and-summary">Test results and summary</a></li>
 <li><a href="#test-suite-control">Test suite control</a><ul>
+<li><a href="#general-keywords-test_opts">General keywords (TEST_OPTS)</a></li>
 <li><a href="#jtreg-keywords">JTReg keywords</a></li>
 <li><a href="#gtest-keywords">Gtest keywords</a></li>
 <li><a href="#microbenchmark-keywords">Microbenchmark keywords</a></li>
@@ -102,11 +103,29 @@ TEST FAILURE</code></pre>
 <p>To separate multiple keyword=value pairs, use <code>;</code> (semicolon). Since the shell normally eats <code>;</code>, the recommended usage is to write the assignment inside qoutes, e.g. <code>JTREG=&quot;...;...&quot;</code>. This will also make sure spaces are preserved, as in <code>JTREG=&quot;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;</code>.</p>
 <p>(Other ways are possible, e.g. using backslash: <code>JTREG=JOBS=1\;TIMEOUT=8</code>. Also, as a special technique, the string <code>%20</code> will be replaced with space for certain options, e.g. <code>JTREG=VM_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug</code>. This can be useful if you have layers of scripts and have trouble getting proper quoting of command line arguments through.)</p>
 <p>As far as possible, the names of the keywords have been standardized between test suites.</p>
-<h3 id="jtreg-keywords">JTReg keywords</h3>
+<h3 id="general-keywords-test_opts">General keywords (TEST_OPTS)</h3>
+<p>Some keywords are valid across different test suites. If you want to run tests from multiple test suites, or just don't want to care which test suite specific control variable to use, then you can use the general TEST_OPTS control variable.</p>
+<p>There are also some keywords that applies globally to the test runner system, not to any specific test suites. These are also available as TEST_OPTS keywords.</p>
 <h4 id="jobs">JOBS</h4>
+<p>Currently only applies to JTReg.</p>
+<h4 id="timeout_factor">TIMEOUT_FACTOR</h4>
+<p>Currently only applies to JTReg.</p>
+<h4 id="vm_options">VM_OPTIONS</h4>
+<p>Applies to JTReg, GTest and Micro.</p>
+<h4 id="java_options">JAVA_OPTIONS</h4>
+<p>Applies to JTReg, GTest and Micro.</p>
+<h4 id="aot_modules">AOT_MODULES</h4>
+<p>Applies to JTReg and GTest.</p>
+<h4 id="jcov">JCOV</h4>
+<p>This keywords applies globally to the test runner system. If set to <code>true</code>, it enables JCov coverage reporting for all tests run. To be useful, the JDK under test must be run with a JDK built with JCov instrumentation (<code>configure --with-jcov=&lt;path to directory containing lib/jcov.jar&gt;</code>, <code>make jcov-image</code>).</p>
+<p>The simplest way to run tests with JCov coverage report is to use the special target <code>jcov-test</code> instead of <code>test</code>, e.g. <code>make jcov-test TEST=jdk_lang</code>. This will make sure the JCov image is built, and that JCov reporting is enabled.</p>
+<p>The JCov report is stored in <code>build/$BUILD/test-results/jcov-output</code>.</p>
+<p>Please note that running with JCov reporting can be very memory intensive.</p>
+<h3 id="jtreg-keywords">JTReg keywords</h3>
+<h4 id="jobs-1">JOBS</h4>
 <p>The test concurrency (<code>-concurrency</code>).</p>
 <p>Defaults to TEST_JOBS (if set by <code>--with-test-jobs=</code>), otherwise it defaults to JOBS, except for Hotspot, where the default is <em>number of CPU cores/2</em>, but never more than 12.</p>
-<h4 id="timeout">TIMEOUT</h4>
+<h4 id="timeout_factor-1">TIMEOUT_FACTOR</h4>
 <p>The timeout factor (<code>-timeoutFactor</code>).</p>
 <p>Defaults to 4.</p>
 <h4 id="test_mode">TEST_MODE</h4>
@@ -125,13 +144,21 @@ TEST FAILURE</code></pre>
 <p>Limit memory consumption (<code>-Xmx</code> and <code>-vmoption:-Xmx</code>, or none).</p>
 <p>Limit memory consumption for JTReg test framework and VM under test. Set to 0 to disable the limits.</p>
 <p>Defaults to 512m, except for hotspot, where it defaults to 0 (no limit).</p>
+<h4 id="keywords">KEYWORDS</h4>
+<p>JTReg kewords sent to JTReg using <code>-k</code>. Please be careful in making sure that spaces and special characters (like <code>!</code>) are properly quoted. To avoid some issues, the special value <code>%20</code> can be used instead of space.</p>
+<h4 id="extra_problem_lists">EXTRA_PROBLEM_LISTS</h4>
+<p>Use additional problem lists file or files, in addition to the default ProblemList.txt located at the JTReg test roots.</p>
+<p>If multiple file names are specified, they should be separated by space (or, to help avoid quoting issues, the special value <code>%20</code>).</p>
+<p>The file names should be either absolute, or relative to the JTReg test root of the tests to be run.</p>
 <h4 id="options">OPTIONS</h4>
 <p>Additional options to the JTReg test framework.</p>
 <p>Use <code>JTREG=&quot;OPTIONS=--help all&quot;</code> to see all available JTReg options.</p>
-<h4 id="java_options">JAVA_OPTIONS</h4>
+<h4 id="java_options-1">JAVA_OPTIONS</h4>
 <p>Additional Java options to JTReg (<code>-javaoption</code>).</p>
-<h4 id="vm_options">VM_OPTIONS</h4>
+<h4 id="vm_options-1">VM_OPTIONS</h4>
 <p>Additional VM options to JTReg (<code>-vmoption</code>).</p>
+<h4 id="aot_modules-1">AOT_MODULES</h4>
+<p>Generate AOT modules before testing for the specified module, or set of modules. If multiple modules are specified, they should be separated by space (or, to help avoid quoting issues, the special value <code>%20</code>).</p>
 <h3 id="gtest-keywords">Gtest keywords</h3>
 <h4 id="repeat">REPEAT</h4>
 <p>The number of times to repeat the tests (<code>--gtest_repeat</code>).</p>
@@ -139,6 +166,8 @@ TEST FAILURE</code></pre>
 <h4 id="options-1">OPTIONS</h4>
 <p>Additional options to the Gtest test framework.</p>
 <p>Use <code>GTEST=&quot;OPTIONS=--help&quot;</code> to see all available Gtest options.</p>
+<h4 id="aot_modules-2">AOT_MODULES</h4>
+<p>Generate AOT modules before testing for the specified module, or set of modules. If multiple modules are specified, they should be separated by space (or, to help avoid quoting issues, the special value <code>%20</code>).</p>
 <h3 id="microbenchmark-keywords">Microbenchmark keywords</h3>
 <h4 id="fork">FORK</h4>
 <p>Override the number of benchmark forks to spawn. Same as specifying <code>-f &lt;num&gt;</code>.</p>
@@ -152,7 +181,7 @@ TEST FAILURE</code></pre>
 <p>Amount of time to spend in each warmup iteration. Same as specifying <code>-w &lt;num&gt;</code>.</p>
 <h4 id="results_format">RESULTS_FORMAT</h4>
 <p>Specify to have the test run save a log of the values. Accepts the same values as <code>-rff</code>, i.e., <code>text</code>, <code>csv</code>, <code>scsv</code>, <code>json</code>, or <code>latex</code>.</p>
-<h4 id="vm_options-1">VM_OPTIONS</h4>
+<h4 id="vm_options-2">VM_OPTIONS</h4>
 <p>Additional VM arguments to provide to forked off VMs. Same as <code>-jvmArgs &lt;args&gt;</code></p>
 <h4 id="options-2">OPTIONS</h4>
 <p>Additional arguments to send to JMH.</p>

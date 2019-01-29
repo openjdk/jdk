@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
-#define SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#ifndef SHARE_OOPS_INSTANCEKLASS_HPP
+#define SHARE_OOPS_INSTANCEKLASS_HPP
 
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -1243,11 +1243,7 @@ public:
 
 private:
   // initialization state
-#ifdef ASSERT
   void set_init_state(ClassState state);
-#else
-  void set_init_state(ClassState state) { _init_state = (u1)state; }
-#endif
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
@@ -1474,4 +1470,4 @@ class InnerClassesIterator : public StackObj {
   }
 };
 
-#endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#endif // SHARE_OOPS_INSTANCEKLASS_HPP

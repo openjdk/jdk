@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _current_file(0),
-      _file_count(DefaultFileCount), _archive_name_len(0),
+      _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
@@ -99,6 +99,15 @@ static bool is_regular_file(const char* filename) {
     return false;
   }
   return (st.st_mode & S_IFMT) == S_IFREG;
+}
+
+static bool is_fifo_file(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  if (ret != 0) {
+    return false;
+  }
+  return S_ISFIFO(st.st_mode);
 }
 
 // Try to find the next number that should be used for file rotation.
@@ -187,6 +196,7 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
         break;
       }
       _file_count = static_cast<uint>(value);
+      _is_default_file_count = false;
     } else if (strcmp(FileSizeOptionKey, key) == 0) {
       julong value;
       success = Arguments::atojulong(value_str, &value);
@@ -214,6 +224,11 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     return false;
   }
 
+  bool file_exist = file_exists(_file_name);
+  if (file_exist && _is_default_file_count && is_fifo_file(_file_name)) {
+    _file_count = 0; // Prevent file rotation for fifo's such as named pipes.
+  }
+
   if (_file_count > 0) {
     // compute digits with filecount - 1 since numbers will start from 0
     _file_count_max_digits = number_of_digits(_file_count - 1);
@@ -225,7 +240,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
                      ", filesize: " SIZE_FORMAT " KiB).",
                      _file_name, _file_count, _rotate_size / K);
 
-  if (_file_count > 0 && file_exists(_file_name)) {
+  if (_file_count > 0 && file_exist) {
     if (!is_regular_file(_file_name)) {
       errstream->print_cr("Unable to log to file %s with log file rotation: "
                           "%s is not a regular file",

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_OS_HPP
-#define SHARE_VM_RUNTIME_OS_HPP
+#ifndef SHARE_RUNTIME_OS_HPP
+#define SHARE_RUNTIME_OS_HPP
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -539,9 +539,8 @@ class os: AllStatic {
 
   //File i/o operations
 
-  static size_t read(int fd, void *buf, unsigned int nBytes);
-  static size_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static size_t restartable_read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read(int fd, void *buf, unsigned int nBytes);
+  static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
   static size_t write(int fd, const void *buf, unsigned int nBytes);
 
   // Reading directories.
@@ -995,4 +994,4 @@ template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {
 
 extern "C" int SpinPause();
 
-#endif // SHARE_VM_RUNTIME_OS_HPP
+#endif // SHARE_RUNTIME_OS_HPP

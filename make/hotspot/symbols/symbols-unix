@@ -81,7 +81,6 @@ JVM_GetClassFieldsCount
 JVM_GetClassInterfaces
 JVM_GetClassMethodsCount
 JVM_GetClassModifiers
-JVM_GetClassName
 JVM_GetClassNameUTF
 JVM_GetClassSignature
 JVM_GetClassSigners
@@ -133,6 +132,7 @@ JVM_Halt
 JVM_HasReferencePendingList
 JVM_HoldsLock
 JVM_IHashCode
+JVM_InitClassName
 JVM_InitStackTraceElement
 JVM_InitStackTraceElementArray
 JVM_InitializeFromArchive

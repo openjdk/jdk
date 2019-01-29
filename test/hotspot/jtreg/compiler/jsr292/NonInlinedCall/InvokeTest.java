@@ -60,6 +60,8 @@ public class InvokeTest {
     static final MethodHandle privateMH; // invokespecial   I.f4 T
     static final MethodHandle basicMH;
 
+    static final MethodHandle intrinsicMH; // invokevirtual Object.hashCode
+
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     static volatile boolean doDeopt = false;
@@ -75,6 +77,7 @@ public class InvokeTest {
             specialMH  = LOOKUP.findSpecial(T.class, "f4", mtype, T.class);
             privateMH  = LOOKUP.findSpecial(I.class, "f4", mtype, I.class);
             basicMH    = NonInlinedReinvoker.make(staticMH);
+            intrinsicMH = LOOKUP.findVirtual(Object.class, "hashCode", MethodType.methodType(int.class));
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -117,6 +120,10 @@ public class InvokeTest {
     static class Q2 extends T implements J2 {}
     static class Q3 extends T implements J3 {}
 
+    static class H {
+        public int hashCode() { return 0; }
+    }
+
     @DontInline
     static void linkToVirtual(T recv, Class<?> expected) {
         try {
@@ -132,6 +139,16 @@ public class InvokeTest {
         try {
             Class<?> cls = (Class<?>)defaultMH.invokeExact(recv);
             assertEquals(cls, expected);
+        } catch (Throwable e) {
+            throw new Error(e);
+        }
+    }
+
+    @DontInline
+    static void linkToVirtualIntrinsic(Object recv, int expected) {
+        try {
+            int v = (int)intrinsicMH.invokeExact(recv);
+            assertEquals(v, expected);
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -177,7 +194,6 @@ public class InvokeTest {
         }
     }
 
-
     @DontInline
     static void invokeBasic() {
         try {
@@ -214,6 +230,8 @@ public class InvokeTest {
         // Monomorphic case (optimized virtual call)
         run(() -> linkToVirtual(new T(), T.class));
         run(() -> linkToVirtualDefault(new T(), I.class));
+
+        run(() -> linkToVirtualIntrinsic(new H(), 0));
 
         // Megamorphic case (optimized virtual call)
         run(() -> {

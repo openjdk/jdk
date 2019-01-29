@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.FileDescriptor;
 import java.util.Set;
 import java.util.HashSet;
 import sun.net.ext.ExtendedSocketOptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /*
  * On Unix systems we simply delegate to native methods.
@@ -91,25 +90,14 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        addExtSocketOptions(ExtendedSocketOptions.options(SOCK_STREAM), options);
+        if (getServerSocket() != null) {
+            options.addAll(ExtendedSocketOptions.serverSocketOptions());
+        } else {
+            options.addAll(ExtendedSocketOptions.clientSocketOptions());
+        }
         return options;
     }
 
-    private void addExtSocketOptions(Set<SocketOption<?>> extOptions,
-            Set<SocketOption<?>> options) {
-        extOptions.forEach((option) -> {
-            if (option.name().equals("SO_FLOW_SLA")) {
-                // SO_FLOW_SLA is Solaris specific option which is not applicable
-                // for ServerSockets.
-                // getSocket() will always return null for server socket
-                if (getSocket() != null) {
-                    options.add(option);
-                }
-            } else {
-                options.add(option);
-            }
-        });
-    }
     protected void socketSetOption(int opt, boolean b, Object val) throws SocketException {
         if (opt == SocketOptions.SO_REUSEPORT &&
             !supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {

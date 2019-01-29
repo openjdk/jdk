@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 static volatile int release_critical = 0;
 
-JNIEXPORT jboolean JNICALL Java_CSLocker_lock
+JNIEXPORT jboolean JNICALL Java_gc_cslocker_CSLocker_lock
   (JNIEnv *env, jobject obj, jintArray array)
 {
     jboolean retval = JNI_TRUE;
@@ -42,7 +42,7 @@ JNIEXPORT jboolean JNICALL Java_CSLocker_lock
     return retval;
 }
 
-JNIEXPORT void JNICALL Java_CSLocker_unlock
+JNIEXPORT void JNICALL Java_gc_cslocker_CSLocker_unlock
   (JNIEnv *env, jobject obj)
 {
     release_critical = 1;

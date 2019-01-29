@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -87,4 +87,4 @@ public:
   void set_initialize_gclab() { assert(!_initialize_gclab, "Can only enable once"); _initialize_gclab = true; }
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP

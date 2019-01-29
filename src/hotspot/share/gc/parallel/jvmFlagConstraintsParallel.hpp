@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_COMMANDLINEFLAGCONSTRAINTSPARALLEL_HPP
-#define SHARE_GC_PARALLEL_COMMANDLINEFLAGCONSTRAINTSPARALLEL_HPP
+#ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+#define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
 
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -33,4 +33,4 @@ JVMFlag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose)
 JVMFlag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
 JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
 
-#endif // SHARE_GC_PARALLEL_COMMANDLINEFLAGCONSTRAINTSPARALLEL_HPP
+#endif // SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP

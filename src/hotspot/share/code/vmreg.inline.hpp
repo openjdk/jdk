@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_VMREG_INLINE_HPP
-#define SHARE_VM_CODE_VMREG_INLINE_HPP
+#ifndef SHARE_CODE_VMREG_INLINE_HPP
+#define SHARE_CODE_VMREG_INLINE_HPP
 
 #include "asm/register.hpp"
 #include "code/vmreg.hpp"
 #include CPU_HEADER_INLINE(vmreg)
 
-#endif // SHARE_VM_CODE_VMREG_INLINE_HPP
+#endif // SHARE_CODE_VMREG_INLINE_HPP

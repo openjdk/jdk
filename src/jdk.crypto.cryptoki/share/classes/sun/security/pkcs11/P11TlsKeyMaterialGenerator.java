@@ -189,8 +189,13 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             attributes = token.getAttributes
                 (O_GENERATE, CKO_SECRET_KEY, keyType, attributes);
             // the returned keyID is a dummy, ignore
-            token.p11.C_DeriveKey(session.id(),
-                ckMechanism, p11Key.keyID, attributes);
+            long p11KeyID = p11Key.getKeyID();
+            try {
+                token.p11.C_DeriveKey(session.id(),
+                        ckMechanism, p11KeyID, attributes);
+            } finally {
+                p11Key.releaseKeyID();
+            }
 
             CK_SSL3_KEY_MAT_OUT out = null;
             if (params instanceof CK_SSL3_KEY_MAT_PARAMS) {

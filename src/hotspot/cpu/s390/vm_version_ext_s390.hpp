@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_VM_VERSION_EXT_S390_HPP
-#define CPU_S390_VM_VM_VERSION_EXT_S390_HPP
+#ifndef CPU_S390_VM_VERSION_EXT_S390_HPP
+#define CPU_S390_VM_VERSION_EXT_S390_HPP
 
 #include "utilities/macros.hpp"
 #include "vm_version_s390.hpp"
@@ -59,4 +59,4 @@ class VM_Version_Ext : public VM_Version {
   static const char* cpu_description(void);
 };
 
-#endif // CPU_S390_VM_VM_VERSION_EXT_S390_HPP
+#endif // CPU_S390_VM_VERSION_EXT_S390_HPP

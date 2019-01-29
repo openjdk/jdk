@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_OOPMAPCACHE_HPP
-#define SHARE_VM_INTERPRETER_OOPMAPCACHE_HPP
+#ifndef SHARE_INTERPRETER_OOPMAPCACHE_HPP
+#define SHARE_INTERPRETER_OOPMAPCACHE_HPP
 
 #include "oops/generateOopMap.hpp"
 #include "runtime/mutex.hpp"
@@ -177,4 +177,4 @@ class OopMapCache : public CHeapObj<mtClass> {
   static void cleanup_old_entries();
 };
 
-#endif // SHARE_VM_INTERPRETER_OOPMAPCACHE_HPP
+#endif // SHARE_INTERPRETER_OOPMAPCACHE_HPP

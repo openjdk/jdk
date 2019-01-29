@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,15 @@ ClassListParser::ClassListParser(const char* file) {
   assert(_instance == NULL, "must be singleton");
   _instance = this;
   _classlist_file = file;
-  _file = fopen(file, "r");
+  _file = NULL;
+  // Use os::open() because neither fopen() nor os::fopen()
+  // can handle long path name on Windows.
+  int fd = os::open(file, O_RDONLY, S_IREAD);
+  if (fd != -1) {
+    // Obtain a File* from the file descriptor so that fgets()
+    // can be used in parse_one_line()
+    _file = os::open(fd, "r");
+  }
   if (_file == NULL) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);

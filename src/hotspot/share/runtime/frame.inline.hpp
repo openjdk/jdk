@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_FRAME_INLINE_HPP
-#define SHARE_VM_RUNTIME_FRAME_INLINE_HPP
+#ifndef SHARE_RUNTIME_FRAME_INLINE_HPP
+#define SHARE_RUNTIME_FRAME_INLINE_HPP
 
 #include "code/compiledMethod.inline.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
@@ -67,4 +67,4 @@ inline bool StackFrameStream::is_done() {
   return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);
 }
 
-#endif // SHARE_VM_RUNTIME_FRAME_INLINE_HPP
+#endif // SHARE_RUNTIME_FRAME_INLINE_HPP

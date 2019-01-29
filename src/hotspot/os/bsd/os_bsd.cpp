@@ -2217,14 +2217,6 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   }
 }
 
-size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  RESTARTABLE_RETURN_INT(::read(fd, buf, nBytes));
-}
-
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
-  RESTARTABLE_RETURN_INT(::pread(fd, buf, nBytes, offset));
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -2573,7 +2565,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(2)) {
       break;
     } else {
       // timeout
@@ -2607,7 +2599,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }

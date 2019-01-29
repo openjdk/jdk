@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_STACKMAPTABLEFORMAT_HPP
-#define SHARE_VM_CLASSFILE_STACKMAPTABLEFORMAT_HPP
+#ifndef SHARE_CLASSFILE_STACKMAPTABLEFORMAT_HPP
+#define SHARE_CLASSFILE_STACKMAPTABLEFORMAT_HPP
 
 #include "classfile/verificationType.hpp"
 
@@ -963,4 +963,4 @@ class stack_map_table_attribute {
 
 #undef FOR_EACH_STACKMAP_FRAME_TYPE
 
-#endif // SHARE_VM_CLASSFILE_STACKMAPTABLEFORMAT_HPP
+#endif // SHARE_CLASSFILE_STACKMAPTABLEFORMAT_HPP

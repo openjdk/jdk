@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,4 +43,4 @@ protected:
                             Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 };
 
-#endif // #ifndef CPU_ARM_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_ARM_HPP
+#endif // CPU_ARM_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_ARM_HPP

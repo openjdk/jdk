@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * An implementation of SocketChannels
@@ -66,7 +65,7 @@ class SocketChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // Our file descriptor object
     private final FileDescriptor fd;
@@ -282,7 +281,7 @@ class SocketChannelImpl
             // additional options required by socket adaptor
             set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
-            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
+            set.addAll(ExtendedSocketOptions.clientSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }
@@ -518,10 +517,10 @@ class SocketChannelImpl
                 beginWrite(blocking);
                 if (blocking) {
                     do {
-                        n = sendOutOfBandData(fd, b);
+                        n = Net.sendOOB(fd, b);
                     } while (n == IOStatus.INTERRUPTED && isOpen());
                 } else {
-                    n = sendOutOfBandData(fd, b);
+                    n = Net.sendOOB(fd, b);
                 }
             } finally {
                 endWrite(blocking, n > 0);
@@ -773,10 +772,10 @@ class SocketChannelImpl
                         int n = 0;
                         if (blocking) {
                             do {
-                                n = checkConnect(fd, true);
+                                n = Net.pollConnect(fd, -1);
                             } while ((n == 0 || n == IOStatus.INTERRUPTED) && isOpen());
                         } else {
-                            n = checkConnect(fd, false);
+                            n = Net.pollConnect(fd, 0);
                         }
                         connected = (n > 0);
                     } finally {
@@ -1113,19 +1112,4 @@ class SocketChannelImpl
         sb.append(']');
         return sb.toString();
     }
-
-
-    // -- Native methods --
-
-    private static native int checkConnect(FileDescriptor fd, boolean block)
-        throws IOException;
-
-    private static native int sendOutOfBandData(FileDescriptor fd, byte data)
-        throws IOException;
-
-    static {
-        IOUtil.load();
-        nd = new SocketDispatcher();
-    }
-
 }
