@@ -37,7 +37,7 @@ class ThreadsList;
 struct DeflateMonitorCounters {
   int nInuse;             // currently associated with objects
   int nInCirculation;     // extant
-  int nScavenged;         // reclaimed
+  int nScavenged;         // reclaimed (global and per-thread)
   double perThreadTimes;  // per-thread scavenge times
 };
 
@@ -114,7 +114,7 @@ class ObjectSynchronizer : AllStatic {
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread * Self, oop obj, const InflateCause cause);
   // This version is only for internal use
-  static ObjectMonitor* inflate_helper(oop obj);
+  static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
 
   // Returns the identity hash value for an oop

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1884,8 +1884,9 @@ PerfLongVariable * ObjectMonitor::_sync_MonExtant              = NULL;
 
 // One-shot global initialization for the sync subsystem.
 // We could also defer initialization and initialize on-demand
-// the first time we call inflate().  Initialization would
-// be protected - like so many things - by the MonitorCache_lock.
+// the first time we call ObjectSynchronizer::inflate().
+// Initialization would be protected - like so many things - by
+// the MonitorCache_lock.
 
 void ObjectMonitor::Initialize() {
   assert(!InitDone, "invariant");

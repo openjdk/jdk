@@ -164,7 +164,7 @@ class ObjectMonitor {
   volatile int _SpinDuration;
 
   volatile jint  _count;            // reference count to prevent reclamation/deflation
-                                    // at stop-the-world time.  See deflate_idle_monitors().
+                                    // at stop-the-world time. See ObjectSynchronizer::deflate_monitor().
                                     // _count is approximately |_WaitSet| + |_EntryList|
  protected:
   ObjectWaiter * volatile _WaitSet; // LL of threads wait()ing on the monitor

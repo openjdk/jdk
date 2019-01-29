@@ -647,7 +647,7 @@ class Thread: public ThreadShadow {
   // uses an atomic instruction to set the current threads parity to
   // "collection_parity", if it is not already.  Returns "true" iff the
   // calling thread does the update, this indicates that the calling thread
-  // has claimed the thread's stack as a root groop in the current
+  // has claimed the thread's stack as a root group in the current
   // collection.
   bool claim_oops_do(bool is_par, int collection_parity) {
     if (!is_par) {
@@ -2250,7 +2250,7 @@ class Threads: AllStatic {
   // The "thread claim parity" provides a way for threads to be claimed
   // by parallel worker tasks.
   //
-  // Each thread contains a a "parity" field. A task will claim the
+  // Each thread contains a "parity" field. A task will claim the
   // thread only if its parity field is the same as the global parity,
   // which is updated by calling change_thread_claim_parity().
   //
@@ -2259,7 +2259,7 @@ class Threads: AllStatic {
   // that should claim threads.
   //
   // New threads get their parity set to 0 and change_thread_claim_parity()
-  // never set the global parity to 0.
+  // never sets the global parity to 0.
   static int thread_claim_parity() { return _thread_claim_parity; }
   static void change_thread_claim_parity();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
