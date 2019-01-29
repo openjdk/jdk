@@ -68,7 +68,9 @@
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \
-  template(ZOperation)                            \
+  template(ZMarkStart)                            \
+  template(ZMarkEnd)                              \
+  template(ZRelocateStart)                        \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
