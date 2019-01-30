@@ -57,9 +57,9 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
-applications/ctw/modules/java_desktop.java 8217851 windows-all
-applications/ctw/modules/java_desktop_2.java 8217851 windows-all
-applications/ctw/modules/jdk_jconsole.java 8217851 windows-all
+applications/ctw/modules/java_desktop.java   8189604 windows-all
+applications/ctw/modules/java_desktop_2.java 8189604 windows-all
+applications/ctw/modules/jdk_jconsole.java   8189604 windows-all
 
 #############################################################################
 
@@ -67,12 +67,12 @@ applications/ctw/modules/jdk_jconsole.java 8217851 windows-all
 
 gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
-gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
+gc/survivorAlignment/TestPromotionToSurvivor.java 8218049 generic-all
+gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8218049 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
-gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8177765 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
@@ -171,7 +171,7 @@ vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
 vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java 8051349 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
