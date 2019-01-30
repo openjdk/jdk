@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ final class RenegoInfoExtension {
             if (!chc.conContext.isNegotiated) {
                 if (chc.activeCipherSuites.contains(
                         CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
-                    // Using the the TLS_EMPTY_RENEGOTIATION_INFO_SCSV instead.
+                    // Using the TLS_EMPTY_RENEGOTIATION_INFO_SCSV instead.
                     return null;
                 }
 

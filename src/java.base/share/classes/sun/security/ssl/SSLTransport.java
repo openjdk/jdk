@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ interface SSLTransport {
      * destination application data buffers.
      *
      * For SSL/TLS connections, if no source data, the network data may be
-     * received from the underlying underlying SSL/TLS input stream.
+     * received from the underlying SSL/TLS input stream.
      *
      * @param context      the transportation context
      * @param srcs         an array of {@code ByteBuffers} containing the

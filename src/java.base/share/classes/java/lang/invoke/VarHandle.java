@@ -2160,7 +2160,7 @@ public abstract class VarHandle implements Constable {
          * Construct a {@linkplain VarHandleDesc} given a kind, name, and declaring
          * class.
          *
-         * @param kind the kind of of the var handle
+         * @param kind the kind of the var handle
          * @param name the unqualified name of the field, for field var handles; otherwise ignored
          * @param declaringClass a {@link ClassDesc} describing the declaring class,
          *                       for field var handles
@@ -2217,7 +2217,7 @@ public abstract class VarHandle implements Constable {
 
         /**
          * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
-         * for for an array type.
+         * for an array type.
          *
          * @param arrayClass a {@link ClassDesc} describing the type of the array
          * @return the {@linkplain VarHandleDesc}

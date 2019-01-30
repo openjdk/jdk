@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import java.util.Date;
 /**
  * This class contains parameters for checking against constraints that extend
  * past the publicly available parameters in java.security.AlgorithmConstraints.
-
- * This is currently on passed between  between PKIX, AlgorithmChecker,
+ *
+ * This is currently passed between PKIX, AlgorithmChecker,
  * and DisabledAlgorithmConstraints.
  */
 public class ConstraintsParameters {

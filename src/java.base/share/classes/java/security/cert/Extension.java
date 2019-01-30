@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.io.Serializable;
  * <p>
  * Each extension contains an object identifier, a criticality setting
  * indicating whether it is a critical or a non-critical extension, and
- * and an ASN.1 DER-encoded value. Its ASN.1 definition is:
+ * an ASN.1 DER-encoded value. Its ASN.1 definition is:
  *
  * <pre>
  *
