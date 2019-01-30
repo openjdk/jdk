@@ -40,22 +40,15 @@ import java.util.ResourceBundle;
  */
 public class Resources {
     public final String annotationTypeSummary;
-    public final String annotationTypeTableSummary;
     public final String classSummary;
-    public final String classTableSummary;
     private final BaseConfiguration configuration;
     private final String commonBundleName;
     private final String docletBundleName;
     public final String enumSummary;
-    public final String enumTableSummary;
     public final String errorSummary;
-    public final String errorTableSummary;
     public final String exceptionSummary;
-    public final String exceptionTableSummary;
     public final String interfaceSummary;
-    public final String interfaceTableSummary;
     public final String packageSummary;
-    public final String packageTableSummary;
 
     protected ResourceBundle commonBundle;
     protected ResourceBundle docletBundle;
@@ -77,26 +70,12 @@ public class Resources {
         this.commonBundleName = commonBundleName;
         this.docletBundleName = docletBundleName;
         this.annotationTypeSummary = getText("doclet.Annotation_Types_Summary");
-        this.annotationTypeTableSummary = getText("doclet.Member_Table_Summary",
-                this.annotationTypeSummary, getText("doclet.annotationtypes"));
         this.classSummary = getText("doclet.Class_Summary");
-        this.classTableSummary = getText("doclet.Member_Table_Summary",
-                this.classSummary, getText("doclet.classes"));
         this.enumSummary = getText("doclet.Enum_Summary");
-        this.enumTableSummary = getText("doclet.Member_Table_Summary",
-                this.enumSummary, getText("doclet.enums"));
         this.errorSummary = getText("doclet.Error_Summary");
-        this.errorTableSummary = getText("doclet.Member_Table_Summary",
-                this.errorSummary, getText("doclet.errors"));
         this.exceptionSummary = getText("doclet.Exception_Summary");
-        this.exceptionTableSummary = getText("doclet.Member_Table_Summary",
-                this.exceptionSummary, getText("doclet.exceptions"));
         this.interfaceSummary = getText("doclet.Interface_Summary");
-        this.interfaceTableSummary = getText("doclet.Member_Table_Summary",
-                this.interfaceSummary, getText("doclet.interfaces"));
         this.packageSummary = getText("doclet.Package_Summary");
-        this.packageTableSummary = getText("doclet.Member_Table_Summary",
-                this.packageSummary, getText("doclet.packages"));
     }
 
     /**

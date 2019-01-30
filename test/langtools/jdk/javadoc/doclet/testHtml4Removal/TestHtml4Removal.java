@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8194955 8182765
- * @summary Warn when default HTML version is used.
+ * @bug 8215577
+ * @summary Remove javadoc support for HTML 4
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @run main TestHtmlWarning
+ * @run main TestHtml4Removal
  */
 
 import java.nio.file.Files;
@@ -38,41 +38,24 @@ import java.util.List;
 
 import javadoc.tester.JavadocTester;
 
-public class TestHtmlWarning extends JavadocTester {
+public class TestHtml4Removal extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         Files.write(testFile,
                 List.of("/** Comment. */", "public class C { }"));
 
-        TestHtmlWarning tester = new TestHtmlWarning();
+        TestHtml4Removal tester = new TestHtml4Removal();
         tester.runTests();
     }
 
     private static final Path testFile = Paths.get("C.java");
-    private static final String warning
-            = "javadoc: warning - You have specified the HTML version as HTML 4.01 by using the -html4 option.\n"
-            + "The default is currently HTML5 and the support for HTML 4.01 will be removed\n"
-            + "in a future release. To suppress this warning, please ensure that any HTML constructs\n"
-            + "in your comments are valid in HTML5, and remove the -html4 option.";
 
     @Test
     public void testHtml4() {
         javadoc("-d", "out-4",
                 "-html4",
                 testFile.toString());
-        checkExit(Exit.OK);
-
-        checkOutput(Output.OUT, true, warning);
-    }
-
-    @Test
-    public void testHtml5() {
-        javadoc("-d", "out-5",
-                "-html5",
-                testFile.toString());
-        checkExit(Exit.OK);
-
-        checkOutput(Output.OUT, false, warning);
+        checkExit(Exit.ERROR);
     }
 
     @Test
@@ -81,6 +64,6 @@ public class TestHtmlWarning extends JavadocTester {
                 testFile.toString());
         checkExit(Exit.OK);
 
-        checkOutput(Output.OUT, false, warning);
+        checkOutput("C.html", true, "<!DOCTYPE HTML>");
     }
 }

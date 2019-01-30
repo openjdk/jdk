@@ -212,11 +212,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getMethodDetails(Content methodDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(methodDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(methodDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(methodDetailsTree));
     }
 
     /**
@@ -249,12 +245,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        String summary =  resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Method_Summary"),
-                resources.getText("doclet.methods"));
-
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)

@@ -203,12 +203,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public boolean frames = false;
 
     /**
-     * This is the HTML version of the generated pages.
-     * The default value is determined later.
-     */
-    public HtmlVersion htmlVersion = null;
-
-    /**
      * Collected set of doclint options
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
@@ -303,10 +297,6 @@ public class HtmlConfiguration extends BaseConfiguration {
             return false;
         }
 
-        if (htmlVersion == null) {
-            htmlVersion = HtmlVersion.HTML5;
-        }
-
         // check if helpfile exists
         if (!helpfile.isEmpty()) {
             DocFile help = DocFile.createFileForInput(this, helpfile);
@@ -365,22 +355,8 @@ public class HtmlConfiguration extends BaseConfiguration {
         setCreateOverview();
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getAllTagletNames(),
-                Utils.toLowerCase(htmlVersion.name()));
+                Utils.toLowerCase(HtmlVersion.HTML5.name()));
         return true;
-    }
-
-    /**
-     * Return true if the generated output is HTML5.
-     */
-    public boolean isOutputHtml5() {
-        return htmlVersion == HtmlVersion.HTML5;
-    }
-
-    /**
-     * Return true if the tag is allowed for this specific version of HTML.
-     */
-    public boolean allowTag(HtmlTag htmlTag) {
-        return htmlTag.allowTag(this.htmlVersion);
     }
 
     /**
@@ -588,18 +564,9 @@ public class HtmlConfiguration extends BaseConfiguration {
                     return true;
                 }
             },
-            new Option(resources, "-html4") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    reporter.print(WARNING, resources.getText("doclet.HTML_4_specified", helpfile));
-                    htmlVersion = HtmlVersion.HTML4;
-                    return true;
-                }
-            },
             new Option(resources, "-html5") {
                 @Override
                 public boolean process(String opt,  List<String> args) {
-                    htmlVersion = HtmlVersion.HTML5;
                     return true;
                 }
             },

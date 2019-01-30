@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,23 +75,4 @@ public class TestLinkTaglet extends JavadocTester {
 
         checkFiles(false, "checkPkg/A.html");
     }
-
-    @Test
-    public void test_html4() {
-        javadoc("-Xdoclint:none",
-                "-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg", testSrc("checkPkg/B.java"));
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/C.html", true,
-                "Qualified Link: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Unqualified Link1: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Unqualified Link2: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Qualified Link: <a href=\"#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>\n"
-                + " Unqualified Link: <a href=\"#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n"
-                + " Unqualified Link: <a href=\"#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>\n"
-                + " Package Link: <a href=\"package-summary.html\"><code>pkg</code></a>.<br/>");
-}
 }

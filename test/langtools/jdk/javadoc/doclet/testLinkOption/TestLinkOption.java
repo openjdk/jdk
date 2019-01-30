@@ -114,26 +114,6 @@ public class TestLinkOption extends JavadocTester {
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Object</a></pre>"
         );
 
-        String out1_html4 = "out1-html4";
-        javadoc("-d", out1_html4,
-                "-source", "8",
-                "-html4",
-                "-classpath", mylib,
-                "-sourcepath", testSrc,
-                "-linkoffline", url, testSrc + "/jdk",
-                "-package",
-                "pkg", "mylib.lang");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/B.html", true,
-                "<div class=\"block\">A method with html tag the method "
-                + "<a href=\"" + url + "java/lang/ClassLoader.html?is-external=true#getSystemClassLoader--\""
-                + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><tt>getSystemClassLoader()</tt>"
-                + "</code></a> as the parent class loader.</div>",
-                "<div class=\"block\">is equivalent to invoking <code>"
-                + "<a href=\"#createTempFile-java.lang.String-java.lang.String-java.io.File-\">"
-                + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>");
-
         // Generate the documentation using -linkoffline and a relative path as the first parameter.
         // We will try linking to the docs generated in test 1 with a relative path.
         String out2 = "out2";

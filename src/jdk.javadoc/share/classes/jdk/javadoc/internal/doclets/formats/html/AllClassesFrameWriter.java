@@ -112,7 +112,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     protected void buildAllClassesFile(boolean wantFrames) throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
         Content body = getBody(false, getWindowTitle(label));
-        Content htmlTree = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        Content htmlTree = HtmlTree.MAIN();
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
                 HtmlStyle.bar, contents.allClassesLabel);
         htmlTree.addContent(heading);

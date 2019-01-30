@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,24 +653,6 @@ public class TestOrdering extends JavadocTester {
                     "<h4>threeProperty</h4>",
                     "<h4>fourProperty</h4>");
 
-            javadoc("-d", "out-5-html4",
-                    "-html4",
-                    "-javafx",
-                    "-sourcepath", testSrc(new File(".").getPath()),
-                    "pkg5"
-            );
-
-            checkExit(Exit.OK);
-
-            checkOrder("pkg5/CtorTest.html",
-                    "<a href=\"#CtorTest-int-\"",
-                    "<a href=\"#CtorTest-int-int-\"",
-                    "<a href=\"#CtorTest-int-int-int-\"",
-                    "<a href=\"#CtorTest-int-int-int-int-\"",
-                    "<a name=\"CtorTest-int-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-\">",
-                    "<a name=\"CtorTest-int-\">");
         }
     }
 }

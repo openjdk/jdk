@@ -61,9 +61,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  *  deletion without notice.</b>
  */
 public class Table {
-    private final HtmlVersion version;
     private final HtmlStyle tableStyle;
-    private String summary;
     private Content caption;
     private Map<String, Predicate<Element>> tabMap;
     private String defaultTab;
@@ -84,29 +82,12 @@ public class Table {
     /**
      * Creates a builder for an HTML table.
      *
-     * @param version   the version of HTML, used to determine is a {@code summary}
-     *                  attribute is needed
      * @param style     the style class for the {@code <table>} tag
      */
-    public Table(HtmlVersion version, HtmlStyle style) {
-        this.version = version;
+    public Table(HtmlStyle style) {
         this.tableStyle = style;
         bodyRows = new ArrayList<>();
         bodyRowMasks = new ArrayList<>();
-    }
-
-    /**
-     * Sets the summary for the table.
-     * This is ignored if the HTML version for the table is not {@link HtmlVersion#HTML4}.
-     *
-     * @param summary the summary
-     * @return this object
-     */
-    public Table setSummary(String summary) {
-        if (version == HtmlVersion.HTML4) {
-            this.summary = summary;
-        }
-        return this;
     }
 
     /**
@@ -418,9 +399,6 @@ public class Table {
         HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
         mainDiv.setStyle(tableStyle);
         HtmlTree table = new HtmlTree(HtmlTag.TABLE);
-        if (summary != null) {
-            table.addAttr(HtmlAttr.SUMMARY, summary);
-        }
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {
                 table.addContent(caption);
