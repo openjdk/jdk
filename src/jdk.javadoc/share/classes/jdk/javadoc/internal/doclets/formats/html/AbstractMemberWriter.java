@@ -407,19 +407,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      *
      * @param mems list of program elements for which the use information will be added
      * @param heading the section heading
-     * @param tableSummary the summary for the use table
      * @param contentTree the content tree to which the use information will be added
      */
-    protected void addUseInfo(List<? extends Element> mems,
-            Content heading, String tableSummary, Content contentTree) {
+    protected void addUseInfo(List<? extends Element> mems, Content heading, Content contentTree) {
         if (mems == null || mems.isEmpty()) {
             return;
         }
         List<? extends Element> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Table useTable = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                    .setSummary(tableSummary)
+            Table useTable = new Table(HtmlStyle.useSummary)
                     .setCaption(heading)
                     .setRowScopeColumn(1)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);

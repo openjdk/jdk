@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,20 +56,6 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
         checkOutput("pkg1/SubClass.html", true,
                 "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>"
                 + "<a href=\"BaseClass.html#overridenMethodWithDocsToCopy()\">"
-                + "BaseClass</a></code></span>");
-    }
-
-    @Test
-    public void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg1", "pkg2");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/SubClass.html", true,
-                "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>"
-                + "<a href=\"BaseClass.html#overridenMethodWithDocsToCopy--\">"
                 + "BaseClass</a></code></span>");
     }
 }

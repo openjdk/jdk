@@ -101,9 +101,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         String pkgName = configuration.utils.getPackageName(packageElement);
         HtmlTree body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
         Content pkgNameContent = new StringContent(pkgName);
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN()
-                : body;
+        HtmlTree htmlTree = HtmlTree.MAIN();
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
                 packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
         htmlTree.addContent(heading);
@@ -111,9 +109,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         div.setStyle(HtmlStyle.indexContainer);
         packgen.addClassListing(div);
         htmlTree.addContent(div);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            body.addContent(htmlTree);
-        }
+        body.addContent(htmlTree);
         packgen.printHtmlDocument(
                 configuration.metakeywords.getMetaKeywords(packageElement), false, body);
     }
@@ -168,9 +164,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         SortedSet<TypeElement> tset = utils.filterOutPrivateClasses(list, configuration.javafx);
         if(!tset.isEmpty()) {
             boolean printedHeader = false;
-            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
-                    ? HtmlTree.SECTION()
-                    : contentTree;
+            HtmlTree htmlTree = HtmlTree.SECTION();
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.setTitle(labelContent);
             for (TypeElement typeElement : tset) {
@@ -195,9 +189,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 ul.addContent(li);
             }
             htmlTree.addContent(ul);
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                contentTree.addContent(htmlTree);
-            }
+            contentTree.addContent(htmlTree);
         }
     }
 }

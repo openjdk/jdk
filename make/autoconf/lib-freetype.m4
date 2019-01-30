@@ -102,7 +102,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
   if (test "x$with_freetype_include" = "x"  && test "x$with_freetype_lib" != "x") || \
      (test "x$with_freetype_include" != "x"  && test "x$with_freetype_lib" = "x"); then
-       AC_MSG_ERROR(['must specify both or neither of --with_freetype_include and --with_freetype_lib])
+       AC_MSG_ERROR(['must specify both or neither of --with-freetype-include and --with-freetype-lib])
   fi
 
   FREETYPE_TO_USE=bundled
@@ -115,7 +115,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     elif (test "x$with_freetype" = "xbundled"); then
       FREETYPE_TO_USE=bundled
       if (test "x$with_freetype_include" != "x"  || test "x$with_freetype_lib" != "x"); then
-        AC_MSG_ERROR(['bundled' cannot be specified with --with_freetype_include and --with_freetype_lib])
+        AC_MSG_ERROR(['bundled' cannot be specified with --with-freetype-include and --with-freetype-lib])
       fi
     else
        AC_MSG_ERROR(['valid values for --with-freetype are 'system' and 'bundled'])

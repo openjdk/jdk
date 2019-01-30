@@ -105,42 +105,6 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
     }
 
     @Test
-    public void testModulesHtml4(Path base) throws Exception {
-        Path srcDir = base.resolve("src");
-        createModules(srcDir);
-
-        Path outDir = base.resolve("out2");
-        javadoc("-d", outDir.toString(),
-                "-doctitle", "Document Title",
-                "-header", "Test Header",
-                "--frames",
-                "--module-source-path", srcDir.toString(),
-                "--module", "m1,m2",
-                "-html4");
-
-        checkExit(Exit.OK);
-
-        checkOrder("module-overview-frame.html",
-                "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<div class=\"indexNav\">",
-                "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Modules\">Modules</h2>\n"
-                + "<ul title=\"Modules\">");
-
-        checkOrder("m1/module-frame.html",
-                "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<div class=\"indexNav\">",
-                "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"m1\"><a href=\"module-summary.html\" target=\"classFrame\">m1</a>&nbsp;Packages</h2>");
-
-        checkOrder("overview-summary.html",
-                "<div class=\"fixedNav\">",
-                "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>",
-                "<div class=\"bottomNav\"><a name=\"navbar.bottom\">");
-    }
-
-    @Test
     public void testPackages(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createPackages(srcDir);
@@ -172,36 +136,6 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                 + "<div class=\"indexContainer\">\n"
                 + "<h2 title=\"Packages\">Packages</h2>",
                 "<footer role=\"contentinfo\">");
-    }
-
-    @Test
-    public void testPackagesHtml4(Path base) throws Exception {
-        Path srcDir = base.resolve("src");
-        createPackages(srcDir);
-
-        Path outDir = base.resolve("out4");
-        javadoc("-d", outDir.toString(),
-                "-doctitle", "Document Title",
-                "-header", "Test Header",
-                "--frames",
-                "-sourcepath", srcDir.toString(),
-                "pkg1", "pkg2",
-                "-html4");
-
-        checkExit(Exit.OK);
-
-        checkOrder("overview-summary.html",
-                "<div class=\"fixedNav\">",
-                "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>",
-                "<div class=\"bottomNav\"><a name=\"navbar.bottom\">");
-
-        checkOrder("overview-frame.html",
-                "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<div class=\"indexNav\">",
-                "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>"
-        );
     }
 
     @Test

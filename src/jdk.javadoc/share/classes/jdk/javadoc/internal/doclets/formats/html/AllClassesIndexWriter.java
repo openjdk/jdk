@@ -103,32 +103,20 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     protected void buildAllClassesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
-        addTop(htmlTree);
+        HtmlTree header = HtmlTree.HEADER();
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        header.addContent(navBar.getContent(true));
+        bodyTree.addContent(header);
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(allClassesContent);
-            bodyTree.addContent(mainTree);
-        } else {
-            bodyTree.addContent(allClassesContent);
-        }
-        Content tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : bodyTree;
+        mainTree.addContent(allClassesContent);
+        bodyTree.addContent(mainTree);
+        Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            bodyTree.addContent(tree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
+        bodyTree.addContent(footer);
         printHtmlDocument(null, true, bodyTree);
     }
 
@@ -138,8 +126,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addContents(Content content) {
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.typeSummary)
-                .setSummary(resources.classTableSummary)
+        Table table = new Table(HtmlStyle.typeSummary)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)

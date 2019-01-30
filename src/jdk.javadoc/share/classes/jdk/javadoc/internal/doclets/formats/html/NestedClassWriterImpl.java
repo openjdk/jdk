@@ -109,15 +109,10 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        String summary =  resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Nested_Class_Summary"),
-                resources.getText("doclet.nested_classes"));
-
         List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
                 HtmlStyle.colLast);
 
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.getContent("doclet.Nested_Classes"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)

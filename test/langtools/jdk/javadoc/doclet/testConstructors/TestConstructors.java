@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,57 +89,5 @@ public class TestConstructors extends JavadocTester {
                 "<a href=\"Outer.Inner.html#Outer.Inner(int)\"><code>Outer.Inner(int)</code></a>",
                 "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner()\"><code>Outer.Inner.NestedInner()</code></a>",
                 "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner(int)\"><code>Outer.Inner.NestedInner(int)</code></a>");
-    }
-
-    @Test
-    public void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg1");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/Outer.html", true,
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"Outer.Inner.html#Inner--\"><code>Inner()</code></a>, \n"
-                + "<a href=\"Outer.Inner.html#Inner-int-\"><code>Inner(int)</code></a>, \n"
-                + "<a href=\"Outer.Inner.NestedInner.html#NestedInner--\"><code>NestedInner()</code></a>, \n"
-                + "<a href=\"Outer.Inner.NestedInner.html#NestedInner-int-\"><code>NestedInner(int)</code></a>, \n"
-                + "<a href=\"#Outer--\"><code>Outer()</code></a>, \n"
-                + "<a href=\"#Outer-int-\"><code>Outer(int)</code></a>",
-                "Link: <a href=\"Outer.Inner.html#Inner--\"><code>Inner()</code></a>, "
-                + "<a href=\"#Outer-int-\"><code>Outer(int)</code></a>, "
-                + "<a href=\"Outer.Inner.NestedInner.html#NestedInner-int-\"><code>"
-                + "NestedInner(int)</code></a>",
-                "<a href=\"#Outer--\">Outer</a></span>()",
-                "<a name=\"Outer--\">",
-                "<a href=\"#Outer-int-\">Outer</a></span>&#8203;(int&nbsp;i)",
-                "<a name=\"Outer-int-\">");
-
-        checkOutput("pkg1/Outer.Inner.html", true,
-                "<a href=\"#Inner--\">Inner</a></span>()",
-                "<a name=\"Inner--\">",
-                "<a href=\"#Inner-int-\">Inner</a></span>&#8203;(int&nbsp;i)",
-                "<a name=\"Inner-int-\">");
-
-        checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
-                "<a href=\"#NestedInner--\">NestedInner</a></span>()",
-                "<a name=\"NestedInner--\">",
-                "<a href=\"#NestedInner-int-\">NestedInner</a></span>&#8203;(int&nbsp;i)",
-                "<a name=\"NestedInner-int-\">");
-
-        checkOutput("pkg1/Outer.Inner.html", false,
-                "Outer.Inner--",
-                "Outer.Inner-int-");
-
-        checkOutput("pkg1/Outer.Inner.NestedInner.html", false,
-                "Outer.Inner.NestedInner--",
-                "Outer.Inner.NestedInner-int-");
-
-        checkOutput("pkg1/Outer.html", false,
-                "<a href=\"Outer.Inner.html#Outer.Inner--\"><code>Outer.Inner()</code></a>",
-                "<a href=\"Outer.Inner.html#Outer.Inner-int-\"><code>Outer.Inner(int)</code></a>",
-                "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner--\"><code>Outer.Inner.NestedInner()</code></a>",
-                "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner-int-\"><code>Outer.Inner.NestedInner(int)</code></a>");
     }
 }

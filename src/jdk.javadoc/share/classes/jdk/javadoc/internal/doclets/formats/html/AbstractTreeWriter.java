@@ -119,18 +119,10 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             Content headingContent = contents.getContent(heading);
             Content sectionHeading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
                     headingContent);
-            HtmlTree htmlTree;
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                htmlTree = HtmlTree.SECTION(sectionHeading);
-            } else {
-                div.addContent(sectionHeading);
-                htmlTree = div;
-            }
+            HtmlTree htmlTree = HtmlTree.SECTION(sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, htmlTree);
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                div.addContent(htmlTree);
-            }
+            div.addContent(htmlTree);
         }
     }
 

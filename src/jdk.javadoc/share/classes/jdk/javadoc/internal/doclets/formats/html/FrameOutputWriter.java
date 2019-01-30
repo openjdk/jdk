@@ -106,12 +106,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         body.addContent(script.asContent());
         Content noScript = HtmlTree.NOSCRIPT(contents.noScriptMessage);
         body.addContent(noScript);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            HtmlTree main = HtmlTree.MAIN(frame);
-            body.addContent(main);
-        } else {
-            body.addContent(frame);
-        }
+        HtmlTree main = HtmlTree.MAIN(frame);
+        body.addContent(main);
         if (configuration.windowtitle.length() > 0) {
             printFramesDocument(configuration.windowtitle, body);
         } else {
@@ -128,9 +124,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is an error writing the frames document
      */
     private void printFramesDocument(String title, HtmlTree body) throws DocFileIOException {
-        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
-        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+        Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(!configuration.notimestamp)
                 .setTitle(title)
                 .setCharset(configuration.charset)
@@ -139,7 +134,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
                 .addScript(getFramesScript());
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
    }
 

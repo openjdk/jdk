@@ -85,15 +85,11 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
     protected void buildAllPackagesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
-        addTop(htmlTree);
+        HtmlTree header = HtmlTree.HEADER();
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        header.addContent(navBar.getContent(true));
+        bodyTree.addContent(header);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.allPackagesContainer);
         addPackages(div);
@@ -101,23 +97,14 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(headerDiv);
-            mainTree.addContent(div);
-            bodyTree.addContent(mainTree);
-        } else {
-            bodyTree.addContent(headerDiv);
-            bodyTree.addContent(div);
-        }
-        Content tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : bodyTree;
+        mainTree.addContent(headerDiv);
+        mainTree.addContent(div);
+        bodyTree.addContent(mainTree);
+        Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            bodyTree.addContent(tree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
+        bodyTree.addContent(footer);
         printHtmlDocument(null, true, bodyTree);
     }
 
@@ -127,8 +114,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addPackages(Content content) {
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.packagesSummary)
-                .setSummary(resources.packageTableSummary)
+        Table table = new Table(HtmlStyle.packagesSummary)
                 .setCaption(getTableCaption(new StringContent(resources.packageSummary)))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

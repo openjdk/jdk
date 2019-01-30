@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ public class TestRedirectLinks extends JavadocTester {
         String apiURL = "http://docs.oracle.com/en/java/javase/11/docs/api";
         String outRedirect = "outRedirect";
         javadoc("-d", outRedirect,
-                "-html4",
                 "-sourcepath", testSrc,
                 "-link", apiURL,
                 "pkg");

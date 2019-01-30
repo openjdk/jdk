@@ -165,11 +165,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getEnumConstantsDetails(Content enumConstantsDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(enumConstantsDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(enumConstantsDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(enumConstantsDetailsTree));
     }
 
     /**
@@ -204,12 +200,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     @Override
     protected Table createSummaryTable() {
-        String summary = resources.getText("doclet.Member_Table_Summary",
-            resources.getText("doclet.Enum_Constant_Summary"),
-            resources.getText("doclet.enum_constants"));
-
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.getContent("doclet.Enum_Constants"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

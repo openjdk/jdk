@@ -158,7 +158,7 @@ public enum Option {
         }
     },
 
-    DOCLINT_FORMAT("--doclint-format", "opt.doclint.format", EXTENDED, BASIC, ONEOF, "html4", "html5"),
+    DOCLINT_FORMAT("--doclint-format", "opt.doclint.format", EXTENDED, BASIC, ONEOF, "html5"),
 
     // -nowarn is retained for command-line backward compatibility
     NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {

@@ -98,9 +98,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected void generatePackageTreeFile() throws DocFileIOException {
         HtmlTree body = getPackageTreeHeader();
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN()
-                : body;
+        HtmlTree mainTree = HtmlTree.MAIN();
         Content headContent = contents.getContent("doclet.Hierarchy_For_Package",
                 utils.getPackageName(packageElement));
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
@@ -109,26 +107,20 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         if (configuration.packages.size() > 1) {
             addLinkToMainTree(div);
         }
-        htmlTree.addContent(div);
+        mainTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree, true);
-        htmlTree.addContent(divTree);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            body.addContent(htmlTree);
-        }
-        HtmlTree tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : body;
+        mainTree.addContent(divTree);
+        body.addContent(mainTree);
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(tree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
+        body.addContent(footer);
         printHtmlDocument(null, true, body);
     }
 
@@ -141,18 +133,14 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = packageName + " " + resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        bodyTree.addContent(htmlTree);
         return bodyTree;
     }
 
