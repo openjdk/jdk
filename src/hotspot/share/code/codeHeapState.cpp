@@ -78,43 +78,134 @@
 //  - direct output into an argument-passed outputStream and
 //  - buffered output into a bufferedStream with subsequent flush
 //    of the filled buffer to the outputStream.
-#define USE_STRINGSTREAM
-#define HEX32_FORMAT  "0x%x"  // just a helper format string used below multiple times
-//
+#define USE_BUFFEREDSTREAM
+
+// There are instances when composing an output line or a small set of
+// output lines out of many tty->print() calls creates significant overhead.
 // Writing to a bufferedStream buffer first has a significant advantage:
-// It uses noticeably less cpu cycles and reduces (when wirting to a
-// network file) the required bandwidth by at least a factor of ten.
+// It uses noticeably less cpu cycles and reduces (when writing to a
+// network file) the required bandwidth by at least a factor of ten. Observed on MacOS.
 // That clearly makes up for the increased code complexity.
-#if defined(USE_STRINGSTREAM)
-#define STRINGSTREAM_DECL(_anyst, _outst)                 \
-    /* _anyst  name of the stream as used in the code */  \
-    /* _outst  stream where final output will go to   */  \
-    ResourceMark rm;                                      \
-    bufferedStream   _sstobj = bufferedStream(4*K);       \
-    bufferedStream*  _sstbuf = &_sstobj;                  \
-    outputStream*    _outbuf = _outst;                    \
-    bufferedStream*  _anyst  = &_sstobj; /* any stream. Use this to just print - no buffer flush.  */
+//
+// Conversion of existing code is easy and straightforward, if the code already
+// uses a parameterized output destination, e.g. "outputStream st".
+//  - rename the formal parameter to any other name, e.g. out_st.
+//  - at a suitable place in your code, insert
+//      BUFFEREDSTEAM_DECL(buf_st, out_st)
+// This will provide all the declarations necessary. After that, all
+// buf_st->print() (and the like) calls will be directed to a bufferedStream object.
+// Once a block of output (a line or a small set of lines) is composed, insert
+//      BUFFEREDSTREAM_FLUSH(termstring)
+// to flush the bufferedStream to the final destination out_st. termstring is just
+// an arbitrary string (e.g. "\n") which is appended to the bufferedStream before
+// being written to out_st. Be aware that the last character written MUST be a '\n'.
+// Otherwise, buf_st->position() does not correspond to out_st->position() any longer.
+//      BUFFEREDSTREAM_FLUSH_LOCKED(termstring)
+// does the same thing, protected by the ttyLocker lock.
+//      BUFFEREDSTREAM_FLUSH_IF(termstring, remSize)
+// does a flush only if the remaining buffer space is less than remSize.
+//
+// To activate, #define USE_BUFFERED_STREAM before including this header.
+// If not activated, output will directly go to the originally used outputStream
+// with no additional overhead.
+//
+#if defined(USE_BUFFEREDSTREAM)
+// All necessary declarations to print via a bufferedStream
+// This macro must be placed before any other BUFFEREDSTREAM*
+// macro in the function.
+#define BUFFEREDSTREAM_DECL_SIZE(_anyst, _outst, _capa)       \
+    ResourceMark         _rm;                                 \
+    /* _anyst  name of the stream as used in the code */      \
+    /* _outst  stream where final output will go to   */      \
+    /* _capa   allocated capacity of stream buffer    */      \
+    size_t           _nflush = 0;                             \
+    size_t     _nforcedflush = 0;                             \
+    size_t      _nsavedflush = 0;                             \
+    size_t     _nlockedflush = 0;                             \
+    size_t     _nflush_bytes = 0;                             \
+    size_t         _capacity = _capa;                         \
+    bufferedStream   _sstobj = bufferedStream(_capa);         \
+    bufferedStream*  _sstbuf = &_sstobj;                      \
+    outputStream*    _outbuf = _outst;                        \
+    bufferedStream*   _anyst = &_sstobj; /* any stream. Use this to just print - no buffer flush.  */
 
-#define STRINGSTREAM_FLUSH(termString)                    \
-    _sstbuf->print("%s", termString);                     \
-    _outbuf->print("%s", _sstbuf->as_string());           \
-    _sstbuf->reset();
+// Same as above, but with fixed buffer size.
+#define BUFFEREDSTREAM_DECL(_anyst, _outst)                   \
+    BUFFEREDSTREAM_DECL_SIZE(_anyst, _outst, 4*K);
 
-#define STRINGSTREAM_FLUSH_LOCKED(termString)             \
-    { ttyLocker ttyl;/* keep this output block together */\
-      STRINGSTREAM_FLUSH(termString)                      \
+// Flush the buffer contents unconditionally.
+// No action if the buffer is empty.
+#define BUFFEREDSTREAM_FLUSH(_termString)                     \
+    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+      _sstbuf->print("%s", _termString);                      \
+    }                                                         \
+    if (_sstbuf != _outbuf) {                                 \
+      if (_sstbuf->size() != 0) {                             \
+        _nforcedflush++; _nflush_bytes += _sstbuf->size();    \
+        _outbuf->print("%s", _sstbuf->as_string());           \
+        _sstbuf->reset();                                     \
+      }                                                       \
     }
+
+// Flush the buffer contents if the remaining capacity is
+// less than the given threshold.
+#define BUFFEREDSTREAM_FLUSH_IF(_termString, _remSize)        \
+    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+      _sstbuf->print("%s", _termString);                      \
+    }                                                         \
+    if (_sstbuf != _outbuf) {                                 \
+      if ((_capacity - _sstbuf->size()) < (size_t)(_remSize)){\
+        _nflush++; _nforcedflush--;                           \
+        BUFFEREDSTREAM_FLUSH("")                              \
+      } else {                                                \
+        _nsavedflush++;                                       \
+      }                                                       \
+    }
+
+// Flush the buffer contents if the remaining capacity is less
+// than the calculated threshold (256 bytes + capacity/16)
+// That should suffice for all reasonably sized output lines.
+#define BUFFEREDSTREAM_FLUSH_AUTO(_termString)                \
+    BUFFEREDSTREAM_FLUSH_IF(_termString, 256+(_capacity>>4))
+
+#define BUFFEREDSTREAM_FLUSH_LOCKED(_termString)              \
+    { ttyLocker ttyl;/* keep this output block together */    \
+      _nlockedflush++;                                        \
+      BUFFEREDSTREAM_FLUSH(_termString)                       \
+    }
+
+// #define BUFFEREDSTREAM_FLUSH_STAT()                           \
+//     if (_sstbuf != _outbuf) {                                 \
+//       _outbuf->print_cr("%ld flushes (buffer full), %ld forced, %ld locked, %ld bytes total, %ld flushes saved", _nflush, _nforcedflush, _nlockedflush, _nflush_bytes, _nsavedflush); \
+//    }
+
+#define BUFFEREDSTREAM_FLUSH_STAT()
 #else
-#define STRINGSTREAM_DECL(_anyst, _outst)                 \
-    outputStream*  _outbuf = _outst;                      \
+#define BUFFEREDSTREAM_DECL_SIZE(_anyst, _outst, _capa)       \
+    size_t       _capacity = _capa;                           \
+    outputStream*  _outbuf = _outst;                          \
     outputStream*  _anyst  = _outst;   /* any stream. Use this to just print - no buffer flush.  */
 
-#define STRINGSTREAM_FLUSH(termString)                    \
-    _outbuf->print("%s", termString);
+#define BUFFEREDSTREAM_DECL(_anyst, _outst)                   \
+    BUFFEREDSTREAM_DECL_SIZE(_anyst, _outst, 4*K)
 
-#define STRINGSTREAM_FLUSH_LOCKED(termString)             \
-    _outbuf->print("%s", termString);
+#define BUFFEREDSTREAM_FLUSH(_termString)                     \
+    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+      _outbuf->print("%s", _termString);                      \
+    }
+
+#define BUFFEREDSTREAM_FLUSH_IF(_termString, _remSize)        \
+    BUFFEREDSTREAM_FLUSH(_termString)
+
+#define BUFFEREDSTREAM_FLUSH_AUTO(_termString)                \
+    BUFFEREDSTREAM_FLUSH(_termString)
+
+#define BUFFEREDSTREAM_FLUSH_LOCKED(_termString)              \
+    BUFFEREDSTREAM_FLUSH(_termString)
+
+#define BUFFEREDSTREAM_FLUSH_STAT()
 #endif
+#define HEX32_FORMAT  "0x%x"  // just a helper format string used below multiple times
 
 const char  blobTypeChar[] = {' ', 'C', 'N', 'I', 'X', 'Z', 'U', 'R', '?', 'D', 'T', 'E', 'S', 'A', 'M', 'B', 'L' };
 const char* blobTypeName[] = {"noType"
@@ -461,7 +552,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
                                   // results in StatArray size of 24M (= max_granules * 48 Bytes per element)
                                   // For a 1GB CodeHeap, the granule size must be at least 2kB to not violate the max_granles limit.
   const char* heapName   = get_heapName(heap);
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   if (!initialization_complete) {
     memset(CodeHeapStatArray, 0, sizeof(CodeHeapStatArray));
@@ -477,7 +568,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
                   "   to help them understand and solve issues in customer systems.\n"
                   "   It is not intended for use and interpretation by other persons.\n"
                   "   \n");
-    STRINGSTREAM_FLUSH("")
+    BUFFEREDSTREAM_FLUSH("")
   }
   get_HeapStatGlobals(out, heapName);
 
@@ -493,13 +584,13 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
 
   if (seg_size == 0) {
     printBox(ast, '-', "Heap not fully initialized yet, segment size is zero for segment ", heapName);
-    STRINGSTREAM_FLUSH("")
+    BUFFEREDSTREAM_FLUSH("")
     return;
   }
 
   if (!CodeCache_lock->owned_by_self()) {
     printBox(ast, '-', "aggregate function called without holding the CodeCache_lock for ", heapName);
-    STRINGSTREAM_FLUSH("")
+    BUFFEREDSTREAM_FLUSH("")
     return;
   }
 
@@ -555,7 +646,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
   ast->print_cr("   CodeHeap (committed part) is mapped to " SIZE_FORMAT " granules of size " SIZE_FORMAT " bytes.", granules, granularity);
   ast->print_cr("   Each granule takes " SIZE_FORMAT " bytes of C heap, that is " SIZE_FORMAT "K in total for statistics data.", sizeof(StatElement), (sizeof(StatElement)*granules)/(size_t)K);
   ast->print_cr("   The number of granules is limited to %dk, requiring a granules size of at least %d bytes for a 1GB heap.", (unsigned int)(max_granules/K), (unsigned int)(G/max_granules));
-  STRINGSTREAM_FLUSH("\n")
+  BUFFEREDSTREAM_FLUSH("\n")
 
 
   while (!done) {
@@ -644,7 +735,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
         insane = true; ast->print_cr("Sanity check: end index (%d) lower than begin index (%d)", ix_end, ix_beg);
       }
       if (insane) {
-        STRINGSTREAM_FLUSH("")
+        BUFFEREDSTREAM_FLUSH("")
         continue;
       }
 
@@ -1033,7 +1124,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
         avgTemp = 0;
         ast->print_cr("No hotness data available");
       }
-      STRINGSTREAM_FLUSH("\n")
+      BUFFEREDSTREAM_FLUSH("\n")
 
       // This loop is intentionally printing directly to "out".
       // It should not print anything, anyway.
@@ -1115,7 +1206,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
                   "   Subsequent print functions create their output based on this snapshot.\n");
     ast->print_cr("   Free space in %s is distributed over %d free blocks.", heapName, nBlocks_free);
     ast->print_cr("   Each free block takes " SIZE_FORMAT " bytes of C heap for statistics data, that is " SIZE_FORMAT "K in total.", sizeof(FreeBlk), (sizeof(FreeBlk)*nBlocks_free)/K);
-    STRINGSTREAM_FLUSH("\n")
+    BUFFEREDSTREAM_FLUSH("\n")
 
     //----------------------------------------
     //--  Prepare the FreeArray of FreeBlks --
@@ -1151,7 +1242,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
     if (ix != alloc_freeBlocks) {
       ast->print_cr("Free block count mismatch. Expected %d free blocks, but found %d.", alloc_freeBlocks, ix);
       ast->print_cr("I will update the counter and retry data collection");
-      STRINGSTREAM_FLUSH("\n")
+      BUFFEREDSTREAM_FLUSH("\n")
       nBlocks_free = ix;
       continue;
     }
@@ -1165,7 +1256,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
       ast->print_cr("Free block count mismatch could not be resolved.");
       ast->print_cr("Try to run \"aggregate\" function to update counters");
     }
-    STRINGSTREAM_FLUSH("")
+    BUFFEREDSTREAM_FLUSH("")
 
     //---< discard old array and update global values  >---
     discard_FreeArray(out);
@@ -1199,7 +1290,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, const char* gra
   set_HeapStatGlobals(out, heapName);
 
   printBox(ast, '=', "C O D E   H E A P   A N A L Y S I S   C O M P L E T E   for segment ", heapName);
-  STRINGSTREAM_FLUSH("\n")
+  BUFFEREDSTREAM_FLUSH("\n")
 }
 
 
@@ -1214,7 +1305,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (TopSizeArray == NULL) || (used_topSizeBlocks == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   {
     printBox(ast, '=', "U S E D   S P A C E   S T A T I S T I C S   for ", heapName);
@@ -1226,7 +1317,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
                   "      is not continuously held, the displayed name might be wrong or no name\n"
                   "      might be found at all. The likelihood for that to happen increases\n"
                   "      over time passed between analysis and print step.\n", used_topSizeBlocks);
-    STRINGSTREAM_FLUSH_LOCKED("\n")
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n")
   }
 
   //----------------------------
@@ -1246,7 +1337,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
     ast->fill_to(66);
     ast->print_cr("%6s", "method");
     ast->print_cr("%18s %13s %17s %4s %9s  %5s %s",      "Addr(module)      ", "offset", "size", "type", " type lvl", " temp", "Name");
-    STRINGSTREAM_FLUSH_LOCKED("")
+    BUFFEREDSTREAM_FLUSH_LOCKED("")
 
     //---<  print Top Ten Used Blocks  >---
     if (used_topSizeBlocks > 0) {
@@ -1324,17 +1415,17 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->fill_to(67+6);
           ast->print("%s", blob_name);
         }
-        STRINGSTREAM_FLUSH_LOCKED("\n")
+        ast->cr();
+        BUFFEREDSTREAM_FLUSH_AUTO("")
       }
       if (used_topSizeBlocks != printed_topSizeBlocks) {
         ast->print_cr("used blocks: %d, printed blocks: %d", used_topSizeBlocks, printed_topSizeBlocks);
-        STRINGSTREAM_FLUSH("")
         for (unsigned int i = 0; i < alloc_topSizeBlocks; i++) {
           ast->print_cr("  TopSizeArray[%d].index = %d, len = %d", i, TopSizeArray[i].index, TopSizeArray[i].len);
-          STRINGSTREAM_FLUSH("")
+          BUFFEREDSTREAM_FLUSH_AUTO("")
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("\n\n")
+      BUFFEREDSTREAM_FLUSH("\n\n")
     }
   }
 
@@ -1359,7 +1450,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
                     "      %ld characters are printed per percentage point.\n", pctFactor/100);
       ast->print_cr("total size   of all blocks: %7ldM", (total_size<<log2_seg_size)/M);
       ast->print_cr("total number of all blocks: %7ld\n", total_count);
-      STRINGSTREAM_FLUSH_LOCKED("")
+      BUFFEREDSTREAM_FLUSH_LOCKED("")
 
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
@@ -1388,9 +1479,10 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->print("%c", (j%((pctFactor/100)*10) == 0) ? ('0'+j/(((unsigned int)pctFactor/100)*10)) : '*');
         }
         ast->cr();
+        BUFFEREDSTREAM_FLUSH_AUTO("")
       }
-      ast->print_cr("----------------------------+----------+\n\n");
-      STRINGSTREAM_FLUSH_LOCKED("\n")
+      ast->print_cr("----------------------------+----------+");
+      BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
 
       printBox(ast, '-', "Contribution per size range to total size for ", heapName);
       ast->print_cr("Note: The histogram indicates how much space (as a percentage of all\n"
@@ -1398,7 +1490,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
                     "      %ld characters are printed per percentage point.\n", pctFactor/100);
       ast->print_cr("total size   of all blocks: %7ldM", (total_size<<log2_seg_size)/M);
       ast->print_cr("total number of all blocks: %7ld\n", total_count);
-      STRINGSTREAM_FLUSH_LOCKED("")
+      BUFFEREDSTREAM_FLUSH_LOCKED("")
 
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
@@ -1427,9 +1519,10 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->print("%c", (j%((pctFactor/100)*10) == 0) ? ('0'+j/(((unsigned int)pctFactor/100)*10)) : '*');
         }
         ast->cr();
+        BUFFEREDSTREAM_FLUSH_AUTO("")
       }
       ast->print_cr("----------------------------+----------+");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
+      BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
     }
   }
 }
@@ -1446,7 +1539,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (FreeArray == NULL) || (alloc_granules == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   {
     printBox(ast, '=', "F R E E   S P A C E   S T A T I S T I C S   for ", heapName);
@@ -1455,12 +1548,11 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
                   "      unoccupied, e.g. by class unloading. Then, the two adjacent free\n"
                   "      blocks, together with the now unoccupied space, form a new, large\n"
                   "      free block.");
-    STRINGSTREAM_FLUSH_LOCKED("\n")
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n")
   }
 
   {
     printBox(ast, '-', "List of all Free Blocks in ", heapName);
-    STRINGSTREAM_FLUSH_LOCKED("")
 
     unsigned int ix = 0;
     for (ix = 0; ix < alloc_freeBlocks-1; ix++) {
@@ -1472,10 +1564,11 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
       if (FreeArray[ix].stubs_in_gap) {
         ast->print(" !! permanent gap, contains stubs and/or blobs !!");
       }
-      STRINGSTREAM_FLUSH_LOCKED("\n")
+      ast->cr();
+      BUFFEREDSTREAM_FLUSH_AUTO("")
     }
     ast->print_cr(INTPTR_FORMAT ": Len[%4d] = " HEX32_FORMAT, p2i(FreeArray[ix].start), ix, FreeArray[ix].len);
-    STRINGSTREAM_FLUSH_LOCKED("\n\n")
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n")
   }
 
 
@@ -1519,7 +1612,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
       }
     }
   }
-  STRINGSTREAM_FLUSH_LOCKED("")
+  BUFFEREDSTREAM_FLUSH_AUTO("")
 
   {
     printBox(ast, '-', "Top Ten Free Blocks in ", heapName);
@@ -1536,9 +1629,10 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
         ast->print("#blocks (in gap) %d", FreeTopTen[iy]->n_gapBlocks);
       }
       ast->cr();
+      BUFFEREDSTREAM_FLUSH_AUTO("")
     }
-    STRINGSTREAM_FLUSH_LOCKED("\n\n")
   }
+  BUFFEREDSTREAM_FLUSH_LOCKED("\n\n")
 
 
   //--------------------------------------------------------
@@ -1583,7 +1677,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
       }
     }
   }
-  STRINGSTREAM_FLUSH_LOCKED("")
+  BUFFEREDSTREAM_FLUSH_AUTO("")
 
   {
     printBox(ast, '-', "Top Ten Free-Occupied-Free Triples in ", heapName);
@@ -1601,9 +1695,10 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
       ast->fill_to(63);
       ast->print("#blocks (in gap) %d", FreeTopTenTriple[iy]->n_gapBlocks);
       ast->cr();
+      BUFFEREDSTREAM_FLUSH_AUTO("")
     }
-    STRINGSTREAM_FLUSH_LOCKED("\n\n")
   }
+  BUFFEREDSTREAM_FLUSH_LOCKED("\n\n")
 }
 
 
@@ -1618,7 +1713,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (alloc_granules == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   unsigned int granules_per_line = 32;
   char*        low_bound         = heap->low_boundary();
@@ -1634,13 +1729,12 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
                     "  Occupied granules show their BlobType character, see legend.\n");
       print_blobType_legend(ast);
     }
-    STRINGSTREAM_FLUSH_LOCKED("")
+    BUFFEREDSTREAM_FLUSH_LOCKED("")
   }
 
   {
     if (segment_granules) {
       printBox(ast, '-', "Total (all types) count for granule size == segment size", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1649,7 +1743,6 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
       }
     } else {
       printBox(ast, '-', "Total (all tiers) count, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1659,13 +1752,12 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
         print_count_single(ast, count);
       }
     }
-    STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+    BUFFEREDSTREAM_FLUSH_LOCKED("|\n\n\n")
   }
 
   {
     if (nBlocks_t1 > 0) {
       printBox(ast, '-', "Tier1 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1676,17 +1768,16 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
           print_count_single(ast, StatArray[ix].t1_count);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier1 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_t2 > 0) {
       printBox(ast, '-', "Tier2 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1697,17 +1788,16 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
           print_count_single(ast, StatArray[ix].t2_count);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier2 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_alive > 0) {
       printBox(ast, '-', "not_used/not_entrant/not_installed nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1718,17 +1808,16 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
           print_count_single(ast, StatArray[ix].tx_count);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No not_used/not_entrant nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_stub > 0) {
       printBox(ast, '-', "Stub & Blob count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1739,17 +1828,16 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
           print_count_single(ast, StatArray[ix].stub_count);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Stubs and Blobs found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_dead > 0) {
       printBox(ast, '-', "Dead nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1760,17 +1848,16 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
           print_count_single(ast, StatArray[ix].dead_count);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No dead nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
       printBox(ast, '-', "Count by tier (combined, no dead blocks): <#t1>:<#t2>:<#s>, 0x0..0xf. '*' indicates >= 16 blocks", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 24;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1787,7 +1874,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
         }
         ast->print(" ");
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      BUFFEREDSTREAM_FLUSH_LOCKED("|\n\n\n")
     }
   }
 }
@@ -1804,7 +1891,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (alloc_granules == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   unsigned int granules_per_line = 32;
   char*        low_bound         = heap->low_boundary();
@@ -1823,13 +1910,12 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
       ast->print_cr("  These digits represent a fill percentage range (see legend).\n");
       print_space_legend(ast);
     }
-    STRINGSTREAM_FLUSH_LOCKED("")
+    BUFFEREDSTREAM_FLUSH_LOCKED("")
   }
 
   {
     if (segment_granules) {
       printBox(ast, '-', "Total (all types) space consumption for granule size == segment size", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1838,7 +1924,6 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
       }
     } else {
       printBox(ast, '-', "Total (all types) space consumption. ' ' indicates empty, '*' indicates full.", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1848,13 +1933,12 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
         print_space_single(ast, space);
       }
     }
-    STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+    BUFFEREDSTREAM_FLUSH_LOCKED("|\n\n\n")
   }
 
   {
     if (nBlocks_t1 > 0) {
       printBox(ast, '-', "Tier1 space consumption. ' ' indicates empty, '*' indicates full", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1865,17 +1949,16 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
           print_space_single(ast, StatArray[ix].t1_space);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier1 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_t2 > 0) {
       printBox(ast, '-', "Tier2 space consumption. ' ' indicates empty, '*' indicates full", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1886,11 +1969,11 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
           print_space_single(ast, StatArray[ix].t2_space);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier2 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
@@ -1906,17 +1989,16 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
           print_space_single(ast, StatArray[ix].tx_space);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier2 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_stub > 0) {
       printBox(ast, '-', "Stub and Blob space consumption. ' ' indicates empty, '*' indicates full", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1927,34 +2009,32 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
           print_space_single(ast, StatArray[ix].stub_space);
         }
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Stubs and Blobs found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_dead > 0) {
       printBox(ast, '-', "Dead space consumption. ' ' indicates empty, '*' indicates full", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         print_space_single(ast, StatArray[ix].dead_space);
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No dead nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
       printBox(ast, '-', "Space consumption by tier (combined): <t1%>:<t2%>:<s%>. ' ' indicates empty, '*' indicates full", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 24;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1979,7 +2059,8 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
         }
         ast->print(" ");
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
+      BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
     }
   }
 }
@@ -1995,7 +2076,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (alloc_granules == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   unsigned int granules_per_line = 32;
   char*        low_bound         = heap->low_boundary();
@@ -2009,12 +2090,11 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
                   "  Information for the youngest method (highest ID) in the granule is printed.\n"
                   "  Refer to the legend to learn how method age is mapped to the displayed digit.");
     print_age_legend(ast);
-    STRINGSTREAM_FLUSH_LOCKED("")
+    BUFFEREDSTREAM_FLUSH_LOCKED("")
   }
 
   {
     printBox(ast, '-', "Age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
-    STRINGSTREAM_FLUSH_LOCKED("")
 
     granules_per_line = 128;
     for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2026,64 +2106,61 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
       age       = age > agex ? age : agex;
       print_age_single(ast, age);
     }
-    STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+    ast->print("|");
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_t1 > 0) {
       printBox(ast, '-', "Tier1 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         print_age_single(ast, StatArray[ix].t1_age);
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier1 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_t2 > 0) {
       printBox(ast, '-', "Tier2 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         print_age_single(ast, StatArray[ix].t2_age);
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier2 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (nBlocks_alive > 0) {
       printBox(ast, '-', "not_used/not_entrant/not_installed age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         print_age_single(ast, StatArray[ix].tx_age);
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
     } else {
       ast->print("No Tier2 nMethods found in CodeHeap.");
-      STRINGSTREAM_FLUSH_LOCKED("\n\n\n")
     }
+    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
       printBox(ast, '-', "age distribution by tier <a1>:<a2>. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
-      STRINGSTREAM_FLUSH_LOCKED("")
 
       granules_per_line = 32;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2093,7 +2170,8 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
         print_age_single(ast, StatArray[ix].t2_age);
         ast->print(" ");
       }
-      STRINGSTREAM_FLUSH_LOCKED("|\n\n\n")
+      ast->print("|");
+      BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
     }
   }
 }
@@ -2110,7 +2188,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   if ((StatArray == NULL) || (alloc_granules == 0)) {
     return;
   }
-  STRINGSTREAM_DECL(ast, out)
+  BUFFEREDSTREAM_DECL(ast, out)
 
   unsigned int granules_per_line   = 128;
   char*        low_bound           = heap->low_boundary();
@@ -2129,7 +2207,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
                 "  is not continuously held, the displayed name might be wrong or no name\n"
                 "  might be found at all. The likelihood for that to happen increases\n"
                 "  over time passed between aggregtion and print steps.\n");
-  STRINGSTREAM_FLUSH_LOCKED("")
+  BUFFEREDSTREAM_FLUSH_LOCKED("")
 
   for (unsigned int ix = 0; ix < alloc_granules; ix++) {
     //---<  print a new blob on a new line  >---
@@ -2144,7 +2222,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
       ast->print_cr("--------------------------------------------------------------------");
       ast->print_cr("Address range [" INTPTR_FORMAT "," INTPTR_FORMAT "), " SIZE_FORMAT "k", p2i(low_bound+ix*granule_size), p2i(low_bound + end_ix*granule_size), (end_ix - ix)*granule_size/(size_t)K);
       ast->print_cr("--------------------------------------------------------------------");
-      STRINGSTREAM_FLUSH_LOCKED("")
+      BUFFEREDSTREAM_FLUSH_AUTO("")
     }
     // Only check granule if it contains at least one blob.
     unsigned int nBlobs  = StatArray[ix].t1_count   + StatArray[ix].t2_count + StatArray[ix].tx_count +
@@ -2192,7 +2270,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->fill_to(61);
           ast->print_cr("%6s", "method");
           ast->print_cr("%18s %13s %17s %9s  %5s %18s  %s", "Addr(module)      ", "offset", "size", " type lvl", " temp", "blobType          ", "Name");
-          STRINGSTREAM_FLUSH_LOCKED("")
+          BUFFEREDSTREAM_FLUSH_AUTO("")
         }
 
         //---<  print line prefix (address and offset from CodeHeap start)  >---
@@ -2248,15 +2326,15 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->fill_to(62+6);
           ast->print("<stale blob>");
         }
-        STRINGSTREAM_FLUSH_LOCKED("\n")
+        ast->cr();
+        BUFFEREDSTREAM_FLUSH_AUTO("")
       } else if (!blob_is_safe && (this_blob != last_blob) && (this_blob != NULL)) {
         last_blob          = this_blob;
-        STRINGSTREAM_FLUSH_LOCKED("\n")
       }
     }
     } // nBlobs > 0
   }
-  STRINGSTREAM_FLUSH_LOCKED("\n\n")
+  BUFFEREDSTREAM_FLUSH_LOCKED("\n\n")
 }
 
 
@@ -2393,7 +2471,11 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
     }
     ast->cr();
 
-    { // can't use STRINGSTREAM_FLUSH_LOCKED("") here.
+    // can't use BUFFEREDSTREAM_FLUSH_IF("", 512) here.
+    // can't use this expression. bufferedStream::capacity() does not exist.
+    // if ((ast->capacity() - ast->size()) < 512) {
+    // Assume instead that default bufferedStream capacity (4K) was used.
+    if (ast->size() > 3*K) {
       ttyLocker ttyl;
       out->print("%s", ast->as_string());
       ast->reset();
