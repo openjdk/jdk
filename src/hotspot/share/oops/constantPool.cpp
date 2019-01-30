@@ -448,6 +448,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
   assert(THREAD->is_Java_thread(), "must be a Java thread");
+  JavaThread* javaThread = (JavaThread*)THREAD;
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and
@@ -480,7 +481,14 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
   Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
-  Klass* k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+
+  Klass* k;
+  {
+    // Turn off the single stepping while doing class resolution
+    JvmtiHideSingleStepping jhss(javaThread);
+    k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+  } //  JvmtiHideSingleStepping jhss(javaThread);
+
   if (!HAS_PENDING_EXCEPTION) {
     // preserve the resolved klass from unloading
     mirror_handle = Handle(THREAD, k->java_mirror());
