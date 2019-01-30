@@ -35,6 +35,9 @@ import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import jdk.test.lib.net.SimpleSSLContext;
 
 /**
@@ -60,6 +63,7 @@ public class UnknownBodyLengthTest {
     volatile String clientURL;
     volatile int port;
     final ServerSocket ss;
+    final List<Socket> acceptedList = new CopyOnWriteArrayList<>();
 
     UnknownBodyLengthTest(boolean useSSL) throws Exception {
         ctx = new SimpleSSLContext().get();
@@ -94,9 +98,16 @@ public class UnknownBodyLengthTest {
         fillBuf(BUF);
         try {
             while (!stopped) {
-                try (Socket s = ss.accept()) {
+                try {
+                    Socket s = ss.accept();
+                    acceptedList.add(s);
                     s.setTcpNoDelay(true);
-                    s.setSoLinger(true, 1);
+                    // if we use linger=1 we still see some
+                    // intermittent failures caused by IOException
+                    // "Connection reset by peer".
+                    // The client side is expecting EOF, but gets reset instead.
+                    // 30 is a 'magic' value that may need to be adjusted again.
+                    s.setSoLinger(true, 30);
                     System.out.println("Accepted: " + s.getRemoteSocketAddress());
                     System.out.println("Accepted: " + s);
                     OutputStream os = s.getOutputStream();
@@ -121,11 +132,13 @@ public class UnknownBodyLengthTest {
                         os.write(chdr.getBytes());
                     os.write("\r\n".getBytes());
                     os.write(BUF);
-                    if (is.available() > 0)
+                    if (is.available() > 0) {
+                        System.out.println("Draining input: " + s);
                         is.read(buf);
+                    }
                     os.flush();
-                    os.close();
                     s.shutdownOutput();
+                    System.out.println("Closed output: " + s);
                 } catch(Exception e) {
                     if (!stopped) {
                         System.out.println("Unexpected server exception: " + e);
@@ -136,7 +149,7 @@ public class UnknownBodyLengthTest {
         } catch(final Throwable t) {
             if (!stopped) t.printStackTrace();
         } finally {
-            try {stopped = true; ss.close(); } catch (Exception e) {}
+            stop();
         }
     }
 
@@ -182,5 +195,8 @@ public class UnknownBodyLengthTest {
     public void stop() {
         stopped = true;
         try { ss.close(); } catch (Throwable t) { }
+        for (Socket s : acceptedList) {
+            try { s.close(); } catch (Throwable t) { }
+        }
     }
 }
