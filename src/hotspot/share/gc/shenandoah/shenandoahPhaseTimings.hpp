@@ -45,7 +45,6 @@ class outputStream;
   f(scan_roots,                                     "  Scan Roots")                     \
   f(scan_thread_roots,                              "    S: Thread Roots")              \
   f(scan_code_roots,                                "    S: Code Cache Roots")          \
-  f(scan_string_table_roots,                        "    S: String Table Roots")        \
   f(scan_universe_roots,                            "    S: Universe Roots")            \
   f(scan_jni_roots,                                 "    S: JNI Roots")                 \
   f(scan_jni_weak_roots,                            "    S: JNI Weak Roots")            \
@@ -67,7 +66,6 @@ class outputStream;
   f(update_roots,                                   "  Update Roots")                   \
   f(update_thread_roots,                            "    U: Thread Roots")              \
   f(update_code_roots,                              "    U: Code Cache Roots")          \
-  f(update_string_table_roots,                      "    U: String Table Roots")        \
   f(update_universe_roots,                          "    U: Universe Roots")            \
   f(update_jni_roots,                               "    U: JNI Roots")                 \
   f(update_jni_weak_roots,                          "    U: JNI Weak Roots")            \
@@ -97,7 +95,6 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")             \
   f(evac_thread_roots,                              "    E: Thread Roots")              \
   f(evac_code_roots,                                "    E: Code Cache Roots")          \
-  f(evac_string_table_roots,                        "    E: String Table Roots")        \
   f(evac_universe_roots,                            "    E: Universe Roots")            \
   f(evac_jni_roots,                                 "    E: JNI Roots")                 \
   f(evac_jni_weak_roots,                            "    E: JNI Weak Roots")            \
@@ -124,7 +121,6 @@ class outputStream;
   f(final_update_refs_roots,                         "  Update Roots")                  \
   f(final_update_refs_thread_roots,                  "    UR: Thread Roots")            \
   f(final_update_refs_code_roots,                    "    UR: Code Cache Roots")        \
-  f(final_update_refs_string_table_roots,            "    UR: String Table Roots")      \
   f(final_update_refs_universe_roots,                "    UR: Universe Roots")          \
   f(final_update_refs_jni_roots,                     "    UR: JNI Roots")               \
   f(final_update_refs_jni_weak_roots,                "    UR: JNI Weak Roots")          \
@@ -146,7 +142,6 @@ class outputStream;
   f(degen_gc_update_roots,                           "  Degen Update Roots")            \
   f(degen_gc_update_thread_roots,                    "    DU: Thread Roots")            \
   f(degen_gc_update_code_roots,                      "    DU: Code Cache Roots")        \
-  f(degen_gc_update_string_table_roots,              "    DU: String Table Roots")      \
   f(degen_gc_update_universe_roots,                  "    DU: Universe Roots")          \
   f(degen_gc_update_jni_roots,                       "    DU: JNI Roots")               \
   f(degen_gc_update_jni_weak_roots,                  "    DU: JNI Weak Roots")          \
@@ -169,7 +164,6 @@ class outputStream;
   f(init_traversal_gc_work,                          "  Work")                          \
   f(init_traversal_gc_thread_roots,                  "    TI: Thread Roots")            \
   f(init_traversal_gc_code_roots,                    "    TI: Code Cache Roots")        \
-  f(init_traversal_gc_string_table_roots,            "    TI: String Table Roots")      \
   f(init_traversal_gc_universe_roots,                "    TI: Universe Roots")          \
   f(init_traversal_gc_jni_roots,                     "    TI: JNI Roots")               \
   f(init_traversal_gc_jni_weak_roots,                "    TI: JNI Weak Roots")          \
@@ -189,7 +183,6 @@ class outputStream;
   f(final_traversal_gc_work,                         "  Work")                          \
   f(final_traversal_gc_thread_roots,                 "    TF: Thread Roots")            \
   f(final_traversal_gc_code_roots,                   "    TF: Code Cache Roots")        \
-  f(final_traversal_gc_string_table_roots,           "    TF: String Table Roots")      \
   f(final_traversal_gc_universe_roots,               "    TF: Universe Roots")          \
   f(final_traversal_gc_jni_roots,                    "    TF: JNI Roots")               \
   f(final_traversal_gc_jni_weak_roots,               "    TF: JNI Weak Roots")          \
@@ -207,7 +200,6 @@ class outputStream;
   f(final_traversal_update_roots,                    "  Update Roots")                  \
   f(final_traversal_update_thread_roots,             "    TU: Thread Roots")            \
   f(final_traversal_update_code_roots,               "    TU: Code Cache Roots")        \
-  f(final_traversal_update_string_table_roots,       "    TU: String Table Roots")      \
   f(final_traversal_update_universe_roots,           "    TU: Universe Roots")          \
   f(final_traversal_update_jni_roots,                "    TU: JNI Roots")               \
   f(final_traversal_update_jni_weak_roots,           "    TU: JNI Weak Roots")          \
@@ -231,7 +223,6 @@ class outputStream;
   f(full_gc_roots,                                   "  Roots")                         \
   f(full_gc_thread_roots,                            "    F: Thread Roots")             \
   f(full_gc_code_roots,                              "    F: Code Cache Roots")         \
-  f(full_gc_string_table_roots,                      "    F: String Table Roots")       \
   f(full_gc_universe_roots,                          "    F: Universe Roots")           \
   f(full_gc_jni_roots,                               "    F: JNI Roots")                \
   f(full_gc_jni_weak_roots,                          "    F: JNI Weak Roots")           \
@@ -286,7 +277,6 @@ class outputStream;
 #define SHENANDOAH_GC_PAR_PHASE_DO(f)                           \
   f(ThreadRoots,             "Thread Roots (ms):")              \
   f(CodeCacheRoots,          "CodeCache Roots (ms):")           \
-  f(StringTableRoots,        "StringTable Roots (ms):")         \
   f(UniverseRoots,           "Universe Roots (ms):")            \
   f(JNIRoots,                "JNI Handles Roots (ms):")         \
   f(JNIWeakRoots,            "JNI Weak Roots (ms):")            \
