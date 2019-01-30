@@ -76,12 +76,15 @@ export OUTPUTDIR="@OUTPUTDIR@"
 if [ "@COMPILE_TYPE@" != "cross" ]; then
   export JAVAP="@FIXPATH@ $OUTPUTDIR/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
   export JIMAGE="@FIXPATH@ $OUTPUTDIR/jdk/bin/jimage"
+  export JMOD="@FIXPATH@ $OUTPUTDIR/jdk/bin/jmod"
 elif [ "@CREATE_BUILDJDK@" = "true" ]; then
   export JAVAP="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
   export JIMAGE="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jimage"
+  export JMOD="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jmod"
 else
   export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
   export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
+  export JMOD="@FIXPATH@ @BUILD_JDK@/bin/jmod"
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
