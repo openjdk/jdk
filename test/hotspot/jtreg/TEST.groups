@@ -59,7 +59,8 @@ hotspot_misc = \
  -:hotspot_compiler \
  -:hotspot_gc \
  -:hotspot_runtime \
- -:hotspot_serviceability
+ -:hotspot_serviceability \
+ -gc/nvdimm
 
 hotspot_native_sanity = \
   native_sanity
@@ -197,7 +198,7 @@ tier1_gc_2 = \
 gc_epsilon = \
   gc/epsilon/ \
   gc/CriticalNativeArgs.java \
-  gc/stress/CriticalNativeStress.java 
+  gc/stress/CriticalNativeStress.java
 
 tier1_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
@@ -210,7 +211,7 @@ tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithCMS.java \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
   gc/stress/gcbasher/TestGCBasherWithParallel.java
-  
+
 tier1_gc_shenandoah = \
   gc/shenandoah/options/ \
   gc/shenandoah/compiler/ \
