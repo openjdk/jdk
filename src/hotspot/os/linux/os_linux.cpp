@@ -1856,6 +1856,34 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
+// keywords_to_match - NULL terminated array of keywords
+static bool print_matching_lines_from_sysinfo_file(outputStream* st, const char* keywords_to_match[]) {
+  const char* filename = "/proc/sysinfo";
+  char* line = NULL;
+  size_t length = 0;
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  st->print_cr("Virtualization information:");
+  while (getline(&line, &length, fp) != -1) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
+        st->print("%s", line);
+        break;
+      }
+      i++;
+    }
+  }
+
+  free(line);
+  fclose(fp);
+
+  return true;
+}
+
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
 
@@ -1939,6 +1967,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_ld_preload_file(st);
 
   os::Linux::print_container_info(st);
+
+  os::Linux::print_virtualization_info(st);
 }
 
 // Try to identify popular distros.
@@ -2150,6 +2180,20 @@ void os::Linux::print_container_info(outputStream* st) {
   j = OSContainer::OSContainer::memory_max_usage_in_bytes();
   st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
   st->cr();
+}
+
+void os::Linux::print_virtualization_info(outputStream* st) {
+#if defined(S390)
+  // /proc/sysinfo contains interesting information about
+  // - LPAR
+  // - whole "Box" (CPUs )
+  // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
+  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+
+  if (! print_matching_lines_from_sysinfo_file(st, kw)) {
+    st->print_cr("  </proc/sysinfo Not Available>");
+  }
+#endif
 }
 
 void os::print_memory_info(outputStream* st) {
