@@ -1856,6 +1856,36 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
+#if defined(S390)
+// keywords_to_match - NULL terminated array of keywords
+static bool print_matching_lines_from_sysinfo_file(outputStream* st, const char* keywords_to_match[]) {
+  const char* filename = "/proc/sysinfo";
+  char* line = NULL;
+  size_t length = 0;
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  st->print_cr("Virtualization information:");
+  while (getline(&line, &length, fp) != -1) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
+        st->print("%s", line);
+        break;
+      }
+      i++;
+    }
+  }
+
+  free(line);
+  fclose(fp);
+
+  return true;
+}
+#endif
+
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
 
