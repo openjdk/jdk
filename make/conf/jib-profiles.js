@@ -238,7 +238,7 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "solaris-x64",
         "solaris-sparcv9", "windows-x64", "windows-x86",
-        "linux-aarch64", "linux-arm32"
+        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
     // These are the base setttings for all the main build profiles.
@@ -461,6 +461,28 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
             ],
         },
+
+        "linux-ppc64le": {
+            target_os: "linux",
+            target_cpu: "ppc64le",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups"],
+            configure_args: [
+                "--openjdk-target=ppc64le-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
+
+        "linux-s390x": {
+            target_os: "linux",
+            target_cpu: "s390x",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups"],
+            configure_args: [
+                "--openjdk-target=s390x-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
     };
 
     // Add the base settings to all the main profiles
@@ -623,6 +645,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
        "linux-arm32": {
             platform: "linux-arm32",
+        },
+       "linux-ppc64le": {
+            platform: "linux-ppc64le",
+        },
+       "linux-s390x": {
+            platform: "linux-s390x",
         }
     }
     // Generate common artifacts for all main profiles
@@ -867,7 +895,9 @@ var getJibProfilesDependencies = function (input, common) {
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
         windows_x64: "VS2017-15.5.5+1.0",
         linux_aarch64: "gcc7.3.0-Fedora27+1.2",
-        linux_arm: "gcc7.3.0-Fedora27+1.2"
+        linux_arm: "gcc7.3.0-Fedora27+1.2",
+        linux_ppc64le: "gcc7.3.0-Fedora27+1.0",
+        linux_s390x: "gcc7.3.0-Fedora27+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
