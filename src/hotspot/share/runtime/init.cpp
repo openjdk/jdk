@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,13 @@ void exit_globals() {
   static bool destructorsCalled = false;
   if (!destructorsCalled) {
     destructorsCalled = true;
+    if (log_is_enabled(Info, monitorinflation)) {
+      // The ObjectMonitor subsystem uses perf counters so
+      // do this before perfMemory_exit().
+      // ObjectSynchronizer::finish_deflate_idle_monitors()'s call
+      // to audit_and_print_stats() is done at the Debug level.
+      ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
+    }
     perfMemory_exit();
     if (log_is_enabled(Debug, safepoint, stats)) {
       // Print the collected safepoint statistics.

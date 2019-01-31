@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8133885
- * @summary monitorinflation=debug should have logging from each of the statements in the code
+ * @summary monitorinflation=trace should have logging from each of the statements in the code
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -50,7 +50,7 @@ public class MonitorInflationTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=debug",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=trace",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 

@@ -579,7 +579,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceMonitorInflation",     LogLevel::Trace, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
