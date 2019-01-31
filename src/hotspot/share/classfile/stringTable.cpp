@@ -468,7 +468,7 @@ void StringTable::check_concurrent_work() {
   if ((dead_factor > load_factor) ||
       (load_factor > PREF_AVG_LIST_LEN) ||
       (dead_factor > CLEAN_DEAD_HIGH_WATER_MARK)) {
-    log_debug(stringtable)("Concurrent work triggered, live factor:%g dead factor:%g",
+    log_debug(stringtable)("Concurrent work triggered, live factor: %g dead factor: %g",
                            load_factor, dead_factor);
     trigger_concurrent_work();
   }

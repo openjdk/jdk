@@ -5269,12 +5269,6 @@ void CMSCollector::refProcessingWork() {
       // Prune dead klasses from subklass/sibling/implementor lists.
       Klass::clean_weak_klass_links(purged_class);
     }
-
-    {
-      GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer_cm);
-      // Clean up unreferenced symbols in symbol table.
-      SymbolTable::unlink();
-    }
   }
 
   // Restore any preserved marks as a result of mark stack or
