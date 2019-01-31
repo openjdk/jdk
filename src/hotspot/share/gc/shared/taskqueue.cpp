@@ -281,13 +281,3 @@ TaskTerminator::~TaskTerminator() {
   }
 }
 
-// Move assignment
-TaskTerminator& TaskTerminator::operator=(const TaskTerminator& o) {
-  if (_terminator != NULL) {
-    delete _terminator;
-  }
-  _terminator = o.terminator();
-  const_cast<TaskTerminator&>(o)._terminator = NULL;
-  return *this;
-}
-

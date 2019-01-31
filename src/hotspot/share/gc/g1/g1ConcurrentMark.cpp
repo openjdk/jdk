@@ -588,7 +588,7 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   _num_active_tasks = active_tasks;
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
-  _terminator = TaskTerminator((int) active_tasks, _task_queues);
+  _terminator.terminator()->reset_for_reuse((int) active_tasks);
   _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
   _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
 }
