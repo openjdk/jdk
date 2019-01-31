@@ -65,6 +65,8 @@
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
 
 #include "memory/metaspace.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"
 
@@ -1861,6 +1863,22 @@ GCTracer* ShenandoahHeap::tracer() {
 
 size_t ShenandoahHeap::tlab_used(Thread* thread) const {
   return _free_set->used();
+}
+
+bool ShenandoahHeap::try_cancel_gc() {
+  while (true) {
+    jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
+    if (prev == CANCELLABLE) return true;
+    else if (prev == CANCELLED) return false;
+    assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
+    assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
+    {
+      // We need to provide a safepoint here, otherwise we might
+      // spin forever if a SP is pending.
+      ThreadBlockInVM sp(JavaThread::current());
+      SpinPause();
+    }
+  }
 }
 
 void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
