@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package java.awt.peer;
 
-import java.awt.*;
+import java.awt.Rectangle;
+import java.awt.Robot;
 
 /**
  * RobotPeer defines an interface whereby toolkits support automated testing
@@ -116,9 +117,4 @@ public interface RobotPeer
      * @see Robot#createScreenCapture(Rectangle)
      */
     int[] getRGBPixels(Rectangle bounds);
-
-    /**
-     * Disposes the robot peer when it is not needed anymore.
-     */
-    void dispose();
 }
