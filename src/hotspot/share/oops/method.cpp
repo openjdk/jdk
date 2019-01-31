@@ -2403,7 +2403,6 @@ void Method::print_touched_methods(outputStream* out) {
 void Method::verify_on(outputStream* st) {
   guarantee(is_method(), "object must be method");
   guarantee(constants()->is_constantPool(), "should be constant pool");
-  guarantee(constMethod()->is_constMethod(), "should be ConstMethod*");
   MethodData* md = method_data();
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");

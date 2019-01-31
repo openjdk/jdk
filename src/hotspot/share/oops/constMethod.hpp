@@ -241,8 +241,6 @@ public:
                                MethodType mt,
                                TRAPS);
 
-  bool is_constMethod() const { return true; }
-
   // Inlined tables
   void set_inlined_tables_length(InlineTableSizes* sizes);
 

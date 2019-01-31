@@ -444,7 +444,6 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, TRAPS);
-  bool is_constantPoolCache() const { return true; }
 
   int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
