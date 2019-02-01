@@ -72,7 +72,7 @@ private:
   // The possible values of the _implementor fall into following three cases:
   //   NULL: no implementor.
   //   A ciInstanceKlass that's not itself: one implementor.
-  //   Itsef: more than one implementors.
+  //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;
 
   void compute_injected_fields();

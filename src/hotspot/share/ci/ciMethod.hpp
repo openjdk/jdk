@@ -89,6 +89,7 @@ class ciMethod : public ciMetadata {
   bool _can_be_parsed;
   bool _can_be_statically_bound;
   bool _has_reserved_stack_access;
+  bool _is_overpass;
 
   // Lazy fields, filled in on demand
   address              _code;
@@ -265,6 +266,8 @@ class ciMethod : public ciMetadata {
     return get_method_at_bci(bci, ignored_will_link, &ignored_declared_signature);
   }
 
+  ciKlass*      get_declared_method_holder_at_bci(int bci);
+
   ciSignature*  get_declared_signature_at_bci(int bci) {
     bool ignored_will_link;
     ciSignature* declared_signature;
@@ -333,6 +336,9 @@ class ciMethod : public ciMetadata {
   bool is_empty_method() const;
   bool is_vanilla_constructor() const;
   bool is_final_method() const                   { return is_final() || holder()->is_final(); }
+  bool is_default_method() const                 { return !is_abstract() && !is_private() &&
+                                                          holder()->is_interface(); }
+  bool is_overpass    () const                   { check_is_loaded(); return _is_overpass; }
   bool has_loops      () const;
   bool has_jsrs       () const;
   bool is_getter      () const;

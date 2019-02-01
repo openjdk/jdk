@@ -652,11 +652,13 @@ class PredictedCallGenerator : public CallGenerator {
   CallGenerator* _if_missed;
   CallGenerator* _if_hit;
   float          _hit_prob;
+  bool           _exact_check;
 
 public:
   PredictedCallGenerator(ciKlass* predicted_receiver,
                          CallGenerator* if_missed,
-                         CallGenerator* if_hit, float hit_prob)
+                         CallGenerator* if_hit, bool exact_check,
+                         float hit_prob)
     : CallGenerator(if_missed->method())
   {
     // The call profile data may predict the hit_prob as extreme as 0 or 1.
@@ -668,6 +670,7 @@ public:
     _if_missed          = if_missed;
     _if_hit             = if_hit;
     _hit_prob           = hit_prob;
+    _exact_check        = exact_check;
   }
 
   virtual bool      is_virtual()   const    { return true; }
@@ -682,9 +685,16 @@ CallGenerator* CallGenerator::for_predicted_call(ciKlass* predicted_receiver,
                                                  CallGenerator* if_missed,
                                                  CallGenerator* if_hit,
                                                  float hit_prob) {
-  return new PredictedCallGenerator(predicted_receiver, if_missed, if_hit, hit_prob);
+  return new PredictedCallGenerator(predicted_receiver, if_missed, if_hit,
+                                    /*exact_check=*/true, hit_prob);
 }
 
+CallGenerator* CallGenerator::for_guarded_call(ciKlass* guarded_receiver,
+                                               CallGenerator* if_missed,
+                                               CallGenerator* if_hit) {
+  return new PredictedCallGenerator(guarded_receiver, if_missed, if_hit,
+                                    /*exact_check=*/false, PROB_ALWAYS);
+}
 
 JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
@@ -695,8 +705,8 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   Node* receiver = kit.argument(0);
   CompileLog* log = kit.C->log();
   if (log != NULL) {
-    log->elem("predicted_call bci='%d' klass='%d'",
-              jvms->bci(), log->identify(_predicted_receiver));
+    log->elem("predicted_call bci='%d' exact='%d' klass='%d'",
+              jvms->bci(), (_exact_check ? 1 : 0), log->identify(_predicted_receiver));
   }
 
   receiver = kit.null_check_receiver_before_call(method());
@@ -708,10 +718,15 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   ReplacedNodes replaced_nodes = kit.map()->replaced_nodes();
   replaced_nodes.clone();
 
-  Node* exact_receiver = receiver;  // will get updated in place...
-  Node* slow_ctl = kit.type_check_receiver(receiver,
-                                           _predicted_receiver, _hit_prob,
-                                           &exact_receiver);
+  Node* casted_receiver = receiver;  // will get updated in place...
+  Node* slow_ctl = NULL;
+  if (_exact_check) {
+    slow_ctl = kit.type_check_receiver(receiver, _predicted_receiver, _hit_prob,
+                                       &casted_receiver);
+  } else {
+    slow_ctl = kit.subtype_check_receiver(receiver, _predicted_receiver,
+                                          &casted_receiver);
+  }
 
   SafePointNode* slow_map = NULL;
   JVMState* slow_jvms = NULL;
@@ -736,7 +751,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   // fall through if the instance exactly matches the desired type
-  kit.replace_in_map(receiver, exact_receiver);
+  kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());

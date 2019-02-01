@@ -2794,6 +2794,22 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
   return fail;
 }
 
+//------------------------------subtype_check_receiver-------------------------
+Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
+                                       Node** casted_receiver) {
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  Node* recv_klass = load_object_klass(receiver);
+  Node* want_klass = makecon(tklass);
+
+  Node* slow_ctl = gen_subtype_check(recv_klass, want_klass);
+
+  // Cast receiver after successful check
+  const TypeOopPtr* recv_type = tklass->cast_to_exactness(false)->is_klassptr()->as_instance_type();
+  Node* cast = new CheckCastPPNode(control(), receiver, recv_type);
+  (*casted_receiver) = _gvn.transform(cast);
+
+  return slow_ctl;
+}
 
 //------------------------------seems_never_null-------------------------------
 // Use null_seen information if it is available from the profile.

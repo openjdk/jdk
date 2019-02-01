@@ -830,6 +830,10 @@ class GraphKit : public Phase {
   Node* type_check_receiver(Node* receiver, ciKlass* klass, float prob,
                             Node* *casted_receiver);
 
+  // Inexact type check used for predicted calls.
+  Node* subtype_check_receiver(Node* receiver, ciKlass* klass,
+                               Node** casted_receiver);
+
   // implementation of object creation
   Node* set_output_for_allocation(AllocateNode* alloc,
                                   const TypeOopPtr* oop_type,

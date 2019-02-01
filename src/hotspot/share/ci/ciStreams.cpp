@@ -315,18 +315,7 @@ int ciBytecodeStream::get_field_holder_index() {
 // If this is a method invocation bytecode, get the constant pool
 // index of the invoked method.
 int ciBytecodeStream::get_method_index() {
-#ifdef ASSERT
-  switch (cur_bc()) {
-  case Bytecodes::_invokeinterface:
-  case Bytecodes::_invokevirtual:
-  case Bytecodes::_invokespecial:
-  case Bytecodes::_invokestatic:
-  case Bytecodes::_invokedynamic:
-    break;
-  default:
-    ShouldNotReachHere();
-  }
-#endif
+  assert(Bytecodes::is_invoke(cur_bc()), "invalid bytecode: %s", Bytecodes::name(cur_bc()));
   if (has_index_u4())
     return get_index_u4();  // invokedynamic
   return get_index_u2_cpcache();

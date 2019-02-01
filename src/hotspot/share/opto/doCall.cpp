@@ -292,6 +292,51 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         }
       }
     }
+
+    // If there is only one implementor of this interface then we
+    // may be able to bind this invoke directly to the implementing
+    // klass but we need both a dependence on the single interface
+    // and on the method we bind to. Additionally since all we know
+    // about the receiver type is that it's supposed to implement the
+    // interface we have to insert a check that it's the class we
+    // expect.  Interface types are not checked by the verifier so
+    // they are roughly equivalent to Object.
+    // The number of implementors for declared_interface is less or
+    // equal to the number of implementors for target->holder() so
+    // if number of implementors of target->holder() == 1 then
+    // number of implementors for decl_interface is 0 or 1. If
+    // it's 0 then no class implements decl_interface and there's
+    // no point in inlining.
+    if (call_does_dispatch && bytecode == Bytecodes::_invokeinterface) {
+      ciInstanceKlass* declared_interface =
+          caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+
+      if (declared_interface->nof_implementors() == 1 &&
+          (!callee->is_default_method() || callee->is_overpass()) /* CHA doesn't support default methods yet */) {
+        ciInstanceKlass* singleton = declared_interface->implementor();
+        ciMethod* cha_monomorphic_target =
+            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
+
+        if (cha_monomorphic_target != NULL &&
+            cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
+          ciKlass* holder = cha_monomorphic_target->holder();
+
+          // Try to inline the method found by CHA. Inlined method is guarded by the type check.
+          CallGenerator* hit_cg = call_generator(cha_monomorphic_target,
+              vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
+
+          // Deoptimize on type check fail. The interpreter will throw ICCE for us.
+          CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
+              Deoptimization::Reason_class_check, Deoptimization::Action_none);
+
+          CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
+          if (hit_cg != NULL && cg != NULL) {
+            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target);
+            return cg;
+          }
+        }
+      }
+    }
   }
 
   // Nothing claimed the intrinsic, we go with straight-forward inlining
