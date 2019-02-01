@@ -909,6 +909,11 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   st->cr();
 }
 
+void os::print_instructions(outputStream* st, address pc, int unitsize) {
+  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
+  print_hex_dump(st, pc - 256, pc + 256, unitsize);
+}
+
 void os::print_environment_variables(outputStream* st, const char** env_list) {
   if (env_list) {
     st->print_cr("Environment Variables:");
