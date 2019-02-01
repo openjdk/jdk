@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.ArrayList;
 
 import jdk.test.lib.apps.LingeredApp;
+import jtreg.SkippedException;
+
 /**
  * @test
  * @bug 8193124
@@ -91,6 +93,8 @@ public class ClhsdbFindPC {
 
                 test.run(theApp.getPid(), cmds, expStrMap, null);
             }
+        } catch (SkippedException se) {
+            throw se;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
