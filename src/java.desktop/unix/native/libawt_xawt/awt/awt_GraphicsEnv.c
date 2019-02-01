@@ -190,6 +190,8 @@ findWithTemplate(XVisualInfo *vinfo,
     visualList = XGetVisualInfo(awt_display,
                                 mask, vinfo, &visualsMatched);
     if (visualList) {
+        int id = -1;
+        VisualID defaultVisual = XVisualIDFromVisual(DefaultVisual(awt_display, vinfo->screen));
         defaultConfig = ZALLOC(_AwtGraphicsConfigData);
         for (i = 0; i < visualsMatched; i++) {
             memcpy(&defaultConfig->awt_visInfo, &visualList[i], sizeof(XVisualInfo));
@@ -198,19 +200,30 @@ findWithTemplate(XVisualInfo *vinfo,
             /* we can't use awtJNI_CreateColorData here, because it'll pull,
                SystemColor, which in turn will cause toolkit to be reinitialized */
             if (awtCreateX11Colormap(defaultConfig)) {
-                /* Allocate white and black pixels for this visual */
-                color.flags = DoRed | DoGreen | DoBlue;
-                color.red = color.green = color.blue = 0x0000;
-                XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
-                x11Screens[visualList[i].screen].blackpixel = color.pixel;
-                color.flags = DoRed | DoGreen | DoBlue;
-                color.red = color.green = color.blue = 0xffff;
-                XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
-                x11Screens[visualList[i].screen].whitepixel = color.pixel;
-
-                XFree(visualList);
-                return defaultConfig;
+                if (visualList[i].visualid == defaultVisual) {
+                    id = i;
+                    break;
+                } else if (-1 == id) {
+                    // Keep 1st match for fallback
+                    id = i;
+                }
             }
+        }
+        if (-1 != id) {
+            memcpy(&defaultConfig->awt_visInfo, &visualList[id], sizeof(XVisualInfo));
+            defaultConfig->awt_depth = visualList[id].depth;
+            /* Allocate white and black pixels for this visual */
+            color.flags = DoRed | DoGreen | DoBlue;
+            color.red = color.green = color.blue = 0x0000;
+            XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
+            x11Screens[visualList[id].screen].blackpixel = color.pixel;
+            color.flags = DoRed | DoGreen | DoBlue;
+            color.red = color.green = color.blue = 0xffff;
+            XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
+            x11Screens[visualList[id].screen].whitepixel = color.pixel;
+
+            XFree(visualList);
+            return defaultConfig;
         }
         XFree(visualList);
         free((void *)defaultConfig);
