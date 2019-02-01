@@ -182,14 +182,14 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening001/TestDescription.java 8148
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java 8208259 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/java/sequences/Test.java 8208255 generic-all
-vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8208255 generic-all
+vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/java/sequences/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/mixed/stress/java/findDeadlock/TestDescription.java 8208278 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
