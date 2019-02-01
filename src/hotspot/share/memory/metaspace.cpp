@@ -132,7 +132,15 @@ size_t MetaspaceGC::capacity_until_GC() {
   return value;
 }
 
-bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
+// Try to increase the _capacity_until_GC limit counter by v bytes.
+// Returns true if it succeeded. It may fail if either another thread
+// concurrently increased the limit or the new limit would be larger
+// than MaxMetaspaceSize.
+// On success, optionally returns new and old metaspace capacity in
+// new_cap_until_GC and old_cap_until_GC respectively.
+// On error, optionally sets can_retry to indicate whether if there is
+// actually enough space remaining to satisfy the request.
+bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC, bool* can_retry) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
   size_t old_capacity_until_GC = _capacity_until_GC;
@@ -143,6 +151,16 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
     new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
+  if (new_value > MaxMetaspaceSize) {
+    if (can_retry != NULL) {
+      *can_retry = false;
+    }
+    return false;
+  }
+
+  if (can_retry != NULL) {
+    *can_retry = true;
+  }
   size_t prev_value = Atomic::cmpxchg(new_value, &_capacity_until_GC, old_capacity_until_GC);
 
   if (old_capacity_until_GC != prev_value) {
@@ -236,7 +254,7 @@ void MetaspaceGC::compute_new_size() {
 
   const double min_tmp = used_after_gc / maximum_used_percentage;
   size_t minimum_desired_capacity =
-    (size_t)MIN2(min_tmp, double(max_uintx));
+    (size_t)MIN2(min_tmp, double(MaxMetaspaceSize));
   // Don't shrink less than the initial generation size
   minimum_desired_capacity = MAX2(minimum_desired_capacity,
                                   MetaspaceSize);
@@ -283,7 +301,7 @@ void MetaspaceGC::compute_new_size() {
     const double maximum_free_percentage = MaxMetaspaceFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
-    size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
+    size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(MaxMetaspaceSize));
     maximum_desired_capacity = MAX2(maximum_desired_capacity,
                                     MetaspaceSize);
     log_trace(gc, metaspace)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
@@ -1470,6 +1488,7 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 
   size_t before = 0;
   size_t after = 0;
+  bool can_retry = true;
   MetaWord* res;
   bool incremented;
 
@@ -1477,9 +1496,9 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
   // the HWM, an allocation is still attempted. This is because another thread must then
   // have incremented the HWM and therefore the allocation might still succeed.
   do {
-    incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before);
+    incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before, &can_retry);
     res = allocate(word_size, mdtype);
-  } while (!incremented && res == NULL);
+  } while (!incremented && res == NULL && can_retry);
 
   if (incremented) {
     Metaspace::tracer()->report_gc_threshold(before, after,
