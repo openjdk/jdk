@@ -3,8 +3,7 @@
 ### jQuery License
 ```
 jQuery v 3.3.1
-Copyright 2005, 2018 jQuery Foundation, Inc. and other contributors
-http://jquery.com/
+Copyright JS Foundation and other contributors, https://js.foundation/
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
