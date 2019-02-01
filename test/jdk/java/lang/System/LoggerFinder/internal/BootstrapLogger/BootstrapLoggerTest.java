@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.io.PrintStream;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
@@ -37,6 +38,7 @@ import java.security.Permissions;
 import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -156,7 +158,7 @@ public class BootstrapLoggerTest {
                     .collect(Collectors.toSet());
             set.stream().forEach(t -> LogStream.err.println("Found: " + t));
             if (set.size() > 1) {
-                throw new RuntimeException("Too many bootsrap threads found");
+                throw new RuntimeException("Too many bootstrap threads found");
             }
             Optional<Thread> t = set.stream().findFirst();
             if (t.isPresent()) {
@@ -292,46 +294,73 @@ public class BootstrapLoggerTest {
         // of the executor.
         SimplePolicy.allowAll.set(Boolean.TRUE);
         try {
-            Stream<Thread> stream = Thread.getAllStackTraces().keySet().stream();
-            stream.filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
-                    .forEach(t -> LogStream.err.println(t));
+            // Though unlikely, it is not impossible that the bootstrap logger
+            // executor may have released its first thread and spawned a new one.
+            // If that happened then the executor itself might have been GC'ed
+            // as well and a new one might have been created.
+            // The code below will lookup the executor threads again and
+            // join them.
+            // Only one may be active at a given time, but that might not
+            // be the one referenced by threadRef.
+            // We're just making sure all of them have stopped running
+            // before verifying that the executor is eventually GC'ed.
+            final WeakReference<Thread> previous = threadRef;
+            Stream<WeakReference<Thread>> stream = Thread.getAllStackTraces().keySet().stream()
+               .filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
+               .filter((t) -> previous == null ? true : t != previous.get())
+               .map((t) -> new WeakReference<>(t, queue));
+            List<WeakReference<Thread>> threads = stream.collect(Collectors.toList());
+            if (previous != null) threads.add(previous);
+            threads.forEach(t -> LogStream.err.println(t.get()));
             stream = null;
-            if (threadRef != null && test == TestCase.SECURE_AND_WAIT) {
-                Thread t = threadRef.get();
-                if (t != null) {
-                    if (!(Boolean)isAlive.invoke(null)) {
-                        throw new RuntimeException("Executor already terminated");
+
+            if (test == TestCase.SECURE_AND_WAIT) {
+                // First wait for all executor threads to terminate
+                for (var ref : threads) {
+                    Thread t = ref.get();
+                    if (t != null) {
+                        if (!(Boolean)isAlive.invoke(null) && t.isAlive()) {
+                            throw new RuntimeException("Executor already terminated");
+                        } else {
+                            LogStream.err.println("Executor still alive as expected: " + t.getName());
+                        }
+                        LogStream.err.println("Waiting for " + t.getName() + " to terminate (join)");
+                        t.join(60_000);
+                        t = null;
                     } else {
-                        LogStream.err.println("Executor still alive as expected.");
+                        LogStream.err.println("WeakReference<Thread> is already cleared.");
+                        long count = Thread.getAllStackTraces().keySet().stream()
+                            .filter((tr) -> tr.getName().startsWith("BootstrapMessageLoggerTask-"))
+                            .count();
+                        if (count != 0) {
+                            LogStream.err.println("There are " + count + " threads still lingering.");
+                        }
                     }
-                    LogStream.err.println("Waiting for " + t.getName() + " to terminate (join)");
-                    t.join(60_000);
-                    t = null;
                 }
-                LogStream.err.println("Calling System.gc()");
+                // Then wait until all the executor threads are GC'ed
+                while (!threads.isEmpty()) {
+                    LogStream.err.println("Calling System.gc()");
+                    System.gc();
+                    LogStream.err.println("Waiting for BootstrapMessageLoggerTask to be gc'ed");
+                    Reference<?> tref;
+                    while ((tref = queue.remove(1000)) == null) {
+                        LogStream.err.println("Calling System.gc()");
+                        System.gc();
+                    }
+
+                    threads.remove(tref);
+                    LogStream.err.println("BootstrapMessageLoggerTask has been gc'ed: "
+                                          + threads.size() + " remaining...");
+                }
+                // Then wait for the executor to be gc'ed...
+                LogStream.err.println("Waiting for the executor to be gc'ed: Calling System.gc()");
                 System.gc();
-                LogStream.err.println("Waiting for BootstrapMessageLoggerTask to be gc'ed");
-                while (queue.remove(1000) == null) {
-                    LogStream.err.println("Calling System.gc()");
-                    System.gc();
-                }
-
-                // Call the reference here to make sure threadRef will not be
-                // eagerly garbage collected before the thread it references.
-                // otherwise, it might not be enqueued, resulting in the
-                // queue.remove() call above to always return null....
-                if (threadRef.get() != null) {
-                    throw new RuntimeException("Reference should have been cleared");
-                }
-
-                LogStream.err.println("BootstrapMessageLoggerTask has been gc'ed");
-                // Wait for the executor to be gc'ed...
                 for (int i=0; i<10; i++) {
-                    LogStream.err.println("Calling System.gc()");
-                    System.gc();
                     if (!(Boolean)isAlive.invoke(null)) break;
                     // It would be unexpected that we reach here...
                     Thread.sleep(1000);
+                    LogStream.err.println("Calling System.gc()");
+                    System.gc();
                 }
 
                 if ((Boolean)isAlive.invoke(null)) {
