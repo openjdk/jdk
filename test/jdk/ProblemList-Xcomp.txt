@@ -29,3 +29,4 @@
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 java/util/concurrent/CountDownLatch/Basic.java 8195057 generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/StreamLinkTest.java 8216317 solaris-all
