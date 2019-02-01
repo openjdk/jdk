@@ -586,15 +586,15 @@ void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
   if (Metaspace::using_class_space()) {
     out->print("   Non-Class:  ");
   }
-  print_human_readable_size(out, Metaspace::chunk_manager_metadata()->free_chunks_total_words(), scale);
+  print_human_readable_size(out, Metaspace::chunk_manager_metadata()->free_chunks_total_bytes(), scale);
   out->cr();
   if (Metaspace::using_class_space()) {
     out->print("       Class:  ");
-    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_words(), scale);
+    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_bytes(), scale);
     out->cr();
     out->print("        Both:  ");
-    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_words() +
-                              Metaspace::chunk_manager_metadata()->free_chunks_total_words(), scale);
+    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_bytes() +
+                              Metaspace::chunk_manager_metadata()->free_chunks_total_bytes(), scale);
     out->cr();
   }
   out->cr();
