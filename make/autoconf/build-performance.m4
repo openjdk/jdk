@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,11 @@ AC_DEFUN([BPERF_CHECK_CORES],
     NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
     FOUND_CORES=yes
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
-    NUM_CORES=`/usr/sbin/prtconf | grep "^Number Of Processors" | awk '{ print [$]4 }'`
-    FOUND_CORES=yes
+    NUM_LCPU=`lparstat -m 2> /dev/null | $GREP -o "lcpu=[[0-9]]*" | $CUT -d "=" -f 2`
+    if test -n "$NUM_LCPU"; then
+      NUM_CORES=$NUM_LCPU
+      FOUND_CORES=yes
+    fi
   elif test -n "$NUMBER_OF_PROCESSORS"; then
     # On windows, look in the env
     NUM_CORES=$NUMBER_OF_PROCESSORS
