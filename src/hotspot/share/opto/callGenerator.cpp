@@ -459,7 +459,7 @@ void LateInlineCallGenerator::do_late_inline() {
   C->set_has_loops(C->has_loops() || _inline_cg->method()->has_loops());
   C->env()->notice_inlined_method(_inline_cg->method());
   C->set_inlining_progress(true);
-
+  C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
   kit.replace_call(call, result, true);
 }
 

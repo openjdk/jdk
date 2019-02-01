@@ -383,6 +383,7 @@ class Compile : public Phase {
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
+  bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
@@ -653,6 +654,8 @@ class Compile : public Phase {
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
+  void          set_do_cleanup(bool z)          { _do_cleanup = z; }
+  int               do_cleanup() const          { return _do_cleanup; }
   void          set_major_progress()            { _major_progress++; }
   void        clear_major_progress()            { _major_progress = 0; }
   int               max_inline_size() const     { return _max_inline_size; }
@@ -1075,7 +1078,11 @@ class Compile : public Phase {
     if (!inlining_incrementally()) {
       return unique() > (uint)NodeCountInliningCutoff;
     } else {
-      return live_nodes() > (uint)LiveNodeCountInliningCutoff;
+      // Give some room for incremental inlining algorithm to "breathe"
+      // and avoid thrashing when live node count is close to the limit.
+      // Keep in mind that live_nodes() isn't accurate during inlining until
+      // dead node elimination step happens (see Compile::inline_incrementally).
+      return live_nodes() > (uint)LiveNodeCountInliningCutoff * 11 / 10;
     }
   }
 
@@ -1083,7 +1090,8 @@ class Compile : public Phase {
   void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
   bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
 
-  void inline_incrementally_one(PhaseIterGVN& igvn);
+  bool inline_incrementally_one();
+  void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
