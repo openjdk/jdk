@@ -397,7 +397,7 @@ public class INDIFY_Test extends MlvmTest {
         // TODO: exclude GC time, compilation time (optionally) from measurements
 
         print("Comparing invocation time orders");
-        verifyTimeOrder(results[REFLECTION_CALL],         results[INVOKE_EXACT]);
+        verifyTimeOrder(results[INDY],                    results[REFLECTION_CALL]);
         verifyTimeOrder(results[INVOKE_EXACT],            results[DIRECT_CALL]);
         verifyTimeOrder(results[INVOKE],                  results[DIRECT_CALL]);
         verifyTimeOrder(results[INVOKE_EXACT],            results[INDY]);

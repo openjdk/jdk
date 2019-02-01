@@ -117,7 +117,7 @@ public class CheckCipherSuites {
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
-    // List of enabled cipher suites when the "crypto.policy" security
+    // List of supported cipher suites when the "crypto.policy" security
     // property is set to "unlimited" (the default value).
     private final static String[] SUPPORTED_DEFAULT = {
         "TLS_AES_128_GCM_SHA256",

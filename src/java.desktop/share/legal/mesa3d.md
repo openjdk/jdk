@@ -1,10 +1,10 @@
-## Mesa 3-D Graphics Library v4.1
+## Mesa 3-D Graphics Library v5.0
 
 ### Mesa License
 <pre>
 
 Mesa 3-D graphics library
-Version:  4.1
+Version:  5.0
 
 Copyright (C) 1999-2002  Brian Paul   All Rights Reserved.
 
