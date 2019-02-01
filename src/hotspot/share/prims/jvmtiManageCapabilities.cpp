@@ -107,6 +107,14 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
 #ifndef ZERO
   jc.can_pop_frame = 1;
   jc.can_force_early_return = 1;
+  // Workaround for 8195635:
+  // disable pop_frame and force_early_return capabilities with Graal
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    jc.can_pop_frame = 0;
+    jc.can_force_early_return = 0;
+  }
+#endif // INCLUDE_JVMCI
 #endif // !ZERO
   jc.can_get_source_debug_extension = 1;
   jc.can_access_local_variables = 1;

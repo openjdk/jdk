@@ -69,6 +69,29 @@ java/lang/ref/OOMEInReferenceHandler.java                               8196611 
 java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
 java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
 
+# tests require pop_frame and force_early_return capabilities
+com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all
+com/sun/jdi/RedefineG.java                                              8195635   generic-all
+com/sun/jdi/RedefineCrossStart.java                                     8195635   generic-all
+com/sun/jdi/PopSynchronousTest.java                                     8195635   generic-all
+com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all
+com/sun/jdi/RedefineG.java                                              8195635   generic-all
+com/sun/jdi/RedefineCrossStart.java                                     8195635   generic-all
+com/sun/jdi/PopSynchronousTest.java                                     8195635   generic-all
+com/sun/jdi/PopAsynchronousTest.java                                    8195635   generic-all
+com/sun/jdi/PopAndStepTest.java                                         8195635   generic-all
+com/sun/jdi/PopAsynchronousTest.java                                    8195635   generic-all
+com/sun/jdi/PopAndStepTest.java                                         8195635   generic-all
+com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
+com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all
+com/sun/jdi/RedefineG.java                                              8195635   generic-all
+com/sun/jdi/RedefineCrossStart.java                                     8195635   generic-all
+com/sun/jdi/PopSynchronousTest.java                                     8195635   generic-all
+com/sun/jdi/PopAsynchronousTest.java                                    8195635   generic-all
+com/sun/jdi/PopAndStepTest.java                                         8195635   generic-all
+com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
+com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
+
 # Next JFR tests fail with Graal. Assuming 8193210.
 jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
 jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
