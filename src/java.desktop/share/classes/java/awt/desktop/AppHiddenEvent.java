@@ -34,11 +34,13 @@ import java.awt.HeadlessException;
  *
  * @see AppHiddenListener#appHidden(AppHiddenEvent)
  * @see AppHiddenListener#appUnhidden(AppHiddenEvent)
- *
  * @since 9
  */
 public final class AppHiddenEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 2637465279476429224L;
 
     /**

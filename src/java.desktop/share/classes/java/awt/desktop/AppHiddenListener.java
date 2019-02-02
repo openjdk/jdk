@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,17 @@ package java.awt.desktop;
 public interface AppHiddenListener extends SystemEventListener {
 
     /**
-     * Called the app is hidden.
+     * Called when the app is hidden.
      *
-     * @param e event
+     * @param  e event
      */
-    public void appHidden(final AppHiddenEvent e);
+    public void appHidden(AppHiddenEvent e);
 
     /**
      * Called when the hidden app is shown again (but not necessarily brought to
      * the foreground).
      *
-     * @param e event
+     * @param  e event
      */
-    public void appUnhidden(final AppHiddenEvent e);
+    public void appUnhidden(AppHiddenEvent e);
 }

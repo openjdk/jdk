@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,19 @@ package java.awt.desktop;
  * @since 9
  */
 public interface AppForegroundListener extends SystemEventListener {
+
     /**
      * Called when the app becomes the foreground app.
-     * @param e event
+     *
+     * @param  e event
      */
-    public void appRaisedToForeground(final AppForegroundEvent e);
+    public void appRaisedToForeground(AppForegroundEvent e);
 
     /**
      * Called when the app becomes the background app and another app becomes
      * the foreground app.
      *
-     * @param e event
+     * @param  e event
      */
-    public void appMovedToBackground(final AppForegroundEvent e);
+    public void appMovedToBackground(AppForegroundEvent e);
 }
