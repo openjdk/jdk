@@ -1025,6 +1025,11 @@ class Compile : public Phase {
                       ciMethodData* logmd = NULL);
   // Report if there were too many recompiles at a method and bci.
   bool too_many_recompiles(ciMethod* method, int bci, Deoptimization::DeoptReason reason);
+  // Report if there were too many traps or recompiles at a method and bci.
+  bool too_many_traps_or_recompiles(ciMethod* method, int bci, Deoptimization::DeoptReason reason) {
+    return too_many_traps(method, bci, reason) ||
+           too_many_recompiles(method, bci, reason);
+  }
   // Return a bitset with the reasons where deoptimization is allowed,
   // i.e., where there were not too many uncommon traps.
   int _allowed_reasons;

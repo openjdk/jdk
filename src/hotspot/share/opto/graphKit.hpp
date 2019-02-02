@@ -751,6 +751,10 @@ class GraphKit : public Phase {
     return C->too_many_recompiles(method(), bci(), reason);
   }
 
+  bool too_many_traps_or_recompiles(Deoptimization::DeoptReason reason) {
+      return C->too_many_traps_or_recompiles(method(), bci(), reason);
+  }
+
   // Returns the object (if any) which was created the moment before.
   Node* just_allocated_object(Node* current_control);
 
