@@ -3436,6 +3436,12 @@ const TypePtr* TypeOopPtr::with_inline_depth(int depth) const {
   return make(_ptr, _offset, _instance_id, _speculative, depth);
 }
 
+//------------------------------with_instance_id--------------------------------
+const TypePtr* TypeOopPtr::with_instance_id(int instance_id) const {
+  assert(_instance_id != -1, "should be known");
+  return make(_ptr, _offset, instance_id, _speculative, _inline_depth);
+}
+
 //------------------------------meet_instance_id--------------------------------
 int TypeOopPtr::meet_instance_id( int instance_id ) const {
   // Either is 'TOP' instance?  Return the other instance!
@@ -4044,6 +4050,11 @@ const TypePtr *TypeInstPtr::with_inline_depth(int depth) const {
   return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, _speculative, depth);
 }
 
+const TypePtr *TypeInstPtr::with_instance_id(int instance_id) const {
+  assert(is_known_instance(), "should be known");
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, instance_id, _speculative, _inline_depth);
+}
+
 //=============================================================================
 // Convenience common pre-built types.
 const TypeAryPtr *TypeAryPtr::RANGE;
@@ -4528,6 +4539,11 @@ const TypePtr *TypeAryPtr::with_inline_depth(int depth) const {
     return this;
   }
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, _speculative, depth);
+}
+
+const TypePtr *TypeAryPtr::with_instance_id(int instance_id) const {
+  assert(is_known_instance(), "should be known");
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
 //=============================================================================
