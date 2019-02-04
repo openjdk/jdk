@@ -54,7 +54,7 @@ import jdk.internal.misc.VM;
  * from the Unicode Consortium at
  * <a href="http://www.unicode.org">http://www.unicode.org</a>.
  * <p>
- * The Java SE 12 Platform uses character information from version 11.0
+ * The Java SE 13 Platform uses character information from version 11.0
  * of the Unicode Standard, plus the Japanese Era code point,
  * {@code U+32FF}, from the first version of the Unicode Standard
  * after 11.0 that assigns the code point.
