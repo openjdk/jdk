@@ -252,7 +252,6 @@ java/awt/Choice/PopupPosTest/PopupPosTest.html  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
-java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html 8192929 windows-all,linux-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.html 8017454 macosx-all
 java/awt/Focus/NonFocusableWindowTest/NoEventsTest.java 8000171 windows-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8079267 windows-all,linux-all

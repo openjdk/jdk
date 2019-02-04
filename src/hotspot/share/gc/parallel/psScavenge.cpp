@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,12 +428,6 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
       WeakProcessor::weak_oops_do(&_is_alive_closure, &root_closure);
-    }
-
-    {
-      GCTraceTime(Debug, gc, phases) tm("Scrub String Table", &_gc_timer);
-      // Unlink any dead interned Strings and process the remaining live ones.
-      StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
     }
 
     // Verify that usage of root_closure didn't copy any objects.

@@ -78,10 +78,6 @@
 class StubRoutines: AllStatic {
 
  public:
-  enum platform_independent_constants {
-    max_size_of_parameters = 256                           // max. parameter size supported by megamorphic lookups
-  };
-
   // Dependencies
   friend class StubGenerator;
 
@@ -114,7 +110,6 @@ class StubRoutines: AllStatic {
 
   static jint    _fpu_cntrl_wrd_std;
   static jint    _fpu_cntrl_wrd_24;
-  static jint    _fpu_cntrl_wrd_64;
   static jint    _fpu_cntrl_wrd_trunc;
   static jint    _mxcsr_std;
   static jint    _fpu_subnormal_bias1[3];
@@ -207,18 +202,6 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
-  // These are versions of the java.lang.Math methods which perform
-  // the same operations as the intrinsic version.  They are used for
-  // constant folding in the compiler to ensure equivalence.  If the
-  // intrinsic version returns the same result as the strict version
-  // then they can be set to the appropriate function from
-  // SharedRuntime.
-  static double (*_intrinsic_log10)(double);
-  static double (*_intrinsic_pow)(double, double);
-  static double (*_intrinsic_sin)(double);
-  static double (*_intrinsic_cos)(double);
-  static double (*_intrinsic_tan)(double);
-
   // Safefetch stubs.
   static address _safefetch32_entry;
   static address _safefetch32_fault_pc;
@@ -289,7 +272,6 @@ class StubRoutines: AllStatic {
   static jint    fpu_cntrl_wrd_std()                       { return _fpu_cntrl_wrd_std;   }
   static address addr_fpu_cntrl_wrd_std()                  { return (address)&_fpu_cntrl_wrd_std;   }
   static address addr_fpu_cntrl_wrd_24()                   { return (address)&_fpu_cntrl_wrd_24;   }
-  static address addr_fpu_cntrl_wrd_64()                   { return (address)&_fpu_cntrl_wrd_64;   }
   static address addr_fpu_cntrl_wrd_trunc()                { return (address)&_fpu_cntrl_wrd_trunc; }
   static address addr_mxcsr_std()                          { return (address)&_mxcsr_std; }
   static address addr_fpu_subnormal_bias1()                { return (address)&_fpu_subnormal_bias1; }
@@ -385,27 +367,6 @@ class StubRoutines: AllStatic {
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
   static address zero_aligned_words()  { return _zero_aligned_words; }
-
-  static double  intrinsic_log10(double d) {
-    assert(_intrinsic_log10 != NULL, "must be defined");
-    return _intrinsic_log10(d);
-  }
-  static double  intrinsic_pow(double d, double d2) {
-    assert(_intrinsic_pow != NULL, "must be defined");
-    return _intrinsic_pow(d, d2);
-  }
-  static double  intrinsic_sin(double d) {
-    assert(_intrinsic_sin != NULL, "must be defined");
-    return _intrinsic_sin(d);
-  }
-  static double  intrinsic_cos(double d) {
-    assert(_intrinsic_cos != NULL, "must be defined");
-    return _intrinsic_cos(d);
-  }
-  static double  intrinsic_tan(double d) {
-    assert(_intrinsic_tan != NULL, "must be defined");
-    return _intrinsic_tan(d);
-  }
 
   //
   // Safefetch stub support

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
@@ -448,6 +449,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
   assert(THREAD->is_Java_thread(), "must be a Java thread");
+  JavaThread* javaThread = (JavaThread*)THREAD;
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and
@@ -480,7 +482,14 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
   Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
-  Klass* k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+
+  Klass* k;
+  {
+    // Turn off the single stepping while doing class resolution
+    JvmtiHideSingleStepping jhss(javaThread);
+    k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+  } //  JvmtiHideSingleStepping jhss(javaThread);
+
   if (!HAS_PENDING_EXCEPTION) {
     // preserve the resolved klass from unloading
     mirror_handle = Handle(THREAD, k->java_mirror());
@@ -817,9 +826,9 @@ constantTag ConstantPool::constant_tag_at(int which) {
   constantTag tag = tag_at(which);
   if (tag.is_dynamic_constant() ||
       tag.is_dynamic_constant_in_error()) {
-    // have to look at the signature for this one
-    Symbol* constant_type = uncached_signature_ref_at(which);
-    return constantTag::ofBasicType(FieldType::basic_type(constant_type));
+    BasicType bt = basic_type_for_constant_at(which);
+    // dynamic constant could return an array, treat as object
+    return constantTag::ofBasicType(is_reference_type(bt) ? T_OBJECT : bt);
   }
   return tag;
 }
@@ -2514,11 +2523,6 @@ void ConstantPool::verify_on(outputStream* st) {
       CPSlot entry = slot_at(i);
       guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
     }
-  }
-  if (cache() != NULL) {
-    // Note: cache() can be NULL before a class is completely setup or
-    // in temporary constant pools used during constant pool merging
-    guarantee(cache()->is_constantPoolCache(), "should be constant pool cache");
   }
   if (pool_holder() != NULL) {
     // Note: pool_holder() can be NULL in temporary constant pools

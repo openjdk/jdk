@@ -2591,9 +2591,10 @@ JNI_ENTRY(jobject, jni_GetObjectArrayElement(JNIEnv *env, jobjectArray array, js
     ret = JNIHandles::make_local(env, a->obj_at(index));
     return ret;
   } else {
-    char buf[jintAsStringSize];
-    sprintf(buf, "%d", index);
-    THROW_MSG_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), buf);
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("Index %d out of bounds for length %d", index, a->length());
+    THROW_MSG_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 JNI_END
 
@@ -2624,9 +2625,10 @@ JNI_ENTRY(void, jni_SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize
       THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
     }
   } else {
-    char buf[jintAsStringSize];
-    sprintf(buf, "%d", index);
-    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), buf);
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("Index %d out of bounds for length %d", index, a->length());
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 JNI_END
 
@@ -2801,6 +2803,19 @@ DEFINE_RELEASESCALARARRAYELEMENTS(T_DOUBLE,  jdouble,  Double,  double
                                   , HOTSPOT_JNI_RELEASEDOUBLEARRAYELEMENTS_ENTRY(env, array, (double *) buf, mode),
                                   HOTSPOT_JNI_RELEASEDOUBLEARRAYELEMENTS_RETURN())
 
+static void check_bounds(jsize start, jsize copy_len, jsize array_len, TRAPS) {
+  ResourceMark rm(THREAD);
+  if (copy_len < 0) {
+    stringStream ss;
+    ss.print("Length %d is negative", copy_len);
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
+  } else if (start < 0 || (start > array_len - copy_len)) {
+    stringStream ss;
+    ss.print("Array region %d.." INT64_FORMAT " out of bounds for length %d",
+             start, (int64_t)start+(int64_t)copy_len, array_len);
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
+  }
+}
 
 #define DEFINE_GETSCALARARRAYREGION(ElementTag,ElementType,Result, Tag \
                                     , EntryProbe, ReturnProbe); \
@@ -2814,12 +2829,9 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   EntryProbe; \
   DT_VOID_RETURN_MARK(Get##Result##ArrayRegion); \
   typeArrayOop src = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-  if (start < 0 || len < 0 || (start > src->length() - len)) { \
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
-  } else { \
-    if (len > 0) { \
-      ArrayAccess<>::arraycopy_to_native(src, typeArrayOopDesc::element_offset<ElementType>(start), buf, len); \
-    } \
+  check_bounds(start, len, src->length(), CHECK); \
+  if (len > 0) {    \
+    ArrayAccess<>::arraycopy_to_native(src, typeArrayOopDesc::element_offset<ElementType>(start), buf, len); \
   } \
 JNI_END
 
@@ -2861,12 +2873,9 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   EntryProbe; \
   DT_VOID_RETURN_MARK(Set##Result##ArrayRegion); \
   typeArrayOop dst = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-  if (start < 0 || len < 0 || (start > dst->length() - len)) { \
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
-  } else { \
-    if (len > 0) { \
-      ArrayAccess<>::arraycopy_from_native(buf, dst, typeArrayOopDesc::element_offset<ElementType>(start), len); \
-    } \
+  check_bounds(start, len, dst->length(), CHECK); \
+  if (len > 0) { \
+    ArrayAccess<>::arraycopy_from_native(buf, dst, typeArrayOopDesc::element_offset<ElementType>(start), len); \
   } \
 JNI_END
 

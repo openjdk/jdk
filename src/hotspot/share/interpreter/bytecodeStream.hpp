@@ -211,7 +211,6 @@ class BytecodeStream: public BaseBytecodeStream {
     return _code;
   }
 
-  bool            is_active_breakpoint() const   { return Bytecodes::is_active_breakpoint_at(bcp()); }
   Bytecodes::Code code() const                   { return _code; }
 
   // Unsigned indices, widening

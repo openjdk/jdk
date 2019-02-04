@@ -299,24 +299,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates an HTML anchor tag with an id or a name attribute and content.
-     *
-     * @param htmlVersion the version of the generated HTML
-     * @param attr name or id attribute for the anchor tag
-     * @param body content for the anchor tag
-     * @return an HtmlTree object
-     */
-    public static HtmlTree A(HtmlVersion htmlVersion, String attr, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.A);
-        htmltree.addAttr((htmlVersion == HtmlVersion.HTML4)
-                ? HtmlAttr.NAME
-                : HtmlAttr.ID,
-                nullCheck(attr));
-        htmltree.addContent(nullCheck(body));
-        return htmltree;
-    }
-
-    /**
      * Generates an HTML anchor tag with id attribute and a body.
      *
      * @param id id for the anchor tag

@@ -145,7 +145,7 @@ public class Navigation {
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();
-        this.links = new Links(path, configuration.htmlVersion);
+        this.links = new Links(path);
         this.topBottomNavContents = new HashMap<>();
         this.rowListTitle = configuration.getResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
@@ -976,9 +976,7 @@ public class Navigation {
         Content contentTree = new ContentBuilder();
         if (!configuration.nonavbar) {
             Deque<Content> queue;
-            Content tree = (configuration.htmlVersion == HtmlVersion.HTML5)
-                    ? HtmlTree.NAV()
-                    : contentTree;
+            Content tree = HtmlTree.NAV();
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
             if (top) {
                 queue = topBottomNavContents.get(Position.TOP);

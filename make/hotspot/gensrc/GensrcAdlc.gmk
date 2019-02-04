@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,12 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call check-jvm-feature, shenandoahgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/shenandoah/shenandoah_$(HOTSPOT_TARGET_CPU).ad \
+      )))
+  endif
+
+  ifeq ($(call check-jvm-feature, zgc), true)
+    AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU).ad \
       )))
   endif
 

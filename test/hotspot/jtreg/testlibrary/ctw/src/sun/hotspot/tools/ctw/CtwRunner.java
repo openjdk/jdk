@@ -263,6 +263,8 @@ public class CtwRunner {
                 "-XX:-UseCounterDecay",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
+                // redirect VM output to cerr so it won't collide w/ ctw output
+                "-XX:+DisplayVMOutputToStderr",
                 // define phase start
                 "-DCompileTheWorldStartAt=" + classStart,
                 "-DCompileTheWorldStopAt=" + classStop,

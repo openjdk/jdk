@@ -113,30 +113,18 @@ protected:
 // the deduplication queue and table during the unlink_or_oops_do() operation.
 //
 class StringDedupUnlinkOrOopsDoClosure : public StackObj {
-private:
+  AlwaysTrueClosure   _always_true;
+  DoNothingClosure    _do_nothing;
   BoolObjectClosure*  _is_alive;
   OopClosure*         _keep_alive;
 
 public:
   StringDedupUnlinkOrOopsDoClosure(BoolObjectClosure* is_alive,
-                                     OopClosure* keep_alive);
+                                   OopClosure* keep_alive);
 
-  // Applies and returns the result from the is_alive closure, or
-  // returns true if no such closure was provided.
-  bool is_alive(oop o) {
-    if (_is_alive != NULL) {
-      return _is_alive->do_object_b(o);
-    }
-    return true;
-  }
+  bool is_alive(oop o) { return _is_alive->do_object_b(o); }
 
-  // Applies the keep_alive closure, or does nothing if no such
-  // closure was provided.
-  void keep_alive(oop* p) {
-    if (_keep_alive != NULL) {
-      _keep_alive->do_oop(p);
-    }
-  }
+  void keep_alive(oop* p) { _keep_alive->do_oop(p); }
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUP_HPP

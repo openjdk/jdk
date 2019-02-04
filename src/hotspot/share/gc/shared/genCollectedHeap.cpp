@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,33 +849,14 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   }
 }
 
-void GenCollectedHeap::process_string_table_roots(StrongRootsScope* scope,
-                                                  OopClosure* root_closure,
-                                                  OopStorage::ParState<false, false>* par_state_string) {
-  assert(root_closure != NULL, "Must be set");
-  // All threads execute the following. A specific chunk of buckets
-  // from the StringTable are the individual tasks.
-
-  // Either we should be single threaded or have a ParState
-  assert((scope->n_threads() <= 1) || par_state_string != NULL, "Parallel but no ParState");
-
-  if (scope->n_threads() > 1) {
-    StringTable::possibly_parallel_oops_do(par_state_string, root_closure);
-  } else {
-    StringTable::oops_do(root_closure);
-  }
-}
-
 void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
                                            OopsInGenClosure* root_closure,
                                            OopsInGenClosure* old_gen_closure,
-                                           CLDClosure* cld_closure,
-                                           OopStorage::ParState<false, false>* par_state_string) {
+                                           CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
 
   process_roots(scope, SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
-  process_string_table_roots(scope, root_closure, par_state_string);
 
   if (_process_strong_tasks->try_claim_task(GCH_PS_younger_gens)) {
     root_closure->reset_generation();
@@ -895,19 +876,11 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
                                           ScanningOption so,
                                           bool only_strong_roots,
                                           OopsInGenClosure* root_closure,
-                                          CLDClosure* cld_closure,
-                                          OopStorage::ParState<false, false>* par_state_string) {
+                                          CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
   process_roots(scope, so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
-  if (is_adjust_phase) {
-    // We never treat the string table as roots during marking
-    // for the full gc, so we only need to process it during
-    // the adjust phase.
-    process_string_table_roots(scope, root_closure, par_state_string);
-  }
-
   _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }
 

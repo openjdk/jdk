@@ -62,8 +62,6 @@ public class FuncDoclocation extends FunctionDef1Arg
       if (DTM.NULL != whereNode)
       {
         fileLocation = dtm.getDocumentBaseURI();
-//        int owner = dtm.getDocument();
-//        fileLocation = xctxt.getSourceTreeManager().findURIFromDoc(owner);
       }
     }
 

@@ -38,21 +38,15 @@ ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address r
     _tmp(LIR_OprFact::illegalOpr),
     _runtime_stub(runtime_stub) {
 
-  // Allocate tmp register if needed
-  if (!_ref_addr->is_register()) {
-    assert(_ref_addr->is_address(), "Must be an address");
-    if (_ref_addr->as_address_ptr()->index()->is_valid() ||
-        _ref_addr->as_address_ptr()->disp() != 0) {
-      // Has index or displacement, need tmp register to load address into
-      _tmp = access.gen()->new_pointer_register();
-    } else {
-      // No index or displacement, address available in base register
-      _ref_addr = _ref_addr->as_address_ptr()->base();
-    }
-  }
-
+  assert(_ref_addr->is_address(), "Must be an address");
   assert(_ref->is_register(), "Must be a register");
-  assert(_ref_addr->is_register() != _tmp->is_register(), "Only one should be a register");
+
+  // Allocate tmp register if needed
+  if (_ref_addr->as_address_ptr()->index()->is_valid() ||
+      _ref_addr->as_address_ptr()->disp() != 0) {
+    // Has index or displacement, need tmp register to load address into
+    _tmp = access.gen()->new_pointer_register();
+  }
 }
 
 DecoratorSet ZLoadBarrierStubC1::decorators() const {

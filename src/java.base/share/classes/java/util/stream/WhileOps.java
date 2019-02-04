@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -658,7 +658,7 @@ final class WhileOps {
         // True if no splitting should be performed, if true then
         // this spliterator may be used for an underlying spliterator whose
         // covered elements have an encounter order
-        // See use in stream take/dropWhile default default methods
+        // See use in stream take/dropWhile default methods
         final boolean noSplitting;
         // True when operations are cancelled for all related spliterators
         // For taking, spliterators cannot split or traversed

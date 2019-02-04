@@ -113,9 +113,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
                 getTargetModuleLink("classFrame", moduleNameContent, mdle));
         heading.addContent(Contents.SPACE);
         heading.addContent(contents.packagesLabel);
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
-                : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
+        HtmlTree htmlTree = HtmlTree.MAIN(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.packagesLabel);
         Set<PackageElement> modulePackages = configuration.modulePackages.get(mdle);

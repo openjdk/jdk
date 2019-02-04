@@ -765,22 +765,6 @@ public:
     void print(outputStream* st = tty, int indent = 0) const PRODUCT_RETURN;
   };
 
-  // Postorder iteration over the loop tree.
-  class PostorderLoops : public StackObj {
-  private:
-    Loop* _root;
-    Loop* _current;
-  public:
-    PostorderLoops(Loop* root) : _root(root), _current(root) {
-      while (_current->child() != NULL) {
-        _current = _current->child();
-      }
-    }
-    bool done() { return _current == NULL; }  // Finished iterating?
-    void next();                            // Advance to next loop
-    Loop* current() { return _current; }      // Return current loop.
-  };
-
   // Preorder iteration over the loop tree.
   class PreorderLoops : public StackObj {
   private:
@@ -857,7 +841,6 @@ public:
   int start_block_num() const       { return 0; }
   Block* rpo_at(int rpo) const      { assert(0 <= rpo && rpo < block_count(), "out of bounds");
                                       return _block_map[rpo]; }
-  int next_pre_order()              { return _next_pre_order; }
   int inc_next_pre_order()          { return _next_pre_order++; }
 
 private:

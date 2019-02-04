@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public:
 
     // OopStorage phases.
     jni,
+    stringtable,
     vm
   };
 
@@ -65,6 +66,8 @@ public:
   static const char* description(Phase phase);
   static Processor processor(Phase phase); // Precondition: is_serial(phase)
   static OopStorage* oop_storage(Phase phase); // Precondition: is_oop_storage(phase)
+
+  static bool is_stringtable(Phase phase);
 };
 
 typedef WeakProcessorPhases::Phase WeakProcessorPhase;

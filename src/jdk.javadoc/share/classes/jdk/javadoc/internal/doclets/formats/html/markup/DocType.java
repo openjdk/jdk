@@ -45,12 +45,4 @@ public enum DocType {
     DocType(String text) {
         this.text = text;
     }
-
-    public static DocType forVersion(HtmlVersion v) {
-        switch (v) {
-            case HTML4: return HTML4_TRANSITIONAL;
-            case HTML5: return HTML5;
-            default: throw new IllegalArgumentException();
-        }
-    }
 }

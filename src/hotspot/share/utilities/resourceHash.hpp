@@ -27,11 +27,6 @@
 
 #include "memory/allocation.hpp"
 
-template<typename K> struct ResourceHashtableFns {
-    typedef unsigned (*hash_fn)(K const&);
-    typedef bool (*equals_fn)(K const&, K const&);
-};
-
 template<
     typename K, typename V,
     // xlC does not compile this:
@@ -159,10 +154,6 @@ class ResourceHashtable : public ResourceObj {
       }
       ++bucket;
     }
-  }
-
-  static size_t node_size() {
-    return sizeof(Node);
   }
 };
 

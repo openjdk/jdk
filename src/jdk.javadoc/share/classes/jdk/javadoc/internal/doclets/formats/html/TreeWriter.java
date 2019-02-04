@@ -112,9 +112,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN()
-                : body;
+        HtmlTree htmlTree = HtmlTree.MAIN();
         htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
@@ -123,20 +121,12 @@ public class TreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree, true);
         htmlTree.addContent(divTree);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            body.addContent(htmlTree);
-        }
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            htmlTree = HtmlTree.FOOTER();
-        } else {
-            htmlTree = body;
-        }
+        body.addContent(htmlTree);
+        htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(htmlTree);
-        }
+        body.addContent(htmlTree);
         printHtmlDocument(null, true, body);
     }
 
@@ -187,15 +177,11 @@ public class TreeWriter extends AbstractTreeWriter {
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        bodyTree.addContent(htmlTree);
         return bodyTree;
     }
 

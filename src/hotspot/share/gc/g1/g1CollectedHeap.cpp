@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3362,24 +3362,54 @@ void G1CollectedHeap::print_termination_stats(uint worker_id,
 
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
-  uint n_workers = workers()->active_workers();
-
-  G1StringDedupUnlinkOrOopsDoClosure dedup_closure(is_alive, NULL, false);
-  ParallelCleaningTask g1_unlink_task(is_alive, &dedup_closure, n_workers, class_unloading_occurred);
-  workers()->run_task(&g1_unlink_task);
+  uint num_workers = workers()->active_workers();
+  ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
+  workers()->run_task(&unlink_task);
 }
 
-void G1CollectedHeap::partial_cleaning(BoolObjectClosure* is_alive,
-                                       bool process_strings,
-                                       bool process_string_dedup) {
-  if (!process_strings && !process_string_dedup) {
-    // Nothing to clean.
-    return;
+// Clean string dedup data structures.
+// Ideally we would prefer to use a StringDedupCleaningTask here, but we want to
+// record the durations of the phases. Hence the almost-copy.
+class G1StringDedupCleaningTask : public AbstractGangTask {
+  BoolObjectClosure* _is_alive;
+  OopClosure* _keep_alive;
+  G1GCPhaseTimes* _phase_times;
+
+public:
+  G1StringDedupCleaningTask(BoolObjectClosure* is_alive,
+                            OopClosure* keep_alive,
+                            G1GCPhaseTimes* phase_times) :
+    AbstractGangTask("Partial Cleaning Task"),
+    _is_alive(is_alive),
+    _keep_alive(keep_alive),
+    _phase_times(phase_times)
+  {
+    assert(G1StringDedup::is_enabled(), "String deduplication disabled.");
+    StringDedup::gc_prologue(true);
   }
 
-  G1StringDedupUnlinkOrOopsDoClosure dedup_closure(is_alive, NULL, false);
-  StringCleaningTask g1_unlink_task(is_alive, process_string_dedup ? &dedup_closure : NULL, process_strings);
-  workers()->run_task(&g1_unlink_task);
+  ~G1StringDedupCleaningTask() {
+    StringDedup::gc_epilogue();
+  }
+
+  void work(uint worker_id) {
+    StringDedupUnlinkOrOopsDoClosure cl(_is_alive, _keep_alive);
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupQueueFixup, worker_id);
+      StringDedupQueue::unlink_or_oops_do(&cl);
+    }
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupTableFixup, worker_id);
+      StringDedupTable::unlink_or_oops_do(&cl, worker_id);
+    }
+  }
+};
+
+void G1CollectedHeap::string_dedup_cleaning(BoolObjectClosure* is_alive,
+                                            OopClosure* keep_alive,
+                                            G1GCPhaseTimes* phase_times) {
+  G1StringDedupCleaningTask cl(is_alive, keep_alive, phase_times);
+  workers()->run_task(&cl);
 }
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
@@ -3911,11 +3941,6 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
   // not copied during the pause.
   process_discovered_references(per_thread_states);
 
-  // FIXME
-  // CM's reference processing also cleans up the string table.
-  // Should we do that here also? We could, but it is a serial operation
-  // and could significantly increase the pause time.
-
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
 
@@ -3923,12 +3948,12 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
                               g1_policy()->phase_times()->weak_phase_times());
 
   if (G1StringDedup::is_enabled()) {
-    double fixup_start = os::elapsedTime();
+    double string_dedup_time_ms = os::elapsedTime();
 
-    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, g1_policy()->phase_times());
+    string_dedup_cleaning(&is_alive, &keep_alive, g1_policy()->phase_times());
 
-    double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
-    g1_policy()->phase_times()->record_string_dedup_fixup_time(fixup_time_ms);
+    double string_cleanup_time_ms = (os::elapsedTime() - string_dedup_time_ms) * 1000.0;
+    g1_policy()->phase_times()->record_string_deduplication_time(string_cleanup_time_ms);
   }
 
   if (evacuation_failed()) {

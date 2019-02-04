@@ -49,7 +49,6 @@ inline const char* bool_to_str(bool b) {
 }
 
 const char* basictype_to_str(BasicType t);
-const char  basictype_to_char(BasicType t);
 
 jbyte *ci_card_table_address();
 template <typename T> T ci_card_table_address_as() {

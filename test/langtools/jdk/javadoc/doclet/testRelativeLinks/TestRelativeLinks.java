@@ -102,28 +102,6 @@ public class TestRelativeLinks extends JavadocTester {
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>");
     }
 
-    @Test
-    public void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-use",
-                "-sourcepath", testSrc,
-                "pkg", "pkg2");
-        checkExit(Exit.OK);
-    }
-
-    @Override
-    public void checkLinks() {
-        // since the test uses explicit links to non-existent files,
-        // we create those files to avoid false positive errors from checkLinks
-        touch("pkg/relative-class-link.html");
-        touch("pkg/relative-field-link.html");
-        touch("pkg/relative-method-link.html");
-        touch("pkg/relative-package-link.html");
-        touch("pkg/relative-multi-line-link.html");
-        super.checkLinks();
-    }
-
     private void touch(String file) {
         File f = new File(outputDir, file);
         out.println("touch " + f);

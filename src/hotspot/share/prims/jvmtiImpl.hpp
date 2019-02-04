@@ -297,24 +297,10 @@ public:
   // lazily create _jvmti_breakpoints and _breakpoint_list
   static JvmtiBreakpoints& get_jvmti_breakpoints();
 
-  // quickly test whether the bcp matches a cached breakpoint in the list
-  static inline bool is_breakpoint(address bcp);
-
   static void oops_do(OopClosure* f);
   static void metadata_do(void f(Metadata*)) NOT_JVMTI_RETURN;
   static void gc_epilogue();
 };
-
-// quickly test whether the bcp matches a cached breakpoint in the list
-bool JvmtiCurrentBreakpoints::is_breakpoint(address bcp) {
-    address *bps = get_breakpoint_list();
-    if (bps == NULL) return false;
-    for ( ; (*bps) != NULL; bps++) {
-      if ((*bps) == bcp) return true;
-    }
-    return false;
-}
-
 
 ///////////////////////////////////////////////////////////////
 //

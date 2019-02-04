@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZSERVICEABILITY_HPP
 
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "memory/allocation.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
@@ -88,12 +89,14 @@ public:
 template <bool IsGCStart, bool IsGCEnd>
 class ZServiceabilityTracer : public StackObj {
 private:
+  SvcGCMarker                       _svc_gc_marker;
   ZServiceabilityMemoryUsageTracker _memory_usage_tracker;
   ZServiceabilityManagerStatsTracer _manager_stats_tracer;
   ZServiceabilityCountersTracer     _counters_tracer;
 
 public:
   ZServiceabilityTracer() :
+      _svc_gc_marker(SvcGCMarker::CONCURRENT),
       _memory_usage_tracker(),
       _manager_stats_tracer(IsGCStart, IsGCEnd),
       _counters_tracer() {}

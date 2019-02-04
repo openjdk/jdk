@@ -92,7 +92,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
   # This setup is to verify access to system installed freetype header and libraries.
   # On Windows and MacOS this does not apply and using these options will report an error.
-  # On other platforms (Linux, Solaris, and perhaps AIX), they will default to using
+  # On other platforms (Linux, Solaris), they will default to using
   # the system libraries. If they are found automatically, nothing need be done.
   # If they are not found, the configure "--with-freetype-*" options may be used to fix that.
   # If the preference is to bundle on these platforms then use --with-freetype=bundled
@@ -102,11 +102,12 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
   if (test "x$with_freetype_include" = "x"  && test "x$with_freetype_lib" != "x") || \
      (test "x$with_freetype_include" != "x"  && test "x$with_freetype_lib" = "x"); then
-       AC_MSG_ERROR(['must specify both or neither of --with_freetype_include and --with_freetype_lib])
+       AC_MSG_ERROR(['must specify both or neither of --with-freetype-include and --with-freetype-lib])
   fi
 
   FREETYPE_TO_USE=bundled
-  if (test "x$OPENJDK_TARGET_OS" != "xwindows" && test "x$OPENJDK_TARGET_OS" != "xmacosx"); then
+  if (test "x$OPENJDK_TARGET_OS" != "xwindows" && test "x$OPENJDK_TARGET_OS" != "xmacosx" \
+      && test "x$OPENJDK_TARGET_OS" != "xaix"); then
     FREETYPE_TO_USE=system
   fi
   if (test "x$with_freetype" != "x"); then
@@ -115,7 +116,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     elif (test "x$with_freetype" = "xbundled"); then
       FREETYPE_TO_USE=bundled
       if (test "x$with_freetype_include" != "x"  || test "x$with_freetype_lib" != "x"); then
-        AC_MSG_ERROR(['bundled' cannot be specified with --with_freetype_include and --with_freetype_lib])
+        AC_MSG_ERROR(['bundled' cannot be specified with --with-freetype-include and --with-freetype-lib])
       fi
     else
        AC_MSG_ERROR(['valid values for --with-freetype are 'system' and 'bundled'])

@@ -1825,40 +1825,27 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     if (unloading_occurred) {
       MutexLockerEx ml2(is_concurrent ? Module_lock : NULL);
       JFR_ONLY(Jfr::on_unloading_classes();)
+
       MutexLockerEx ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
-    }
-  }
-
-  // Cleanup ResolvedMethodTable even if no unloading occurred.
-  {
-    GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-    ResolvedMethodTable::trigger_cleanup();
-  }
-
-  if (unloading_occurred) {
-    {
-      GCTraceTime(Debug, gc, phases) t("SymbolTable", gc_timer);
-      // Check if there's work to do in the SymbolTable
-      SymbolTable::do_check_concurrent_work();
-    }
-
-    {
-      MutexLockerEx ml(is_concurrent ? SystemDictionary_lock : NULL);
-      GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
       constraints()->purge_loader_constraints();
       resolution_errors()->purge_resolution_errors();
     }
+  }
 
-    {
-      GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-      // Oops referenced by the protection domain cache table may get unreachable independently
-      // of the class loader (eg. cached protection domain oops). So we need to
-      // explicitly unlink them here.
-      // All protection domain oops are linked to the caller class, so if nothing
-      // unloads, this is not needed.
-      _pd_cache_table->trigger_cleanup();
-    }
+  GCTraceTime(Debug, gc, phases) t("Trigger cleanups", gc_timer);
+  // Trigger cleaning the ResolvedMethodTable even if no unloading occurred.
+  ResolvedMethodTable::trigger_cleanup();
+
+  if (unloading_occurred) {
+    SymbolTable::trigger_cleanup();
+
+    // Oops referenced by the protection domain cache table may get unreachable independently
+    // of the class loader (eg. cached protection domain oops). So we need to
+    // explicitly unlink them here.
+    // All protection domain oops are linked to the caller class, so if nothing
+    // unloads, this is not needed.
+    _pd_cache_table->trigger_cleanup();
   }
 
   return unloading_occurred;

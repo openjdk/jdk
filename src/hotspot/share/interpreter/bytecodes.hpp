@@ -380,7 +380,6 @@ class Bytecodes: AllStatic {
   static Code       code_or_bp_at(address bcp)    { return (Code)cast(*bcp); }
 
   static Code       code_at(Method* method, int bci);
-  static bool       is_active_breakpoint_at(address bcp) { return (Code)*bcp == _breakpoint; }
 
   // find a bytecode, behind a breakpoint if necessary:
   static Code       non_breakpoint_code_at(const Method* method, address bcp);
@@ -405,17 +404,11 @@ class Bytecodes: AllStatic {
   // if 'end' is provided, it indicates the end of the code buffer which
   // should not be read past when parsing.
   static int         special_length_at(Bytecodes::Code code, address bcp, address end = NULL);
-  static int         special_length_at(Method* method, address bcp, address end = NULL) { return special_length_at(code_at(method, bcp), bcp, end); }
   static int         raw_special_length_at(address bcp, address end = NULL);
   static int         length_for_code_at(Bytecodes::Code code, address bcp)  { int l = length_for(code); return l > 0 ? l : special_length_at(code, bcp); }
   static int         length_at      (Method* method, address bcp)  { return length_for_code_at(code_at(method, bcp), bcp); }
   static int         java_length_at (Method* method, address bcp)  { return length_for_code_at(java_code_at(method, bcp), bcp); }
   static bool        is_java_code   (Code code)    { return 0 <= code && code < number_of_java_codes; }
-
-  static bool        is_aload       (Code code)    { return (code == _aload  || code == _aload_0  || code == _aload_1
-                                                                             || code == _aload_2  || code == _aload_3); }
-  static bool        is_astore      (Code code)    { return (code == _astore || code == _astore_0 || code == _astore_1
-                                                                             || code == _astore_2 || code == _astore_3); }
 
   static bool        is_store_into_local(Code code){ return (_istore <= code && code <= _astore_3); }
   static bool        is_const       (Code code)    { return (_aconst_null <= code && code <= _ldc2_w); }
@@ -433,7 +426,6 @@ class Bytecodes: AllStatic {
     assert(code == (u_char)code, "must be a byte");
     return _flags[code + (is_wide ? (1<<BitsPerByte) : 0)];
   }
-  static int         format_bits    (Code code, bool is_wide) { return flags(code, is_wide) & _all_fmt_bits; }
   static bool        has_all_flags  (Code code, int test_flags, bool is_wide) {
     return (flags(code, is_wide) & test_flags) == test_flags;
   }

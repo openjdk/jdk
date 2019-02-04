@@ -588,7 +588,7 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   _num_active_tasks = active_tasks;
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
-  _terminator = TaskTerminator((int) active_tasks, _task_queues);
+  _terminator.terminator()->reset_for_reuse((int) active_tasks);
   _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
   _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
 }
@@ -1655,11 +1655,9 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
-  } else {
-    GCTraceTime(Debug, gc, phases) debug("Cleanup", _gc_timer_cm);
-    // No need to clean string table as it is treated as strong roots when
-    // class unloading is disabled.
-    _g1h->partial_cleaning(&g1_is_alive, false, G1StringDedup::is_enabled());
+  } else if (StringDedup::is_enabled()) {
+    GCTraceTime(Debug, gc, phases) debug("String Deduplication", _gc_timer_cm);
+    _g1h->string_dedup_cleaning(&g1_is_alive, NULL);
   }
 }
 

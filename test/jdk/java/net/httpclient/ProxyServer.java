@@ -25,6 +25,7 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -90,12 +91,13 @@ public class ProxyServer extends Thread implements Closeable {
         this.credentials = credentials;
         setName("ProxyListener");
         setDaemon(true);
-        connections = new LinkedList<>();
+        connections = new CopyOnWriteArrayList<Connection>();
         start();
     }
 
     public ProxyServer(String s) {
         credentials = null;
+        connections = new CopyOnWriteArrayList<Connection>();
     }
 
     /**
@@ -110,15 +112,16 @@ public class ProxyServer extends Thread implements Closeable {
      * currently open
      */
     public void close() throws IOException {
-        if (debug) System.out.println("Proxy: closing");
+        if (debug) System.out.println("Proxy: closing server");
         done = true;
         listener.close();
         for (Connection c : connections) {
             c.close();
+            c.awaitCompletion();
         }
     }
 
-    List<Connection> connections;
+    final CopyOnWriteArrayList<Connection> connections;
 
     volatile boolean done;
 
@@ -137,17 +140,20 @@ public class ProxyServer extends Thread implements Closeable {
     }
 
     public void execute() {
+        int id = 0;
         try {
-            while(!done) {
+            while (!done) {
                 Socket s = listener.accept();
+                id++;
+                Connection c = new Connection(s, id);
                 if (debug)
-                    System.out.println("Client: " + s);
-                Connection c = new Connection(s);
+                    System.out.println("Proxy: accepted new connection: " + s);
                 connections.add(c);
+                c.init();
             }
         } catch(Throwable e) {
             if (debug && !done) {
-                System.out.println("Fatal error: Listener: " + e);
+                System.out.println("Proxy: Fatal error, listener got " + e);
                 e.printStackTrace();
             }
         }
@@ -158,21 +164,20 @@ public class ProxyServer extends Thread implements Closeable {
      */
     class Connection {
 
+        private final int id;
         Socket clientSocket, serverSocket;
         Thread out, in;
         volatile InputStream clientIn, serverIn;
         volatile OutputStream clientOut, serverOut;
 
-        boolean forwarding = false;
-
         final static int CR = 13;
         final static int LF = 10;
 
-        Connection(Socket s) throws IOException {
+        Connection(Socket s, int id) throws IOException {
+            this.id = id;
             this.clientSocket= s;
             this.clientIn = new BufferedInputStream(s.getInputStream());
             this.clientOut = s.getOutputStream();
-            init();
         }
 
         byte[] readHeaders(InputStream is) throws IOException {
@@ -218,9 +223,21 @@ public class ProxyServer extends Thread implements Closeable {
         private volatile boolean closing;
         public synchronized void close() throws IOException {
             closing = true;
-            if (debug) System.out.println("Closing connection (proxy)");
-            if (serverSocket != null) serverSocket.close();
-            if (clientSocket != null) clientSocket.close();
+            if (debug)
+                System.out.println("Proxy: closing connection {" + this + "}");
+            if (serverSocket != null)
+                serverSocket.close();
+            if (clientSocket != null)
+                clientSocket.close();
+        }
+
+        public void awaitCompletion() {
+            try {
+                if (in != null)
+                    in.join();
+                if (out!= null)
+                    out.join();
+            } catch (InterruptedException e) { }
         }
 
         int findCRLF(byte[] b) {
@@ -274,6 +291,9 @@ public class ProxyServer extends Thread implements Closeable {
                 while (true) {
                     buf = readHeaders(clientIn);
                     if (findCRLF(buf) == -1) {
+                        if (debug)
+                            System.out.println("Proxy: no CRLF closing, buf contains:["
+                                    + new String(buf, UTF_8) + "]" );
                         close();
                         return;
                     }
@@ -302,7 +322,8 @@ public class ProxyServer extends Thread implements Closeable {
                 }
             } catch (Throwable e) {
                 if (debug) {
-                    System.out.println (e);
+                    System.out.println("Proxy: " + e);
+                    e.printStackTrace();
                 }
                 try {close(); } catch (IOException e1) {}
             }
@@ -352,7 +373,8 @@ public class ProxyServer extends Thread implements Closeable {
             } else {
                 port = Integer.parseInt(hostport[1]);
             }
-            if (debug) System.out.printf("Server: (%s/%d)\n", hostport[0], port);
+            if (debug)
+                System.out.printf("Proxy: connecting to (%s/%d)\n", hostport[0], port);
             serverSocket = new Socket(hostport[0], port);
             serverOut = serverSocket.getOutputStream();
 
@@ -372,8 +394,9 @@ public class ProxyServer extends Thread implements Closeable {
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
-                    if (debug) {
-                        System.out.println (e);
+                    if (!closing && debug) {
+                        System.out.println("Proxy: " + e);
+                        e.printStackTrace();
                     }
                 }
             });
@@ -388,8 +411,8 @@ public class ProxyServer extends Thread implements Closeable {
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
-                    if (debug) {
-                        System.out.println(e);
+                    if (!closing && debug) {
+                        System.out.println("Proxy: " + e);
                         e.printStackTrace();
                     }
                 }
@@ -408,6 +431,11 @@ public class ProxyServer extends Thread implements Closeable {
             // might fail if we're closing, but we don't care.
             clientOut.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
             proxyCommon();
+        }
+
+        @Override
+        public String toString() {
+            return "Proxy connection " + id + ", client sock:" + clientSocket;
         }
     }
 

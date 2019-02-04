@@ -173,11 +173,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public Content getAnnotationDetails(Content annotationDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(annotationDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
     }
 
     /**
@@ -208,16 +204,12 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        String summary = resources.getText("doclet.Member_Table_Summary",
-            resources.getText("doclet.Field_Summary"),
-            resources.getText("doclet.fields"));
         Content caption = contents.getContent("doclet.Fields");
 
         TableHeader header = new TableHeader(contents.modifierAndTypeLabel, contents.fields,
             contents.descriptionLabel);
 
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(caption)
                 .setHeader(header)
                 .setRowScopeColumn(1)

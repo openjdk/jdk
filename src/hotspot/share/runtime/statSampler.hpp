@@ -65,6 +65,4 @@ class StatSampler : AllStatic {
     static void destroy();
 };
 
-void statSampler_exit();
-
 #endif // SHARE_RUNTIME_STATSAMPLER_HPP

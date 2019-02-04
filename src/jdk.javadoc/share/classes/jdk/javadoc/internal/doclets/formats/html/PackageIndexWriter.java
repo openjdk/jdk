@@ -102,10 +102,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            String tableSummary = resources.getText("doclet.Member_Table_Summary",
-                    resources.getText("doclet.Package_Summary"), resources.getText("doclet.packages"));
-            Table table =  new Table(configuration.htmlVersion, HtmlStyle.overviewSummary)
-                    .setSummary(tableSummary)
+            Table table =  new Table(HtmlStyle.overviewSummary)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Packages"))

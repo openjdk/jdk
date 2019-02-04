@@ -65,9 +65,6 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   Klass*    holder_klass()  const     { return _holder_klass; }
   Metadata* holder_metadata() const   { return _holder_metadata; }
 
-  void set_holder_metadata(Metadata* m) { _holder_metadata = m; }
-  void set_holder_klass(Klass* k)     { _holder_klass = k; }
-
   static int holder_metadata_offset() { return offset_of(CompiledICHolder, _holder_metadata); }
   static int holder_klass_offset()    { return offset_of(CompiledICHolder, _holder_klass); }
 

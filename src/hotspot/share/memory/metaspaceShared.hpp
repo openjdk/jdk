@@ -168,13 +168,10 @@ class MetaspaceShared : AllStatic {
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS);
-  static void check_shared_class_loader_type(InstanceKlass* ik);
 
   // Allocate a block of memory from the "mc", "ro", or "rw" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
-
-  static char* read_only_space_top();
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {

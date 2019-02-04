@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,5 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
     // store-before-CAS avoidance in fast_lock/compiler_lock_object
     // we can find any flavor mark in the displaced mark.
   }
-// [RGV] The next line appears to do nothing!
-  intptr_t dh = (intptr_t) displaced_header();
   dest->set_displaced_header(displaced_header());
 }

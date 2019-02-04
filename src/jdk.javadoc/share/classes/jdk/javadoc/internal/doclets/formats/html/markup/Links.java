@@ -47,7 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 public class Links {
 
     private final DocPath file;
-    private final HtmlVersion version;
 
     /**
      * Creates a {@code Links} object for a specific file, to be written in a specific HTML version.
@@ -56,11 +55,9 @@ public class Links {
      * to use an {@code id} or {@code name} attribute when creating anchors.
      *
      * @param file the file
-     * @param version the HTML version
      */
-    public Links(DocPath file, HtmlVersion version) {
+    public Links(DocPath file) {
         this.file = file;
-        this.version = version;
     }
 
     /**
@@ -107,7 +104,7 @@ public class Links {
      * @return a content tree for the marker anchor
      */
     public Content createAnchor(String name, Content content) {
-        return HtmlTree.A(version, name, (content == null ? EMPTY_COMMENT : content));
+        return HtmlTree.A_ID(name, (content == null ? EMPTY_COMMENT : content));
     }
 
     private static final Content EMPTY_COMMENT = new Comment(" ");
@@ -319,59 +316,7 @@ public class Links {
      * @return a valid HTML name
      */
     public String getName(String name) {
-        /* The HTML 4 spec at http://www.w3.org/TR/html4/types.html#h-6.2 mentions
-         * that the name/id should begin with a letter followed by other valid characters.
-         * The HTML 5 spec (draft) is more permissive on names/ids where the only restriction
-         * is that it should be at least one character long and should not contain spaces.
-         * The spec draft is @ http://www.w3.org/html/wg/drafts/html/master/dom.html#the-id-attribute.
-         *
-         * For HTML 4, we need to check for non-characters at the beginning of the name and
-         * substitute it accordingly, "_" and "$" can appear at the beginning of a member name.
-         * The method substitutes "$" with "Z:Z:D" and will prefix "_" with "Z:Z".
-         */
-
-        if (version == HtmlVersion.HTML5) {
-            return name.replaceAll(" +", "");
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            switch (ch) {
-                case '(':
-                case ')':
-                case '<':
-                case '>':
-                case ',':
-                    sb.append('-');
-                    break;
-                case ' ':
-                case '[':
-                    break;
-                case ']':
-                    sb.append(":A");
-                    break;
-                // Any appearance of $ needs to be substituted with ":D" and not with hyphen
-                // since a field name "P$$ and a method P(), both valid member names, can end
-                // up as "P--". A member name beginning with $ needs to be substituted with
-                // "Z:Z:D".
-                case '$':
-                    if (i == 0)
-                        sb.append("Z:Z");
-                    sb.append(":D");
-                    break;
-                // A member name beginning with _ needs to be prefixed with "Z:Z" since valid anchor
-                // names can only begin with a letter.
-                case '_':
-                    if (i == 0)
-                        sb.append("Z:Z");
-                    sb.append(ch);
-                    break;
-                default:
-                    sb.append(ch);
-            }
-        }
-        return sb.toString();
+        return name.replaceAll(" +", "");
     }
 
 }

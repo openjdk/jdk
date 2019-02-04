@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,30 @@ import java.net.*;
 
 public class ProtocolRedirect {
     public static void main(String [] args) throws Exception {
-        int localPort;
-        new Thread(new Redirect()).start();
-        while ((localPort = Redirect.listenPort) == -1) {
-            Thread.sleep(1000);
-        }
+        try (Redirect server = new Redirect(new ServerSocket())) {
+            ServerSocket ss = server.ssock;
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            new Thread(server).start();
 
-        String page = "http://localhost:"+localPort+"/";
-        URL url = new URL(page);
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-        conn.connect();
-        if (conn.getResponseCode() != 302) {
-            throw new RuntimeException("Test failed. Should get RespCode: 302. Got:"+conn.getResponseCode());
+            URL url = new URL("http", ss.getInetAddress().getHostAddress(), ss.getLocalPort(), "/");
+            String page = url.toString();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.connect();
+            if (conn.getResponseCode() != 302) {
+                System.err.println("Bad response code received from: " + page);
+                throw new RuntimeException("Test failed. Should get RespCode: 302. Got:" + conn.getResponseCode());
+            }
+            System.out.println("Received expected response code from: " + page);
         }
     }
 }
 
-class Redirect implements Runnable {
-    public static int listenPort = -1; // port to listen for connections on
+class Redirect implements Runnable, Closeable {
+    final ServerSocket ssock;
+    volatile boolean stopped;
+    Redirect(ServerSocket ss) {
+        ssock = ss;
+    }
 
     // Send a header redirect to the peer telling it to go to the
     // https server on the host it sent the connection request to.
@@ -61,18 +67,31 @@ class Redirect implements Runnable {
         out.write(reply.toString().getBytes());
     }
 
-    Socket sock;
+    volatile Socket sock;
     public void run() {
         try {
-            ServerSocket ssock = new ServerSocket();
-            ssock.bind(null);
-            listenPort = ssock.getLocalPort();
-            sock = ssock.accept();
-            sock.setTcpNoDelay(true);
+            Socket s = sock = ssock.accept();
+            s.setTcpNoDelay(true);
             sendReply();
-            sock.shutdownOutput();
-        } catch(IOException io) {
-            throw new RuntimeException(io.getCause());
+            s.shutdownOutput();
+        } catch(Throwable t) {
+            if (!stopped) {
+                t.printStackTrace();
+                throw new RuntimeException(String.valueOf(t), t);
+            }
+        }
+    }
+
+    public void close() {
+        Socket s = sock;
+        boolean done = stopped;
+        if (done) return;
+        stopped = true;
+        try {
+            if (s != null) s.close();
+        } catch (Throwable x) {
+        } finally {
+            try { ssock.close(); } catch (Throwable x) {}
         }
     }
 

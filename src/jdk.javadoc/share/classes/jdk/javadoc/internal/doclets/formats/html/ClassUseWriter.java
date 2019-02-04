@@ -99,14 +99,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final ConstructorWriterImpl constrSubWriter;
     final FieldWriterImpl fieldSubWriter;
     final NestedClassWriterImpl classSubWriter;
-    // Summary for various use tables.
-    final String classUseTableSummary;
-    final String subclassUseTableSummary;
-    final String subinterfaceUseTableSummary;
-    final String fieldUseTableSummary;
-    final String methodUseTableSummary;
-    final String constructorUseTableSummary;
-    final String packageUseTableSummary;
     private final Navigation navBar;
 
     /**
@@ -164,22 +156,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         constrSubWriter = new ConstructorWriterImpl(this);
         fieldSubWriter = new FieldWriterImpl(this);
         classSubWriter = new NestedClassWriterImpl(this);
-
-        String useTableSummary = resources.getText("doclet.Use_Table_Summary");
-        classUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.classes"));
-        subclassUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.subclasses"));
-        subinterfaceUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.subinterfaces"));
-        fieldUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.fields"));
-        methodUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.methods"));
-        constructorUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.constructors"));
-        packageUseTableSummary = MessageFormat.format(useTableSummary,
-                resources.getText("doclet.packages"));
         this.navBar = new Navigation(typeElement, configuration, fixedNavDiv, PageMode.USE, path);
     }
 
@@ -258,21 +234,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             div.addContent(contents.getContent("doclet.ClassUse_No.usage.of.0",
                     utils.getFullyQualifiedName(typeElement)));
         }
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(div);
-            body.addContent(mainTree);
-        } else {
-            body.addContent(div);
-        }
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : body;
+        mainTree.addContent(div);
+        body.addContent(mainTree);
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.addContent(navBar.getContent(false));
-        addBottom(htmlTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(htmlTree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
+        body.addContent(footer);
         printHtmlDocument(null, true, body);
     }
 
@@ -302,8 +270,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                .setSummary(packageUseTableSummary)
+        Table table = new Table(HtmlStyle.useSummary)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -330,8 +297,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
 
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                .setSummary(packageUseTableSummary)
+        Table table = new Table(HtmlStyle.useSummary)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -354,9 +320,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             Content markerAnchor = links.createAnchor(getPackageAnchorName(pkg));
-            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
-                    ? HtmlTree.SECTION(markerAnchor)
-                    : HtmlTree.LI(HtmlStyle.blockList, markerAnchor);
+            HtmlTree htmlTree = HtmlTree.SECTION(markerAnchor);
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                             typeElement)),
@@ -364,11 +328,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
             htmlTree.addContent(heading);
             addClassUse(pkg, htmlTree);
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
-            } else {
-                ul.addContent(htmlTree);
-            }
+            ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
         }
         Content li = HtmlTree.LI(HtmlStyle.blockList, ul);
         contentTree.addContent(li);
@@ -400,67 +360,67 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content pkgLink = getPackageLink(pkg, utils.getPackageName(pkg));
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_Annotation", classLink,
-                pkgLink), classUseTableSummary, contentTree);
+                pkgLink), contentTree);
         classSubWriter.addUseInfo(pkgToClassTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_TypeParameter", classLink,
-                pkgLink), classUseTableSummary, contentTree);
+                pkgLink), contentTree);
         classSubWriter.addUseInfo(pkgToSubclass.get(pkg),
                 contents.getContent("doclet.ClassUse_Subclass", classLink,
-                pkgLink), subclassUseTableSummary, contentTree);
+                pkgLink), contentTree);
         classSubWriter.addUseInfo(pkgToSubinterface.get(pkg),
                 contents.getContent("doclet.ClassUse_Subinterface", classLink,
-                pkgLink), subinterfaceUseTableSummary, contentTree);
+                pkgLink), contentTree);
         classSubWriter.addUseInfo(pkgToImplementingClass.get(pkg),
                 contents.getContent("doclet.ClassUse_ImplementingClass", classLink,
-                pkgLink), classUseTableSummary, contentTree);
+                pkgLink), contentTree);
         fieldSubWriter.addUseInfo(pkgToField.get(pkg),
                 contents.getContent("doclet.ClassUse_Field", classLink,
-                pkgLink), fieldUseTableSummary, contentTree);
+                pkgLink), contentTree);
         fieldSubWriter.addUseInfo(pkgToFieldAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_FieldAnnotations", classLink,
-                pkgLink), fieldUseTableSummary, contentTree);
+                pkgLink), contentTree);
         fieldSubWriter.addUseInfo(pkgToFieldTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_FieldTypeParameter", classLink,
-                pkgLink), fieldUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodAnnotations", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodParameterAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodParameterAnnotations", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodTypeParameter", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodReturn.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodReturn", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodReturnTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodReturnTypeParameter", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodArgs.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodArgs", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodArgTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodArgsTypeParameters", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         methodSubWriter.addUseInfo(pkgToMethodThrows.get(pkg),
                 contents.getContent("doclet.ClassUse_MethodThrows", classLink,
-                pkgLink), methodUseTableSummary, contentTree);
+                pkgLink), contentTree);
         constrSubWriter.addUseInfo(pkgToConstructorAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_ConstructorAnnotations", classLink,
-                pkgLink), constructorUseTableSummary, contentTree);
+                pkgLink), contentTree);
         constrSubWriter.addUseInfo(pkgToConstructorParameterAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_ConstructorParameterAnnotations", classLink,
-                pkgLink), constructorUseTableSummary, contentTree);
+                pkgLink), contentTree);
         constrSubWriter.addUseInfo(pkgToConstructorArgs.get(pkg),
                 contents.getContent("doclet.ClassUse_ConstructorArgs", classLink,
-                pkgLink), constructorUseTableSummary, contentTree);
+                pkgLink), contentTree);
         constrSubWriter.addUseInfo(pkgToConstructorArgTypeParameter.get(pkg),
                 contents.getContent("doclet.ClassUse_ConstructorArgsTypeParameters", classLink,
-                pkgLink), constructorUseTableSummary, contentTree);
+                pkgLink), contentTree);
         constrSubWriter.addUseInfo(pkgToConstructorThrows.get(pkg),
                 contents.getContent("doclet.ClassUse_ConstructorThrows", classLink,
-                pkgLink), constructorUseTableSummary, contentTree);
+                pkgLink), contentTree);
     }
 
     /**
@@ -476,9 +436,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
                 contents.moduleLabel);
@@ -489,9 +447,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         navBar.setNavLinkClass(classLinkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        bodyTree.addContent(htmlTree);
         ContentBuilder headContent = new ContentBuilder();
         headContent.addContent(contents.getContent("doclet.ClassUse_Title", cltype));
         headContent.addContent(new HtmlTree(HtmlTag.BR));
@@ -499,11 +455,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING,
                 true, HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(div);
-        } else {
-            bodyTree.addContent(div);
-        }
+        mainTree.addContent(div);
         return bodyTree;
     }
 }

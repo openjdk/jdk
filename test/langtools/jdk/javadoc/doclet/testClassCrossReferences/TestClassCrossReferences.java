@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,20 +83,4 @@ public class TestClassCrossReferences extends JavadocTester {
                 "The code being documented uses modules but the packages defined"
                 + " in http://docs.oracle.com/javase/8/docs/api/ are in the unnamed module");
     }
-
-    @Test
-    public void test_html4() {
-        javadoc("-d", "out-html4",
-                "-source", "8",
-                "-html4",
-                "-Xdoclint:none",
-                "-sourcepath", testSrc,
-                "-linkoffline", uri, testSrc,
-                testSrc("C.java"));
-        checkExit(Exit.OK);
-
-        checkOutput("C.html", true,
-                "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
-                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>");
-}
 }

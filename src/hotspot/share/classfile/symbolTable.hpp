@@ -123,18 +123,19 @@ private:
   volatile bool _needs_rehashing;
 
   volatile size_t _items_count;
-  volatile size_t _uncleaned_items_count;
+  volatile bool   _has_items_to_clean;
 
   double get_load_factor() const;
-  double get_dead_factor() const;
 
   void check_concurrent_work();
-  void trigger_concurrent_work();
 
   static void item_added();
   static void item_removed();
-  static void set_item_clean_count(size_t ncl);
-  static void mark_item_clean_count();
+
+  // For cleaning
+  void reset_has_items_to_clean();
+  void mark_has_items_to_clean();
+  bool has_items_to_clean() const;
 
   SymbolTable();
 
@@ -190,12 +191,9 @@ public:
     initialize_symbols(symbol_alloc_arena_size);
   }
 
-  static void unlink() {
-    do_check_concurrent_work();
-  }
-  static void do_check_concurrent_work();
   static void do_concurrent_work(JavaThread* jt);
   static bool has_work() { return the_table()->_has_work; }
+  static void trigger_cleanup();
 
   // Probing
   static Symbol* lookup(const char* name, int len, TRAPS);

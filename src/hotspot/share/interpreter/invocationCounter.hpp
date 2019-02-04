@@ -57,10 +57,6 @@ class InvocationCounter {
   };
 
  public:
-  static int InterpreterInvocationLimit;        // CompileThreshold scaled for interpreter use
-  static int InterpreterBackwardBranchLimit;    // A separate threshold for on stack replacement
-  static int InterpreterProfileLimit;           // Profiling threshold scaled for interpreter use
-
   typedef address (*Action)(const methodHandle& method, TRAPS);
 
   enum PublicConstants {
@@ -95,11 +91,10 @@ class InvocationCounter {
   Action action() const                          { return _action[state()]; }
   int    count() const                           { return _counter >> number_of_noncount_bits; }
 
-  int   get_InvocationLimit() const              { return InterpreterInvocationLimit >> number_of_noncount_bits; }
-  int   get_BackwardBranchLimit() const          { return InterpreterBackwardBranchLimit >> number_of_noncount_bits; }
-  int   get_ProfileLimit() const                 { return InterpreterProfileLimit >> number_of_noncount_bits; }
-
 #ifdef CC_INTERP
+  static int InterpreterInvocationLimit;        // CompileThreshold scaled for interpreter use
+  static int InterpreterBackwardBranchLimit;    // A separate threshold for on stack replacement
+
   // Test counter using scaled limits like the asm interpreter would do rather than doing
   // the shifts to normalize the counter.
   // Checks sum of invocation_counter and backedge_counter as the template interpreter does.
@@ -110,11 +105,6 @@ class InvocationCounter {
   bool reached_BackwardBranchLimit(InvocationCounter *back_edge_count) const {
     return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
            (unsigned int) InterpreterBackwardBranchLimit;
-  }
-  // Do this just like asm interpreter does for max speed.
-  bool reached_ProfileLimit(InvocationCounter *back_edge_count) const {
-    return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
-           (unsigned int) InterpreterProfileLimit;
   }
 #endif // CC_INTERP
 

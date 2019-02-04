@@ -60,6 +60,8 @@ gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generi
 gc/g1/plab/TestPLABPromotion.java                               8191048   generic-all
 gc/g1/plab/TestPLABResize.java                                  8191048   generic-all
 
+gc/stress/TestStressG1Humongous.java                            8218176   generic-all
+
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   macosx-all
@@ -109,8 +111,6 @@ vmTestbase/vm/mlvm/anonloader/stress/oome/heap/Test.java         8186299   gener
 vmTestbase/vm/mlvm/anonloader/stress/oome/metaspace/Test.java    8186299   generic-all
 
 # jvmti tests
-vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretbase/TestDescription.java       8195635   generic-all
-
 vmTestbase/nsk/jvmti/PopFrame/popframe009/TestDescription.java                     8195639   generic-all
 
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn001/TestDescription.java     8195674   generic-all
@@ -126,6 +126,61 @@ vmTestbase/nsk/jvmti/PopFrame/popframe005/TestDescription.java                  
 vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java                   8207013   generic-all
 
 serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                        8202482   generic-all
+
+# tests require pop_frame and force_early_return capabilities
+vmTestbase/nsk/jdb/pop/pop001/pop001.java                                                         8195635 generic-all
+vmTestbase/nsk/jdb/pop_exception/pop_exception001/pop_exception001.java                           8195635 generic-all
+vmTestbase/nsk/jdb/reenter/reenter001/reenter001.java                                             8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc01x002/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x001/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x002/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x001/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x002/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc06x001/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc08x001/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x002/TestDescription.java                               8195635 generic-all
+vmTestbase/nsk/jdi/MethodExitEvent/returnValue/returnValue003/returnValue003.java                 8195635 generic-all
+vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.jav                        8195635 generic-all
+vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes001/TestDescription.java                    8195635 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses002/TestDescription.java         8195635 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java                         8195635 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java                         8195635 generic-all
+vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java                                    8195635 generic-all
+vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn002/forceEarlyReturn002.java 8195635 generic-all
+vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn001/TestDescription.java                    8195635 generic-all
+vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java                    8195635 generic-all
+vmTestbase/nsk/jvmti/PopFrame/popframe001/TestDescription.java                                    8195635 generic-all
+vmTestbase/nsk/jvmti/PopFrame/popframe003/TestDescription.java                                    8195635 generic-all
+vmTestbase/nsk/jvmti/PopFrame/popframe005/TestDescription.java                                    8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/capability/CM01/cm01t007/TestDescription.java                      8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t001/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS201/hs201t001/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS201/hs201t002/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS202/hs202t002/hs202t002.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS203/hs203t001/hs203t001.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS203/hs203t002/hs203t002.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS203/hs203t003/hs203t003.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS203/hs203t004/hs203t004.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t001/hs204t001.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t003/hs204t003.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t004/hs204t004.java                             8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretbase/TestDescription.java                      8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretfp/TestDescription.java                        8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretint/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretlong/TestDescription.java                      8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretobj/TestDescription.java                       8195635 generic-all
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretstr/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java                   8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java                   8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_b/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2same_a/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2same_b/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_none2indy_a/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_none2indy_b/TestDescription.java                       8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java                     8195635 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/stepBreakPopReturn/INDIFY_Test.java                            8195635 generic-all
 
 compiler/stable/TestStableBoolean.java                           8204347   generic-all
 compiler/stable/TestStableByte.java                              8204347   generic-all

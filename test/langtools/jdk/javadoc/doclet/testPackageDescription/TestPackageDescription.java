@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,6 @@ public class TestPackageDescription extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 "<a id=\"package.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<div class=\"block\">package description</div>\n");
-    }
-
-    @Test
-    public void test2() {
-        javadoc("-d", "out-2",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/package-summary.html", true,
-                "<a name=\"package.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">package description</div>\n");

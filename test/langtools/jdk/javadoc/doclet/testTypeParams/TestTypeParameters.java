@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,22 +71,6 @@ public class TestTypeParameters extends JavadocTester {
         // Nested type parameters
         checkOutput("pkg/C.html", true,
                 "<a id=\"formatDetails(java.util.Collection,java.util.Collection)\">\n"
-                + "<!--   -->\n"
-                + "</a>");
-    }
-
-    @Test
-    public void test1_html4() {
-        javadoc("-d", "out-1-html4",
-                "-html4",
-                "-use",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        // Nested type parameters
-        checkOutput("pkg/C.html", true,
-                "<a name=\"formatDetails-java.util.Collection-java.util.Collection-\">\n"
                 + "<!--   -->\n"
                 + "</a>");
     }

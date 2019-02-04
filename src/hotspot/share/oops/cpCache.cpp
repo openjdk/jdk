@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,14 +851,12 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 // Printing
 
 void ConstantPoolCache::print_on(outputStream* st) const {
-  assert(is_constantPoolCache(), "obj must be constant pool cache");
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->print(st, i);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {
-  assert(is_constantPoolCache(), "obj must be constant pool cache");
   st->print("cache [%d]", length());
   print_address_on(st);
   st->print(" for ");
@@ -869,7 +867,6 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
 // Verification
 
 void ConstantPoolCache::verify_on(outputStream* st) {
-  guarantee(is_constantPoolCache(), "obj must be constant pool cache");
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->verify(st);
 }

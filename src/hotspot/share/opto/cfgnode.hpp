@@ -119,11 +119,13 @@ class JProjNode : public ProjNode {
 // can turn PhiNodes into copys in-place by NULL'ing out their RegionNode
 // input in slot 0.
 class PhiNode : public TypeNode {
+  friend class PhaseRenumberLive;
+
   const TypePtr* const _adr_type; // non-null only for Type::MEMORY nodes.
   // The following fields are only used for data PhiNodes to indicate
   // that the PhiNode represents the value of a known instance field.
         int _inst_mem_id; // Instance memory id (node index of the memory Phi)
-  const int _inst_id;     // Instance id of the memory slice.
+        int _inst_id;     // Instance id of the memory slice.
   const int _inst_index;  // Alias index of the instance memory slice.
   // Array elements references have the same alias_idx but different offset.
   const int _inst_offset; // Offset of the instance memory slice.

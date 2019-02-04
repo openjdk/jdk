@@ -31,6 +31,7 @@
 
 class InstanceKlass;
 class Klass;
+class Thread;
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be

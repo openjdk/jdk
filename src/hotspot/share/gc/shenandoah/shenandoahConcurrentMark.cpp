@@ -46,6 +46,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 template<UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
 class ShenandoahInitMarkRootsClosure : public OopClosure {

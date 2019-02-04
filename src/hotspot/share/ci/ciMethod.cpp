@@ -46,6 +46,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER2
@@ -89,6 +90,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _is_c2_compilable   = !h_m()->is_not_c2_compilable();
   _can_be_parsed      = true;
   _has_reserved_stack_access = h_m()->has_reserved_stack_access();
+  _is_overpass        = h_m()->is_overpass();
   // Lazy fields, filled in on demand.  Require allocation.
   _code               = NULL;
   _exception_handlers = NULL;
@@ -718,7 +720,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   VM_ENTRY_MARK;
 
   // Disable CHA for default methods for now
-  if (root_m->get_Method()->is_default_method()) {
+  if (root_m->is_default_method()) {
     return NULL;
   }
 
@@ -758,6 +760,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     // with the same name but different vtable indexes.
     return NULL;
   }
+  assert(!target()->is_abstract(), "not allowed");
   return CURRENT_THREAD_ENV->get_method(target());
 }
 
@@ -871,6 +874,14 @@ ciMethod* ciMethod::get_method_at_bci(int bci, bool &will_link, ciSignature* *de
   iter.reset_to_bci(bci);
   iter.next();
   return iter.get_method(will_link, declared_signature);
+}
+
+// ------------------------------------------------------------------
+ciKlass* ciMethod::get_declared_method_holder_at_bci(int bci) {
+  ciBytecodeStream iter(this);
+  iter.reset_to_bci(bci);
+  iter.next();
+  return iter.get_declared_method_holder();
 }
 
 // ------------------------------------------------------------------

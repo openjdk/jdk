@@ -104,8 +104,8 @@ public class TestLinkOption extends JavadocTester {
                 "<i>RFC&nbsp;2396: Uniform\n" +
                 " Resource Identifiers (URI): Generic Syntax</i></a>, " +
                 "<br><a href=\"http://www.ietf.org/rfc/rfc2732.txt\"><i>RFC&nbsp;2732: Format for\n" +
-                " Literal IPv6 Addresses in URLs</i></a>, <br><a href=\"URISyntaxException.html\">" +
-                "URISyntaxException</a></dd>\n" +
+                " Literal IPv6 Addresses in URLs</i></a>, <br><a href=\"C.html\">" +
+                "A nearby file</a></dd>\n" +
                 "</dl>");
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,
@@ -113,29 +113,6 @@ public class TestLinkOption extends JavadocTester {
                 + "extends <a href=\"" + url + "java/lang/Object.html?is-external=true\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Object</a></pre>"
         );
-
-        String out1_html4 = "out1-html4";
-        setAutomaticCheckLinks(false); // The example code has toy/bad links
-        javadoc("-d", out1_html4,
-                "-source", "8",
-                "-html4",
-                "-classpath", mylib,
-                "-sourcepath", testSrc,
-                "-linkoffline", url, testSrc + "/jdk",
-                "-package",
-                "pkg", "mylib.lang");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/B.html", true,
-                "<div class=\"block\">A method with html tag the method "
-                + "<a href=\"" + url + "java/lang/ClassLoader.html?is-external=true#getSystemClassLoader--\""
-                + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><tt>getSystemClassLoader()</tt>"
-                + "</code></a> as the parent class loader.</div>",
-                "<div class=\"block\">is equivalent to invoking <code>"
-                + "<a href=\"#createTempFile-java.lang.String-java.lang.String-java.io.File-\">"
-                + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>");
-
-        setAutomaticCheckLinks(true); // re-enable checks
 
         // Generate the documentation using -linkoffline and a relative path as the first parameter.
         // We will try linking to the docs generated in test 1 with a relative path.

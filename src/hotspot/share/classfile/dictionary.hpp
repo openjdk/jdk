@@ -51,8 +51,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
 
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
 
-  void clean_cached_protection_domains(DictionaryEntry* probe);
-
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
   Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries, bool resizable = false);

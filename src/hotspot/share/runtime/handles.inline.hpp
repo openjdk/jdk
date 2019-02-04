@@ -26,7 +26,9 @@
 #define SHARE_RUNTIME_HANDLES_INLINE_HPP
 
 #include "runtime/handles.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
+#include "oops/metadata.hpp"
+#include "oops/oop.hpp"
 
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle

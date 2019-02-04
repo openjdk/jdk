@@ -183,11 +183,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getPropertyDetails(Content propertyDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(propertyDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(propertyDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(propertyDetailsTree));
     }
 
     /**
@@ -223,12 +219,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     @Override
     protected Table createSummaryTable() {
-        String summary = resources.getText("doclet.Member_Table_Summary",
-            resources.getText("doclet.Property_Summary"),
-            resources.getText("doclet.properties"));
-
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)

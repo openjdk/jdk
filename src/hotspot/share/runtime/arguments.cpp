@@ -328,10 +328,6 @@ void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
   _agentList.add(agentLib);
 }
 
-void Arguments::add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib));
-}
-
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
   return ((strncmp(option, property, len) == 0) &&
@@ -583,7 +579,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceMonitorInflation",     LogLevel::Trace, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },

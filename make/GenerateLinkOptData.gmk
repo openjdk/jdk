@@ -59,6 +59,8 @@ ifeq ($(EXTERNAL_BUILDJDK), true)
   INTERIM_IMAGE_DIR := $(BUILD_JDK)
 endif
 
+# Save the stderr output of the command and print it along with stdout in case
+# something goes wrong.
 $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	$(call MakeDir, $(LINK_OPT_DIR))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
@@ -67,7 +69,14 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist \
-	    $(LOG_DEBUG) 2>&1 > $(JLI_TRACE_FILE)
+	    2> $(LINK_OPT_DIR)/stderr > $(JLI_TRACE_FILE) \
+	    || ( \
+	        exitcode=$$? ; \
+	        $(ECHO) "ERROR: Failed to generate link optimization data." \
+	            "This is likely a problem with the newly built JVM/JDK." ; \
+	        $(CAT) $(LINK_OPT_DIR)/stderr $(JLI_TRACE_FILE) ; \
+	        exit $$exitcode \
+	    )
 	$(GREP) -v HelloClasslist $@.raw > $@
 
 # The jli trace is created by the same recipe as classlist. By declaring these

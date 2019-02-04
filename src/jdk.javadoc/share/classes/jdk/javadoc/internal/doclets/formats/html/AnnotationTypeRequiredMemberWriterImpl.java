@@ -178,11 +178,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public Content getAnnotationDetails(Content annotationDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(annotationDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
     }
 
     /**
@@ -200,18 +196,6 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
                 contents.annotateTypeRequiredMemberSummaryLabel);
         memberTree.addContent(label);
-    }
-
-    /**
-     * Get the summary for the member summary table.
-     *
-     * @return a string for the table summary
-     */
-    // Overridden by AnnotationTypeOptionalMemberWriterImpl
-    protected String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Annotation_Type_Required_Member_Summary"),
-                resources.getText("doclet.annotation_type_required_members"));
     }
 
     /**
@@ -237,8 +221,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     @Override
     protected Table createSummaryTable() {
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(getTableSummary())
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)

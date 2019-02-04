@@ -61,10 +61,9 @@ public class TestShutdownEvent {
              new TestVMCrash(),
              new TestUnhandledException(),
              new TestRuntimeHalt(),
-             // exclude until JDK-8217744 is fixed
-             // new TestSig("TERM"),
-             // new TestSig("HUP"),
-             // new TestSig("INT")
+             new TestSig("TERM"),
+             new TestSig("HUP"),
+             new TestSig("INT")
     };
 
     public static void main(String[] args) throws Throwable {
@@ -87,7 +86,8 @@ public class TestShutdownEvent {
                                 String.valueOf(subTestIndex));
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println(output.getOutput());
-        System.out.println("Exit code: " + output.getExitValue());
+        int exitCode = output.getExitValue();
+        System.out.println("Exit code: " + exitCode);
 
         String recordingName = output.firstMatch("emergency jfr file: (.*.jfr)", 1);
         if (recordingName == null) {
@@ -102,7 +102,7 @@ public class TestShutdownEvent {
 
         Asserts.assertEquals(filteredEvents.size(), 1);
         RecordedEvent event = filteredEvents.get(0);
-        subTests[subTestIndex].verifyEvents(event);
+        subTests[subTestIndex].verifyEvents(event, exitCode);
     }
 
     @SuppressWarnings("unused")
@@ -119,7 +119,7 @@ public class TestShutdownEvent {
             return true;
         }
         void runTest();
-        void verifyEvents(RecordedEvent event);
+        void verifyEvents(RecordedEvent event, int exitCode);
     }
 
     // Basic stack trace validation, checking that the runTest method is part of the stack
@@ -139,7 +139,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("No remaining non-daemon Java threads");
         }
     }
@@ -152,7 +152,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             validateStackTrace(event.getStackTrace());
         }
@@ -167,7 +167,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("VM Error");
             validateStackTrace(event.getStackTrace());
         }
@@ -180,7 +180,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("No remaining non-daemon Java threads");
         }
     }
@@ -193,7 +193,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             validateStackTrace(event.getStackTrace());
         }
@@ -229,11 +229,15 @@ public class TestShutdownEvent {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Asserts.fail("Process survived the SIG" + signalName + " signal!");
+            System.out.println("Process survived the SIG" + signalName + " signal!");
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
+            if (exitCode == 0) {
+                System.out.println("Process exited normally with exit code 0, skipping the verification");
+                return;
+            }
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             Events.assertEventThread(event);
             Asserts.assertEquals(event.getThread().getJavaName(), "SIG" + signalName + " handler");

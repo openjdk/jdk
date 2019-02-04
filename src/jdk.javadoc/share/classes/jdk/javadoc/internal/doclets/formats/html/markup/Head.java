@@ -51,7 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *  deletion without notice.</b>
  */
 public class Head {
-    private final HtmlVersion htmlVersion;
     private final String docletVersion;
     private final DocPath pathToRoot;
     private String title;
@@ -77,11 +76,9 @@ public class Head {
      * recording the time the file was created.
      * The doclet version should also be provided for recording in the file.
      * @param path the path for the file that will include this HEAD element
-     * @param htmlVersion the HTML version
      * @param docletVersion a string identifying the doclet version
      */
-    public Head(DocPath path, HtmlVersion htmlVersion, String docletVersion) {
-        this.htmlVersion = htmlVersion;
+    public Head(DocPath path, String docletVersion) {
         this.docletVersion = docletVersion;
         pathToRoot = path.parent().invert();
         keywords = new ArrayList<>();
@@ -245,9 +242,7 @@ public class Head {
 
         if (showTimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            tree.addContent(HtmlTree.META(
-                    (htmlVersion == HtmlVersion.HTML5) ? "dc.created" : "date",
-                    dateFormat.format(now)));
+            tree.addContent(HtmlTree.META("dc.created", dateFormat.format(now)));
         }
 
         for (String k : keywords) {

@@ -866,8 +866,8 @@ var getJibProfilesDependencies = function (input, common) {
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
         windows_x64: "VS2017-15.5.5+1.0",
-        linux_aarch64: "gcc7.3.0-Fedora27+1.1",
-        linux_arm: "gcc7.3.0-Fedora27+1.1"
+        linux_aarch64: "gcc7.3.0-Fedora27+1.2",
+        linux_arm: "gcc7.3.0-Fedora27+1.2"
     };
 
     var devkit_platform = (input.target_cpu == "x86"

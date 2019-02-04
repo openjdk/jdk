@@ -78,7 +78,6 @@ void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
   WeakProcessor::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   SystemDictionary::oops_do(oops);
-  StringTable::oops_do(oops);
 
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::oops_do_slow(oops);
@@ -208,13 +207,6 @@ void ShenandoahRootProcessor::process_vm_roots(OopClosure* strong_roots,
     if (_process_strong_tasks->try_claim_task(SHENANDOAH_RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
     }
-  }
-
-  // All threads execute the following. A specific chunk of buckets
-  // from the StringTable are the individual tasks.
-  if (weak_roots != NULL) {
-    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::StringTableRoots, worker_id);
-    StringTable::possibly_parallel_oops_do(&_par_state_string, weak_roots);
   }
 }
 
