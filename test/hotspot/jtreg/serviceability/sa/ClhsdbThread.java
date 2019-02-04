@@ -51,7 +51,7 @@ public class ClhsdbThread {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             // Check for the presence of the usage string
-            expStrMap.put("thread", List.of( "Usage: thread { -a | id }"));
+            expStrMap.put("thread", List.of( "Usage: thread \\{ \\-a \\| id \\}"));
             expStrMap.put("thread -a", List.of(
                 "State: BLOCKED",
                 "Stack in use by Java",
@@ -69,7 +69,7 @@ public class ClhsdbThread {
             Map<String, List<String>> unExpStrMap = new HashMap<>();
             unExpStrMap.put(
                 "thread -a",
-                List.of("Couldn't find thread -a"));
+                List.of("Couldn't find thread \\-a"));
 
             String consolidatedOutput = test.run(
                 theApp.getPid(),

@@ -79,7 +79,7 @@ public class ClhsdbRegionDetailsScanOopsForG1 {
             // words[0] and words[1] represent the start and end addresses
             String cmd = "scanoops " + words[0] + " " + words[1];
             expStrMap = new HashMap<>();
-            expStrMap.put(cmd, List.of("[Ljava/lang/String"));
+            expStrMap.put(cmd, List.of("\\[Ljava/lang/String"));
             test.run(theApp.getPid(), List.of(cmd), expStrMap, null);
         } catch (SkippedException e) {
             throw e;

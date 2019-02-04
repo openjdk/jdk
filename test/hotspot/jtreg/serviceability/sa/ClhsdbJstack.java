@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
@@ -57,11 +56,11 @@ public class ClhsdbJstack {
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("jstack -v", List.of(
                     "No deadlocks found",
-                    "Common-Cleaner",
+                    "Common\\-Cleaner",
                     "Signal Dispatcher",
-                    "java.lang.ref.Finalizer$FinalizerThread.run",
+                    "java.lang.ref.Finalizer\\$FinalizerThread.run",
                     "java.lang.ref.Reference",
-                    "Method*",
+                    "Method\\*",
                     "LingeredApp.main"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
