@@ -49,7 +49,7 @@ class SafepointMechanism : public AllStatic {
   static inline bool local_poll(Thread* thread);
   static inline bool global_poll();
 
-  static inline void block_if_requested_local_poll(JavaThread *thread);
+  static void block_if_requested_slow(JavaThread *thread);
 
   static void default_initialize();
 
