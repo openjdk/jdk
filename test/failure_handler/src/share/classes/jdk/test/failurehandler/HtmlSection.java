@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,13 +153,11 @@ public class HtmlSection {
     public HtmlSection createChildren(String[] sections) {
         int i = 0;
         int n = sections.length;
-        HtmlSection current = rootSection;
-        if (current != null) {
-            for (; i < n && current.child != null;
-                    ++i, current = current.child) {
-                if (!sections[i].equals(current.child.name)) {
-                    break;
-                }
+        HtmlSection current = this;
+        for (; i < n && current.child != null;
+                ++i, current = current.child) {
+            if (!sections[i].equals(current.child.name)) {
+                break;
             }
         }
         for (; i < n; ++i) {

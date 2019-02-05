@@ -1099,6 +1099,12 @@ void nmethod::make_unloaded() {
   assert(SafepointSynchronize::is_at_safepoint() || Thread::current()->is_ConcurrentGC_thread(),
          "must be at safepoint");
 
+  {
+    // Clear ICStubs and release any CompiledICHolders.
+    CompiledICLocker ml(this);
+    clear_ic_callsites();
+  }
+
   // Unregister must be done before the state change
   {
     MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
@@ -1291,10 +1297,11 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     }
 
     // Clear ICStubs to prevent back patching stubs of zombie or flushed
-    // nmethods during the next safepoint (see ICStub::finalize).
+    // nmethods during the next safepoint (see ICStub::finalize), as well
+    // as to free up CompiledICHolder resources.
     {
       CompiledICLocker ml(this);
-      clear_ic_stubs();
+      clear_ic_callsites();
     }
 
     // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
@@ -1326,6 +1333,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
 }
 
 void nmethod::flush() {
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Note that there are no valid oops in the nmethod anymore.
   assert(!is_osr_method() || is_unloaded() || is_zombie(),
          "osr nmethod must be unloaded or zombie before flushing");

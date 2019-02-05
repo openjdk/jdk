@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Deque;
 
 public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
     private final List<ActionSet> actions = new ArrayList<>();
@@ -52,20 +53,27 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
 
     @Override
     public void gatherProcessInfo(HtmlSection section, long pid) {
-        Queue<Long> pids = new LinkedList<>();
-        pids.add(pid);
-        for (Long p = pids.poll(); p != null; p = pids.poll()) {
-            HtmlSection pidSection = section.createChildren("" + p);
-            List<Long> children = helper.getChildren(pidSection, p);
+        // as some of actions can kill a process, we need to get children of all
+        // test process first, and run the actions starting from the leaves
+        // and going up by the process tree
+        Deque<Long> orderedPids = new LinkedList<>();
+        Queue<Long> testPids = new LinkedList<>();
+        testPids.add(pid);
+        HtmlSection ptreeSection = section.createChildren("test_processes");
+        for (Long p = testPids.poll(); p != null; p = testPids.poll()) {
+            orderedPids.addFirst(p);
+            List<Long> children = helper.getChildren(ptreeSection, p);
             if (!children.isEmpty()) {
-                HtmlSection s = pidSection.createChildren("children");
+                HtmlSection s = ptreeSection.createChildren("" + p);
                 for (Long c : children) {
                     s.link(section, c.toString(), c.toString());
                 }
-                pids.addAll(children);
+                testPids.addAll(children);
             }
+        }
+        for (Long p : orderedPids) {
             for (ActionSet set : actions) {
-                set.gatherProcessInfo(pidSection, p);
+                set.gatherProcessInfo(section, p);
             }
         }
     }
