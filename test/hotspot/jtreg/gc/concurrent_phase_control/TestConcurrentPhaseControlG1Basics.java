@@ -27,8 +27,7 @@ package gc.concurrent_phase_control;
  * @test TestConcurrentPhaseControlG1Basics
  * @bug 8169517
  * @requires vm.gc.G1
- * @summary Verify G1 supports concurrent phase control and has the
- * expected set of phases.
+ * @summary Verify G1 supports concurrent phase control.
  * @key gc
  * @modules java.base
  * @library /test/lib /
@@ -45,22 +44,7 @@ import gc.concurrent_phase_control.CheckSupported;
 
 public class TestConcurrentPhaseControlG1Basics {
 
-    private static final String[] phases = {
-        "ANY",
-        "IDLE",
-        "CONCURRENT_CYCLE",
-        "CLEAR_CLAIMED_MARKS",
-        "SCAN_ROOT_REGIONS",
-        "CONCURRENT_MARK",
-        "MARK_FROM_ROOTS",
-        "PRECLEAN",
-        "BEFORE_REMARK",
-        "REMARK",
-        "REBUILD_REMEMBERED_SETS",
-        "CLEANUP_FOR_NEXT_MARK",
-    };
-
     public static void main(String[] args) throws Exception {
-        CheckSupported.check("G1", phases);
+        CheckSupported.check("G1");
     }
 }

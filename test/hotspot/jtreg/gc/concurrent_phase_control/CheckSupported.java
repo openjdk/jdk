@@ -30,65 +30,17 @@ package gc.concurrent_phase_control;
  */
 
 import sun.hotspot.WhiteBox;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class CheckSupported {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    private static Set<String> toSet(List<String> list, String which)
-        throws Exception
-    {
-        Set<String> result = new HashSet<String>(list);
-        if (result.size() < list.size()) {
-            throw new RuntimeException(which + " phases contains duplicates");
-        }
-        return result;
-    }
-
-    private static void checkPhases(String[] expectedPhases) throws Exception {
-        String[] actualPhases = WB.getConcurrentGCPhases();
-
-        List<String> expectedList = Arrays.asList(expectedPhases);
-        List<String> actualList = Arrays.asList(actualPhases);
-
-        Set<String> expected = toSet(expectedList, "Expected");
-        Set<String> actual = toSet(actualList, "Actual");
-
-        expected.removeAll(actualList);
-        actual.removeAll(expectedList);
-
-        boolean match = true;
-        if (!expected.isEmpty()) {
-            match = false;
-            System.out.println("Unexpected phases:");
-            for (String s: expected) {
-                System.out.println("  " + s);
-            }
-        }
-        if (!actual.isEmpty()) {
-            match = false;
-            System.out.println("Expected but missing phases:");
-            for (String s: actual) {
-                System.out.println("  " + s);
-            }
-        }
-        if (!match) {
-            throw new RuntimeException("Mismatch between expected and actual phases");
-        }
-    }
-
-    public static void check(String gcName, String[] phases) throws Exception {
+    public static void check(String gcName) throws Exception {
         // Verify supported.
         if (!WB.supportsConcurrentGCPhaseControl()) {
             throw new RuntimeException(
                 gcName + " unexpectedly missing phase control support");
         }
-
-        checkPhases(phases);
 
         // Verify IllegalArgumentException thrown by request attempt
         // with unknown phase.

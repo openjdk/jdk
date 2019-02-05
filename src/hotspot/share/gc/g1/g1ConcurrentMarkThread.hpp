@@ -90,7 +90,6 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool during_cycle()      { return !idle(); }
 
   // WhiteBox testing support.
-  const char* const* concurrent_phases() const;
   bool request_concurrent_phase(const char* phase);
 
   ConcurrentGCPhaseManager::Stack* phase_manager_stack() {
