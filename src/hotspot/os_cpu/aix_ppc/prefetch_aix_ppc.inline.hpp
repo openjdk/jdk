@@ -43,7 +43,7 @@ inline void Prefetch::read(void *loc, intx interval) {
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
-#if !defined(USE_XLC_PREFETCH_WRITE_BUILTIN)
+#if !defined(USE_XLC_BUILTINS)
   __asm__ __volatile__ (
     "   dcbtst 0, %0       \n"
     :

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,51 +51,43 @@
 
 #include <stdint.h>
 
+// __IBMCPP__ is not defined any more with xlclang++
+#ifdef __IBMCPP__
+#if __IBMCPP__ < 1200
+#error "xlc < 12 not supported"
+#endif
+#endif
+
+#ifndef _AIX
+#error "missing AIX-specific definition _AIX"
+#endif
+
 // Use XLC compiler builtins instead of inline assembler
 #define USE_XLC_BUILTINS
+
 #ifdef USE_XLC_BUILTINS
 #include <builtins.h>
-  #if __IBMCPP__ < 1000
-  // the funtion prototype for __dcbtst(void *) is missing in XLC V8.0
-  // I could compile a little test, where I provided the prototype.
-  // The generated code was correct there. This is the prototype:
-  // extern "builtin" void __dcbtst (void *);
-  // For now we don't make use of it when compiling with XLC V8.0
-  #else
-  // __IBMCPP__ >= 1000
-  // XLC V10 provides the prototype for __dcbtst (void *);
-  #define USE_XLC_PREFETCH_WRITE_BUILTIN
-  #endif
+// XLC V10 and higher provide the prototype for __dcbtst (void *);
 #endif // USE_XLC_BUILTINS
 
 // NULL vs NULL_WORD:
-// On Linux NULL is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use NULL_WORD in places where a
-// pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
-// sizeof(void*), so here we want something which is integer type, but has the
-// same size as a pointer.
-#ifdef __GNUC__
-  #error XLC and __GNUC__?
-#else
-  #define NULL_WORD  NULL
-#endif
+// Some platform/tool-chain combinations can't assign NULL to an integer
+// type so we define NULL_WORD to use in those contexts. For xlc they are the same.
+#define NULL_WORD  NULL
 
 // AIX also needs a 64 bit NULL to work as a null address pointer.
 // Most system includes on AIX would define it as an int 0 if not already defined with one
 // exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
 // In this case you need to copy the following defines to a position after #include <dirent.h>
-// (see jmv_aix.h).
-#ifdef AIX
-  #include <dirent.h>
-  #ifdef _LP64
-    #undef NULL
-    #define NULL 0L
-  #else
-    #ifndef NULL
-      #define NULL 0
-    #endif
+#include <dirent.h>
+#ifdef _LP64
+  #undef NULL
+  #define NULL 0L
+#else
+  #ifndef NULL
+    #define NULL 0
   #endif
-#endif // AIX
+#endif
 
 // Compiler-specific primitive types
 // All defs of int (uint16_6 etc) are defined in AIX' /usr/include/stdint.h
@@ -108,21 +100,14 @@ typedef uint32_t juint;
 typedef uint64_t julong;
 
 // checking for nanness
-#ifdef AIX
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }
-#else
-#error "missing platform-specific definition here"
-#endif
 
 // Checking for finiteness
-
 inline int g_isfinite(jfloat  f)                 { return finite(f); }
 inline int g_isfinite(jdouble f)                 { return finite(f); }
 
-
 // Wide characters
-
 inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 
