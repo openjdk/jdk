@@ -89,7 +89,6 @@ class NMethodSweeper : public AllStatic {
   static Tickspan  _peak_sweep_fraction_time;     // Peak time sweeping one fraction
 
   static MethodStateChange process_compiled_method(CompiledMethod *nm);
-  static void              release_compiled_method(CompiledMethod* nm);
 
   static void init_sweeper_log() NOT_DEBUG_RETURN;
   static bool wait_for_stack_scanning();
