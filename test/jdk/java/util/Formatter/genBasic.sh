@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ gen() {
 #  then $SPP -K$1 -Dtype=$1 -DType=$2 -Kprim<Basic-X.java.template >Basic$2.java
 #  else $SPP -K$1 -Dtype=$1 -DType=$2 -K$3 <Basic-X.java.template >Basic$2.java
 #  fi
-    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 <Basic-X.java.template >Basic$2.java
+    out=Basic$2.java
+    rm -f $out
+    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -iBasic-X.java.template -o$out
 }
 
 gen boolean Boolean       prim  ""  ""   ""
