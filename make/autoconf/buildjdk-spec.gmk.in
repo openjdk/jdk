@@ -75,6 +75,8 @@ JVM_LDFLAGS := @OPENJDK_BUILD_JVM_LDFLAGS@
 JVM_ASFLAGS := @OPENJDK_BUILD_JVM_ASFLAGS@
 JVM_LIBS := @OPENJDK_BUILD_JVM_LIBS@
 
+FDLIBM_CFLAGS := @OPENJDK_BUILD_FDLIBM_CFLAGS@
+
 # The compiler for the build platform is likely not warning compatible with the official
 # compiler.
 WARNINGS_AS_ERRORS := false
