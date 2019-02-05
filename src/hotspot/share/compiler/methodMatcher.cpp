@@ -237,12 +237,10 @@ void skip_leading_spaces(char*& line, int* total_bytes_read ) {
   }
 }
 
-#ifdef _MSC_VER
-#pragma warning(push)
+PRAGMA_DIAG_PUSH
 // warning C4189: The file contains a character that cannot be represented
 //                in the current code page
-#pragma warning(disable : 4819)
-#endif
+PRAGMA_DISABLE_MSVC_WARNING(4819)
 void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, MethodMatcher* matcher) {
   MethodMatcher::Mode c_match;
   MethodMatcher::Mode m_match;
@@ -312,9 +310,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     error_msg = "Could not parse method pattern";
   }
 }
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+PRAGMA_DIAG_POP
 
 bool MethodMatcher::matches(const methodHandle& method) const {
   Symbol* class_name  = method->method_holder()->name();

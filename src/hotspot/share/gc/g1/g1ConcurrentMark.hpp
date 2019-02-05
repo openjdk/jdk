@@ -32,6 +32,7 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/compilerWarnings.hpp"
 
 class ConcurrentGCTimer;
 class G1ConcurrentMarkThread;
@@ -43,11 +44,9 @@ class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 
-#ifdef _MSC_VER
-#pragma warning(push)
+PRAGMA_DIAG_PUSH
 // warning C4522: multiple assignment operators specified
-#pragma warning(disable:4522)
-#endif
+PRAGMA_DISABLE_MSVC_WARNING(4522)
 
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
@@ -93,9 +92,7 @@ public:
   bool is_null() const { return _holder == NULL; }
 };
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
