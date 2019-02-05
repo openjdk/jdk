@@ -294,7 +294,6 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
   _SleepEvent  = ParkEvent::Allocate(this);
-  _MutexEvent  = ParkEvent::Allocate(this);
   _MuxEvent    = ParkEvent::Allocate(this);
 
 #ifdef CHECK_UNHANDLED_OOPS
@@ -460,7 +459,6 @@ Thread::~Thread() {
   // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
   ParkEvent::Release(_SleepEvent); _SleepEvent  = NULL;
-  ParkEvent::Release(_MutexEvent); _MutexEvent  = NULL;
   ParkEvent::Release(_MuxEvent); _MuxEvent    = NULL;
 
   delete handle_area();

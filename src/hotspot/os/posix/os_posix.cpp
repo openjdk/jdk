@@ -2215,5 +2215,74 @@ void Parker::unpark() {
   }
 }
 
+// Platform Monitor implementation
+
+os::PlatformMonitor::PlatformMonitor() {
+  int status = pthread_cond_init(&_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+  status = pthread_mutex_init(&_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  int status = pthread_cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
+  status = pthread_mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+void os::PlatformMonitor::lock() {
+  int status = pthread_mutex_lock(&_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+}
+
+void os::PlatformMonitor::unlock() {
+  int status = pthread_mutex_unlock(&_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+}
+
+bool os::PlatformMonitor::try_lock() {
+  int status = pthread_mutex_trylock(&_mutex);
+  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
+  return status == 0;
+}
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  if (millis > 0) {
+    struct timespec abst;
+    // We have to watch for overflow when converting millis to nanos,
+    // but if millis is that large then we will end up limiting to
+    // MAX_SECS anyway, so just do that here.
+    if (millis / MILLIUNITS > MAX_SECS) {
+      millis = jlong(MAX_SECS) * MILLIUNITS;
+    }
+    to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false, false);
+
+    int ret = OS_TIMEOUT;
+    int status = pthread_cond_timedwait(&_cond, &_mutex, &abst);
+    assert_status(status == 0 || status == ETIMEDOUT,
+                  status, "cond_timedwait");
+    if (status == 0) {
+      ret = OS_OK;
+    }
+    return ret;
+  } else {
+    int status = pthread_cond_wait(&_cond, &_mutex);
+    assert_status(status == 0, status, "cond_wait");
+    return OS_OK;
+  }
+}
+
+void os::PlatformMonitor::notify() {
+  int status = pthread_cond_signal(&_cond);
+  assert_status(status == 0, status, "cond_signal");
+}
+
+void os::PlatformMonitor::notify_all() {
+  int status = pthread_cond_broadcast(&_cond);
+  assert_status(status == 0, status, "cond_broadcast");
+}
 
 #endif // !SOLARIS

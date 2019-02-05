@@ -62,6 +62,20 @@ void SafepointMechanism::block_if_requested(JavaThread *thread) {
   block_if_requested_slow(thread);
 }
 
+void SafepointMechanism::callback_if_safepoint(JavaThread* thread) {
+  if (!uses_thread_local_poll() || local_poll_armed(thread)) {
+    // If using thread local polls, we should not check the
+    // global_poll() and callback via block() if the VMThread
+    // has not yet armed the local poll. Otherwise, when used in
+    // combination with should_block(), the latter could miss
+    // detecting the same safepoint that this method would detect
+    // if only checking global polls.
+    if (global_poll()) {
+      SafepointSynchronize::block(thread, false);
+    }
+  }
+}
+
 void SafepointMechanism::arm_local_poll(JavaThread* thread) {
   thread->set_polling_page(poll_armed_value());
 }

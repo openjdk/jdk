@@ -272,18 +272,16 @@ class MonitorLockerEx: public MutexLockerEx {
     return false;
   }
 
-  bool notify_all() {
+  void notify_all() {
     if (_monitor != NULL) {
-      return _monitor->notify_all();
+      _monitor->notify_all();
     }
-    return true;
   }
 
-  bool notify() {
+  void notify() {
     if (_monitor != NULL) {
-      return _monitor->notify();
+      _monitor->notify();
     }
-    return true;
   }
 };
 
