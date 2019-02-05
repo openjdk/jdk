@@ -1374,6 +1374,8 @@ class Compile : public Phase {
   // supporting clone_map
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
+
+  bool is_compiling_clinit_for(ciKlass* k);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP
