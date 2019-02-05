@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,13 +495,7 @@ public class Font implements java.io.Serializable
 
     private Font2D getFont2D() {
         FontManager fm = FontManagerFactory.getInstance();
-        if (fm.usingPerAppContextComposites() &&
-            font2DHandle != null &&
-            font2DHandle.font2D instanceof CompositeFont &&
-            ((CompositeFont)(font2DHandle.font2D)).isStdComposite()) {
-            return fm.findFont2D(name, style,
-                                          FontManager.LOGICAL_FALLBACK);
-        } else if (font2DHandle == null) {
+        if (font2DHandle == null) {
             font2DHandle =
                 fm.findFont2D(name, style,
                               FontManager.LOGICAL_FALLBACK).handle;

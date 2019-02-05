@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,17 +122,6 @@ import java.util.function.Supplier;
  * a SecurityManager check in a valid Java implementation.  Applets may
  * therefore safely invoke any of its methods without worry of being
  * blocked.
- *
- * Note: If a SecurityManager is installed which derives from
- * sun.awt.AWTSecurityManager, it may override the
- * AWTSecurityManager.getAppContext() method to return the proper
- * AppContext based on the execution context, in the case where
- * the default ThreadGroup-based AppContext indexing would return
- * the main "system" AppContext.  For example, in an applet situation,
- * if a system thread calls into an applet, rather than returning the
- * main "system" AppContext (the one corresponding to the system thread),
- * an installed AWTSecurityManager may return the applet's AppContext
- * based on the execution context.
  *
  * @author  Thomas Ball
  * @author  Fred Ecks
@@ -287,10 +276,7 @@ public final class AppContext {
 
     /**
      * Returns the appropriate AppContext for the caller,
-     * as determined by its ThreadGroup.  If the main "system" AppContext
-     * would be returned and there's an AWTSecurityManager installed, it
-     * is called to get the proper AppContext based on the execution
-     * context.
+     * as determined by its ThreadGroup.
      *
      * @return  the AppContext for the caller.
      * @see     java.lang.ThreadGroup
@@ -382,18 +368,6 @@ public final class AppContext {
      */
     public static boolean isMainContext(AppContext ctx) {
         return (ctx != null && ctx == mainAppContext);
-    }
-
-    private static AppContext getExecutionAppContext() {
-        SecurityManager securityManager = System.getSecurityManager();
-        if ((securityManager != null) &&
-            (securityManager instanceof AWTSecurityManager))
-        {
-            AWTSecurityManager awtSecMgr = (AWTSecurityManager) securityManager;
-            AppContext secAppContext = awtSecMgr.getAppContext();
-            return secAppContext; // Return what we're told
-        }
-        return null;
     }
 
     private long DISPOSAL_TIMEOUT = 5000;  // Default to 5-second timeout
@@ -872,8 +846,7 @@ public final class AppContext {
                 // context since we don't need it.
                 if (numAppContexts.get() == 0) return null;
 
-                // Get the context from the security manager
-                AppContext ecx = getExecutionAppContext();
+                AppContext ecx = null;
 
                 // Not sure we really need to re-check numAppContexts here.
                 // If all applets have gone away then we could have a
