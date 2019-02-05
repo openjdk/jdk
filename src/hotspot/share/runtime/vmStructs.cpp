@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2565,7 +2565,21 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /****************/                                                      \
   /*  VMRegImpl   */                                                      \
   /****************/                                                      \
-  declare_constant(VMRegImpl::stack_slot_size)
+  declare_constant(VMRegImpl::stack_slot_size)                            \
+                                                                          \
+  /******************************/                                        \
+  /*  -XX flags (value origin)  */                                        \
+  /******************************/                                        \
+  declare_constant(JVMFlag::DEFAULT)                                      \
+  declare_constant(JVMFlag::COMMAND_LINE)                                 \
+  declare_constant(JVMFlag::ENVIRON_VAR)                                  \
+  declare_constant(JVMFlag::CONFIG_FILE)                                  \
+  declare_constant(JVMFlag::MANAGEMENT)                                   \
+  declare_constant(JVMFlag::ERGONOMIC)                                    \
+  declare_constant(JVMFlag::ATTACH_ON_DEMAND)                             \
+  declare_constant(JVMFlag::INTERNAL)                                     \
+  declare_constant(JVMFlag::VALUE_ORIGIN_MASK)                            \
+  declare_constant(JVMFlag::ORIG_COMMAND_LINE)
 
 //--------------------------------------------------------------------------------
 // VM_LONG_CONSTANTS

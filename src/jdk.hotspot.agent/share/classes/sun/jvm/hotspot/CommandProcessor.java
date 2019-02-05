@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,11 +649,11 @@ public class CommandProcessor {
                             VM.Flag flag = flags[f];
                             if (name == null || flag.getName().equals(name)) {
 
-                                if (nonDefault && flag.getOrigin() == 0) {
+                                if (nonDefault && (flag.getOrigin() == VM.Flags_DEFAULT)) {
                                     // only print flags which aren't their defaults
                                     continue;
                                 }
-                                out.println(flag.getName() + " = " + flag.getValue() + " " + flag.getOrigin());
+                                out.println(flag.getName() + " = " + flag.getValue() + " " + flag.getOriginString());
                                 printed = true;
                             }
                         }
