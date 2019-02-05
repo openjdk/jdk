@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class ModulePathAndCP {
                                         "--module-path", moduleDir.toString(),
                                         "-m", MAIN_MODULE);
         TestCommon.checkDump(output);
-        String prefix[] = {"-cp", "\"\"", "-Xlog:class+load=trace"};
+        String prefix[] = {"-Djava.class.path=", "-Xlog:class+load=trace"};
 
         // run with the archive with the --module-path the same as the one during
         // dump time. The classes should be loaded from the archive.
