@@ -367,7 +367,7 @@ public:
   int  verify_icholder_relocations();
   void verify_oop_relocations();
 
-  virtual bool is_evol_dependent_on(Klass* dependee) = 0;
+  virtual bool is_evol_dependent() = 0;
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod
   // corresponds to the given method as well.

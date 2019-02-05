@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2021,30 +2021,26 @@ bool nmethod::check_dependency_on(DepChange& changes) {
   return found_check;
 }
 
-bool nmethod::is_evol_dependent_on(Klass* dependee) {
-  InstanceKlass *dependee_ik = InstanceKlass::cast(dependee);
-  Array<Method*>* dependee_methods = dependee_ik->methods();
+bool nmethod::is_evol_dependent() {
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     if (deps.type() == Dependencies::evol_method) {
       Method* method = deps.method_argument(0);
-      for (int j = 0; j < dependee_methods->length(); j++) {
-        if (dependee_methods->at(j) == method) {
-          if (log_is_enabled(Debug, redefine, class, nmethod)) {
-            ResourceMark rm;
-            log_debug(redefine, class, nmethod)
-              ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
-               _method->method_holder()->external_name(),
-               _method->name()->as_C_string(),
-               _method->signature()->as_C_string(),
-               compile_id(),
-               method->method_holder()->external_name(),
-               method->name()->as_C_string(),
-               method->signature()->as_C_string());
-          }
-          if (TraceDependencies || LogCompilation)
-            deps.log_dependency(dependee);
-          return true;
+      if (method->is_old()) {
+        if (log_is_enabled(Debug, redefine, class, nmethod)) {
+          ResourceMark rm;
+          log_debug(redefine, class, nmethod)
+            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
+             _method->method_holder()->external_name(),
+             _method->name()->as_C_string(),
+             _method->signature()->as_C_string(),
+             compile_id(),
+             method->method_holder()->external_name(),
+             method->name()->as_C_string(),
+             method->signature()->as_C_string());
         }
+        if (TraceDependencies || LogCompilation)
+          deps.log_dependency(method->method_holder());
+        return true;
       }
     }
   }

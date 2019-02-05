@@ -244,6 +244,7 @@ public:
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
 
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
+  void mark_evol_dependent_methods(InstanceKlass* dependee);
 
   const char* get_name_at(int offset) {
     return _metaspace_names + offset;
