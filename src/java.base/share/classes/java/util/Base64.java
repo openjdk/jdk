@@ -251,7 +251,7 @@ public class Base64 {
          * @return length of the encoded bytes, or -1 if the length overflows
          *
          */
-        private final int outLength(int srclen, boolean throwOOME) {
+        private final int encodedOutLength(int srclen, boolean throwOOME) {
             int len = 0;
             try {
                 if (doPadding) {
@@ -286,7 +286,7 @@ public class Base64 {
          *          encoded bytes.
          */
         public byte[] encode(byte[] src) {
-            int len = outLength(src.length, true);          // dst array size
+            int len = encodedOutLength(src.length, true);          // dst array size
             byte[] dst = new byte[len];
             int ret = encode0(src, 0, src.length, dst);
             if (ret != dst.length)
@@ -314,7 +314,7 @@ public class Base64 {
          *          space for encoding all input bytes.
          */
         public int encode(byte[] src, byte[] dst) {
-            int len = outLength(src.length, false);         // dst array size
+            int len = encodedOutLength(src.length, false);         // dst array size
             if (dst.length < len || len == -1)
                 throw new IllegalArgumentException(
                     "Output byte array is too small for encoding all input bytes");
@@ -359,7 +359,7 @@ public class Base64 {
          * @return  A newly-allocated byte buffer containing the encoded bytes.
          */
         public ByteBuffer encode(ByteBuffer buffer) {
-            int len = outLength(buffer.remaining(), true);
+            int len = encodedOutLength(buffer.remaining(), true);
             byte[] dst = new byte[len];
             int ret = 0;
             if (buffer.hasArray()) {
@@ -560,7 +560,7 @@ public class Base64 {
          *          if {@code src} is not in valid Base64 scheme
          */
         public byte[] decode(byte[] src) {
-            byte[] dst = new byte[outLength(src, 0, src.length, true)];
+            byte[] dst = new byte[decodedOutLength(src, 0, src.length)];
             int ret = decode0(src, 0, src.length, dst);
             if (ret != dst.length) {
                 dst = Arrays.copyOf(dst, ret);
@@ -613,7 +613,7 @@ public class Base64 {
          *          does not have enough space for decoding all input bytes.
          */
         public int decode(byte[] src, byte[] dst) {
-            int len = outLength(src, 0, src.length, false);
+            int len = decodedOutLength(src, 0, src.length);
             if (dst.length < len || len == -1)
                 throw new IllegalArgumentException(
                     "Output byte array is too small for decoding all input bytes");
@@ -657,7 +657,7 @@ public class Base64 {
                     sp = 0;
                     sl = src.length;
                 }
-                byte[] dst = new byte[outLength(src, sp, sl, true)];
+                byte[] dst = new byte[decodedOutLength(src, sp, sl)];
                 return ByteBuffer.wrap(dst, 0, decode0(src, sp, sl, dst));
             } catch (IllegalArgumentException iae) {
                 buffer.position(pos0);
@@ -691,13 +691,11 @@ public class Base64 {
          * @param src the byte array to decode
          * @param sp the source  position
          * @param sl the source limit
-         * @param throwOOME if true, throws OutOfMemoryError if the length of
-         *                  the decoded bytes overflows; else returns the
-         *                  length
-         * @return length of the decoded bytes, or -1 if the length overflows
+         *
+         * @return length of the decoded bytes
          *
          */
-        private int outLength(byte[] src, int sp, int sl, boolean throwOOME) {
+        private int decodedOutLength(byte[] src, int sp, int sl) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int paddings = 0;
             int len = sl - sp;
@@ -733,18 +731,12 @@ public class Base64 {
             if (paddings == 0 && (len & 0x3) !=  0)
                 paddings = 4 - (len & 0x3);
 
-            try {
-                len = Math.multiplyExact(3, (Math.addExact(len, 3) / 4)) - paddings;
-            } catch (ArithmeticException ex) {
-                if (throwOOME) {
-                    throw new OutOfMemoryError("Decoded size is too large");
-                } else {
-                    // let the caller know that the decoded bytes length
-                    // is too large
-                    len = -1;
-                }
-            }
-            return len;
+            // If len is near to Integer.MAX_VALUE, (len + 3)
+            // can possibly overflow, perform this operation as
+            // long and cast it back to integer when the value comes under
+            // integer limit. The final value will always be in integer
+            // limits
+            return 3 * (int) ((len + 3L) / 4) - paddings;
         }
 
         private int decode0(byte[] src, int sp, int sl, byte[] dst) {
