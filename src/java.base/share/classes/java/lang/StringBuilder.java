@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public final class StringBuilder
      */
     @HotSpotIntrinsicCandidate
     public StringBuilder(String str) {
-        super(str.length() + 16);
+        super(str.coder(), str.length(), 16);
         append(str);
     }
 
@@ -134,7 +134,7 @@ public final class StringBuilder
      * @param      seq   the sequence to copy.
      */
     public StringBuilder(CharSequence seq) {
-        this(seq.length() + 16);
+        super(String.LATIN1, seq.length(), 16);
         append(seq);
     }
 

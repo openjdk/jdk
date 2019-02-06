@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @bug 8149330 8218227
- * @summary Capacity should not get close to Integer.MAX_VALUE unless
- *          necessary
+ * @bug 8218227
+ * @summary StringBuilder/StringBuffer constructor throws confusing
+ *          NegativeArraySizeException
  * @requires os.maxMemory >= 6G
  * @run main/othervm -Xms5G -Xmx5G HugeCapacity
  * @ignore This test has huge memory requirements
@@ -35,8 +35,6 @@ public class HugeCapacity {
     private static int failures = 0;
 
     public static void main(String[] args) {
-        testLatin1();
-        testUtf16();
         testHugeInitialString();
         testHugeInitialCharSequence();
         if (failures > 0) {
@@ -44,33 +42,10 @@ public class HugeCapacity {
         }
     }
 
-    private static void testLatin1() {
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.ensureCapacity(Integer.MAX_VALUE / 2);
-            sb.ensureCapacity(Integer.MAX_VALUE / 2 + 1);
-        } catch (OutOfMemoryError oom) {
-            oom.printStackTrace();
-            failures++;
-        }
-    }
-
-    private static void testUtf16() {
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.append('\u042b');
-            sb.ensureCapacity(Integer.MAX_VALUE / 4);
-            sb.ensureCapacity(Integer.MAX_VALUE / 4 + 1);
-        } catch (OutOfMemoryError oom) {
-            oom.printStackTrace();
-            failures++;
-        }
-    }
-
     private static void testHugeInitialString() {
         try {
             String str = "Z".repeat(Integer.MAX_VALUE - 8);
-            StringBuilder sb = new StringBuilder(str);
+            StringBuffer sb = new StringBuffer(str);
         } catch (OutOfMemoryError ignore) {
         } catch (Throwable unexpected) {
             unexpected.printStackTrace();
@@ -81,7 +56,7 @@ public class HugeCapacity {
     private static void testHugeInitialCharSequence() {
         try {
             CharSequence seq = new MyHugeCharSeq();
-            StringBuilder sb = new StringBuilder(seq);
+            StringBuffer sb = new StringBuffer(seq);
         } catch (OutOfMemoryError ignore) {
         } catch (Throwable unexpected) {
             unexpected.printStackTrace();
