@@ -25,10 +25,10 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_posix.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -1659,25 +1659,12 @@ static void pthread_init_common(void) {
 
 // This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
 
-static int (*_clock_gettime)(clockid_t, struct timespec *) = NULL;
-static int (*_clock_getres)(clockid_t, struct timespec *) = NULL;
+int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
+int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
+
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
-
-// Exported clock functionality
-
-int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
-}
-
-int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
-}
-
-bool os::Posix::supports_monotonic_clock() {
-  return _clock_gettime != NULL;
-}
 
 // Determine what POSIX API's are present and do appropriate
 // configuration.
@@ -1879,12 +1866,12 @@ static void to_abstime(timespec* abstime, jlong timeout,
 
   clockid_t clock = CLOCK_MONOTONIC;
   // need to ensure we have a runtime check for clock_gettime support
-  if (!isAbsolute && _clock_gettime != NULL) {
+  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
     if (!_use_clock_monotonic_condattr || isRealtime) {
       clock = CLOCK_REALTIME;
     }
     struct timespec now;
-    int status = _clock_gettime(clock, &now);
+    int status = os::Posix::clock_gettime(clock, &now);
     assert_status(status == 0, status, "clock_gettime");
     calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
     DEBUG_ONLY(max_secs += now.tv_sec;)
