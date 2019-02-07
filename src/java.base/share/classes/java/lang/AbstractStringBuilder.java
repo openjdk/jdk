@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,19 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             value = StringUTF16.newBytesFor(capacity);
             coder = UTF16;
         }
+    }
+
+    /**
+     * Creates an AbstractStringBuilder with the specified coder and with
+     * the initial capacity equal to the smaller of (capacity + addition)
+     * and Integer.MAX_VALUE.
+     */
+    AbstractStringBuilder(byte coder, int capacity, int addition) {
+        this.coder = coder;
+        capacity = (capacity < Integer.MAX_VALUE - addition)
+                ? capacity + addition : Integer.MAX_VALUE;
+        value = (coder == LATIN1)
+                ? new byte[capacity] : StringUTF16.newBytesFor(capacity);
     }
 
     /**

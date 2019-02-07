@@ -82,6 +82,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
+runtime/CompressedOops/UseCompressedOops.java 8079353 windows-all
 
 #############################################################################
 

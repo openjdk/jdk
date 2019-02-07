@@ -72,14 +72,15 @@ public class ClhsdbJdis {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of(
-                    "public static void main(java.lang.String[])",
+                    "public static void main\\(java\\.lang\\.String\\[\\]\\)",
                     "Holder Class",
                     "public class jdk.test.lib.apps.LingeredApp @",
+                    "public class jdk\\.test\\.lib\\.apps\\.LingeredApp @",
                     "Bytecode",
                     "line bci   bytecode",
                     "Exception Table",
                     "start bci end bci handler bci catch type",
-                    "Constant Pool of [public class jdk.test.lib.apps.LingeredApp @"));
+                    "Constant Pool of \\[public class jdk\\.test\\.lib\\.apps\\.LingeredApp @"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException e) {

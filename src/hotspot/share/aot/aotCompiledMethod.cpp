@@ -428,10 +428,6 @@ address AOTCompiledMethod::call_instruction_address(address pc) const {
   return pltcall->instruction_address();
 }
 
-bool AOTCompiledMethod::is_evol_dependent_on(Klass* dependee) {
-  return !is_aot_runtime_stub() && _heap->is_dependent_method(dependee, this);
-}
-
 void AOTCompiledMethod::clear_inline_caches() {
   assert(SafepointSynchronize::is_at_safepoint(), "cleaning of IC's only allowed at safepoint");
   if (is_zombie()) {

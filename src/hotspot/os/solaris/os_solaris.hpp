@@ -335,4 +335,21 @@ class PlatformParker : public CHeapObj<mtInternal> {
   }
 };
 
+// Platform specific implementation that underpins VM Monitor/Mutex class
+class PlatformMonitor : public CHeapObj<mtInternal> {
+ private:
+  mutex_t _mutex; // Native mutex for locking
+  cond_t  _cond;  // Native condition variable for blocking
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  void lock();
+  void unlock();
+  bool try_lock();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
+};
+
 #endif // OS_SOLARIS_OS_SOLARIS_HPP

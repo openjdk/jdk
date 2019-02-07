@@ -22,22 +22,23 @@
  */
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
  * @test
- * @bug 8210583
- * @summary Tests Base64.Encoder.encode/Decoder.decode for the large size
- *          of resulting bytes which can not be allocated
- * @requires os.maxMemory >= 6g
- * @run main/othervm -Xms4g -Xmx6g TestEncodingDecodingLength
+ * @bug 8210583 8217969 8218265
+ * @summary Tests Base64.Encoder.encode and Base64.Decoder.decode
+ *          with the large size of input array/buffer
+ * @requires os.maxMemory >= 8g
+ * @run main/othervm -Xms6g -Xmx8g TestEncodingDecodingLength
  *
  */
 
 public class TestEncodingDecodingLength {
 
     public static void main(String[] args) {
-        int size = Integer.MAX_VALUE - 2;
+        int size = Integer.MAX_VALUE - 8;
         byte[] inputBytes = new byte[size];
         byte[] outputBytes = new byte[size];
 
@@ -46,13 +47,15 @@ public class TestEncodingDecodingLength {
         checkOOM("encode(byte[])", () -> encoder.encode(inputBytes));
         checkIAE("encode(byte[] byte[])", () -> encoder.encode(inputBytes, outputBytes));
         checkOOM("encodeToString(byte[])", () -> encoder.encodeToString(inputBytes));
-        checkOOM("encode(ByteBuffer)", () -> encoder.encode(ByteBuffer.allocate(size)));
+        checkOOM("encode(ByteBuffer)", () -> encoder.encode(ByteBuffer.wrap(inputBytes)));
 
-        // Check decoder with large array length
+        // Check decoder with large array length,
+        // should not throw any exception
+        Arrays.fill(inputBytes, (byte) 86);
         Base64.Decoder decoder = Base64.getDecoder();
-        checkOOM("decode(byte[])", () -> decoder.decode(inputBytes));
-        checkIAE("decode(byte[], byte[])", () -> decoder.decode(inputBytes, outputBytes));
-        checkOOM("decode(ByteBuffer)", () -> decoder.decode(ByteBuffer.allocate(size)));
+        decoder.decode(inputBytes);
+        decoder.decode(inputBytes, outputBytes);
+        decoder.decode(ByteBuffer.wrap(inputBytes));
     }
 
     private static final void checkOOM(String methodName, Runnable r) {

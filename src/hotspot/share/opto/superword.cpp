@@ -613,7 +613,7 @@ void SuperWord::find_adjacent_refs() {
     // alignment is set and vectors will be aligned.
     bool create_pack = true;
     if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
-      if (!Matcher::misaligned_vectors_ok()) {
+      if (!Matcher::misaligned_vectors_ok() || AlignVector) {
         int vw = vector_width(mem_ref);
         int vw_best = vector_width(best_align_to_mem_ref);
         if (vw > vw_best) {
@@ -638,7 +638,7 @@ void SuperWord::find_adjacent_refs() {
       } else {
         // Allow independent (different type) unaligned memory operations
         // if HW supports them.
-        if (!Matcher::misaligned_vectors_ok()) {
+        if (!Matcher::misaligned_vectors_ok() || AlignVector) {
           create_pack = false;
         } else {
           // Check if packs of the same memory type but
@@ -3372,9 +3372,9 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
-  if (vw > ObjectAlignmentInBytes) {
+  if (vw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new CastP2XNode(NULL, align_to_ref_p.base());
+    Node* xbase = new CastP2XNode(NULL, align_to_ref_p.adr());
     _igvn.register_new_node_with_optimizer(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
@@ -3566,8 +3566,8 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
     assert(!valid(), "base address is loop variant");
     return;
   }
-  //unsafe reference could not be aligned appropriately without runtime checking
-  if (base == NULL || base->bottom_type() == Type::TOP) {
+  // unsafe references require misaligned vector access support
+  if (base->is_top() && !Matcher::misaligned_vectors_ok()) {
     assert(!valid(), "unsafe access");
     return;
   }
@@ -3591,6 +3591,16 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
       break; // stop looking at addp's
     }
   }
+  if (!invariant(adr)) {
+    assert(!valid(), "adr is loop variant");
+    return;
+  }
+
+  if (!base->is_top() && adr != base) {
+    assert(!valid(), "adr and base differ");
+    return;
+  }
+
   NOT_PRODUCT(if(_slp->is_trace_alignment()) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
 

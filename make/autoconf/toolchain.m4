@@ -595,7 +595,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
 [
   LINKER=[$]$1
-  LINKER_NAME=$2
+  LINKER_NAME="$2"
 
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -Wl,-V output typically looks like

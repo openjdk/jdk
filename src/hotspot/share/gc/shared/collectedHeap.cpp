@@ -161,11 +161,6 @@ bool CollectedHeap::supports_concurrent_phase_control() const {
   return false;
 }
 
-const char* const* CollectedHeap::concurrent_phases() const {
-  static const char* const result[] = { NULL };
-  return result;
-}
-
 bool CollectedHeap::request_concurrent_phase(const char* phase) {
   return false;
 }

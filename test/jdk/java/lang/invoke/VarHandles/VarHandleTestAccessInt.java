@@ -133,16 +133,13 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
     }
 
     @Test
-    public void testEqualsAndHashCode() {
+    public void testEquals() {
         VarHandle[] vhs1 = allocate(true);
         VarHandle[] vhs2 = allocate(true);
 
         for (int i = 0; i < vhs1.length; i++) {
             for (int j = 0; j < vhs1.length; j++) {
-                if (i == j) {
-                    assertEquals(vhs1[i], vhs1[i]);
-                }
-                else {
+                if (i != j) {
                     assertNotEquals(vhs1[i], vhs1[j]);
                     assertNotEquals(vhs1[i], vhs2[j]);
                 }

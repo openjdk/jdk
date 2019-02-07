@@ -2338,9 +2338,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-// PPC doesn't support misaligned vectors store/load.
+// PPC implementation uses VSX load/store instructions (if
+// SuperwordUseVSX) which support 4 byte but not arbitrary alignment
 const bool Matcher::misaligned_vectors_ok() {
-  return !AlignVector; // can be changed by flag
+  return false;
 }
 
 // PPC AES support not yet implemented

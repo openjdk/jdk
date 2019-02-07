@@ -143,7 +143,7 @@ private:
   }
 
   // Called when a thread voluntarily blocks
-  static void   block(JavaThread *thread);
+  static void   block(JavaThread *thread, bool block_in_safepoint_check = true);
 
   friend class SafepointMechanism;
 

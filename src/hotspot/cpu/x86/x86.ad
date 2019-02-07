@@ -1585,7 +1585,7 @@ const uint Matcher::vector_shift_count_ideal_reg(int size) {
 
 // x86 supports misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
-  return !AlignVector; // can be changed by flag
+  return true;
 }
 
 // x86 AES instructions are compatible with SunJCE expanded

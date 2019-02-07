@@ -28,6 +28,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/tieredThresholdPolicy.hpp"
 #include "code/scopeDesc.hpp"

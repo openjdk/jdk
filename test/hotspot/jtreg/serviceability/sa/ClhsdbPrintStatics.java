@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
@@ -71,7 +70,7 @@ public class ClhsdbPrintStatics {
             expStrMap.put("printstatics Threads", List.of(
                     "Static fields of Threads",
                     "_number_of_threads", "_number_of_non_daemon_threads",
-                    "JavaThread* Threads"));
+                    "JavaThread\\* Threads"));
             expStrMap.put("printstatics Universe", List.of(
                     "Static fields of Universe",
                     "uintptr_t Universe::_verify_oop_mask",

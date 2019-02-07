@@ -690,6 +690,28 @@ bool AOTCodeHeap::is_dependent_method(Klass* dependee, AOTCompiledMethod* aot) {
   return false;
 }
 
+void AOTCodeHeap::mark_evol_dependent_methods(InstanceKlass* dependee) {
+  AOTKlassData* klass_data = find_klass(dependee);
+  if (klass_data == NULL) {
+    return; // no AOT records for this class - no dependencies
+  }
+  if (!dependee->has_passed_fingerprint_check()) {
+    return; // different class
+  }
+
+  int methods_offset = klass_data->_dependent_methods_offset;
+  if (methods_offset >= 0) {
+    address methods_cnt_adr = _dependencies + methods_offset;
+    int methods_cnt = *(int*)methods_cnt_adr;
+    int* indexes = (int*)(methods_cnt_adr + 4);
+    for (int i = 0; i < methods_cnt; ++i) {
+      int code_id = indexes[i];
+      AOTCompiledMethod* aot = _code_to_aot[code_id]._aot;
+      aot->mark_for_deoptimization(false);
+    }
+  }
+}
+
 void AOTCodeHeap::sweep_dependent_methods(int* indexes, int methods_cnt) {
   int marked = 0;
   for (int i = 0; i < methods_cnt; ++i) {
