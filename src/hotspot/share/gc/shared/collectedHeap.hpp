@@ -534,12 +534,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // The default implementation returns false.
   virtual bool supports_concurrent_phase_control() const;
 
-  // Return a NULL terminated array of concurrent phase names provided
-  // by this collector.  Supports Whitebox testing.  These are the
-  // names recognized by request_concurrent_phase(). The default
-  // implementation returns an array of one NULL element.
-  virtual const char* const* concurrent_phases() const;
-
   // Request the collector enter the indicated concurrent phase, and
   // wait until it does so.  Supports WhiteBox testing.  Only one
   // request may be active at a time.  Phases are designated by name;

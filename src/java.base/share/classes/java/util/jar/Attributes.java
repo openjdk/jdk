@@ -265,9 +265,10 @@ public class Attributes implements Map<Object,Object>, Cloneable {
     }
 
     /**
-     * Compares the specified Attributes object with this Map for equality.
-     * Returns true if the given object is also an instance of Attributes
-     * and the two Attributes objects represent the same mappings.
+     * Compares the specified object to the underlying
+     * {@linkplain Attributes#map map} for equality.
+     * Returns true if the given object is also a Map
+     * and the two maps represent the same mappings.
      *
      * @param o the Object to be compared
      * @return true if the specified Object is equal to this Map

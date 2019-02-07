@@ -80,7 +80,7 @@ public class ClhsdbScanOops {
 
             expStrMap.put(cmd, List.of
                 ("java/lang/Object", "java/lang/Class", "java/lang/Thread",
-                 "java/lang/String", "[B", "[I"));
+                 "java/lang/String", "\\[B", "\\[I"));
 
             // Test the 'type' option also
             // scanoops <start addr> <end addr> java/lang/String

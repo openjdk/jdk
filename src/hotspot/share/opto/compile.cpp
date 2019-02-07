@@ -3820,6 +3820,11 @@ void Compile::set_allowed_deopt_reasons() {
   }
 }
 
+bool Compile::is_compiling_clinit_for(ciKlass* k) {
+  ciMethod* root = method(); // the root method of compilation
+  return root->is_static_initializer() && root->holder() == k; // access in the context of clinit
+}
+
 #ifndef PRODUCT
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence

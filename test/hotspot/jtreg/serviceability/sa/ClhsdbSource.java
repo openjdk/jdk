@@ -58,16 +58,16 @@ public class ClhsdbSource {
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("source clhsdb_cmd_file", List.of(
                     "No deadlocks found",
-                    "Common-Cleaner",
+                    "Common\\-Cleaner",
                     "Signal Dispatcher",
-                    "java.lang.ref.Finalizer$FinalizerThread.run",
+                    "java.lang.ref.Finalizer\\$FinalizerThread.run",
                     "java.lang.ref.Reference",
-                    "Method*",
+                    "Method\\*",
                     "LingeredApp.main",
                     "Available commands:",
-                    "attach pid | exec core",
-                    "intConstant [ name [ value ] ]",
-                    "type [ type [ name super isOop isInteger isUnsigned size ] ]"));
+                    "attach pid \\| exec core",
+                    "intConstant \\[ name \\[ value \\] \\]",
+                    "type \\[ type \\[ name super isOop isInteger isUnsigned size \\] \\]"));
 
             Map<String, List<String>> unExpStrMap = new HashMap<>();
             unExpStrMap.put("source clhsdb_cmd_file", List.of(

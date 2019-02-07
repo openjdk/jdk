@@ -1369,7 +1369,6 @@ public:
 
   // WhiteBox testing support.
   virtual bool supports_concurrent_phase_control() const;
-  virtual const char* const* concurrent_phases() const;
   virtual bool request_concurrent_phase(const char* phase);
 
   virtual WorkGang* get_safepoint_workers() { return _workers; }

@@ -663,27 +663,6 @@ class CompiledMethodMarker: public StackObj {
   }
 };
 
-void NMethodSweeper::release_compiled_method(CompiledMethod* nm) {
-  // Make sure the released nmethod is no longer referenced by the sweeper thread
-  CodeCacheSweeperThread* thread = (CodeCacheSweeperThread*)JavaThread::current();
-  thread->set_scanned_compiled_method(NULL);
-
-  // Clean up any CompiledICHolders
-  {
-    ResourceMark rm;
-    RelocIterator iter(nm);
-    CompiledICLocker ml(nm);
-    while (iter.next()) {
-      if (iter.type() == relocInfo::virtual_call_type) {
-        CompiledIC::cleanup_call_site(iter.virtual_call_reloc(), nm);
-      }
-    }
-  }
-
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  nm->flush();
-}
-
 NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(CompiledMethod* cm) {
   assert(cm != NULL, "sanity");
   assert(!CodeCache_lock->owned_by_self(), "just checking");
@@ -697,7 +676,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
   // Skip methods that are currently referenced by the VM
   if (cm->is_locked_by_vm()) {
     // But still remember to clean-up inline caches for alive nmethods
-    if (cm->is_alive() && !cm->is_unloading()) {
+    if (cm->is_alive()) {
       // Clean inline caches that point to zombie/non-entrant/unloaded nmethods
       cm->cleanup_inline_caches(false);
       SWEEP(cm);
@@ -709,7 +688,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     // All inline caches that referred to this nmethod were cleaned in the
     // previous sweeper cycle. Now flush the nmethod from the code cache.
     assert(!cm->is_locked_by_vm(), "must not flush locked Compiled Methods");
-    release_compiled_method(cm);
+    cm->flush();
     assert(result == None, "sanity");
     result = Flushed;
   } else if (cm->is_not_entrant()) {
@@ -728,7 +707,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
         // Make sure that we unregistered the nmethod with the heap and flushed all
         // dependencies before removing the nmethod (done in make_zombie()).
         assert(cm->is_zombie(), "nmethod must be unregistered");
-        release_compiled_method(cm);
+        cm->flush();
         assert(result == None, "sanity");
         result = Flushed;
       } else {
@@ -744,14 +723,10 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
   } else if (cm->is_unloaded()) {
     // Code is unloaded, so there are no activations on the stack.
     // Convert the nmethod to zombie or flush it directly in the OSR case.
-
-    // Clean ICs of unloaded nmethods as well because they may reference other
-    // unloaded nmethods that may be flushed earlier in the sweeper cycle.
-    cm->cleanup_inline_caches(false);
     if (cm->is_osr_method()) {
       SWEEP(cm);
       // No inline caches will ever point to osr methods, so we can just remove it
-      release_compiled_method(cm);
+      cm->flush();
       assert(result == None, "sanity");
       result = Flushed;
     } else {

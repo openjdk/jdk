@@ -83,7 +83,7 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
     }
 
     @Test
-    public void testEqualsAndHashCode() {
+    public void testEquals() {
         VarHandle[] vhs1 = setupVarHandleSources(true).stream().
             map(vhs -> vhs.s).toArray(VarHandle[]::new);
         VarHandle[] vhs2 = setupVarHandleSources(true).stream().
@@ -91,10 +91,7 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
 
         for (int i = 0; i < vhs1.length; i++) {
             for (int j = 0; j < vhs1.length; j++) {
-                if (i == j) {
-                    assertEquals(vhs1[i], vhs1[i]);
-                }
-                else {
+                if (i != j) {
                     assertNotEquals(vhs1[i], vhs1[j]);
                     assertNotEquals(vhs1[i], vhs2[j]);
                 }

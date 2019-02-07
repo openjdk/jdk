@@ -86,6 +86,14 @@ void AOTLoader::metadata_do(void f(Metadata*)) {
   }
 }
 
+void AOTLoader::mark_evol_dependent_methods(InstanceKlass* dependee) {
+  if (UseAOT) {
+    FOR_ALL_AOT_HEAPS(heap) {
+      (*heap)->mark_evol_dependent_methods(dependee);
+    }
+  }
+}
+
 /**
  * List of core modules for which we search for shared libraries.
  */

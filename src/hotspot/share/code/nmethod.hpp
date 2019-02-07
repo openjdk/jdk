@@ -588,9 +588,9 @@ public:
   bool check_dependency_on(DepChange& changes);
 
   // Evolution support. Tells if this compiled method is dependent on any of
-  // methods m() of class dependee, such that if m() in dependee is replaced,
+  // redefined methods, such that if m() is replaced,
   // this compiled method will have to be deoptimized.
-  bool is_evol_dependent_on(Klass* dependee);
+  bool is_evol_dependent();
 
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod

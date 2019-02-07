@@ -2146,9 +2146,9 @@ const bool Matcher::pass_original_key_for_aes() {
   return false;
 }
 
-// x86 supports misaligned vectors store/load.
+// aarch64 supports misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
-  return !AlignVector; // can be changed by flag
+  return true;
 }
 
 // false => size gets scaled to BytesPerLong, ok.

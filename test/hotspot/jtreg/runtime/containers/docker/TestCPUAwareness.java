@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,8 @@ public class TestCPUAwareness {
     private static void testCpus(int valueToSet, int expectedTraceValue) throws Exception {
         Common.logNewTestCase("test cpus: " + valueToSet);
         DockerRunOptions opts = Common.newOpts(imageName)
-            .addDockerOpts("--cpus", "" + valueToSet);
+            .addDockerOpts("--cpu-period=" + 10000)
+            .addDockerOpts("--cpu-quota=" + valueToSet * 10000);
         Common.run(opts)
             .shouldMatch("active_processor_count.*" + expectedTraceValue);
     }

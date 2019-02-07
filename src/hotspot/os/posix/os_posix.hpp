@@ -123,6 +123,11 @@ public:
 
 #ifdef SUPPORTS_CLOCK_MONOTONIC
 
+private:
+  // These need to be members so we can access them from inline functions
+  static int (*_clock_gettime)(clockid_t, struct timespec *);
+  static int (*_clock_getres)(clockid_t, struct timespec *);
+public:
   static bool supports_monotonic_clock();
   static int clock_gettime(clockid_t clock_id, struct timespec *tp);
   static int clock_getres(clockid_t clock_id, struct timespec *tp);
@@ -222,6 +227,23 @@ class PlatformParker : public CHeapObj<mtInternal> {
 
  public:
   PlatformParker();
+};
+
+// Platform specific implementation that underpins VM Monitor/Mutex class
+class PlatformMonitor : public CHeapObj<mtInternal> {
+ private:
+  pthread_mutex_t _mutex; // Native mutex for locking
+  pthread_cond_t  _cond;  // Native condition variable for blocking
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  void lock();
+  void unlock();
+  bool try_lock();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
 };
 
 #endif // !SOLARIS

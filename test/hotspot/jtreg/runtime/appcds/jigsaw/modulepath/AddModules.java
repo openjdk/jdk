@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class AddModules {
                                         "--add-modules",
                                         MAIN_MODULE1 + "," + MAIN_MODULE2);
         TestCommon.checkDump(output);
-        String prefix[] = {"-cp", "\"\"", "-Xlog:class+load=trace"};
+        String prefix[] = {"-Djava.class.path=", "-Xlog:class+load=trace"};
 
         // run the com.greetings module with the archive with the --module-path
         // the same as the one during dump time.

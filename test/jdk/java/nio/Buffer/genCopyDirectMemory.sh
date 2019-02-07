@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 # questions.
 #
 
-javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java > Spp.java
+javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
 
 gen() {
-    java  build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3<CopyDirect-X-Memory.java.template >CopyDirect$2Memory.java
+    out=CopyDirect$2Memory.java
+    rm -f $out
+    java  build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 -iCopyDirect-X-Memory.java.template -o$out
 }
 
 gen byte Byte Byte

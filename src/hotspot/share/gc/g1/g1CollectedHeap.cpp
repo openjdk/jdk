@@ -2323,10 +2323,6 @@ bool G1CollectedHeap::supports_concurrent_phase_control() const {
   return true;
 }
 
-const char* const* G1CollectedHeap::concurrent_phases() const {
-  return _cm_thread->concurrent_phases();
-}
-
 bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
   return _cm_thread->request_concurrent_phase(phase);
 }

@@ -145,7 +145,7 @@ public class ClhsdbLauncher {
                 List<String> expectedStr = expectedStrMap.get(cmd);
                 if (expectedStr != null) {
                     for (String exp : expectedStr) {
-                        out.shouldContain(exp);
+                        out.shouldMatch(exp);
                     }
                 }
             }
@@ -154,7 +154,7 @@ public class ClhsdbLauncher {
                 List<String> unExpectedStr = unExpectedStrMap.get(cmd);
                 if (unExpectedStr != null) {
                     for (String unExp : unExpectedStr) {
-                        out.shouldNotContain(unExp);
+                        out.shouldNotMatch(unExp);
                     }
                 }
             }

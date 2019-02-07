@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**

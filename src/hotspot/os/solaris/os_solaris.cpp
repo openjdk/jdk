@@ -5192,6 +5192,72 @@ void Parker::unpark() {
   }
 }
 
+// Platform Monitor implementation
+
+os::PlatformMonitor::PlatformMonitor() {
+  int status = os::Solaris::cond_init(&_cond);
+  assert_status(status == 0, status, "cond_init");
+  status = os::Solaris::mutex_init(&_mutex);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  int status = os::Solaris::cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
+  status = os::Solaris::mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+void os::PlatformMonitor::lock() {
+  int status = os::Solaris::mutex_lock(&_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+}
+
+void os::PlatformMonitor::unlock() {
+  int status = os::Solaris::mutex_unlock(&_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+}
+
+bool os::PlatformMonitor::try_lock() {
+  int status = os::Solaris::mutex_trylock(&_mutex);
+  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
+  return status == 0;
+}
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  if (millis > 0) {
+    timestruc_t abst;
+    int ret = OS_TIMEOUT;
+    compute_abstime(&abst, millis);
+    int status = os::Solaris::cond_timedwait(&_cond, &_mutex, &abst);
+    assert_status(status == 0 || status == EINTR ||
+                  status == ETIME || status == ETIMEDOUT,
+                  status, "cond_timedwait");
+    // EINTR acts as spurious wakeup - which is permitted anyway
+    if (status == 0 || status == EINTR) {
+      ret = OS_OK;
+    }
+    return ret;
+  } else {
+    int status = os::Solaris::cond_wait(&_cond, &_mutex);
+    assert_status(status == 0 || status == EINTR,
+                  status, "cond_wait");
+    return OS_OK;
+  }
+}
+
+void os::PlatformMonitor::notify() {
+  int status = os::Solaris::cond_signal(&_cond);
+  assert_status(status == 0, status, "cond_signal");
+}
+
+void os::PlatformMonitor::notify_all() {
+  int status = os::Solaris::cond_broadcast(&_cond);
+  assert_status(status == 0, status, "cond_broadcast");
+}
+
 extern char** environ;
 
 // Run the specified command in a separate process. Return its exit value,

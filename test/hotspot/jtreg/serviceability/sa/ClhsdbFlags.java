@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jtreg.SkippedException;
 
@@ -35,6 +34,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8190198
  * @bug 8217612
+ * @bug 8217845
  * @summary Test clhsdb flags command
  * @requires vm.hasSA
  * @library /test/lib
@@ -64,6 +64,7 @@ public class ClhsdbFlags {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("flags", List.of(
+                    "command line", "ergonomic", "default",
                     "UnlockDiagnosticVMOptions = true",
                     "MaxFDLimit = false",
                     "MaxJavaStackTraceDepth = 1024",
