@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   __ remove_frame(initial_frame_size_in_bytes());
 
   // mov_slow here is usually one or two instruction
-  __ mov_address(Rtemp, os::get_polling_page(), symbolic_Relocation::polling_page_reference);
+  __ mov_address(Rtemp, os::get_polling_page());
   __ relocate(relocInfo::poll_return_type);
   __ ldr(Rtemp, Address(Rtemp));
   __ ret();
@@ -317,7 +317,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  __ mov_address(Rtemp, os::get_polling_page(), symbolic_Relocation::polling_page_reference);
+  __ mov_address(Rtemp, os::get_polling_page());
   if (info != NULL) {
     add_debug_info_for_branch(info);
   }

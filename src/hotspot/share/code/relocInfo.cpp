@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,6 @@ void relocInfo::set_type(relocType t) {
   assert(format()==old_format, "sanity check");
 }
 
-nmethod* RelocIterator::code_as_nmethod() const {
-  return _code->as_nmethod();
-}
-
-void relocInfo::set_format(int f) {
-  int old_offset = addr_offset();
-  assert((f & format_mask) == f, "wrong format");
-  _value = (_value & ~(format_mask << offset_width)) | (f << offset_width);
-  assert(addr_offset()==old_offset, "sanity check");
-}
-
-
 void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type, relocType new_type) {
   bool found = false;
   while (itr->next() && !found) {
@@ -114,11 +102,6 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
     }
   }
   assert(found, "no relocInfo found for pc");
-}
-
-
-void relocInfo::remove_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type) {
-  change_reloc_info_for_address(itr, pc, old_type, none);
 }
 
 
@@ -179,14 +162,6 @@ RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   set_limits(begin, limit);
 }
 
-
-enum { indexCardSize = 128 };
-struct RelocIndexEntry {
-  jint addr_offset;          // offset from header_end of an addr()
-  jint reloc_offset;         // offset from header_end of a relocInfo (prefix)
-};
-
-
 bool RelocIterator::addr_in_const() const {
   const int n = CodeBuffer::SECT_CONSTS;
   return section_start(n) <= addr() && addr() < section_end(n);
@@ -214,12 +189,6 @@ void RelocIterator::set_limits(address begin, address limit) {
   }
 }
 
-
-void RelocIterator::set_limit(address limit) {
-  address code_end = (address)code() + code()->size();
-  assert(limit == NULL || limit <= code_end, "in bounds");
-  _limit = limit;
-}
 
 // All the strange bit-encodings are in here.
 // The idea is to encode relocation data which are small integers
@@ -619,14 +588,6 @@ void metadata_Relocation::fix_metadata_relocation() {
   if (!metadata_is_immediate()) {
     // get the metadata from the pool, and re-insert it into the instruction:
     pd_fix_value(value());
-  }
-}
-
-
-void metadata_Relocation::verify_metadata_relocation() {
-  if (!metadata_is_immediate()) {
-    // get the metadata from the pool, and re-insert it into the instruction:
-    verify_value(value());
   }
 }
 
