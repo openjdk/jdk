@@ -30,7 +30,7 @@ include TextFileProcessing.gmk
 default: bundles
 
 # Only macosx has bundles defined.
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
 
   bundles: jre-bundle jdk-bundle
 

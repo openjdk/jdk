@@ -28,13 +28,13 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/JvmMapfile.gmk))
 ################################################################################
 # Combine a list of static symbols
 
-ifneq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), windows-x86_64)
+ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86_64)), false)
   # On Windows x86_64, we should not have any symbols at all, since that
   # results in duplicate warnings from the linker (JDK-8043491).
   SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-shared
 endif
 
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+ifeq ($(call isTargetOsType, unix), true)
   SYMBOLS_SRC += $(TOPDIR)/make/hotspot/symbols/symbols-unix
 endif
 
@@ -48,7 +48,7 @@ ifneq ($(findstring debug, $(DEBUG_LEVEL)), )
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
   ifeq ($(call check-jvm-feature, dtrace), true)
     # Additional mapfiles that are only used when dtrace is enabled
     ifeq ($(call check-jvm-feature, compiler2), true)
@@ -64,7 +64,7 @@ endif
 # Create a dynamic list of symbols from the built object files. This is highly
 # platform dependent.
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
   DUMP_SYMBOLS_CMD := $(NM) --defined-only *.o
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
@@ -76,7 +76,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
         if ($$3 ~ /$(FILTER_SYMBOLS_PATTERN)/) print $$3; \
       }'
 
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
+else ifeq ($(call isTargetOs, solaris), true)
   DUMP_SYMBOLS_CMD := $(NM) -p *.o
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
@@ -90,7 +90,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
         if ($$3 ~ /$(FILTER_SYMBOLS_PATTERN)/) print $$3; \
       }'
 
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   # nm on macosx prints out "warning: nm: no name list" to stderr for
   # files without symbols. Hide this, even at the expense of hiding real errors.
   DUMP_SYMBOLS_CMD := $(NM) -Uj *.o 2> /dev/null
@@ -107,7 +107,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
 # The script below might be what was intended, but it failes to link with tons
 # of 'cannot export hidden symbol vtable for X'.
 #  '{ if ($$1 ~ /^__ZTV/ || $$1 ~ /^_gHotSpotVM/) print substr($$1, 2) }'
-else ifeq ($(OPENJDK_TARGET_OS), aix)
+else ifeq ($(call isTargetOs, aix), true)
   # NOTE: The old build had the solution below. This should to be fixed in
   # configure instead.
 
@@ -123,7 +123,7 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
         if ($$3 ~ /^SharedArchivePath__9Arguments$$/) print $$3; \
        }'
 
-else ifeq ($(OPENJDK_TARGET_OS), windows)
+else ifeq ($(call isTargetOs, windows), true)
   DUMP_SYMBOLS_CMD := $(DUMPBIN) -symbols *.obj
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
@@ -153,12 +153,12 @@ $(JVM_OUTPUTDIR)/symbols: $(SYMBOLS_SRC)
 ################################################################################
 # Finally convert the symbol list into a platform-specific mapfile
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   # On macosx, we need to add a leading underscore
   define create-mapfile-work
 	  $(AWK) '{ if ($$0 ~ ".") { print "  _" $$0 } }'  < $^ > $@.tmp
   endef
-else ifeq ($(OPENJDK_TARGET_OS), windows)
+else ifeq ($(call isTargetOs, windows), true)
   # On windows, add an 'EXPORTS' header
   define create-mapfile-work
 	  $(ECHO) "EXPORTS" > $@.tmp

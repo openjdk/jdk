@@ -31,7 +31,7 @@ $(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
+ifeq ($(call isTargetOs, aix), true)
 
   TZMAPPINGS_SRC := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf
 
@@ -44,7 +44,7 @@ endif
 
 ################################################################################
 # Copy the microsoft runtime libraries on windows
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
   define copy-and-chmod
@@ -81,7 +81,7 @@ endif
 ################################################################################
 # In jvm.cfg, the first listed KNOWN variant is the default. On most build
 # configurations, that is the server variant.
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), windows-x86)
+ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86)), true)
   DEFAULT_CFG_VARIANT ?= client
 endif
 DEFAULT_CFG_VARIANT ?= server
@@ -143,7 +143,7 @@ DEF_POLICY_DST := $(LIB_DST_DIR)/security/default.policy
 DEF_POLICY_SRC_LIST := $(DEF_POLICY_SRC)
 DEF_POLICY_SRC_LIST += $(CUSTOM_POLICY_SRC_LIST)
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), windows solaris), )
+ifeq ($(call isTargetOs, windows solaris), true)
   DEF_POLICY_SRC_LIST += $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/lib/security/default.policy
 endif
 
@@ -183,7 +183,7 @@ $(eval $(call SetupCopyFiles, COPY_NET_PROPERTIES, \
 
 TARGETS += $(COPY_NET_PROPERTIES)
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), solaris linux), )
+ifeq ($(call isTargetOs, solaris linux), true)
   $(eval $(call SetupCopyFiles, COPY_SDP_CONF, \
       FILES := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/sdp/sdp.conf.template, \
       DEST := $(CONF_DST_DIR)/sdp, \

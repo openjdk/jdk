@@ -181,6 +181,23 @@ uppercase = \
   )
 
 ################################################################################
+# Boolean operators.
+
+# Return the word "true" if all the boolean words given as argument is "true",
+# and returns "false" otherwise. Boolean words must be "true" or "false". It is
+# an error to supply a non-boolean word. An empty string is considered "true".
+And = \
+  $(strip $(if $(filter-out true false, $1), $(error Non-boolean values: $1)) \
+  $(if $(strip $(filter-out true, $1)), false, true))
+
+# Return the word "false" if all the boolean words given as argument is "false",
+# and returns "true" otherwise. Boolean words must be "true" or "false". It is
+# an error to supply a non-boolean word.  An empty string is considered "false".
+Or = \
+  $(strip $(if $(filter-out true false, $1), $(error Non-boolean values: $1)) \
+  $(if $(strip $(filter-out false, $1)), true, false))
+
+################################################################################
 # Parse a multiple-keyword variable, like FOO="KEYWORD1=val1;KEYWORD2=val2;..."
 # These will be converted into a series of variables like FOO_KEYWORD1=val1,
 # FOO_KEYWORD2=val2, etc. Unknown keywords will cause an error.
@@ -267,6 +284,50 @@ check-jvm-variant = \
     $(if $(filter-out $(VALID_JVM_VARIANTS), $1), \
       $(error Internal error: Invalid variant tested: $1)) \
     $(if $(filter $1, $(JVM_VARIANTS)), true, false))
+
+################################################################################
+# Check if our build or target conforms to certain restrictions. This set of
+# functions all work in similar ways, testing the property that the name
+# implies, so e.g. isTargetCpu test the CPU of the target system.
+#
+# $1 - A property, or a space separated list of properties to test for.
+#
+# Returns true if the actual property matches one of the properties in the list,
+# and false otherwise.
+#
+# Examples: $(call isTargetOs, linux solaris) will return true when executed
+# on either linux or solaris, and false otherwise.
+# $(call isBuildCpuArch, x86) will return true iff the build CPU Arch is x86.
+
+isTargetOs = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_OS), $1), true, false))
+
+isTargetOsType = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_OS_TYPE), $1), true, false))
+
+isTargetCpu = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU), $1), true, false))
+
+isTargetCpuArch = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_ARCH), $1), true, false))
+
+isTargetCpuBits = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_BITS), $1), true, false))
+
+isBuildOs = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS), $1), true, false))
+
+isBuildOsType = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS_TYPE), $1), true, false))
+
+isBuildOsEnv = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS_ENV), $1), true, false))
+
+isBuildCpu = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_CPU), $1), true, false))
+
+isBuildCpuArch = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_CPU_ARCH), $1), true, false))
 
 ################################################################################
 # Converts a space separated list to a comma separated list.

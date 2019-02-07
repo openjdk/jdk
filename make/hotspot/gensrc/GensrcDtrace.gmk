@@ -28,12 +28,12 @@
 
 ifeq ($(call check-jvm-feature, dtrace), true)
 
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(call isTargetOs, solaris), true)
     DTRACE_FLAGS := -64
     DTRACE_CPP_FLAGS := -D_LP64
-  else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  else ifeq ($(call isTargetOs, macosx), true)
     DTRACE_CPP_FLAGS := -D_LP64 -x c
-  else ifeq ($(OPENJDK_TARGET_OS), linux)
+  else ifeq ($(call isTargetOs, linux), true)
     DTRACE_CPP_FLAGS := -x c
   endif
 
@@ -54,7 +54,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
   TARGETS += $(patsubst $(DTRACE_SOURCE_DIR)/%.d, \
       $(DTRACE_GENSRC_DIR)/%.h, $(wildcard $(DTRACE_SOURCE_DIR)/*.d))
 
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(call isTargetOs, solaris), true)
     ############################################################################
     # First we need to generate the dtraceGenOffsets tool. When run, this will
     # produce two header files and a C++ file. Note that generateJvmOffsets.cpp

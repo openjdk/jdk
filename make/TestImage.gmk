@@ -30,7 +30,7 @@ include MakeBase.gmk
 
 ############################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   FIXPATH_COPY := $(TEST_IMAGE_DIR)/bin/fixpath.exe
 
   $(FIXPATH_COPY): $(firstword $(FIXPATH))

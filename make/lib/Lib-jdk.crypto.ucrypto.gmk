@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJ2UCRYPTO, \
       NAME := j2ucrypto, \

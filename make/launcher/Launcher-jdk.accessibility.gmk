@@ -28,7 +28,7 @@ include LauncherCommon.gmk
 ################################################################################
 # jabswitch
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   JABSWITCH_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/jabswitch
   ACCESSBRIDGE_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/common
@@ -98,7 +98,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   endef
 
-  ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+  ifeq ($(call isTargetCpuBits, 32), true)
     $(eval $(call SetupInspector,-32,32))
     $(eval $(call SetupWalker,-32,32))
     $(eval $(call SetupInspector,,LEGACY))
