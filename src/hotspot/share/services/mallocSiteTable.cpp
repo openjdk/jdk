@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
   MallocSiteHashtableEntry* head = _table[index];
   while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
     MallocSite* site = head->data();
-    if (site->flags() == flags && site->equals(key)) {
+    if (site->flag() == flags && site->equals(key)) {
       return head->data();
     }
 
