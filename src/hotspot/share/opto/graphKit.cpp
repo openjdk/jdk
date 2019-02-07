@@ -3426,6 +3426,10 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
+    // Add an edge in the MergeMem for the header fields so an access
+    // to one of those has correct memory state
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
