@@ -694,6 +694,13 @@ WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, 
   return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
 WB_END
 
+// Alloc memory with pseudo call stack and specific memory type.
+WB_ENTRY(jlong, WB_NMTMallocWithPseudoStackAndType(JNIEnv* env, jobject o, jlong size, jint pseudo_stack, jint type))
+  address pc = (address)(size_t)pseudo_stack;
+  NativeCallStack stack(&pc, 1);
+  return (jlong)(uintptr_t)os::malloc(size, (MEMFLAGS)type, stack);
+WB_END
+
 // Free the memory allocated by NMTAllocTest
 WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
   os::free((void*)(uintptr_t)mem);
@@ -2161,6 +2168,7 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
+  {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
   {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
   {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
   {CC"NMTAttemptReserveMemoryAt",    CC"(JJ)J",       (void*)&WB_NMTAttemptReserveMemoryAt },

@@ -704,9 +704,15 @@ void MemDetailDiffReporter::old_malloc_site(const MallocSite* malloc_site) const
 
 void MemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
   const MallocSite* current)  const {
-  assert(early->flag() == current->flag(), "Must be the same memory type");
-  diff_malloc_site(current->call_stack(), current->size(), current->count(),
-    early->size(), early->count(), early->flag());
+  if (early->flag() != current->flag()) {
+    // If malloc site type changed, treat it as deallocation of old type and
+    // allocation of new type.
+    old_malloc_site(early);
+    new_malloc_site(current);
+  } else {
+    diff_malloc_site(current->call_stack(), current->size(), current->count(),
+      early->size(), early->count(), early->flag());
+  }
 }
 
 void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_t current_size,
