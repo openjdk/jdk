@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ final class ClientHello {
             if (session != null && identityAlg != null) {
                 String sessionIdentityAlg =
                     session.getIdentificationProtocol();
-                if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+                if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
                     if (SSLLogger.isOn &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.finest("Can't resume, endpoint id" +
@@ -1036,7 +1036,7 @@ final class ClientHello {
                 if (resumingSession && identityAlg != null) {
                     String sessionIdentityAlg =
                         previous.getIdentificationProtocol();
-                    if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+                    if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
                         if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                             SSLLogger.finest("Can't resume, endpoint id" +
