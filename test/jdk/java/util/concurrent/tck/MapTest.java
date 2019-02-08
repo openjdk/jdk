@@ -166,6 +166,40 @@ public class MapTest extends JSR166TestCase {
         assertEquals(1, m.size());
     }
 
+    /**
+     * "Missing" test found while investigating JDK-8210280.
+     * ant -Djsr166.tckTestClass=HashMapTest -Djsr166.methodFilter=testBug8210280 -Djsr166.runsPerTest=1000000 tck
+     */
+    public void testBug8210280() {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final int size1 = rnd.nextInt(32);
+        final int size2 = rnd.nextInt(128);
+
+        final Map m1 = impl.emptyMap();
+        for (int i = 0; i < size1; i++) {
+            int elt = rnd.nextInt(1024 * i, 1024 * (i + 1));
+            assertNull(m1.put(impl.makeKey(elt), impl.makeValue(elt)));
+        }
+
+        final Map m2 = impl.emptyMap();
+        for (int i = 0; i < size2; i++) {
+            int elt = rnd.nextInt(Integer.MIN_VALUE + 1024 * i,
+                                  Integer.MIN_VALUE + 1024 * (i + 1));
+            assertNull(m2.put(impl.makeKey(elt), impl.makeValue(-elt)));
+        }
+
+        final Map m1Copy = impl.emptyMap();
+        m1Copy.putAll(m1);
+
+        m1.putAll(m2);
+
+        for (Object elt : m2.keySet())
+            assertEquals(m2.get(elt), m1.get(elt));
+        for (Object elt : m1Copy.keySet())
+            assertSame(m1Copy.get(elt), m1.get(elt));
+        assertEquals(size1 + size2, m1.size());
+    }
+
 //     public void testFailsIntentionallyForDebugging() {
 //         fail(impl.klazz().getSimpleName());
 //     }
