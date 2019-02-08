@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5739,6 +5739,19 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   debug_only(ik->verify();)
 }
 
+void ClassFileParser::update_class_name(Symbol* new_class_name) {
+  // Decrement the refcount in the old name, since we're clobbering it.
+  if (_class_name != NULL) {
+    _class_name->decrement_refcount();
+  }
+  _class_name = new_class_name;
+  // Increment the refcount of the new name.
+  // Now the ClassFileParser owns this name and will decrement in
+  // the destructor.
+  _class_name->increment_refcount();
+}
+
+
 // For an unsafe anonymous class that is in the unnamed package, move it to its host class's
 // package by prepending its host class's package name to its class name and setting
 // its _class_name field.
@@ -5762,9 +5775,10 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anon
     strncpy(new_anon_name + host_pkg_len + 1, (char *)_class_name->base(), class_name_len);
 
     // Create a symbol and update the anonymous class name.
-    _class_name = SymbolTable::new_symbol(new_anon_name,
+    Symbol* new_name = SymbolTable::new_symbol(new_anon_name,
                                           (int)host_pkg_len + 1 + class_name_len,
                                           CHECK);
+    update_class_name(new_name);
   }
 }
 
@@ -5810,6 +5824,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  TRAPS) :
   _stream(stream),
   _requested_name(name),
+  _class_name(NULL),
   _loader_data(loader_data),
   _unsafe_anonymous_host(unsafe_anonymous_host),
   _cp_patches(cp_patches),
@@ -5867,7 +5882,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_vanilla_constructor(false),
   _max_bootstrap_specifier_index(-1) {
 
-  _class_name = name != NULL ? name : vmSymbols::unknown_class_name();
+  update_class_name(name != NULL ? name : vmSymbols::unknown_class_name());
 
   assert(THREAD->is_Java_thread(), "invariant");
   assert(_loader_data != NULL, "invariant");
@@ -5937,6 +5952,8 @@ void ClassFileParser::clear_class_metadata() {
 
 // Destructor to clean up
 ClassFileParser::~ClassFileParser() {
+  _class_name->decrement_refcount();
+
   if (_cp != NULL) {
     MetadataFactory::free_metadata(_loader_data, _cp);
   }
@@ -6092,7 +6109,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   // Update _class_name which could be null previously
   // to reflect the name in the constant pool
-  _class_name = class_name_in_cp;
+  update_class_name(class_name_in_cp);
 
   // Don't need to check whether this class name is legal or not.
   // It has been checked when constant pool is parsed.
