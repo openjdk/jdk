@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 
 HeapRegion* G1CollectionSetCandidates::pop_front() {
@@ -73,7 +73,7 @@ void G1CollectionSetCandidates::verify() const {
   for (; idx < _num_regions; idx++) {
     HeapRegion *cur = _regions[idx];
     guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
-    guarantee(CollectionSetChooser::should_add(cur), "Region %u should be eligible for addition.", cur->hrm_index());
+    guarantee(G1CollectionSetChooser::should_add(cur), "Region %u should be eligible for addition.", cur->hrm_index());
     if (prev != NULL) {
       guarantee(prev->gc_efficiency() >= cur->gc_efficiency(),
                 "GC efficiency for region %u: %1.4f smaller than for region %u: %1.4f",

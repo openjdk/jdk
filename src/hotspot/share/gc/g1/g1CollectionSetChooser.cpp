@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -171,7 +171,7 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
       _reclaimable_bytes_added += hr->reclaimable_bytes();
     }
 
-    bool should_add(HeapRegion* hr) { return CollectionSetChooser::should_add(hr); }
+    bool should_add(HeapRegion* hr) { return G1CollectionSetChooser::should_add(hr); }
 
   public:
     G1BuildCandidateRegionsClosure(G1BuildCandidateArray* array) :
@@ -245,19 +245,19 @@ public:
   }
 };
 
-uint CollectionSetChooser::calculate_work_chunk_size(uint num_workers, uint num_regions) {
+uint G1CollectionSetChooser::calculate_work_chunk_size(uint num_workers, uint num_regions) {
   assert(num_workers > 0, "Active gc workers should be greater than 0");
   return MAX2(num_regions / num_workers, 1U);
 }
 
-bool CollectionSetChooser::should_add(HeapRegion* hr) {
+bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
   return !hr->is_young() &&
          !hr->is_pinned() &&
          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
          hr->rem_set()->is_complete();
 }
 
-G1CollectionSetCandidates* CollectionSetChooser::build(WorkGang* workers, uint max_num_regions) {
+G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint max_num_regions) {
   uint num_workers = workers->active_workers();
   uint chunk_size = calculate_work_chunk_size(num_workers, max_num_regions);
 

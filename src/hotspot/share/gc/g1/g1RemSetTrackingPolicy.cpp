@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/collectionSetChooser.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -126,7 +126,7 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
   // - Otherwise only add those old gen regions which occupancy is low enough that there
   // is a chance that we will ever evacuate them in the mixed gcs.
   if ((total_live_bytes > 0) &&
-      CollectionSetChooser::region_occupancy_low_enough_for_evac(total_live_bytes) &&
+      G1CollectionSetChooser::region_occupancy_low_enough_for_evac(total_live_bytes) &&
       !r->rem_set()->is_tracked()) {
 
     r->rem_set()->set_state_updating();

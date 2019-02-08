@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -31,6 +30,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeterogeneousHeapPolicy.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
@@ -1028,7 +1028,7 @@ void G1Policy::decide_on_conc_mark_initiation() {
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end() {
-  G1CollectionSetCandidates* candidates = CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
+  G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
   _collection_set->set_candidates(candidates);
 
   bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");

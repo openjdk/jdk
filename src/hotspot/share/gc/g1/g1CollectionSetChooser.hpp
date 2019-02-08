@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_COLLECTIONSETCHOOSER_HPP
-#define SHARE_GC_G1_COLLECTIONSETCHOOSER_HPP
+#ifndef SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
+#define SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
 
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
@@ -34,7 +34,7 @@ class WorkGang;
 
 // Helper class to calculate collection set candidates, and containing some related
 // methods.
-class CollectionSetChooser : public AllStatic {
+class G1CollectionSetChooser : public AllStatic {
   static uint calculate_work_chunk_size(uint num_workers, uint num_regions);
 public:
 
@@ -57,4 +57,4 @@ public:
   static G1CollectionSetCandidates* build(WorkGang* workers, uint max_num_regions);
 };
 
-#endif // SHARE_GC_G1_COLLECTIONSETCHOOSER_HPP
+#endif // SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
