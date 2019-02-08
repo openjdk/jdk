@@ -90,7 +90,7 @@ TARGETS += $(COMPILE_DEPEND) $(DEPEND_SERVICE_PROVIDER)
 
 # To be able to call the javascript filter when generating man pages using
 # pandoc, we need to create this executable wrapper script.
-ifneq ($(PANDOC), )
+ifeq ($(ENABLE_PANDOC), true)
   # PANDOC_TROFF_MANPAGE_FILTER is duplicated for export in ToolsJdk.gmk.
   PANDOC_TROFF_MANPAGE_FILTER := \
       $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-troff-manpage-filter

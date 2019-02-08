@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_VIRTUAL_MEMORY_TRACKER_HPP
-#define SHARE_VM_SERVICES_VIRTUAL_MEMORY_TRACKER_HPP
+#ifndef SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+#define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
 
 #if INCLUDE_NMT
 
@@ -70,8 +70,8 @@ class VirtualMemory {
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
 class VirtualMemoryAllocationSite : public AllocationSite<VirtualMemory> {
  public:
-  VirtualMemoryAllocationSite(const NativeCallStack& stack) :
-    AllocationSite<VirtualMemory>(stack) { }
+  VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
+    AllocationSite<VirtualMemory>(stack, flag) { }
 
   inline void reserve_memory(size_t sz)  { data()->reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { data()->commit_memory(sz);   }
@@ -445,4 +445,4 @@ private:
 
 #endif // INCLUDE_NMT
 
-#endif // SHARE_VM_SERVICES_VIRTUAL_MEMORY_TRACKER_HPP
+#endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP

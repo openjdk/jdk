@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug      8002387 8014636 8078320 8175200 8186332
  * @summary  Improve rendered HTML formatting for {@code}
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestLiteralCodeInPre
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestLiteralCodeInPre extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-Xdoclint:none",

@@ -24,7 +24,7 @@
 #
 
 ifeq ($(call check-jvm-feature, dtrace), true)
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(call isTargetOs, solaris), true)
     JNI_INCLUDE_FLAGS := \
         -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
         -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \

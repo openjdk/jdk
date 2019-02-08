@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_CASTNODE_HPP
-#define SHARE_VM_OPTO_CASTNODE_HPP
+#ifndef SHARE_OPTO_CASTNODE_HPP
+#define SHARE_OPTO_CASTNODE_HPP
 
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -151,4 +151,4 @@ class CastP2XNode : public Node {
 
 
 
-#endif // SHARE_VM_OPTO_CASTNODE_HPP
+#endif // SHARE_OPTO_CASTNODE_HPP

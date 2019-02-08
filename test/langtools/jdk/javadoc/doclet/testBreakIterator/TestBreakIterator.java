@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
  * Correct Answer: "This is a class (i.e. it is indeed a class)."
  * Wrong Answer: "This is a class (i.e."
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestBreakIterator
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestBreakIterator extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestBreakIterator extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-breakiterator",
@@ -63,9 +65,8 @@ public class TestBreakIterator extends JavadocTester {
                 "<div class=\"block\">with a block tag</div>");
 
         checkOutput("pkg/BreakIteratorTest.html", true,
-                "<div class=\"block\">Return methods to the specified\n" +
-                " <a href=\"../com/sun/javadoc/package-summary.html#included\">access\n" +
-                " modifier option</a>.</div>");
+                "<div class=\"block\">with an anchor for the\n" +
+                " <a href=\"../index-all.html\">top level index</a>.</div>");
 
         checkOutput("pkg/BreakIteratorTest.html", true,
                 "<div class=\"block\">A constant indicating that the keyLocation is indeterminate\n" +

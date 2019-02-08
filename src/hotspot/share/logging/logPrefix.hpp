@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGPREFIX_HPP
-#define SHARE_VM_LOGGING_LOGPREFIX_HPP
+#ifndef SHARE_LOGGING_LOGPREFIX_HPP
+#define SHARE_LOGGING_LOGPREFIX_HPP
 
 #include "gc/shared/gcId.hpp"
 #include "logging/logTag.hpp"
@@ -79,7 +79,6 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ref, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, reloc)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, start)) \
-  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, stringtable)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, symboltable)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, sweep)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, task)) \
@@ -117,4 +116,4 @@ template <> struct LogPrefix<__VA_ARGS__> { \
 LOG_PREFIX_LIST
 #undef LOG_PREFIX
 
-#endif // SHARE_VM_LOGGING_LOGPREFIX_HPP
+#endif // SHARE_LOGGING_LOGPREFIX_HPP

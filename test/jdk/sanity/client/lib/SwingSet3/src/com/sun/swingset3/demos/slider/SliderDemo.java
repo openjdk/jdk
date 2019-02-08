@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@ public class SliderDemo extends JPanel {
      * main method allows us to run as a standalone demo.
      */
     public static void main(String[] args) {
+        //Ensure slider value is not printed above the slider handle
+        //which is the default behavior in GTK look and feel.
+        UIManager.put("Slider.paintValue", Boolean.FALSE);
         JFrame frame = new JFrame(SliderDemo.class.getAnnotation(DemoProperties.class).value());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(new SliderDemo());

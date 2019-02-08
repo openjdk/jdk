@@ -59,8 +59,9 @@ define GenerateVarHandle
 	  $$(eval $1_type := $$$$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$$$($1_Type)))
         endif
 	$$(call MakeDir, $$(@D))
+	$(RM) $$@
 	$(TOOL_SPP) -nel -K$$($1_type) -Dtype=$$($1_type) -DType=$$($1_Type) \
-	    $$($1_ARGS) < $$< > $$@
+	    $$($1_ARGS) -i$$< -o$$@
 
   GENSRC_VARHANDLES += $$($1_FILENAME)
 endef
@@ -147,10 +148,11 @@ define GenerateVarHandleByteArray
 
   $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleByteArrayView.java.template $(BUILD_TOOLS_JDK)
 	$$(call MakeDir, $$(@D))
+	$(RM) $$@
 	$(TOOL_SPP) -nel -K$$($1_type) \
 	    -Dtype=$$($1_type) -DType=$$($1_Type) -DBoxType=$$($1_BoxType) \
 	    -DrawType=$$($1_rawType) -DRawType=$$($1_RawType) -DRawBoxType=$$($1_RawBoxType) \
-	    $$($1_ARGS) < $$< > $$@
+	    $$($1_ARGS) -i$$< -o$$@
 
   GENSRC_VARHANDLES += $$($1_FILENAME)
 endef

@@ -72,6 +72,12 @@ void CompileTask::free(CompileTask* task) {
    JNIHandles::destroy_global(task->_method_holder);
    JNIHandles::destroy_global(task->_hot_method_holder);
 
+   if (task->_failure_reason_on_C_heap && task->_failure_reason != NULL) {
+     os::free((void*) task->_failure_reason);
+   }
+   task->_failure_reason = NULL;
+   task->_failure_reason_on_C_heap = false;
+
    task->set_is_free(true);
    task->set_next(_task_free_list);
    _task_free_list = task;
@@ -110,6 +116,7 @@ void CompileTask::initialize(int compile_id,
   _time_queued = 0;  // tidy
   _compile_reason = compile_reason;
   _failure_reason = NULL;
+  _failure_reason_on_C_heap = false;
 
   if (LogCompilation) {
     _time_queued = os::elapsed_counter();

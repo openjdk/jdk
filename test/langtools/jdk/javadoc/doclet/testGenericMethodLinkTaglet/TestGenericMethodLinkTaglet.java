@@ -25,9 +25,9 @@
  * @test
  * @bug      8188248
  * @summary  NullPointerException on generic methods
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester toolbox.ToolBox builder.ClassBuilder
+ * @build    javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
  * @run main TestGenericMethodLinkTaglet
  */
 
@@ -37,6 +37,8 @@ import java.nio.file.Paths;
 import builder.ClassBuilder;
 import builder.ClassBuilder.MethodBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestGenericMethodLinkTaglet extends JavadocTester {
 
@@ -52,7 +54,7 @@ public class TestGenericMethodLinkTaglet extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createTestClass(srcDir);
 

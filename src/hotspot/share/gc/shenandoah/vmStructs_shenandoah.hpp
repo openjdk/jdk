@@ -20,8 +20,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
-#define SHARE_VM_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
+#ifndef SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
+#define SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -43,4 +43,4 @@
   declare_toplevel_type(ShenandoahHeap*)                                      \
   declare_toplevel_type(ShenandoahHeapRegion*)                                \
 
-#endif // SHARE_VM_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
+#endif // SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP

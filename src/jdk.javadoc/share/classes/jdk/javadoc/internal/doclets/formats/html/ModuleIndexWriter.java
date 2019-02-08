@@ -95,7 +95,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param main the document tree to which the modules list will be added
      */
     protected void addIndexContents(Content header, Content main) {
-        HtmlTree htmltree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
+        HtmlTree htmltree = HtmlTree.NAV();
         htmltree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
@@ -121,8 +121,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             String tableSummary = resources.getText("doclet.Member_Table_Summary",
                     resources.getText("doclet.Module_Summary"), resources.getText("doclet.modules"));
             TableHeader header = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(configuration.htmlVersion, HtmlStyle.overviewSummary)
-                    .setSummary(tableSummary)
+            Table table =  new Table(HtmlStyle.overviewSummary)
                     .setHeader(header)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Modules"))

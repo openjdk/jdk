@@ -382,6 +382,14 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/CharacterDataLatin1.isWhitespace(I)Z");
         }
 
+        if (isJDK13OrHigher()) {
+            add(toBeInvestigated,
+                            "java/lang/Math.max(DD)D",
+                            "java/lang/Math.max(FF)F",
+                            "java/lang/Math.min(DD)D",
+                            "java/lang/Math.min(FF)F");
+        }
+
         if (!config.inlineNotify()) {
             add(ignore, "java/lang/Object.notify()V");
         }
@@ -540,6 +548,10 @@ public class CheckGraalIntrinsics extends GraalTest {
 
     private static boolean isJDK12OrHigher() {
         return GraalServices.JAVA_SPECIFICATION_VERSION >= 12;
+    }
+
+    private static boolean isJDK13OrHigher() {
+        return GraalServices.JAVA_SPECIFICATION_VERSION >= 13;
     }
 
     public interface Refiner {

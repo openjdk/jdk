@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,6 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
   CPUPerformanceInterface* _cpu_perf_interface;
   SystemProcessInterface*  _system_process_interface;
   NetworkPerformanceInterface* _network_performance_interface;
-
-  // stub helper
-  void functionality_not_implemented(char** str) const;
 
   JfrOSInterfaceImpl();
   bool initialize();
@@ -176,15 +173,6 @@ int JfrOSInterface::JfrOSInterfaceImpl::os_version(char** os_version) const {
   os::print_os_info_brief(&os_ver_info);
   *os_version = os_ver_info.as_string();
   return OS_OK;
-}
-
-void JfrOSInterface::JfrOSInterfaceImpl::functionality_not_implemented(char** str) const {
-  assert(str != NULL, "address to string is NULL!");
-  const char* not_impl = "Functionality_not_implemented";
-  const size_t not_impl_len = strlen(not_impl);
-  *str = NEW_C_HEAP_ARRAY(char, not_impl_len+1, mtTracing);
-  strncpy(*str, not_impl, not_impl_len);
-  (*str)[not_impl_len] = '\0';
 }
 
 JfrOSInterface::JfrOSInterface() {

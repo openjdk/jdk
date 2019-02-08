@@ -27,7 +27,7 @@ include CopyCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
 
   UCRYPTO_CFG_SRC := $(TOPDIR)/src/jdk.crypto.ucrypto/solaris/conf/security/ucrypto-solaris.cfg
   UCRYPTO_CFG_DST := $(CONF_DST_DIR)/security/ucrypto-solaris.cfg

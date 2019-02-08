@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,23 @@ package java.awt.desktop;
 /**
  * Used to respond to a request to quit the application.
  *
- * @see java.awt.Desktop#setQuitHandler(java.awt.desktop.QuitHandler)
- * @see java.awt.desktop.QuitHandler
- * @see java.awt.Desktop#setQuitStrategy(java.awt.desktop.QuitStrategy)
- *
+ * @see java.awt.Desktop#setQuitHandler(QuitHandler)
+ * @see QuitHandler
+ * @see java.awt.Desktop#setQuitStrategy(QuitStrategy)
  * @since 9
  */
 public interface QuitResponse {
 
     /**
-     * Notifies the external quit requester that the quit will proceed, and performs the default {@link java.awt.desktop.QuitStrategy}.
+     * Notifies the external quit requester that the quit will proceed, and
+     * performs the default {@link QuitStrategy}.
      */
     public void performQuit();
 
     /**
-     * Notifies the external quit requester that the user has explicitly canceled the pending quit, and leaves the application running.
+     * Notifies the external quit requester that the user has explicitly
+     * canceled the pending quit, and leaves the application running.
+     * <p>
      * <b>Note: this will cancel a pending log-out, restart, or shutdown.</b>
      */
     public void cancelQuit();

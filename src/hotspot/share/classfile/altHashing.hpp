@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_ALTHASHING_HPP
-#define SHARE_VM_CLASSFILE_ALTHASHING_HPP
+#ifndef SHARE_CLASSFILE_ALTHASHING_HPP
+#define SHARE_CLASSFILE_ALTHASHING_HPP
 
 #include "jni.h"
 #include "classfile/symbolTable.hpp"
@@ -51,4 +51,4 @@ class AltHashing : AllStatic {
   static juint murmur3_32(juint seed, const jbyte* data, int len);
   static juint murmur3_32(juint seed, const jchar* data, int len);
 };
-#endif // SHARE_VM_CLASSFILE_ALTHASHING_HPP
+#endif // SHARE_CLASSFILE_ALTHASHING_HPP

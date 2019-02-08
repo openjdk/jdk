@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,19 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.windows.WWindowPeer;
+import sun.java2d.d3d.D3DContext.D3DContextCaps;
 import sun.java2d.pipe.hw.ContextCapabilities;
 import sun.java2d.windows.WindowsFlags;
-import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
-import sun.java2d.d3d.D3DContext.D3DContextCaps;
+
+import static sun.java2d.d3d.D3DContext.D3DContextCaps.CAPS_DEVICE_OK;
+import static sun.java2d.d3d.D3DContext.D3DContextCaps.CAPS_EMPTY;
 
 /**
  * This class implements D3D-specific functionality, such as fullscreen
  * exclusive mode and display changes.  It is kept separate from
  * Win32GraphicsDevice to help avoid overburdening the parent class.
  */
-public class D3DGraphicsDevice extends Win32GraphicsDevice {
+public final class D3DGraphicsDevice extends Win32GraphicsDevice {
     private D3DContext context;
 
     private static boolean d3dAvailable;

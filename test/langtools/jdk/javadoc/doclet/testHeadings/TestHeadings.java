@@ -26,12 +26,14 @@
  * @bug      4905786 6259611 8162363 8196202
  * @summary  Make sure that headings use the TH tag instead of the TD tag.
  * @author   jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @build    TestHeadings
  * @run main TestHeadings
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHeadings extends JavadocTester {
 
@@ -58,7 +60,7 @@ public class TestHeadings extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",

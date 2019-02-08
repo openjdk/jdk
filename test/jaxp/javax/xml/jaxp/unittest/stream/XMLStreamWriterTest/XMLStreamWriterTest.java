@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ import org.w3c.dom.Document;
 
 /*
  * @test
- * @bug 6347190 8139584
+ * @bug 6347190 8139584 8216408
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @run testng/othervm stream.XMLStreamWriterTest.XMLStreamWriterTest
- * @summary Test StAX Writer won't insert comment into element inside.
+ * @summary Tests XMLStreamWriter.
  */
 @Listeners({jaxp.library.BasePolicy.class})
 public class XMLStreamWriterTest {
@@ -94,12 +94,14 @@ public class XMLStreamWriterTest {
     }
 
     /**
-     * Test of main method, of class TestXMLStreamWriter.
+     * Verifies that the StAX Writer won't insert comment into the element tag.
      */
     @Test
     public void testWriteComment() {
         try {
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a:html href=\"http://java.sun.com\"><!--This is comment-->java.sun.com</a:html>";
+            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    + "<a:html href=\"http://java.sun.com\">"
+                    + "<!--This is comment-->java.sun.com</a:html>";
             XMLOutputFactory f = XMLOutputFactory.newInstance();
             // f.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES,
             // Boolean.TRUE);
@@ -122,4 +124,18 @@ public class XMLStreamWriterTest {
         }
     }
 
+    /**
+     * @bug 8216408
+     * Verifies that setDefaultNamespace accepts null.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testSetDefaultNamespace() throws Exception {
+        XMLOutputFactory f = XMLOutputFactory.newFactory();
+        f.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, true);
+        StringWriter sw = new StringWriter();
+        XMLStreamWriter xsw = f.createXMLStreamWriter(sw);
+        xsw.setDefaultNamespace(null);
+    }
 }

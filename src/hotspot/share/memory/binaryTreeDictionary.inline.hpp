@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
-#define SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
+#ifndef SHARE_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
+#define SHARE_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
 
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
@@ -239,35 +239,6 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_tail(TreeChunk<Chunk_t, Free
   this->link_tail(chunk);
 
   assert(!tail() || size() == tail()->size(), "Wrong sized chunk in list");
-  FreeList_t::increment_count();
-  debug_only(this->increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
-  assert(head() == NULL || head()->prev() == NULL, "list invariant");
-  assert(tail() == NULL || tail()->next() == NULL, "list invariant");
-}
-
-// Add this chunk at the head of the list.  "At the head of the list"
-// is defined to be after the chunk pointer to by head().  This is
-// because the TreeList<Chunk_t, FreeList_t> is embedded in the first TreeChunk<Chunk_t, FreeList_t> in the
-// list.  See the definition of TreeChunk<Chunk_t, FreeList_t>.
-template <class Chunk_t, class FreeList_t>
-void TreeList<Chunk_t, FreeList_t>::return_chunk_at_head(TreeChunk<Chunk_t, FreeList_t>* chunk) {
-  assert(chunk->list() == this, "list should be set for chunk");
-  assert(head() != NULL, "The tree list is embedded in the first chunk");
-  assert(chunk != NULL, "returning NULL chunk");
-  // This is expensive for metaspace
-  assert(!FLSVerifyDictionary || !this->verify_chunk_in_free_list(chunk), "Double entry");
-  assert(head() == NULL || head()->prev() == NULL, "list invariant");
-  assert(tail() == NULL || tail()->next() == NULL, "list invariant");
-
-  Chunk_t* fc = head()->next();
-  if (fc != NULL) {
-    chunk->link_after(fc);
-  } else {
-    assert(tail() == NULL, "List is inconsistent");
-    this->link_tail(chunk);
-  }
-  head()->link_after(chunk);
-  assert(!head() || size() == head()->size(), "Wrong sized chunk in list");
   FreeList_t::increment_count();
   debug_only(this->increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
@@ -799,11 +770,6 @@ size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_nodes_helper(TreeList<Ch
     total_nodes_helper(tl->right());
 }
 
-template <class Chunk_t, class FreeList_t>
-size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_nodes_in_tree(TreeList<Chunk_t, FreeList_t>* tl) const {
-  return total_nodes_helper(root());
-}
-
 // Searches the tree for a chunk that ends at the
 // specified address.
 template <class Chunk_t, class FreeList_t>
@@ -1035,4 +1001,4 @@ size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_chunk_size(debug_only(co
   return total_size();
 }
 
-#endif // SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
+#endif // SHARE_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP

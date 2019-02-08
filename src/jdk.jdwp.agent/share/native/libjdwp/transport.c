@@ -95,6 +95,13 @@ findTransportOnLoad(void *handle)
     if (handle == NULL) {
         return onLoad;
     }
+#if defined(_WIN32) && !defined(_WIN64)
+    onLoad = (jdwpTransport_OnLoad_t)
+                 dbgsysFindLibraryEntry(handle, "_jdwpTransport_OnLoad@16");
+    if (onLoad != NULL) {
+        return onLoad;
+    }
+#endif
     onLoad = (jdwpTransport_OnLoad_t)
                  dbgsysFindLibraryEntry(handle, "jdwpTransport_OnLoad");
     return onLoad;

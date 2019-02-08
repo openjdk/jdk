@@ -26,15 +26,17 @@
  * @bug 4530730 8196202
  * @summary stddoclet: With frames off, window titles have "()" appended
  * @author dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main WindowTitles
  */
 
 /**
  * Runs javadoc and runs regression tests on the resulting HTML.
  */
+import javadoc.tester.JavadocTester;
+
 public class WindowTitles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -43,7 +45,7 @@ public class WindowTitles extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         // Test for all cases except the split index page
         javadoc("-d", "out-1",
                 "-use",
@@ -71,7 +73,7 @@ public class WindowTitles extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         // Test only for the split-index case (and run on only one package)
         javadoc("-d", "out-2",
                 "-splitindex",

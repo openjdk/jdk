@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_X86_ZADDRESS_LINUX_X86_INLINE_HPP
-#define OS_CPU_LINUX_X86_ZADDRESS_LINUX_X86_INLINE_HPP
+#ifndef OS_CPU_LINUX_X86_GC_Z_ZADDRESS_LINUX_X86_INLINE_HPP
+#define OS_CPU_LINUX_X86_GC_Z_ZADDRESS_LINUX_X86_INLINE_HPP
 
 inline uintptr_t ZAddress::address(uintptr_t value) {
   return value;
 }
 
-#endif // OS_CPU_LINUX_X86_ZADDRESS_LINUX_X86_INLINE_HPP
+#endif // OS_CPU_LINUX_X86_GC_Z_ZADDRESS_LINUX_X86_INLINE_HPP

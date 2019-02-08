@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
-#define CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
+#ifndef CPU_AARCH64_NATIVEINST_AARCH64_HPP
+#define CPU_AARCH64_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
@@ -47,6 +47,8 @@
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
+
+class NativeCall;
 
 class NativeInstruction {
   friend class Relocation;
@@ -701,4 +703,4 @@ inline NativeLdSt *NativeLdSt_at(address addr) {
   assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
   return (NativeLdSt*)addr;
 }
-#endif // CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
+#endif // CPU_AARCH64_NATIVEINST_AARCH64_HPP

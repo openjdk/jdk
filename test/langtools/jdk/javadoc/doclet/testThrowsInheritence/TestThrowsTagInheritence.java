@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@
  * override the throws tags in interface. This test also verifies that throws tags are inherited properly
  * the case where the name of one exception is not fully qualified.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestThrowsTagInheritence
  */
 
 // TODO: should be TestThrowsInheritance!
+import javadoc.tester.JavadocTester;
+
 public class TestThrowsTagInheritence extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -43,7 +45,7 @@ public class TestThrowsTagInheritence extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 testSrc("C.java"),
@@ -62,7 +64,7 @@ public class TestThrowsTagInheritence extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-package", "pkg");

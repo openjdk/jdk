@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   # Flags depending on the build platform/tool chain
   # NOTE: No optimization or debug flags set here
-  ifeq ($(OPENJDK_BUILD_OS), linux)
+  ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
-  else ifeq ($(OPENJDK_BUILD_OS), solaris)
+  else ifeq ($(call isBuildOs, solaris), true)
     ADLC_LDFLAGS := -m64
     ADLC_CFLAGS := -m64
     ADLC_CFLAGS_WARNINGS := +w
-  else ifeq ($(OPENJDK_BUILD_OS), aix)
+  else ifeq ($(call isBuildOs, aix), true)
     ADLC_LDFLAGS := -q64
     ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
-  else ifeq ($(OPENJDK_BUILD_OS), windows)
+  else ifeq ($(call isBuildOs, windows), true)
     ADLC_LDFLAGS := -nologo
     ADLC_CFLAGS := -nologo -EHsc
     # NOTE: The old build also have -D_CRT_SECURE_NO_DEPRECATE but it doesn't
@@ -87,17 +87,17 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLCFLAGS += -q -T
 
   # ADLC flags depending on target OS
-  ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(call isTargetOs, linux), true)
     ADLCFLAGS += -DLINUX=1 -D_GNU_SOURCE=1
-  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+  else ifeq ($(call isTargetOs, solaris), true)
     ADLCFLAGS += -DSOLARIS=1 -DSPARC_WORKS=1
-  else ifeq ($(OPENJDK_TARGET_OS), aix)
+  else ifeq ($(call isTargetOs, aix), true)
     ADLCFLAGS += -DAIX=1
-  else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  else ifeq ($(call isTargetOs, macosx), true)
     ADLCFLAGS += -D_ALLBSD_SOURCE=1 -D_GNU_SOURCE=1
   endif
 
-  ifneq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), false)
     # NOTE: Windows adlc flags was different in the old build. Is this really
     # correct?
 
@@ -109,7 +109,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   # This generates checks in the generated C++ files that _LP64 is correctly
   # (un)defined when compiling them.
-  ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+  ifeq ($(call isTargetCpuBits, 64), true)
     ADLCFLAGS += -D_LP64=1
   else
     ADLCFLAGS += -U_LP64
@@ -139,6 +139,12 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call check-jvm-feature, shenandoahgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/shenandoah/shenandoah_$(HOTSPOT_TARGET_CPU).ad \
+      )))
+  endif
+
+  ifeq ($(call check-jvm-feature, zgc), true)
+    AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU).ad \
       )))
   endif
 

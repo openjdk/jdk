@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
   // Root scanning phases
   _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>(max_gc_threads, "Thread Roots (ms):");
-  _gc_par_phases[StringTableRoots] = new WorkerDataArray<double>(max_gc_threads, "StringTable Roots (ms):");
   _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>(max_gc_threads, "Universe Roots (ms):");
   _gc_par_phases[JNIRoots] = new WorkerDataArray<double>(max_gc_threads, "JNI Handles Roots (ms):");
   _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>(max_gc_threads, "ObjectSynchronizer Roots (ms):");
@@ -136,7 +135,7 @@ void G1GCPhaseTimes::reset() {
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
-  _cur_string_dedup_fixup_time_ms = 0.0;
+  _cur_string_deduplication_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
   _cur_resize_tlab_time_ms = 0.0;
   _cur_derived_pointer_table_update_time_ms = 0.0;
@@ -290,12 +289,12 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
   }
 }
 
-void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) const {
+void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
   LogTarget(Debug, gc, phases) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-    log_phase(phase, 2, &ls, true);
+    log_phase(phase, 2 + extra_indent, &ls, true);
   }
 }
 
@@ -417,7 +416,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_total_free_cset_time_ms +
                         _cur_fast_reclaim_humongous_time_ms +
                         _cur_expand_heap_time_ms +
-                        _cur_string_dedup_fixup_time_ms;
+                        _cur_string_deduplication_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
@@ -430,9 +429,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   _weak_phase_times.log_print(2);
 
   if (G1StringDedup::is_enabled()) {
-    debug_time("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
-    debug_phase(_gc_par_phases[StringDedupQueueFixup]);
-    debug_phase(_gc_par_phases[StringDedupTableFixup]);
+    debug_time("String Deduplication", _cur_string_deduplication_time_ms);
+    debug_phase(_gc_par_phases[StringDedupQueueFixup], 1);
+    debug_phase(_gc_par_phases[StringDedupTableFixup], 1);
   }
 
   if (G1CollectedHeap::heap()->evacuation_failed()) {
@@ -497,7 +496,6 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "GCWorkerStart",
       "ExtRootScan",
       "ThreadRoots",
-      "StringTableRoots",
       "UniverseRoots",
       "JNIRoots",
       "ObjectSynchronizerRoots",

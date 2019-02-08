@@ -32,7 +32,7 @@
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/evacuationInfo.hpp"
+#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #endif
 
@@ -209,7 +209,7 @@ void G1MMUTracer::send_g1_mmu_event(double time_slice_ms, double gc_time_ms, dou
   }
 }
 
-void G1NewTracer::send_evacuation_info_event(EvacuationInfo* info) {
+void G1NewTracer::send_evacuation_info_event(G1EvacuationInfo* info) {
   EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());

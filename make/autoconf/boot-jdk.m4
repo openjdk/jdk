@@ -63,18 +63,18 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
     # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
     if test "x$BOOT_JDK_FOUND" = xmaybe; then
       # Do we have a bin/java?
-      if test ! -x "$BOOT_JDK/bin/java"; then
+      if test ! -x "$BOOT_JDK/bin/java$EXE_SUFFIX"; then
         AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring])
         BOOT_JDK_FOUND=no
       else
         # Do we have a bin/javac?
-        if test ! -x "$BOOT_JDK/bin/javac"; then
+        if test ! -x "$BOOT_JDK/bin/javac$EXE_SUFFIX"; then
           AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring])
           AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
           BOOT_JDK_FOUND=no
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $HEAD -n 1`
+          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $HEAD -n 1`
           if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
             AC_MSG_NOTICE([You have _JAVA_OPTIONS or JAVA_TOOL_OPTIONS set. This can mess up the build. Please use --with-boot-jdk-jvmargs instead.])
             AC_MSG_NOTICE([Java reports: "$BOOT_JDK_VERSION".])
@@ -101,7 +101,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             AC_MSG_CHECKING([for Boot JDK])
             AC_MSG_RESULT([$BOOT_JDK])
             AC_MSG_CHECKING([Boot JDK version])
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR '\n\r' '  '`
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR '\n\r' '  '`
             AC_MSG_RESULT([$BOOT_JDK_VERSION])
           fi # end check jdk version
         fi # end check javac
@@ -335,11 +335,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_SUBST(BOOT_JDK)
 
   # Setup tools from the Boot JDK.
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA, java)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVADOC, javadoc)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JARSIGNER, jarsigner)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA, java$EXE_SUFFIX)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac$EXE_SUFFIX)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVADOC, javadoc$EXE_SUFFIX)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar$EXE_SUFFIX)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JARSIGNER, jarsigner$EXE_SUFFIX)
 
   # Finally, set some other options...
 

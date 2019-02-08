@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1608,12 +1608,13 @@ public final class Files {
     }
 
     /**
-     * Tells whether or not a file is considered <em>hidden</em>. The exact
-     * definition of hidden is platform or provider dependent. On UNIX for
-     * example a file is considered to be hidden if its name begins with a
-     * period character ('.'). On Windows a file is considered hidden if it
-     * isn't a directory and the DOS {@link DosFileAttributes#isHidden hidden}
-     * attribute is set.
+     * Tells whether or not a file is considered <em>hidden</em>.
+     *
+     * @apiNote
+     * The exact definition of hidden is platform or provider dependent. On UNIX
+     * for example a file is considered to be hidden if its name begins with a
+     * period character ('.'). On Windows a file is considered hidden if the DOS
+     * {@link DosFileAttributes#isHidden hidden} attribute is set.
      *
      * <p> Depending on the implementation this method may require to access
      * the file system to determine if the file is considered hidden.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSTATE_HPP
-#define SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSTATE_HPP
+#ifndef SHARE_JFR_RECORDER_REPOSITORY_JFRCHUNKSTATE_HPP
+#define SHARE_JFR_RECORDER_REPOSITORY_JFRCHUNKSTATE_HPP
 
 #include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
@@ -57,4 +57,4 @@ class JfrChunkState : public JfrCHeapObj {
   const char* path() const;
 };
 
-#endif // SHARE_VM_JFR_RECORDER_REPOSITORY_JFRRCHUNKSTATE_HPP
+#endif // SHARE_JFR_RECORDER_REPOSITORY_JFRCHUNKSTATE_HPP

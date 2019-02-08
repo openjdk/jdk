@@ -27,11 +27,13 @@
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestUnnamedPackage
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestUnnamedPackage extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestUnnamedPackage extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 testSrc("C.java"));

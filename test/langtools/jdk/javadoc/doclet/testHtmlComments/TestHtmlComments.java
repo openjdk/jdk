@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
  * @summary  The field detail comment should not show up in the output if there
  *           are no fields to document.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestHtmlComments
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlComments extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestHtmlComments extends JavadocTester {
     }
 
     @Test
-    void run() {
+    public void run() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 testSrc("C.java"));

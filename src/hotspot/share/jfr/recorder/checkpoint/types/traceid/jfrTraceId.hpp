@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
-#define SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 
 #include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -125,4 +125,4 @@ class JfrTraceId : public AllStatic {
   static void tag_as_event_host(const jclass jc);
 };
 
-#endif // SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

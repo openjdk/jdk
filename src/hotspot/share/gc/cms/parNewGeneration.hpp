@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_PARNEWGENERATION_HPP
-#define SHARE_VM_GC_CMS_PARNEWGENERATION_HPP
+#ifndef SHARE_GC_CMS_PARNEWGENERATION_HPP
+#define SHARE_GC_CMS_PARNEWGENERATION_HPP
 
 #include "gc/cms/parOopClosures.hpp"
 #include "gc/serial/defNewGeneration.hpp"
@@ -415,4 +415,4 @@ class ParNewGeneration: public DefNewGeneration {
   static oop real_forwardee(oop obj);
 };
 
-#endif // SHARE_VM_GC_CMS_PARNEWGENERATION_HPP
+#endif // SHARE_GC_CMS_PARNEWGENERATION_HPP

@@ -119,6 +119,8 @@
 
 #define JAVA_12_VERSION                   56
 
+#define JAVA_13_VERSION                   57
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == 19 || bad_constant == 20) && _major_version >= JAVA_9_VERSION,
          "Unexpected bad constant pool entry");
@@ -2118,12 +2120,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_LambdaForm_Compiled;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Hidden_signature): {
-      if (_location != _in_method)  break;  // only allow for methods
-      if (!privileged)              break;  // only allow in privileged code
-      return _method_Hidden;
-    }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_security_AccessController_Hidden_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Hidden_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_Hidden;

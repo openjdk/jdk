@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ import sun.net.www.HeaderParser;
 
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -74,7 +74,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import jdk.internal.net.http.HttpRequestImpl;
 
@@ -264,6 +263,15 @@ public final class Utils {
                       : ! PROXY_AUTH_DISABLED_SCHEMES.isEmpty();
     }
 
+    // WebSocket connection Upgrade headers
+    private static final String HEADER_CONNECTION = "Connection";
+    private static final String HEADER_UPGRADE    = "Upgrade";
+
+    public static final void setWebSocketUpgradeHeaders(HttpRequestImpl request) {
+        request.setSystemHeader(HEADER_UPGRADE, "websocket");
+        request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
+    }
+
     public static IllegalArgumentException newIAE(String message, Object... args) {
         return new IllegalArgumentException(format(message, args));
     }
@@ -307,11 +315,16 @@ public final class Utils {
         if (!(t instanceof IOException))
             return t;
 
+        if (t instanceof SSLHandshakeException)
+            return t;  // no need to decorate
+
         String msg = messageSupplier.get();
         if (msg == null)
             return t;
 
         if (t instanceof ConnectionExpiredException) {
+            if (t.getCause() instanceof SSLHandshakeException)
+                return t;  // no need to decorate
             IOException ioe = new IOException(msg, t.getCause());
             t = new ConnectionExpiredException(ioe);
         } else {

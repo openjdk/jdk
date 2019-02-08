@@ -25,11 +25,11 @@
  * @test
  * @bug 8178070 8196201 8184205
  * @summary Test packages table in module summary pages
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ModuleBuilder toolbox.ToolBox JavadocTester
+ * @build toolbox.ModuleBuilder toolbox.ToolBox javadoc.tester.*
  * @run main TestModulePackages
  */
 
@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
+import javadoc.tester.JavadocTester;
 import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SHAREDRUNTIMEMATH_HPP
-#define SHARE_VM_RUNTIME_SHAREDRUNTIMEMATH_HPP
+#ifndef SHARE_RUNTIME_SHAREDRUNTIMEMATH_HPP
+#define SHARE_RUNTIME_SHAREDRUNTIMEMATH_HPP
 
 #include <math.h>
 
@@ -127,4 +127,4 @@ static double scalbnA(double x, int n) {
   return x*twom54;
 }
 
-#endif // SHARE_VM_RUNTIME_SHAREDRUNTIMEMATH_HPP
+#endif // SHARE_RUNTIME_SHAREDRUNTIMEMATH_HPP

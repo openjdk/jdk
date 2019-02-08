@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_OPTO_SUPERWORD_HPP
-#define SHARE_VM_OPTO_SUPERWORD_HPP
+#ifndef SHARE_OPTO_SUPERWORD_HPP
+#define SHARE_OPTO_SUPERWORD_HPP
 
 #include "opto/loopnode.hpp"
 #include "opto/node.hpp"
@@ -695,4 +695,4 @@ class SWPointer {
 #endif
 };
 
-#endif // SHARE_VM_OPTO_SUPERWORD_HPP
+#endif // SHARE_OPTO_SUPERWORD_HPP

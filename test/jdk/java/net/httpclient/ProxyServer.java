@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A minimal proxy server that supports CONNECT tunneling. It does not do
@@ -37,6 +41,18 @@ public class ProxyServer extends Thread implements Closeable {
     ServerSocket listener;
     int port;
     volatile boolean debug;
+    private final Credentials credentials;  // may be null
+
+    private static class Credentials {
+        private final String name;
+        private final String password;
+        private Credentials(String name, String password) {
+            this.name = name;
+            this.password = password;
+        }
+        public String name() { return name; }
+        public String password() { return password; }
+    }
 
     /**
      * Create proxy on port (zero means don't care). Call getPort()
@@ -46,19 +62,43 @@ public class ProxyServer extends Thread implements Closeable {
         this(port, false);
     }
 
-    public ProxyServer(Integer port, Boolean debug) throws IOException {
+    public ProxyServer(Integer port,
+                       Boolean debug,
+                       String username,
+                       String password)
+        throws IOException
+    {
+        this(port, debug, new Credentials(username, password));
+    }
+
+    public ProxyServer(Integer port,
+                       Boolean debug)
+        throws IOException
+    {
+        this(port, debug, null);
+    }
+
+    public ProxyServer(Integer port,
+                       Boolean debug,
+                       Credentials credentials)
+        throws IOException
+    {
         this.debug = debug;
         listener = new ServerSocket();
         listener.setReuseAddress(false);
         listener.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
         this.port = listener.getLocalPort();
+        this.credentials = credentials;
         setName("ProxyListener");
         setDaemon(true);
-        connections = new LinkedList<>();
+        connections = new CopyOnWriteArrayList<Connection>();
         start();
     }
 
-    public ProxyServer(String s) {  }
+    public ProxyServer(String s) {
+        credentials = null;
+        connections = new CopyOnWriteArrayList<Connection>();
+    }
 
     /**
      * Returns the port number this proxy is listening on
@@ -72,15 +112,16 @@ public class ProxyServer extends Thread implements Closeable {
      * currently open
      */
     public void close() throws IOException {
-        if (debug) System.out.println("Proxy: closing");
+        if (debug) System.out.println("Proxy: closing server");
         done = true;
         listener.close();
         for (Connection c : connections) {
             c.close();
+            c.awaitCompletion();
         }
     }
 
-    List<Connection> connections;
+    final CopyOnWriteArrayList<Connection> connections;
 
     volatile boolean done;
 
@@ -99,17 +140,20 @@ public class ProxyServer extends Thread implements Closeable {
     }
 
     public void execute() {
+        int id = 0;
         try {
-            while(!done) {
+            while (!done) {
                 Socket s = listener.accept();
+                id++;
+                Connection c = new Connection(s, id);
                 if (debug)
-                    System.out.println("Client: " + s);
-                Connection c = new Connection(s);
+                    System.out.println("Proxy: accepted new connection: " + s);
                 connections.add(c);
+                c.init();
             }
         } catch(Throwable e) {
             if (debug && !done) {
-                System.out.println("Fatal error: Listener: " + e);
+                System.out.println("Proxy: Fatal error, listener got " + e);
                 e.printStackTrace();
             }
         }
@@ -120,21 +164,20 @@ public class ProxyServer extends Thread implements Closeable {
      */
     class Connection {
 
+        private final int id;
         Socket clientSocket, serverSocket;
         Thread out, in;
         volatile InputStream clientIn, serverIn;
         volatile OutputStream clientOut, serverOut;
 
-        boolean forwarding = false;
-
         final static int CR = 13;
         final static int LF = 10;
 
-        Connection(Socket s) throws IOException {
+        Connection(Socket s, int id) throws IOException {
+            this.id = id;
             this.clientSocket= s;
             this.clientIn = new BufferedInputStream(s.getInputStream());
             this.clientOut = s.getOutputStream();
-            init();
         }
 
         byte[] readHeaders(InputStream is) throws IOException {
@@ -180,9 +223,21 @@ public class ProxyServer extends Thread implements Closeable {
         private volatile boolean closing;
         public synchronized void close() throws IOException {
             closing = true;
-            if (debug) System.out.println("Closing connection (proxy)");
-            if (serverSocket != null) serverSocket.close();
-            if (clientSocket != null) clientSocket.close();
+            if (debug)
+                System.out.println("Proxy: closing connection {" + this + "}");
+            if (serverSocket != null)
+                serverSocket.close();
+            if (clientSocket != null)
+                clientSocket.close();
+        }
+
+        public void awaitCompletion() {
+            try {
+                if (in != null)
+                    in.join();
+                if (out!= null)
+                    out.join();
+            } catch (InterruptedException e) { }
         }
 
         int findCRLF(byte[] b) {
@@ -194,16 +249,72 @@ public class ProxyServer extends Thread implements Closeable {
             return -1;
         }
 
+        // Checks credentials in the request against those allowable by the proxy.
+        private boolean authorized(Credentials credentials,
+                                   List<String> requestHeaders) {
+            List<String> authorization = requestHeaders.stream()
+                    .filter(n -> n.toLowerCase(Locale.US).startsWith("proxy-authorization"))
+                    .collect(toList());
+
+            if (authorization.isEmpty())
+                return false;
+
+            if (authorization.size() != 1) {
+                throw new IllegalStateException("Authorization unexpected count:" + authorization);
+            }
+            String value = authorization.get(0).substring("proxy-authorization".length()).trim();
+            if (!value.startsWith(":"))
+                throw new IllegalStateException("Authorization malformed: " + value);
+            value = value.substring(1).trim();
+
+            if (!value.startsWith("Basic "))
+                throw new IllegalStateException("Authorization not Basic: " + value);
+
+            value = value.substring("Basic ".length());
+            String values = new String(Base64.getDecoder().decode(value), UTF_8);
+            int sep = values.indexOf(':');
+            if (sep < 1) {
+                throw new IllegalStateException("Authorization no colon: " +  values);
+            }
+            String name = values.substring(0, sep);
+            String password = values.substring(sep + 1);
+
+            if (name.equals(credentials.name()) && password.equals(credentials.password()))
+                return true;
+
+            return false;
+        }
+
         public void init() {
             try {
-                byte[] buf = readHeaders(clientIn);
-                int p = findCRLF(buf);
-                if (p == -1) {
-                    close();
-                    return;
+                byte[] buf;
+                while (true) {
+                    buf = readHeaders(clientIn);
+                    if (findCRLF(buf) == -1) {
+                        if (debug)
+                            System.out.println("Proxy: no CRLF closing, buf contains:["
+                                    + new String(buf, UTF_8) + "]" );
+                        close();
+                        return;
+                    }
+
+                    List<String> headers = asList(new String(buf, UTF_8).split("\r\n"));
+                    // check authorization credentials, if required by the server
+                    if (credentials != null && !authorized(credentials, headers)) {
+                        String resp = "HTTP/1.1 407 Proxy Authentication Required\r\n" +
+                                      "Content-Length: 0\r\n" +
+                                      "Proxy-Authenticate: Basic realm=\"proxy realm\"\r\n\r\n";
+
+                        clientOut.write(resp.getBytes(UTF_8));
+                    } else {
+                        break;
+                    }
                 }
+
+                int p = findCRLF(buf);
                 String cmd = new String(buf, 0, p, "US-ASCII");
                 String[] params = cmd.split(" ");
+
                 if (params[0].equals("CONNECT")) {
                     doTunnel(params[1]);
                 } else {
@@ -211,7 +322,8 @@ public class ProxyServer extends Thread implements Closeable {
                 }
             } catch (Throwable e) {
                 if (debug) {
-                    System.out.println (e);
+                    System.out.println("Proxy: " + e);
+                    e.printStackTrace();
                 }
                 try {close(); } catch (IOException e1) {}
             }
@@ -261,7 +373,8 @@ public class ProxyServer extends Thread implements Closeable {
             } else {
                 port = Integer.parseInt(hostport[1]);
             }
-            if (debug) System.out.printf("Server: (%s/%d)\n", hostport[0], port);
+            if (debug)
+                System.out.printf("Proxy: connecting to (%s/%d)\n", hostport[0], port);
             serverSocket = new Socket(hostport[0], port);
             serverOut = serverSocket.getOutputStream();
 
@@ -281,8 +394,9 @@ public class ProxyServer extends Thread implements Closeable {
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
-                    if (debug) {
-                        System.out.println (e);
+                    if (!closing && debug) {
+                        System.out.println("Proxy: " + e);
+                        e.printStackTrace();
                     }
                 }
             });
@@ -297,8 +411,8 @@ public class ProxyServer extends Thread implements Closeable {
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
-                    if (debug) {
-                        System.out.println(e);
+                    if (!closing && debug) {
+                        System.out.println("Proxy: " + e);
                         e.printStackTrace();
                     }
                 }
@@ -317,6 +431,11 @@ public class ProxyServer extends Thread implements Closeable {
             // might fail if we're closing, but we don't care.
             clientOut.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
             proxyCommon();
+        }
+
+        @Override
+        public String toString() {
+            return "Proxy connection " + id + ", client sock:" + clientSocket;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP
-#define SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTMARK_INLINE_HPP
+#define SHARE_GC_G1_G1CONCURRENTMARK_INLINE_HPP
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -210,6 +210,12 @@ inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, siz
   task(worker_id)->update_liveness(obj, size);
 }
 
+inline void G1CMTask::abort_marking_if_regular_check_fail() {
+  if (!regular_clock_call()) {
+    set_has_aborted();
+  }
+}
+
 inline bool G1CMTask::make_reference_grey(oop obj) {
   if (!_cm->mark_in_next_bitmap(_worker_id, obj)) {
     return false;
@@ -287,4 +293,4 @@ inline bool G1ConcurrentMark::do_yield_check() {
   }
 }
 
-#endif // SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP
+#endif // SHARE_GC_G1_G1CONCURRENTMARK_INLINE_HPP

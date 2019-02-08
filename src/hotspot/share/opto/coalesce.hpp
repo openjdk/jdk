@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_COALESCE_HPP
-#define SHARE_VM_OPTO_COALESCE_HPP
+#ifndef SHARE_OPTO_COALESCE_HPP
+#define SHARE_OPTO_COALESCE_HPP
 
 #include "opto/phase.hpp"
 
@@ -114,4 +114,4 @@ public:
   void update_ifg(uint lr1, uint lr2, IndexSet *n_lr1, IndexSet *n_lr2);
 };
 
-#endif // SHARE_VM_OPTO_COALESCE_HPP
+#endif // SHARE_OPTO_COALESCE_HPP

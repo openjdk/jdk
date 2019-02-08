@@ -25,11 +25,13 @@
  * @test
  * @bug 8211901
  * @summary  javadoc generates broken links on deprecated items page
- * @library  ../lib
+ * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestOverriddenDeprecatedMethods
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestOverriddenDeprecatedMethods extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out-deprecated",
                 "-sourcepath", testSrc,
                 "--override-methods","summary",

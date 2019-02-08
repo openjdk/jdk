@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,19 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
+else ifeq ($(call isTargetOs, solaris), true)
   SA_LDFLAGS := -mt
 
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   SA_CFLAGS := -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
   LIBSA_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
-else ifeq ($(OPENJDK_TARGET_OS), windows)
+else ifeq ($(call isTargetOs, windows), true)
   SA_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -D_MBCS -EHsc
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+  ifeq ($(call isTargetCpu, x86_64), true)
     SA_CXXFLAGS := -DWIN64
   else
     # Only add /RTC1 flag for debug builds as it's
@@ -66,7 +66,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
-    LIBS_linux := -lthread_db $(LIBDL), \
+    LIBS_linux := $(LIBDL), \
     LIBS_solaris := -ldl -ldemangle -lthread -lproc, \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \

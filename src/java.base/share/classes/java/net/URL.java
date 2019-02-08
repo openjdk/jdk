@@ -1220,16 +1220,22 @@ public final class URL implements java.io.Serializable {
     private static final URLStreamHandlerFactory defaultFactory = new DefaultFactory();
 
     private static class DefaultFactory implements URLStreamHandlerFactory {
-        private static String PREFIX = "sun.net.www.protocol";
+        private static String PREFIX = "sun.net.www.protocol.";
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
-            String name = PREFIX + "." + protocol + ".Handler";
+            // Avoid using reflection during bootstrap
+            switch (protocol) {
+                case "file":
+                    return new sun.net.www.protocol.file.Handler();
+                case "jar":
+                    return new sun.net.www.protocol.jar.Handler();
+                case "jrt":
+                    return new sun.net.www.protocol.jrt.Handler();
+            }
+            String name = PREFIX + protocol + ".Handler";
             try {
-                @SuppressWarnings("deprecation")
-                Object o = Class.forName(name).newInstance();
+                Object o = Class.forName(name).getDeclaredConstructor().newInstance();
                 return (URLStreamHandler)o;
-            } catch (ClassNotFoundException x) {
-                // ignore
             } catch (Exception e) {
                 // For compatibility, all Exceptions are ignored.
                 // any number of exceptions can get thrown here

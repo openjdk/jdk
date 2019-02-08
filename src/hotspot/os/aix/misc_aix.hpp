@@ -23,8 +23,8 @@
  */
 
 
-#ifndef OS_AIX_VM_MISC_AIX_HPP
-#define OS_AIX_VM_MISC_AIX_HPP
+#ifndef OS_AIX_MISC_AIX_HPP
+#define OS_AIX_MISC_AIX_HPP
 
 // misc_aix.hpp, misc_aix.cpp: convenience functions needed for the OpenJDK AIX
 // port.
@@ -90,5 +90,4 @@ namespace MiscUtils {
   };
 }
 
-#endif // OS_AIX_VM_MISC_AIX_HPP
-
+#endif // OS_AIX_MISC_AIX_HPP

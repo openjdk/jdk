@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP
-#define SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP
+#ifndef SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP
+#define SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP
 
 #include "interpreter/bytecode.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -126,7 +126,6 @@ class InterpreterRuntime: AllStatic {
   static void _breakpoint(JavaThread* thread, Method* method, address bcp);
   static Bytecodes::Code get_original_bytecode_at(JavaThread* thread, Method* method, address bcp);
   static void            set_original_bytecode_at(JavaThread* thread, Method* method, address bcp, Bytecodes::Code new_code);
-  static bool is_breakpoint(JavaThread *thread);
 
   // Safepoints
   static void    at_safepoint(JavaThread* thread);
@@ -196,4 +195,4 @@ class SignatureHandlerLibrary: public AllStatic {
   static void add(uint64_t fingerprint, address handler);
 };
 
-#endif // SHARE_VM_INTERPRETER_INTERPRETERRUNTIME_HPP
+#endif // SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP

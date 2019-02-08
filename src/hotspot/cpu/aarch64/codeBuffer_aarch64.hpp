@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_CODEBUFFER_AARCH64_HPP
-#define CPU_AARCH64_VM_CODEBUFFER_AARCH64_HPP
+#ifndef CPU_AARCH64_CODEBUFFER_AARCH64_HPP
+#define CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 
 private:
   void pd_initialize() {}
@@ -32,4 +32,4 @@ private:
 public:
   void flush_bundle(bool start_new_bundle) {}
 
-#endif // CPU_AARCH64_VM_CODEBUFFER_AARCH64_HPP
+#endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP

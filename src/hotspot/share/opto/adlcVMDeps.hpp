@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_ADLCVMDEPS_HPP
-#define SHARE_VM_OPTO_ADLCVMDEPS_HPP
+#ifndef SHARE_OPTO_ADLCVMDEPS_HPP
+#define SHARE_OPTO_ADLCVMDEPS_HPP
+
 
 // adlcVMDeps.hpp is used by both adlc and vm builds.
-// Only include allocation.hpp when we're not building adlc.
-#ifndef SHARE_VM_ADLC_ARENA_HPP
-#include "memory/allocation.hpp"
-#endif
+// Don't inherit from AllStatic to avoid including memory/allocation.hpp.
 
 // Declare commonly known constant and data structures between the
 // ADLC and the VM
 //
 
-class AdlcVMDeps : public AllStatic {
+class AdlcVMDeps {   // AllStatic
  public:
   // Mirror of TypeFunc types
   enum { Control, I_O, Memory, FramePtr, ReturnAdr, Parms };
@@ -52,4 +50,4 @@ class AdlcVMDeps : public AllStatic {
   static const char* none_reloc_type() { return "relocInfo::none"; }
 };
 
-#endif // SHARE_VM_OPTO_ADLCVMDEPS_HPP
+#endif // SHARE_OPTO_ADLCVMDEPS_HPP

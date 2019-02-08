@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_VMREG_X86_INLINE_HPP
-#define CPU_X86_VM_VMREG_X86_INLINE_HPP
+#ifndef CPU_X86_VMREG_X86_INLINE_HPP
+#define CPU_X86_VMREG_X86_INLINE_HPP
 
 inline VMReg RegisterImpl::as_VMReg() {
   if( this==noreg ) return VMRegImpl::Bad();
@@ -46,4 +46,4 @@ inline VMReg KRegisterImpl::as_VMReg() {
   return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_xmm);
 }
 
-#endif // CPU_X86_VM_VMREG_X86_INLINE_HPP
+#endif // CPU_X86_VMREG_X86_INLINE_HPP

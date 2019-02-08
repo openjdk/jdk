@@ -140,7 +140,7 @@ NSK_AOD_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni
 
 NO_FRAMEPOINTER_CFLAGS :=
-ifeq ($(OPENJDK_TARGET_OS),linux)
+ifeq ($(call isTargetOs, linux), true)
    NO_FRAMEPOINTER_CFLAGS := -fomit-frame-pointer
 endif
 
@@ -849,11 +849,11 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine09agent00 := $(NSK_AOD_INC
 ################################################################################
 
 # Platform specific setup
-ifneq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
+ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpuArch, sparc)), false)
   BUILD_HOTSPOT_JTREG_EXCLUDE += liboverflow.c exeThreadSignalMask.c
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libstepBreakPopReturn := -lpthread
@@ -870,11 +870,11 @@ endif
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
     BUILD_HOTSPOT_JTREG_EXCLUDE += libterminatedThread.c
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
     BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c
 

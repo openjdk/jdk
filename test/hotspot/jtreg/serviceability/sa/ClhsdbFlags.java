@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import jtreg.SkippedException;
 
 /**
  * @test
  * @bug 8190198
+ * @bug 8217612
+ * @bug 8217845
  * @summary Test clhsdb flags command
  * @requires vm.hasSA
  * @library /test/lib
@@ -41,8 +43,8 @@ import jdk.test.lib.Utils;
 
 public class ClhsdbFlags {
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Starting ClhsdbFlags test");
+    public static void runBasicTest() throws Exception {
+        System.out.println("Starting ClhsdbFlags basic test");
 
         LingeredApp theApp = null;
         try {
@@ -62,6 +64,7 @@ public class ClhsdbFlags {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("flags", List.of(
+                    "command line", "ergonomic", "default",
                     "UnlockDiagnosticVMOptions = true",
                     "MaxFDLimit = false",
                     "MaxJavaStackTraceDepth = 1024",
@@ -81,11 +84,63 @@ public class ClhsdbFlags {
                     "MaxJavaStackTraceDepth = 1024"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
+        } catch (SkippedException se) {
+            throw se;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             LingeredApp.stopApp(theApp);
         }
         System.out.println("Test PASSED");
+    }
+
+    public static void runAllTypesTest() throws Exception {
+        System.out.println("Starting ClhsdbFlags all types test");
+
+        LingeredApp theApp = null;
+        try {
+            ClhsdbLauncher test = new ClhsdbLauncher();
+            List<String> vmArgs = new ArrayList<String>();
+            vmArgs.add("-XX:+UnlockDiagnosticVMOptions");   // bool
+            vmArgs.add("-XX:ActiveProcessorCount=1");       // int
+            vmArgs.add("-XX:ParallelGCThreads=1");          // uint
+            vmArgs.add("-XX:MaxJavaStackTraceDepth=1024");  // intx
+            vmArgs.add("-XX:LogEventsBufferEntries=10");    // uintx
+            vmArgs.add("-XX:HeapSizePerGCThread=32m");      // size_t
+            vmArgs.add("-XX:NativeMemoryTracking=off");     // ccstr
+            vmArgs.add("-XX:OnError='echo error'");         // ccstrlist
+            vmArgs.add("-XX:CompileThresholdScaling=1.0");  // double
+            vmArgs.add("-XX:ErrorLogTimeout=120");          // uint64_t
+            vmArgs.addAll(Utils.getVmOptions());
+            theApp = LingeredApp.startApp(vmArgs);
+            System.out.println("Started LingeredApp with pid " + theApp.getPid());
+
+            List<String> cmds = List.of("flags");
+
+            Map<String, List<String>> expStrMap = new HashMap<>();
+            expStrMap.put("flags", List.of(
+                    "UnlockDiagnosticVMOptions = true",
+                    "ActiveProcessorCount = 1",
+                    "ParallelGCThreads = 1",
+                    "MaxJavaStackTraceDepth = 1024",
+                    "LogEventsBufferEntries = 10",
+                    "HeapSizePerGCThread = 3",
+                    "NativeMemoryTracking = \"off\"",
+                    "OnError = \"'echo error'\"",
+                    "CompileThresholdScaling = 1.0",
+                    "ErrorLogTimeout = 120"));
+
+            test.run(theApp.getPid(), cmds, expStrMap, null);
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
+        } finally {
+            LingeredApp.stopApp(theApp);
+        }
+        System.out.println("Test PASSED");
+    }
+
+    public static void main(String[] args) throws Exception {
+        runBasicTest();
+        runAllTypesTest();
     }
 }

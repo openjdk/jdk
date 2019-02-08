@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_INTERP_MASM_ARM_HPP
-#define CPU_ARM_VM_INTERP_MASM_ARM_HPP
+#ifndef CPU_ARM_INTERP_MASM_ARM_HPP
+#define CPU_ARM_INTERP_MASM_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -277,4 +277,4 @@ void get_method_counters(Register method,
                          Register reg3 = noreg);
 };
 
-#endif // CPU_ARM_VM_INTERP_MASM_ARM_HPP
+#endif // CPU_ARM_INTERP_MASM_ARM_HPP

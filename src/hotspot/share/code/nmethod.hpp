@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_NMETHOD_HPP
-#define SHARE_VM_CODE_NMETHOD_HPP
+#ifndef SHARE_CODE_NMETHOD_HPP
+#define SHARE_CODE_NMETHOD_HPP
 
 #include "code/compiledMethod.hpp"
 
 class DepChange;
 class DirectiveSet;
+class DebugInformationRecorder;
 
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
@@ -587,9 +588,9 @@ public:
   bool check_dependency_on(DepChange& changes);
 
   // Evolution support. Tells if this compiled method is dependent on any of
-  // methods m() of class dependee, such that if m() in dependee is replaced,
+  // redefined methods, such that if m() is replaced,
   // this compiled method will have to be deoptimized.
-  bool is_evol_dependent_on(Klass* dependee);
+  bool is_evol_dependent();
 
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod
@@ -669,4 +670,4 @@ class nmethodLocker : public StackObj {
   }
 };
 
-#endif // SHARE_VM_CODE_NMETHOD_HPP
+#endif // SHARE_CODE_NMETHOD_HPP

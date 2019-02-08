@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_METASPACESHARED_HPP
-#define SHARE_VM_MEMORY_METASPACESHARED_HPP
+#ifndef SHARE_MEMORY_METASPACESHARED_HPP
+#define SHARE_MEMORY_METASPACESHARED_HPP
 
 #include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
@@ -168,13 +168,10 @@ class MetaspaceShared : AllStatic {
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS);
-  static void check_shared_class_loader_type(InstanceKlass* ik);
 
   // Allocate a block of memory from the "mc", "ro", or "rw" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
-
-  static char* read_only_space_top();
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
@@ -203,4 +200,4 @@ class MetaspaceShared : AllStatic {
 private:
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
 };
-#endif // SHARE_VM_MEMORY_METASPACESHARED_HPP
+#endif // SHARE_MEMORY_METASPACESHARED_HPP

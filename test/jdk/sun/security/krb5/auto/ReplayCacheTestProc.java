@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,8 +399,7 @@ public class ReplayCacheTestProc {
             if (lib != null) {
                 String libDir = lib.substring(0, lib.lastIndexOf('/'));
                 p.prop("sun.security.jgss.lib", lib)
-                        .env("DYLD_LIBRARY_PATH", libDir)
-                        .env("LD_LIBRARY_PATH", libDir);
+                        .env(Platform.sharedLibraryPathVariableName(), libDir);
             }
         }
         Proc.d(label+suffix+" started");

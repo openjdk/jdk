@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
-#define OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
+#ifndef OS_CPU_AIX_PPC_OS_AIX_PPC_HPP
+#define OS_CPU_AIX_PPC_OS_AIX_PPC_HPP
 
   static void setup_fpu() {}
 
@@ -36,4 +36,4 @@
 static bool platform_print_native_stack(outputStream* st, void* context,
                                         char *buf, int buf_size);
 
-#endif // OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
+#endif // OS_CPU_AIX_PPC_OS_AIX_PPC_HPP

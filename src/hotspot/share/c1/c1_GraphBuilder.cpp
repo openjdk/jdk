@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1451,9 +1451,6 @@ void GraphBuilder::call_register_finalizer() {
   }
 
   if (needs_check) {
-    // Not a trivial method because C2 can do better with inlined check.
-    compilation()->set_would_profile(true);
-
     // Perform the registration of finalizable objects.
     ValueStack* state_before = copy_state_for_exception();
     load_local(objectType, 0);
@@ -1945,7 +1942,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // Use CHA on the receiver to select a more precise method.
       cha_monomorphic_target = target->find_monomorphic_target(calling_klass, callee_holder, actual_recv);
     } else if (code == Bytecodes::_invokeinterface && callee_holder->is_loaded() && receiver != NULL) {
-      // if there is only one implementor of this interface then we
+      assert(callee_holder->is_interface(), "invokeinterface to non interface?");
+      // If there is only one implementor of this interface then we
       // may be able bind this invoke directly to the implementing
       // klass but we need both a dependence on the single interface
       // and on the method we bind to.  Additionally since all we know
@@ -1953,54 +1951,45 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // interface we have to insert a check that it's the class we
       // expect.  Interface types are not checked by the verifier so
       // they are roughly equivalent to Object.
+      // The number of implementors for declared_interface is less or
+      // equal to the number of implementors for target->holder() so
+      // if number of implementors of target->holder() == 1 then
+      // number of implementors for decl_interface is 0 or 1. If
+      // it's 0 then no class implements decl_interface and there's
+      // no point in inlining.
       ciInstanceKlass* singleton = NULL;
-      if (target->holder()->nof_implementors() == 1) {
-        singleton = target->holder()->implementor();
-        assert(singleton != NULL && singleton != target->holder(),
-               "just checking");
-
-        assert(holder->is_interface(), "invokeinterface to non interface?");
-        ciInstanceKlass* decl_interface = (ciInstanceKlass*)holder;
-        // the number of implementors for decl_interface is less or
-        // equal to the number of implementors for target->holder() so
-        // if number of implementors of target->holder() == 1 then
-        // number of implementors for decl_interface is 0 or 1. If
-        // it's 0 then no class implements decl_interface and there's
-        // no point in inlining.
-        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_nonstatic_concrete_methods()) {
-          singleton = NULL;
-        }
-      }
-      if (singleton) {
-        cha_monomorphic_target = target->find_monomorphic_target(calling_klass, target->holder(), singleton);
+      ciInstanceKlass* declared_interface = callee_holder;
+      if (declared_interface->nof_implementors() == 1 &&
+          (!target->is_default_method() || target->is_overpass()) /* CHA doesn't support default methods yet. */) {
+        singleton = declared_interface->implementor();
+        assert(singleton != NULL && singleton != declared_interface, "");
+        cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
-          // If CHA is able to bind this invoke then update the class
-          // to match that class, otherwise klass will refer to the
-          // interface.
-          klass = cha_monomorphic_target->holder();
-          actual_recv = target->holder();
+          if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
+            // If CHA is able to bind this invoke then update the class
+            // to match that class, otherwise klass will refer to the
+            // interface.
+            klass = cha_monomorphic_target->holder();
+            actual_recv = declared_interface;
 
-          // insert a check it's really the expected class.
-          CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
-          c->set_incompatible_class_change_check();
-          c->set_direct_compare(klass->is_final());
-          // pass the result of the checkcast so that the compiler has
-          // more accurate type info in the inlinee
-          better_receiver = append_split(c);
+            // insert a check it's really the expected class.
+            CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
+            c->set_incompatible_class_change_check();
+            c->set_direct_compare(klass->is_final());
+            // pass the result of the checkcast so that the compiler has
+            // more accurate type info in the inlinee
+            better_receiver = append_split(c);
+          } else {
+            cha_monomorphic_target = NULL; // subtype check against Object is useless
+          }
         }
       }
     }
   }
 
   if (cha_monomorphic_target != NULL) {
-    if (cha_monomorphic_target->is_abstract()) {
-      // Do not optimize for abstract methods
-      cha_monomorphic_target = NULL;
-    }
-  }
-
-  if (cha_monomorphic_target != NULL) {
-    if (!(target->is_final_method())) {
+    assert(!cha_monomorphic_target->is_abstract(), "");
+    if (!target->is_final_method() && !target->is_private()) {
       // If we inlined because CHA revealed only a single target method,
       // then we are dependent on that target method not getting overridden
       // by dynamic class loading.  Be sure to test the "static" receiver
@@ -3569,9 +3558,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 }
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
-  // Not a trivial method because C2 may do intrinsics better.
-  compilation()->set_would_profile(true);
-
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
   // accesses critical VM-internal data.

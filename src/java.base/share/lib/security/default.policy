@@ -127,6 +127,7 @@ grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
     permission java.lang.RuntimePermission "loadLibrary.j2pkcs11";
     permission java.util.PropertyPermission "sun.security.pkcs11.allowSingleThreadedModules", "read";
+    permission java.util.PropertyPermission "sun.security.pkcs11.disableKeyExtraction", "read";
     permission java.util.PropertyPermission "os.name", "read";
     permission java.util.PropertyPermission "os.arch", "read";
     permission java.util.PropertyPermission "jdk.crypto.KeyAgreement.legacyKDF", "read";
@@ -200,6 +201,7 @@ grant codeBase "jrt:/jdk.zipfs" {
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
     permission java.lang.RuntimePermission "fileSystemProvider";
     permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
 };
 
 // permissions needed by applications using java.desktop module

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_BYTES_AARCH64_HPP
-#define CPU_AARCH64_VM_BYTES_AARCH64_HPP
+#ifndef CPU_AARCH64_BYTES_AARCH64_HPP
+#define CPU_AARCH64_BYTES_AARCH64_HPP
 
 #include "memory/allocation.hpp"
 
@@ -63,4 +63,4 @@ class Bytes: AllStatic {
 // The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
 #include OS_CPU_HEADER_INLINE(bytes)
 
-#endif // CPU_AARCH64_VM_BYTES_AARCH64_HPP
+#endif // CPU_AARCH64_BYTES_AARCH64_HPP

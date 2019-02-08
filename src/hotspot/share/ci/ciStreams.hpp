@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CISTREAMS_HPP
-#define SHARE_VM_CI_CISTREAMS_HPP
+#ifndef SHARE_CI_CISTREAMS_HPP
+#define SHARE_CI_CISTREAMS_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciExceptionHandler.hpp"
@@ -68,12 +68,6 @@ private:
   void reset( address base, unsigned int size ) {
     _bc_start =_was_wide = 0;
     _start = _pc = base; _end = base + size;
-  }
-
-  void assert_wide(bool require_wide) const {
-    if (require_wide)
-         { assert(is_wide(),  "must be a wide instruction"); }
-    else { assert(!is_wide(), "must not be a wide instruction"); }
   }
 
   Bytecode bytecode() const { return Bytecode(this, _bc_start); }
@@ -155,10 +149,6 @@ public:
     return bytecode().get_index_u1(cur_bc_raw());
   }
 
-  int get_index_u1_cpcache() const {
-    return bytecode().get_index_u1_cpcache(cur_bc_raw());
-  }
-
   // Get a byte index following this bytecode.
   // If prefixed with a wide bytecode, get a wide index.
   int get_index() const {
@@ -218,16 +208,12 @@ public:
   int get_int_table( int index ) const {
     return Bytes::get_Java_u4((address)&_table_base[index]); }
 
-  // For tableswitch - get length of offset part
-  int get_tableswitch_length()  { return get_int_table(2)-get_int_table(1)+1; }
-
   int get_dest_table( int index ) const {
     return cur_bci() + get_int_table(index); }
 
   // --- Constant pool access ---
   int get_constant_raw_index() const;
   int get_constant_pool_index() const;
-  int get_constant_cache_index() const;
   int get_field_index();
   int get_method_index();
 
@@ -255,7 +241,6 @@ public:
 
   ciInstanceKlass* get_declared_field_holder();
   int      get_field_holder_index();
-  int      get_field_signature_index();
 
   ciMethod*     get_method(bool& will_link, ciSignature* *declared_signature_result);
   bool          has_appendix();
@@ -266,8 +251,6 @@ public:
   int           get_method_holder_index();
   int           get_method_signature_index(const constantPoolHandle& cpool);
 
-  // Get the resolved references arrays from the constant pool
-  ciObjArray* get_resolved_references();
 };
 
 
@@ -438,4 +421,4 @@ Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NUL
 Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 
-#endif // SHARE_VM_CI_CISTREAMS_HPP
+#endif // SHARE_CI_CISTREAMS_HPP

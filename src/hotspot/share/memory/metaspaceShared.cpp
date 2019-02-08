@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,10 +216,6 @@ char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
 
 char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
-}
-
-char* MetaspaceShared::read_only_space_top() {
-  return _ro_region.top();
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
@@ -1659,7 +1655,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     ResourceMark rm;
     char class_list_path_str[JVM_MAXPATHLEN];
     // Preload classes to be shared.
-    // Should use some os:: method rather than fopen() here. aB.
     const char* class_list_path;
     if (SharedClassListFile == NULL) {
       // Construct the path to the class list (in jre/lib)

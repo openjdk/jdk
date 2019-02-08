@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_OSTHREAD_WINDOWS_HPP
-#define OS_WINDOWS_VM_OSTHREAD_WINDOWS_HPP
+#ifndef OS_WINDOWS_OSTHREAD_WINDOWS_HPP
+#define OS_WINDOWS_OSTHREAD_WINDOWS_HPP
 
   typedef void* HANDLE;
  public:
@@ -66,4 +66,4 @@
   void pd_initialize();
   void pd_destroy();
 
-#endif // OS_WINDOWS_VM_OSTHREAD_WINDOWS_HPP
+#endif // OS_WINDOWS_OSTHREAD_WINDOWS_HPP

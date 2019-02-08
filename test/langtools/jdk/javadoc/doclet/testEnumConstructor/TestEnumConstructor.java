@@ -25,9 +25,9 @@
  * @test
  * @bug 8202624
  * @summary javadoc generates references to enum constructors, which are not documented
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestEnumConstructor
  */
 
@@ -36,6 +36,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestEnumConstructor extends JavadocTester {
 
@@ -51,7 +53,7 @@ public class TestEnumConstructor extends JavadocTester {
     }
 
     @Test
-    void test1(Path base) throws Exception {
+    public void test1(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createEnum(srcDir);
 
@@ -72,7 +74,7 @@ public class TestEnumConstructor extends JavadocTester {
     }
 
     @Test
-    void test2(Path base) throws Exception {
+    public void test2(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         createEnum(srcDir);
 

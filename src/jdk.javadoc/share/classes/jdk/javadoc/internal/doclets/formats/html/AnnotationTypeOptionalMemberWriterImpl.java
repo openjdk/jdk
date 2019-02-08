@@ -121,16 +121,6 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     @Override
-    protected String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Annotation_Type_Optional_Member_Summary"),
-                resources.getText("doclet.annotation_type_optional_members"));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     protected Content getCaption() {
         return contents.getContent("doclet.Annotation_Type_Optional_Members");
     }

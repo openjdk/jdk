@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_NATIVEINST_ARM_32_HPP
-#define CPU_ARM_VM_NATIVEINST_ARM_32_HPP
+#ifndef CPU_ARM_NATIVEINST_ARM_32_HPP
+#define CPU_ARM_NATIVEINST_ARM_32_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
@@ -45,6 +45,7 @@
 // The non-raw classes are the front-end entry point, hiding potential
 // back-end extensions or the actual instructions size.
 class NativeInstruction;
+class NativeCall;
 
 class RawNativeInstruction {
  public:
@@ -428,4 +429,4 @@ inline NativeCall* nativeCall_before(address return_address) {
   return (NativeCall *) rawNativeCall_before(return_address);
 }
 
-#endif // CPU_ARM_VM_NATIVEINST_ARM_32_HPP
+#endif // CPU_ARM_NATIVEINST_ARM_32_HPP

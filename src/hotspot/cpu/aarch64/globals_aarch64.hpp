@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_GLOBALS_AARCH64_HPP
-#define CPU_AARCH64_VM_GLOBALS_AARCH64_HPP
+#ifndef CPU_AARCH64_GLOBALS_AARCH64_HPP
+#define CPU_AARCH64_GLOBALS_AARCH64_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -166,4 +166,4 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #endif
 
 
-#endif // CPU_AARCH64_VM_GLOBALS_AARCH64_HPP
+#endif // CPU_AARCH64_GLOBALS_AARCH64_HPP

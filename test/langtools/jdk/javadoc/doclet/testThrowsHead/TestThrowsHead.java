@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * not documented with a throws tag, we generate a link to it in the
  * throws section.  Make sure that the link is below a Throws heading.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestThrowsHead
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestThrowsHead extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestThrowsHead extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 testSrc("C.java"));
         checkExit(Exit.OK);

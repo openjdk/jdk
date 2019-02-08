@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,16 @@
  * @summary  Add support for HTML keywords via META tag for
  *           class and member names to improve API search
  * @author   dkramer
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main MetaTag
  */
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javadoc.tester.JavadocTester;
 
 public class MetaTag extends JavadocTester {
 
@@ -49,7 +51,7 @@ public class MetaTag extends JavadocTester {
     }
 
     @Test
-    void testStandard() {
+    public void testStandard() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-keywords",
@@ -63,7 +65,7 @@ public class MetaTag extends JavadocTester {
     }
 
     @Test
-    void testNoTimestamp() {
+    public void testNoTimestamp() {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "-notimestamp",
@@ -74,36 +76,6 @@ public class MetaTag extends JavadocTester {
 
         // No keywords when -keywords is not used.
         checkMeta("dc.created", false);
-    }
-
-    @Test
-    void testStandard_html4() {
-        javadoc("-d", "out-1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-keywords",
-                "--frames",
-                "-doctitle", "Sample Packages",
-                "p1", "p2");
-
-        checkExit(Exit.OK);
-
-        checkMeta("date", true);
-    }
-
-    @Test
-    void testNoTimestamp_html4() {
-        javadoc("-d", "out-2-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-notimestamp",
-                "--frames",
-                "-doctitle", "Sample Packages",
-                "p1", "p2");
-        checkExit(Exit.OK);
-
-        // No keywords when -keywords is not used.
-        checkMeta("date", false);
     }
 
     void checkMeta(String metaNameDate, boolean found) {

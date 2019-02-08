@@ -170,7 +170,7 @@ AccessBridgeEventHandler::firePropertyChange(long vmID,
     if (propertyChangeFP != (AccessBridge_PropertyChangeFP) 0) {
         propertyChangeFP(vmID, event, source, property, oldName, newName);
     } else {
-        DEBUG_CODE(AppendToCallInfo("  Error! propertyChangeFP == 0\r\n"));
+        DEBUG_CODE(AppendToCallInfo("[ERROR]: propertyChangeFP == 0"));
     }
 }
 
@@ -186,9 +186,9 @@ AccessBridgeEventHandler::firePropertyChange(long vmID,
  *
  */
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-const char fireEventDebugString[] = "\r\nIn AccessBridgeEventHandler::%s(%p, %p); vmID = %X\r\n";
+const char fireEventDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s(%p, %p); vmID = %X\r\n";
 #else // JOBJECT64 is jlong (64 bit)
-const char fireEventDebugString[] = "\r\nIn AccessBridgeEventHandler::%s(%016I64X, %016I64X); vmID = %X\r\n";
+const char fireEventDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s(%016I64X, %016I64X); vmID = %X\r\n";
 #endif
 
 #define FIRE_EVENT(method, FPprototype, eventFP) \
@@ -199,18 +199,18 @@ const char fireEventDebugString[] = "\r\nIn AccessBridgeEventHandler::%s(%016I64
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source); \
         } else { \
-            DEBUG_CODE(AppendToCallInfo("  Error! eventFP == 0\r\n")); \
+            DEBUG_CODE(AppendToCallInfo("[ERROR]: eventFP == 0")); \
         } \
     }
 
     void AccessBridgeEventHandler::fireJavaShutdown(long vmID) {
         DEBUG_CODE(char debugBuf[255]);
-        DEBUG_CODE(sprintf(debugBuf, "\r\nCalling fireJavaShutdown; vmID = %X\r\n", vmID));
+        DEBUG_CODE(sprintf(debugBuf, "[INFO]: Calling fireJavaShutdown; vmID = %X\r\n", vmID));
         DEBUG_CODE(AppendToCallInfo(debugBuf));
         if (javaShutdownFP != (AccessBridge_JavaShutdownFP) 0) {
             javaShutdownFP(vmID);
         } else {
-            DEBUG_CODE(AppendToCallInfo("  Error! javaShutdownFP == 0\r\n"));
+            DEBUG_CODE(AppendToCallInfo("[ERROR]:  javaShutdownFP == 0"));
         }
     }
 
@@ -241,9 +241,9 @@ FIRE_EVENT(firePopupMenuWillBecomeVisible, AccessBridge_PopupMenuWillBecomeVisib
  *
  */
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-const char firePropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing a no-param property change (%p, %p):\r\n";
+const char firePropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing a no-param property change (%p, %p):\r\n";
 #else // JOBJECT64 is jlong (64 bit)
-const char firePropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing a no-param property change (%016I64X, %016I64X):\r\n";
+const char firePropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing a no-param property change (%016I64X, %016I64X):\r\n";
 #endif
 
 #define FIRE_PROPERTY_CHANGE(method, FPprototype, eventFP) \
@@ -254,7 +254,7 @@ const char firePropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source); \
         } else { \
-            DEBUG_CODE(AppendToCallInfo("  Error! eventFP == 0\r\n")); \
+            DEBUG_CODE(AppendToCallInfo("[ERROR]:  eventFP == 0")); \
         } \
     }
 
@@ -269,9 +269,9 @@ const char firePropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%
  *
  */
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-const char fireStringPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing a string property change (%p, %p, %ls, %ls):\r\n";
+const char fireStringPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing a string property change (%p, %p, %ls, %ls):\r\n";
 #else // JOBJECT64 is jlong (64 bit)
-const char fireStringPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing a string property change (%016I64X, %016I64X, %ls, %ls):\r\n";
+const char fireStringPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing a string property change (%016I64X, %016I64X, %ls, %ls):\r\n";
 #endif
 
 #define FIRE_STRING_PROPERTY_CHANGE(method, FPprototype, eventFP, oldValue, newValue) \
@@ -283,7 +283,7 @@ const char fireStringPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHand
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \
         } else { \
-            DEBUG_CODE(AppendToCallInfo("  Error! eventFP == 0\r\n")); \
+            DEBUG_CODE(AppendToCallInfo("[ERROR]:  eventFP == 0\r\n")); \
         } \
     }
 
@@ -298,9 +298,9 @@ const char fireStringPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHand
  *
  */
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-const char fireIntPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing an int property change (%p, %p, %d, %d):\r\n";
+const char fireIntPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing an int property change (%p, %p, %d, %d):\r\n";
 #else // JOBJECT64 is jlong (64 bit)
-const char fireIntPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing an int property change (%016I64X, %016I64X, %d, %d):\r\n";
+const char fireIntPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing an int property change (%016I64X, %016I64X, %d, %d):\r\n";
 #endif
 
 #define FIRE_INT_PROPERTY_CHANGE(method, FPprototype, eventFP) \
@@ -312,7 +312,7 @@ const char fireIntPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \
         } else { \
-            DEBUG_CODE(AppendToCallInfo("  Error! eventFP == 0\r\n")); \
+            DEBUG_CODE(AppendToCallInfo("[ERROR]: eventFP == 0\r\n")); \
         } \
     }
 
@@ -327,9 +327,9 @@ const char fireIntPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler
  *
  */
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-const char fireACPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing an AC property change (%p, %p, %p, %p):\r\n";
+const char fireACPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing an AC property change (%p, %p, %p, %p):\r\n";
 #else // JOBJECT64 is jlong (64 bit)
-const char fireACPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler::%s, Firing an AC property change (%016I64X, %016I64X, %016I64X, %016I64X):\r\n";
+const char fireACPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s, Firing an AC property change (%016I64X, %016I64X, %016I64X, %016I64X):\r\n";
 #endif
 
 #define FIRE_AC_PROPERTY_CHANGE(method, FPprototype, eventFP) \
@@ -341,7 +341,7 @@ const char fireACPropertyChangeDebugString[] = "\r\nIn AccessBridgeEventHandler:
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \
         } else { \
-            DEBUG_CODE(AppendToCallInfo("  Error! eventFP == 0\r\n")); \
+            DEBUG_CODE(AppendToCallInfo("[ERROR]:  eventFP == 0\r\n")); \
         } \
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_BYTECODE_INLINE_HPP
-#define SHARE_VM_INTERPRETER_BYTECODE_INLINE_HPP
+#ifndef SHARE_INTERPRETER_BYTECODE_INLINE_HPP
+#define SHARE_INTERPRETER_BYTECODE_INLINE_HPP
 
 #include "interpreter/bytecode.hpp"
 #include "oops/cpCache.inline.hpp"
 
 inline bool Bytecode_invoke::has_appendix() { return cpcache_entry()->has_appendix(); }
 
-#endif // SHARE_VM_INTERPRETER_BYTECODE_INLINE_HPP
+#endif // SHARE_INTERPRETER_BYTECODE_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
@@ -792,7 +793,7 @@ void SafepointSynchronize::check_for_lazy_critical_native(JavaThread *thread, Ja
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint callback point
 
-void SafepointSynchronize::block(JavaThread *thread) {
+void SafepointSynchronize::block(JavaThread *thread, bool block_in_safepoint_check) {
   assert(thread != NULL, "thread must be set");
   assert(thread->is_Java_thread(), "not a Java thread");
 
@@ -847,28 +848,37 @@ void SafepointSynchronize::block(JavaThread *thread) {
         }
       }
 
-      // We transition the thread to state _thread_blocked here, but
-      // we can't do our usual check for external suspension and then
-      // self-suspend after the lock_without_safepoint_check() call
-      // below because we are often called during transitions while
-      // we hold different locks. That would leave us suspended while
-      // holding a resource which results in deadlocks.
-      thread->set_thread_state(_thread_blocked);
-      Safepoint_lock->unlock();
+      if (block_in_safepoint_check) {
+        // We transition the thread to state _thread_blocked here, but
+        // we can't do our usual check for external suspension and then
+        // self-suspend after the lock_without_safepoint_check() call
+        // below because we are often called during transitions while
+        // we hold different locks. That would leave us suspended while
+        // holding a resource which results in deadlocks.
+        thread->set_thread_state(_thread_blocked);
+        Safepoint_lock->unlock();
 
-      // We now try to acquire the threads lock. Since this lock is hold by the VM thread during
-      // the entire safepoint, the threads will all line up here during the safepoint.
-      Threads_lock->lock_without_safepoint_check();
-      // restore original state. This is important if the thread comes from compiled code, so it
-      // will continue to execute with the _thread_in_Java state.
-      thread->set_thread_state(state);
-      Threads_lock->unlock();
+        // We now try to acquire the threads lock. Since this lock is hold by the VM thread during
+        // the entire safepoint, the threads will all line up here during the safepoint.
+        Threads_lock->lock_without_safepoint_check();
+        // restore original state. This is important if the thread comes from compiled code, so it
+        // will continue to execute with the _thread_in_Java state.
+        thread->set_thread_state(state);
+        Threads_lock->unlock();
+      } else {
+        // We choose not to block in this call since we would be
+        // caught when transitioning back anyways if the safepoint
+        // is still going on.
+        thread->set_thread_state(state);
+        Safepoint_lock->unlock();
+      }
       break;
 
     case _thread_in_native_trans:
     case _thread_blocked_trans:
     case _thread_new_trans:
-      if (thread->safepoint_state()->type() == ThreadSafepointState::_call_back) {
+      if (thread->safepoint_state()->type() == ThreadSafepointState::_call_back &&
+          block_in_safepoint_check) {
         thread->print_thread_state();
         fatal("Deadlock in safepoint code.  "
               "Should have called back to the VM before blocking.");

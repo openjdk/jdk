@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ public interface Metrics {
      * operating system tries to satisfy a memory request for any
      * process in the current Isolation Group when no free memory is
      * readily available.  Use {@link #isCpuSetMemoryPressureEnabled()} to
-     * to determine if this support is enabled.
+     * determine if this support is enabled.
      *
      * @return Memory pressure or 0 if not enabled or metric is not
      *         available.
@@ -322,7 +322,7 @@ public interface Metrics {
      * Returns the largest amount of physical memory, in bytes, that
      * have been allocated in the Isolation Group.
      *
-     * @return The largest amount of memory in bytes or or 0 if this
+     * @return The largest amount of memory in bytes or 0 if this
      *         metric is not available.
      *
      */
@@ -362,7 +362,7 @@ public interface Metrics {
      * Returns the largest amount of kernel physical memory, in bytes, that
      * have been allocated in the Isolation Group.
      *
-     * @return The largest amount of memory in bytes or or 0 if this
+     * @return The largest amount of memory in bytes or 0 if this
      *         metric is not available.
      *
      */
@@ -402,7 +402,7 @@ public interface Metrics {
      * Returns the largest amount of networking physical memory, in bytes,
      * that have been allocated in the Isolation Group.
      *
-     * @return The largest amount of memory in bytes or or 0 if this
+     * @return The largest amount of memory in bytes or 0 if this
      *         metric is not available.
      *
      */
@@ -442,7 +442,7 @@ public interface Metrics {
      * Returns the largest amount of physical memory and swap space,
      * in bytes, that have been allocated in the Isolation Group.
      *
-     * @return The largest amount of memory in bytes or or 0 if this
+     * @return The largest amount of memory in bytes or 0 if this
      *         metric is not available.
      *
      */

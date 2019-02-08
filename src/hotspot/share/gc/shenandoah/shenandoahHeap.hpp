@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
@@ -163,9 +163,9 @@ public:
     return &_lock;
   }
 
-  void assert_heaplock_owned_by_current_thread()     PRODUCT_RETURN;
-  void assert_heaplock_not_owned_by_current_thread() PRODUCT_RETURN;
-  void assert_heaplock_or_safepoint()                PRODUCT_RETURN;
+  void assert_heaplock_owned_by_current_thread()     NOT_DEBUG_RETURN;
+  void assert_heaplock_not_owned_by_current_thread() NOT_DEBUG_RETURN;
+  void assert_heaplock_or_safepoint()                NOT_DEBUG_RETURN;
 
 // ---------- Initialization, termination, identification, printing routines
 //
@@ -231,7 +231,7 @@ private:
 
 public:
   uint max_workers();
-  void assert_gc_workers(uint nworker) PRODUCT_RETURN;
+  void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkGang* workers() const;
   WorkGang* get_safepoint_workers();
@@ -380,7 +380,7 @@ private:
   };
 
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
-  inline bool try_cancel_gc();
+  bool try_cancel_gc();
 
 public:
   static address cancelled_gc_addr();
@@ -754,4 +754,4 @@ private:
   bool should_inject_alloc_failure();
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

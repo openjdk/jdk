@@ -23,9 +23,14 @@
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.zip.*;
 import java.text.MessageFormat;
+import java.util.*;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * A stripped-down version of Jar tool with a "-encoding" option to
@@ -39,9 +44,9 @@ public class zip {
     String[] files;
     Charset cs = Charset.forName("UTF-8");
 
-    Map<String, File> entryMap = new HashMap<String, File>();
-    Set<File> entries = new LinkedHashSet<File>();
-    List<String> paths = new ArrayList<String>();
+    Map<String, File> entryMap = new HashMap<>();
+    Set<File> entries = new LinkedHashSet<>();
+    List<String> paths = new ArrayList<>();
 
     CRC32 crc32 = new CRC32();
     /*
@@ -330,15 +335,13 @@ public class zip {
         }
     }
 
-    boolean update(InputStream in, OutputStream out) throws IOException
-    {
+    boolean update(InputStream in, OutputStream out) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(in, cs);
              ZipOutputStream zos = new ZipOutputStream(out, cs))
         {
             ZipEntry e = null;
             byte[] buf = new byte[1024];
             int n = 0;
-            boolean updateOk = true;
 
             // put the old entries first, replace if necessary
             while ((e = zis.getNextEntry()) != null) {
@@ -367,11 +370,11 @@ public class zip {
             }
 
             // add the remaining new files
-            for (File f: entries) {
+            for (File f : entries) {
                 addFile(zos, f);
             }
         }
-        return updateOk;
+        return true;
     }
 
     private String entryName(String name) {
@@ -479,6 +482,8 @@ public class zip {
 
     Set<ZipEntry> newDirSet() {
         return new HashSet<ZipEntry>() {
+            private static final long serialVersionUID = 4547977575248028254L;
+
             public boolean add(ZipEntry e) {
                 return (e == null || super.add(e));
             }};
@@ -520,7 +525,6 @@ public class zip {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             while (zes.hasMoreElements()) {
                 ZipEntry e = zes.nextElement();
-                InputStream is;
                 if (files == null) {
                     dirs.add(extractFile(zf.getInputStream(e), e));
                 } else {
@@ -533,8 +537,8 @@ public class zip {
                     }
                 }
             }
+            updateLastModifiedTime(dirs);
         }
-        updateLastModifiedTime(dirs);
     }
 
     ZipEntry extractFile(InputStream is, ZipEntry e) throws IOException {
@@ -727,7 +731,7 @@ public class zip {
         st.commentChar('#');
         st.quoteChar('"');
         st.quoteChar('\'');
-        while (st.nextToken() != st.TT_EOF) {
+        while (st.nextToken() != StreamTokenizer.TT_EOF) {
             args.add(st.sval);
         }
         r.close();
@@ -738,4 +742,3 @@ public class zip {
         System.exit(z.run(args) ? 0 : 1);
     }
 }
-

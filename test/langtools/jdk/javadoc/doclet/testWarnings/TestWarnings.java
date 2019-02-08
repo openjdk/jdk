@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,13 @@
  *           a "link unresolved" warning.
  *           Make sure error message starts with "error -".
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestWarnings
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestWarnings extends JavadocTester {
     public static void main(String... args) throws Exception  {
@@ -43,7 +45,7 @@ public class TestWarnings extends JavadocTester {
     }
 
     @Test
-    void testDefault() {
+    public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -70,7 +72,7 @@ public class TestWarnings extends JavadocTester {
     }
 
     @Test
-    void testPrivate() {
+    public void testPrivate() {
         javadoc("-d", "out-private",
                 "-private",
                 "-sourcepath", testSrc,
@@ -82,18 +84,4 @@ public class TestWarnings extends JavadocTester {
             "<a href=\"#%3Cinit%3E()\"><code>X()</code></a><br/>",
             "<a href=\"#f\"><code>f</code></a><br/>");
     }
-
-    @Test
-    void testPrivate_html4() {
-        javadoc("-d", "out-private-html4",
-                "-html4",
-                "-private",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.ERROR);
-
-        checkOutput("pkg/X.html", true,
-            "<a href=\"#m--\"><code>m()</code></a><br/>",
-            "<a href=\"#X--\"><code>X()</code></a><br/>");
-}
 }

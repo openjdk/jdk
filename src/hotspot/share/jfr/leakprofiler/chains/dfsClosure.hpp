@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
-#define SHARE_VM_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
+#define SHARE_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
 
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
@@ -62,4 +62,4 @@ class DFSClosure: public BasicOopIterateClosure {
   virtual void do_oop(narrowOop* ref);
 };
 
-#endif // SHARE_VM_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
+#endif // SHARE_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP

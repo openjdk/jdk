@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -20,8 +20,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
-#define SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#ifndef SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#define SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
 
 #include "gc/shared/taskqueue.hpp"
 #include "runtime/mutex.hpp"
@@ -55,6 +55,7 @@ public:
   }
 
   virtual ~OWSTTaskTerminator() {
+    assert(_spin_master == NULL, "Should have been reset");
     assert(_blocker != NULL, "Can not be NULL");
     delete _blocker;
   }
@@ -76,4 +77,4 @@ private:
 };
 
 
-#endif // SHARE_VM_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#endif // SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP

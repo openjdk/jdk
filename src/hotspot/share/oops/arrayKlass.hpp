@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_ARRAYKLASS_HPP
-#define SHARE_VM_OOPS_ARRAYKLASS_HPP
+#ifndef SHARE_OOPS_ARRAYKLASS_HPP
+#define SHARE_OOPS_ARRAYKLASS_HPP
 
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
@@ -99,7 +99,6 @@ class ArrayKlass: public Klass {
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
-  bool compute_is_subtype_of(Klass* k);
 
   // Sizing
   static int static_size(int header_size);
@@ -145,4 +144,4 @@ class ArrayKlass: public Klass {
   void oop_verify_on(oop obj, outputStream* st);
 };
 
-#endif // SHARE_VM_OOPS_ARRAYKLASS_HPP
+#endif // SHARE_OOPS_ARRAYKLASS_HPP

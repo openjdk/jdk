@@ -161,12 +161,8 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   {
     size_t last = _last_heap_print;
     if ((used - last >= _step_heap_print) && Atomic::cmpxchg(used, &_last_heap_print, last) == last) {
-      log_info(gc)("Heap: " SIZE_FORMAT "M reserved, " SIZE_FORMAT "M (%.2f%%) committed, " SIZE_FORMAT "M (%.2f%%) used",
-                   max_capacity() / M,
-                   capacity() / M,
-                   capacity() * 100.0 / max_capacity(),
-                   used / M,
-                   used * 100.0 / max_capacity());
+      print_heap_info(used);
+      print_metaspace_info();
     }
   }
 
@@ -268,13 +264,26 @@ HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exc
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
-  log_info(gc)("GC request for \"%s\" is ignored", GCCause::to_string(cause));
+  switch (cause) {
+    case GCCause::_metadata_GC_threshold:
+    case GCCause::_metadata_GC_clear_soft_refs:
+      // Receiving these causes means the VM itself entered the safepoint for metadata collection.
+      // While Epsilon does not do GC, it has to perform sizing adjustments, otherwise we would
+      // re-enter the safepoint again very soon.
+
+      assert(SafepointSynchronize::is_at_safepoint(), "Expected at safepoint");
+      log_info(gc)("GC request for \"%s\" is handled", GCCause::to_string(cause));
+      MetaspaceGC::compute_new_size();
+      print_metaspace_info();
+      break;
+    default:
+      log_info(gc)("GC request for \"%s\" is ignored", GCCause::to_string(cause));
+  }
   _monitoring_support->update_counters();
 }
 
 void EpsilonHeap::do_full_collection(bool clear_all_soft_refs) {
-  log_info(gc)("Full GC request for \"%s\" is ignored", GCCause::to_string(gc_cause()));
-  _monitoring_support->update_counters();
+  collect(gc_cause());
 }
 
 void EpsilonHeap::safe_object_iterate(ObjectClosure *cl) {
@@ -289,13 +298,46 @@ void EpsilonHeap::print_on(outputStream *st) const {
 
   st->print_cr("Allocation space:");
   _space->print_on(st);
+
+  MetaspaceUtils::print_on(st);
 }
 
 void EpsilonHeap::print_tracing_info() const {
-  Log(gc) log;
-  size_t allocated_kb = used() / K;
-  log.info("Total allocated: " SIZE_FORMAT " KB",
-           allocated_kb);
-  log.info("Average allocation rate: " SIZE_FORMAT " KB/sec",
-           (size_t)(allocated_kb * NANOSECS_PER_SEC / os::elapsed_counter()));
+  print_heap_info(used());
+  print_metaspace_info();
+}
+
+void EpsilonHeap::print_heap_info(size_t used) const {
+  size_t reserved  = max_capacity();
+  size_t committed = capacity();
+
+  if (reserved != 0) {
+    log_info(gc)("Heap: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "
+                 SIZE_FORMAT "%s (%.2f%%) used",
+            byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
+            byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
+            committed * 100.0 / reserved,
+            byte_size_in_proper_unit(used),      proper_unit_for_byte_size(used),
+            used * 100.0 / reserved);
+  } else {
+    log_info(gc)("Heap: no reliable data");
+  }
+}
+
+void EpsilonHeap::print_metaspace_info() const {
+  size_t reserved  = MetaspaceUtils::reserved_bytes();
+  size_t committed = MetaspaceUtils::committed_bytes();
+  size_t used      = MetaspaceUtils::used_bytes();
+
+  if (reserved != 0) {
+    log_info(gc, metaspace)("Metaspace: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "
+                            SIZE_FORMAT "%s (%.2f%%) used",
+            byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
+            byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
+            committed * 100.0 / reserved,
+            byte_size_in_proper_unit(used),      proper_unit_for_byte_size(used),
+            used * 100.0 / reserved);
+  } else {
+    log_info(gc, metaspace)("Metaspace: no reliable data");
+  }
 }

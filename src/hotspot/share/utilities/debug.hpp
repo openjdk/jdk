@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_DEBUG_HPP
-#define SHARE_VM_UTILITIES_DEBUG_HPP
+#ifndef SHARE_UTILITIES_DEBUG_HPP
+#define SHARE_UTILITIES_DEBUG_HPP
 
 #include "utilities/breakpoint.hpp"
 #include "utilities/compilerWarnings.hpp"
@@ -205,4 +205,4 @@ template<> struct STATIC_ASSERT_FAILURE<true> { enum { value = 1 }; };
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
 
-#endif // SHARE_VM_UTILITIES_DEBUG_HPP
+#endif // SHARE_UTILITIES_DEBUG_HPP

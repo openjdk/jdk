@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_CPCACHEOOP_HPP
-#define SHARE_VM_OOPS_CPCACHEOOP_HPP
+#ifndef SHARE_OOPS_CPCACHE_HPP
+#define SHARE_OOPS_CPCACHE_HPP
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
@@ -444,7 +444,6 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, TRAPS);
-  bool is_constantPoolCache() const { return true; }
 
   int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
@@ -526,4 +525,4 @@ class ConstantPoolCache: public MetaspaceObj {
   void verify_on(outputStream* st);
 };
 
-#endif // SHARE_VM_OOPS_CPCACHEOOP_HPP
+#endif // SHARE_OOPS_CPCACHE_HPP

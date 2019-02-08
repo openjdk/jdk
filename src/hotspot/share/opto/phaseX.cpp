@@ -461,32 +461,34 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List *worklist
 PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
                                      Unique_Node_List* worklist, Unique_Node_List* new_worklist,
                                      PhaseNumber phase_num) :
-  PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live) {
-
+  PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
+  _new_type_array(C->comp_arena()),
+  _old2new_map(C->unique(), C->unique(), -1),
+  _delayed(Thread::current()->resource_area()),
+  _is_pass_finished(false),
+  _live_node_count(C->live_nodes())
+{
   assert(RenumberLiveNodes, "RenumberLiveNodes must be set to true for node renumbering to take place");
   assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
   assert(gvn->nodes_size() == 0, "GVN must not contain any nodes at this point");
+  assert(_delayed.size() == 0, "should be empty");
 
-  uint old_unique_count = C->unique();
-  uint live_node_count = C->live_nodes();
   uint worklist_size = worklist->size();
 
-  // Storage for the updated type information.
-  Type_Array new_type_array(C->comp_arena());
-
   // Iterate over the set of live nodes.
-  uint current_idx = 0; // The current new node ID. Incremented after every assignment.
-  for (uint i = 0; i < _useful.size(); i++) {
-    Node* n = _useful.at(i);
-    // Sanity check that fails if we ever decide to execute this phase after EA
-    assert(!n->is_Phi() || n->as_Phi()->inst_mem_id() == -1, "should not be linked to data Phi");
-    const Type* type = gvn->type_or_null(n);
-    new_type_array.map(current_idx, type);
+  for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
+    Node* n = _useful.at(current_idx);
 
     bool in_worklist = false;
     if (worklist->member(n)) {
       in_worklist = true;
     }
+
+    const Type* type = gvn->type_or_null(n);
+    _new_type_array.map(current_idx, type);
+
+    assert(_old2new_map.at(n->_idx) == -1, "already seen");
+    _old2new_map.at_put(n->_idx, current_idx);
 
     n->set_idx(current_idx); // Update node ID.
 
@@ -494,22 +496,80 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
       new_worklist->push(n);
     }
 
-    current_idx++;
+    if (update_embedded_ids(n) < 0) {
+      _delayed.push(n); // has embedded IDs; handle later
+    }
   }
 
   assert(worklist_size == new_worklist->size(), "the new worklist must have the same size as the original worklist");
-  assert(live_node_count == current_idx, "all live nodes must be processed");
+  assert(_live_node_count == _useful.size(), "all live nodes must be processed");
+
+  _is_pass_finished = true; // pass finished; safe to process delayed updates
+
+  while (_delayed.size() > 0) {
+    Node* n = _delayed.pop();
+    int no_of_updates = update_embedded_ids(n);
+    assert(no_of_updates > 0, "should be updated");
+  }
 
   // Replace the compiler's type information with the updated type information.
-  gvn->replace_types(new_type_array);
+  gvn->replace_types(_new_type_array);
 
   // Update the unique node count of the compilation to the number of currently live nodes.
-  C->set_unique(live_node_count);
+  C->set_unique(_live_node_count);
 
   // Set the dead node count to 0 and reset dead node list.
   C->reset_dead_node_list();
 }
 
+int PhaseRenumberLive::new_index(int old_idx) {
+  assert(_is_pass_finished, "not finished");
+  if (_old2new_map.at(old_idx) == -1) { // absent
+    // Allocate a placeholder to preserve uniqueness
+    _old2new_map.at_put(old_idx, _live_node_count);
+    _live_node_count++;
+  }
+  return _old2new_map.at(old_idx);
+}
+
+int PhaseRenumberLive::update_embedded_ids(Node* n) {
+  int no_of_updates = 0;
+  if (n->is_Phi()) {
+    PhiNode* phi = n->as_Phi();
+    if (phi->_inst_id != -1) {
+      if (!_is_pass_finished) {
+        return -1; // delay
+      }
+      int new_idx = new_index(phi->_inst_id);
+      assert(new_idx != -1, "");
+      phi->_inst_id = new_idx;
+      no_of_updates++;
+    }
+    if (phi->_inst_mem_id != -1) {
+      if (!_is_pass_finished) {
+        return -1; // delay
+      }
+      int new_idx = new_index(phi->_inst_mem_id);
+      assert(new_idx != -1, "");
+      phi->_inst_mem_id = new_idx;
+      no_of_updates++;
+    }
+  }
+
+  const Type* type = _new_type_array.fast_lookup(n->_idx);
+  if (type != NULL && type->isa_oopptr() && type->is_oopptr()->is_known_instance()) {
+    if (!_is_pass_finished) {
+        return -1; // delay
+    }
+    int old_idx = type->is_oopptr()->instance_id();
+    int new_idx = new_index(old_idx);
+    const Type* new_type = type->is_oopptr()->with_instance_id(new_idx);
+    _new_type_array.map(n->_idx, new_type);
+    no_of_updates++;
+  }
+
+  return no_of_updates;
+}
 
 //=============================================================================
 //------------------------------PhaseTransform---------------------------------

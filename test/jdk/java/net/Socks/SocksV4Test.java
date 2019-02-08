@@ -26,36 +26,80 @@
  * @bug 4727547
  * @summary SocksSocketImpl throws NullPointerException
  * @build SocksServer
- * @run main SocksV4Test
+ * @run main/othervm SocksV4Test
  */
 
+import java.io.IOException;
 import java.net.*;
 
 public class SocksV4Test {
 
     // An unresolvable host
     static final String HOSTNAME = "doesnot.exist.invalid";
+    static final String USER = "johndoe";
+    static final String PASSWORD = "helloworld";
 
     public static void main(String[] args) throws Exception {
+        Authenticator.setDefault(new Auth());
+        UHETest();
+        getLocalPortTest();
+    }
+
+    static class Auth extends Authenticator {
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(USER, PASSWORD.toCharArray());
+        }
+    }
+
+    public static void getLocalPortTest() throws Exception {
+        // We actually use V5 for this test because that is the default
+        // protocol version used by the client and it doesn't really handle
+        // down grading very well.
+        try (SocksServer srvr = new SocksServer(0, false);
+             ServerSocket ss = new ServerSocket(0)) {
+
+            srvr.addUser(USER, PASSWORD);
+            int serverPort = ss.getLocalPort();
+            srvr.start();
+            int proxyPort = srvr.getPort();
+            System.out.printf("Server port %d, Proxy port %d\n", serverPort, proxyPort);
+            Proxy sp = new Proxy(Proxy.Type.SOCKS,
+                    new InetSocketAddress("localhost", proxyPort));
+            // Let's create an unresolved address
+            InetSocketAddress ad = new InetSocketAddress("127.0.0.1", serverPort);
+            try (Socket s = new Socket(sp)) {
+                s.connect(ad, 10000);
+                int pp = s.getLocalPort();
+                System.out.println("Local port = " + pp);
+                if (pp == serverPort || pp == proxyPort)
+                    throw new RuntimeException("wrong port returned");
+            } catch (UnknownHostException ex) {
+                throw new RuntimeException(ex);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
+    }
+
+    public static void UHETest() throws Exception {
         // sanity before running the test
         assertUnresolvableHost(HOSTNAME);
 
         // Create a SOCKS V4 proxy
-        SocksServer srvr = new SocksServer(0, true);
-        srvr.start();
-        Proxy sp = new Proxy(Proxy.Type.SOCKS,
-                             new InetSocketAddress("localhost", srvr.getPort()));
-        // Let's create an unresolved address
-        InetSocketAddress ad = new InetSocketAddress(HOSTNAME, 1234);
-        try (Socket s = new Socket(sp)) {
-            s.connect(ad, 10000);
-        } catch (UnknownHostException ex) {
-            // OK, that's what we expected
-        } catch (NullPointerException npe) {
-            // Not OK, this used to be the bug
-            throw new RuntimeException("Got a NUllPointerException");
-        } finally {
-            srvr.terminate();
+        try (SocksServer srvr = new SocksServer(0, true)) {
+            srvr.start();
+            Proxy sp = new Proxy(Proxy.Type.SOCKS,
+                    new InetSocketAddress("localhost", srvr.getPort()));
+            // Let's create an unresolved address
+            InetSocketAddress ad = new InetSocketAddress(HOSTNAME, 1234);
+            try (Socket s = new Socket(sp)) {
+                s.connect(ad, 10000);
+            } catch (UnknownHostException ex) {
+                // OK, that's what we expected
+            } catch (NullPointerException npe) {
+                // Not OK, this used to be the bug
+                throw new RuntimeException("Got a NUllPointerException");
+            }
         }
     }
 

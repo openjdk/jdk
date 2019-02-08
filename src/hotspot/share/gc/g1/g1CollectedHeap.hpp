@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
-#define SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
+#ifndef SHARE_GC_G1_G1COLLECTEDHEAP_HPP
+#define SHARE_GC_G1_G1COLLECTEDHEAP_HPP
 
-#include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
@@ -35,6 +34,7 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -735,7 +735,7 @@ private:
   void evacuate_optional_regions(G1ParScanThreadStateSet* per_thread_states, G1OptionalCSet* ocset);
 
   void pre_evacuate_collection_set();
-  void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
+  void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
   // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr();
@@ -762,7 +762,7 @@ private:
 
   // After a collection pause, convert the regions in the collection set into free
   // regions.
-  void free_collection_set(G1CollectionSet* collection_set, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
+  void free_collection_set(G1CollectionSet* collection_set, G1EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
@@ -1332,14 +1332,12 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Partial cleaning used when class unloading is disabled.
-  // Let the caller choose what structures to clean out:
-  // - StringTable
-  // - StringDeduplication structures
-  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_string_dedup);
+  // Partial cleaning of VM internal data structures.
+  void string_dedup_cleaning(BoolObjectClosure* is_alive,
+                             OopClosure* keep_alive,
+                             G1GCPhaseTimes* phase_times = NULL);
 
-  // Complete cleaning used when class unloading is enabled.
-  // Cleans out all structures handled by partial_cleaning and also the CodeCache.
+  // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
@@ -1371,7 +1369,6 @@ public:
 
   // WhiteBox testing support.
   virtual bool supports_concurrent_phase_control() const;
-  virtual const char* const* concurrent_phases() const;
   virtual bool request_concurrent_phase(const char* phase);
 
   virtual WorkGang* get_safepoint_workers() { return _workers; }
@@ -1452,4 +1449,4 @@ private:
   inline bool offer_termination();
 };
 
-#endif // SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
+#endif // SHARE_GC_G1_G1COLLECTEDHEAP_HPP

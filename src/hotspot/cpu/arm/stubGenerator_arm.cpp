@@ -820,9 +820,9 @@ class StubGenerator: public StubCodeGenerator {
     // Note: oop_mask and oop_bits must be updated if the code is saved/reused
     const address oop_mask = (address) Universe::verify_oop_mask();
     const address oop_bits = (address) Universe::verify_oop_bits();
-    __ mov_address(tmp1, oop_mask, symbolic_Relocation::oop_mask_reference);
+    __ mov_address(tmp1, oop_mask);
     __ andr(tmp2, oop, tmp1);
-    __ mov_address(tmp1, oop_bits, symbolic_Relocation::oop_bits_reference);
+    __ mov_address(tmp1, oop_bits);
     __ cmp(tmp2, tmp1);
     __ b(error, ne);
 

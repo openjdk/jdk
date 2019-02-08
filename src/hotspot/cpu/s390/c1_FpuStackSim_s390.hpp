@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef CPU_S390_VM_C1_FPUSTACKSIM_S390_HPP
-#define CPU_S390_VM_C1_FPUSTACKSIM_S390_HPP
+#ifndef CPU_S390_C1_FPUSTACKSIM_S390_HPP
+#define CPU_S390_C1_FPUSTACKSIM_S390_HPP
 
 // No FPU stack on ZARCH_64
 class FpuStackSim;
 
-#endif // CPU_S390_VM_C1_FPUSTACKSIM_S390_HPP
+#endif // CPU_S390_C1_FPUSTACKSIM_S390_HPP

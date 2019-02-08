@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
-#define SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
+#ifndef SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
+#define SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
 
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -34,7 +34,6 @@
 #include "runtime/vmThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "services/diagnosticCommand_ext.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -889,4 +888,4 @@ public:
 };
 #endif // INCLUDE_JVMTI
 
-#endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
+#endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

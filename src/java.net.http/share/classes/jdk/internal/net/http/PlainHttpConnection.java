@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class PlainHttpConnection extends HttpConnection {
      */
     private ConnectTimerEvent newConnectTimer(Exchange<?> exchange,
                                               CompletableFuture<Void> cf) {
-        Duration duration = client().connectTimeout().orElse(null);
+        Duration duration = exchange.remainingConnectTimeout().orElse(null);
         if (duration != null) {
             ConnectTimerEvent cte = new ConnectTimerEvent(duration, exchange, cf);
             return cte;

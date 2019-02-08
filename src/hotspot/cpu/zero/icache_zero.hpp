@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_ICACHE_ZERO_HPP
-#define CPU_ZERO_VM_ICACHE_ZERO_HPP
+#ifndef CPU_ZERO_ICACHE_ZERO_HPP
+#define CPU_ZERO_ICACHE_ZERO_HPP
 
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
@@ -38,4 +38,4 @@ class ICache : public AbstractICache {
   static void invalidate_range(address start, int nbytes) {}
 };
 
-#endif // CPU_ZERO_VM_ICACHE_ZERO_HPP
+#endif // CPU_ZERO_ICACHE_ZERO_HPP

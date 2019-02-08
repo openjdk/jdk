@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,57 +22,17 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_MUTEX_HPP
-#define SHARE_VM_RUNTIME_MUTEX_HPP
+#ifndef SHARE_RUNTIME_MUTEX_HPP
+#define SHARE_RUNTIME_MUTEX_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/histogram.hpp"
 
-// The SplitWord construct allows us to colocate the contention queue
-// (cxq) with the lock-byte.  The queue elements are ParkEvents, which are
-// always aligned on 256-byte addresses - the least significant byte of
-// a ParkEvent is always 0.  Colocating the lock-byte with the queue
-// allows us to easily avoid what would otherwise be a race in lock()
-// if we were to use two completely separate fields for the contention queue
-// and the lock indicator.  Specifically, colocation renders us immune
-// from the race where a thread might enqueue itself in the lock() slow-path
-// immediately after the lock holder drops the outer lock in the unlock()
-// fast-path.
-//
-// Colocation allows us to use a fast-path unlock() form that uses
-// A MEMBAR instead of a CAS.  MEMBAR has lower local latency than CAS
-// on many platforms.
-//
-// See:
-// +  http://blogs.sun.com/dave/entry/biased_locking_in_hotspot
-// +  http://blogs.sun.com/dave/resource/synchronization-public2.pdf
-//
-// Note that we're *not* using word-tearing the classic sense.
-// The lock() fast-path will CAS the lockword and the unlock()
-// fast-path will store into the lock-byte colocated within the lockword.
-// We depend on the fact that all our reference platforms have
-// coherent and atomic byte accesses.  More precisely, byte stores
-// interoperate in a safe, sane, and expected manner with respect to
-// CAS, ST and LDs to the full-word containing the byte.
-// If you're porting HotSpot to a platform where that isn't the case
-// then you'll want change the unlock() fast path from:
-//    STB;MEMBAR #storeload; LDN
-// to a full-word CAS of the lockword.
 
-
-union SplitWord {   // full-word with separately addressable LSB
-  volatile intptr_t FullWord ;
-  volatile void * Address ;
-  volatile jbyte Bytes [sizeof(intptr_t)] ;
-} ;
-
-class ParkEvent ;
-
-// See orderAccess.hpp.  We assume throughout the VM that mutex lock and
-// try_lock do fence-lock-acquire, and that unlock does a release-unlock,
-// *in that order*.  If their implementations change such that these
-// assumptions are violated, a whole lot of code will break.
+// A Mutex/Monitor is a simple wrapper around a native lock plus condition
+// variable that supports lock ownership tracking, lock ranking for deadlock
+// detection and coordinates with the safepoint protocol.
 
 // The default length of monitor name was originally chosen to be 64 to avoid
 // false sharing. Now, PaddedMonitor is available for this purpose.
@@ -118,22 +78,10 @@ class Monitor : public CHeapObj<mtInternal> {
        native         = max_nonleaf    +   1
   };
 
-  // The WaitSet and EntryList linked lists are composed of ParkEvents.
-  // I use ParkEvent instead of threads as ParkEvents are immortal and
-  // type-stable, meaning we can safely unpark() a possibly stale
-  // list element in the unlock()-path.
-
  protected:                              // Monitor-Mutex metadata
-  SplitWord _LockWord ;                  // Contention queue (cxq) colocated with Lock-byte
   Thread * volatile _owner;              // The owner of the lock
-                                         // Consider sequestering _owner on its own $line
-                                         // to aid future synchronization mechanisms.
-  ParkEvent * volatile _EntryList ;      // List of threads waiting for entry
-  ParkEvent * volatile _OnDeck ;         // heir-presumptive
-  volatile intptr_t _WaitLock [1] ;      // Protects _WaitSet
-  ParkEvent * volatile  _WaitSet ;       // LL of ParkEvents
-  volatile bool     _snuck;              // Used for sneaky locking (evil).
-  char _name[MONITOR_NAME_LEN];          // Name of mutex
+  os::PlatformMonitor _lock;             // Native monitor implementation
+  char _name[MONITOR_NAME_LEN];          // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
@@ -149,8 +97,8 @@ class Monitor : public CHeapObj<mtInternal> {
   void set_owner_implementation(Thread* owner)                        PRODUCT_RETURN;
   void check_prelock_state     (Thread* thread, bool safepoint_check) PRODUCT_RETURN;
   void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
+  void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
 
-  // platform-dependent support code can go here (in os_<os_family>.cpp)
  public:
   enum {
     _no_safepoint_check_flag    = true,
@@ -164,6 +112,9 @@ class Monitor : public CHeapObj<mtInternal> {
   // consistent checking for each lock.
   // A few existing locks will sometimes have a safepoint check and
   // sometimes not, but these locks are set up in such a way to avoid deadlocks.
+  // Note: monitors that may be shared between JavaThreads and the VMThread
+  // should never encounter a safepoint check whilst they are held, else a
+  // deadlock with the VMThread can occur.
   enum SafepointCheckRequired {
     _safepoint_check_never,       // Monitors with this value will cause errors
                                   // when acquired with a safepoint check.
@@ -175,22 +126,6 @@ class Monitor : public CHeapObj<mtInternal> {
   };
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
-
-  enum WaitResults {
-    CONDVAR_EVENT,         // Wait returned because of condition variable notification
-    INTERRUPT_EVENT,       // Wait returned because waiting thread was interrupted
-    NUMBER_WAIT_RESULTS
-  };
-
- private:
-   int  TrySpin (Thread * Self) ;
-   int  TryLock () ;
-   int  TryFast () ;
-   int  AcquireOrPush (ParkEvent * ev) ;
-   void IUnlock (bool RelaxAssert) ;
-   void ILock (Thread * Self) ;
-   int  IWait (Thread * Self, jlong timo);
-   int  ILocked () ;
 
  protected:
    static void ClearMonitor (Monitor * m, const char* name = NULL) ;
@@ -208,8 +143,8 @@ class Monitor : public CHeapObj<mtInternal> {
   bool wait(bool no_safepoint_check = !_no_safepoint_check_flag,
             long timeout = 0,
             bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
-  bool notify();
-  bool notify_all();
+  void notify();
+  void notify_all();
 
 
   void lock(); // prints out warning if VM thread blocks
@@ -218,6 +153,8 @@ class Monitor : public CHeapObj<mtInternal> {
   bool is_locked() const                     { return _owner != NULL; }
 
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
+
+  void release_for_safepoint();
 
   // Lock without safepoint check. Should ONLY be used by safepoint code and other code
   // that is guaranteed not to block while running inside the VM.
@@ -290,9 +227,6 @@ class PaddedMonitor : public Monitor {
 // there may have been some benefit to having distinct mutexes and monitors, but that time
 // has past.
 //
-// The Mutex/Monitor design parallels that of Java-monitors, being based on
-// thread-specific park-unpark platform-specific primitives.
-
 
 class Mutex : public Monitor {      // degenerate Monitor
  public:
@@ -300,8 +234,8 @@ class Mutex : public Monitor {      // degenerate Monitor
          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
   // default destructor
  private:
-   bool notify ()    { ShouldNotReachHere(); return false; }
-   bool notify_all() { ShouldNotReachHere(); return false; }
+   void notify ()    { ShouldNotReachHere(); }
+   void notify_all() { ShouldNotReachHere(); }
    bool wait (bool no_safepoint_check, long timeout, bool as_suspend_equivalent) {
      ShouldNotReachHere() ;
      return false ;
@@ -320,4 +254,4 @@ public:
     Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
 };
 
-#endif // SHARE_VM_RUNTIME_MUTEX_HPP
+#endif // SHARE_RUNTIME_MUTEX_HPP

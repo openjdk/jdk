@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_NATIVEINST_SPARC_HPP
-#define CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+#ifndef CPU_SPARC_NATIVEINST_SPARC_HPP
+#define CPU_SPARC_NATIVEINST_SPARC_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "runtime/icache.hpp"
@@ -311,6 +311,8 @@ inline NativeInstruction* nativeInstruction_at(address address) {
 
 // The NativeCall is an abstraction for accessing/manipulating native call imm32 instructions.
 // (used to manipulate inline caches, primitive & dll calls, etc.)
+class NativeCall;
+
 inline NativeCall* nativeCall_at(address instr);
 inline NativeCall* nativeCall_overwriting_at(address instr,
                                              address destination);
@@ -807,4 +809,4 @@ class NativeIllegalInstruction: public NativeInstruction {
   static void insert(address code_pos);
 };
 
-#endif // CPU_SPARC_VM_NATIVEINST_SPARC_HPP
+#endif // CPU_SPARC_NATIVEINST_SPARC_HPP

@@ -48,6 +48,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -2045,6 +2046,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
   const char* failure_reason = NULL;
+  bool failure_reason_on_C_heap = false;
   const char* retry_message = NULL;
 
   int system_dictionary_modification_counter;
@@ -2071,6 +2073,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         jvmci->compile_method(method, osr_bci, &env);
 
         failure_reason = env.failure_reason();
+        failure_reason_on_C_heap = env.failure_reason_on_C_heap();
         if (!env.retryable()) {
           retry_message = "not retryable";
           compilable = ciEnv::MethodCompilable_not_at_tier;
@@ -2146,7 +2149,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   pop_jni_handle_block();
 
   if (failure_reason != NULL) {
-    task->set_failure_reason(failure_reason);
+    task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (_compilation_log != NULL) {
       _compilation_log->log_failure(thread, task, failure_reason, retry_message);
     }
@@ -2212,15 +2215,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   // the point somewhat) our clearing of the bits must be occurring
   // only after the setting of the bits. See also 14012000 above.
   method->clear_queued_for_compilation();
-
-#ifdef ASSERT
-  if (CollectedHeap::fired_fake_oom()) {
-    // The current compile received a fake OOM during compilation so
-    // go ahead and exit the VM since the test apparently succeeded
-    tty->print_cr("*** Shutting down VM after successful fake OOM");
-    vm_exit(0);
-  }
-#endif
 }
 
 /**

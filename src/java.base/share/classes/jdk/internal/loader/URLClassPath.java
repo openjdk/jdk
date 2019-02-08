@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,10 +1092,15 @@ public class URLClassPath {
             int i = 0;
             while (st.hasMoreTokens()) {
                 String path = st.nextToken();
-                URL url = DISABLE_CP_URL_CHECK ? new URL(base, path) : safeResolve(base, path);
+                URL url = DISABLE_CP_URL_CHECK ? new URL(base, path) : tryResolve(base, path);
                 if (url != null) {
                     urls[i] = url;
                     i++;
+                } else {
+                    if (DEBUG_CP_URL_CHECK) {
+                        System.err.println("Class-Path entry: \"" + path
+                                           + "\" ignored in JAR file " + base);
+                    }
                 }
             }
             if (i == 0) {
@@ -1107,35 +1112,73 @@ public class URLClassPath {
             return urls;
         }
 
-        /*
-         * Return a URL for the given path resolved against the base URL, or
-         * null if the resulting URL is invalid.
+        static URL tryResolve(URL base, String input) throws MalformedURLException {
+            if ("file".equalsIgnoreCase(base.getProtocol())) {
+                return tryResolveFile(base, input);
+            } else {
+                return tryResolveNonFile(base, input);
+            }
+        }
+
+        /**
+         * Attempt to return a file URL by resolving input against a base file
+         * URL. The input is an absolute or relative file URL that encodes a
+         * file path.
+         *
+         * @apiNote Nonsensical input such as a Windows file path with a drive
+         * letter cannot be disambiguated from an absolute URL so will be rejected
+         * (by returning null) by this method.
+         *
+         * @return the resolved URL or null if the input is an absolute URL with
+         *         a scheme other than file (ignoring case)
+         * @throws MalformedURLException
          */
-        static URL safeResolve(URL base, String path) {
-            String child = path.replace(File.separatorChar, '/');
-            try {
-                if (!URI.create(child).isAbsolute()) {
-                    URL url = new URL(base, child);
-                    if (base.getProtocol().equalsIgnoreCase("file")) {
-                        return url;
-                    } else {
-                        String bp = base.getPath();
-                        String urlp = url.getPath();
-                        int pos = bp.lastIndexOf('/');
-                        if (pos == -1) {
-                            pos = bp.length() - 1;
-                        }
-                        if (urlp.regionMatches(0, bp, 0, pos + 1)
-                            && urlp.indexOf("..", pos) == -1) {
-                            return url;
-                        }
-                    }
+        static URL tryResolveFile(URL base, String input) throws MalformedURLException {
+            int index = input.indexOf(':');
+            boolean isFile;
+            if (index >= 0) {
+                String scheme = input.substring(0, index);
+                isFile = "file".equalsIgnoreCase(scheme);
+            } else {
+                isFile = true;
+            }
+            return (isFile) ? new URL(base, input) : null;
+        }
+
+        /**
+         * Attempt to return a URL by resolving input against a base URL. Returns
+         * null if the resolved URL is not contained by the base URL.
+         *
+         * @return the resolved URL or null
+         * @throws MalformedURLException
+         */
+        static URL tryResolveNonFile(URL base, String input) throws MalformedURLException {
+            String child = input.replace(File.separatorChar, '/');
+            if (isRelative(child)) {
+                URL url = new URL(base, child);
+                String bp = base.getPath();
+                String urlp = url.getPath();
+                int pos = bp.lastIndexOf('/');
+                if (pos == -1) {
+                    pos = bp.length() - 1;
                 }
-            } catch (MalformedURLException | IllegalArgumentException e) {}
-            if (DEBUG_CP_URL_CHECK) {
-                System.err.println("Class-Path entry: \"" + path + "\" ignored in JAR file " + base);
+                if (urlp.regionMatches(0, bp, 0, pos + 1)
+                        && urlp.indexOf("..", pos) == -1) {
+                    return url;
+                }
             }
             return null;
+        }
+
+        /**
+         * Returns true if the given input is a relative URI.
+         */
+        static boolean isRelative(String child) {
+            try {
+                return !URI.create(child).isAbsolute();
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
         }
     }
 

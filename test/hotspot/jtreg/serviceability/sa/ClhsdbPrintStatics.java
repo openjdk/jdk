@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 /**
  * @test
@@ -70,7 +70,7 @@ public class ClhsdbPrintStatics {
             expStrMap.put("printstatics Threads", List.of(
                     "Static fields of Threads",
                     "_number_of_threads", "_number_of_non_daemon_threads",
-                    "JavaThread* Threads"));
+                    "JavaThread\\* Threads"));
             expStrMap.put("printstatics Universe", List.of(
                     "Static fields of Universe",
                     "uintptr_t Universe::_verify_oop_mask",
@@ -83,6 +83,8 @@ public class ClhsdbPrintStatics {
                     "bool JvmtiExport::_can_post_on_exceptions"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
+        } catch (SkippedException se) {
+            throw se;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {

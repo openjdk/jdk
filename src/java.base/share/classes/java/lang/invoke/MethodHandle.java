@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1083,7 +1083,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
       * else if (makeVarargs)
       *   return asVarargsCollector(type().lastParameterType());
       * else
-      *   return return asFixedArity();
+      *   return asFixedArity();
       * }</pre></blockquote>
       * @param makeVarargs true if the return method handle should have variable arity behavior
       * @return a method handle of the same type, with possibly adjusted variable arity behavior

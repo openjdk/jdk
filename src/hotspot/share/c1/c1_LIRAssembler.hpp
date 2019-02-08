@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_LIRASSEMBLER_HPP
-#define SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#ifndef SHARE_C1_C1_LIRASSEMBLER_HPP
+#define SHARE_C1_C1_LIRASSEMBLER_HPP
 
 #include "c1/c1_CodeStubs.hpp"
 #include "ci/ciMethodData.hpp"
@@ -279,4 +279,4 @@ class LIR_Assembler: public CompilationResourceObj {
   }
 };
 
-#endif // SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#endif // SHARE_C1_C1_LIRASSEMBLER_HPP

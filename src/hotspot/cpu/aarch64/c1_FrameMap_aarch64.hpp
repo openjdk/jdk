@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_C1_FRAMEMAP_AARCH64_HPP
-#define CPU_AARCH64_VM_C1_FRAMEMAP_AARCH64_HPP
+#ifndef CPU_AARCH64_C1_FRAMEMAP_AARCH64_HPP
+#define CPU_AARCH64_C1_FRAMEMAP_AARCH64_HPP
 
 //  On AArch64 the frame looks as follows:
 //
@@ -144,5 +144,4 @@
   static int last_cpu_reg()             { return pd_last_cpu_reg;  }
   static int last_byte_reg()            { return pd_last_byte_reg; }
 
-#endif // CPU_AARCH64_VM_C1_FRAMEMAP_AARCH64_HPP
-
+#endif // CPU_AARCH64_C1_FRAMEMAP_AARCH64_HPP

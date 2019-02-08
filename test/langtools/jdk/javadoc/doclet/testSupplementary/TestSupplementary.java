@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@
  * @summary Test to make sure that "see" tag and "serialField" tag handle supplementary
  *    characters correctly.  This test case needs to be run in en_US locale.
  * @author Naoto Sato
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestSupplementary
  */
 
 import java.util.Locale;
+
+import javadoc.tester.JavadocTester;
 
 public class TestSupplementary extends JavadocTester {
 
@@ -48,7 +50,7 @@ public class TestSupplementary extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-locale", "en_US",
                 "-d", "out",
                 testSrc("C.java"));

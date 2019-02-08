@@ -70,7 +70,10 @@ public enum Target {
     JDK1_11("11", 55, 0),
 
     /** JDK 12. */
-    JDK1_12("12", 56, 0);
+    JDK1_12("12", 56, 0),
+
+    /** JDK 13. */
+    JDK1_13("13", 57, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 

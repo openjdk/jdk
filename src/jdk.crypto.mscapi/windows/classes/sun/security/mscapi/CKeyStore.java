@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.*;
+
+import sun.security.util.Debug;
 
 /**
  * Implementation of key store for Windows using the Microsoft Crypto API.
@@ -180,6 +182,7 @@ abstract class CKeyStore extends KeyStoreSpi {
     private static final String KEYSTORE_COMPATIBILITY_MODE_PROP =
         "sun.security.mscapi.keyStoreCompatibilityMode";
     private final boolean keyStoreCompatibilityMode;
+    private static final Debug debug = Debug.getInstance("keystore");
 
     /*
      * The keystore entries.
@@ -709,6 +712,11 @@ abstract class CKeyStore extends KeyStoreSpi {
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
+        }
+
+        if (debug != null) {
+            debug.println("MSCAPI keystore load: entry count: " +
+                    entries.size());
         }
     }
 

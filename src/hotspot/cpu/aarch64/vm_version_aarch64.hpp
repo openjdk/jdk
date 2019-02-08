@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_VM_VERSION_AARCH64_HPP
-#define CPU_AARCH64_VM_VM_VERSION_AARCH64_HPP
+#ifndef CPU_AARCH64_VM_VERSION_AARCH64_HPP
+#define CPU_AARCH64_VM_VERSION_AARCH64_HPP
 
 #include "runtime/globals_extension.hpp"
 #include "runtime/vm_version.hpp"
@@ -121,4 +121,4 @@ public:
   }
 };
 
-#endif // CPU_AARCH64_VM_VM_VERSION_AARCH64_HPP
+#endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

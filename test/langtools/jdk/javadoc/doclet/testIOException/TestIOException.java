@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
  * @test
  * @bug 8164130
  * @summary test IOException handling
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestIOException
  */
 
 import java.io.File;
 import java.io.FileWriter;
+
+import javadoc.tester.JavadocTester;
 
 public class TestIOException extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestIOException extends JavadocTester {
     }
 
     @Test
-    void testReadOnlyDirectory() {
+    public void testReadOnlyDirectory() {
         File outDir = new File("out1");
         if (!outDir.mkdir()) {
             throw new Error("Cannot create directory");
@@ -66,7 +68,7 @@ public class TestIOException extends JavadocTester {
     }
 
     @Test
-    void testReadOnlyFile() throws Exception {
+    public void testReadOnlyFile() throws Exception {
         File outDir = new File("out2");
         if (!outDir.mkdir()) {
             throw new Error("Cannot create directory");
@@ -95,7 +97,7 @@ public class TestIOException extends JavadocTester {
     }
 
     @Test
-    void testReadOnlySubdirectory() throws Exception {
+    public void testReadOnlySubdirectory() throws Exception {
         // init source file
         File srcDir = new File("src4");
         File src_p = new File(srcDir, "p");
@@ -133,7 +135,7 @@ public class TestIOException extends JavadocTester {
     }
 
     @Test
-    void testReadOnlyDocFilesDir() throws Exception {
+    public void testReadOnlyDocFilesDir() throws Exception {
         // init source files
         File srcDir = new File("src4");
         File src_p = new File(srcDir, "p");

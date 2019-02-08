@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,13 @@ import jdk.internal.net.http.websocket.RawChannel;
 class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
-    final Exchange<T> exchange;
     final HttpRequest initialRequest;
     final Optional<HttpResponse<T>> previousResponse;
     final HttpHeaders headers;
     final Optional<SSLSession> sslSession;
     final URI uri;
     final HttpClient.Version version;
-    RawChannel rawchan;
-    final HttpConnection connection;
-    final Stream<T> stream;
+    final RawChannelProvider rawChannelProvider;
     final T body;
 
     public HttpResponseImpl(HttpRequest initialRequest,
@@ -62,7 +59,6 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                             T body,
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
-        this.exchange = exch;
         this.initialRequest = initialRequest;
         this.previousResponse = Optional.ofNullable(previousResponse);
         this.headers = response.headers();
@@ -70,21 +66,8 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         this.sslSession = Optional.ofNullable(response.getSSLSession());
         this.uri = response.request().uri();
         this.version = response.version();
-        this.connection = connection(exch);
-        this.stream = null;
+        this.rawChannelProvider = RawChannelProvider.create(response, exch);
         this.body = body;
-    }
-
-    private HttpConnection connection(Exchange<?> exch) {
-        if (exch == null || exch.exchImpl == null) {
-            assert responseCode == 407;
-            return null; // case of Proxy 407
-        }
-        return exch.exchImpl.connection();
-    }
-
-    private ExchangeImpl<?> exchangeImpl() {
-        return exchange != null ? exchange.exchImpl : stream;
     }
 
     @Override
@@ -141,23 +124,11 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
      */
     @Override
     public synchronized RawChannel rawChannel() throws IOException {
-        if (rawchan == null) {
-            ExchangeImpl<?> exchImpl = exchangeImpl();
-            if (!(exchImpl instanceof Http1Exchange)) {
-                // RawChannel is only used for WebSocket - and WebSocket
-                // is not supported over HTTP/2 yet, so we should not come
-                // here. Getting a RawChannel over HTTP/2 might be supported
-                // in the future, but it would entail retrieving any left over
-                // bytes that might have been read but not consumed by the
-                // HTTP/2 connection.
-                throw new UnsupportedOperationException("RawChannel is not supported over HTTP/2");
-            }
-            // Http1Exchange may have some remaining bytes in its
-            // internal buffer.
-            Supplier<ByteBuffer> initial = ((Http1Exchange<?>)exchImpl)::drainLeftOverBytes;
-            rawchan = new RawChannelTube(connection, initial);
+        if (rawChannelProvider == null) {
+            throw new UnsupportedOperationException(
+                    "RawChannel is only supported for WebSocket creation");
         }
-        return rawchan;
+        return rawChannelProvider.rawChannel();
     }
 
     @Override
@@ -173,5 +144,62 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
           .append(") ")
           .append(statusCode());
         return sb.toString();
+    }
+
+    /**
+     * An auxiliary class used for RawChannel creation when creating a WebSocket.
+     * This avoids keeping around references to connection/exchange in the
+     * regular HttpResponse case. Only those responses corresponding to an
+     * initial WebSocket request have a RawChannelProvider.
+     */
+    private static final class RawChannelProvider implements RawChannel.Provider {
+        private final HttpConnection connection;
+        private final Exchange<?> exchange;
+        private RawChannel rawchan;
+        RawChannelProvider(HttpConnection conn, Exchange<?> exch) {
+            connection = conn;
+            exchange = exch;
+        }
+
+        static RawChannelProvider create(Response resp, Exchange<?> exch) {
+            if (resp.request().isWebSocket()) {
+                return new RawChannelProvider(connection(resp, exch), exch);
+            }
+            return null;
+        }
+
+        @Override
+        public synchronized RawChannel rawChannel() {
+            if (rawchan == null) {
+                ExchangeImpl<?> exchImpl = exchangeImpl();
+                if (!(exchImpl instanceof Http1Exchange)) {
+                    // RawChannel is only used for WebSocket - and WebSocket
+                    // is not supported over HTTP/2 yet, so we should not come
+                    // here. Getting a RawChannel over HTTP/2 might be supported
+                    // in the future, but it would entail retrieving any left over
+                    // bytes that might have been read but not consumed by the
+                    // HTTP/2 connection.
+                    throw new UnsupportedOperationException("RawChannel is not supported over HTTP/2");
+                }
+                // Http1Exchange may have some remaining bytes in its
+                // internal buffer.
+                Supplier<ByteBuffer> initial = ((Http1Exchange<?>) exchImpl)::drainLeftOverBytes;
+                rawchan = new RawChannelTube(connection, initial);
+            }
+            return rawchan;
+        }
+
+        private static HttpConnection connection(Response resp, Exchange<?> exch) {
+            if (exch == null || exch.exchImpl == null) {
+                assert resp.statusCode == 407;
+                return null; // case of Proxy 407
+            }
+            return exch.exchImpl.connection();
+        }
+
+        private ExchangeImpl<?> exchangeImpl() {
+            return exchange != null ? exchange.exchImpl : null;
+        }
+
     }
 }

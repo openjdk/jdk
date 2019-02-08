@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_MONITORCHUNK_HPP
-#define SHARE_VM_RUNTIME_MONITORCHUNK_HPP
+#ifndef SHARE_RUNTIME_MONITORCHUNK_HPP
+#define SHARE_RUNTIME_MONITORCHUNK_HPP
 
 #include "runtime/synchronizer.hpp"
 
@@ -62,4 +62,4 @@ class MonitorChunk: public CHeapObj<mtInternal> {
   bool contains(void* addr) const           { return (addr >= (void*) monitors()) && (addr <  (void*) (monitors() + number_of_monitors())); }
 };
 
-#endif // SHARE_VM_RUNTIME_MONITORCHUNK_HPP
+#endif // SHARE_RUNTIME_MONITORCHUNK_HPP

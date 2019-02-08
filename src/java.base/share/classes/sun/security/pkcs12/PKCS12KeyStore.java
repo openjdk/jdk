@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import javax.crypto.Mac;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.tools.KeyStoreUtil;
 import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
@@ -74,6 +75,7 @@ import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.provider.JavaKeyStore.JKS;
 import sun.security.util.KeyStoreDelegator;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
 
 
 /**
@@ -306,8 +308,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         Collections.synchronizedMap(new LinkedHashMap<String, Entry>());
 
     private ArrayList<KeyEntry> keyList = new ArrayList<KeyEntry>();
-    private LinkedHashMap<X500Principal, X509Certificate> certsMap =
-            new LinkedHashMap<X500Principal, X509Certificate>();
+    private List<X509Certificate> allCerts = new ArrayList<>();
     private ArrayList<CertEntry> certEntries = new ArrayList<CertEntry>();
 
     /**
@@ -2212,11 +2213,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         }
                     }
                     chain.add(cert);
-                    X500Principal issuerDN = cert.getIssuerX500Principal();
-                    if (issuerDN.equals(cert.getSubjectX500Principal())) {
+                    if (KeyStoreUtil.isSelfSigned(cert)) {
                         break;
                     }
-                    cert = certsMap.get(issuerDN);
+                    cert = findIssuer(cert);
                 }
                 /* Update existing KeyEntry in entries table */
                 if (chain.size() > 0) {
@@ -2231,23 +2231,78 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (debug != null) {
-            if (privateKeyCount > 0) {
-                debug.println("Loaded " + privateKeyCount +
-                    " protected private key(s)");
-            }
-            if (secretKeyCount > 0) {
-                debug.println("Loaded " + secretKeyCount +
-                    " protected secret key(s)");
-            }
-            if (certificateCount > 0) {
-                debug.println("Loaded " + certificateCount +
-                    " certificate(s)");
-            }
+            debug.println("PKCS12KeyStore load: private key count: " +
+                    privateKeyCount + ". secret key count: " + secretKeyCount +
+                    ". certificate count: " + certificateCount);
         }
 
         certEntries.clear();
-        certsMap.clear();
+        allCerts.clear();
         keyList.clear();
+    }
+
+    /**
+     * Find the issuer of input in allCerts. If the input has an
+     * AuthorityKeyIdentifier extension and the keyId inside matches
+     * the keyId of the SubjectKeyIdentifier of a cert. This cert is
+     * returned. Otherwise, a cert whose subjectDN is the same as the
+     * input's issuerDN is returned.
+     *
+     * @param input the input certificate
+     * @return the isssuer, or null if none matches
+     */
+    private X509Certificate findIssuer(X509Certificate input) {
+
+        X509Certificate fallback = null; // the DN match
+        X500Principal issuerPrinc = input.getIssuerX500Principal();
+
+        // AuthorityKeyIdentifier value encoded as an OCTET STRING
+        byte[] issuerIdExtension = input.getExtensionValue("2.5.29.35");
+        byte[] issuerId = null;
+
+        if (issuerIdExtension != null) {
+            try {
+                issuerId = new AuthorityKeyIdentifierExtension(
+                            false,
+                            new DerValue(issuerIdExtension).getOctetString())
+                        .getEncodedKeyIdentifier();
+            } catch (IOException e) {
+                // ignored. issuerId is still null
+            }
+        }
+
+        for (X509Certificate cert : allCerts) {
+            if (cert.getSubjectX500Principal().equals(issuerPrinc)) {
+                if (issuerId != null) {
+                    // SubjectKeyIdentifier value encoded as an OCTET STRING
+                    byte[] subjectIdExtension = cert.getExtensionValue("2.5.29.14");
+                    byte[] subjectId = null;
+                    if (subjectIdExtension != null) {
+                        try {
+                            subjectId = new DerValue(subjectIdExtension)
+                                    .getOctetString();
+                        } catch (IOException e) {
+                            // ignored. issuerId is still null
+                        }
+                    }
+                    if (subjectId != null) {
+                        if (Arrays.equals(issuerId, subjectId)) {
+                            // keyId exact match!
+                            return cert;
+                        } else {
+                            // Different keyId. Not a fallback.
+                            continue;
+                        }
+                    } else {
+                        // A DN match with no subjectId
+                        fallback = cert;
+                    }
+                } else { // if there is no issuerId, return the 1st DN match
+                    return cert;
+                }
+            }
+        }
+        return fallback;
     }
 
     /**
@@ -2507,12 +2562,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 } else {
                     certEntries.add(new CertEntry(cert, keyId, alias));
                 }
-                X500Principal subjectDN = cert.getSubjectX500Principal();
-                if (subjectDN != null) {
-                    if (!certsMap.containsKey(subjectDN)) {
-                        certsMap.put(subjectDN, cert);
-                    }
-                }
+                allCerts.add(cert);
             }
         }
     }
@@ -2525,6 +2575,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     /*
      * PKCS12 permitted first 24 bytes:
      *
+     * 30 80 02 01 03 30 80 06 09 2A 86 48 86 F7 0D 01 07 01 A0 80 24 80 04 --
      * 30 82 -- -- 02 01 03 30 82 -- -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 8-
      * 30 -- 02 01 03 30 -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 -- 04 -- -- --
      * 30 81 -- 02 01 03 30 81 -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 81 -- 04
@@ -2536,6 +2587,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
 
     private static final long[][] PKCS12_HEADER_PATTERNS = {
+        { 0x3080020103308006L, 0x092A864886F70D01L, 0x0701A08024800400L },
         { 0x3082000002010330L, 0x82000006092A8648L, 0x86F70D010701A080L },
         { 0x3000020103300006L, 0x092A864886F70D01L, 0x0701A00004000000L },
         { 0x3081000201033081L, 0x0006092A864886F7L, 0x0D010701A0810004L },
@@ -2547,6 +2599,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     };
 
     private static final long[][] PKCS12_HEADER_MASKS = {
+        { 0xFFFFFFFFFFFFFFFFL, 0xFFFFFFFFFFFFFFFFL, 0xFFFFFFFFFFFFFF00L },
         { 0xFFFF0000FFFFFFFFL, 0xFF0000FFFFFFFFFFL, 0xFFFFFFFFFFFFFFF0L },
         { 0xFF00FFFFFFFF00FFL, 0xFFFFFFFFFFFFFFFFL, 0xFFFFFF00FF000000L },
         { 0xFFFF00FFFFFFFFFFL, 0x00FFFFFFFFFFFFFFL, 0xFFFFFFFFFFFF00FFL },

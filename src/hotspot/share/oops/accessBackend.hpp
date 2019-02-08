@@ -1192,7 +1192,7 @@ namespace AccessInternal {
     DecayedT decayed_value = value;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators |
                                              (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
-                                              INTERNAL_CONVERT_COMPRESSED_OOP : INTERNAL_EMPTY)>::value;
+                                              INTERNAL_CONVERT_COMPRESSED_OOP : DECORATORS_NONE)>::value;
     PreRuntimeDispatch::store_at<expanded_decorators>(base, offset, decayed_value);
   }
 
@@ -1221,7 +1221,7 @@ namespace AccessInternal {
     // Potentially remember if we need compressed oop awareness
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators |
                                              (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
-                                              INTERNAL_CONVERT_COMPRESSED_OOP : INTERNAL_EMPTY)>::value;
+                                              INTERNAL_CONVERT_COMPRESSED_OOP : DECORATORS_NONE)>::value;
     return PreRuntimeDispatch::load_at<expanded_decorators, DecayedT>(base, offset);
   }
 
@@ -1253,7 +1253,7 @@ namespace AccessInternal {
     // Potentially remember that we need compressed oop awareness
     const DecoratorSet final_decorators = expanded_decorators |
                                           (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
-                                           INTERNAL_CONVERT_COMPRESSED_OOP : INTERNAL_EMPTY);
+                                           INTERNAL_CONVERT_COMPRESSED_OOP : DECORATORS_NONE);
     return PreRuntimeDispatch::atomic_cmpxchg_at<final_decorators>(new_decayed_value, base,
                                                                    offset, compare_decayed_value);
   }
@@ -1278,7 +1278,7 @@ namespace AccessInternal {
     // atomic_xchg is only available in SEQ_CST flavour.
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | MO_SEQ_CST |
                                              (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
-                                              INTERNAL_CONVERT_COMPRESSED_OOP : INTERNAL_EMPTY)>::value;
+                                              INTERNAL_CONVERT_COMPRESSED_OOP : DECORATORS_NONE)>::value;
     return PreRuntimeDispatch::atomic_xchg_at<expanded_decorators>(new_decayed_value, base, offset);
   }
 

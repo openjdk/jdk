@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_VM_THREAD_LINUX_S390_HPP
-#define OS_CPU_LINUX_S390_VM_THREAD_LINUX_S390_HPP
+#ifndef OS_CPU_LINUX_S390_THREAD_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_THREAD_LINUX_S390_HPP
 
  private:
 
@@ -50,4 +50,4 @@
 
   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
 
-#endif // OS_CPU_LINUX_S390_VM_THREAD_LINUX_S390_HPP
+#endif // OS_CPU_LINUX_S390_THREAD_LINUX_S390_HPP

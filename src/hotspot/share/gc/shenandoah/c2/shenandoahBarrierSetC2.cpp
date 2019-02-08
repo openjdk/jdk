@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,9 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "opto/arraycopynode.hpp"
@@ -775,11 +777,19 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
-      load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+      if (ShenandoahCASBarrier) {
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+      } else {
+        load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+      }
     } else
 #endif
     {
-      load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+      if (ShenandoahCASBarrier) {
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+      } else {
+        load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+      }
     }
 
     access.set_raw_access(load_store);
@@ -813,18 +823,34 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
-      if (is_weak_cas) {
-        load_store = kit->gvn().transform(new ShenandoahWeakCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+      if (ShenandoahCASBarrier) {
+        if (is_weak_cas) {
+          load_store = kit->gvn().transform(new ShenandoahWeakCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        } else {
+          load_store = kit->gvn().transform(new ShenandoahCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        }
       } else {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        if (is_weak_cas) {
+          load_store = kit->gvn().transform(new WeakCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        } else {
+          load_store = kit->gvn().transform(new CompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        }
       }
     } else
 #endif
     {
-      if (is_weak_cas) {
-        load_store = kit->gvn().transform(new ShenandoahWeakCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+      if (ShenandoahCASBarrier) {
+        if (is_weak_cas) {
+          load_store = kit->gvn().transform(new ShenandoahWeakCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        } else {
+          load_store = kit->gvn().transform(new ShenandoahCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        }
       } else {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        if (is_weak_cas) {
+          load_store = kit->gvn().transform(new WeakCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        } else {
+          load_store = kit->gvn().transform(new CompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        }
       }
     }
     access.set_raw_access(load_store);

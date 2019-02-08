@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,17 @@ package sun.awt;
 
 import java.awt.AWTError;
 import java.awt.GraphicsDevice;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-
-import java.util.*;
+import java.util.Enumeration;
 
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
-import sun.util.logging.PlatformLogger;
 import sun.java2d.xr.XRSurfaceData;
+import sun.util.logging.PlatformLogger;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -290,32 +287,6 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     private static native boolean pRunningXinerama();
-    private static native Point getXineramaCenterPoint();
-
-    /**
-     * Override for Xinerama case: call new Solaris API for getting the correct
-     * centering point from the windowing system.
-     */
-    public Point getCenterPoint() {
-        if (runningXinerama()) {
-            Point p = getXineramaCenterPoint();
-            if (p != null) {
-                return p;
-            }
-        }
-        return super.getCenterPoint();
-    }
-
-    /**
-     * Override for Xinerama case
-     */
-    public Rectangle getMaximumWindowBounds() {
-        if (runningXinerama()) {
-            return getXineramaWindowBounds();
-        } else {
-            return super.getMaximumWindowBounds();
-        }
-    }
 
     public boolean runningXinerama() {
         if (xinerState == null) {
@@ -327,105 +298,6 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             }
         }
         return xinerState.booleanValue();
-    }
-
-    /**
-     * Return the bounds for a centered Window on a system running in Xinerama
-     * mode.
-     *
-     * Calculations are based on the assumption of a perfectly rectangular
-     * display area (display edges line up with one another, and displays
-     * have consistent width and/or height).
-     *
-     * The bounds to return depend on the arrangement of displays and on where
-     * Windows are to be centered.  There are two common situations:
-     *
-     * 1) The center point lies at the center of the combined area of all the
-     *    displays.  In this case, the combined area of all displays is
-     *    returned.
-     *
-     * 2) The center point lies at the center of a single display.  In this case
-     *    the user most likely wants centered Windows to be constrained to that
-     *    single display.  The boundaries of the one display are returned.
-     *
-     * It is possible for the center point to be at both the center of the
-     * entire display space AND at the center of a single monitor (a square of
-     * 9 monitors, for instance).  In this case, the entire display area is
-     * returned.
-     *
-     * Because the center point is arbitrarily settable by the user, it could
-     * fit neither of the cases above.  The fallback case is to simply return
-     * the combined area for all screens.
-     */
-    protected Rectangle getXineramaWindowBounds() {
-        Point center = getCenterPoint();
-        Rectangle unionRect, tempRect;
-        GraphicsDevice[] gds = getScreenDevices();
-        Rectangle centerMonitorRect = null;
-        int i;
-
-        // if center point is at the center of all monitors
-        // return union of all bounds
-        //
-        //  MM*MM     MMM       M
-        //            M*M       *
-        //            MMM       M
-
-        // if center point is at center of a single monitor (but not of all
-        // monitors)
-        // return bounds of single monitor
-        //
-        // MMM         MM
-        // MM*         *M
-
-        // else, center is in some strange spot (such as on the border between
-        // monitors), and we should just return the union of all monitors
-        //
-        // MM          MMM
-        // MM          MMM
-
-        unionRect = getUsableBounds(gds[0]);
-
-        for (i = 0; i < gds.length; i++) {
-            tempRect = getUsableBounds(gds[i]);
-            if (centerMonitorRect == null &&
-                // add a pixel or two for fudge-factor
-                (tempRect.width / 2) + tempRect.x > center.x - 1 &&
-                (tempRect.height / 2) + tempRect.y > center.y - 1 &&
-                (tempRect.width / 2) + tempRect.x < center.x + 1 &&
-                (tempRect.height / 2) + tempRect.y < center.y + 1) {
-                centerMonitorRect = tempRect;
-            }
-            unionRect = unionRect.union(tempRect);
-        }
-
-        // first: check for center of all monitors (video wall)
-        // add a pixel or two for fudge-factor
-        if ((unionRect.width / 2) + unionRect.x > center.x - 1 &&
-            (unionRect.height / 2) + unionRect.y > center.y - 1 &&
-            (unionRect.width / 2) + unionRect.x < center.x + 1 &&
-            (unionRect.height / 2) + unionRect.y < center.y + 1) {
-
-            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
-                screenLog.finer("Video Wall: center point is at center of all displays.");
-            }
-            return unionRect;
-        }
-
-        // next, check if at center of one monitor
-        if (centerMonitorRect != null) {
-            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
-                screenLog.finer("Center point at center of a particular " +
-                                "monitor, but not of the entire virtual display.");
-            }
-            return centerMonitorRect;
-        }
-
-        // otherwise, the center is at some weird spot: return unionRect
-        if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
-            screenLog.finer("Center point is somewhere strange - return union of all bounds.");
-        }
-        return unionRect;
     }
 
     /**

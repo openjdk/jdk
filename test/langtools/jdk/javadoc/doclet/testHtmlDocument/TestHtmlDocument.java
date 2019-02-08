@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 6851834
  * @summary This test verifies the HTML document generation for javadoc output.
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.util
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @author Bhavesh Patel
  * @run main TestHtmlDocument
  */
@@ -43,6 +43,8 @@ import static jdk.javadoc.internal.doclets.toolkit.util.DocletConstants.NL;
  * The class reads each file, complete with newlines, into a string to easily
  * compare the existing markup with the generated markup.
  */
+import javadoc.tester.JavadocTester;
+
 public class TestHtmlDocument extends JavadocTester {
 
     // Entry point
@@ -52,7 +54,7 @@ public class TestHtmlDocument extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         checking("markup");
         // Check whether the generated markup is same as the existing markup.
         String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);
@@ -69,7 +71,6 @@ public class TestHtmlDocument extends JavadocTester {
     // Generate the HTML output using the HTML document generation within doclet.
     public static String generateHtmlTree() {
         // Document type for the HTML document
-        DocType htmlDocType = DocType.HTML4_TRANSITIONAL;
         HtmlTree html = new HtmlTree(HtmlTag.HTML);
         HtmlTree head = new HtmlTree(HtmlTag.HEAD);
         HtmlTree title = new HtmlTree(HtmlTag.TITLE);
@@ -142,7 +143,7 @@ public class TestHtmlDocument extends JavadocTester {
         HtmlTree hr = new HtmlTree(HtmlTag.HR);
         body.addContent(hr);
         html.addContent(body);
-        HtmlDocument htmlDoc = new HtmlDocument(htmlDocType, html);
+        HtmlDocument htmlDoc = new HtmlDocument(html);
         return htmlDoc.toString();
     }
 }

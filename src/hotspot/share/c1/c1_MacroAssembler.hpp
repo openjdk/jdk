@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_MACROASSEMBLER_HPP
-#define SHARE_VM_C1_C1_MACROASSEMBLER_HPP
+#ifndef SHARE_C1_C1_MACROASSEMBLER_HPP
+#define SHARE_C1_C1_MACROASSEMBLER_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "utilities/macros.hpp"
@@ -93,4 +93,4 @@ class StubAssembler: public C1_MacroAssembler {
   void epilogue();
 };
 
-#endif // SHARE_VM_C1_C1_MACROASSEMBLER_HPP
+#endif // SHARE_C1_C1_MACROASSEMBLER_HPP

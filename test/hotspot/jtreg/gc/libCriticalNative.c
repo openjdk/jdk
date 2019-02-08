@@ -23,7 +23,7 @@
 
 #include "jni.h"
 
-JNIEXPORT jlong JNICALL JavaCritical_CriticalNativeStress_sum1
+JNIEXPORT jlong JNICALL JavaCritical_gc_CriticalNative_sum1
   (jint length, jlong* a) {
   jlong sum = 0;
   jint index;
@@ -34,7 +34,7 @@ JNIEXPORT jlong JNICALL JavaCritical_CriticalNativeStress_sum1
   return sum;
 }
 
-JNIEXPORT jlong JNICALL  JavaCritical_CriticalNativeStress_sum2
+JNIEXPORT jlong JNICALL  JavaCritical_gc_CriticalNative_sum2
   (jlong a1, jint a2_length, jint* a2, jint a4_length, jint* a4, jint a6_length, jlong* a6, jint a8_length, jint* a8) {
   jlong sum = a1;
   jint index;
@@ -56,7 +56,7 @@ JNIEXPORT jlong JNICALL  JavaCritical_CriticalNativeStress_sum2
   return sum;
 }
 
-JNIEXPORT jlong JNICALL Java_CriticalNativeStress_sum1
+JNIEXPORT jlong JNICALL Java_gc_CriticalNative_sum1
   (JNIEnv *env, jclass jclazz, jlongArray a) {
   jlong sum = 0;
   jsize len = (*env)->GetArrayLength(env, a);
@@ -70,7 +70,7 @@ JNIEXPORT jlong JNICALL Java_CriticalNativeStress_sum1
   return sum;
 }
 
-JNIEXPORT jlong JNICALL Java_CriticalNativeStress_sum2
+JNIEXPORT jlong JNICALL Java_gc_CriticalNative_sum2
   (JNIEnv *env, jclass jclazz, jlong a1, jintArray a2, jintArray a3, jlongArray a4, jintArray a5) {
   jlong sum = a1;
   jsize index;
@@ -112,12 +112,12 @@ JNIEXPORT jlong JNICALL Java_CriticalNativeStress_sum2
 }
 
 
-JNIEXPORT jboolean JNICALL JavaCritical_CriticalNativeArgs_isNull
+JNIEXPORT jboolean JNICALL JavaCritical_gc_CriticalNative_isNull
   (jint length, jint* a) {
   return (a == NULL) && (length == 0);
 }
 
-JNIEXPORT jboolean JNICALL Java_CriticalNativeArgs_isNull
+JNIEXPORT jboolean JNICALL Java_gc_CriticalNative_isNull
   (JNIEnv *env, jclass jclazz, jintArray a) {
   jboolean is_null;
   jsize len = (*env)->GetArrayLength(env, a);

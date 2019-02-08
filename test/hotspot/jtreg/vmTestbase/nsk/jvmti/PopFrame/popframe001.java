@@ -39,7 +39,6 @@ public class popframe001 {
     static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
 
-    static boolean DEBUG_MODE = false;
     static volatile boolean popFdone = false;
     static volatile int totRes = PASSED;
     private PrintStream out;
@@ -58,9 +57,9 @@ public class popframe001 {
         }
     }
 
-    native static int doPopFrame(int vrb, popFrameCls popFrameClsThr);
-    native static int suspThread(int vrb, popFrameCls popFrameClsThr);
-    native static int resThread(int vrb, popFrameCls popFrameClsThr);
+    native static int doPopFrame(popFrameCls popFrameClsThr);
+    native static int suspThread(popFrameCls popFrameClsThr);
+    native static int resThread(popFrameCls popFrameClsThr);
 
     public static void main(String[] argv) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -76,10 +75,6 @@ public class popframe001 {
         int retValue = 0;
 
         this.out = out;
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
 
         popFrameClsThr = new popFrameCls("Tested Thread");
         startingBarrier = new Wicket();
@@ -90,35 +85,26 @@ public class popframe001 {
         synchronized (barrier) {
         }
 
-        if (DEBUG_MODE) {
-            out.println("Going to suspend the thread...");
-            retValue = suspThread(1, popFrameClsThr);
-        } else
-            retValue = suspThread(0, popFrameClsThr);
+        out.println("Going to suspend the thread...");
+        retValue = suspThread(popFrameClsThr);
         if (retValue != PASSED) {
             out.println("TEST: failed to suspend thread");
             return FAILED;
         }
 
         // pop a frame of the child thread
-        if (DEBUG_MODE) {
-            out.println("Going to pop a frame...");
-            retValue = doPopFrame(1, popFrameClsThr);
-        } else
-            retValue = doPopFrame(0, popFrameClsThr);
+        out.println("Going to pop a frame...");
+        retValue = doPopFrame(popFrameClsThr);
         popFdone = true;
         popFrameClsThr.letItGo();
         if (retValue != PASSED) {
             out.println("TEST: failed to pop frame");
-            resThread(0, popFrameClsThr);
+            resThread(popFrameClsThr);
             return FAILED;
         }
 
-        if (DEBUG_MODE) {
-            out.println("Going to resume the thread...");
-            retValue = resThread(1, popFrameClsThr);
-        } else
-            retValue = resThread(0, popFrameClsThr);
+        out.println("Going to resume the thread...");
+        retValue = resThread(popFrameClsThr);
         if (retValue != PASSED) {
             out.println("TEST: failed to resume thread");
             return FAILED;
@@ -143,30 +129,22 @@ public class popframe001 {
 
         public void run() {
             activeMethod();
-            if (DEBUG_MODE)
-                out.println("popFrameCls (" + this +
-                    "): exiting...");
+            out.println("popFrameCls (" + this + "): exiting...");
         }
 
         public void activeMethod() {
             boolean compl = true; // complain in a finally block
 
             if (popframe001.popFdone) { // popping has been done
-                if (DEBUG_MODE)
-                    out.println("popFrameCls (" + this +
-                        "): enter activeMethod() after popping");
+                out.println("popFrameCls (" + this + "): enter activeMethod() after popping");
                 return;
             }
             try {
                 // notify the main thread
                 synchronized (popframe001.barrier) {
-                    if (DEBUG_MODE)
-                        out.println("popFrameCls (" + this +
-                            "): notifying main thread");
+                    out.println("popFrameCls (" + this + "): notifying main thread");
                     popframe001.startingBarrier.unlock();
-                    if (DEBUG_MODE)
-                        out.println("popFrameCls (" + this +
-                            "): inside activeMethod()");
+                    out.println("popFrameCls (" + this + "): inside activeMethod()");
                 }
                 // loop until the main thread pops us
                 int i = 0;

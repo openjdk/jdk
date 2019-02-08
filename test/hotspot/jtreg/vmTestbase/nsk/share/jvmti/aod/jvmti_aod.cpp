@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ jthread nsk_jvmti_aod_createThread(JNIEnv *jni) {
         return NULL;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = jni->GetMethodID(klass, "<init>", "()V"))  != NULL)) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "()V")) != NULL)) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
         return NULL;
     }
@@ -199,7 +199,7 @@ jthread nsk_jvmti_aod_createThreadWithName(JNIEnv *jni, const char* threadName) 
         return NULL;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = jni->GetMethodID(klass, "<init>", "(Ljava/lang/String;)V"))  != NULL)) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "(Ljava/lang/String;)V")) != NULL)) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
         return NULL;
     }

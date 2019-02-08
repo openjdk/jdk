@@ -93,15 +93,11 @@ public class SingleIndexWriter extends AbstractIndexWriter {
     protected void generateIndexFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : body;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            body.addContent(htmlTree);
-        }
+        body.addContent(htmlTree);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         elements = new TreeSet<>(indexbuilder.getIndexMap().keySet());
@@ -118,18 +114,12 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             }
         }
         addLinksForIndexes(divTree);
-        body.addContent((configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN(divTree)
-                : divTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            htmlTree = HtmlTree.FOOTER();
-        }
+        body.addContent(HtmlTree.MAIN(divTree));
+        htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(htmlTree);
-        }
+        body.addContent(htmlTree);
         createSearchIndexFiles();
         printHtmlDocument(null, true, body);
     }

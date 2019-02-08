@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLPermission;
 import java.security.AccessControlContext;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -125,6 +127,10 @@ final class Exchange<T> {
         return request;
     }
 
+    public Optional<Duration> remainingConnectTimeout() {
+        return multi.remainingConnectTimeout();
+    }
+
     HttpClientImpl client() {
         return client;
     }
@@ -149,6 +155,13 @@ final class Exchange<T> {
                 }
             }
         }
+    }
+
+    // Called for 204 response - when no body is permitted
+    // This is actually only needed for HTTP/1.1 in order
+    // to return the connection to the pool (or close it)
+    void nullBody(HttpResponse<T> resp, Throwable t) {
+        exchImpl.nullBody(resp, t);
     }
 
     public CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler) {

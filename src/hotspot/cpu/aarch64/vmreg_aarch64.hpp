@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_VMREG_AARCH64_HPP
-#define CPU_AARCH64_VM_VMREG_AARCH64_HPP
+#ifndef CPU_AARCH64_VMREG_AARCH64_HPP
+#define CPU_AARCH64_VMREG_AARCH64_HPP
 
 inline bool is_Register() {
   return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
@@ -52,4 +52,4 @@ inline   bool is_concrete() {
   return is_even(value());
 }
 
-#endif // CPU_AARCH64_VM_VMREG_AARCH64_HPP
+#endif // CPU_AARCH64_VMREG_AARCH64_HPP

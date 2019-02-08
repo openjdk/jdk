@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,15 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_STACKVALUE_HPP
-#define SHARE_VM_RUNTIME_STACKVALUE_HPP
+#ifndef SHARE_RUNTIME_STACKVALUE_HPP
+#define SHARE_RUNTIME_STACKVALUE_HPP
 
 #include "code/location.hpp"
 #include "runtime/handles.hpp"
+
+class BasicLock;
+class RegisterMap;
+class ScopeValue;
 
 class StackValue : public ResourceObj {
  private:
@@ -113,4 +117,4 @@ class StackValue : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_RUNTIME_STACKVALUE_HPP
+#endif // SHARE_RUNTIME_STACKVALUE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestInvalidateArrayCopy
  * @bug 8182050
@@ -28,7 +30,7 @@
  * @requires vm.gc.G1
  * @requires vm.debug
  * @key gc
- * @run main/othervm -XX:NewSize=1M -Xlog:gc -XX:MaxNewSize=1m -XX:-UseTLAB -XX:OldSize=63M -XX:MaxHeapSize=64M TestInvalidateArrayCopy
+ * @run main/othervm -XX:NewSize=1M -Xlog:gc -XX:MaxNewSize=1m -XX:-UseTLAB -XX:OldSize=63M -XX:MaxHeapSize=64M gc.g1.TestInvalidateArrayCopy
  */
 
 // The test allocates zero-sized arrays of j.l.O and tries to arraycopy random data into it so

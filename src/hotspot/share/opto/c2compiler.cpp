@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/compile.hpp"
@@ -439,6 +440,18 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_isWhitespace:
     if (!Matcher::match_rule_supported(Op_Whitespace)) return false;
+    break;
+  case vmIntrinsics::_maxF:
+    if (!Matcher::match_rule_supported(Op_MaxF)) return false;
+    break;
+  case vmIntrinsics::_minF:
+    if (!Matcher::match_rule_supported(Op_MinF)) return false;
+    break;
+  case vmIntrinsics::_maxD:
+    if (!Matcher::match_rule_supported(Op_MaxD)) return false;
+    break;
+  case vmIntrinsics::_minD:
+    if (!Matcher::match_rule_supported(Op_MinD)) return false;
     break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:

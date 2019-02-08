@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug      6786688 8008164 8162363 8169819 8183037 8182765 8184205
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestHtmlTableTags
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlTableTags extends JavadocTester {
 
@@ -46,7 +48,7 @@ public class TestHtmlTableTags extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
@@ -57,19 +59,6 @@ public class TestHtmlTableTags extends JavadocTester {
         checkHtmlTableTag();
         checkHtmlTableCaptions();
         checkHtmlTableHeaders();
-    }
-
-    @Test
-    void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-use",
-                "--frames",
-                "pkg1", "pkg2");
-        checkExit(Exit.OK);
-
-        checkHtmlTableSummaries();
     }
 
     /*

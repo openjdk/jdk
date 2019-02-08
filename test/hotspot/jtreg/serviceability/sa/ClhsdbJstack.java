@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 /**
  * @test
@@ -34,7 +34,7 @@ import jdk.test.lib.Platform;
  * @summary Test clhsdb Jstack command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbJstack
+ * @run main/othervm/timeout=480 ClhsdbJstack
  */
 
 public class ClhsdbJstack {
@@ -56,14 +56,16 @@ public class ClhsdbJstack {
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("jstack -v", List.of(
                     "No deadlocks found",
-                    "Common-Cleaner",
+                    "Common\\-Cleaner",
                     "Signal Dispatcher",
-                    "java.lang.ref.Finalizer$FinalizerThread.run",
+                    "java.lang.ref.Finalizer\\$FinalizerThread.run",
                     "java.lang.ref.Reference",
-                    "Method*",
+                    "Method\\*",
                     "LingeredApp.main"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
+        } catch (SkippedException se) {
+            throw se;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR (with -Xcomp=" + withXcomp + ") " + ex, ex);
         } finally {

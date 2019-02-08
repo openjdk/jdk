@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2011,13 +2011,6 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
-  struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
-
-  return ts;
-}
-
 extern "C" {
   typedef void (*sa_handler_t)(int);
   typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
@@ -2844,43 +2837,6 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-// Read calls from inside the vm need to perform state transitions
-size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
-  ThreadBlockInVM tbiv(thread);
-  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
-  size_t res;
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
-  ThreadBlockInVM tbiv(thread);
-  RESTARTABLE(::pread(fd, buf, (size_t) nBytes, offset), res);
-  return res;
-}
-
-size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
-  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
-void os::naked_short_sleep(jlong ms) {
-  assert(ms < 1000, "Un-interruptable sleep, short time use only");
-
-  // usleep is deprecated and removed from POSIX, in favour of nanosleep, but
-  // Solaris requires -lrt for this.
-  usleep((ms * 1000));
-
-  return;
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -3530,7 +3486,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2000 * NANOSECS_PER_MILLISEC))) {
+    if (sr_semaphore.timedwait(2000)) {
       break;
     } else {
       // timeout
@@ -3564,7 +3520,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }
@@ -4149,6 +4105,9 @@ void os::init(void) {
     Solaris::_pthread_setname_np =  // from 11.3
         (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
   }
+
+  // Shared Posix initialization
+  os::Posix::init();
 }
 
 // To install functions for atexit system call
@@ -4254,6 +4213,9 @@ jint os::init_2(void) {
 
   // Init pset_loadavg function pointer
   init_pset_getloadavg_ptr();
+
+  // Shared Posix initialization
+  os::Posix::init_2();
 
   return JNI_OK;
 }
@@ -5228,6 +5190,72 @@ void Parker::unpark() {
     status = os::Solaris::cond_signal(_cond);
     assert(status == 0, "invariant");
   }
+}
+
+// Platform Monitor implementation
+
+os::PlatformMonitor::PlatformMonitor() {
+  int status = os::Solaris::cond_init(&_cond);
+  assert_status(status == 0, status, "cond_init");
+  status = os::Solaris::mutex_init(&_mutex);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  int status = os::Solaris::cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
+  status = os::Solaris::mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+void os::PlatformMonitor::lock() {
+  int status = os::Solaris::mutex_lock(&_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+}
+
+void os::PlatformMonitor::unlock() {
+  int status = os::Solaris::mutex_unlock(&_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+}
+
+bool os::PlatformMonitor::try_lock() {
+  int status = os::Solaris::mutex_trylock(&_mutex);
+  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
+  return status == 0;
+}
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  if (millis > 0) {
+    timestruc_t abst;
+    int ret = OS_TIMEOUT;
+    compute_abstime(&abst, millis);
+    int status = os::Solaris::cond_timedwait(&_cond, &_mutex, &abst);
+    assert_status(status == 0 || status == EINTR ||
+                  status == ETIME || status == ETIMEDOUT,
+                  status, "cond_timedwait");
+    // EINTR acts as spurious wakeup - which is permitted anyway
+    if (status == 0 || status == EINTR) {
+      ret = OS_OK;
+    }
+    return ret;
+  } else {
+    int status = os::Solaris::cond_wait(&_cond, &_mutex);
+    assert_status(status == 0 || status == EINTR,
+                  status, "cond_wait");
+    return OS_OK;
+  }
+}
+
+void os::PlatformMonitor::notify() {
+  int status = os::Solaris::cond_signal(&_cond);
+  assert_status(status == 0, status, "cond_signal");
+}
+
+void os::PlatformMonitor::notify_all() {
+  int status = os::Solaris::cond_broadcast(&_cond);
+  assert_status(status == 0, status, "cond_broadcast");
 }
 
 extern char** environ;

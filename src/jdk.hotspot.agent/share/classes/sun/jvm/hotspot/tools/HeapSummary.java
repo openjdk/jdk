@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,8 @@ public class HeapSummary extends Tool {
       if (f != null) {
          if (f.isBool()) {
             return f.getBool()? 1L : 0L;
+         } else if (f.isUIntx() || f.isSizet() || f.isUint64t()) {
+            return Long.parseUnsignedLong(f.getValue());
          } else {
             return Long.parseLong(f.getValue());
          }

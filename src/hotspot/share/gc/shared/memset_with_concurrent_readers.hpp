@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SRC_SHARE_VM_GC_SHARED_MEMSETWITHCONCURRENTREADERS_HPP
-#define SRC_SHARE_VM_GC_SHARED_MEMSETWITHCONCURRENTREADERS_HPP
+#ifndef SHARE_GC_SHARED_MEMSET_WITH_CONCURRENT_READERS_HPP
+#define SHARE_GC_SHARED_MEMSET_WITH_CONCURRENT_READERS_HPP
 
 #include "utilities/macros.hpp"
 
@@ -47,4 +47,4 @@ inline void memset_with_concurrent_readers(void* to, int value, size_t size) {
 
 #endif // End of target dispatch.
 
-#endif // SRC_SHARE_VM_GC_SHARED_MEMSETWITHCONCURRENTREADERS_HPP
+#endif // SHARE_GC_SHARED_MEMSET_WITH_CONCURRENT_READERS_HPP

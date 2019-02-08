@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_MALLOC_SITE_TABLE_HPP
-#define SHARE_VM_SERVICES_MALLOC_SITE_TABLE_HPP
+#ifndef SHARE_SERVICES_MALLOCSITETABLE_HPP
+#define SHARE_SERVICES_MALLOCSITETABLE_HPP
 
 #if INCLUDE_NMT
 
@@ -37,15 +37,12 @@
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
 class MallocSite : public AllocationSite<MemoryCounter> {
- private:
-  MEMFLAGS _flags;
-
  public:
   MallocSite() :
-    AllocationSite<MemoryCounter>(NativeCallStack::empty_stack()), _flags(mtNone) {}
+    AllocationSite<MemoryCounter>(NativeCallStack::empty_stack(), mtNone) {}
 
   MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
-    AllocationSite<MemoryCounter>(stack), _flags(flags) {}
+    AllocationSite<MemoryCounter>(stack, flags) {}
 
 
   void allocate(size_t size)      { data()->allocate(size);   }
@@ -55,7 +52,6 @@ class MallocSite : public AllocationSite<MemoryCounter> {
   size_t size()  const { return peek()->size(); }
   // The number of calls were made
   size_t count() const { return peek()->count(); }
-  MEMFLAGS flags() const  { return (MEMFLAGS)_flags; }
 };
 
 // Malloc site hashtable entry
@@ -271,4 +267,4 @@ class MallocSiteTable : AllStatic {
 };
 
 #endif // INCLUDE_NMT
-#endif // SHARE_VM_SERVICES_MALLOC_SITE_TABLE_HPP
+#endif // SHARE_SERVICES_MALLOCSITETABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.awt.desktop;
 /**
  * Implementors receive notification as the system is entering sleep, and after
  * the system wakes.
- *
+ * <p>
  * This notification is useful for disconnecting from network services prior to
  * sleep, or re-establishing a connection if the network configuration has
  * changed during sleep.
@@ -42,14 +42,14 @@ public interface SystemSleepListener extends SystemEventListener {
      * delivered prior to the actual system sleep, and may be processed after
      * the corresponding wake has occurred.
      *
-     * @param e the system sleep event
+     * @param  e the system sleep event
      */
-    public void systemAboutToSleep(final SystemSleepEvent e);
+    public void systemAboutToSleep(SystemSleepEvent e);
 
     /**
      * Called after the system has awoken from sleeping.
      *
-     * @param e the system sleep event
+     * @param  e the system sleep event
      */
-    public void systemAwoke(final SystemSleepEvent e);
+    public void systemAwoke(SystemSleepEvent e);
 }

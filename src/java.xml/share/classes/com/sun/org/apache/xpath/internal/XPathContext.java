@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,7 +49,6 @@ import java.util.Stack;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.URIResolver;
-import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.XMLReader;
 
 /**
@@ -57,7 +56,7 @@ import org.xml.sax.XMLReader;
  *
  * <p>This class extends DTMManager but does not directly implement it.</p>
  * @xsl.usage advanced
- * @LastModified: Oct 2017
+ * @LastModified: Jan 2019
  */
 public class XPathContext extends DTMManager // implements ExpressionContext
 {
@@ -481,33 +480,6 @@ public class XPathContext extends DTMManager // implements ExpressionContext
   public final void setVarStack(VariableStack varStack)
   {
     m_variableStacks = varStack;
-  }
-
-  // ================ SourceTreeManager ===================
-
-  /** The source tree manager, which associates Source objects to source
-   *  tree nodes. */
-  private SourceTreeManager m_sourceTreeManager = new SourceTreeManager();
-
-  /**
-   * Get the SourceTreeManager associated with this execution context.
-   *
-   * @return the SourceTreeManager associated with this execution context.
-   */
-  public final SourceTreeManager getSourceTreeManager()
-  {
-    return m_sourceTreeManager;
-  }
-
-  /**
-   * Set the SourceTreeManager associated with this execution context.
-   *
-   * @param mgr the SourceTreeManager to be associated with this
-   *        execution context.
-   */
-  public void setSourceTreeManager(SourceTreeManager mgr)
-  {
-    m_sourceTreeManager = mgr;
   }
 
   // =================================================

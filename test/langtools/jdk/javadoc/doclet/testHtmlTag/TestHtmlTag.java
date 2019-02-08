@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@
  * @bug 6786682 4649116 8182765
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestHtmlTag
  */
 
 import java.util.Locale;
+
+import javadoc.tester.JavadocTester;
 
 public class TestHtmlTag extends JavadocTester {
     private static final String defaultLanguage = Locale.getDefault().getLanguage();
@@ -41,7 +43,7 @@ public class TestHtmlTag extends JavadocTester {
         tester.runTests();
     }
     @Test
-    void test_default() {
+    public void test_default() {
         javadoc("-locale", defaultLanguage,
                 "-d", "out-default",
                 "-sourcepath", testSrc,
@@ -60,7 +62,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_ja() {
+    public void test_ja() {
         // TODO: why does this test need/use pkg2; why can't it use pkg1
         // like the other two tests, so that we can share the check methods?
         javadoc("-locale", "ja",
@@ -80,7 +82,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_en_US() {
+    public void test_en_US() {
         javadoc("-locale", "en_US",
                 "-d", "out-en_US",
                 "-sourcepath", testSrc,
@@ -98,7 +100,7 @@ public class TestHtmlTag extends JavadocTester {
     }
 
     @Test
-    void test_other() {
+    public void test_other() {
         javadoc("-locale", "en_US",
                 "-d", "out-other",
                 "-sourcepath", testSrc,
@@ -192,65 +194,5 @@ public class TestHtmlTag extends JavadocTester {
                 + " arguments to the activation group's special constructor when an\n"
                 + " activation group is created/recreated.</div>\n"
                 + "<dl>");
-    }
-
-    @Test
-    void test_other_html4() {
-        javadoc("-locale", "en_US",
-                "-d", "out-other-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg3");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg3/package-summary.html", true,
-                "<div class=\"contentContainer\"><a name=\"package.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<div class=\"block\"><p>This is the first line."
-                + " Note the newlines before the &lt;p&gt; is relevant.</div>");
-
-        checkOutput("pkg3/A.DatatypeFactory.html", true,
-                "<div class=\"block\"><p>\n"
-                + " Factory that creates new <code>javax.xml.datatype</code>\n"
-                + " <code>Object</code>s that map XML to/from Java <code>Object</code>s.</p>\n"
-                + "\n"
-                + " <p id=\"DatatypeFactory.newInstance\">\n"
-                + " A new instance of the <code>DatatypeFactory</code> is created through the\n"
-                + " <a href=\"#newInstance--\"><code>newInstance()</code></a> method that uses the following implementation\n"
-                + " resolution mechanisms to determine an implementation:</p>\n"
-                + " <ol>\n"
-                + " <li>\n"
-                + " If the system property specified by <a href=\"#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
-                + " \"<code>javax.xml.datatype.DatatypeFactory</code>\", exists, a class with\n"
-                + " the name of the property value is instantiated. Any Exception thrown\n"
-                + " during the instantiation process is wrapped as a\n"
-                + " <code>IllegalStateException</code>.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " If the file ${JAVA_HOME}/lib/jaxp.properties exists, it is loaded in a\n"
-                + " <code>Properties</code> <code>Object</code>. The\n"
-                + " <code>Properties</code> <code>Object </code> is then queried for the\n"
-                + " property as documented in the prior step and processed as documented in\n"
-                + " the prior step.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " Uses the service-provider loading facilities, defined by the\n"
-                + " <code>ServiceLoader</code> class, to attempt to locate and load an\n"
-                + " implementation of the service using the default loading mechanism:\n"
-                + " the service-provider loading facility will use the current thread's context class loader\n"
-                + " to attempt to load the service. If the context class loader is null, the system class loader will be used.\n"
-                + " <br>\n"
-                + " In case of <code>service configuration error</code> a\n"
-                + " <code>DatatypeConfigurationException</code> will be thrown.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " The final mechanism is to attempt to instantiate the <code>Class</code>\n"
-                + " specified by <a href=\"#DATATYPEFACTORY_IMPLEMENTATION_CLASS\">"
-                + "<code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
-                + " thrown during the instantiation process is wrapped as a\n"
-                + " <code>IllegalStateException</code>.\n"
-                + " </li>\n"
-                + " </ol></div>");
     }
 }

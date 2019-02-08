@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_HANDLES_HPP
-#define SHARE_VM_RUNTIME_HANDLES_HPP
+#ifndef SHARE_RUNTIME_HANDLES_HPP
+#define SHARE_RUNTIME_HANDLES_HPP
 
 #include "memory/arena.hpp"
 #include "oops/oop.hpp"
@@ -31,6 +31,7 @@
 
 class InstanceKlass;
 class Klass;
+class Thread;
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be
@@ -252,6 +253,8 @@ class HandleMark {
   HandleMark* previous_handle_mark() const        { return _previous_handle_mark; }
 
   size_t size_in_bytes() const { return _size_in_bytes; }
+  // remove all chunks beginning with the next
+  void chop_later_chunks();
  public:
   HandleMark();                            // see handles_inline.hpp
   HandleMark(Thread* thread)                      { initialize(thread); }
@@ -310,4 +313,4 @@ class HandleMarkCleaner: public StackObj {
   inline ~HandleMarkCleaner();
 };
 
-#endif // SHARE_VM_RUNTIME_HANDLES_HPP
+#endif // SHARE_RUNTIME_HANDLES_HPP

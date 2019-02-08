@@ -107,9 +107,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getSimpleName(typeElement)));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
                 contents.moduleLabel);
@@ -117,9 +115,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        bodyTree.addContent(htmlTree);
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
@@ -151,11 +147,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 HtmlStyle.title, headerContent);
         heading.addContent(getTypeParameterLinks(linkInfo));
         div.addContent(heading);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(div);
-        } else {
-            bodyTree.addContent(div);
-        }
+        mainTree.addContent(div);
         return bodyTree;
     }
 
@@ -173,15 +165,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addFooter(Content contentTree) {
         contentTree.addContent(HtmlConstants.END_OF_CLASS_DATA);
-        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : contentTree;
+        Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            contentTree.addContent(htmlTree);
-        }
+        contentTree.addContent(htmlTree);
     }
 
     /**

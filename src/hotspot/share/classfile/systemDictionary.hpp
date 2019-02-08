@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
-#define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+#ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
+#define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
 #include "classfile/classLoader.hpp"
 #include "jvmci/systemDictionary_jvmci.hpp"
@@ -703,4 +703,4 @@ private:
   static bool _has_checkPackageAccess;
 };
 
-#endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
+#endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

@@ -224,10 +224,6 @@ public:
   { }
 };
 
-const char* const* G1ConcurrentMarkThread::concurrent_phases() const {
-  return concurrent_phase_names;
-}
-
 bool G1ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   int phase = lookup_concurrent_phase(phase_name);
   if (phase < 0) return false;

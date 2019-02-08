@@ -60,6 +60,8 @@ gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generi
 gc/g1/plab/TestPLABPromotion.java                               8191048   generic-all
 gc/g1/plab/TestPLABResize.java                                  8191048   generic-all
 
+gc/stress/TestStressG1Humongous.java                            8218176   generic-all
+
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   macosx-all
@@ -122,8 +124,6 @@ vmTestbase/nsk/jvmti/PopFrame/popframe001/TestDescription.java                  
 vmTestbase/nsk/jvmti/PopFrame/popframe003/TestDescription.java                     8207013   generic-all
 vmTestbase/nsk/jvmti/PopFrame/popframe005/TestDescription.java                     8207013   generic-all
 vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java                   8207013   generic-all
-
-vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t003/TestDescription.java         8051349   generic-all
 
 serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                        8202482   generic-all
 

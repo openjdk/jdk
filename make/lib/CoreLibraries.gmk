@@ -35,7 +35,7 @@ $(eval $(call IncludeCustomExtension, lib/CoreLibraries.gmk))
 
 BUILD_LIBFDLIBM_OPTIMIZATION := NONE
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
   BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
 endif
 
@@ -68,7 +68,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
 ##########################################################################################
 
 LIBVERIFY_OPTIMIZATION := HIGH
-ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+ifeq ($(call isTargetOs, solaris linux), true)
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBVERIFY_OPTIMIZATION := LOW
   endif
@@ -92,7 +92,7 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
 endif
@@ -181,11 +181,11 @@ TARGETS += $(BUILD_LIBJIMAGE)
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   LIBJLI_EXCLUDE_FILES += java_md_solinux.c
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # Supply the name of the C runtime lib.
   LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
   ifneq ($(MSVCP_DLL), )
@@ -233,7 +233,7 @@ TARGETS += $(BUILD_LIBJLI)
 
 LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libjli)
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
+ifeq ($(call isTargetOs, aix), true)
   # AIX also requires a static libjli because the compiler doesn't support '-rpath'
   $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
       NAME := jli_static, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,16 +111,13 @@ public abstract class Executable extends AccessibleObject
 
             printModifiersIfNonzero(sb, modifierMask, isDefault);
             specificToStringHeader(sb);
-            sb.append('(');
-
-            sb.append(Stream.of(parameterTypes).map(Type::getTypeName).
-                      collect(Collectors.joining(",")));
-
-            sb.append(')');
-
+            sb.append(Arrays.stream(parameterTypes)
+                      .map(Type::getTypeName)
+                      .collect(Collectors.joining(",", "(", ")")));
             if (exceptionTypes.length > 0) {
-                sb.append(Stream.of(exceptionTypes).map(Type::getTypeName).
-                          collect(Collectors.joining(",", " throws ", "")));
+                sb.append(Arrays.stream(exceptionTypes)
+                          .map(Type::getTypeName)
+                          .collect(Collectors.joining(",", " throws ", "")));
             }
             return sb.toString();
         } catch (Exception e) {
@@ -140,8 +137,9 @@ public abstract class Executable extends AccessibleObject
             return typeVar.getName();
         } else {
             return typeVar.getName() + " extends " +
-                Stream.of(bounds).map(Type::getTypeName).
-                collect(Collectors.joining(" & "));
+                Arrays.stream(bounds)
+                .map(Type::getTypeName)
+                .collect(Collectors.joining(" & "));
         }
     }
 
@@ -153,8 +151,9 @@ public abstract class Executable extends AccessibleObject
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
-                sb.append(Stream.of(typeparms).map(Executable::typeVarBounds).
-                          collect(Collectors.joining(",", "<", "> ")));
+                sb.append(Arrays.stream(typeparms)
+                          .map(Executable::typeVarBounds)
+                          .collect(Collectors.joining(",", "<", "> ")));
             }
 
             specificToGenericStringHeader(sb);
@@ -173,8 +172,9 @@ public abstract class Executable extends AccessibleObject
 
             Type[] exceptionTypes = getGenericExceptionTypes();
             if (exceptionTypes.length > 0) {
-                sb.append(Stream.of(exceptionTypes).map(Type::getTypeName).
-                          collect(Collectors.joining(",", " throws ", "")));
+                sb.append(Arrays.stream(exceptionTypes)
+                          .map(Type::getTypeName)
+                          .collect(Collectors.joining(",", " throws ", "")));
             }
             return sb.toString();
         } catch (Exception e) {

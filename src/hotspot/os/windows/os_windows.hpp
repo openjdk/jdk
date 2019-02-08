@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_OS_WINDOWS_HPP
-#define OS_WINDOWS_VM_OS_WINDOWS_HPP
+#ifndef OS_WINDOWS_OS_WINDOWS_HPP
+#define OS_WINDOWS_OS_WINDOWS_HPP
 // Win32_OS defines the interface to windows operating systems
 
 // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
 #define strtok_r strtok_s
+
+#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
+#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
@@ -184,4 +187,21 @@ class PlatformParker : public CHeapObj<mtInternal> {
 
 } ;
 
-#endif // OS_WINDOWS_VM_OS_WINDOWS_HPP
+// Platform specific implementation that underpins VM Monitor/Mutex class
+class PlatformMonitor : public CHeapObj<mtInternal> {
+ private:
+  CRITICAL_SECTION   _mutex; // Native mutex for locking
+  CONDITION_VARIABLE _cond;  // Native condition variable for blocking
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  void lock();
+  void unlock();
+  bool try_lock();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
+};
+
+#endif // OS_WINDOWS_OS_WINDOWS_HPP

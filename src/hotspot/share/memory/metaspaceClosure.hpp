@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_METASPACE_ITERATOR_HPP
-#define SHARE_VM_MEMORY_METASPACE_ITERATOR_HPP
+#ifndef SHARE_MEMORY_METASPACECLOSURE_HPP
+#define SHARE_MEMORY_METASPACECLOSURE_HPP
 
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -273,4 +273,4 @@ private:
   KVHashtable<address, bool, mtInternal> _has_been_visited;
 };
 
-#endif // SHARE_VM_MEMORY_METASPACE_ITERATOR_HPP
+#endif // SHARE_MEMORY_METASPACECLOSURE_HPP

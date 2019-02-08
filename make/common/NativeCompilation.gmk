@@ -175,9 +175,9 @@ $(strip \
 )
 endef
 
-ifeq ($(OPENJDK_BUILD_OS_ENV), windows.cygwin)
+ifeq ($(call isBuildOsEnv, windows.cygwin), true)
   UNIX_PATH_PREFIX := /cygdrive
-else ifeq ($(OPENJDK_BUILD_OS_ENV), windows.msys)
+else ifeq ($(call isBuildOsEnv, windows.msys), true)
   UNIX_PATH_PREFIX :=
 endif
 
@@ -770,7 +770,7 @@ define SetupNativeCompilationBody
 	$(TOUCH) $$@
 
   # On windows we need to create a resource file
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     ifneq ($$($1_VERSIONINFO_RESOURCE), )
       $1_RES := $$($1_OBJECT_DIR)/$$($1_BASENAME).res
       $1_RES_DEP := $$($1_RES).d
@@ -808,7 +808,7 @@ define SetupNativeCompilationBody
 
   ifneq ($(DISABLE_MAPFILES), true)
     $1_REAL_MAPFILE := $$($1_MAPFILE)
-    ifneq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(call isTargetOs, windows), false)
       ifneq ($$($1_REORDER), )
         $1_REAL_MAPFILE := $$($1_OBJECT_DIR)/mapfile
 
@@ -845,13 +845,13 @@ define SetupNativeCompilationBody
       # Only copy debug symbols for dynamic libraries and programs.
       ifneq ($$($1_TYPE), STATIC_LIBRARY)
         # Generate debuginfo files.
-        ifeq ($(OPENJDK_TARGET_OS), windows)
+        ifeq ($(call isTargetOs, windows), true)
           $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb" \
               "-map:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map"
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb \
               $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map
 
-        else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
+        else ifeq ($(call isTargetOs, linux solaris), true)
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).debuginfo
           # Setup the command line creating debuginfo files, to be run after linking.
           # It cannot be run separately since it updates the original target file
@@ -860,13 +860,13 @@ define SetupNativeCompilationBody
               $(CD) $$($1_OUTPUT_DIR) && \
                   $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
-        else ifeq ($(OPENJDK_TARGET_OS), macosx)
+        else ifeq ($(call isTargetOs, macosx), true)
           $1_DEBUGINFO_FILES := \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
           $1_CREATE_DEBUGINFO_CMDS := \
               $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
-        endif # OPENJDK_TARGET_OS
+        endif
 
         # Since the link rule creates more than one file that we want to track,
         # we have to use some tricks to get make to cooperate. To properly
@@ -952,7 +952,7 @@ define SetupNativeCompilationBody
       endif
     endif
 
-    ifeq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(call isTargetOs, windows), true)
       ifeq ($$($1_EMBED_MANIFEST), true)
         $1_EXTRA_LDFLAGS += -manifest:embed
       endif
@@ -1032,7 +1032,7 @@ define SetupNativeCompilationBody
                 # Keep as much as possible on one execution line for best performance
                 # on Windows
 		$$(call LogInfo, Linking $$($1_BASENAME))
-                ifeq ($(OPENJDK_TARGET_OS), windows)
+                ifeq ($(call isTargetOs, windows), true)
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
@@ -1050,7 +1050,7 @@ define SetupNativeCompilationBody
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
                 endif
-                ifeq ($(OPENJDK_TARGET_OS), windows)
+                ifeq ($(call isTargetOs, windows), true)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
                   endif

@@ -29,8 +29,8 @@
 // functionality (aka ILE layer) to close some functional gaps that exist in
 // the PASE layer.
 
-#ifndef OS_AIX_VM_LIBO4_HPP
-#define OS_AIX_VM_LIBO4_HPP
+#ifndef OS_AIX_LIBO4_HPP
+#define OS_AIX_LIBO4_HPP
 
 class libo4 {
 public:
@@ -87,4 +87,4 @@ public:
   static bool removeEscapeMessageFromJoblogByContext(const void* context);
 };
 
-#endif // OS_AIX_VM_LIBO4_HPP
+#endif // OS_AIX_LIBO4_HPP

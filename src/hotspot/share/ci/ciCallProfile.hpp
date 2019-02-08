@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CICALLPROFILE_HPP
-#define SHARE_VM_CI_CICALLPROFILE_HPP
+#ifndef SHARE_CI_CICALLPROFILE_HPP
+#define SHARE_CI_CICALLPROFILE_HPP
 
 #include "ci/ciClassList.hpp"
 #include "memory/allocation.hpp"
@@ -79,17 +79,6 @@ public:
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return _receiver[i];
   }
-
-  // Rescale the current profile based on the incoming scale
-  ciCallProfile rescale(double scale) {
-    assert(scale >= 0 && scale <= 1.0, "out of range");
-    ciCallProfile call = *this;
-    call._count = (int)(call._count * scale);
-    for (int i = 0; i < _morphism; i++) {
-      call._receiver_count[i] = (int)(call._receiver_count[i] * scale);
-    }
-    return call;
-  }
 };
 
-#endif // SHARE_VM_CI_CICALLPROFILE_HPP
+#endif // SHARE_CI_CICALLPROFILE_HPP

@@ -967,6 +967,21 @@ uint CallJavaNode::cmp( const Node &n ) const {
   return CallNode::cmp(call) && _method == call._method &&
          _override_symbolic_info == call._override_symbolic_info;
 }
+#ifdef ASSERT
+bool CallJavaNode::validate_symbolic_info() const {
+  if (method() == NULL) {
+    return true; // call into runtime or uncommon trap
+  }
+  ciMethod* symbolic_info = jvms()->method()->get_method_at_bci(_bci);
+  ciMethod* callee = method();
+  if (symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic()) {
+    assert(override_symbolic_info(), "should be set");
+  }
+  assert(ciMethod::is_consistent_info(symbolic_info, callee), "inconsistent info");
+  return true;
+}
+#endif
+
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream *st) const {
   if( _method ) _method->print_short_name(st);

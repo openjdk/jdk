@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.nio.file.AccessMode;
 import java.nio.file.ClosedFileSystemException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -43,7 +42,7 @@ import java.util.Map;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 /**
  * @test
- * @bug 8038500 8040059 8150366 8150496 8147539 8211385
+ * @bug 8038500 8040059 8150366 8150496 8147539
  * @summary Basic test for zip provider
  *
  * @modules jdk.zipfs
@@ -86,32 +85,6 @@ public class Basic {
 
         // Test: exercise directory iterator and retrieval of basic attributes
         Files.walkFileTree(fs.getPath("/"), new FileTreePrinter());
-
-        // Test: DirectoryStream
-        found = false;
-
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/"))) {
-            for (Path entry: stream) {
-                found = entry.toString().equals("/META-INF");
-                if (found) break;
-            }
-        }
-        if (!found)
-            throw new RuntimeException("Expected file not found");
-
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("META-INF"))) {
-            for (Path entry: stream) {
-                if (entry.toString().equals("/META-INF/services"))
-                    throw new RuntimeException("child path should be relative");
-            }
-        }
-
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/META-INF"))) {
-            for (Path entry: stream) {
-                if (entry.toString().equals("META-INF/services"))
-                    throw new RuntimeException("child path should be absolute");
-            }
-        }
 
         // Test: copy file from zip file to current (scratch) directory
         Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");

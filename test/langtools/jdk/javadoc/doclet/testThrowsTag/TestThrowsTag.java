@@ -27,11 +27,13 @@
  * @summary  Test to make sure that exceptions always show up in the
  *           correct order.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestThrowsTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestThrowsTag extends JavadocTester {
 
@@ -41,7 +43,7 @@ public class TestThrowsTag extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");

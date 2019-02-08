@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_INLINE_HPP
-#define SHARE_VM_OOPS_OOP_INLINE_HPP
+#ifndef SHARE_OOPS_OOP_INLINE_HPP
+#define SHARE_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/access.inline.hpp"
@@ -481,4 +481,4 @@ void oopDesc::set_displaced_mark_raw(markOop m) {
   mark_raw()->set_displaced_mark_helper(m);
 }
 
-#endif // SHARE_VM_OOPS_OOP_INLINE_HPP
+#endif // SHARE_OOPS_OOP_INLINE_HPP

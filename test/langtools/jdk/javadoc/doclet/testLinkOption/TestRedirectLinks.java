@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8190312
  * @summary test redirected URLs for -link
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox toolbox.JavacTask JavadocTester
+ * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @run main TestRedirectLinks
  */
 
@@ -59,9 +59,9 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
+import javadoc.tester.JavadocTester;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
-
 
 public class TestRedirectLinks extends JavadocTester {
     /**
@@ -103,6 +103,7 @@ public class TestRedirectLinks extends JavadocTester {
                     out.println("Header: " + httpConn.getHeaderFieldKey(n) + ": " + httpConn.getHeaderField(n));
                     n++;
                 }
+                httpConn.disconnect();
             }
         } catch (Exception e) {
             out.println("Exception occurred: " + e);
@@ -116,7 +117,6 @@ public class TestRedirectLinks extends JavadocTester {
         String apiURL = "http://docs.oracle.com/en/java/javase/11/docs/api";
         String outRedirect = "outRedirect";
         javadoc("-d", outRedirect,
-                "-html4",
                 "-sourcepath", testSrc,
                 "-link", apiURL,
                 "pkg");

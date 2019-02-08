@@ -35,11 +35,13 @@ import java.awt.HeadlessException;
  *
  * @see ScreenSleepListener#screenAboutToSleep(ScreenSleepEvent)
  * @see ScreenSleepListener#screenAwoke(ScreenSleepEvent)
- *
  * @since 9
  */
 public final class ScreenSleepEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 7521606180376544150L;
 
     /**

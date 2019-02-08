@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_VMERROR_HPP
-#define SHARE_VM_UTILITIES_VMERROR_HPP
+#ifndef SHARE_UTILITIES_VMERROR_HPP
+#define SHARE_UTILITIES_VMERROR_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -122,9 +122,6 @@ class VMError : public AllStatic {
                              void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
   static void report_and_die(const char* message, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 
-  static fdStream out;
-  static fdStream log; // error log used by VMError::report_and_die()
-
   // Timeout handling.
   // Hook functions for platform dependend functionality:
   static void reporting_started();
@@ -198,4 +195,4 @@ public:
   // for test purposes, which is not NULL and contains bits in every word
   static void* get_segfault_address();
 };
-#endif // SHARE_VM_UTILITIES_VMERROR_HPP
+#endif // SHARE_UTILITIES_VMERROR_HPP

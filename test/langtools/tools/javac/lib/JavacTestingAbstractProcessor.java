@@ -110,7 +110,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
      * corresponding platform visitor type.
      */
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitor9<R, P> {
 
         /**
@@ -121,7 +121,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses to call.
@@ -131,7 +131,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses to call.
@@ -141,7 +141,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class ElementKindVisitor<R, P> extends ElementKindVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
@@ -162,7 +162,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class ElementScanner<R, P> extends ElementScanner9<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
@@ -181,7 +181,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
@@ -202,7 +202,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class SimpleElementVisitor<R, P> extends SimpleElementVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
@@ -223,7 +223,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
@@ -244,7 +244,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_12)
+    @SupportedSourceVersion(RELEASE_13)
     public static class TypeKindVisitor<R, P> extends TypeKindVisitor9<R, P> {
         /**
          * Constructor for concrete subclasses to call; uses {@code null}

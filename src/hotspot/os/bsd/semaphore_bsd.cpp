@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled/precompiled.hpp"
 #include "semaphore_bsd.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
 #include <semaphore.h>
@@ -65,29 +66,27 @@ void OSXSemaphore::wait() {
   assert(ret == KERN_SUCCESS, "Failed to wait on semaphore");
 }
 
-int64_t OSXSemaphore::currenttime() {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (tv.tv_sec * NANOSECS_PER_SEC) + (tv.tv_usec * 1000);
-}
-
 bool OSXSemaphore::trywait() {
-  return timedwait(0, 0);
+  return timedwait(0);
 }
 
-bool OSXSemaphore::timedwait(unsigned int sec, int nsec) {
+bool OSXSemaphore::timedwait(int64_t millis) {
   kern_return_t kr = KERN_ABORTED;
-  mach_timespec_t waitspec;
-  waitspec.tv_sec = sec;
-  waitspec.tv_nsec = nsec;
 
-  int64_t starttime = currenttime();
+  // kernel semaphores take a relative timeout
+  mach_timespec_t waitspec;
+  int secs = millis / MILLIUNITS;
+  int nsecs = (millis % MILLIUNITS) * NANOSECS_PER_MILLISEC;
+  waitspec.tv_sec = secs;
+  waitspec.tv_nsec = nsecs;
+
+  int64_t starttime = os::javaTimeMillis() * NANOSECS_PER_MILLISEC;
 
   kr = semaphore_timedwait(_semaphore, waitspec);
   while (kr == KERN_ABORTED) {
-    int64_t totalwait = (sec * NANOSECS_PER_SEC) + nsec;
-
-    int64_t current = currenttime();
+    // reduce the timout and try again
+    int64_t totalwait = millis * NANOSECS_PER_MILLISEC;
+    int64_t current = os::javaTimeMillis() * NANOSECS_PER_MILLISEC;
     int64_t passedtime = current - starttime;
 
     if (passedtime >= totalwait) {

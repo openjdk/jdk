@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
  *           If A implements I and B extends A, B should be in the list of
  *           implementing classes in the documentation for I.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestInterface
  */
 
@@ -50,6 +50,8 @@
    and Child<CE>
  */
 
+import javadoc.tester.JavadocTester;
+
 public class TestInterface extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -58,7 +60,7 @@ public class TestInterface extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -156,50 +158,7 @@ public class TestInterface extends JavadocTester {
     }
 
     @Test
-    void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/Child.html", true,
-                //Make sure "Specified By" has substituted type parameters.
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
-                + "<dd><code><a href=\"Interface.html#method--\">method</a>"
-                + "</code>&nbsp;in interface&nbsp;<code>"
-                + "<a href=\"Interface.html\" title=\"interface in pkg\">"
-                + "Interface</a>&lt;<a href=\"Child.html\" title=\"type parameter in Child\">"
-                + "CE</a>&gt;</code></dd>",
-                //Make sure "Overrides" has substituted type parameters.
-                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
-                + "<dd><code><a href=\"Parent.html#method--\">method</a>"
-                + "</code>&nbsp;in class&nbsp;<code><a href=\"Parent.html\" "
-                + "title=\"class in pkg\">Parent</a>&lt;<a href=\"Child.html\" "
-                + "title=\"type parameter in Child\">CE</a>&gt;</code></dd>");
-
-        checkOutput("pkg/ClassWithStaticMembers.html", true,
-                "<td class=\"colFirst\"><code>static void</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#m--\">m</a></span>()</code></th>\n"
-                + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">A hider method</div>\n"
-                + "</td>\n",
-
-                "<h4>staticMethod</h4>\n"
-                + "<pre class=\"methodSignature\">public static&nbsp;void&nbsp;staticMethod()</pre>\n"
-                + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
-                + "Description copied from interface:&nbsp;<code>"
-                + "<a href=\"InterfaceWithStaticMembers.html#staticMethod--\">"
-                + "InterfaceWithStaticMembers</a></code></span></div>\n"
-                + "<div class=\"block\">A static method</div>\n");
-
-        checkOutput("pkg/Interface.html", false,
-                "public int&nbsp;method()");
-    }
-
-    @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "pkg1");
@@ -215,24 +174,7 @@ public class TestInterface extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
-        javadoc("-d", "out-1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg1");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/Child.html", true,
-            // Ensure the correct Overrides in the inheritance hierarchy is reported
-            "<span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-            "<dd><code><a href=\"GrandParent.html#method1--\">method1</a></code>" +
-            "&nbsp;in class&nbsp;" +
-            "<code><a href=\"GrandParent.html\" title=\"class in pkg1\">GrandParent</a>" +
-            "&lt;<a href=\"Child.html\" title=\"type parameter in Child\">CE</a>&gt;</code>");
-    }
-
-    @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "pkg2");

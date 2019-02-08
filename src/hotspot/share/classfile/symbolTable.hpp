@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
-#define SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+#ifndef SHARE_CLASSFILE_SYMBOLTABLE_HPP
+#define SHARE_CLASSFILE_SYMBOLTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/concurrentHashTable.hpp"
 #include "utilities/hashtable.hpp"
+
+class JavaThread;
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -121,18 +123,19 @@ private:
   volatile bool _needs_rehashing;
 
   volatile size_t _items_count;
-  volatile size_t _uncleaned_items_count;
+  volatile bool   _has_items_to_clean;
 
   double get_load_factor() const;
-  double get_dead_factor() const;
 
   void check_concurrent_work();
-  void trigger_concurrent_work();
 
   static void item_added();
   static void item_removed();
-  static void set_item_clean_count(size_t ncl);
-  static void mark_item_clean_count();
+
+  // For cleaning
+  void reset_has_items_to_clean();
+  void mark_has_items_to_clean();
+  bool has_items_to_clean() const;
 
   SymbolTable();
 
@@ -188,12 +191,9 @@ public:
     initialize_symbols(symbol_alloc_arena_size);
   }
 
-  static void unlink() {
-    do_check_concurrent_work();
-  }
-  static void do_check_concurrent_work();
   static void do_concurrent_work(JavaThread* jt);
   static bool has_work() { return the_table()->_has_work; }
+  static void trigger_cleanup();
 
   // Probing
   static Symbol* lookup(const char* name, int len, TRAPS);
@@ -257,4 +257,4 @@ public:
   static void print_histogram() PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
+#endif // SHARE_CLASSFILE_SYMBOLTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
-#define SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#define SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
 
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
@@ -90,7 +90,6 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool during_cycle()      { return !idle(); }
 
   // WhiteBox testing support.
-  const char* const* concurrent_phases() const;
   bool request_concurrent_phase(const char* phase);
 
   ConcurrentGCPhaseManager::Stack* phase_manager_stack() {
@@ -98,4 +97,4 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   }
 };
 
-#endif // SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

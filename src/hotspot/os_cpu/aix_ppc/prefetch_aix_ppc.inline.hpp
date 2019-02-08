@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP
-#define OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP
+#ifndef OS_CPU_AIX_PPC_PREFETCH_AIX_PPC_INLINE_HPP
+#define OS_CPU_AIX_PPC_PREFETCH_AIX_PPC_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
 
@@ -55,4 +55,4 @@ inline void Prefetch::write(void *loc, intx interval) {
 #endif
 }
 
-#endif // OS_CPU_AIX_PPC_VM_PREFETCH_AIX_PPC_INLINE_HPP
+#endif // OS_CPU_AIX_PPC_PREFETCH_AIX_PPC_INLINE_HPP

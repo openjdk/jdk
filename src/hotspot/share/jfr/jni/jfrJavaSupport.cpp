@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,15 +474,16 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* t) {
   }
   const char* temp = NULL;
   const oop java_string = resolve_non_null(string);
-  if (java_lang_String::value(java_string) != NULL) {
-    const size_t length = java_lang_String::utf8_length(java_string);
+  const typeArrayOop value = java_lang_String::value(java_string);
+  if (value != NULL) {
+    const size_t length = java_lang_String::utf8_length(java_string, value);
     temp = NEW_RESOURCE_ARRAY_IN_THREAD(t, const char, (length + 1));
     if (temp == NULL) {
        JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
        return NULL;
     }
     assert(temp != NULL, "invariant");
-    java_lang_String::as_utf8_string(java_string, const_cast<char*>(temp), (int) length + 1);
+    java_lang_String::as_utf8_string(java_string, value, const_cast<char*>(temp), (int) length + 1);
   }
   return temp;
 }

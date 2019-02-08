@@ -167,7 +167,7 @@ void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Regi
 
   bool load_const = VM_Version::supports_movw();
   if (load_const) {
-    __ mov_address(top_addr, (address)Universe::heap()->top_addr(), symbolic_Relocation::eden_top_reference);
+    __ mov_address(top_addr, (address)Universe::heap()->top_addr());
   } else {
     __ ldr(top_addr, Address(Rthread, JavaThread::heap_top_addr_offset()));
   }

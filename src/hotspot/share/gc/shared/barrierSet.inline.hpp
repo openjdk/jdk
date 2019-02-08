@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
-#define SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
+#ifndef SHARE_GC_SHARED_BARRIERSET_INLINE_HPP
+#define SHARE_GC_SHARED_BARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
 #include "oops/accessDecorators.hpp"
@@ -57,4 +57,4 @@ inline bool BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in
   return true;
 }
 
-#endif // SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
+#endif // SHARE_GC_SHARED_BARRIERSET_INLINE_HPP

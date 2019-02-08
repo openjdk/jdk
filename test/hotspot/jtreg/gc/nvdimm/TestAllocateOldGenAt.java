@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /* @test TestAllocateOldGenAt.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateOldGenAt option
@@ -28,6 +30,7 @@
  * @requires test.vm.gc.nvdimm
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @run main gc.nvdimm.TestAllocateOldGenAt
  */
 
 import jdk.test.lib.JDKToolFinder;

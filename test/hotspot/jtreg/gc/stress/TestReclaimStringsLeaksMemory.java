@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.stress;
+
 /*
  * @test TestReclaimStringsLeaksMemory
  * @bug 8180048
@@ -29,12 +31,12 @@
  * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm TestReclaimStringsLeaksMemory
- * @run main/othervm TestReclaimStringsLeaksMemory -XX:+UseSerialGC
- * @run main/othervm TestReclaimStringsLeaksMemory -XX:+UseParallelGC
- * @run main/othervm TestReclaimStringsLeaksMemory -XX:+UseParallelGC -XX:-UseParallelOldGC
- * @run main/othervm TestReclaimStringsLeaksMemory -XX:+UseConcMarkSweepGC
- * @run main/othervm TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC -XX:-UseParallelOldGC
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseConcMarkSweepGC
+ * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 
 import java.util.Arrays;

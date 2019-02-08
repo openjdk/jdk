@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.http.HttpResponse.BodySubscriber;
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.ResponseSubscribers.TrustedSubscriber;
 
 /**
  * A buffering BodySubscriber. When subscribed, accumulates ( buffers ) a given
  * amount ( in bytes ) of a publisher's data before pushing it to a downstream
  * subscriber.
  */
-public class BufferingSubscriber<T> implements BodySubscriber<T>
+public class BufferingSubscriber<T> implements TrustedSubscriber<T>
 {
     /** The downstream consumer of the data. */
     private final BodySubscriber<T> downstreamSubscriber;
@@ -92,6 +92,11 @@ public class BufferingSubscriber<T> implements BodySubscriber<T>
     /** Returns the number of bytes remaining in the given buffers. */
     private static final long remaining(List<ByteBuffer> buffers) {
         return buffers.stream().mapToLong(ByteBuffer::remaining).sum();
+    }
+
+    @Override
+    public boolean needsExecutor() {
+        return TrustedSubscriber.needsExecutor(downstreamSubscriber);
     }
 
     /**

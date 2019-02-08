@@ -858,7 +858,6 @@ public abstract class Path2D implements Shape, Cloneable {
          * path.
          *
          * @serialData
-         * <a id="Path2DSerialData"><!-- --></a>
          * <ol>
          * <li>The default serializable fields.
          * There are no default serializable fields as of 1.6.
@@ -1634,7 +1633,6 @@ public abstract class Path2D implements Shape, Cloneable {
          * path.
          *
          * @serialData
-         * <a id="Path2DSerialData"><!-- --></a>
          * <ol>
          * <li>The default serializable fields.
          * There are no default serializable fields as of 1.6.

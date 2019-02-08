@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
-#define SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#ifndef SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#define SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "memory/allocation.hpp"
@@ -264,6 +264,8 @@ public:
   // "index" in "_offset_array".
   HeapWord* address_for_index(size_t index) const;
 };
+
+class Space;
 
 //////////////////////////////////////////////////////////////////////////
 // The BlockOffsetArray whose subtypes use the BlockOffsetSharedArray.
@@ -543,4 +545,4 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   virtual size_t last_active_index() const;
 };
 
-#endif // SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
+#endif // SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_VMSTRUCTS_HPP
-#define SHARE_GC_SERIAL_VMSTRUCTS_HPP
+#ifndef SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
+#define SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
 
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"

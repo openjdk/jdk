@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @author jamieh
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestMemberInheritance
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestMemberInheritance extends JavadocTester {
 
@@ -42,7 +44,7 @@ public class TestMemberInheritance extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg", "diamond", "inheritDist", "pkg1");
@@ -101,53 +103,6 @@ public class TestMemberInheritance extends JavadocTester {
                 + " title=\"interface in pkg1\">Interface</a></h3>\n"
                 + "<code><a href=\"Interface.html#between(java.time.chrono.ChronoLocalDate"
                 + ",java.time.chrono.ChronoLocalDate)\">between</a></code>"
-        );
-    }
-
-    @Test
-    void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg", "diamond", "inheritDist", "pkg1");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/SubClass.html", true,
-                // Public method should be inherited
-                "<a href=\"BaseClass.html#pubMethod--\">",
-                // Protected method should be inherited
-                "<a href=\"BaseClass.html#proMethod--\">");
-
-        checkOutput("pkg/BaseClass.html", true,
-                // Test overriding/implementing methods with generic parameters.
-                "<dl>\n"
-                + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
-                + "<dd><code><a href=\"BaseInterface.html#getAnnotation-java.lang.Class-\">"
-                + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
-                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">"
-                + "BaseInterface</a></code></dd>\n"
-                + "</dl>");
-
-        checkOutput("diamond/Z.html", true,
-                // Test diamond inheritance member summary (6256068)
-                "<code><a href=\"A.html#aMethod--\">aMethod</a></code>");
-
-        checkOutput("pkg/SubClass.html", false,
-                "<a href=\"BaseClass.html#staticMethod--\">staticMethod</a></code>");
-
-        checkOutput("pkg1/Implementer.html", true,
-                // ensure the method makes it
-                "<td class=\"colFirst\"><code>static java.time.Period</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#between-java.time.LocalDate-java.time.LocalDate-\">"
-                + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
-                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
-
-        checkOutput("pkg1/Implementer.html", false,
-                "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"Interface.html\""
-                + " title=\"interface in pkg1\">Interface</a></h3>\n"
-                + "<code><a href=\"Interface.html#between-java.time.chrono.ChronoLocalDate"
-                + "-java.time.chrono.ChronoLocalDate-\">between</a></code>"
         );
     }
 }

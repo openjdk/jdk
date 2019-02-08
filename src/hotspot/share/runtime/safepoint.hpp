@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SAFEPOINT_HPP
-#define SHARE_VM_RUNTIME_SAFEPOINT_HPP
+#ifndef SHARE_RUNTIME_SAFEPOINT_HPP
+#define SHARE_RUNTIME_SAFEPOINT_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -143,7 +143,7 @@ private:
   }
 
   // Called when a thread voluntarily blocks
-  static void   block(JavaThread *thread);
+  static void   block(JavaThread *thread, bool block_in_safepoint_check = true);
 
   friend class SafepointMechanism;
 
@@ -253,4 +253,4 @@ class ThreadSafepointState: public CHeapObj<mtInternal> {
 
 
 
-#endif // SHARE_VM_RUNTIME_SAFEPOINT_HPP
+#endif // SHARE_RUNTIME_SAFEPOINT_HPP

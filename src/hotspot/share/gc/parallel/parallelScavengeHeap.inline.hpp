@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
-#define SHARE_VM_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
+#ifndef SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
+#define SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psMarkSweepProxy.hpp"
@@ -51,4 +51,4 @@ inline bool ParallelScavengeHeap::is_in_young(oop p) {
          "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i((void*)p));
   return result;
 }
-#endif // SHARE_VM_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
+#endif // SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP

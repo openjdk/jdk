@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
-#define SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
+#ifndef SHARE_OOPS_TYPEARRAYKLASS_HPP
+#define SHARE_OOPS_TYPEARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -61,8 +61,6 @@ class TypeArrayKlass : public ArrayKlass {
   }
 
   int oop_size(oop obj) const;
-
-  bool compute_is_subtype_of(Klass* k);
 
   // Allocation
   typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
@@ -137,4 +135,4 @@ class TypeArrayKlass : public ArrayKlass {
   PackageEntry* package() const;
 };
 
-#endif // SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
+#endif // SHARE_OOPS_TYPEARRAYKLASS_HPP

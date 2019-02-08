@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
-#define SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
+#ifndef SHARE_INTERPRETER_LINKRESOLVER_HPP
+#define SHARE_INTERPRETER_LINKRESOLVER_HPP
 
 #include "oops/method.hpp"
 
@@ -362,4 +362,4 @@ class LinkResolver: AllStatic {
                                           const methodHandle& selected_method,
                                           Klass *recv_klass, TRAPS);
 };
-#endif // SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
+#endif // SHARE_INTERPRETER_LINKRESOLVER_HPP

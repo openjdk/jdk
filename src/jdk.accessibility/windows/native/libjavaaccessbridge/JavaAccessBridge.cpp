@@ -85,7 +85,7 @@ extern "C" {
      */
     JNIEXPORT void JNICALL
     Java_com_sun_java_accessibility_internal_AccessBridge_runDLL(JNIEnv *env, jobject obj) {
-        PrintDebugString("\r\nJavaAccessBridge.DLL runDLL() called");
+        PrintDebugString("[INFO]: JavaAccessBridge.DLL runDLL() called");
         theJavaAccessBridge->javaRun(env, obj);
     }
 
@@ -100,20 +100,20 @@ extern "C" {
 
         switch (message) {
         case WM_INITDIALOG:
-            PrintDebugString("In AccessBridgeDialog - Initializing");
+            PrintDebugString("[INFO]: In AccessBridgeDialog - Initializing");
             break;
 
         case WM_COMMAND:
             command = LOWORD (wParam);
-            PrintDebugString("In AccessBridgeDialog - Got WM_COMMAND, command: %X", command);
+            PrintDebugString("[INFO]: In AccessBridgeDialog - Got WM_COMMAND, command: %X", command);
             break;
 
             // call from Java with data for us to deliver
         case WM_COPYDATA:
             if (theDialogWindow == (HWND) wParam) {
-                PrintDebugString("In AccessBridgeDialog - Got WM_COPYDATA from ourselves");
+                PrintDebugString("[INFO]: In AccessBridgeDialog - Got WM_COPYDATA from ourselves");
             } else {
-                PrintDebugString("In AccessBridgeDialog - Got WM_COPYDATA from HWND %p", wParam);
+                PrintDebugString("[INFO]: In AccessBridgeDialog - Got WM_COPYDATA from HWND %p", wParam);
                 sentToUs = (COPYDATASTRUCT *) lParam;
                 package = (char *) sentToUs->lpData;
                 theJavaAccessBridge->processPackage(package, sentToUs->cbData);
@@ -125,16 +125,16 @@ extern "C" {
             // wParam == sourceHwnd
             // lParam == buffer size in shared memory
             if (theDialogWindow == (HWND) wParam) {
-                PrintDebugString("In AccessBridgeDialog - Got AB_MESSAGE_WAITING from ourselves");
+                PrintDebugString("[INFO]: In AccessBridgeDialog - Got AB_MESSAGE_WAITING from ourselves");
             } else {
-                PrintDebugString("In AccessBridgeDialog - Got AB_MESSAGE_WAITING from HWND %p", wParam);
+                PrintDebugString("[INFO]: In AccessBridgeDialog - Got AB_MESSAGE_WAITING from HWND %p", wParam);
                 LRESULT returnVal = theJavaAccessBridge->receiveMemoryPackage((HWND) wParam, (long) lParam);
             }
             break;
 
             // a JavaAccessBridge DLL is going away
         case AB_DLL_GOING_AWAY:
-            PrintDebugString("In AccessBridgeDialog - Got AB_DLL_GOING_AWAY message");
+            PrintDebugString("[INFO]: In AccessBridgeDialog - Got AB_DLL_GOING_AWAY message");
             theJavaAccessBridge->WindowsATDestroyed((HWND) wParam);
             break;
 
@@ -145,7 +145,7 @@ extern "C" {
                 // A new Windows AT just said "hi";
                 // say "hi" back so it can mate up with us
                 // otherwise don't do anything (e.g. don't set up data structures yet)
-                PrintDebugString("In AccessBridgeDialog - Got theFromWindowsHelloMsgID message");
+                PrintDebugString("[INFO]: In AccessBridgeDialog - Got theFromWindowsHelloMsgID message");
                 theJavaAccessBridge->postHelloToWindowsDLLMsg((HWND) wParam);
             }
         }
@@ -165,6 +165,7 @@ extern "C" {
 JavaAccessBridge::JavaAccessBridge(HINSTANCE hInstance) {
     windowsInstance = hInstance;
     ATs = (AccessBridgeATInstance *) 0;
+    initializeFileLogger("_java_access_bridge");
     initBroadcastMessageIDs();          // get the unique to us broadcast msg. IDs
 }
 
@@ -177,7 +178,7 @@ extern DWORD JavaBridgeThreadId;
 JavaAccessBridge::~JavaAccessBridge() {
     // inform all other AccessBridges that we're going away
 
-    PrintDebugString("\r\nin JavaAccessBridge::~JavaAccessBridge()");
+    PrintDebugString("[INFO]: in JavaAccessBridge::~JavaAccessBridge()");
 
     // Send a shutdown message for those applications like StarOffice that do
     // send a shutdown message themselves.
@@ -185,13 +186,13 @@ JavaAccessBridge::~JavaAccessBridge() {
 
     AccessBridgeATInstance *current = ATs;
     while (current != (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  telling %p we're going away", current->winAccessBridgeWindow);
+        PrintDebugString("[INFO]:  telling %p we're going away", current->winAccessBridgeWindow);
                 SendMessage(current->winAccessBridgeWindow,
                     AB_DLL_GOING_AWAY, (WPARAM) dialogWindow, (LPARAM) 0);
         current = current->nextATInstance;
     }
 
-    PrintDebugString("  finished telling ATs about our demise");
+    PrintDebugString("[INFO]:  finished telling ATs about our demise");
 
         if(JavaBridgeThreadId)
                 {
@@ -201,8 +202,9 @@ JavaAccessBridge::~JavaAccessBridge() {
 
     delete ATs;
 
-    PrintDebugString("  finished deleting ATs");
-    PrintDebugString("GOODBYE CRUEL WORLD...");
+    PrintDebugString("[INFO]:   finished deleting ATs");
+    PrintDebugString("[INFO]: GOODBYE CRUEL WORLD...");
+    finalizeFileLogger();
 }
 
 
@@ -210,17 +212,17 @@ void
 JavaAccessBridge::javaRun(JNIEnv *env, jobject obj) {
     MSG msg;
 
-    PrintDebugString("JavaAccessBridge::javaRun(%p, %p) called", env, obj);
+    PrintDebugString("[INFO]: JavaAccessBridge::javaRun(%p, %p) called", env, obj);
 
     if (env->GetJavaVM(&javaVM) != 0) {
         return; // huh!?!?!
     }
-    PrintDebugString("  -> javaVM = %p", javaVM);
+    PrintDebugString("[INFO]:   -> javaVM = %p", javaVM);
 
     if (javaVM->AttachCurrentThread((void **) &windowsThreadJNIEnv, NULL) != 0) {
         return; // huh!?!?!
     }
-    PrintDebugString("  -> windowsThreadJNIEnv = %p", windowsThreadJNIEnv);
+    PrintDebugString("[INFO]:  -> windowsThreadJNIEnv = %p", windowsThreadJNIEnv);
 
     javaThreadABObject = env->NewGlobalRef(obj);
     windowsThreadABObject = windowsThreadJNIEnv->NewGlobalRef(obj);
@@ -230,7 +232,7 @@ JavaAccessBridge::javaRun(JNIEnv *env, jobject obj) {
     if (javaThreadEntryPoints->BuildJavaEntryPoints() == FALSE) {
         return;         // couldn't build our entry points; let's get out of here!
     }
-    PrintDebugString("  all Java thread entry points successfully found.");
+    PrintDebugString("[INFO]:   all Java thread entry points successfully found.");
 
     // initialize the Windows thread AccessBridge entry points
     windowsThreadEntryPoints = new AccessBridgeJavaEntryPoints(windowsThreadJNIEnv,
@@ -238,12 +240,12 @@ JavaAccessBridge::javaRun(JNIEnv *env, jobject obj) {
     if (windowsThreadEntryPoints->BuildJavaEntryPoints() == FALSE) {
         return;         // couldn't build our entry points; let's get out of here!
     }
-    PrintDebugString("  all Windows thread entry points successfully found.");
+    PrintDebugString("[INFO]:   all Windows thread entry points successfully found.");
 
 
     // open our window
     if (initWindow() == TRUE) {
-        PrintDebugString("  Window created.  HWND = %p", dialogWindow);
+        PrintDebugString("[INFO]:   Window created.  HWND = %p", dialogWindow);
 
         // post a broadcast msg.; let other AccessBridge DLLs know we exist
         postHelloToWindowsDLLMsg(HWND_BROADCAST);
@@ -254,7 +256,7 @@ JavaAccessBridge::javaRun(JNIEnv *env, jobject obj) {
             DispatchMessage(&msg);
         }
     } else {
-        PrintDebugString("  FAILED TO CREATE WINDOW!!!");
+        PrintDebugString("[ERROR]:   FAILED TO CREATE WINDOW!!!");
     }
 
     javaVM->DetachCurrentThread();
@@ -301,8 +303,8 @@ JavaAccessBridge::initWindow() {
  */
 void
 JavaAccessBridge::postHelloToWindowsDLLMsg(HWND destHwnd) {
-    PrintDebugString("\r\nIn JavaAccessBridge::postHelloToWindowsDLLMsg");
-    PrintDebugString("  calling PostMessage(%p, %X, %p, %p)",
+    PrintDebugString("[INFO]: In JavaAccessBridge::postHelloToWindowsDLLMsg");
+    PrintDebugString("[INFO]:   calling PostMessage(%p, %X, %p, %p)",
                      destHwnd, theFromJavaHelloMsgID, dialogWindow, dialogWindow);
     PostMessage(destHwnd, theFromJavaHelloMsgID, (WPARAM) dialogWindow, (LPARAM) dialogWindow);
 }
@@ -333,10 +335,10 @@ JavaAccessBridge::sendPackage(char *buffer, int bufsize, HWND destHwnd) {
 void
 JavaAccessBridge::sendJavaEventPackage(char *buffer, int bufsize, long type) {
 
-    PrintDebugString("JavaAccessBridge::sendJavaEventPackage(), type = %X", type);
+    PrintDebugString("[INFO]: JavaAccessBridge::sendJavaEventPackage(), type = %X", type);
 
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
     }
 
     AccessBridgeATInstance *ati = ATs;
@@ -353,10 +355,10 @@ JavaAccessBridge::sendJavaEventPackage(char *buffer, int bufsize, long type) {
 void
 JavaAccessBridge::sendAccessibilityEventPackage(char *buffer, int bufsize, long type) {
 
-    PrintDebugString("JavaAccessBridge::sendAccessibilityEventPackage(), type = %X", type);
+    PrintDebugString("[INFO]: JavaAccessBridge::sendAccessibilityEventPackage(), type = %X", type);
 
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR] ATs == 0! (shouldn't happen here!)");
     }
 
     AccessBridgeATInstance *ati = ATs;
@@ -381,11 +383,11 @@ BOOL
 JavaAccessBridge::receiveMemoryPackage(HWND srcWindow, long bufsize) {
     char *IPCview;
 
-    PrintDebugString("\r\nJavaAccessBridge::receiveMemoryPackage(%p, %d)", srcWindow, bufsize);
+    PrintDebugString("[INFO]: JavaAccessBridge::receiveMemoryPackage(%p, %d)", srcWindow, bufsize);
 
     // look-up the appropriate IPCview based on the srcHWND of the Windows AccessBridge DLL
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR! - ATs == 0 (shouldn't happen in receiveMemoryPackage()!");
+        PrintDebugString("[ERROR]: - ATs == 0 (shouldn't happen in receiveMemoryPackage()!");
         return FALSE;
     }
     AccessBridgeATInstance *ati = ATs->findABATInstanceFromATHWND(srcWindow);
@@ -408,7 +410,7 @@ JavaAccessBridge::receiveMemoryPackage(HWND srcWindow, long bufsize) {
 
     } else {
         //DEBUG_CODE(AppendToCallInfo("ERROR receiving memory package: couldn't find srcWindow"));
-        PrintDebugString("ERROR receiving memory package: couldn't find srcWindow");
+        PrintDebugString("[ERROR]: receiving memory package: couldn't find srcWindow");
         return FALSE;
     }
 }
@@ -420,11 +422,11 @@ JavaAccessBridge::receiveMemoryPackage(HWND srcWindow, long bufsize) {
  */
 LRESULT
 JavaAccessBridge::processPackage(char *buffer, int bufsize) {
-    PrintDebugString("\r\nProcessing package sent from Windows, bufsize = %d:", bufsize);
+    PrintDebugString("[INFO]: Processing package sent from Windows, bufsize = %d:", bufsize);
 
     PackageType *type = (PackageType *) buffer;
     LRESULT returnVal = 0;
-    PrintDebugString("  PackageType = %X:", *type);
+    PrintDebugString("[INFO]:  PackageType = %X:", *type);
     jobject rAC;
 
     switch (*type) {
@@ -433,13 +435,13 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
     case cMemoryMappedFileCreatedPackage:
         // Windows is telling us it created a memory mapped file for us to use
         // in repsonding to various information querying packages (see below)
-        PrintDebugString("   type == cMemoryMappedFileCreatedPackage");
+        PrintDebugString("[INFO]:   type == cMemoryMappedFileCreatedPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(MemoryMappedFileCreatedPackage))) {
             MemoryMappedFileCreatedPackage *pkg =
                 (MemoryMappedFileCreatedPackage *) (buffer + sizeof(PackageType));
             returnVal = MemoryMappedFileCreated((HWND)ABLongToHandle(pkg->bridgeWindow), pkg->filename);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(MemoryMappedFileCreatedPackage));
         }
         break;
@@ -447,84 +449,84 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ information querying packages ------------------
 
     case cReleaseJavaObjectPackage:
-        PrintDebugString("   type == cReleaseJavaObjectPackage");
+        PrintDebugString("[INFO]:   type == cReleaseJavaObjectPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(ReleaseJavaObjectPackage))) {
             ReleaseJavaObjectPackage *pkg =
                 (ReleaseJavaObjectPackage *) (buffer + sizeof(PackageType));
             releaseJavaObject((jobject)pkg->object);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:   processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(ReleaseJavaObjectPackage));
         }
         break;
 
     case cGetAccessBridgeVersionPackage:
-        PrintDebugString("   type == cGetAccessBridgeVersionPackage");
+        PrintDebugString("[INFO]:   type == cGetAccessBridgeVersionPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessBridgeVersionPackage))) {
             GetAccessBridgeVersionPackage *pkg =
                 (GetAccessBridgeVersionPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getVersionInfo(&(pkg->rVersionInfo));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessBridgeVersionPackage));
         }
         break;
 
     case cIsJavaWindowPackage:
-        PrintDebugString("   type == cIsJavaWindowPackage");
+        PrintDebugString("[INFO]:   type == cIsJavaWindowPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(IsJavaWindowPackage))) {
             IsJavaWindowPackage *pkg =
                 (IsJavaWindowPackage *) (buffer + sizeof(PackageType));
             pkg->rResult =
                 windowsThreadEntryPoints->isJavaWindow(pkg->window);
-            PrintDebugString("     -> returning result = %d", pkg->rResult);
+            PrintDebugString("[INFO]:     -> returning result = %d", pkg->rResult);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(IsJavaWindowPackage));
         }
         break;
 
     case cIsSameObjectPackage:
-        PrintDebugString("   type == cIsSameObjectPackage");
+        PrintDebugString("[INFO]:   type == cIsSameObjectPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(IsSameObjectPackage))) {
             IsSameObjectPackage *pkg =
                 (IsSameObjectPackage *) (buffer + sizeof(PackageType));
             pkg->rResult =
                 windowsThreadEntryPoints->isSameObject((jobject)pkg->obj1, (jobject)pkg->obj2);
-            PrintDebugString("     -> returning result = %d", pkg->rResult);
+            PrintDebugString("[INFO]:     -> returning result = %d", pkg->rResult);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(IsSameObjectPackage));
         }
         break;
 
 
     case cGetAccessibleContextFromHWNDPackage:
-        PrintDebugString("   type == cGetAccessibleContextFromHWNDPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleContextFromHWNDPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleContextFromHWNDPackage))) {
             GetAccessibleContextFromHWNDPackage *pkg =
                 (GetAccessibleContextFromHWNDPackage *) (buffer + sizeof(PackageType));
             rAC = windowsThreadEntryPoints->getAccessibleContextFromHWND(pkg->window);
             pkg->rAccessibleContext = (JOBJECT64)rAC;
             pkg->rVMID = HandleToLong(dialogWindow);
-            PrintDebugString("     -> returning AC = %p, vmID = %X", rAC, pkg->rVMID);
+            PrintDebugString("[INFO]:      -> returning AC = %p, vmID = %X", rAC, pkg->rVMID);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleContextFromHWNDPackage));
         }
         break;
 
 
     case cGetHWNDFromAccessibleContextPackage:
-        PrintDebugString("   type == cGetHWNDFromAccessibleContextPackage");
+        PrintDebugString("[INFO]:    type == cGetHWNDFromAccessibleContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetHWNDFromAccessibleContextPackage))) {
             GetHWNDFromAccessibleContextPackage *pkg =
                 (GetHWNDFromAccessibleContextPackage *) (buffer + sizeof(PackageType));
             pkg->rHWND =
                 ABHandleToLong( windowsThreadEntryPoints->getHWNDFromAccessibleContext((jobject)pkg->accessibleContext) );
-            PrintDebugString("     -> returning HWND = %p", pkg->rHWND);
+            PrintDebugString("[INFO]:     -> returning HWND = %p", pkg->rHWND);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetHWNDFromAccessibleContextPackage));
         }
         break;
@@ -533,15 +535,15 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         /* ===== utility methods ===== */
 
     case cSetTextContentsPackage:
-        PrintDebugString("   type == cSetTextContentsPackage");
+        PrintDebugString("[INFO]:   type == cSetTextContentsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(SetTextContentsPackage))) {
             SetTextContentsPackage *pkg =
                 (SetTextContentsPackage *) (buffer + sizeof(PackageType));
             pkg->rResult =
                 windowsThreadEntryPoints->setTextContents((jobject)pkg->accessibleContext, pkg->text);
-            PrintDebugString("     -> returning result = %d", pkg->rResult);
+            PrintDebugString("[INFO]:     -> returning result = %d", pkg->rResult);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(SetTextContentsPackage));
         }
         break;
@@ -552,75 +554,76 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
                 (GetParentWithRolePackage *) (buffer + sizeof(PackageType));
             rAC = windowsThreadEntryPoints->getParentWithRole((jobject)pkg->accessibleContext, pkg->role);
             pkg->rAccessibleContext = (JOBJECT64)rAC;
-            PrintDebugString("   type == cGetParentWithRolePackage");
-            PrintDebugString("     pkg->vmID: %X", pkg->vmID);
-            PrintDebugString("     pkg->accessibleContext: %p", (jobject)pkg->accessibleContext);
-            PrintDebugString("     pkg->role: %ls", pkg->role);
-            PrintDebugString("     -> returning rAccessibleContext = %p", rAC);
+            PrintDebugString("[INFO]:   type == cGetParentWithRolePackage\n"\
+                             "     pkg->vmID: %X"\
+                             "     pkg->accessibleContext: %p"\
+                             "     pkg->role: %ls"\
+                             "     -> returning rAccessibleContext = %p"\
+                , pkg->vmID, (jobject)pkg->accessibleContext, pkg->role, rAC);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:   processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetParentWithRolePackage));
         }
         break;
 
     case cGetTopLevelObjectPackage:
-        PrintDebugString("   type == cGetTopLevelObjectPackage");
+        PrintDebugString("[INFO]:   type == cGetTopLevelObjectPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetTopLevelObjectPackage))) {
             GetTopLevelObjectPackage *pkg =
                 (GetTopLevelObjectPackage *) (buffer + sizeof(PackageType));
             rAC = windowsThreadEntryPoints->getTopLevelObject((jobject)pkg->accessibleContext);
             pkg->rAccessibleContext = (JOBJECT64)rAC;
-            PrintDebugString("     -> returning rAccessibleContext = %p", rAC);
+            PrintDebugString("[INFO]:      -> returning rAccessibleContext = %p", rAC);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetTopLevelObjectPackage));
         }
         break;
 
     case cGetParentWithRoleElseRootPackage:
-        PrintDebugString("   type == cGetParentWithRoleElseRootPackage");
+        PrintDebugString("[INFO]:   type == cGetParentWithRoleElseRootPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetParentWithRoleElseRootPackage))) {
             GetParentWithRoleElseRootPackage *pkg =
                 (GetParentWithRoleElseRootPackage *) (buffer + sizeof(PackageType));
             rAC = windowsThreadEntryPoints->getParentWithRoleElseRoot((jobject)pkg->accessibleContext, pkg->role);
             pkg->rAccessibleContext = (JOBJECT64)rAC;
-            PrintDebugString("     -> returning rAccessibleContext = %p", rAC);
+            PrintDebugString("[INFO]:      -> returning rAccessibleContext = %p", rAC);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetParentWithRoleElseRootPackage));
         }
         break;
 
     case cGetObjectDepthPackage:
-        PrintDebugString("   type == cGetObjectDepthPackage");
+        PrintDebugString("[INFO]:   type == cGetObjectDepthPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetObjectDepthPackage))) {
             GetObjectDepthPackage *pkg =
                 (GetObjectDepthPackage *) (buffer + sizeof(PackageType));
             pkg->rResult =
                 windowsThreadEntryPoints->getObjectDepth((jobject)pkg->accessibleContext);
-            PrintDebugString("     -> returning rResult = %d", pkg->rResult);
+            PrintDebugString("[INFO]:     -> returning rResult = %d", pkg->rResult);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetObjectDepthPackage));
         }
         break;
 
     case cGetActiveDescendentPackage:
-        PrintDebugString("   type == cGetActiveDescendentPackage");
+        PrintDebugString("[INFO]:   type == cGetActiveDescendentPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetActiveDescendentPackage))) {
             GetActiveDescendentPackage *pkg =
                 (GetActiveDescendentPackage *) (buffer + sizeof(PackageType));
             rAC = windowsThreadEntryPoints->getActiveDescendent((jobject)pkg->accessibleContext);
             pkg->rAccessibleContext = (JOBJECT64)rAC;
-            PrintDebugString("     -> returning rAccessibleContext = %p", rAC);
+            PrintDebugString("[INFO]:  -> returning rAccessibleContext = %p", rAC);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:   processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetActiveDescendentPackage));
         }
         break;
 
     case cGetAccessibleContextAtPackage:
-        PrintDebugString("   type == cGetAccessibleContextAtPackage");
+        PrintDebugString("[INFO]:   type == cGetAccessibleContextAtPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleContextAtPackage))) {
             GetAccessibleContextAtPackage *pkg =
                 (GetAccessibleContextAtPackage *) (buffer + sizeof(PackageType));
@@ -628,13 +631,13 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
                 windowsThreadEntryPoints->getAccessibleContextAt(pkg->x, pkg->y,
                                                                  (jobject)pkg->AccessibleContext);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleContextAtPackage));
         }
         break;
 
     case cGetAccessibleContextWithFocusPackage:
-        PrintDebugString("   type == cGetAccessibleContextWithFocusPackage");
+        PrintDebugString("[INFO]:   type == cGetAccessibleContextWithFocusPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleContextWithFocusPackage))) {
             GetAccessibleContextWithFocusPackage *pkg =
                 (GetAccessibleContextWithFocusPackage *) (buffer + sizeof(PackageType));
@@ -642,46 +645,46 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
                 windowsThreadEntryPoints->getAccessibleContextWithFocus();
                         pkg->rVMID =  HandleToLong(dialogWindow);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleContextWithFocusPackage));
         }
         break;
 
     case cGetAccessibleContextInfoPackage:
-        PrintDebugString("   type == cGetAccessibleContextInfoPackage");
+        PrintDebugString("[INFO]:   type == cGetAccessibleContextInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleContextInfoPackage))) {
             GetAccessibleContextInfoPackage *pkg =
                 (GetAccessibleContextInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleContextInfo(
                                                                (jobject)pkg->AccessibleContext, &(pkg->rAccessibleContextInfo));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleContextInfoPackage));
         }
         break;
 
     case cGetAccessibleChildFromContextPackage:
-        PrintDebugString("   type == cGetAccessibleChildFromContextPackage");
+        PrintDebugString("[INFO]:   type == cGetAccessibleChildFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleChildFromContextPackage))) {
             GetAccessibleChildFromContextPackage *pkg =
                 (GetAccessibleChildFromContextPackage *) (buffer + sizeof(PackageType));
             pkg->rAccessibleContext = (JOBJECT64)windowsThreadEntryPoints->getAccessibleChildFromContext(
                                                                                               (jobject)pkg->AccessibleContext, pkg->childIndex);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleChildFromContextPackage));
         }
         break;
 
     case cGetAccessibleParentFromContextPackage:
-        PrintDebugString("   type == cGetAccessibleParentFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleParentFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleParentFromContextPackage))) {
             GetAccessibleParentFromContextPackage *pkg =
                 (GetAccessibleParentFromContextPackage *) (buffer + sizeof(PackageType));
             pkg->rAccessibleContext = (JOBJECT64)windowsThreadEntryPoints->getAccessibleParentFromContext(
                                                                                                (jobject)pkg->AccessibleContext);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleParentFromContextPackage));
         }
         break;
@@ -689,106 +692,106 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ begin AccessibleTable packages ------------------
 
     case cGetAccessibleTableInfoPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableInfoPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableInfoPackage))) {
             GetAccessibleTableInfoPackage *pkg =
                 (GetAccessibleTableInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTableInfo((jobject)pkg->accessibleContext,
                                                              &(pkg->rTableInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableInfoPackage));
         }
         break;
 
     case cGetAccessibleTableCellInfoPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableCellInfoPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableCellInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableCellInfoPackage))) {
             GetAccessibleTableCellInfoPackage *pkg =
                 (GetAccessibleTableCellInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTableCellInfo((jobject)pkg->accessibleTable, pkg->row,
                                                                  pkg->column, &(pkg->rTableCellInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableCellInfoPackage));
         }
         break;
 
     case cGetAccessibleTableRowHeaderPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableRowHeaderPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableRowHeaderPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableRowHeaderPackage))) {
             GetAccessibleTableRowHeaderPackage *pkg =
                 (GetAccessibleTableRowHeaderPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTableRowHeader((jobject)pkg->accessibleContext,
                                                                   &(pkg->rTableInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableRowHeaderPackage));
         }
         break;
 
     case cGetAccessibleTableColumnHeaderPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableColumnHeaderPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableColumnHeaderPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableColumnHeaderPackage))) {
             GetAccessibleTableColumnHeaderPackage *pkg =
                 (GetAccessibleTableColumnHeaderPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTableColumnHeader((jobject)pkg->accessibleContext,
                                                                      &(pkg->rTableInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableColumnHeaderPackage));
         }
         break;
 
 
     case cGetAccessibleTableRowDescriptionPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableRowDescriptionPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableRowDescriptionPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableRowDescriptionPackage))) {
             GetAccessibleTableRowDescriptionPackage *pkg =
                 (GetAccessibleTableRowDescriptionPackage *) (buffer + sizeof(PackageType));
             pkg->rAccessibleContext = (JOBJECT64)windowsThreadEntryPoints->getAccessibleTableRowDescription(
                                                                                                  (jobject)pkg->accessibleContext, pkg->row);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableRowDescriptionPackage));
         }
         break;
 
     case cGetAccessibleTableColumnDescriptionPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableColumnDescriptionPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableColumnDescriptionPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableColumnDescriptionPackage))) {
             GetAccessibleTableColumnDescriptionPackage *pkg =
                 (GetAccessibleTableColumnDescriptionPackage *) (buffer + sizeof(PackageType));
             pkg->rAccessibleContext = (JOBJECT64)windowsThreadEntryPoints->getAccessibleTableColumnDescription(
                                                                                                     (jobject)pkg->accessibleContext, pkg->column);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableColumnDescriptionPackage));
         }
         break;
 
     case cGetAccessibleTableColumnSelectionCountPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableColumnSelectionCountPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableColumnSelectionCountPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableColumnSelectionCountPackage))) {
             GetAccessibleTableColumnSelectionCountPackage *pkg =
                 (GetAccessibleTableColumnSelectionCountPackage *) (buffer + sizeof(PackageType));
             pkg->rCount = windowsThreadEntryPoints->getAccessibleTableColumnSelectionCount(
                                                                                            (jobject)pkg->accessibleTable);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableColumnSelectionCountPackage));
         }
         break;
 
     case cGetAccessibleTableRowSelectionCountPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableRowSelectionCountPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableRowSelectionCountPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableRowSelectionCountPackage))) {
             GetAccessibleTableRowSelectionCountPackage *pkg =
                 (GetAccessibleTableRowSelectionCountPackage *) (buffer + sizeof(PackageType));
@@ -796,114 +799,114 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
             pkg->rCount = windowsThreadEntryPoints->getAccessibleTableRowSelectionCount(
                                                                                         (jobject)pkg->accessibleTable);
 
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableRowSelectionCountPackage));
         }
         break;
 
     case cIsAccessibleTableRowSelectedPackage:
-        PrintDebugString("   ##### type == cIsAccessibleTableRowSelectedPackage");
+        PrintDebugString("[INFO]:    ##### type == cIsAccessibleTableRowSelectedPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(IsAccessibleTableRowSelectedPackage))) {
             IsAccessibleTableRowSelectedPackage *pkg =
                 (IsAccessibleTableRowSelectedPackage *) (buffer + sizeof(PackageType));
             pkg->rResult = windowsThreadEntryPoints->isAccessibleTableRowSelected(
                                                                                   (jobject)pkg->accessibleTable, pkg->row);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(IsAccessibleTableRowSelectedPackage));
         }
         break;
 
     case cIsAccessibleTableColumnSelectedPackage:
-        PrintDebugString("   ##### type == cIsAccessibleTableColumnSelectedPackage");
+        PrintDebugString("[INFO]:    ##### type == cIsAccessibleTableColumnSelectedPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(IsAccessibleTableColumnSelectedPackage))) {
             IsAccessibleTableColumnSelectedPackage *pkg =
                 (IsAccessibleTableColumnSelectedPackage *) (buffer + sizeof(PackageType));
             pkg->rResult = windowsThreadEntryPoints->isAccessibleTableColumnSelected(
                                                                                      (jobject)pkg->accessibleTable, pkg->column);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(IsAccessibleTableColumnSelectedPackage));
         }
         break;
 
     case cGetAccessibleTableColumnSelectionsPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableColumnSelectionsPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableColumnSelectionsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableColumnSelectionsPackage))) {
             GetAccessibleTableColumnSelectionsPackage *pkg =
                 (GetAccessibleTableColumnSelectionsPackage *) (buffer + sizeof(PackageType));
-            PrintDebugString("     ##### cGetAccessibleTableColumnSelectionsPackage count=%d", pkg->count);
+            PrintDebugString("[INFO]:      ##### cGetAccessibleTableColumnSelectionsPackage count=%d", pkg->count);
             windowsThreadEntryPoints->getAccessibleTableColumnSelections(
                                                                          (jobject)pkg->accessibleTable, pkg->count, pkg->rSelections);
 
             for (int i = 0; i < pkg->count; i++) {
-                PrintDebugString("     ##### cGetAccessibleTableColumnSelectionsPackage(%d)=%d", i, pkg->rSelections[i]);
+                PrintDebugString("[INFO]:      ##### cGetAccessibleTableColumnSelectionsPackage(%d)=%d", i, pkg->rSelections[i]);
             }
 
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableColumnSelectionsPackage));
         }
         break;
 
 
     case cGetAccessibleTableRowSelectionsPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableRowSelectionsPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableRowSelectionsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableRowSelectionsPackage))) {
             GetAccessibleTableRowSelectionsPackage *pkg =
                 (GetAccessibleTableRowSelectionsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTableRowSelections(
                                                                       (jobject)pkg->accessibleTable, pkg->count, pkg->rSelections);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableRowSelectionsPackage));
         }
         break;
 
     case cGetAccessibleTableRowPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableRowPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableRowPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableRowPackage))) {
             GetAccessibleTableRowPackage *pkg =
                 (GetAccessibleTableRowPackage *) (buffer + sizeof(PackageType));
             pkg->rRow = windowsThreadEntryPoints->getAccessibleTableRow(
                                                                         (jobject)pkg->accessibleTable, pkg->index);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableRowPackage));
         }
         break;
 
     case cGetAccessibleTableColumnPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableColumnPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableColumnPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableColumnPackage))) {
             GetAccessibleTableColumnPackage *pkg =
                 (GetAccessibleTableColumnPackage *) (buffer + sizeof(PackageType));
             pkg->rColumn = windowsThreadEntryPoints->getAccessibleTableColumn(
                                                                               (jobject)pkg->accessibleTable, pkg->index);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableColumnPackage));
         }
         break;
 
     case cGetAccessibleTableIndexPackage:
-        PrintDebugString("   ##### type == cGetAccessibleTableIndexPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleTableIndexPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTableIndexPackage))) {
             GetAccessibleTableIndexPackage *pkg =
                 (GetAccessibleTableIndexPackage *) (buffer + sizeof(PackageType));
             pkg->rIndex = windowsThreadEntryPoints->getAccessibleTableIndex(
                                                                             (jobject)pkg->accessibleTable, pkg->row, pkg->column);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTableIndexPackage));
         }
         break;
@@ -914,15 +917,15 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ begin AccessibleRelationSet packages ------------------
 
     case cGetAccessibleRelationSetPackage:
-        PrintDebugString("   ##### type == cGetAccessibleRelationSetPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleRelationSetPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleRelationSetPackage))) {
             GetAccessibleRelationSetPackage *pkg =
                 (GetAccessibleRelationSetPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleRelationSet(
                                                                (jobject)pkg->accessibleContext, &(pkg->rAccessibleRelationSetInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleRelationSetPackage));
         }
         break;
@@ -932,85 +935,85 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ begin AccessibleHypertext packages ------------------
 
     case cGetAccessibleHypertextPackage:
-        PrintDebugString("   ##### type == cGetAccessibleHypertextPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleHypertextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleHypertextPackage))) {
             GetAccessibleHypertextPackage *pkg =
                 (GetAccessibleHypertextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleHypertext(
                                                              (jobject)pkg->accessibleContext, &(pkg->rAccessibleHypertextInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleHypertextPackage));
         }
         break;
 
     case cActivateAccessibleHyperlinkPackage:
-        PrintDebugString("   ##### type == cActivateAccessibleHyperlinkPackage");
+        PrintDebugString("[INFO]:    ##### type == cActivateAccessibleHyperlinkPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(ActivateAccessibleHyperlinkPackage))) {
             ActivateAccessibleHyperlinkPackage *pkg =
                 (ActivateAccessibleHyperlinkPackage *) (buffer + sizeof(PackageType));
             pkg->rResult = windowsThreadEntryPoints->activateAccessibleHyperlink(
                                                                                  (jobject)pkg->accessibleContext, (jobject)pkg->accessibleHyperlink);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(ActivateAccessibleHyperlinkPackage));
         }
         break;
 
     case cGetAccessibleHyperlinkCountPackage:
-        PrintDebugString("   ##### type == cGetAccessibleHyperlinkCountPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleHyperlinkCountPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleHyperlinkCountPackage))) {
             GetAccessibleHyperlinkCountPackage *pkg =
                 (GetAccessibleHyperlinkCountPackage *) (buffer + sizeof(PackageType));
             pkg->rLinkCount = windowsThreadEntryPoints->getAccessibleHyperlinkCount(
                                                                                     (jobject)pkg->accessibleContext);
-            PrintDebugString("   ##### processing succeeded: pkg->rLinkCount = %d", pkg->rLinkCount);
+            PrintDebugString("[INFO]:    ##### processing succeeded: pkg->rLinkCount = %d", pkg->rLinkCount);
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleHyperlinkCountPackage));
         }
         break;
 
     case cGetAccessibleHypertextExtPackage:
-        PrintDebugString("   ##### type == cGetAccessibleHypertextExtPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleHypertextExtPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleHypertextExtPackage))) {
             GetAccessibleHypertextExtPackage *pkg =
                 (GetAccessibleHypertextExtPackage *) (buffer + sizeof(PackageType));
             pkg->rSuccess = windowsThreadEntryPoints->getAccessibleHypertextExt(
                                                                                 (jobject)pkg->accessibleContext, pkg->startIndex, &(pkg->rAccessibleHypertextInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleHypertextExtPackage));
         }
         break;
 
     case cGetAccessibleHypertextLinkIndexPackage:
-        PrintDebugString("   ##### type == cGetAccessibleHypertextLinkIndexPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleHypertextLinkIndexPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleHypertextLinkIndexPackage))) {
             GetAccessibleHypertextLinkIndexPackage *pkg =
                 (GetAccessibleHypertextLinkIndexPackage *) (buffer + sizeof(PackageType));
             pkg->rLinkIndex = windowsThreadEntryPoints->getAccessibleHypertextLinkIndex(
                                                                                         (jobject)pkg->hypertext, pkg->charIndex);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleHypertextLinkIndexPackage));
         }
         break;
 
     case cGetAccessibleHyperlinkPackage:
-        PrintDebugString("   ##### type == cGetAccessibleHyperlinkPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleHyperlinkPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleHyperlinkPackage))) {
             GetAccessibleHyperlinkPackage *pkg =
                 (GetAccessibleHyperlinkPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleHyperlink((jobject)pkg->hypertext, pkg->linkIndex,
                                                              &(pkg->rAccessibleHyperlinkInfo));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleHyperlinkPackage));
         }
         break;
@@ -1020,59 +1023,59 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ begin Accessible KeyBindings, Icons and Actions
 
     case cGetAccessibleKeyBindingsPackage:
-        PrintDebugString("   ##### type == cGetAccessibleKeyBindingsPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleKeyBindingsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleKeyBindingsPackage))) {
             GetAccessibleKeyBindingsPackage *pkg =
                 (GetAccessibleKeyBindingsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleKeyBindings (
                                                                 (jobject)pkg->accessibleContext, &(pkg->rAccessibleKeyBindings));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleKeyBindingsPackage));
         }
         break;
 
     case cGetAccessibleIconsPackage:
-        PrintDebugString("   ##### type == cGetAccessibleIconsPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleIconsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleIconsPackage))) {
             GetAccessibleIconsPackage *pkg =
                 (GetAccessibleIconsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleIcons (
                                                           (jobject)pkg->accessibleContext, &(pkg->rAccessibleIcons));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleIconsPackage));
         }
         break;
 
 
     case cGetAccessibleActionsPackage:
-        PrintDebugString("   ##### type == cGetAccessibleActionsPackage");
+        PrintDebugString("[INFO]:    ##### type == cGetAccessibleActionsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleActionsPackage))) {
             GetAccessibleActionsPackage *pkg =
                 (GetAccessibleActionsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleActions (
                                                             (jobject)pkg->accessibleContext, &(pkg->rAccessibleActions));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleActionsPackage));
         }
         break;
 
     case cDoAccessibleActionsPackage:
-        PrintDebugString("   ##### type == cDoAccessibleActionsPackage");
+        PrintDebugString("[INFO]:    ##### type == cDoAccessibleActionsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(DoAccessibleActionsPackage))) {
             DoAccessibleActionsPackage *pkg =
                 (DoAccessibleActionsPackage *) (buffer + sizeof(PackageType));
             pkg->rResult =
                 windowsThreadEntryPoints->doAccessibleActions((jobject)pkg->accessibleContext, &(pkg->actionsToDo),
                                                               &(pkg->failure));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(DoAccessibleActionsPackage));
         }
         break;
@@ -1080,50 +1083,50 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ begin addtional methods for Teton
 
     case cGetVirtualAccessibleNamePackage:
-        PrintDebugString("   ##### type == GetVirtualAccessibleNamePackage");
+        PrintDebugString("[INFO]:    ##### type == GetVirtualAccessibleNamePackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetVirtualAccessibleNamePackage))) {
             GetVirtualAccessibleNamePackage *pkg =
                 (GetVirtualAccessibleNamePackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getVirtualAccessibleName ((const jobject)pkg->accessibleContext,
                                                              pkg->rName,
                                                              pkg->len);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetVirtualAccessibleNamePackage));
         }
         break;
 
     case cRequestFocusPackage:
-        PrintDebugString("   ##### type == RequestFocusPackage");
+        PrintDebugString("[INFO]:    ##### type == RequestFocusPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(RequestFocusPackage))) {
             RequestFocusPackage *pkg =
                 (RequestFocusPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->requestFocus (
                                                     (jobject)pkg->accessibleContext);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(RequestFocusPackage));
         }
         break;
 
     case cSelectTextRangePackage:
-        PrintDebugString("   ##### type == SelectTextRangePackage");
+        PrintDebugString("[INFO]:    ##### type == SelectTextRangePackage");
         if (bufsize == (sizeof(PackageType) + sizeof(SelectTextRangePackage))) {
             SelectTextRangePackage *pkg =
                 (SelectTextRangePackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->selectTextRange (
                                                        (jobject)pkg->accessibleContext, pkg->startIndex, pkg->endIndex);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(SelectTextRangePackage));
         }
         break;
 
     case cGetTextAttributesInRangePackage:
-        PrintDebugString("   ##### type == GetTextAttributesInRangePackage");
+        PrintDebugString("[INFO]:    ##### type == GetTextAttributesInRangePackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetTextAttributesInRangePackage))) {
             GetTextAttributesInRangePackage *pkg =
                 (GetTextAttributesInRangePackage *) (buffer + sizeof(PackageType));
@@ -1131,30 +1134,30 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
                                                                 (jobject)pkg->accessibleContext, pkg->startIndex, pkg->endIndex,
                                                                 (AccessibleTextAttributesInfo *)&(pkg->attributes),
                                                                 &(pkg->rLength));
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetTextAttributesInRangePackage));
         }
         break;
 
 
     case cGetVisibleChildrenCountPackage:
-        PrintDebugString("   ##### type == GetVisibleChildrenCountPackage");
+        PrintDebugString("[INFO]:    ##### type == GetVisibleChildrenCountPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetVisibleChildrenCountPackage))) {
             GetVisibleChildrenCountPackage *pkg =
                 (GetVisibleChildrenCountPackage *) (buffer + sizeof(PackageType));
             pkg->rChildrenCount = windowsThreadEntryPoints->getVisibleChildrenCount ((jobject)pkg->accessibleContext);
 
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetVisibleChildrenCountPackage));
         }
         break;
 
     case cGetVisibleChildrenPackage:
-        PrintDebugString("   ##### type == GetVisibleChildrenPackage");
+        PrintDebugString("[INFO]:    ##### type == GetVisibleChildrenPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetVisibleChildrenPackage))) {
             GetVisibleChildrenPackage *pkg =
                 (GetVisibleChildrenPackage *) (buffer + sizeof(PackageType));
@@ -1162,23 +1165,23 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
                                                                           pkg->startIndex,
                                                                           &(pkg->rVisibleChildrenInfo));
 
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetVisibleChildrenPackage));
         }
         break;
 
     case cSetCaretPositionPackage:
-        PrintDebugString("   ##### type == SetCaretPositionPackage");
+        PrintDebugString("[INFO]:    ##### type == SetCaretPositionPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(SetCaretPositionPackage))) {
             SetCaretPositionPackage *pkg =
                 (SetCaretPositionPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->setCaretPosition (
                                                         (jobject)pkg->accessibleContext, pkg->position);
-            PrintDebugString("   ##### processing succeeded");
+            PrintDebugString("[INFO]:    ##### processing succeeded");
         } else {
-            PrintDebugString("   ##### processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    ##### processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(SetCaretPositionPackage));
         }
         break;
@@ -1190,105 +1193,105 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ Accessible Text packages ------------------
 
     case cGetAccessibleTextInfoPackage:
-        PrintDebugString("   type == cGetAccessibleTextInfoPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextInfoPackage))) {
             GetAccessibleTextInfoPackage *pkg =
                 (GetAccessibleTextInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextInfo((jobject)pkg->AccessibleContext,
                                                             &(pkg->rTextInfo), pkg->x, pkg->y);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextInfoPackage));
         }
         break;
 
     case cGetAccessibleTextItemsPackage:
-        PrintDebugString("   type == cGetAccessibleTextItemsPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextItemsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextItemsPackage))) {
             GetAccessibleTextItemsPackage *pkg =
                 (GetAccessibleTextItemsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextItems((jobject)pkg->AccessibleContext,
                                                              &(pkg->rTextItemsInfo), pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextInfoPackage));
         }
         break;
 
     case cGetAccessibleTextSelectionInfoPackage:
-        PrintDebugString("   type == cGetAccessibleTextSelectionInfoPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextSelectionInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextSelectionInfoPackage))) {
             GetAccessibleTextSelectionInfoPackage *pkg =
                 (GetAccessibleTextSelectionInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextSelectionInfo(
                                                                      (jobject)pkg->AccessibleContext, &(pkg->rTextSelectionItemsInfo));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextSelectionInfoPackage));
         }
         break;
 
     case cGetAccessibleTextAttributeInfoPackage:
-        PrintDebugString("   type == cGetAccessibleTextAttributeInfoPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextAttributeInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextAttributeInfoPackage))) {
             GetAccessibleTextAttributeInfoPackage *pkg =
                 (GetAccessibleTextAttributeInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextAttributes(
                                                                   (jobject)pkg->AccessibleContext, pkg->index, (AccessibleTextAttributesInfo *) &(pkg->rAttributeInfo));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextAttributeInfoPackage));
         }
         break;
 
     case cGetAccessibleTextRectInfoPackage:
-        PrintDebugString("   type == cGetAccessibleTextRectInfoPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextRectInfoPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextRectInfoPackage))) {
             GetAccessibleTextRectInfoPackage *pkg =
                 (GetAccessibleTextRectInfoPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextRect((jobject)pkg->AccessibleContext,
                                                             &(pkg->rTextRectInfo), pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextRectInfoPackage));
         }
         break;
 
     case cGetCaretLocationPackage:
-        PrintDebugString("   type == cGetCaretLocationPackage");
+        PrintDebugString("[INFO]:    type == cGetCaretLocationPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetCaretLocationPackage))) {
             GetCaretLocationPackage *pkg =
                 (GetCaretLocationPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getCaretLocation((jobject)pkg->AccessibleContext,
                                                             &(pkg->rTextRectInfo), pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetCaretLocationPackage));
         }
         break;
 
     case cGetAccessibleTextLineBoundsPackage:
-        PrintDebugString("   type == cGetAccessibleTextLineBoundsPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextLineBoundsPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextLineBoundsPackage))) {
             GetAccessibleTextLineBoundsPackage *pkg =
                 (GetAccessibleTextLineBoundsPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextLineBounds((jobject)pkg->AccessibleContext,
                                                                   pkg->index, &(pkg->rLineStart), &(pkg->rLineEnd));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextLineBoundsPackage));
         }
         break;
 
     case cGetAccessibleTextRangePackage:
-        PrintDebugString("   type == cGetAccessibleTextRangePackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleTextRangePackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleTextRangePackage))) {
             GetAccessibleTextRangePackage *pkg =
                 (GetAccessibleTextRangePackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getAccessibleTextRange((jobject)pkg->AccessibleContext,
                                                              pkg->start, pkg->end, (wchar_t *) &(pkg->rText), (sizeof(pkg->rText) / sizeof(wchar_t)));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleTextRangePackage));
         }
         break;
@@ -1297,40 +1300,40 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ Accessible Value packages ------------------
 
     case cGetCurrentAccessibleValueFromContextPackage:
-        PrintDebugString("   type == cGetCurrentAccessibleValueFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetCurrentAccessibleValueFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetCurrentAccessibleValueFromContextPackage))) {
             GetCurrentAccessibleValueFromContextPackage *pkg =
                 (GetCurrentAccessibleValueFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getCurrentAccessibleValueFromContext((jobject)pkg->AccessibleContext,
                                                                            (wchar_t *) &(pkg->rValue), (sizeof(pkg->rValue) / sizeof(wchar_t)));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetCurrentAccessibleValueFromContextPackage));
         }
         break;
 
     case cGetMaximumAccessibleValueFromContextPackage:
-        PrintDebugString("   type == cGetMaximumAccessibleValueFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetMaximumAccessibleValueFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetMaximumAccessibleValueFromContextPackage))) {
             GetMaximumAccessibleValueFromContextPackage *pkg =
                 (GetMaximumAccessibleValueFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getMaximumAccessibleValueFromContext((jobject)pkg->AccessibleContext,
                                                                            (wchar_t *) &(pkg->rValue), (sizeof(pkg->rValue) / sizeof(wchar_t)));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetMaximumAccessibleValueFromContextPackage));
         }
         break;
 
     case cGetMinimumAccessibleValueFromContextPackage:
-        PrintDebugString("   type == cGetMinimumAccessibleValueFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetMinimumAccessibleValueFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetMinimumAccessibleValueFromContextPackage))) {
             GetMinimumAccessibleValueFromContextPackage *pkg =
                 (GetMinimumAccessibleValueFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->getMinimumAccessibleValueFromContext((jobject)pkg->AccessibleContext,
                                                                            (wchar_t *) &(pkg->rValue), (sizeof(pkg->rValue) / sizeof(wchar_t)));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetMinimumAccessibleValueFromContextPackage));
         }
         break;
@@ -1338,90 +1341,90 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ Accessible Selection packages ------------------
 
     case cAddAccessibleSelectionFromContextPackage:
-        PrintDebugString("   type == cAddAccessibleSelectionFromContextPackage");
+        PrintDebugString("[INFO]:    type == cAddAccessibleSelectionFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(AddAccessibleSelectionFromContextPackage))) {
             AddAccessibleSelectionFromContextPackage *pkg =
                 (AddAccessibleSelectionFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->addAccessibleSelectionFromContext((jobject)pkg->AccessibleContext,
                                                                         pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(AddAccessibleSelectionFromContextPackage));
         }
         break;
 
     case cClearAccessibleSelectionFromContextPackage:
-        PrintDebugString("   type == cClearAccessibleSelectionFromContextPackage");
+        PrintDebugString("[INFO]:    type == cClearAccessibleSelectionFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(ClearAccessibleSelectionFromContextPackage))) {
             ClearAccessibleSelectionFromContextPackage *pkg =
                 (ClearAccessibleSelectionFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->clearAccessibleSelectionFromContext((jobject)pkg->AccessibleContext);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(ClearAccessibleSelectionFromContextPackage));
         }
         break;
 
     case cGetAccessibleSelectionFromContextPackage:
-        PrintDebugString("   type == cGetAccessibleSelectionFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleSelectionFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleSelectionFromContextPackage))) {
             GetAccessibleSelectionFromContextPackage *pkg =
                 (GetAccessibleSelectionFromContextPackage *) (buffer + sizeof(PackageType));
             pkg->rAccessibleContext = (JOBJECT64)windowsThreadEntryPoints->getAccessibleSelectionFromContext(
                                                                                                   (jobject)pkg->AccessibleContext, pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleSelectionFromContextPackage));
         }
         break;
 
     case cGetAccessibleSelectionCountFromContextPackage:
-        PrintDebugString("   type == cGetAccessibleSelectionCountFromContextPackage");
+        PrintDebugString("[INFO]:    type == cGetAccessibleSelectionCountFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(GetAccessibleSelectionCountFromContextPackage))) {
             GetAccessibleSelectionCountFromContextPackage *pkg =
                 (GetAccessibleSelectionCountFromContextPackage *) (buffer + sizeof(PackageType));
             pkg->rCount = windowsThreadEntryPoints->getAccessibleSelectionCountFromContext(
                                                                                            (jobject)pkg->AccessibleContext);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(GetAccessibleSelectionCountFromContextPackage));
         }
         break;
 
     case cIsAccessibleChildSelectedFromContextPackage:
-        PrintDebugString("   type == cIsAccessibleChildSelectedFromContextPackage");
+        PrintDebugString("[INFO]:    type == cIsAccessibleChildSelectedFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(IsAccessibleChildSelectedFromContextPackage))) {
             IsAccessibleChildSelectedFromContextPackage *pkg =
                 (IsAccessibleChildSelectedFromContextPackage *) (buffer + sizeof(PackageType));
             pkg->rResult = windowsThreadEntryPoints->isAccessibleChildSelectedFromContext(
                                                                                           (jobject)pkg->AccessibleContext, pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(IsAccessibleChildSelectedFromContextPackage));
         }
         break;
 
     case cRemoveAccessibleSelectionFromContextPackage:
-        PrintDebugString("   type == cRemoveAccessibleSelectionFromContextPackage");
+        PrintDebugString("[INFO]:    type == cRemoveAccessibleSelectionFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(RemoveAccessibleSelectionFromContextPackage))) {
             RemoveAccessibleSelectionFromContextPackage *pkg =
                 (RemoveAccessibleSelectionFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->removeAccessibleSelectionFromContext((jobject)pkg->AccessibleContext,
                                                                            pkg->index);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(RemoveAccessibleSelectionFromContextPackage));
         }
         break;
 
     case cSelectAllAccessibleSelectionFromContextPackage:
-        PrintDebugString("   type == cSelectAllAccessibleSelectionFromContextPackage");
+        PrintDebugString("[INFO]:    type == cSelectAllAccessibleSelectionFromContextPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(SelectAllAccessibleSelectionFromContextPackage))) {
             SelectAllAccessibleSelectionFromContextPackage *pkg =
                 (SelectAllAccessibleSelectionFromContextPackage *) (buffer + sizeof(PackageType));
             windowsThreadEntryPoints->selectAllAccessibleSelectionFromContext((jobject)pkg->AccessibleContext);
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(SelectAllAccessibleSelectionFromContextPackage));
         }
         break;
@@ -1430,60 +1433,60 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
         // ------------ event notification management packages ------------------
 
     case cAddJavaEventNotificationPackage:
-        PrintDebugString("   type = cAddJavaEventNotificationPackage");
+        PrintDebugString("[INFO]:    type = cAddJavaEventNotificationPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(AddJavaEventNotificationPackage))) {
             AddJavaEventNotificationPackage *pkg =
                 (AddJavaEventNotificationPackage *) (buffer + sizeof(PackageType));
             addJavaEventNotification(pkg->type, (HWND)ABLongToHandle( pkg->DLLwindow ) );
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(AddJavaEventNotificationPackage));
         }
         break;
 
     case cRemoveJavaEventNotificationPackage:
-        PrintDebugString("   type = cRemoveJavaEventNotificationPackage");
+        PrintDebugString("[INFO]:    type = cRemoveJavaEventNotificationPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(RemoveJavaEventNotificationPackage))) {
             RemoveJavaEventNotificationPackage *pkg =
                 (RemoveJavaEventNotificationPackage *) (buffer + sizeof(PackageType));
             removeJavaEventNotification(pkg->type, (HWND)ABLongToHandle( pkg->DLLwindow ));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(RemoveJavaEventNotificationPackage));
         }
         break;
 
     case cAddAccessibilityEventNotificationPackage:
-        PrintDebugString("   type = cAddAccessibilityEventNotificationPackage");
+        PrintDebugString("[INFO]:    type = cAddAccessibilityEventNotificationPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(AddAccessibilityEventNotificationPackage))) {
             AddAccessibilityEventNotificationPackage *pkg =
                 (AddAccessibilityEventNotificationPackage *) (buffer + sizeof(PackageType));
             addAccessibilityEventNotification(pkg->type, (HWND)ABLongToHandle(pkg->DLLwindow));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(AddAccessibilityEventNotificationPackage));
         }
         break;
 
     case cRemoveAccessibilityEventNotificationPackage:
-        PrintDebugString("   type = cRemoveAccessibilityEventNotificationPackage");
+        PrintDebugString("[INFO]:    type = cRemoveAccessibilityEventNotificationPackage");
         if (bufsize == (sizeof(PackageType) + sizeof(RemoveAccessibilityEventNotificationPackage))) {
             RemoveAccessibilityEventNotificationPackage *pkg =
                 (RemoveAccessibilityEventNotificationPackage *) (buffer + sizeof(PackageType));
             removeAccessibilityEventNotification(pkg->type, (HWND)ABLongToHandle(pkg->DLLwindow));
         } else {
-            PrintDebugString("   processing FAILED!! -> bufsize = %d; expectation = %d",
+            PrintDebugString("[ERROR]:    processing FAILED!! -> bufsize = %d; expectation = %d",
                              bufsize, sizeof(PackageType) + sizeof(RemoveAccessibilityEventNotificationPackage));
         }
         break;
 
     default:
-        PrintDebugString("   processing FAILED!! -> don't know how to handle type = %X", *type);
+        PrintDebugString("[ERROR]:    processing FAILED!! -> don't know how to handle type = %X", *type);
         returnVal = -1;
         break;
     }
 
-    PrintDebugString("   package processing completed");
+    PrintDebugString("[INFO]:    package processing completed");
     return returnVal;
 }
 
@@ -1502,17 +1505,17 @@ JavaAccessBridge::processPackage(char *buffer, int bufsize) {
  */
 LRESULT
 JavaAccessBridge::MemoryMappedFileCreated(HWND ATBridgeDLLWindow, char *filename) {
-    PrintDebugString("  in MemoryMappedFileCreated(%p, %s)!", ATBridgeDLLWindow, filename);
+    PrintDebugString("[INFO]:   in MemoryMappedFileCreated(%p, %s)!", ATBridgeDLLWindow, filename);
     AccessBridgeATInstance *newAT =
         new AccessBridgeATInstance(dialogWindow, ATBridgeDLLWindow, filename, ATs);
-    PrintDebugString("    just created a new ATInstance = %p, old = %p", newAT, ATs);
+    PrintDebugString("[INFO]:     just created a new ATInstance = %p, old = %p", newAT, ATs);
     ATs = newAT;
 
     LRESULT returnVal = ATs->initiateIPC();
     if (returnVal == 0) {
-        PrintDebugString("  Successfully initiated IPC with AT!!!");
+        PrintDebugString("[INFO]:   Successfully initiated IPC with AT!!!");
     } else {
-        PrintDebugString("  ERROR: Failed to initiate IPC with AT!!!");
+        PrintDebugString("[ERROR]: Failed to initiate IPC with AT!!!");
     }
 
     return returnVal;
@@ -1525,9 +1528,9 @@ JavaAccessBridge::MemoryMappedFileCreated(HWND ATBridgeDLLWindow, char *filename
  */
 void
 JavaAccessBridge::WindowsATDestroyed(HWND ATBridgeDLLWindow) {
-    PrintDebugString("\r\nin JavaAccessBridge::WindowsATDestroyed(%p)", ATBridgeDLLWindow);
+    PrintDebugString("[INFO]: in JavaAccessBridge::WindowsATDestroyed(%p)", ATBridgeDLLWindow);
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! -> ATs == 0! (shouldn't happen here)");
+        PrintDebugString("[ERROR]: -> ATs == 0! (shouldn't happen here)");
         return;
     }
 
@@ -1539,20 +1542,20 @@ JavaAccessBridge::WindowsATDestroyed(HWND ATBridgeDLLWindow) {
         removeJavaEventNotification(currentAT->javaEventMask, ATBridgeDLLWindow);
         removeAccessibilityEventNotification(currentAT->accessibilityEventMask, ATBridgeDLLWindow);
         delete currentAT;
-        PrintDebugString("  data structures successfully removed");
+        PrintDebugString("[INFO]:   data structures successfully removed");
     } else {
         while (currentAT != (AccessBridgeATInstance *) NULL) {
             if (currentAT->winAccessBridgeWindow == ATBridgeDLLWindow) {
                 previousAT->nextATInstance = currentAT->nextATInstance;
                 delete currentAT;
-                PrintDebugString("  data structures successfully removed");
+                PrintDebugString("[INFO]:   data structures successfully removed");
                 return;
             } else {
                 previousAT = currentAT;
                 currentAT = currentAT->nextATInstance;
             }
         }
-        PrintDebugString("  ERROR!! couldn't find matching data structures!");
+        PrintDebugString("[ERROR]: couldn't find matching data structures!");
     }
 }
 
@@ -1570,13 +1573,13 @@ JavaAccessBridge::WindowsATDestroyed(HWND ATBridgeDLLWindow) {
  */
 void
 JavaAccessBridge::releaseJavaObject(jobject object) {
-    PrintDebugString("In JavaAccessBridge::releaseJavaObject");
-    PrintDebugString("  object X: %p", object);
+    PrintDebugString("[INFO]: In JavaAccessBridge::releaseJavaObject");
+    PrintDebugString("[INFO]:   object X: %p", object);
     if (windowsThreadJNIEnv != (JNIEnv *) 0) {
         windowsThreadJNIEnv->DeleteGlobalRef(object);
-        PrintDebugString("  global reference deleted.", object);
+        PrintDebugString("[INFO]:   global reference deleted.", object);
     } else {
-        PrintDebugString("  Error! windowsThreadJNIEnv == 0");
+        PrintDebugString("[ERROR]: windowsThreadJNIEnv == 0");
     }
 }
 
@@ -1590,23 +1593,23 @@ void
 JavaAccessBridge::addJavaEventNotification(jlong type, HWND DLLwindow) {
     // walk through list of ATs, find this one and add this type
     // and, if we weren't listening for these before, ask Java for 'em
-    PrintDebugString("  adding Java event type %016I64X to HWND %p", type, DLLwindow);
+    PrintDebugString("[INFO]:   adding Java event type %016I64X to HWND %p", type, DLLwindow);
     AccessBridgeATInstance *ati = ATs;
     long globalEventMask = 0;
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->winAccessBridgeWindow == DLLwindow) {
             ati->javaEventMask |= type;
-            PrintDebugString("  found HWND, javaEventMask now is %X", ati->javaEventMask);
+            PrintDebugString("[INFO]:   found HWND, javaEventMask now is %X", ati->javaEventMask);
         } else {
             globalEventMask |= ati->javaEventMask;
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  union of all Java AT event masks: %X", globalEventMask);
+    PrintDebugString("[INFO]:   union of all Java AT event masks: %X", globalEventMask);
     if (!(globalEventMask & type)) {
         // no other ATs wanted this event;
         // start getting them from Java
-        PrintDebugString("  no other AT wanted this Java event (so not registered); adding to AccessBridge.java");
+        PrintDebugString("[INFO]:   no other AT wanted this Java event (so not registered); adding to AccessBridge.java");
         windowsThreadEntryPoints->addJavaEventNotification(type);
     }
 }
@@ -1619,23 +1622,23 @@ void
 JavaAccessBridge::removeJavaEventNotification(jlong type, HWND DLLwindow) {
     // walk through list of ATs, find this one and remove this type
     // and, if no other AT wants 'em either, tell Java we no longer want 'em
-    PrintDebugString("  removing Java event type %016I64X from HWND %p", type, DLLwindow);
+    PrintDebugString("[INFO]:   removing Java event type %016I64X from HWND %p", type, DLLwindow);
     AccessBridgeATInstance *ati = ATs;
     long globalEventMask = 0;
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->winAccessBridgeWindow == DLLwindow) {
             ati->javaEventMask &= (0xFFFFFFFF - type);
-            PrintDebugString("  found HWND, javaEventMask now is %X", ati->javaEventMask);
+            PrintDebugString("[INFO]:   found HWND, javaEventMask now is %X", ati->javaEventMask);
         } else {
             globalEventMask |= ati->javaEventMask;
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  union of all Java AT event masks: %X", globalEventMask);
+    PrintDebugString("[INFO]:   union of all Java AT event masks: %X", globalEventMask);
     if (!(globalEventMask & type)) {
         // no other ATs wanted this event;
         // stop getting them from Java
-        PrintDebugString("  no other AT wanted this Java event (so can remove); removing from AccessBridge.java");
+        PrintDebugString("[INFO]:   no other AT wanted this Java event (so can remove); removing from AccessBridge.java");
         windowsThreadEntryPoints->removeJavaEventNotification(type);
     }
 }
@@ -1649,23 +1652,23 @@ void
 JavaAccessBridge::addAccessibilityEventNotification(jlong type, HWND DLLwindow) {
     // walk through list of ATs, find this one and add this type
     // and, if we weren't listening for these before, ask Java for 'em
-    PrintDebugString("  adding Accesibility event type %016I64X to HWND %p", type, DLLwindow);
+    PrintDebugString("[INFO]:   adding Accesibility event type %016I64X to HWND %p", type, DLLwindow);
     AccessBridgeATInstance *ati = ATs;
     long globalEventMask = 0;
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->winAccessBridgeWindow == DLLwindow) {
             ati->accessibilityEventMask |= type;
-            PrintDebugString("  found HWND, accessibilityEventMask now is %X", ati->accessibilityEventMask);
+            PrintDebugString("[INFO]:   found HWND, accessibilityEventMask now is %X", ati->accessibilityEventMask);
         } else {
             globalEventMask |= ati->accessibilityEventMask;
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  union of all Accessibility AT event masks: %X", globalEventMask);
+    PrintDebugString("[INFO]:   union of all Accessibility AT event masks: %X", globalEventMask);
     if (!(globalEventMask & type)) {
         // no other ATs wanted this event;
         // start getting them from Java
-        PrintDebugString("  no other AT wanted this Accesibility event (so not registered); adding to AccessBridge.java");
+        PrintDebugString("[INFO]:   no other AT wanted this Accesibility event (so not registered); adding to AccessBridge.java");
         windowsThreadEntryPoints->addAccessibilityEventNotification(type);
     }
 }
@@ -1678,23 +1681,23 @@ void
 JavaAccessBridge::removeAccessibilityEventNotification(jlong type, HWND DLLwindow) {
     // walk through list of ATs, find this one and remove this type
     // and, if no other AT wants 'em either, tell Java we no longer want 'em
-    PrintDebugString("  removing Accesibility event type %016I64X from HWND %p", type, DLLwindow);
+    PrintDebugString("[INFO]:   removing Accesibility event type %016I64X from HWND %p", type, DLLwindow);
     AccessBridgeATInstance *ati = ATs;
     long globalEventMask = 0;
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->winAccessBridgeWindow == DLLwindow) {
             ati->accessibilityEventMask &= (0xFFFFFFFF - type);
-            PrintDebugString("  found HWND, accessibilityEventMask now is %X", ati->accessibilityEventMask);
+            PrintDebugString("[INFO]:   found HWND, accessibilityEventMask now is %X", ati->accessibilityEventMask);
         } else {
             globalEventMask |= ati->accessibilityEventMask;
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  union of all Accessibility AT event masks: %X", globalEventMask);
+    PrintDebugString("[INFO]:   union of all Accessibility AT event masks: %X", globalEventMask);
     if (!(globalEventMask & type)) {
         // no other ATs wanted this event;
         // stop getting them from Java
-        PrintDebugString("  no other AT wanted this Accessibility event (so can remove); removing from AccessBridge.java");
+        PrintDebugString("[INFO]:   no other AT wanted this Accessibility event (so can remove); removing from AccessBridge.java");
         windowsThreadEntryPoints->removeAccessibilityEventNotification(type);
     }
 }
@@ -1711,13 +1714,13 @@ JavaAccessBridge::firePropertyCaretChange(JNIEnv *env, jobject callingObj,
                                           jobject event, jobject source,
                                           jint oldValue, jint newValue) {
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyCaretChanged(%p, %p, %p, %p, %d, %d)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyCaretChanged(%p, %p, %p, %p, %d, %d)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -1733,17 +1736,17 @@ JavaAccessBridge::firePropertyCaretChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyCaretChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %016I64X"\
+                             "          GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             pkg->oldPosition = oldValue;
@@ -1753,7 +1756,7 @@ JavaAccessBridge::firePropertyCaretChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyCaretChange event");
+    PrintDebugString("[INFO]:  done with propertyCaretChange event");
 }
 
 /**
@@ -1765,13 +1768,13 @@ JavaAccessBridge::firePropertyDescriptionChange(JNIEnv *env, jobject callingObj,
                                                 jobject event, jobject source,
                                                 jstring oldValue, jstring newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyDescriptionChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyDescriptionChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -1788,17 +1791,17 @@ JavaAccessBridge::firePropertyDescriptionChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyCaretChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             if (oldValue != (jstring) 0) {
@@ -1839,7 +1842,7 @@ JavaAccessBridge::firePropertyDescriptionChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyDescriptionChange event");
+    PrintDebugString("[INFO]:   done with propertyDescriptionChange event");
 }
 
 /**
@@ -1851,13 +1854,13 @@ JavaAccessBridge::firePropertyNameChange(JNIEnv *env, jobject callingObj,
                                          jobject event, jobject source,
                                          jstring oldValue, jstring newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyNameChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyNameChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -1874,17 +1877,17 @@ JavaAccessBridge::firePropertyNameChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyNameChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "         GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             if (oldValue != (jstring) 0) {
@@ -1925,7 +1928,7 @@ JavaAccessBridge::firePropertyNameChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyNameChange event");
+    PrintDebugString("[INFO]:  done with propertyNameChange event");
 }
 
 
@@ -1937,12 +1940,12 @@ void
 JavaAccessBridge::firePropertySelectionChange(JNIEnv *env, jobject callingObj,
                                               jobject event, jobject source) {
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertySelectionChanged(%p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertySelectionChanged(%p, %p, %p, %p)",
                      env, callingObj, event, source);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -1958,24 +1961,24 @@ JavaAccessBridge::firePropertySelectionChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertySelectionChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %016I64X"\
+                             "          GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             ati->sendAccessibilityEventPackage(buffer, sizeof(buffer), cPropertySelectionChangeEvent);
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertySelectionChange event");
+    PrintDebugString("[INFO]:   done with propertySelectionChange event");
 }
 
 
@@ -1988,13 +1991,13 @@ JavaAccessBridge::firePropertyStateChange(JNIEnv *env, jobject callingObj,
                                           jobject event, jobject source,
                                           jstring oldValue, jstring newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyStateChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyStateChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2011,17 +2014,17 @@ JavaAccessBridge::firePropertyStateChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyStateChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "  GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             if (oldValue != (jstring) 0) {
@@ -2062,7 +2065,7 @@ JavaAccessBridge::firePropertyStateChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyStateChange event");
+    PrintDebugString("[INFO]:  done with propertyStateChange event");
 }
 
 
@@ -2074,12 +2077,12 @@ void
 JavaAccessBridge::firePropertyTextChange(JNIEnv *env, jobject callingObj,
                                          jobject event, jobject source) {
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyTextChanged(%p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyTextChanged(%p, %p, %p, %p)",
                      env, callingObj, event, source);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2095,24 +2098,24 @@ JavaAccessBridge::firePropertyTextChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyTextChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p",pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             ati->sendAccessibilityEventPackage(buffer, sizeof(buffer), cPropertyTextChangeEvent);
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyTextChange event");
+    PrintDebugString("[INFO]:  done with propertyTextChange event");
 }
 
 
@@ -2125,13 +2128,13 @@ JavaAccessBridge::firePropertyValueChange(JNIEnv *env, jobject callingObj,
                                           jobject event, jobject source,
                                           jstring oldValue, jstring newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyValueChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyValueChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2148,17 +2151,17 @@ JavaAccessBridge::firePropertyValueChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyValueChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             if (oldValue != (jstring) 0) {
@@ -2199,7 +2202,7 @@ JavaAccessBridge::firePropertyValueChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyValueChange event");
+    PrintDebugString("[INFO]:   done with propertyValueChange event");
 }
 
 /**
@@ -2210,12 +2213,12 @@ void
 JavaAccessBridge::firePropertyVisibleDataChange(JNIEnv *env, jobject callingObj,
                                                 jobject event, jobject source) {
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyVisibleDataChanged(%p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyVisibleDataChanged(%p, %p, %p, %p)",
                      env, callingObj, event, source);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2231,24 +2234,24 @@ JavaAccessBridge::firePropertyVisibleDataChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyVisibleDataChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "         GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             ati->sendAccessibilityEventPackage(buffer, sizeof(buffer), cPropertyVisibleDataChangeEvent);
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyVisibleDataChange event");
+    PrintDebugString("[INFO]:  done with propertyVisibleDataChange event");
 }
 
 
@@ -2261,13 +2264,13 @@ JavaAccessBridge::firePropertyChildChange(JNIEnv *env, jobject callingObj,
                                           jobject event, jobject source,
                                           jobject oldValue, jobject newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyChildPropertyChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyChildPropertyChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2283,7 +2286,7 @@ JavaAccessBridge::firePropertyChildChange(JNIEnv *env, jobject callingObj,
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyChildChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:  sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
@@ -2291,22 +2294,24 @@ JavaAccessBridge::firePropertyChildChange(JNIEnv *env, jobject callingObj,
             pkg->oldChildAccessibleContext = (JOBJECT64)env->NewGlobalRef(oldValue);
             pkg->newChildAccessibleContext = (JOBJECT64)env->NewGlobalRef(newValue);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
-            PrintDebugString("  GlobalRef'd OldChildAC: %p", pkg->oldChildAccessibleContext);
-            PrintDebugString("  GlobalRef'd NewChildAC: %p", pkg->newChildAccessibleContext);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %p"\
+                             "  GlobalRef'd Source: %p"\
+                             "  GlobalRef'd OldChildAC: %p"\
+                             "  GlobalRef'd NewChildAC: %p"\
+                            , pkg->Event, pkg->AccessibleContextSource, pkg->oldChildAccessibleContext, pkg->newChildAccessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
-            PrintDebugString("  GlobalRef'd OldChildAC: %016I64X", pkg->oldChildAccessibleContext);
-            PrintDebugString("  GlobalRef'd NewChildAC: %016I64X", pkg->newChildAccessibleContext);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X"\
+                             "  GlobalRef'd OldChildAC: %016I64X"\
+                             "  GlobalRef'd NewChildAC: %016I64X"\
+                             , pkg->Event, pkg->AccessibleContextSource, pkg->oldChildAccessibleContext, pkg->newChildAccessibleContext);
 #endif
 
             ati->sendAccessibilityEventPackage(buffer, sizeof(buffer), cPropertyChildChangeEvent);
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyChildChange event");
+    PrintDebugString("[INFO]:  done with propertyChildChange event");
 }
 
 
@@ -2319,13 +2324,13 @@ JavaAccessBridge::firePropertyActiveDescendentChange(JNIEnv *env, jobject callin
                                                      jobject event, jobject source,
                                                      jobject oldValue, jobject newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyActiveDescendentPropertyChanged(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyActiveDescendentPropertyChanged(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2341,7 +2346,7 @@ JavaAccessBridge::firePropertyActiveDescendentChange(JNIEnv *env, jobject callin
     while (ati != (AccessBridgeATInstance *) 0) {
         if (ati->accessibilityEventMask & cPropertyActiveDescendentChangeEvent) {
 
-            PrintDebugString("  sending to AT");
+            PrintDebugString("[INFO]:   sending to AT");
 
             // make new GlobalRefs for this AT
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
@@ -2349,22 +2354,24 @@ JavaAccessBridge::firePropertyActiveDescendentChange(JNIEnv *env, jobject callin
             pkg->oldActiveDescendentAccessibleContext = (JOBJECT64)env->NewGlobalRef(oldValue);
             pkg->newActiveDescendentAccessibleContext = (JOBJECT64)env->NewGlobalRef(newValue);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
-            PrintDebugString("  GlobalRef'd OldActiveDescendentAC: %p", pkg->oldActiveDescendentAccessibleContext);
-            PrintDebugString("  GlobalRef'd NewActiveDescendentAC: %p", pkg->newActiveDescendentAccessibleContext);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "  GlobalRef'd Source: %p"\
+                             "  GlobalRef'd OldActiveDescendentAC: %p"\
+                             "  GlobalRef'd NewActiveDescendentAC: %p"\
+                             , pkg->Event, pkg->AccessibleContextSource, pkg->oldActiveDescendentAccessibleContext, pkg->newActiveDescendentAccessibleContext);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
-            PrintDebugString("  GlobalRef'd OldActiveDescendentAC: %016I64X", pkg->oldActiveDescendentAccessibleContext);
-            PrintDebugString("  GlobalRef'd NewActiveDescendentAC: %016I64X", pkg->newActiveDescendentAccessibleContext);
+            PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                             "  GlobalRef'd Source: %016I64X"\
+                             "  GlobalRef'd OldActiveDescendentAC: %016I64X"\
+                             "  GlobalRef'd NewActiveDescendentAC: %016I64X"\
+            , pkg->Event, pkg->AccessibleContextSource, pkg->oldActiveDescendentAccessibleContext, pkg->newActiveDescendentAccessibleContext);
 #endif
 
             ati->sendAccessibilityEventPackage(buffer, sizeof(buffer), cPropertyActiveDescendentChangeEvent);
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyActiveChange event");
+    PrintDebugString("[INFO]:  done with propertyActiveChange event");
 }
 
 /**
@@ -2376,13 +2383,13 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
                                                jobject event, jobject source,
                                                jstring oldValue, jstring newValue){
 
-    PrintDebugString("\r\nJava_com_sun_java_accessibility_internal_AccessBridge_propertyTableModelChange(%p, %p, %p, %p, %p, %p)",
+    PrintDebugString("[INFO]: Java_com_sun_java_accessibility_internal_AccessBridge_propertyTableModelChange(%p, %p, %p, %p, %p, %p)",
                      env, callingObj, event,
                      source, oldValue, newValue);
 
     // sanity check
     if (ATs == (AccessBridgeATInstance *) 0) {
-        PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+        PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
         return;         // panic!
     }
 
@@ -2405,11 +2412,11 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
             pkg->Event = (JOBJECT64)env->NewGlobalRef(event);
             pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-            PrintDebugString("  GlobalRef'd Event: %p", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                             "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
-            PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event);
-            PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+            PrintDebugString("[INFO]:   GlobalRef'd Event: %016I64X"\
+                             "          GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
             if (oldValue != (jstring) 0) {
@@ -2450,31 +2457,31 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
         }
         ati = ati->nextATInstance;
     }
-    PrintDebugString("  done with propertyTableModelChange event");
+    PrintDebugString("[INFO]:  done with propertyTableModelChange event");
 }
 
 
 
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
 #define PRINT_GLOBALREFS() \
-    PrintDebugString("  GlobalRef'd Event: %p", pkg->Event); \
-    PrintDebugString("  GlobalRef'd Source: %p", pkg->AccessibleContextSource);
+    PrintDebugString("[INFO]:   GlobalRef'd Event: %p"\
+                     "          GlobalRef'd Source: %p", pkg->Event, pkg->AccessibleContextSource);
 #else // JOBJECT64 is jlong (64 bit)
 #define PRINT_GLOBALREFS() \
-    PrintDebugString("  GlobalRef'd Event: %016I64X", pkg->Event); \
-    PrintDebugString("  GlobalRef'd Source: %016I64X", pkg->AccessibleContextSource);
+    PrintDebugString("[INFO]:  GlobalRef'd Event: %016I64X"\
+                     "  GlobalRef'd Source: %016I64X", pkg->Event, pkg->AccessibleContextSource);
 #endif
 
 #define FIRE_EVENT(function, packageStruct, packageConstant, eventConstant)             \
     void JavaAccessBridge::function(JNIEnv *env, jobject callingObj,                    \
                                     jobject eventObj, jobject source) {                 \
                                                                                         \
-        PrintDebugString("\r\nFiring event id = %d(%p, %p, %p, %p); vmID = %X",         \
-                         eventConstant, env, callingObj, eventObj, source, dialogWindow); \
+        PrintDebugString("[INFO]: Firing event id = %d(%p, %p, %p, %p); vmID = %X",     \
+                        eventConstant, env, callingObj, eventObj, source, dialogWindow);\
                                                                                         \
         /* sanity check */                                                              \
         if (ATs == (AccessBridgeATInstance *) 0) {                                      \
-            PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");           \
+            PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");            \
             return;         /* panic! */                                                \
         }                                                                               \
                                                                                         \
@@ -2488,11 +2495,11 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
         /* make new Global Refs, send events only to those ATs that want 'em */         \
         AccessBridgeATInstance *ati = ATs;                                              \
         while (ati != (AccessBridgeATInstance *) 0) {                                   \
-            PrintDebugString("\r\njavaEventMask = %X eventConstant=%d pkg->vmID=%X",    \
+            PrintDebugString("[INFO]: javaEventMask = %X eventConstant=%d pkg->vmID=%X",\
                              ati->javaEventMask, eventConstant, pkg->vmID );            \
             if (ati->javaEventMask & eventConstant) {                                   \
                                                                                         \
-                PrintDebugString("  sending to AT");                                    \
+                PrintDebugString("[INFO]:   sending to AT");                            \
                 /* make new GlobalRefs for this AT */                                   \
                 pkg->Event = (JOBJECT64)env->NewGlobalRef(eventObj);                    \
                 pkg->AccessibleContextSource = (JOBJECT64)env->NewGlobalRef(source);    \
@@ -2502,17 +2509,17 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
             }                                                                           \
             ati = ati->nextATInstance;                                                  \
         }                                                                               \
-        PrintDebugString("  done with firing AWT event");                               \
+        PrintDebugString("[INFO]:   done with firing AWT event");                       \
     }
 
     void JavaAccessBridge::javaShutdown(JNIEnv *env, jobject callingObj) {
 
-        PrintDebugString("\r\nFiring event id = %d(%p, %p); vmID = %X",
+        PrintDebugString("[INFO]: Firing event id = %d(%p, %p); vmID = %X",
                          cJavaShutdownEvent, env, callingObj, dialogWindow);
 
         /* sanity check */
         if (ATs == (AccessBridgeATInstance *) 0) {
-            PrintDebugString("  ERROR!! ATs == 0! (shouldn't happen here!)");
+            PrintDebugString("[ERROR]: ATs == 0! (shouldn't happen here!)");
             return;             /* panic! */
         }
 
@@ -2527,12 +2534,12 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
         AccessBridgeATInstance *ati = ATs;
         while (ati != (AccessBridgeATInstance *) 0) {
             if (ati->javaEventMask & cJavaShutdownEvent) {
-                PrintDebugString("  sending to AT");
+                PrintDebugString("[INFO]:   sending to AT");
                 ati->sendJavaEventPackage(buffer, sizeof(buffer), cJavaShutdownEvent);
             }
             ati = ati->nextATInstance;
         }
-        PrintDebugString("  done with firing AWT event");
+        PrintDebugString("[INFO]:   done with firing AWT event");
     }
 
     FIRE_EVENT(fireFocusGained, FocusGainedPackage, cFocusGainedPackage, cFocusGainedEvent)

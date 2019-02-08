@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package gc.metaspace;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.List;
@@ -45,13 +47,13 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test TestMetaspacePerfCountersShenandoah
@@ -64,8 +66,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
  */
 public class TestMetaspacePerfCounters {
     public static Class fooClass = null;

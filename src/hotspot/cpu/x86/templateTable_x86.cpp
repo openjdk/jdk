@@ -582,8 +582,9 @@ void TemplateTable::condy_helper(Label& Done) {
       __ cmpl(flags, ltos);
       __ jcc(Assembler::notEqual, notLong);
       // ltos
-      __ movptr(rax, field);
+      // Loading high word first because movptr clobbers rax
       NOT_LP64(__ movptr(rdx, field.plus_disp(4)));
+      __ movptr(rax, field);
       __ push(ltos);
       __ jmp(Done);
 

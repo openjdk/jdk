@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 import static jdk.test.lib.Asserts.assertEQ;
 import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
@@ -33,12 +35,12 @@ import jdk.test.lib.management.DynamicVMOption;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @run main TestDynMaxHeapFreeRatio
- * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 TestDynMaxHeapFreeRatio
- * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:-UseAdaptiveSizePolicy TestDynMaxHeapFreeRatio
- * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 TestDynMaxHeapFreeRatio
- * @run main/othervm -XX:MinHeapFreeRatio=51 -XX:MaxHeapFreeRatio=52 TestDynMaxHeapFreeRatio
- * @run main/othervm -XX:MinHeapFreeRatio=75 -XX:MaxHeapFreeRatio=100 TestDynMaxHeapFreeRatio
+ * @run main gc.arguments.TestDynMaxHeapFreeRatio
+ * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 gc.arguments.TestDynMaxHeapFreeRatio
+ * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:-UseAdaptiveSizePolicy gc.arguments.TestDynMaxHeapFreeRatio
+ * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 gc.arguments.TestDynMaxHeapFreeRatio
+ * @run main/othervm -XX:MinHeapFreeRatio=51 -XX:MaxHeapFreeRatio=52 gc.arguments.TestDynMaxHeapFreeRatio
+ * @run main/othervm -XX:MinHeapFreeRatio=75 -XX:MaxHeapFreeRatio=100 gc.arguments.TestDynMaxHeapFreeRatio
  */
 public class TestDynMaxHeapFreeRatio {
 

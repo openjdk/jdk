@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8025633 8025524 8081854 8187521 8182765
  * @summary Test for valid name attribute in HTML anchors.
  * @author Bhavesh Patel
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox JavadocTester
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestAnchorNames
  */
 
@@ -36,7 +36,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import toolbox.*;
+import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestAnchorNames extends JavadocTester {
 
@@ -51,128 +52,7 @@ public class TestAnchorNames extends JavadocTester {
     }
 
     @Test
-    void testHtml4(Path ignore) {
-        setAutomaticCheckLinks(false); // @ignore JDK-8202622
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-source", "8", //so that '_' can be used as an identifier
-                "-use",
-                "pkg1");
-        setAutomaticCheckLinks(true); // @ignore JDK-8202622
-        checkExit(Exit.OK);
-
-        // Test some section markers and links to these markers
-        checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"skip.navbar.top\">",
-                "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">",
-                "<a name=\"nested.class.summary\">",
-                "<a href=\"#nested.class.summary\">",
-                "<a name=\"method.summary\">",
-                "<a href=\"#method.summary\">",
-                "<a name=\"field.detail\">",
-                "<a href=\"#field.detail\">",
-                "<a name=\"constructor.detail\">",
-                "<a href=\"#constructor.detail\">");
-
-        // Test some members and link to these members
-        checkOutput("pkg1/RegClass.html", true,
-                //The marker for this appears in the serialized-form.html which we will
-                //test below
-                "<a href=\"../serialized-form.html#pkg1.RegClass\">");
-
-        // Test some fields
-        checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"Z:Z_\">",
-                "<a href=\"#Z:Z_\">",
-                "<a name=\"Z:Z_:D\">",
-                "<a href=\"#Z:Z_:D\">",
-                "<a name=\"Z:Z:D_\">",
-                "<a href=\"#Z:Z:D_\">",
-                "<a name=\"Z:Z:Dfield\">",
-                "<a href=\"#Z:Z:Dfield\">",
-                "<a name=\"fieldInCla:D:D\">",
-                "<a href=\"#fieldInCla:D:D\">",
-                "<a name=\"S_:D:D:D:D:DINT\">",
-                "<a href=\"#S_:D:D:D:D:DINT\">",
-                "<a name=\"method:D:D\">",
-                "<a href=\"#method:D:D\">");
-
-        checkOutput("pkg1/DeprMemClass.html", true,
-                "<a name=\"Z:Z_field_In_Class\">",
-                "<a href=\"#Z:Z_field_In_Class\">");
-
-        // Test constructor
-        checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"RegClass-java.lang.String-int-\">",
-                "<a href=\"#RegClass-java.lang.String-int-\">");
-
-        // Test some methods
-        checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"Z:Z_methodInClass-java.lang.String-\">",
-                "<a href=\"#Z:Z_methodInClass-java.lang.String-\">",
-                "<a name=\"method--\">",
-                "<a href=\"#method--\">",
-                "<a name=\"foo-java.util.Map-\">",
-                "<a href=\"#foo-java.util.Map-\">",
-                "<a name=\"methodInCla:Ds-java.lang.String:A-\">",
-                "<a href=\"#methodInCla:Ds-java.lang.String:A-\">",
-                "<a name=\"Z:Z_methodInClas:D-java.lang.String-int-\">",
-                "<a href=\"#Z:Z_methodInClas:D-java.lang.String-int-\">",
-                "<a name=\"methodD-pkg1.RegClass.:DA-\">",
-                "<a href=\"#methodD-pkg1.RegClass.:DA-\">",
-                "<a name=\"methodD-pkg1.RegClass.D:A-\">",
-                "<a href=\"#methodD-pkg1.RegClass.D:A-\">");
-
-        checkOutput("pkg1/DeprMemClass.html", true,
-                "<a name=\"Z:Z:Dmethod_In_Class--\">",
-                "<a href=\"#Z:Z:Dmethod_In_Class--\">");
-
-        // Test enum
-        checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
-                "<a name=\"Z:Z:DFLD2\">",
-                "<a href=\"#Z:Z:DFLD2\">");
-
-        // Test nested class
-        checkOutput("pkg1/RegClass._NestedClas$.html", true,
-                "<a name=\"Z:Z_NestedClas:D--\">",
-                "<a href=\"#Z:Z_NestedClas:D--\">");
-
-        // Test class use page
-        checkOutput("pkg1/class-use/DeprMemClass.html", true,
-                "<a href=\"../RegClass.html#d____mc\">");
-
-        // Test deprecated list page
-        checkOutput("deprecated-list.html", true,
-                "<a href=\"pkg1/DeprMemClass.html#Z:Z_field_In_Class\">",
-                "<a href=\"pkg1/DeprMemClass.html#Z:Z:Dmethod_In_Class--\">");
-
-        // Test constant values page
-        checkOutput("constant-values.html", true,
-                "<a href=\"pkg1/RegClass.html#S_:D:D:D:D:DINT\">");
-
-        // Test serialized form page
-        checkOutput("serialized-form.html", true,
-                //This is the marker for the link that appears in the pkg1.RegClass.html page
-                "<a name=\"pkg1.RegClass\">");
-
-        // Test member name index page
-        checkOutput("index-all.html", true,
-                "<a name=\"I:Z:Z:D\">",
-                "<a href=\"#I:Z:Z:D\">$",
-                "<a href=\"#I:Z:Z_\">_");
-
-        // The marker name conversion should only affect HTML anchors. It should not
-        // affect the labels.
-        checkOutput("pkg1/RegClass.html", false,
-                " Z:Z_",
-                " Z:Z:Dfield",
-                " Z:Z_field_In_Class",
-                " S_:D:D:D:D:DINT");
-    }
-
-    @Test
-    void testHtml5(Path ignore) {
+    public void testHtml5(Path ignore) {
         javadoc("-d", "out-html5",
                 "-sourcepath", testSrc,
                 "-source", "8", //so that '_' can be used as an identifier
@@ -289,7 +169,7 @@ public class TestAnchorNames extends JavadocTester {
      * @throws IOException if there is a problem generating the source files
      */
     @Test
-    void testNonAscii(Path base) throws IOException {
+    public void testNonAscii(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "package p; public class Def {\n"

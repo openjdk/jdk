@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,10 +21,9 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 
-#include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/iterator.hpp"
 
@@ -42,13 +41,7 @@ public:
   static void parallel_oops_do(OopClosure* cl, uint worker_id);
   static void oops_do_slow(OopClosure* cl);
 
-  // Parallel cleanup string dedup queues/table
-  static void parallel_cleanup();
-
-  static inline bool is_candidate(oop obj) {
-    return java_lang_String::is_instance_inlined(obj) &&
-           java_lang_String::value(obj) != NULL;
-  }
+  static inline bool is_candidate(oop obj);
 private:
   static void unlink_or_oops_do(BoolObjectClosure* is_alive,
                                 OopClosure* keep_alive,
@@ -56,4 +49,4 @@ private:
 
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP

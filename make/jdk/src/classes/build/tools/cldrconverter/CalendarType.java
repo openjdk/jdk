@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ enum CalendarType {
         {0,   2},   // generic
         {0,   2},   // gregorian
         {0,   1},   // buddhist
-        {232, 4},   // japanese (eras from Meiji)
+        {232, 5},   // japanese (eras from Meiji)
         {0,   2},   // roc (Minguo)
         {0,   1},   // islamic (Hijrah)
         {0,   1},   // islamic-civil (same as islamic)

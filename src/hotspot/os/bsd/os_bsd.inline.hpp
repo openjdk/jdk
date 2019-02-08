@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_BSD_VM_OS_BSD_INLINE_HPP
-#define OS_BSD_VM_OS_BSD_INLINE_HPP
+#ifndef OS_BSD_OS_BSD_INLINE_HPP
+#define OS_BSD_OS_BSD_INLINE_HPP
 
 #include "runtime/os.hpp"
 
@@ -100,12 +100,6 @@ inline int os::ftruncate(int fd, jlong length) {
 inline bool os::numa_has_static_binding()   { return true; }
 inline bool os::numa_has_group_homing()     { return false;  }
 
-inline size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE( (size_t) ::read(fd, buf, (size_t) nBytes), res);
-  return res;
-}
-
 inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;
   RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
@@ -156,4 +150,4 @@ inline void os::exit(int num) {
   ::exit(num);
 }
 
-#endif // OS_BSD_VM_OS_BSD_INLINE_HPP
+#endif // OS_BSD_OS_BSD_INLINE_HPP

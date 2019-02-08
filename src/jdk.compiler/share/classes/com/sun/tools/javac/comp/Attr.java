@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -794,11 +794,11 @@ public class Attr extends JCTree.Visitor {
      * @param typarams the type variables to enter
      * @param env      the current environment
      */
-    void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
+    void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env, boolean checkCyclic) {
         for (JCTypeParameter tvar : typarams) {
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
-            a.bound = Type.noType;
+            a.setUpperBound(Type.noType);
             if (!tvar.bounds.isEmpty()) {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
@@ -811,8 +811,10 @@ public class Attr extends JCTree.Visitor {
             }
             a.tsym.flags_field &= ~UNATTRIBUTED;
         }
-        for (JCTypeParameter tvar : typarams) {
-            chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
+        if (checkCyclic) {
+            for (JCTypeParameter tvar : typarams) {
+                chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
+            }
         }
     }
 
@@ -4518,9 +4520,9 @@ public class Attr extends JCTree.Visitor {
             annotate.annotateTypeParameterSecondStage(tree, tree.annotations);
         }
 
-        if (!typeVar.bound.isErroneous()) {
+        if (!typeVar.getUpperBound().isErroneous()) {
             //fixup type-parameter bound computed in 'attribTypeVariables'
-            typeVar.bound = checkIntersection(tree, tree.bounds);
+            typeVar.setUpperBound(checkIntersection(tree, tree.bounds));
         }
     }
 

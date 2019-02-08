@@ -195,7 +195,7 @@ public class SourceToHTMLConverter {
             }
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
-            body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(div) : div);
+            body.addContent(HtmlTree.MAIN(div));
             writeToFile(body, outputdir.resolve(configuration.docPaths.forClass(te)));
         } catch (IOException e) {
             String message = resources.getText("doclet.exception.read.file", fo.getName());
@@ -210,8 +210,7 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path) throws DocFileIOException {
-        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
-        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+        Head head = new Head(path, configuration.docletVersion)
 //                .setTimestamp(!configuration.notimestamp) // temporary: compatibility!
                 .setTitle(resources.getText("doclet.Window_Source_title"))
 //                .setCharset(configuration.charset) // temporary: compatibility!
@@ -219,7 +218,7 @@ public class SourceToHTMLConverter {
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head.toContent(), body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlTree);
         messages.notice("doclet.Generating_0", path.getPath());
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
@@ -294,7 +293,7 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            Content anchor = HtmlTree.A(configuration.htmlVersion,
+            Content anchor = HtmlTree.A_ID(
                     "line." + Integer.toString(currentLineNo),
                     new StringContent(utils.replaceTabs(line)));
             pre.addContent(anchor);

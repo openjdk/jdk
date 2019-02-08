@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ public interface Elements {
     /**
      * Returns a module element given its fully qualified name.
      *
-     * If the named module cannot be found, {@code null} is
+     * If the requested module cannot be found, {@code null} is
      * returned. One situation where a module cannot be found is if
      * the environment does not include modules, such as an annotation
      * processing environment configured for a {@linkplain
@@ -199,7 +199,7 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  the name
+     * @param name  the name, or an empty string for an unnamed module
      * @return the named module element, or {@code null} if it cannot be found
      * @see #getAllModuleElements
      * @since 9
@@ -451,6 +451,7 @@ public interface Elements {
     /**
      * Returns the package of an element.  The package of a package is
      * itself.
+     * The package of a module is {@code null}.
      *
      * @param type the element being examined
      * @return the package of an element
@@ -511,6 +512,7 @@ public interface Elements {
      * @param hidden  the second element
      * @return {@code true} if and only if the first element hides
      *          the second
+     * @jls 8.4.8 Inheritance, Overriding, and Hiding
      */
     boolean hides(Element hider, Element hidden);
 

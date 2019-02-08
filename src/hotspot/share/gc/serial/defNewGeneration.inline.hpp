@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-#define SHARE_VM_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+#define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -98,4 +98,4 @@ void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
   save_marks();
 }
 
-#endif // SHARE_VM_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+#endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP

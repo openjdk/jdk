@@ -33,11 +33,13 @@ import java.awt.HeadlessException;
  * Event sent when the application is asked to quit.
  *
  * @see QuitHandler#handleQuitRequestWith(QuitEvent, QuitResponse)
- *
  * @since 9
  */
 public final class QuitEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -256100795532403146L;
 
     /**

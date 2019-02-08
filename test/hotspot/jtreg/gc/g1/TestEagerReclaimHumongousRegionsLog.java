@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestEagerReclaimHumongousRegionsLog
  * @summary Check that G1 reports humongous eager reclaim statistics correctly.
@@ -31,7 +33,7 @@
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver TestEagerReclaimHumongousRegionsLog
+ * @run driver gc.g1.TestEagerReclaimHumongousRegionsLog
  */
 
 import sun.hotspot.WhiteBox;

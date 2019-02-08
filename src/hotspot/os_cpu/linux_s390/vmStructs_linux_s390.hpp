@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_VM_VMSTRUCTS_LINUX_S390_HPP
-#define OS_CPU_LINUX_S390_VM_VMSTRUCTS_LINUX_S390_HPP
+#ifndef OS_CPU_LINUX_S390_VMSTRUCTS_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_VMSTRUCTS_LINUX_S390_HPP
 
 // These are the OS and CPU-specific fields, types and integer
 // constants required by the Serviceability Agent. This file is
@@ -52,5 +52,4 @@
 
 #define VM_LONG_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 
-#endif // OS_CPU_LINUX_S390_VM_VMSTRUCTS_LINUX_S390_HPP
-
+#endif // OS_CPU_LINUX_S390_VMSTRUCTS_LINUX_S390_HPP

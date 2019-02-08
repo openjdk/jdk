@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug      8048628 8174715 8182765
  * @summary  Verify html inline tags are removed correctly in the first sentence.
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestNonInlineHtmlTagRemoval
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestNonInlineHtmlTagRemoval extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
     }
 
     @Test
-    void testPositive() {
+    public void testPositive() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 testSrc("C.java"));
@@ -64,16 +66,7 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
     }
 
     @Test
-    void testPositive_html4() {
-        javadoc("-d", "out1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                testSrc("C.java"));
-        checkExit(Exit.OK);
-    }
-
-    @Test
-    void testNegative() {
+    public void testNegative() {
         javadoc("-d", "out2",
                 "-sourcepath", testSrc,
                 testSrc("Negative.java"));

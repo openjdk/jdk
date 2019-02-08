@@ -72,10 +72,6 @@ jobject SockAddrToInetSocketAddress(JNIEnv* env, struct sockaddr* addr);
 
 jint handleSocketError(JNIEnv *env, jint errorValue);
 
-/* use SocketChannelImpl's checkConnect implementation */
-extern jint Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv* env,
-    jobject this, jobject fdo, jboolean block, jboolean ready);
-
 /*
  * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    initIDs
@@ -598,13 +594,3 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
     return rv;
 }
 
-/*
- * Class:     sun_nio_ch_sctp_SctpChannelImpl
- * Method:    checkConnect
- * Signature: (Ljava/io/FileDescriptor;ZZ)I
- */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_checkConnect
-  (JNIEnv* env, jobject this, jobject fdo, jboolean block, jboolean ready) {
-    return Java_sun_nio_ch_SocketChannelImpl_checkConnect(env, this,
-                                                          fdo, block, ready);
-}

@@ -55,25 +55,21 @@ bool Parse::static_field_ok_in_clinit(ciField *field, ciMethod *method) {
   // need to be guarded.
   ciInstanceKlass *field_holder = field->holder();
 
-  bool access_OK = false;
   if (method->holder()->is_subclass_of(field_holder)) {
-    if (method->is_static()) {
-      if (method->name() == ciSymbol::class_initializer_name()) {
-        // OK to access static fields inside initializer
-        access_OK = true;
-      }
-    } else {
-      if (method->name() == ciSymbol::object_initializer_name()) {
-        // It's also OK to access static fields inside a constructor,
-        // because any thread calling the constructor must first have
-        // synchronized on the class by executing a '_new' bytecode.
-        access_OK = true;
-      }
+    if (method->is_static_initializer()) {
+      // OK to access static fields inside initializer
+      return true;
+    } else if (method->is_object_initializer()) {
+      // It's also OK to access static fields inside a constructor,
+      // because any thread calling the constructor must first have
+      // synchronized on the class by executing a '_new' bytecode.
+      return true;
     }
   }
-
-  return access_OK;
-
+  if (C->is_compiling_clinit_for(field_holder)) {
+    return true; // access in the context of static initializer
+  }
+  return false;
 }
 
 

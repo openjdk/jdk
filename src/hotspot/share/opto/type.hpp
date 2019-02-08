@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_TYPE_HPP
-#define SHARE_VM_OPTO_TYPE_HPP
+#ifndef SHARE_OPTO_TYPE_HPP
+#define SHARE_OPTO_TYPE_HPP
 
 #include "opto/adlcVMDeps.hpp"
 #include "runtime/handles.hpp"
@@ -483,6 +483,8 @@ public:
   // Convenience common pre-built types.
   static const TypeF *ZERO; // positive zero only
   static const TypeF *ONE;
+  static const TypeF *POS_INF;
+  static const TypeF *NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -510,6 +512,8 @@ public:
   // Convenience common pre-built types.
   static const TypeD *ZERO; // positive zero only
   static const TypeD *ONE;
+  static const TypeD *POS_INF;
+  static const TypeD *NEG_INF;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -1041,6 +1045,8 @@ public:
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
 
+  virtual const TypePtr* with_instance_id(int instance_id) const;
+
   virtual const Type *xdual() const;    // Compute dual right now.
   // the core of the computation of the meet for TypeOopPtr and for its subclasses
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -1119,6 +1125,7 @@ class TypeInstPtr : public TypeOopPtr {
   // Speculative type helper methods.
   virtual const Type* remove_speculative() const;
   virtual const TypePtr* with_inline_depth(int depth) const;
+  virtual const TypePtr* with_instance_id(int instance_id) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -1208,6 +1215,7 @@ public:
   // Speculative type helper methods.
   virtual const Type* remove_speculative() const;
   virtual const TypePtr* with_inline_depth(int depth) const;
+  virtual const TypePtr* with_instance_id(int instance_id) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -1841,4 +1849,4 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 
 #endif
 
-#endif // SHARE_VM_OPTO_TYPE_HPP
+#endif // SHARE_OPTO_TYPE_HPP

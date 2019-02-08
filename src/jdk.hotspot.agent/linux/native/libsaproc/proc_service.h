@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,10 @@
 #define _PROC_SERVICE_H_
 
 #include <stdio.h>
-#include <thread_db.h>
+#include <sys/procfs.h>
 #include "jni.h"
+#include "libproc.h"
 
-// Linux does not have the proc service library, though it does provide the
-// thread_db library which can be used to manipulate threads without having
-// to know the details of NPTL
 
 // copied from Solaris "proc_service.h"
 typedef enum {
@@ -78,9 +76,5 @@ ps_lgetfpregs(struct ps_prochandle *ph, lwpid_t lid, prfpregset_t *fpregs);
 
 JNIEXPORT ps_err_e JNICALL
 ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset);
-
-// new libthread_db of NPTL seem to require this symbol
-JNIEXPORT ps_err_e JNICALL
-ps_get_thread_area();
 
 #endif /* _PROC_SERVICE_H_ */

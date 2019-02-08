@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMError;
@@ -52,7 +53,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 8080906 8114834
+ * @bug 8080906 8114834 8206132
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true dom.ls.LSSerializerTest
  * @run testng/othervm dom.ls.LSSerializerTest
@@ -225,31 +226,111 @@ public class LSSerializerTest {
         Assert.assertEquals(XML11_DOCUMENT_OUTPUT, defaultSerialization, "Invalid serialization of XML 1.1 document: ");
     }
 
+    // XML source
+    private static final String XML =
+            "<?xml version=\"1.1\" encoding=\"UTF-16\"?>\n" +
+            "<!DOCTYPE author [\n" +
+            " <!ENTITY name \"Jo Smith\">" +
+            " <!ENTITY name1 \"&name;\">" +
+            " <!ENTITY name2 \"&name1;\">" +
+            "<!ENTITY ele \"<aa><bb>text</bb></aa>\">" +
+            " <!ENTITY ele1 \"&ele;\">" +
+            " <!ENTITY ele2 \"&ele1;\">" +
+            " ]>" +
+            " <author><a>&name1;</a>" +
+            "<b>b &name2; &name1; b</b>" +
+            "<c> &name; </c>" +
+            "<d>&ele1;d</d>" +
+            "<e> &ele2;eee </e>" +
+            "<f>&lt;att&gt;</f>" +
+            "<g> &ele; g</g>" +
+            "<h>&ele2;</h></author>" ;
+
+    // result when "entities" = true, equvalent to setting ExpandEntityReference to false
+    private static final String RESULT_TRUE =
+            "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
+            "<!ENTITY name 'Jo Smith'>\n" +
+            "<!ENTITY name1 '&name;'>\n" +
+            "<!ENTITY name2 '&name1;'>\n" +
+            "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
+            "<!ENTITY ele1 '&ele;'>\n" +
+            "<!ENTITY ele2 '&ele1;'>\n" +
+            "]>\n" +
+            "<author>\n" +
+            "    <a>&name1;</a>\n" +
+            "    <b>b &name2;&name1; b</b>\n" +
+            "    <c>&name;</c>\n" +
+            "    <d>&ele1;d</d>\n" +
+            "    <e>&ele2;eee </e>\n" +
+            "    <f>&lt;att&gt;</f>\n" +
+            "    <g>&ele; g</g>\n" +
+            "    <h>&ele2;</h>\n" +
+            "</author>\n";
+
+    // result when "entities" = false, equvalent to setting ExpandEntityReference to true
+    private static final String RESULT_FALSE =
+            "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
+            "<!ENTITY name 'Jo Smith'>\n" +
+            "<!ENTITY name1 '&name;'>\n" +
+            "<!ENTITY name2 '&name1;'>\n" +
+            "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
+            "<!ENTITY ele1 '&ele;'>\n" +
+            "<!ENTITY ele2 '&ele1;'>\n" +
+            "]>\n" +
+            "<author>\n" +
+            "    <a>Jo Smith</a>\n" +
+            "    <b>b Jo Smith Jo Smith b</b>\n" +
+            "    <c> Jo Smith </c>\n" +
+            "    <d>\n" +
+            "        <aa>\n" +
+            "            <bb>text</bb>\n" +
+            "        </aa>\n" +
+            "        d\n" +
+            "    </d>\n" +
+            "    <e>\n" +
+            "        <aa>\n" +
+            "            <bb>text</bb>\n" +
+            "        </aa>\n" +
+            "        eee \n" +
+            "    </e>\n" +
+            "    <f>&lt;att&gt;</f>\n" +
+            "    <g>\n" +
+            "        <aa>\n" +
+            "            <bb>text</bb>\n" +
+            "        </aa>\n" +
+            "         g\n" +
+            "    </g>\n" +
+            "    <h>\n" +
+            "        <aa>\n" +
+            "            <bb>text</bb>\n" +
+            "        </aa>\n" +
+            "    </h>\n" +
+            "</author>\n";
+
     /*
-     * @bug 8114834 test entity reference, nested entity reference when entities
-     * is true and false
+     * DataProvider: for testing the entities parameter
+     * Data columns: xml source, entities setting, expected result
      */
-    @Test
-    public void testEntityReference() throws Exception {
-        final String XML_DOCUMENT = "<?xml version=\"1.1\" encoding=\"UTF-16\"?>\n" +
-                "<!DOCTYPE author [\n" +
-                " <!ENTITY name \"Jo Smith\">" +
-                " <!ENTITY name1 \"&name;\">" +
-                " <!ENTITY name2 \"&name1;\">" +
-                "<!ENTITY ele \"<aa><bb>text</bb></aa>\">" +
-                " <!ENTITY ele1 \"&ele;\">" +
-                " <!ENTITY ele2 \"&ele1;\">" +
-                " ]>" +
-                " <author><a>&name1;</a>" +
-                "<b>b &name2; &name1; b</b>" +
-                "<c> &name; </c>" +
-                "<d>&ele1;d</d>" +
-                "<e> &ele2;eee </e>" +
-                "<f>&lt;att&gt;</f>" +
-                "<g> &ele; g</g>" +
-                "<h>&ele2;</h></author>" ;
+    @DataProvider(name = "entities")
+    Object[][] getData() throws Exception {
+        return new Object[][]{
+            {XML, Boolean.TRUE, RESULT_TRUE},
+            {XML, Boolean.FALSE, RESULT_FALSE},
+        };
+    }
 
-
+    /**
+     * Tests serializing DOM Document with DOMConfiguration's "entities" parameter.
+     *
+     * @param source the XML source
+     * @param entities the entities parameter setting
+     * @param expected expected string result
+     * @throws Exception
+     * @bug 8114834 8206132
+     */
+    @Test(dataProvider = "entities")
+    public void testEntityReference(String source, Boolean entities, String expected)
+            throws Exception {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
@@ -257,76 +338,18 @@ public class LSSerializerTest {
         DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
 
         LSParser domParser = domImplementationLS.createLSParser(MODE_SYNCHRONOUS, null);
-        domParser.getDomConfig().setParameter("entities", Boolean.TRUE);
+        domParser.getDomConfig().setParameter("entities", entities);
 
         LSInput src = domImplementationLS.createLSInput();
-        src.setStringData(XML_DOCUMENT);
+        src.setStringData(source);
         Document document = domParser.parse(src);
 
         LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
-
         lsSerializer.getDomConfig().setParameter("format-pretty-print", true);
-        System.out.println("test with default entities is " + lsSerializer.getDomConfig().getParameter("entities"));
-        Assert.assertEquals(lsSerializer.writeToString(document),
-                "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
-                "<!ENTITY name 'Jo Smith'>\n" +
-                "<!ENTITY name1 '&name;'>\n" +
-                "<!ENTITY name2 '&name1;'>\n" +
-                "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
-                "<!ENTITY ele1 '&ele;'>\n" +
-                "<!ENTITY ele2 '&ele1;'>\n" +
-                "]>\n" +
-                "<author>\n" +
-                "    <a>&name1;Jo Smith</a>\n" +
-                "    <b>b &name2;Jo Smith &name1;Jo Smith b</b>\n" +
-                "    <c>&name;Jo Smith </c>\n" +
-                "    <d>&ele1;d</d>\n" +
-                "    <e>&ele2;eee </e>\n" +
-                "    <f>&lt;att&gt;</f>\n" +
-                "    <g>&ele; g</g>\n" +
-                "    <h>&ele2;</h>\n" +
-                "</author>\n");
+        System.out.println("test with default entities is " +
+                lsSerializer.getDomConfig().getParameter("entities"));
 
-        lsSerializer.getDomConfig().setParameter("entities", Boolean.FALSE);
-        System.out.println("test with entities is false");
-        Assert.assertEquals(lsSerializer.writeToString(document),
-                "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
-                "<!ENTITY name 'Jo Smith'>\n" +
-                "<!ENTITY name1 '&name;'>\n" +
-                "<!ENTITY name2 '&name1;'>\n" +
-                "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
-                "<!ENTITY ele1 '&ele;'>\n" +
-                "<!ENTITY ele2 '&ele1;'>\n" +
-                "]>\n" +
-                "<author>\n" +
-                "    <a>&name;Jo Smith</a>\n" +
-                "    <b>b &name;Jo Smith &name;Jo Smith b</b>\n" +
-                "    <c>&name;Jo Smith </c>\n" +
-                "    <d>\n" +
-                "        <aa>\n" +
-                "            <bb>text</bb>\n" +
-                "        </aa>\n" +
-                "        d\n" +
-                "    </d>\n" +
-                "    <e>\n" +
-                "        <aa>\n" +
-                "            <bb>text</bb>\n" +
-                "        </aa>\n" +
-                "        eee \n" +
-                "    </e>\n" +
-                "    <f>&lt;att&gt;</f>\n" +
-                "    <g>\n" +
-                "        <aa>\n" +
-                "            <bb>text</bb>\n" +
-                "        </aa>\n" +
-                "         g\n" +
-                "    </g>\n" +
-                "    <h>\n" +
-                "        <aa>\n" +
-                "            <bb>text</bb>\n" +
-                "        </aa>\n" +
-                "    </h>\n" +
-                "</author>\n");
-
+        String result = lsSerializer.writeToString(document);
+        Assert.assertEquals(result, expected);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_INTERPRETERRT_SPARC_HPP
-#define CPU_SPARC_VM_INTERPRETERRT_SPARC_HPP
+#ifndef CPU_SPARC_INTERPRETERRT_SPARC_HPP
+#define CPU_SPARC_INTERPRETERRT_SPARC_HPP
 
 // This is included in the middle of class Interpreter.
 // Do not include files here.
@@ -60,4 +60,4 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   void generate( uint64_t fingerprint );
 };
 
-#endif // CPU_SPARC_VM_INTERPRETERRT_SPARC_HPP
+#endif // CPU_SPARC_INTERPRETERRT_SPARC_HPP

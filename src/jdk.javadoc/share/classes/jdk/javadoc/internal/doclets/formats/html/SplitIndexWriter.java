@@ -121,15 +121,11 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         String title = resources.getText("doclet.Window_Split_Index",
                 unicode.toString());
         HtmlTree body = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : body;
-        addTop(htmlTree);
+        HtmlTree header = HtmlTree.HEADER();
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            body.addContent(htmlTree);
-        }
+        header.addContent(navBar.getContent(true));
+        body.addContent(header);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
@@ -142,16 +138,12 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                     configuration.tagSearchIndexMap.get(unicode), divTree);
         }
         addLinksForIndexes(divTree);
-        body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(divTree) : divTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            htmlTree = HtmlTree.FOOTER();
-        }
+        body.addContent(HtmlTree.MAIN(divTree));
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.addContent(navBar.getContent(false));
-        addBottom(htmlTree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(htmlTree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
+        body.addContent(footer);
         printHtmlDocument(null, true, body);
     }
 

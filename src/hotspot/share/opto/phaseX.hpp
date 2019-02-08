@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_PHASEX_HPP
-#define SHARE_VM_OPTO_PHASEX_HPP
+#ifndef SHARE_OPTO_PHASEX_HPP
+#define SHARE_OPTO_PHASEX_HPP
 
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
@@ -157,6 +157,16 @@ public:
 // Phase that first performs a PhaseRemoveUseless, then it renumbers compiler
 // structures accordingly.
 class PhaseRenumberLive : public PhaseRemoveUseless {
+protected:
+  Type_Array _new_type_array; // Storage for the updated type information.
+  GrowableArray<int> _old2new_map;
+  Node_List _delayed;
+  bool _is_pass_finished;
+  uint _live_node_count;
+
+  int update_embedded_ids(Node* n);
+  int new_index(int old_idx);
+
 public:
   PhaseRenumberLive(PhaseGVN* gvn,
                     Unique_Node_List* worklist, Unique_Node_List* new_worklist,
@@ -639,4 +649,4 @@ public:
 #endif
 };
 
-#endif // SHARE_VM_OPTO_PHASEX_HPP
+#endif // SHARE_OPTO_PHASEX_HPP

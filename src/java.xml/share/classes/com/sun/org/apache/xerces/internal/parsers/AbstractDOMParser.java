@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -84,7 +84,7 @@ import org.xml.sax.SAXException;
  * @author Andy Clark, IBM
  * @author Elena Litani, IBM
  *
- * @LastModified: Nov 2017
+ * @LastModified: Jan 2019
  */
 public class AbstractDOMParser extends AbstractXMLDocumentParser {
 
@@ -491,8 +491,10 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         if (DEBUG_EVENTS) {
             System.out.println ("==>startGeneralEntity ("+name+")");
             if (DEBUG_BASEURI) {
-                System.out.println ("   expandedSystemId( **baseURI): "+identifier.getExpandedSystemId ());
-                System.out.println ("   baseURI:"+ identifier.getBaseSystemId ());
+                System.out.println ("   expandedSystemId( **baseURI): " +
+                        identifier == null ? null : identifier.getExpandedSystemId());
+                System.out.println ("   baseURI:" +
+                        identifier == null ? null : identifier.getBaseSystemId());
             }
         }
 
@@ -512,7 +514,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
                 EntityReferenceImpl erImpl =(EntityReferenceImpl)er;
 
                 // set base uri
-                erImpl.setBaseURI (identifier.getExpandedSystemId ());
+                erImpl.setBaseURI (identifier == null ? null : identifier.getExpandedSystemId());
                 if (fDocumentType != null) {
                     // set actual encoding
                     NamedNodeMap entities = fDocumentType.getEntities ();
@@ -528,12 +530,17 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             }
             fInEntityRef = true;
             fCurrentNode.appendChild (er);
-            fCurrentNode = er;
+
+            if (!fCreateEntityRefNodes) {
+                fCurrentNode = er;
+            } else {
+                ((NodeImpl)er).setReadOnly (true, true);
+            }
         }
         else {
 
-            int er =
-            fDeferredDocumentImpl.createDeferredEntityReference (name, identifier.getExpandedSystemId ());
+            int er = fDeferredDocumentImpl.createDeferredEntityReference (name,
+                    identifier == null ? null : identifier.getExpandedSystemId ());
             if (fDocumentTypeIndex != -1) {
                 // find corresponding Entity decl
                 int node = fDeferredDocumentImpl.getLastChild (fDocumentTypeIndex, false);
@@ -552,7 +559,10 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
                 }
             }
             fDeferredDocumentImpl.appendChild (fCurrentNodeIndex, er);
-            fCurrentNodeIndex = er;
+
+            if (!fCreateEntityRefNodes) {
+                fCurrentNodeIndex = er;
+            }
         }
 
     } // startGeneralEntity(String,XMLResourceIdentifier, Augmentations)

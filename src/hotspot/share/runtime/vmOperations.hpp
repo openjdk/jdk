@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_VMOPERATIONS_HPP
-#define SHARE_VM_RUNTIME_VMOPERATIONS_HPP
+#ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
+#define SHARE_RUNTIME_VMOPERATIONS_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "memory/allocation.hpp"
@@ -68,7 +68,9 @@
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \
-  template(ZOperation)                            \
+  template(ZMarkStart)                            \
+  template(ZMarkEnd)                              \
+  template(ZRelocateStart)                        \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
@@ -119,7 +121,6 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(ThreadSuspend)                         \
-  template(CTWThreshold)                          \
   template(ThreadsSuspendJVMTI)                   \
   template(ICBufferFull)                          \
   template(ScavengeMonitors)                      \
@@ -268,12 +269,6 @@ class VM_ForceSafepoint: public VM_Operation {
 class VM_ThreadSuspend: public VM_ForceSafepoint {
  public:
   VMOp_Type type() const { return VMOp_ThreadSuspend; }
-};
-
-// empty vm op, when forcing a safepoint due to ctw threshold is reached for the sweeper
-class VM_CTWThreshold: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_CTWThreshold; }
 };
 
 // empty vm op, when forcing a safepoint to suspend threads from jvmti
@@ -518,4 +513,4 @@ class VM_PrintClassHierarchy: public VM_Operation {
 };
 #endif // INCLUDE_SERVICES
 
-#endif // SHARE_VM_RUNTIME_VMOPERATIONS_HPP
+#endif // SHARE_RUNTIME_VMOPERATIONS_HPP

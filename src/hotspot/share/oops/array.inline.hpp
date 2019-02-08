@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_ARRAY_INLINE_HPP
-#define SHARE_VM_OOPS_ARRAY_INLINE_HPP
+#ifndef SHARE_OOPS_ARRAY_INLINE_HPP
+#define SHARE_OOPS_ARRAY_INLINE_HPP
 
 #include "oops/array.hpp"
 #include "runtime/orderAccess.hpp"
@@ -34,4 +34,4 @@ inline T Array<T>::at_acquire(const int which) { return OrderAccess::load_acquir
 template <typename T>
 inline void Array<T>::release_at_put(int which, T contents) { OrderAccess::release_store(adr_at(which), contents); }
 
-#endif // SHARE_VM_OOPS_ARRAY_INLINE_HPP
+#endif // SHARE_OOPS_ARRAY_INLINE_HPP

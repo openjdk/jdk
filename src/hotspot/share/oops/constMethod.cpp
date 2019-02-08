@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,6 @@ void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
-  assert(is_constMethod(), "must be constMethod");
   st->print_cr("%s", internal_name());
   Method* m = method();
   st->print(" - method:       " INTPTR_FORMAT " ", p2i((address)m));
@@ -444,7 +443,6 @@ void ConstMethod::print_on(outputStream* st) const {
 // Short version of printing ConstMethod* - just print the name of the
 // method it belongs to.
 void ConstMethod::print_value_on(outputStream* st) const {
-  assert(is_constMethod(), "must be constMethod");
   st->print(" const part of method " );
   Method* m = method();
   if (m != NULL) {
@@ -487,8 +485,6 @@ void ConstMethod::collect_statistics(KlassSizeStats *sz) const {
 // Verification
 
 void ConstMethod::verify_on(outputStream* st) {
-  guarantee(is_constMethod(), "object must be constMethod");
-
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.
   guarantee(method() != NULL && method()->is_method(), "should be method");

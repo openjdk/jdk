@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -189,6 +190,14 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
+    }
+    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+      // We are waiting on an Object monitor but Object.wait() isn't the
+      // top-frame, so we should be waiting on a Class initialization monitor.
+      InstanceKlass* k = thread()->class_to_be_initialized();
+      if (k != NULL) {
+        st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());
+      }
     }
   }
 

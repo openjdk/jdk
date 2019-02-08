@@ -83,7 +83,7 @@ instruct compareAndSwapP_shenandoah(rRegI res,
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
                                                    $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    false, // swap
-                                                   false, $tmp1$$Register, $tmp2$$Register
+                                                   $tmp1$$Register, $tmp2$$Register
                                                    );
   %}
   ins_pipe( pipe_cmpxchg );
@@ -104,7 +104,7 @@ instruct compareAndSwapN_shenandoah(rRegI res,
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
                                                    $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    false, // swap
-                                                   false, $tmp1$$Register, $tmp2$$Register
+                                                   $tmp1$$Register, $tmp2$$Register
                                                    );
   %}
   ins_pipe( pipe_cmpxchg );
@@ -123,7 +123,7 @@ instruct compareAndExchangeN_shenandoah(memory mem_ptr,
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
                                                    NULL, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    true, // exchange
-                                                   false, $tmp1$$Register, $tmp2$$Register
+                                                   $tmp1$$Register, $tmp2$$Register
                                                    );
   %}
   ins_pipe( pipe_cmpxchg );
@@ -145,7 +145,7 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
                                                    NULL, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    true,  // exchange
-                                                   false, $tmp1$$Register, $tmp2$$Register
+                                                   $tmp1$$Register, $tmp2$$Register
                                                    );
   %}
   ins_pipe( pipe_cmpxchg );

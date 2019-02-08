@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
@@ -74,4 +74,4 @@ void ShenandoahTraversalGC::process_oop(T* p, Thread* thread, ShenandoahObjToSca
   }
 }
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_INLINE_HPP

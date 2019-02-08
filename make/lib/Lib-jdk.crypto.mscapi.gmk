@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNMSCAPI, \
       NAME := sunmscapi, \

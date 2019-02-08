@@ -21,6 +21,8 @@
  *
  */
 
+package gc.epsilon;
+
 /**
  * @test TestMemoryMXBeans
  * @key gc
@@ -28,9 +30,9 @@
  * @summary Test JMX memory beans
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC          -Xmx1g TestMemoryMXBeans   -1 1024
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms1g   -Xmx1g TestMemoryMXBeans 1024 1024
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms128m -Xmx1g TestMemoryMXBeans  128 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC          -Xmx1g gc.epsilon.TestMemoryMXBeans   -1 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms1g   -Xmx1g gc.epsilon.TestMemoryMXBeans 1024 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms128m -Xmx1g gc.epsilon.TestMemoryMXBeans  128 1024
  */
 
 import java.lang.management.*;

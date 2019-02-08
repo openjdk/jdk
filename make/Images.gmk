@@ -99,7 +99,8 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	)
         ifeq ($(BUILD_CDS_ARCHIVE), true)
 	  $(call LogWarn, Creating CDS archive for jdk image)
-	  $(JDK_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+	  $(FIXPATH) $(JDK_IMAGE_DIR)/bin/java \
+	      -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
         endif
 	$(TOUCH) $@
 
@@ -114,7 +115,8 @@ $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	)
         ifeq ($(BUILD_CDS_ARCHIVE), true)
 	  $(call LogWarn, Creating CDS archive for jre image)
-	  $(JRE_IMAGE_DIR)/bin/java -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
+	  $(FIXPATH) $(JRE_IMAGE_DIR)/bin/java \
+	      -Xshare:dump -Xmx128M -Xms128M $(LOG_INFO)
         endif
 	$(TOUCH) $@
 
@@ -142,7 +144,7 @@ ifneq ($(filter jdk, $(MAKECMDGOALS)), )
       )
 
   ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
+    ifeq ($(call isTargetOs, macosx), true)
       DEMO_FILES := $(call not-containing, .dSYM, $(DEMO_FILES))
     else
       DEMO_FILES := $(filter-out %.debuginfo %.pdb %.map, $(DEMO_FILES))
@@ -190,7 +192,7 @@ ALL_JDK_MODULES := $(JDK_MODULES)
 ALL_JRE_MODULES := $(sort $(JRE_MODULES), $(foreach m, $(JRE_MODULES), \
     $(call FindTransitiveDepsForModule, $m)))
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   LIBS_TARGET_SUBDIR := bin
 else
   LIBS_TARGET_SUBDIR := lib
@@ -209,7 +211,7 @@ else
   DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
   # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
   # dirs.
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq ($(call isTargetOs, macosx), true)
     $(eval $(call FillCacheFind, \
         $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs))
     FindDebuginfoFiles = \

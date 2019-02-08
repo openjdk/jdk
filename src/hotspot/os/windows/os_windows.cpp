@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,11 @@ static FILETIME process_kernel_time;
   #define __CPU__ i486
 #endif
 
+#if INCLUDE_AOT
+PVOID  topLevelVectoredExceptionHandler = NULL;
+LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
+#endif
+
 // save DLL module handle, used by GetModuleFileName
 
 HINSTANCE vm_lib_handle;
@@ -143,6 +148,12 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeEndPeriod(1L);
     }
+#if INCLUDE_AOT
+    if (topLevelVectoredExceptionHandler != NULL) {
+      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+      topLevelVectoredExceptionHandler = NULL;
+    }
+#endif
     break;
   default:
     break;
@@ -2325,6 +2336,25 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   return true;
 }
 
+#if INCLUDE_AOT
+LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+  address addr = (address) exceptionRecord->ExceptionInformation[1];
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+
+  // Handle the case where we get an implicit exception in AOT generated
+  // code.  AOT DLL's loaded are not registered for structured exceptions.
+  // If the exception occurred in the codeCache or AOT code, pass control
+  // to our normal exception handler.
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  if (cb != NULL) {
+    return topLevelExceptionFilter(exceptionInfo);
+  }
+
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
@@ -3512,6 +3542,43 @@ void os::naked_short_sleep(jlong ms) {
   Sleep(ms);
 }
 
+void os::naked_short_nanosleep(jlong ns) {
+  assert(ns > -1 && ns < NANOUNITS, "Un-interruptable sleep, short time use only");
+  LARGE_INTEGER hundreds_nanos = { 0 };
+  HANDLE wait_timer = ::CreateWaitableTimer(NULL /* attributes*/,
+                                            true /* manual reset */,
+                                            NULL /* name */ );
+  if (wait_timer == NULL) {
+    log_warning(os)("Failed to CreateWaitableTimer: %u", GetLastError());
+    return;
+  }
+
+  // We need a minimum of one hundred nanos.
+  ns = ns > 100 ? ns : 100;
+
+  // Round ns to the nearst hundred of nanos.
+  // Negative values indicate relative time.
+  hundreds_nanos.QuadPart = -((ns + 50) / 100);
+
+  if (::SetWaitableTimer(wait_timer /* handle */,
+                         &hundreds_nanos /* due time */,
+                         0 /* period */,
+                         NULL /* comp func */,
+                         NULL /* comp func args */,
+                         FALSE /* resume */)) {
+    DWORD res = ::WaitForSingleObject(wait_timer /* handle */, INFINITE /* timeout */);
+    if (res != WAIT_OBJECT_0) {
+      if (res == WAIT_FAILED) {
+        log_warning(os)("Failed to WaitForSingleObject: %u", GetLastError());
+      } else {
+        log_warning(os)("Unexpected return from WaitForSingleObject: %s",
+                        res == WAIT_ABANDONED ? "WAIT_ABANDONED" : "WAIT_TIMEOUT");
+      }
+    }
+  }
+  ::CloseHandle(wait_timer /* handle */);
+}
+
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -4043,6 +4110,16 @@ jint os::init_2(void) {
 
   // Setup Windows Exceptions
 
+#if INCLUDE_AOT
+  // If AOT is enabled we need to install a vectored exception handler
+  // in order to forward implicit exceptions from code in AOT
+  // generated DLLs.  This is necessary since these DLLs are not
+  // registered for structured exceptions like codecache methods are.
+  if (UseAOT) {
+    topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelVectoredExceptionFilter);
+  }
+#endif
+
   // for debugging float code generation bugs
   if (ForceFloatExceptions) {
 #ifndef  _WIN64
@@ -4502,7 +4579,7 @@ jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
 }
 
-size_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
+ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   OVERLAPPED ov;
   DWORD nread;
   BOOL result;
@@ -4669,9 +4746,6 @@ int os::fsync(int fd) {
 
 static int nonSeekAvailable(int, long *);
 static int stdinAvailable(int, long *);
-
-#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
 
 // This code is a copy of JDK's sysAvailable
 // from src/windows/hpi/src/sys_api_md.c
@@ -5241,6 +5315,55 @@ void Parker::park(bool isAbsolute, jlong time) {
 void Parker::unpark() {
   guarantee(_ParkEvent != NULL, "invariant");
   SetEvent(_ParkEvent);
+}
+
+// Platform Monitor implementation
+
+os::PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+  InitializeCriticalSection(&_mutex);
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  DeleteCriticalSection(&_mutex);
+}
+
+void os::PlatformMonitor::lock() {
+  EnterCriticalSection(&_mutex);
+}
+
+void os::PlatformMonitor::unlock() {
+  LeaveCriticalSection(&_mutex);
+}
+
+bool os::PlatformMonitor::try_lock() {
+  return TryEnterCriticalSection(&_mutex);
+}
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  int ret = OS_TIMEOUT;
+  int status = SleepConditionVariableCS(&_cond, &_mutex,
+                                        millis == 0 ? INFINITE : millis);
+  if (status != 0) {
+    ret = OS_OK;
+  }
+  #ifndef PRODUCT
+  else {
+    DWORD err = GetLastError();
+    assert(err == ERROR_TIMEOUT, "SleepConditionVariableCS: %ld:", err);
+  }
+  #endif
+  return ret;
+}
+
+void os::PlatformMonitor::notify() {
+  WakeConditionVariable(&_cond);
+}
+
+void os::PlatformMonitor::notify_all() {
+  WakeAllConditionVariable(&_cond);
 }
 
 // Run the specified command in a separate process. Return its exit value,

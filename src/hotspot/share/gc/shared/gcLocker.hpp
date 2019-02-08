@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCLOCKER_HPP
-#define SHARE_VM_GC_SHARED_GCLOCKER_HPP
+#ifndef SHARE_GC_SHARED_GCLOCKER_HPP
+#define SHARE_GC_SHARED_GCLOCKER_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -145,4 +145,4 @@ class GCLocker: public AllStatic {
   static address needs_gc_address() { return (address) &_needs_gc; }
 };
 
-#endif // SHARE_VM_GC_SHARED_GCLOCKER_HPP
+#endif // SHARE_GC_SHARED_GCLOCKER_HPP

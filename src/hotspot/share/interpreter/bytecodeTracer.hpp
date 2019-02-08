@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
-#define SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
+#ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
+#define SHARE_INTERPRETER_BYTECODETRACER_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
@@ -36,6 +36,8 @@
 // be done.
 
 // class BytecodeTracer is used by TraceBytecodes option and PrintMethodData
+
+class methodHandle;
 
 class BytecodeClosure;
 class BytecodeTracer: AllStatic {
@@ -60,4 +62,4 @@ class BytecodeClosure {
   virtual void trace(const methodHandle& method, address bcp, outputStream* st) = 0;
 };
 
-#endif // SHARE_VM_INTERPRETER_BYTECODETRACER_HPP
+#endif // SHARE_INTERPRETER_BYTECODETRACER_HPP

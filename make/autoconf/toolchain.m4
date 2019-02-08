@@ -180,7 +180,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     SHARED_LIBRARY='[$]1.dll'
     STATIC_LIBRARY='[$]1.lib'
     OBJ_SUFFIX='.obj'
-    EXE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
     SHARED_LIBRARY_SUFFIX='.so'
@@ -188,7 +187,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     SHARED_LIBRARY='lib[$]1.so'
     STATIC_LIBRARY='lib[$]1.a'
     OBJ_SUFFIX='.o'
-    EXE_SUFFIX=''
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # For full static builds, we're overloading the SHARED_LIBRARY
       # variables in order to limit the amount of changes required.
@@ -212,7 +210,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
   AC_SUBST(SHARED_LIBRARY)
   AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
-  AC_SUBST(EXE_SUFFIX)
 ])
 
 # Determine which toolchain type to use, and make sure it is valid for this
@@ -281,13 +278,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
 
   TOOLCHAIN_CC_BINARY_clang="clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
-  TOOLCHAIN_CC_BINARY_microsoft="cl"
+  TOOLCHAIN_CC_BINARY_microsoft="cl$EXE_SUFFIX"
   TOOLCHAIN_CC_BINARY_solstudio="cc"
   TOOLCHAIN_CC_BINARY_xlc="xlc_r"
 
   TOOLCHAIN_CXX_BINARY_clang="clang++"
   TOOLCHAIN_CXX_BINARY_gcc="g++"
-  TOOLCHAIN_CXX_BINARY_microsoft="cl"
+  TOOLCHAIN_CXX_BINARY_microsoft="cl$EXE_SUFFIX"
   TOOLCHAIN_CXX_BINARY_solstudio="CC"
   TOOLCHAIN_CXX_BINARY_xlc="xlC_r"
 
@@ -333,9 +330,17 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   if test "x$OPENJDK_BUILD_OS" = "xwindows" \
       && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
     TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
-    # Reset path to VS_PATH. It will include everything that was on PATH at the time we
-    # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
-    PATH="$VS_PATH"
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+      # Append VS_PATH. In WSL, VS_PATH will not contain the WSL env path needed
+      # for using basic Unix tools, so need to keep the original PATH.
+      BASIC_APPEND_TO_PATH(PATH, $VS_PATH)
+      BASIC_APPEND_TO_PATH(WSLENV, "PATH/l:LIB:INCLUDE")
+      export WSLENV
+    else
+      # Reset path to VS_PATH. It will include everything that was on PATH at the time we
+      # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
+      PATH="$VS_PATH"
+    fi
     # The microsoft toolchain also requires INCLUDE and LIB to be set.
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
@@ -430,7 +435,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
-    COMPILER_VERSION_OUTPUT=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
     if test $? -ne 0; then
@@ -590,7 +595,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
 [
   LINKER=[$]$1
-  LINKER_NAME=$2
+  LINKER_NAME="$2"
 
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -Wl,-V output typically looks like
@@ -698,7 +703,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # In the Microsoft toolchain we have a separate LD command "link".
     # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
     # a cygwin program for something completely different.
-    AC_CHECK_PROG([LD], [link],[link],,, [$CYGWIN_LINK])
+    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
     BASIC_FIXUP_EXECUTABLE(LD)
     # Verify that we indeed succeeded with this trick.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
@@ -710,12 +715,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
       AC_MSG_RESULT([yes])
     fi
     LDCXX="$LD"
+    # jaotc being a windows program expects the linker to be supplied with exe suffix.
+    LD_JAOTC="$LD$EXE_SUFFIX"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # jaotc expects 'ld' as the linker rather than the compiler.
+    BASIC_CHECK_TOOLS([LD_JAOTC], ld)
+    BASIC_FIXUP_EXECUTABLE(LD_JAOTC)
   fi
   AC_SUBST(LD)
+  AC_SUBST(LD_JAOTC)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
 
@@ -750,7 +761,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
-    AC_CHECK_PROG([AR], [lib],[lib],,,)
+    AC_CHECK_PROG([AR], [lib$EXE_SUFFIX],[lib$EXE_SUFFIX],,,)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     BASIC_CHECK_TOOLS(AR, ar gcc-ar)
   else
@@ -774,12 +785,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    AC_CHECK_PROG([MT], [mt], [mt],,, [/usr/bin/mt])
+    AC_CHECK_PROG([MT], [mt$EXE_SUFFIX], [mt$EXE_SUFFIX],,, [/usr/bin/mt])
     BASIC_FIXUP_EXECUTABLE(MT)
     # Setup the resource compiler (RC)
-    AC_CHECK_PROG([RC], [rc], [rc],,, [/usr/bin/rc])
+    AC_CHECK_PROG([RC], [rc$EXE_SUFFIX], [rc$EXE_SUFFIX],,, [/usr/bin/rc])
     BASIC_FIXUP_EXECUTABLE(RC)
-    AC_CHECK_PROG([DUMPBIN], [dumpbin], [dumpbin],,,)
+    AC_CHECK_PROG([DUMPBIN], [dumpbin$EXE_SUFFIX], [dumpbin$EXE_SUFFIX],,,)
     BASIC_FIXUP_EXECUTABLE(DUMPBIN)
     # We need to check for 'msbuild.exe' because at the place where we expect to
     # find 'msbuild.exe' there's also a directory called 'msbuild' and configure
@@ -788,7 +799,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     # Notice that we intentionally don't fix up the path to MSBUILD because we
     # will call it in a DOS shell during freetype detection on Windows (see
     # 'LIB_SETUP_FREETYPE' in "libraries.m4"
-    AC_CHECK_PROG([MSBUILD], [msbuild.exe], [msbuild.exe],,,)
+    AC_CHECK_PROG([MSBUILD], [msbuild$EXE_SUFFIX], [msbuild$EXE_SUFFIX],,,)
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
@@ -999,7 +1010,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Check for extra potential brokenness.
   if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # On Windows, double-check that we got the right compiler.
-    CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    CC_VERSION_OUTPUT=`$CC 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
       if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then

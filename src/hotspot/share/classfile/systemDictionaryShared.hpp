@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
-#define SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "oops/klass.hpp"
 #include "classfile/dictionary.hpp"
@@ -300,4 +300,4 @@ public:
   DEBUG_ONLY(static bool checked_excluded_classes() {return _checked_excluded_classes;})
 };
 
-#endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

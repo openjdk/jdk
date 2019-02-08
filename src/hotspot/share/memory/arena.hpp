@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_ARENA_HPP
-#define SHARE_VM_ARENA_HPP
+#ifndef SHARE_MEMORY_ARENA_HPP
+#define SHARE_MEMORY_ARENA_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
@@ -256,4 +256,4 @@ private:
 #define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)
 
-#endif // SHARE_VM_ARENA_HPP
+#endif // SHARE_MEMORY_ARENA_HPP

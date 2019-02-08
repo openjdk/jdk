@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_C1_C1_INSTRUCTION_HPP
-#define SHARE_VM_C1_C1_INSTRUCTION_HPP
+#ifndef SHARE_C1_C1_INSTRUCTION_HPP
+#define SHARE_C1_C1_INSTRUCTION_HPP
 
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIR.hpp"
@@ -2632,4 +2632,4 @@ inline void        BlockBegin::add_successor(BlockBegin* sux)   { assert(_end ==
 
 #undef ASSERT_VALUES
 
-#endif // SHARE_VM_C1_C1_INSTRUCTION_HPP
+#endif // SHARE_C1_C1_INSTRUCTION_HPP

@@ -24,7 +24,7 @@
 // key: compiler.err.break.outside.switch.expression
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// options: --enable-preview -source 12
+// options: --enable-preview -source 13
 
 class BreakOutsideSwitchExpression {
     int t(int i) {

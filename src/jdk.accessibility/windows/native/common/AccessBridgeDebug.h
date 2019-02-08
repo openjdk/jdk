@@ -54,6 +54,8 @@ extern "C" {
     void PrintJavaDebugString(char *msg, ...);
     void wPrintJavaDebugString(wchar_t *msg, ...);
     void wPrintDebugString(wchar_t *msg, ...);
+    void initializeFileLogger(char * suffix);
+    void finalizeFileLogger();
 
 #ifdef __cplusplus
 }

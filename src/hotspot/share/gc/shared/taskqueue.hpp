@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_TASKQUEUE_HPP
-#define SHARE_VM_GC_SHARED_TASKQUEUE_HPP
+#ifndef SHARE_GC_SHARED_TASKQUEUE_HPP
+#define SHARE_GC_SHARED_TASKQUEUE_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -451,7 +451,10 @@ class ParallelTaskTerminator: public CHeapObj<mtGC> {
 protected:
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
+
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   volatile uint _offered_termination;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
 
 #ifdef TRACESPINNING
   static uint _total_yields;
@@ -464,11 +467,18 @@ protected:
   virtual void yield();
   void sleep(uint millis);
 
+  // Called when exiting termination is requested.
+  // When the request is made, terminator may have already terminated
+  // (e.g. all threads are arrived and offered termination). In this case,
+  // it should ignore the request and complete the termination.
+  // Return true if termination is completed. Otherwise, return false.
+  bool complete_or_exit_termination();
 public:
 
   // "n_threads" is the number of threads to be terminated.  "queue_set" is a
   // queue sets of work queues of other threads.
   ParallelTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  virtual ~ParallelTaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
   // else is.  If returns "true", all threads are terminated.  If returns
@@ -500,37 +510,21 @@ public:
 #endif
 };
 
-#ifdef _MSC_VER
-#pragma warning(push)
-// warning C4521: multiple copy constructors specified
-#pragma warning(disable:4521)
-// warning C4522: multiple assignment operators specified
-#pragma warning(disable:4522)
-#endif
-
 class TaskTerminator : public StackObj {
 private:
   ParallelTaskTerminator*  _terminator;
 
-  // Disable following copy constructors and assignment operator
-  TaskTerminator(TaskTerminator& o) { }
-  TaskTerminator(const TaskTerminator& o) { }
-  TaskTerminator& operator=(TaskTerminator& o) { return *this; }
+  // Noncopyable.
+  TaskTerminator(const TaskTerminator&);
+  TaskTerminator& operator=(const TaskTerminator&);
 public:
   TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
   ~TaskTerminator();
-
-  // Move assignment
-  TaskTerminator& operator=(const TaskTerminator& o);
 
   ParallelTaskTerminator* terminator() const {
     return _terminator;
   }
 };
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 
 typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
 typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
@@ -619,4 +613,4 @@ typedef GenericTaskQueueSet<OopStarTaskQueue, mtGC> OopStarTaskQueueSet;
 typedef OverflowTaskQueue<size_t, mtGC>             RegionTaskQueue;
 typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>  RegionTaskQueueSet;
 
-#endif // SHARE_VM_GC_SHARED_TASKQUEUE_HPP
+#endif // SHARE_GC_SHARED_TASKQUEUE_HPP

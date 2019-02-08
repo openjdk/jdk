@@ -25,7 +25,7 @@
 //key: compiler.warn.preview.feature.use.plural
 //key: compiler.misc.feature.diamond
 //key: compiler.misc.feature.lambda
-//options: -Xlint:preview -XDforcePreview -source 12 --enable-preview
+//options: -Xlint:preview -XDforcePreview -source 13 --enable-preview
 
 import java.util.ArrayList;
 

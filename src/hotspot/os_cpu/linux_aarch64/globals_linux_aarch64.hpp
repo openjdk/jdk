@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
+#ifndef OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
@@ -40,6 +40,7 @@ define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
 // Used on 64 bit platforms for UseCompressedOops base address
 define_pd_global(uintx,HeapBaseMinAddress,       2*G);
 
+class Thread;
 extern __thread Thread *aarch64_currentThread;
 
-#endif // OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
+#endif // OS_CPU_LINUX_AARCH64_GLOBALS_LINUX_AARCH64_HPP

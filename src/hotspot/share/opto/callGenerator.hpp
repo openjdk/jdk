@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_CALLGENERATOR_HPP
-#define SHARE_VM_OPTO_CALLGENERATOR_HPP
+#ifndef SHARE_OPTO_CALLGENERATOR_HPP
+#define SHARE_OPTO_CALLGENERATOR_HPP
 
 #include "compiler/compileBroker.hpp"
 #include "opto/callnode.hpp"
@@ -144,6 +144,10 @@ class CallGenerator : public ResourceObj {
                                            CallGenerator* if_hit,
                                            float hit_prob);
 
+  static CallGenerator* for_guarded_call(ciKlass* predicted_receiver,
+                                         CallGenerator* if_missed,
+                                         CallGenerator* if_hit);
+
   // How to make a call that optimistically assumes a MethodHandle target:
   static CallGenerator* for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
                                                    CallGenerator* if_missed,
@@ -176,6 +180,8 @@ class CallGenerator : public ResourceObj {
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
+  static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
+  static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
 };
 
 
@@ -342,4 +348,4 @@ class WarmCallInfo : public ResourceObj {
 #endif
 };
 
-#endif // SHARE_VM_OPTO_CALLGENERATOR_HPP
+#endif // SHARE_OPTO_CALLGENERATOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
-#define SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#ifndef SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#define SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/safepoint.hpp"
@@ -55,26 +55,23 @@ bool SafepointMechanism::should_block(Thread* thread) {
   }
 }
 
-void SafepointMechanism::block_if_requested_local_poll(JavaThread *thread) {
-  bool armed = local_poll_armed(thread); // load acquire, polling page -> op / global state
-  if(armed) {
-    // We could be armed for either a handshake operation or a safepoint
-    if (global_poll()) {
-      SafepointSynchronize::block(thread);
-    }
-    if (thread->has_handshake()) {
-      thread->handshake_process_by_self();
-    }
+void SafepointMechanism::block_if_requested(JavaThread *thread) {
+  if (uses_thread_local_poll() && !SafepointMechanism::local_poll_armed(thread)) {
+    return;
   }
+  block_if_requested_slow(thread);
 }
 
-void SafepointMechanism::block_if_requested(JavaThread *thread) {
-  if (uses_thread_local_poll()) {
-    block_if_requested_local_poll(thread);
-  } else {
-    // If we don't have per thread poll this could a handshake or a safepoint
+void SafepointMechanism::callback_if_safepoint(JavaThread* thread) {
+  if (!uses_thread_local_poll() || local_poll_armed(thread)) {
+    // If using thread local polls, we should not check the
+    // global_poll() and callback via block() if the VMThread
+    // has not yet armed the local poll. Otherwise, when used in
+    // combination with should_block(), the latter could miss
+    // detecting the same safepoint that this method would detect
+    // if only checking global polls.
     if (global_poll()) {
-      SafepointSynchronize::block(thread);
+      SafepointSynchronize::block(thread, false);
     }
   }
 }
@@ -95,4 +92,4 @@ void SafepointMechanism::disarm_local_poll_release(JavaThread* thread) {
   thread->set_polling_page_release(poll_disarmed_value());
 }
 
-#endif // SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
+#endif // SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP

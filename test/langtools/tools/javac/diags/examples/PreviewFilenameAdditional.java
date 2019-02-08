@@ -24,7 +24,7 @@
 // key: compiler.note.preview.filename.additional
 // key: compiler.warn.preview.feature.use
 // key: compiler.misc.feature.diamond
-// options: -Xlint:preview -Xmaxwarns 1 -XDforcePreview  -source 12 --enable-preview
+// options: -Xlint:preview -Xmaxwarns 1 -XDforcePreview  -source 13 --enable-preview
 
 import java.util.ArrayList;
 

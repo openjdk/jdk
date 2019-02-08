@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_SIZES_HPP
-#define SHARE_VM_UTILITIES_SIZES_HPP
+#ifndef SHARE_UTILITIES_SIZES_HPP
+#define SHARE_UTILITIES_SIZES_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -148,4 +148,4 @@ inline int      in_words   (WordSize x)               { return x; }
 
 #define byte_offset_of(klass,field)   in_ByteSize((int)offset_of(klass, field))
 
-#endif // SHARE_VM_UTILITIES_SIZES_HPP
+#endif // SHARE_UTILITIES_SIZES_HPP

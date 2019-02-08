@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_SOLARIS_VM_OS_SOLARIS_HPP
-#define OS_SOLARIS_VM_OS_SOLARIS_HPP
+#ifndef OS_SOLARIS_OS_SOLARIS_HPP
+#define OS_SOLARIS_OS_SOLARIS_HPP
 
 // Solaris_OS defines the interface to Solaris operating systems
 
@@ -335,4 +335,21 @@ class PlatformParker : public CHeapObj<mtInternal> {
   }
 };
 
-#endif // OS_SOLARIS_VM_OS_SOLARIS_HPP
+// Platform specific implementation that underpins VM Monitor/Mutex class
+class PlatformMonitor : public CHeapObj<mtInternal> {
+ private:
+  mutex_t _mutex; // Native mutex for locking
+  cond_t  _cond;  // Native condition variable for blocking
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  void lock();
+  void unlock();
+  bool try_lock();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
+};
+
+#endif // OS_SOLARIS_OS_SOLARIS_HPP

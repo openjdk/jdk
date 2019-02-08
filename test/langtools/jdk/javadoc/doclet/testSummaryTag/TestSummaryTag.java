@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug      8173425 8186332 8182765 8196202
  * @summary  tests for the summary tag behavior
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestSummaryTag
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestSummaryTag extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "p1");
@@ -95,51 +97,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test1_html4() {
-        javadoc("-d", "out1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "p1");
-        checkExit(Exit.OK);
-
-        checkOutput("index-all.html", true,
-            "<dl>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m--\">m()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/B.html#m--\">m()"
-            + "</a></span> - Method in class p1.<a href=\"p1/B.html\" title=\"class in p1\">B</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m1--\">m1()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\"> First sentence </div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m2--\">m2()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">Some html &lt;foo&gt; &nbsp; codes</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m3--\">m3()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence </div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m4--\">m4()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence i.e. the first sentence</div>\n"
-            + "</dd>\n"
-            + "</dl>\n"
-        );
-    }
-
-    @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out2",
                 "-sourcepath", testSrc,
                 "p2");
@@ -153,7 +111,7 @@ public class TestSummaryTag extends JavadocTester {
     }
 
     @Test
-    void test3() {
+    public void test3() {
         javadoc("-d", "out3",
                 "--frames",
                 "-sourcepath", testSrc,

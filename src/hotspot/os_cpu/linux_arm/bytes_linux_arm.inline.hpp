@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_VM_BYTES_LINUX_ARM_INLINE_HPP
-#define OS_CPU_LINUX_ARM_VM_BYTES_LINUX_ARM_INLINE_HPP
+#ifndef OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_INLINE_HPP
+#define OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_INLINE_HPP
 
 #include <byteswap.h>
 
@@ -44,4 +44,4 @@ inline u8 Bytes::swap_u8(u8 x) {
   return bswap_64(x);
 }
 
-#endif // OS_CPU_LINUX_ARM_VM_BYTES_LINUX_ARM_INLINE_HPP
+#endif // OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_INLINE_HPP

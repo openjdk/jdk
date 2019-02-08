@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
-#define CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
+#ifndef CPU_SPARC_FRAME_SPARC_INLINE_HPP
+#define CPU_SPARC_FRAME_SPARC_INLINE_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.inline.hpp"
@@ -56,11 +56,6 @@ inline bool frame::equal(frame other) const {
 // identity and younger/older relationship. NULL represents an invalid (incomparable)
 // frame.
 inline intptr_t* frame::id(void) const { return unextended_sp(); }
-
-// Relationals on frames based
-// Return true if the frame is younger (more recent activation) than the frame represented by id
-inline bool frame::is_younger(intptr_t* id) const { assert(this->id() != NULL && id != NULL, "NULL frame id");
-                                                    return this->id() < id ; }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL && id != NULL, "NULL frame id");
@@ -191,4 +186,4 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *((oop*) map->location(O0->as_VMReg())) = obj;
 }
 
-#endif // CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
+#endif // CPU_SPARC_FRAME_SPARC_INLINE_HPP

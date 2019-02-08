@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_C1_DEFS_PPC_HPP
-#define CPU_PPC_VM_C1_DEFS_PPC_HPP
+#ifndef CPU_PPC_C1_DEFS_PPC_HPP
+#define CPU_PPC_C1_DEFS_PPC_HPP
 
 // Native word offsets from memory address.
 enum {
@@ -73,4 +73,4 @@ enum {
   pd_float_saved_as_double = true
 };
 
-#endif // CPU_PPC_VM_C1_DEFS_PPC_HPP
+#endif // CPU_PPC_C1_DEFS_PPC_HPP

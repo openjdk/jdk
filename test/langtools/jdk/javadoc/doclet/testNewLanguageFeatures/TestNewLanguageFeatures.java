@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
  * @author   jamieh
- * @library  ../lib
+ * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
+ * @build    javadoc.tester.*
  * @run main TestNewLanguageFeatures
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestNewLanguageFeatures extends JavadocTester {
 
@@ -43,7 +45,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
     }
 
     @Test
-    void test() {
+    public void test() {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
@@ -56,21 +58,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkTypeParameters();
         checkVarArgs();
         checkAnnotationTypeUsage();
-    }
-
-    @Test
-    void test_html4() {
-        javadoc("-Xdoclint:none",
-                "-d", "out-html4",
-                "-html4",
-                "-use",
-                "-sourcepath", testSrc,
-                "pkg", "pkg1", "pkg2");
-        checkExit(Exit.OK);
-
-        checkTypeParameters_html4();
-        checkVarArgs_html4();
-        checkAnnotationTypeUsage_html4();
     }
 
     //=================================
@@ -486,122 +473,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
     }
 
     //=================================
-    // TYPE PARAMETER TESTING
-    //=================================
-
-    void checkTypeParameters_html4() {
-        checkOutput("pkg/TypeParameters.html", true,
-                // Make sure the header is correct.
-                "<td class=\"colFirst\"><code><a href=\"TypeParameters.html\" "
-                + "title=\"type parameter in TypeParameters\">E</a>[]</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#methodThatReturnsTypeParameterA-E:A-\">"
-                + "methodThatReturnsTypeParameterA</a></span>&#8203;(<a href=\"TypeParameters.html\" "
-                + "title=\"type parameter in TypeParameters\">E</a>[]&nbsp;e)</code>",
-                "<td class=\"colFirst\"><code>&lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt;"
-                + "<br>T</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#methodtThatReturnsTypeParametersB-java.util.Collection-\">"
-                + "methodtThatReturnsTypeParametersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>",
-                "<div class=\"block\">Returns TypeParameters</div>\n",
-                // Method takes a TypeVariable
-                "<td class=\"colFirst\"><code>&lt;X extends java.lang.Throwable&gt;<br>"
-                + "<a href=\"TypeParameters.html\" title=\"type parameter in TypeParameters\">E</a>"
-                + "</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#orElseThrow-java.util.function.Supplier-\">"
-                + "orElseThrow</a></span>&#8203;(java.util.function.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"
-                );
-
-        //==============================================================
-        // Test Class-Use Documentation for Type Parameters.
-        //==============================================================
-        // ClassUseTest1: <T extends Foo & Foo2>
-        checkOutput("pkg2/class-use/Foo.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest1."
-                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest1.html#method-T-\">method</a></span>"
-                + "&#8203;(T&nbsp;t)</code></th>"
-        );
-
-        checkOutput("pkg2/class-use/Foo2.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">"
-                + "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest1.html#method-T-\">method</a></span>"
-                + "&#8203;(T&nbsp;t)</code></th>"
-        );
-
-        // ClassUseTest2: <T extends ParamTest<Foo3>>
-        checkOutput("pkg2/class-use/ParamTest.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
-                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest2.html#method-T-\">method</a></span>"
-                + "&#8203;(T&nbsp;t)</code></th>"
-        );
-
-        checkOutput("pkg2/class-use/Foo3.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
-                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest2.html#method-T-\">method</a></span>"
-                + "&#8203;(T&nbsp;t)</code></th>"
-        );
-
-        // ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
-        checkOutput("pkg2/class-use/ParamTest2.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3"
-                + ".</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code></th>"
-        );
-
-        checkOutput("pkg2/class-use/Foo4.html", true,
-                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
-                + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code>"
-                + "</th>"
-        );
-
-        // Type parameters in constructor and method args
-        checkOutput("pkg2/class-use/Foo4.html", true,
-                "<caption><span>Method parameters in <a href=\"../"
-                + "package-summary.html\">pkg2</a> with type arguments of "
-                + "type <a href=\"../Foo4.html\" title=\"class in "
-                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
-                + "</span></caption>\n"
-                + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>\n"
-                + "<tbody>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><code>void</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
-                + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-java.util.Set-\">method</a></span>&#8203;(java."
-                + "util.Set&lt;<a href=\"../Foo4.html\" title=\""
-                + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code></th>"
-        );
-
-        //=================================
-        // TYPE PARAMETER IN INDEX
-        //=================================
-        checkOutput("index-all.html", true,
-                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">"
-                + "method(Vector&lt;Object&gt;)</a></span>"
-        );
-
-        // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
-        //=================================
-        // TYPE PARAMETER IN INDEX
-        //=================================
-        checkOutput("index-all.html", true,
-                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">"
-                + "method(Vector&lt;Object&gt;)</a></span>"
-        );
-
-    }
-
-    //=================================
     // VAR ARG TESTING
     //=================================
     void checkVarArgs() {
@@ -609,18 +480,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "(int...&nbsp;i)",
                 "(int[][]...&nbsp;i)",
                 "(int[]...)",
-                "<a href=\"TypeParameters.html\" title=\"class in pkg\">"
-                + "TypeParameters</a>...&nbsp;t");
-    }
-
-    //=================================
-    // VAR ARG TESTING
-    //=================================
-    void checkVarArgs_html4() {
-        checkOutput("pkg/VarArgs.html", true,
-                "(int...&nbsp;i)",
-                "(int[][]...&nbsp;i)",
-                "-int:A...-",
                 "<a href=\"TypeParameters.html\" title=\"class in pkg\">"
                 + "TypeParameters</a>...&nbsp;t");
     }
@@ -818,92 +677,5 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<pre><a href=\"A.html\" title=\"annotation in pkg1\">@A</a>",
                 "public interface <span class=\"typeNameLabel\">B</span></pre>");
 
-    }
-
-    //=================================
-    // ANNOTATION TYPE USAGE TESTING
-    //=================================
-    void checkAnnotationTypeUsage_html4() {
-        checkOutput("pkg/package-summary.html", true,
-                // PACKAGE
-                "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">optional</a>=\"Package Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">required</a>=1994)");
-
-        checkOutput("pkg/AnnotationTypeUsage.html", true,
-                // CLASS
-                "<pre><a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
-                + "=\"Class Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
-                + "required</a>=1994)\n"
-                + "public class <span class=\"typeNameLabel\">"
-                + "AnnotationTypeUsage</span>\n"
-                + "extends java.lang.Object</pre>",
-                // FIELD
-                "<pre><a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
-                + "=\"Field Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
-                + "required</a>=1994)\n"
-                + "public&nbsp;int field</pre>",
-                // CONSTRUCTOR
-                "<pre><a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
-                + "=\"Constructor Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
-                + "required</a>=1994)\n"
-                + "public&nbsp;AnnotationTypeUsage()</pre>",
-                // METHOD
-                "<pre class=\"methodSignature\"><a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
-                + "=\"Method Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
-                + "required</a>=1994)\n"
-                + "public&nbsp;void&nbsp;method()</pre>",
-                // METHOD PARAMS
-                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;methodWithParams&#8203;("
-                + "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">"
-                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
-                + "optional</a>=\"Parameter Annotation\",<a "
-                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
-                + "                             int&nbsp;documented,\n"
-                + "                             int&nbsp;undocmented)</pre>",
-                // CONSTRUCTOR PARAMS
-                "<pre>public&nbsp;AnnotationTypeUsage&#8203;(<a "
-                + "href=\"AnnotationType.html\" title=\"annotation in pkg\">"
-                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
-                + "optional</a>=\"Constructor Param Annotation\",<a "
-                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
-                + "                           int&nbsp;documented,\n"
-                + "                           int&nbsp;undocmented)</pre>");
-
-        //=================================
-        // ANNOTATION TYPE USAGE TESTING (All Different Types).
-        //=================================
-        checkOutput("pkg1/B.html", true,
-                // Integer
-                "<a href=\"A.html#d--\">d</a>=3.14,",
-                // Double
-                "<a href=\"A.html#d--\">d</a>=3.14,",
-                // Boolean
-                "<a href=\"A.html#b--\">b</a>=true,",
-                // String
-                "<a href=\"A.html#s--\">s</a>=\"sigh\",",
-                // Class
-                "<a href=\"A.html#c--\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,",
-                // Bounded Class
-                "<a href=\"A.html#w--\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,",
-                // Enum
-                "<a href=\"A.html#e--\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,",
-                // Annotation Type
-                "<a href=\"A.html#a--\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994),",
-                // String Array
-                "<a href=\"A.html#sa--\">sa</a>={\"up\",\"down\"},",
-                // Primitive
-                "<a href=\"A.html#primitiveClassTest--\">primitiveClassTest</a>=boolean.class,");
     }
 }

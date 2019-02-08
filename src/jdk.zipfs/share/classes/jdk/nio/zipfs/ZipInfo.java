@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,17 @@ package jdk.nio.zipfs;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+
 import static jdk.nio.zipfs.ZipConstants.*;
-import static jdk.nio.zipfs.ZipUtils.*;
+import static jdk.nio.zipfs.ZipUtils.dosToJavaTime;
+import static jdk.nio.zipfs.ZipUtils.unixToJavaTime;
+import static jdk.nio.zipfs.ZipUtils.winToJavaTime;
 
 /**
  * Print all loc and cen headers of the ZIP file
  *
- * @author  Xueming Shen
+ * @author Xueming Shen
  */
-
 public class ZipInfo {
 
     public static void main(String[] args) throws Throwable {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
-#define SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
+#ifndef SHARE_INTERPRETER_BYTECODESTREAM_HPP
+#define SHARE_INTERPRETER_BYTECODESTREAM_HPP
 
 #include "interpreter/bytecode.hpp"
 #include "memory/allocation.hpp"
@@ -211,7 +211,6 @@ class BytecodeStream: public BaseBytecodeStream {
     return _code;
   }
 
-  bool            is_active_breakpoint() const   { return Bytecodes::is_active_breakpoint_at(bcp()); }
   Bytecodes::Code code() const                   { return _code; }
 
   // Unsigned indices, widening
@@ -227,4 +226,4 @@ class BytecodeStream: public BaseBytecodeStream {
   bool            has_index_u4() const           { return bytecode().has_index_u4(raw_code()); }
 };
 
-#endif // SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
+#endif // SHARE_INTERPRETER_BYTECODESTREAM_HPP

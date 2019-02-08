@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_C1_DEFS_AARCH64_HPP
-#define CPU_AARCH64_VM_C1_DEFS_AARCH64_HPP
+#ifndef CPU_AARCH64_C1_DEFS_AARCH64_HPP
+#define CPU_AARCH64_C1_DEFS_AARCH64_HPP
 
 // native word offsets from memory address (little endian)
 enum {
@@ -78,4 +78,4 @@ enum {
   pd_float_saved_as_double = false
 };
 
-#endif // CPU_AARCH64_VM_C1_DEFS_AARCH64_HPP
+#endif // CPU_AARCH64_C1_DEFS_AARCH64_HPP

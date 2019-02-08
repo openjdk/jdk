@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_C2_GLOBALS_PPC_HPP
-#define CPU_PPC_VM_C2_GLOBALS_PPC_HPP
+#ifndef CPU_PPC_C2_GLOBALS_PPC_HPP
+#define CPU_PPC_C2_GLOBALS_PPC_HPP
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -101,4 +101,4 @@ define_pd_global(size_t,   MetaspaceSize,                ScaleForWordSize(16*M))
 // Ergonomics related flags
 define_pd_global(bool,     NeverActAsServerClassMachine, false);
 
-#endif // CPU_PPC_VM_C2_GLOBALS_PPC_HPP
+#endif // CPU_PPC_C2_GLOBALS_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_VM_FRAME_S390_INLINE_HPP
-#define CPU_S390_VM_FRAME_S390_INLINE_HPP
+#ifndef CPU_S390_FRAME_S390_INLINE_HPP
+#define CPU_S390_FRAME_S390_INLINE_HPP
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
@@ -109,14 +109,6 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
   return _fp;
-}
-
-// Return true if this frame is younger (more recent activation) than
-// the frame represented by id.
-inline bool frame::is_younger(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
-  // Stack grows towards smaller addresses on z/Architecture.
-  return this->id() < id;
 }
 
 // Return true if this frame is older (less recent activation) than
@@ -296,4 +288,4 @@ inline intptr_t* frame::real_fp() const {
   return fp();
 }
 
-#endif // CPU_S390_VM_FRAME_S390_INLINE_HPP
+#endif // CPU_S390_FRAME_S390_INLINE_HPP

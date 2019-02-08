@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
 
@@ -36,7 +38,7 @@ import jdk.test.lib.cli.CommandLineOptionTest;
  *              | vm.opt.IgnoreUnrecognizedVMOptions == "false")
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main TestSurvivorAlignmentInBytesOption
+ * @run main gc.arguments.TestSurvivorAlignmentInBytesOption
  */
 public class TestSurvivorAlignmentInBytesOption {
     public static void main(String args[]) throws Throwable {

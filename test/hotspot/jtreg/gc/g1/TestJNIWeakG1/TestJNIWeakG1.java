@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1.TestJNIWeakG1;
+
 /* @test
  * @bug 8166188 8178813
  * @summary Test return of JNI weak global refs during concurrent
@@ -38,13 +40,13 @@
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    -XX:+UseG1GC -XX:MaxTenuringThreshold=2
  *    -Xint
- *    TestJNIWeakG1
+ *    gc.g1.TestJNIWeakG1.TestJNIWeakG1
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    -XX:+UseG1GC -XX:MaxTenuringThreshold=2
  *    -Xcomp
- *    TestJNIWeakG1
+ *    gc.g1.TestJNIWeakG1.TestJNIWeakG1
  */
 
 import sun.hotspot.WhiteBox;

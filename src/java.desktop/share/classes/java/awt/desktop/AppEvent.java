@@ -38,6 +38,9 @@ import java.util.EventObject;
  */
 public class AppEvent extends EventObject {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -5958503993556009432L;
 
     /**

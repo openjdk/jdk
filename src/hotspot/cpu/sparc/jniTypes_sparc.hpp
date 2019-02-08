@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_JNITYPES_SPARC_HPP
-#define CPU_SPARC_VM_JNITYPES_SPARC_HPP
+#ifndef CPU_SPARC_JNITYPES_SPARC_HPP
+#define CPU_SPARC_JNITYPES_SPARC_HPP
 
 #include "jni.h"
 #include "memory/allocation.hpp"
@@ -88,4 +88,4 @@ public:
 
 };
 
-#endif // CPU_SPARC_VM_JNITYPES_SPARC_HPP
+#endif // CPU_SPARC_JNITYPES_SPARC_HPP

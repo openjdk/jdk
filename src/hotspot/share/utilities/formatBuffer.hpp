@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_FORMATBUFFER_HPP
-#define SHARE_VM_UTILITIES_FORMATBUFFER_HPP
+#ifndef SHARE_UTILITIES_FORMATBUFFER_HPP
+#define SHARE_UTILITIES_FORMATBUFFER_HPP
 
 #include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
@@ -116,4 +116,4 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
 // Used to format messages.
 typedef FormatBuffer<> err_msg;
 
-#endif // SHARE_VM_UTILITIES_FORMATBUFFER_HPP
+#endif // SHARE_UTILITIES_FORMATBUFFER_HPP

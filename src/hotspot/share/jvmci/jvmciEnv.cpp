@@ -57,8 +57,9 @@
 JVMCIEnv::JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter):
   _task(task),
   _system_dictionary_modification_counter(system_dictionary_modification_counter),
+  _retryable(true),
   _failure_reason(NULL),
-  _retryable(true)
+  _failure_reason_on_C_heap(false)
 {
   // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);

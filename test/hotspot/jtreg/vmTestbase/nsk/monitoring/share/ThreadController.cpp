@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,20 +486,15 @@ extern "C" {
         jstring stateName;
         jint state;
 
-        if (!NSK_VERIFY(
-             env->GetJavaVM(&vm) == 0)) {
+        if (!NSK_VERIFY(env->GetJavaVM(&vm) == 0)) {
             return NULL;
         }
 
-        if (!NSK_VERIFY(
-             vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1)
-                    == JNI_OK)) {
+        if (!NSK_VERIFY(vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1) == JNI_OK)) {
             return NULL;
         }
 
-        if (!NSK_VERIFY(
-             jvmti->GetThreadState((jthread)thread, &state)
-             == JVMTI_ERROR_NONE)) {
+        if (!NSK_VERIFY(jvmti->GetThreadState((jthread)thread, &state) == JVMTI_ERROR_NONE)) {
             return NULL;
         }
 

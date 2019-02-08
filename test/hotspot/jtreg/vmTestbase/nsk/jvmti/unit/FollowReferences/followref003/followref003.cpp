@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,7 +533,7 @@ static int registerLocal(jint frame_id, jlocation location, jint slot, jlong tag
     for (idx = 1; idx <= curr_local_idx; idx++) {
         loc = &locDesc[idx];
         if (loc->frame_id == frame_id &&
-            loc->slot     == slot) {
+            loc->slot == slot) {
             if (first_followref) {
                 /* Do this check on the first FollowReferences call only */
                 FrameDesc *fr = &frameDesc[frame_id];

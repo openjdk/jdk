@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTYPEIDS_INLINE_HPP
-#define SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTYPEIDS_INLINE_HPP
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -149,4 +149,4 @@ inline void JfrTraceId::tag_as_event_host(const Klass* k) {
   assert(IS_EVENT_HOST_KLASS(k), "invariant");
 }
 
-#endif // SHARE_VM_JFR_CHECKPOINT_TYPES_TRACEID_JFRTYPEIDS_INLINE_HPP
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP

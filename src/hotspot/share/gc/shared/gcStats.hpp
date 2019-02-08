@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCSTATS_HPP
-#define SHARE_VM_GC_SHARED_GCSTATS_HPP
+#ifndef SHARE_GC_SHARED_GCSTATS_HPP
+#define SHARE_GC_SHARED_GCSTATS_HPP
 
 #include "gc/shared/gcUtil.hpp"
 
@@ -58,4 +58,4 @@ class GCStats : public CHeapObj<mtGC> {
   }
 };
 
-#endif // SHARE_VM_GC_SHARED_GCSTATS_HPP
+#endif // SHARE_GC_SHARED_GCSTATS_HPP

@@ -25,9 +25,9 @@
  * @test
  * @bug 8207214
  * @summary Test package-level at-serial tags
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester toolbox.ToolBox
+ * @build javadoc.tester.* toolbox.ToolBox
  * @run main TestSerialTag
  */
 
@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestSerialTag extends JavadocTester {
     public static void main(String... args) throws Exception {

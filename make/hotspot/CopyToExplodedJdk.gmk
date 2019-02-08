@@ -25,7 +25,7 @@
 
 # Copy all built libraries into exploded jdk
 LIB_TARGETS := $(filter $(LIB_OUTPUTDIR)/%, $(TARGETS))
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupCopyFiles, COPY_LIBS_BIN, \
       SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
       DEST := $(JDK_OUTPUTDIR)/bin, \

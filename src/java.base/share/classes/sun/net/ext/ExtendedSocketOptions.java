@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,53 @@ public abstract class ExtendedSocketOptions {
     /** Return the, possibly empty, set of extended socket options available. */
     public final Set<SocketOption<?>> options() { return options; }
 
-    public static final Set<SocketOption<?>> options(short type) {
-        return getInstance().options0(type);
+    /**
+     * Returns the (possibly empty) set of extended socket options for
+     * stream-oriented listening sockets.
+     */
+    public static Set<SocketOption<?>> serverSocketOptions() {
+        return getInstance().options0(SOCK_STREAM, true);
     }
 
-    private Set<SocketOption<?>> options0(short type) {
-        Set<SocketOption<?>> extOptions = null;
+    /**
+     * Returns the (possibly empty) set of extended socket options for
+     * stream-oriented connecting sockets.
+     */
+    public static Set<SocketOption<?>> clientSocketOptions() {
+        return getInstance().options0(SOCK_STREAM, false);
+    }
+
+    /**
+     * Returns the (possibly empty) set of extended socket options for
+     * datagram-oriented sockets.
+     */
+    public static Set<SocketOption<?>> datagramSocketOptions() {
+        return getInstance().options0(SOCK_DGRAM, false);
+    }
+
+    private boolean isDatagramOption(SocketOption<?> option) {
+        return !option.name().startsWith("TCP_");
+    }
+
+    private boolean isStreamOption(SocketOption<?> option, boolean server) {
+        if (server && "SO_FLOW_SLA".equals(option.name())) {
+            return false;
+        } else {
+            return !option.name().startsWith("UDP_");
+        }
+    }
+
+    private Set<SocketOption<?>> options0(short type, boolean server) {
+        Set<SocketOption<?>> extOptions;
         switch (type) {
             case SOCK_DGRAM:
                 extOptions = options.stream()
-                        .filter((option) -> !option.name().startsWith("TCP_"))
+                        .filter(option -> isDatagramOption(option))
                         .collect(Collectors.toUnmodifiableSet());
                 break;
             case SOCK_STREAM:
                 extOptions = options.stream()
-                        .filter((option) -> !option.name().startsWith("UDP_"))
+                        .filter(option -> isStreamOption(option, server))
                         .collect(Collectors.toUnmodifiableSet());
                 break;
             default:

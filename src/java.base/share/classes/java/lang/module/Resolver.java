@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,7 +659,7 @@ final class Resolver {
      * Checks the readability graph to ensure that
      * <ol>
      *   <li><p> A module does not read two or more modules with the same name.
-     *   This includes the case where a module reads another another with the
+     *   This includes the case where a module reads another module with the
      *   same name as itself. </p></li>
      *   <li><p> Two or more modules in the configuration don't export the same
      *   package to a module that reads both. This includes the case where a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_REGMASK_HPP
-#define SHARE_VM_OPTO_REGMASK_HPP
+#ifndef SHARE_OPTO_REGMASK_HPP
+#define SHARE_OPTO_REGMASK_HPP
 
 #include "code/vmreg.hpp"
 #include "opto/optoreg.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 // Some fun naming (textual) substitutions:
 //
@@ -45,10 +47,14 @@
 // numregs in chaitin      ==> proper degree in chaitin
 
 //-------------Non-zero bit search methods used by RegMask---------------------
-// Find lowest 1, or return 32 if empty
-int find_lowest_bit( uint32_t mask );
-// Find highest 1, or return 32 if empty
-int find_hihghest_bit( uint32_t mask );
+// Find lowest 1, undefined if empty/0
+static int find_lowest_bit(uint32_t mask) {
+  return count_trailing_zeros(mask);
+}
+// Find highest 1, undefined if empty/0
+static int find_highest_bit(uint32_t mask) {
+  return count_leading_zeros(mask) ^ 31;
+}
 
 //------------------------------RegMask----------------------------------------
 // The ADL file describes how to print the machine-specific registers, as well
@@ -170,18 +176,11 @@ public:
     FORALL_BODY
 #   undef BODY
       { base = OptoReg::Bad; bits = 1<<0; }
-    return OptoReg::Name(base + find_hihghest_bit(bits));
+    return OptoReg::Name(base + find_highest_bit(bits));
   }
-
-  // Find the lowest-numbered register pair in the mask.  Return the
-  // HIGHEST register number in the pair, or BAD if no pairs.
-  // Assert that the mask contains only bit pairs.
-  OptoReg::Name find_first_pair() const;
 
   // Clear out partial bits; leave only aligned adjacent bit pairs.
   void clear_to_pairs();
-  // Smear out partial bits; leave only aligned adjacent bit pairs.
-  void smear_to_pairs();
   // Verify that the mask contains only aligned adjacent bit pairs
   void verify_pairs() const { assert( is_aligned_pairs(), "mask is not aligned, adjacent pairs" ); }
   // Test that the mask contains only aligned adjacent bit pairs
@@ -217,9 +216,6 @@ public:
   void verify_sets(int size) const { assert(is_aligned_sets(size), "mask is not aligned, adjacent sets"); }
   // Test that the mask contains only aligned adjacent bit sets
   bool is_aligned_sets(const int size) const;
-
-  // mask is a set of misaligned registers
-  bool is_misaligned_set(int size) const { return (int)Size()==size && !is_aligned_sets(size);}
 
   // Test for a single adjacent set
   int is_bound_set(const int size) const;
@@ -313,4 +309,4 @@ public:
 // Do not use this constant directly in client code!
 #undef RM_SIZE
 
-#endif // SHARE_VM_OPTO_REGMASK_HPP
+#endif // SHARE_OPTO_REGMASK_HPP

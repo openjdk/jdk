@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
 
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -52,4 +52,4 @@ public:
   virtual void filter(SATBMarkQueue* queue);
 };
 
-#endif
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP

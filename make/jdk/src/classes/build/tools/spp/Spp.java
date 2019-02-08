@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package build.tools.spp;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.*;
 import java.util.regex.*;
 
@@ -32,7 +34,8 @@ import java.util.regex.*;
  * Spp: A simple regex-based stream preprocessor based on Mark Reinhold's
  *      sed-based spp.sh
  *
- * Usage: java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... <in >out
+ * Usage:
+ * java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... -iin -oout
  *
  * If -nel is declared then empty lines will not be substituted for lines of
  * text in the template that do not appear in the output.
@@ -69,6 +72,8 @@ public class Spp {
         Set<String> keys = new HashSet<>();
         boolean be = false;
         boolean el = true;
+        String inputFile = null;
+        String outputFile = null;
 
         for (String arg:args) {
             if (arg.startsWith("-D")) {
@@ -76,6 +81,10 @@ public class Spp {
                 vars.put(arg.substring(2, i),arg.substring(i+1));
             } else if (arg.startsWith("-K")) {
                 keys.add(arg.substring(2));
+            } else if (arg.startsWith("-i")) {
+                inputFile = arg.substring(2);
+            } else if (arg.startsWith("-o")) {
+                outputFile = arg.substring(2);
             } else if ("-be".equals(arg)) {
                 be = true;
             } else if ("-nel".equals(arg)) {
@@ -87,11 +96,11 @@ public class Spp {
         }
 
         StringBuffer out = new StringBuffer();
-        new Spp().spp(new Scanner(System.in),
+        new Spp().spp(new Scanner(new FileInputStream(inputFile)),
                       out, "",
                       keys, vars, be, el,
                       false);
-        System.out.print(out.toString());
+        new FileOutputStream(outputFile, true).write(out.toString().getBytes());
     }
 
     static final String LNSEP = System.getProperty("line.separator");

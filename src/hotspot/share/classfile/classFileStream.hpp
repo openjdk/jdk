@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_CLASSFILESTREAM_HPP
-#define SHARE_VM_CLASSFILE_CLASSFILESTREAM_HPP
+#ifndef SHARE_CLASSFILE_CLASSFILESTREAM_HPP
+#define SHARE_CLASSFILE_CLASSFILESTREAM_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/bytes.hpp"
@@ -143,4 +143,4 @@ class ClassFileStream: public ResourceObj {
   uint64_t compute_fingerprint() const;
 };
 
-#endif // SHARE_VM_CLASSFILE_CLASSFILESTREAM_HPP
+#endif // SHARE_CLASSFILE_CLASSFILESTREAM_HPP

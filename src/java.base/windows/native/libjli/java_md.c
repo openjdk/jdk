@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 
 #define JVM_DLL "jvm.dll"
 #define JAVA_DLL "java.dll"
+
+#define ELP_PREFIX L"\\\\?\\"
 
 /*
  * Prototypes.
@@ -494,6 +496,57 @@ JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
     }
     return rc;
 }
+
+/* On Windows, if _open fails, retry again with CreateFileW and
+ *  "\\?\" prefix ( extended-length paths) - this allows to open paths with larger file names;
+ * otherwise we run into the MAX_PATH limitation */
+int JLI_Open(const char* name, int flags) {
+    int fd = _open(name, flags);
+    if (fd == -1 && errno == ENOENT) {
+        wchar_t* wname = NULL;
+        wchar_t* wfullname = NULL;
+        wchar_t* wfullname_w_prefix = NULL;
+        size_t wnamelen, wfullnamelen, elplen;
+        HANDLE h;
+
+        wnamelen = strlen(name) + 1;
+        wname = (wchar_t*) malloc(wnamelen*sizeof(wchar_t));
+        if (wname == NULL) {
+            goto end;
+        }
+        if (mbstowcs(wname, name, wnamelen - 1) == -1) {
+            goto end;
+        }
+        wname[wnamelen - 1] = L'\0';
+        wfullname = _wfullpath(wfullname, wname, 0);
+        if (wfullname == NULL) {
+            goto end;
+        }
+
+        wfullnamelen = wcslen(wfullname);
+        if (wfullnamelen > 247) {
+            elplen = wcslen(ELP_PREFIX);
+            wfullname_w_prefix = (wchar_t*) malloc((elplen+wfullnamelen+1)*sizeof(wchar_t));
+            wcscpy(wfullname_w_prefix, ELP_PREFIX);
+            wcscpy(wfullname_w_prefix+elplen, wfullname);
+
+            h = CreateFileW(wfullname_w_prefix, GENERIC_READ, FILE_SHARE_READ, NULL,
+                            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h == INVALID_HANDLE_VALUE) {
+                goto end;
+            }
+            /* associates fd with handle */
+            fd = _open_osfhandle((intptr_t)h, _O_RDONLY);
+        }
+end:
+        free(wname);
+        free(wfullname);
+        free(wfullname_w_prefix);
+    }
+    return fd;
+}
+
+
 
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char* fmt, ...) {

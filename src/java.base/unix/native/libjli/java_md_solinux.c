@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,10 +374,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             char *new_jvmpath = JLI_StringDup(jvmpath);
             new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
                     2 * JLI_StrLen(jrepath) +
-#ifdef AIX
-                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
-                    JLI_StrLen(jrepath) + JLI_StrLen("/lib//jli:") +
-#endif
                     JLI_StrLen(new_jvmpath) + 52;
             new_runpath = JLI_MemAlloc(new_runpath_size);
             newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
@@ -395,15 +391,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                 sprintf(new_runpath, LD_LIBRARY_PATH "="
                         "%s:"
                         "%s/lib:"
-#ifdef AIX
-                        "%s/lib/jli:" /* Needed on AIX because ld doesn't support $ORIGIN. */
-#endif
                         "%s/../lib",
                         new_jvmpath,
                         jrepath,
-#ifdef AIX
-                        jrepath,
-#endif
                         jrepath
                         );
 

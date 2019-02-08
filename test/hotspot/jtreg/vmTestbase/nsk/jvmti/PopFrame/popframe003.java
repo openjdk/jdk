@@ -41,7 +41,6 @@ public class popframe003 {
     public static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
 
-    public static boolean DEBUG_MODE = false;
     private popframe003p popFrameClsThr;
 
     static {
@@ -55,9 +54,9 @@ public class popframe003 {
         }
     }
 
-    native static int doPopFrame(int vrb, popframe003p popFrameClsThr);
-    native static int suspThread(int vrb, popframe003p popFrameClsThr);
-    native static int resThread(int vrb, popframe003p popFrameClsThr);
+    native static int doPopFrame(popframe003p popFrameClsThr);
+    native static int suspThread(popframe003p popFrameClsThr);
+    native static int resThread(popframe003p popFrameClsThr);
 
     public static void main(String[] argv) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -72,12 +71,7 @@ public class popframe003 {
     private int runIt(String argv[], PrintStream out) {
         int retValue = 0;
 
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
-
-        popFrameClsThr = new popframe003p("Tested Thread", out, DEBUG_MODE);
+        popFrameClsThr = new popframe003p("Tested Thread", out);
         // start the child thread
         popFrameClsThr.start();
         popFrameClsThr.startingBarrier.waitFor();
@@ -85,36 +79,27 @@ public class popframe003 {
         synchronized (popFrameClsThr.barrier) {
         }
 
-        if (DEBUG_MODE) {
-            out.println("Going to suspend the thread...");
-            retValue = suspThread(1, popFrameClsThr);
-        } else
-            retValue = suspThread(0, popFrameClsThr);
+        out.println("Going to suspend the thread...");
+        retValue = suspThread(popFrameClsThr);
         if (retValue != PASSED) {
             out.println("TEST: failed to suspend thread");
             return FAILED;
         }
 
         // pop the frame
-        if (DEBUG_MODE) {
-            out.println("Going to pop a frame...");
-            retValue = doPopFrame(1, popFrameClsThr);
-        } else
-            retValue = doPopFrame(0, popFrameClsThr);
+        out.println("Going to pop a frame...");
+        retValue = doPopFrame(popFrameClsThr);
 
         popFrameClsThr.popFrameHasBeenDone();
 
         if (retValue != PASSED) {
             out.println("TEST: failed to pop frame");
-            resThread(0, popFrameClsThr);
+            resThread(popFrameClsThr);
             return FAILED;
         }
 
-        if (DEBUG_MODE) {
-            out.println("Going to resume the thread...");
-            retValue = resThread(1, popFrameClsThr);
-        } else
-            retValue = resThread(0, popFrameClsThr);
+        out.println("Going to resume the thread...");
+        retValue = resThread(popFrameClsThr);
         if (retValue != PASSED) {
             out.println("TEST: failed to resume thread");
             return FAILED;
@@ -147,10 +132,10 @@ public class popframe003 {
                 "\t\tbooleanPubStatGlFld=" + popframe003p.booleanPubStatGlFld + "\texpected: true\n" +
                 "\t\tstrPubStatGlFld=\"" + popframe003p.strPubStatGlFld + "\"\texpected: \"sttc glbl fld\"");
             return FAILED;
-        }
-        else if (DEBUG_MODE)
+        } else {
             out.println("Check #6 PASSED: changes for the static fields of a class,\n" +
-                "\twhich have been made in the popped frame's method, remained\n");
+                    "\twhich have been made in the popped frame's method, remained\n");
+        }
 
         return popframe003p.totRes;
     }

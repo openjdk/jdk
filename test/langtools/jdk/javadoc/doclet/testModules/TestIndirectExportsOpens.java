@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,17 @@
  *          jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- * @library ../lib /tools/lib
- * @build toolbox.ToolBox toolbox.ModuleBuilder JavadocTester
+ * @library ../../lib /tools/lib
+ * @build toolbox.ToolBox toolbox.ModuleBuilder javadoc.tester.*
  * @run main TestIndirectExportsOpens
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import toolbox.*;
+import javadoc.tester.JavadocTester;
+import toolbox.ModuleBuilder;
+import toolbox.ToolBox;
 
 public class TestIndirectExportsOpens extends JavadocTester {
 
@@ -72,16 +74,6 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(false);
         verifyIndirectOpens(false);
-
-        javadoc("-d", base.resolve("out-api-html4").toString(),
-                "-html4",
-                "-quiet",
-                "--module-source-path", base.toString(),
-                "--expand-requires", "transitive",
-                "--module", "a");
-        checkExit(Exit.OK);
-        verifyIndirectExports_html4(false);
-        verifyIndirectOpens_html4(false);
     }
 
     @Test
@@ -108,16 +100,6 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(true);
         verifyIndirectOpens(true);
-
-        javadoc("-d", base.resolve("out-api-html4").toString(),
-                "-html4",
-                "-quiet",
-                "--module-source-path", base.toString(),
-                "--expand-requires", "transitive",
-                "--module", "a");
-        checkExit(Exit.OK);
-        verifyIndirectExports_html4(true);
-        verifyIndirectOpens_html4(true);
     }
 
     @Test
@@ -145,17 +127,6 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(false);
         verifyIndirectOpens(false);
-
-        javadoc("-d", base.resolve("out-api-html4").toString(),
-                "-html4",
-                "-quiet",
-                "--module-source-path", base.toString(),
-                "--expand-requires", "transitive",
-                "--module", "a");
-
-        checkExit(Exit.OK);
-        verifyIndirectExports_html4(false);
-        verifyIndirectOpens_html4(false);
     }
 
     @Test
@@ -221,42 +192,6 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkOutput("a/module-summary.html", present,
                 "<div class=\"packagesSummary\">\n"
                 + "<table>\n"
-                + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
-                + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
-                + "</tr>\n"
-                + "<tbody>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
-                + "<td class=\"colLast\"><a href=\"../m/pm/package-summary.html\">pm</a></td>\n"
-                + "</tr>\n"
-                + "</tbody>\n"
-                + "</table>\n"
-                + "</div>");
-    }
-
-    void verifyIndirectExports_html4(boolean present) {
-        verifyIndirects_html4(present, false);
-    }
-
-    void verifyIndirectOpens_html4(boolean present) {
-        verifyIndirects_html4(present, true);
-    }
-
-    void verifyIndirects_html4(boolean present, boolean opens) {
-
-        String typeString = opens ? "Indirect Opens" : "Indirect Exports";
-
-        // Avoid false positives, just check for primary string absence.
-        if (!present) {
-            checkOutput("a/module-summary.html", false, typeString);
-            return;
-        }
-
-        checkOutput("a/module-summary.html", present,
-                "<div class=\"packagesSummary\">\n"
-                + "<table summary=\"" + typeString + " table, listing modules, and packages\">\n"
                 + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"

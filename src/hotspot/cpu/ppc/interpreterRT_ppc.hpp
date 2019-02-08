@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_INTERPRETERRT_PPC_HPP
-#define CPU_PPC_VM_INTERPRETERRT_PPC_HPP
+#ifndef CPU_PPC_INTERPRETERRT_PPC_HPP
+#define CPU_PPC_INTERPRETERRT_PPC_HPP
 
 // This is included in the middle of class Interpreter.
 // Do not include files here.
@@ -57,4 +57,4 @@ static address get_result_handler(JavaThread* thread, Method* method);
 // A function to get the signature.
 static address get_signature(JavaThread* thread, Method* method);
 
-#endif // CPU_PPC_VM_INTERPRETERRT_PPC_HPP
+#endif // CPU_PPC_INTERPRETERRT_PPC_HPP

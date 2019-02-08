@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_CODECACHE_HPP
-#define SHARE_VM_CODE_CODECACHE_HPP
+#ifndef SHARE_CODE_CODECACHE_HPP
+#define SHARE_CODE_CODECACHE_HPP
 
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
@@ -288,7 +288,6 @@ class CodeCache : AllStatic {
   // Deoptimization
  private:
   static int  mark_for_deoptimization(KlassDepChange& changes);
-  static int  mark_for_evol_deoptimization(InstanceKlass* dependee);
 
  public:
   static void mark_all_nmethods_for_deoptimization();
@@ -298,7 +297,9 @@ class CodeCache : AllStatic {
   // Flushing and deoptimization
   static void flush_dependents_on(InstanceKlass* dependee);
   // Flushing and deoptimization in case of evolution
-  static void flush_evol_dependents_on(InstanceKlass* dependee);
+  static void mark_for_evol_deoptimization(InstanceKlass* dependee);
+  static int  mark_dependents_for_evol_deoptimization();
+  static void flush_evol_dependents();
   // Support for fullspeed debugging
   static void flush_dependents_on_method(const methodHandle& dependee);
 
@@ -430,4 +431,4 @@ struct NMethodFilter {
 typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter> CompiledMethodIterator;
 typedef CodeBlobIterator<nmethod, NMethodFilter> NMethodIterator;
 
-#endif // SHARE_VM_CODE_CODECACHE_HPP
+#endif // SHARE_CODE_CODECACHE_HPP

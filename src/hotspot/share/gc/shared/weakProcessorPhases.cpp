@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
 #include "runtime/jniHandles.hpp"
@@ -78,6 +79,7 @@ const char* WeakProcessorPhases::description(Phase phase) {
   JVMTI_ONLY(case jvmti: return "JVMTI weak processing";)
   JFR_ONLY(case jfr: return "JFR weak processing";)
   case jni: return "JNI weak processing";
+  case stringtable: return "StringTable weak processing";
   case vm: return "VM weak processing";
   default:
     ShouldNotReachHere();
@@ -98,9 +100,14 @@ WeakProcessorPhases::Processor WeakProcessorPhases::processor(Phase phase) {
 OopStorage* WeakProcessorPhases::oop_storage(Phase phase) {
   switch (phase) {
   case jni: return JNIHandles::weak_global_handles();
+  case stringtable: return StringTable::weak_storage();
   case vm: return SystemDictionary::vm_weak_oop_storage();
   default:
     ShouldNotReachHere();
     return NULL;
   }
+}
+
+bool WeakProcessorPhases::is_stringtable(Phase phase) {
+  return phase == stringtable;
 }

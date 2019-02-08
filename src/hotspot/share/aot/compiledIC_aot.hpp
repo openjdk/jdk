@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_AOT_COMPILEDIC_AOT_HPP
-#define SHARE_VM_AOT_COMPILEDIC_AOT_HPP
+#ifndef SHARE_AOT_COMPILEDIC_AOT_HPP
+#define SHARE_AOT_COMPILEDIC_AOT_HPP
 
 #include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
@@ -80,4 +80,4 @@ class CompiledPltStaticCall: public CompiledStaticCall {
   virtual const char* name() const { return "CompiledPltStaticCall"; }
 };
 
-#endif // SHARE_VM_AOT_COMPILEDIC_AOT_HPP
+#endif // SHARE_AOT_COMPILEDIC_AOT_HPP

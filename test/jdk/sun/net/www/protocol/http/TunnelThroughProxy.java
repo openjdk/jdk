@@ -25,6 +25,7 @@
  * @test
  * @bug 4620362
  * @modules java.base/sun.net.www
+ * @build ProxyTunnelServer
  * @run main/othervm TunnelThroughProxy
  * @summary JSSE not returning proper exception on unknown host
  */
@@ -34,8 +35,13 @@ import java.io.*;
 
 public class TunnelThroughProxy {
     public static void main(String[] args) throws Exception {
+        nonexistingHostTest();
+        getLocalPortTest();
+    }
+
+    static void nonexistingHostTest() throws Exception {
+        ProxyTunnelServer proxy = setupProxy(false);
         try {
-            setupProxy();
             URL u = new URL("https://www.nonexistent-site.com/");
             URLConnection uc = u.openConnection();
             InputStream is = uc.getInputStream();
@@ -44,16 +50,48 @@ public class TunnelThroughProxy {
             if (!e.getMessage().matches(".*HTTP\\/.*500.*")) {
                 throw new RuntimeException(e);
             }
+        } finally {
+            proxy.terminate();
         }
     }
-    static void setupProxy() throws IOException {
+
+
+    static void getLocalPortTest() throws Exception {
+        ProxyTunnelServer proxy = setupProxy(true);
+        try {
+            int proxyPort = proxy.getPort();
+            ServerSocket server = new ServerSocket(0);
+            int serverPort = server.getLocalPort();
+
+            Socket sock;
+            sock = new Socket(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", proxyPort)));
+            InetSocketAddress dest = new InetSocketAddress("127.0.0.1", serverPort);
+            sock.connect(dest);
+            int localPort = sock.getLocalPort();
+            if (localPort == proxyPort)
+                throw new RuntimeException("Fail: socket has wrong local port");
+            // check that tunnel really works
+            Socket sock1 = server.accept();
+            OutputStream os = sock1.getOutputStream();
+            os.write(99);
+            os.flush();
+            if (sock.getInputStream().read() != 99)
+                throw new RuntimeException("Tunnel does not work");
+        } finally {
+            proxy.terminate();
+        }
+    }
+
+    static ProxyTunnelServer setupProxy(boolean makeTunnel) throws IOException {
         ProxyTunnelServer pserver = new ProxyTunnelServer();
+        pserver.doTunnel(makeTunnel);
+        int proxyPort = pserver.getPort();
 
         // disable proxy authentication
         pserver.needUserAuth(false);
         pserver.start();
         System.setProperty("https.proxyHost", "localhost");
-        System.setProperty("https.proxyPort", String.valueOf(
-                                        pserver.getPort()));
+        System.setProperty("https.proxyPort", String.valueOf(proxyPort));
+        return pserver;
     }
 }

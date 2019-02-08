@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 /*
  * @test TestUseCompressedOopsErgo
  * @key gc
@@ -28,15 +30,16 @@
  * @summary Tests ergonomics for UseCompressedOops.
  * @requires vm.gc=="null"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UseG1GC
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UseParallelGC
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UseParallelGC -XX:-UseParallelOldGC
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UseSerialGC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC -XX:-UseParallelOldGC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
  */
 
 /*
@@ -46,12 +49,13 @@
  * @comment Graal does not support CMS
  * @requires vm.gc=="null" & !vm.graal.enabled
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UseConcMarkSweepGC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseConcMarkSweepGC
  */
 
 /*
@@ -61,12 +65,13 @@
  * @comment Graal does not support Shenandoah
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+ * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  */
 
 public class TestUseCompressedOopsErgo {

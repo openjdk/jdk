@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_X86_VM_OS_SOLARIS_X86_INLINE_HPP
-#define OS_CPU_SOLARIS_X86_VM_OS_SOLARIS_X86_INLINE_HPP
+#ifndef OS_CPU_SOLARIS_X86_OS_SOLARIS_X86_INLINE_HPP
+#define OS_CPU_SOLARIS_X86_OS_SOLARIS_X86_INLINE_HPP
 
 #include "runtime/os.hpp"
 
@@ -31,4 +31,4 @@ extern "C" jlong _raw_rdtsc(); // In .il file
 
 inline jlong os::rdtsc() { return _raw_rdtsc(); }
 
-#endif // OS_CPU_SOLARIS_X86_VM_OS_SOLARIS_X86_INLINE_HPP
+#endif // OS_CPU_SOLARIS_X86_OS_SOLARIS_X86_INLINE_HPP

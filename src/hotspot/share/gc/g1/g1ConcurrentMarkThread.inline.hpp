@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
-#define SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
+#define SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
 
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
@@ -38,4 +38,4 @@ inline double G1ConcurrentMarkThread::vtime_mark_accum() {
   return _vtime_mark_accum + _cm->all_task_accum_vtime();
 }
 
-#endif // SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
+#endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP

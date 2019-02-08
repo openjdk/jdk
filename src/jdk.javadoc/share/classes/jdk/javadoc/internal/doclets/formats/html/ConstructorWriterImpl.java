@@ -196,11 +196,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getConstructorDetails(Content constructorDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(constructorDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(constructorDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(constructorDetailsTree));
     }
 
     /**
@@ -259,12 +255,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             rowScopeColumn = 0;
         }
 
-        String summary =  resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Constructor_Summary"),
-                resources.getText("doclet.constructors"));
-
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(rowScopeColumn)

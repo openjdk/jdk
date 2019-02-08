@@ -51,21 +51,18 @@ java.base_EXCLUDES += java/lang/doc-files
 # data files and shouldn't go in the product
 java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
-ifneq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), false)
   java.base_EXCLUDE_FILES += \
       SolarisLoginModule.java \
       SolarisSystem.java \
       #
 endif
 
-ifeq ($(filter $(OPENJDK_TARGET_OS), solaris macosx aix), )
-  #
-  # only solaris, macosx and aix
-  #
+ifeq ($(call isTargetOs, solaris macosx aix), false)
   java.base_EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   java.base_EXCLUDE_FILES += \
       sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
       #
@@ -124,7 +121,7 @@ java.desktop_EXCLUDE_FILES += \
     .template \
     #
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   # exclude all X11 on Mac.
   java.desktop_EXCLUDES += \
       sun/awt/X11 \
@@ -186,7 +183,7 @@ else
       sun/awt/X11/XwcTextItem.java
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
 endif
 
@@ -194,8 +191,7 @@ ifdef BUILD_HEADLESS_ONLY
   java.desktop_EXCLUDES += sun/applet
 endif
 
-# Used on windows and macosx
-ifeq ($(filter $(OPENJDK_TARGET_OS), windows macosx), )
+ifeq ($(call isTargetOs, windows macosx), false)
   java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
 endif
 
@@ -374,11 +370,11 @@ SCTP_IMPL_CLASSES = \
     $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SendFailed.java \
     $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/Shutdown.java
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 
-ifeq ($(OPENJDK_TARGET_OS),aix)
+ifeq ($(call isTargetOs, aix), true)
   jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 

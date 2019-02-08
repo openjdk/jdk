@@ -34,7 +34,7 @@ import javax.lang.model.SourceVersion;
  * A visitor of program elements based on their {@linkplain
  * ElementKind kind} with default behavior appropriate for source
  * versions {@link SourceVersion#RELEASE_9 RELEASE_9} through {@link
- * SourceVersion#RELEASE_12 RELEASE_12}.
+ * SourceVersion#RELEASE_13 RELEASE_13}.
  *
  * For {@linkplain
  * Element elements} <code><i>Xyz</i></code> that may have more than one
@@ -80,7 +80,7 @@ import javax.lang.model.SourceVersion;
  * @since 9
  * @spec JPMS
  */
-@SupportedSourceVersion(RELEASE_12)
+@SupportedSourceVersion(RELEASE_13)
 public class ElementKindVisitor9<R, P> extends ElementKindVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

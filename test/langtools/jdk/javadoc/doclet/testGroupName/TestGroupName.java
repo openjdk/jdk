@@ -25,9 +25,9 @@
  * @test
  * @bug 8190003 8196201 8196202 8184205
  * @summary Special characters in group names should be escaped
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox JavadocTester
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestGroupName
  */
 
@@ -35,7 +35,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import toolbox.*;
+import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestGroupName extends JavadocTester {
 

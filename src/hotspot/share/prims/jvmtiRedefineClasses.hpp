@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP
-#define SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP
+#ifndef SHARE_PRIMS_JVMTIREDEFINECLASSES_HPP
+#define SHARE_PRIMS_JVMTIREDEFINECLASSES_HPP
 
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/oopFactory.hpp"
@@ -493,7 +493,8 @@ class VM_RedefineClasses: public VM_Operation {
          InstanceKlass* scratch_class,
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
-  void flush_dependent_code(InstanceKlass* ik, TRAPS);
+  void flush_dependent_code();
+  void mark_dependent_code(InstanceKlass* ik);
 
   // lock classes to redefine since constant pool merging isn't thread safe.
   void lock_classes();
@@ -552,4 +553,4 @@ class VM_RedefineClasses: public VM_Operation {
   // Error printing
   void print_on_error(outputStream* st) const;
 };
-#endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP
+#endif // SHARE_PRIMS_JVMTIREDEFINECLASSES_HPP

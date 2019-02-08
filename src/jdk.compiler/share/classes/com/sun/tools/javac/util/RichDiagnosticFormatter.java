@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,11 +506,11 @@ public class RichDiagnosticFormatter extends
         public Void visitCapturedType(CapturedType t, Void ignored) {
             if (indexOf(t, WhereClauseKind.CAPTURED) == -1) {
                 String suffix = t.lower == syms.botType ? ".1" : "";
-                JCDiagnostic d = diags.fragment("where.captured"+ suffix, t, t.bound, t.lower, t.wildcard);
+                JCDiagnostic d = diags.fragment("where.captured"+ suffix, t, t.getUpperBound(), t.lower, t.wildcard);
                 whereClauses.get(WhereClauseKind.CAPTURED).put(t, d);
                 visit(t.wildcard);
                 visit(t.lower);
-                visit(t.bound);
+                visit(t.getUpperBound());
             }
             return null;
         }
@@ -555,7 +555,7 @@ public class RichDiagnosticFormatter extends
             t = (TypeVar)t.stripMetadataIfNeeded();
             if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
                 //access the bound type and skip error types
-                Type bound = t.bound;
+                Type bound = t.getUpperBound();
                 while ((bound instanceof ErrorType))
                     bound = ((ErrorType)bound).getOriginalType();
                 //retrieve the bound list - if the type variable

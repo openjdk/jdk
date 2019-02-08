@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
@@ -122,6 +123,7 @@ bool VM_RedefineClasses::doit_prologue() {
     _res = JVMTI_ERROR_NULL_POINTER;
     return false;
   }
+
   for (int i = 0; i < _class_count; i++) {
     if (_class_defs[i].klass == NULL) {
       _res = JVMTI_ERROR_INVALID_CLASS;
@@ -207,6 +209,9 @@ void VM_RedefineClasses::doit() {
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(_class_defs[i].klass, _scratch_classes[i], thread);
   }
+
+  // Flush all compiled code that depends on the classes redefined.
+  flush_dependent_code();
 
   // Clean out MethodData pointing to old Method*
   // Have to do this after all classes are redefined and all methods that
@@ -3835,28 +3840,41 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // subsequent calls to RedefineClasses need only throw away code
 // that depends on the class.
 //
-void VM_RedefineClasses::flush_dependent_code(InstanceKlass* ik, TRAPS) {
+
+// First step is to walk the code cache for each class redefined and mark
+// dependent methods.  Wait until all classes are processed to deoptimize everything.
+void VM_RedefineClasses::mark_dependent_code(InstanceKlass* ik) {
   assert_locked_or_safepoint(Compile_lock);
 
   // All dependencies have been recorded from startup or this is a second or
   // subsequent use of RedefineClasses
   if (JvmtiExport::all_dependencies_are_recorded()) {
-    CodeCache::flush_evol_dependents_on(ik);
-  } else {
-    CodeCache::mark_all_nmethods_for_deoptimization();
-
-    ResourceMark rm(THREAD);
-    DeoptimizationMarker dm;
-
-    // Deoptimize all activations depending on marked nmethods
-    Deoptimization::deoptimize_dependents();
-
-    // Make the dependent methods not entrant
-    CodeCache::make_marked_nmethods_not_entrant();
-
-    // From now on we know that the dependency information is complete
-    JvmtiExport::set_all_dependencies_are_recorded(true);
+    CodeCache::mark_for_evol_deoptimization(ik);
   }
+}
+
+void VM_RedefineClasses::flush_dependent_code() {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+
+  bool deopt_needed;
+
+  // This is the first redefinition, mark all the nmethods for deoptimization
+  if (!JvmtiExport::all_dependencies_are_recorded()) {
+    log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
+    CodeCache::mark_all_nmethods_for_deoptimization();
+    deopt_needed = true;
+  } else {
+    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
+    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
+    deopt_needed = (deopt != 0);
+  }
+
+  if (deopt_needed) {
+    CodeCache::flush_evol_dependents();
+  }
+
+  // From now on we know that the dependency information is complete
+  JvmtiExport::set_all_dependencies_are_recorded(true);
 }
 
 void VM_RedefineClasses::compute_added_deleted_matching_methods() {
@@ -3957,8 +3975,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class);
 
-  // Deoptimize all compiled code that depends on this class
-  flush_dependent_code(the_class, THREAD);
+  // Mark all compiled code that depends on this class
+  mark_dependent_code(the_class);
 
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();

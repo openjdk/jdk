@@ -580,6 +580,10 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
+  case vmIntrinsics::_maxF:
+  case vmIntrinsics::_minF:
+  case vmIntrinsics::_maxD:
+  case vmIntrinsics::_minD:
     if (!InlineMathNatives) return true;
     break;
   case vmIntrinsics::_fmaD:

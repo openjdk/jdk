@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8211437
+ * @bug 8211437 8216974
  * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests Response204
  * @summary
  */
@@ -35,6 +35,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.*;
 import java.io.*;
 import java.net.*;
@@ -44,6 +45,9 @@ import java.net.*;
  */
 public class Response204 {
 
+    // check for 8216974
+    static final AtomicReference<Exception> serverError = new AtomicReference<>();
+
     public static void main (String[] args) throws Exception {
         Logger logger = Logger.getLogger ("com.sun.net.httpserver");
         ConsoleHandler c = new ConsoleHandler();
@@ -51,14 +55,17 @@ public class Response204 {
         logger.addHandler (c);
         logger.setLevel (Level.WARNING);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetSocketAddress addr = new InetSocketAddress (InetAddress.getLoopbackAddress(), 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
 
-        URI uri = new URI("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
+        URI uri = new URI("http", null,
+                server.getAddress().getHostString(),
+                server.getAddress().getPort(),
+                "/test/foo.html", null, null);
 
         try {
             HttpClient client = HttpClient.newHttpClient();
@@ -80,6 +87,10 @@ public class Response204 {
             } catch (IOException ioe) {
                 System.out.println("OK 2");
             }
+
+            // check for 8216974
+            Exception error = serverError.get();
+            if (error != null) throw error;
         } finally {
             server.stop(2);
             executor.shutdown();
@@ -90,17 +101,33 @@ public class Response204 {
 
     static class Handler implements HttpHandler {
         volatile int counter = 0;
+        volatile InetSocketAddress remote;
 
         public void handle(HttpExchange t)
                 throws IOException {
             InputStream is = t.getRequestBody();
             Headers map = t.getRequestHeaders();
             Headers rmap = t.getResponseHeaders();
+            if (counter % 2 == 0) {
+                // store the client's address
+                remote = t.getRemoteAddress();
+                System.out.println("Server received request from: " + remote);
+            }
             while (is.read() != -1) ;
             is.close();
-            if (counter++ == 1) {
+            if ((++counter) % 2 == 0) {
                 // pretend there is a body
                 rmap.set("Content-length", "10");
+                // 8216974: the client should have returned the connection
+                // to the pool and should therefore have the same
+                // remote address.
+                if (!t.getRemoteAddress().equals(remote)) {
+                    String msg = "Unexpected remote address: "
+                            + t.getRemoteAddress()
+                            + " - should have been " + remote;
+                    System.out.println(msg);
+                    serverError.set(new Exception(msg));
+                }
             }
             t.sendResponseHeaders(204, -1);
             t.close();

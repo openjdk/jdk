@@ -1030,31 +1030,31 @@ public class Main {
                 (hasExpiredTsaCert && !signerNotExpired)) {
 
             if (strict) {
-                result = rb.getString(isSigning
-                        ? "jar.signed.with.signer.errors."
-                        : "jar.verified.with.signer.errors.");
+                result = isSigning
+                        ? rb.getString("jar.signed.with.signer.errors.")
+                        : rb.getString("jar.verified.with.signer.errors.");
             } else {
-                result = rb.getString(isSigning
-                        ? "jar.signed."
-                        : "jar.verified.");
+                result = isSigning
+                        ? rb.getString("jar.signed.")
+                        : rb.getString("jar.verified.");
             }
 
             if (badKeyUsage) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing."
-                        : "This.jar.contains.entries.whose.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing."));
             }
 
             if (badExtendedKeyUsage) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing."
-                        : "This.jar.contains.entries.whose.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing."));
             }
 
             if (badNetscapeCertType) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing."
-                        : "This.jar.contains.entries.whose.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing."));
             }
 
             // only in verifying
@@ -1063,20 +1063,20 @@ public class Main {
                         "This.jar.contains.unsigned.entries.which.have.not.been.integrity.checked."));
             }
             if (hasExpiredCert) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.certificate.has.expired."
-                        : "This.jar.contains.entries.whose.signer.certificate.has.expired."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.certificate.has.expired.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.has.expired."));
             }
             if (notYetValidCert) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.certificate.is.not.yet.valid."
-                        : "This.jar.contains.entries.whose.signer.certificate.is.not.yet.valid."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.certificate.is.not.yet.valid.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.is.not.yet.valid."));
             }
 
             if (chainNotValidated) {
-                errors.add(String.format(rb.getString(isSigning
-                                ? "The.signer.s.certificate.chain.is.invalid.reason.1"
-                                : "This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1"),
+                errors.add(String.format(isSigning
+                                ? rb.getString("The.signer.s.certificate.chain.is.invalid.reason.1")
+                                : rb.getString("This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1"),
                         chainNotValidatedReason.getLocalizedMessage()));
             }
 
@@ -1084,9 +1084,9 @@ public class Main {
                 errors.add(rb.getString("The.timestamp.has.expired."));
             }
             if (tsaChainNotValidated) {
-                errors.add(String.format(rb.getString(isSigning
-                                ? "The.tsa.certificate.chain.is.invalid.reason.1"
-                                : "This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1"),
+                errors.add(String.format(isSigning
+                                ? rb.getString("The.tsa.certificate.chain.is.invalid.reason.1")
+                                : rb.getString("This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1"),
                         tsaChainNotValidatedReason.getLocalizedMessage()));
             }
 
@@ -1102,9 +1102,9 @@ public class Main {
             }
 
             if (signerSelfSigned) {
-                errors.add(rb.getString(isSigning
-                        ? "The.signer.s.certificate.is.self.signed."
-                        : "This.jar.contains.entries.whose.signer.certificate.is.self.signed."));
+                errors.add(isSigning
+                        ? rb.getString("The.signer.s.certificate.is.self.signed.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.is.self.signed."));
             }
 
             // weakAlg only detected in signing. The jar file is
@@ -1131,7 +1131,7 @@ public class Main {
                         privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
             }
         } else {
-            result = rb.getString(isSigning ? "jar.signed." : "jar.verified.");
+            result = isSigning ? rb.getString("jar.signed.") : rb.getString("jar.verified.");
         }
 
         if (hasExpiredTsaCert) {
@@ -1155,9 +1155,9 @@ public class Main {
                 hasExpiredTsaCert = false;
             }
             if (hasExpiringCert) {
-                warnings.add(rb.getString(isSigning
-                        ? "The.signer.certificate.will.expire.within.six.months."
-                        : "This.jar.contains.entries.whose.signer.certificate.will.expire.within.six.months."));
+                warnings.add(isSigning
+                        ? rb.getString("The.signer.certificate.will.expire.within.six.months.")
+                        : rb.getString("This.jar.contains.entries.whose.signer.certificate.will.expire.within.six.months."));
             }
             if (hasExpiringTsaCert && expireDate != null) {
                 if (expireDate.after(tsaExpireDate)) {
@@ -1170,13 +1170,13 @@ public class Main {
             }
             if (noTimestamp && expireDate != null) {
                 if (hasTimestampBlock) {
-                    warnings.add(String.format(rb.getString(isSigning
-                            ? "invalid.timestamp.signing"
-                            : "bad.timestamp.verifying"), expireDate));
+                    warnings.add(String.format(isSigning
+                            ? rb.getString("invalid.timestamp.signing")
+                            : rb.getString("bad.timestamp.verifying"), expireDate));
                 } else {
-                    warnings.add(String.format(rb.getString(isSigning
-                            ? "no.timestamp.signing"
-                            : "no.timestamp.verifying"), expireDate));
+                    warnings.add(String.format(isSigning
+                            ? rb.getString("no.timestamp.signing")
+                            : rb.getString("no.timestamp.verifying"), expireDate));
                 }
             }
         }
@@ -1551,7 +1551,20 @@ public class Main {
 
         if (verbose != null) {
             builder.eventHandler((action, file) -> {
-                System.out.println(rb.getString("." + action + ".") + file);
+                switch (action) {
+                    case "signing":
+                        System.out.println(rb.getString(".signing.") + file);
+                        break;
+                    case "adding":
+                        System.out.println(rb.getString(".adding.") + file);
+                        break;
+                    case "updating":
+                        System.out.println(rb.getString(".updating.") + file);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("unknown action: "
+                                + action);
+                }
             });
         }
 

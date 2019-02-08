@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_CARDGENERATION_HPP
-#define SHARE_VM_GC_SHARED_CARDGENERATION_HPP
+#ifndef SHARE_GC_SHARED_CARDGENERATION_HPP
+#define SHARE_GC_SHARED_CARDGENERATION_HPP
 
 // Class CardGeneration is a generation that is covered by a card table,
 // and uses a card-size block-offset array to implement block_start.
@@ -96,4 +96,4 @@ class CardGeneration: public Generation {
   CompactibleSpace* first_compaction_space() const;
 };
 
-#endif // SHARE_VM_GC_SHARED_CARDGENERATION_HPP
+#endif // SHARE_GC_SHARED_CARDGENERATION_HPP

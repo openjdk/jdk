@@ -31,7 +31,7 @@ $(eval $(call IncludeCustomExtension, lib/Lib-java.management.gmk))
 ################################################################################
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+ifeq ($(call isTargetOs, solaris linux), true)
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBMANAGEMENT_OPTIMIZATION := LOW
   endif
@@ -57,4 +57,3 @@ TARGETS += $(BUILD_LIBMANAGEMENT)
 
 # Include custom extension post hook
 $(eval $(call IncludeCustomExtension, lib/Lib-java.management-post.gmk))
-

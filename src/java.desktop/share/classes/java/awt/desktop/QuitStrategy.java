@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,19 @@
 package java.awt.desktop;
 
 /**
- * The strategy used to shut down the application, if Sudden Termination is not enabled.
+ * The strategy used to shut down the application, if Sudden Termination is not
+ * enabled.
  *
- * @see java.awt.Desktop#setQuitHandler(java.awt.desktop.QuitHandler)
- * @see java.awt.Desktop#setQuitStrategy(java.awt.desktop.QuitStrategy)
+ * @see java.awt.Desktop#setQuitHandler(QuitHandler)
+ * @see java.awt.Desktop#setQuitStrategy(QuitStrategy)
  * @see java.awt.Desktop#enableSuddenTermination()
  * @see java.awt.Desktop#disableSuddenTermination()
- *
  * @since 9
  */
 public enum QuitStrategy {
     /**
-     * Shuts down the application by calling {@code System.exit(0)}. This is the default strategy.
+     * Shuts down the application by calling {@code System.exit(0)}. This is the
+     * default strategy.
      */
     NORMAL_EXIT,
 

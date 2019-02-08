@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,30 @@
  * @bug 6553182 8025416 8029504
  * @summary This test verifies the -Xdocrootparent option.
  * @author Bhavesh Patel
- * @library ../lib
+ * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build javadoc.tester.*
  * @run main TestDocRootLink
  */
+import javadoc.tester.JavadocTester;
+
 public class TestDocRootLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestDocRootLink tester = new TestDocRootLink();
+
+        // The test files intentionally contain examples of links that should
+        // or should not be affected by the -Xdocrootparent option, and the
+        // results are checked explicitly; so, disable the automatic link
+        // checker to prevent spurious "missing files" errors from some of
+        // these links.
+        tester.setAutomaticCheckLinks(false);
+
         tester.runTests();
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "pkg1", "pkg2");
@@ -71,7 +81,7 @@ public class TestDocRootLink extends JavadocTester {
     }
 
     @Test
-    void test2() {
+    public void test2() {
         javadoc("-d", "out-2",
                 "-Xdocrootparent", "http://download.oracle.com/javase/7/docs",
                 "-sourcepath", testSrc,

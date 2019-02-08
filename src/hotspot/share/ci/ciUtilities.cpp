@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,6 @@ const char* basictype_to_str(BasicType t) {
   const char* str = type2name(t);
   if (str == NULL) return "illegal";
   return str;
-}
-
-// ------------------------------------------------------------------
-// basictype_to_char
-const char basictype_to_char(BasicType t) {
-  char c = type2char(t);
-  return c ? c : 'X';
 }
 
 // ------------------------------------------------------------------

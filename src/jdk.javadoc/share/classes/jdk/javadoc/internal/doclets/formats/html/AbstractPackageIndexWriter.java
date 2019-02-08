@@ -116,13 +116,13 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void buildPackageIndexFile(String title, boolean includeScript) throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
-        Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
+        Content header = HtmlTree.HEADER();
         addNavigationBarHeader(header);
-        Content main = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        Content main = HtmlTree.MAIN();
         addOverviewHeader(main);
         addIndex(header, main);
         addOverview(main);
-        Content footer = createTagIfAllowed(HtmlTag.FOOTER, HtmlTree::FOOTER, ContentBuilder::new);
+        Content footer = HtmlTree.FOOTER();
         addNavigationBarFooter(footer);
         body.addContent(header);
         body.addContent(main);
@@ -157,7 +157,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      */
     protected void addIndexContents(Content header, Content main) {
         if (!packages.isEmpty()) {
-            HtmlTree htmlTree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
+            HtmlTree htmlTree = HtmlTree.NAV();
             htmlTree.setStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
-#define SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTMARK_HPP
+#define SHARE_GC_G1_G1CONCURRENTMARK_HPP
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
@@ -32,6 +32,7 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/compilerWarnings.hpp"
 
 class ConcurrentGCTimer;
 class G1ConcurrentMarkThread;
@@ -43,11 +44,9 @@ class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 
-#ifdef _MSC_VER
-#pragma warning(push)
+PRAGMA_DIAG_PUSH
 // warning C4522: multiple assignment operators specified
-#pragma warning(disable:4522)
-#endif
+PRAGMA_DISABLE_MSVC_WARNING(4522)
 
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
@@ -93,9 +92,7 @@ public:
   bool is_null() const { return _holder == NULL; }
 };
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -727,7 +724,11 @@ private:
   // Supposed to be called regularly during a marking step as
   // it checks a bunch of conditions that might cause the marking step
   // to abort
-  void regular_clock_call();
+  // Return true if the marking step should continue. Otherwise, return false to abort
+  bool regular_clock_call();
+
+  // Set abort flag if regular_clock_call() check fails
+  inline void abort_marking_if_regular_check_fail();
 
   // Test whether obj might have already been passed over by the
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
@@ -869,4 +870,4 @@ public:
   ~G1PrintRegionLivenessInfoClosure();
 };
 
-#endif // SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
+#endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

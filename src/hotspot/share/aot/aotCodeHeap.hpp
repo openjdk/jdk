@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_AOT_AOTCODEHEAP_HPP
-#define SHARE_VM_AOT_AOTCODEHEAP_HPP
+#ifndef SHARE_AOT_AOTCODEHEAP_HPP
+#define SHARE_AOT_AOTCODEHEAP_HPP
 
 #include "aot/aotCompiledMethod.hpp"
 #include "classfile/symbolTable.hpp"
@@ -244,6 +244,7 @@ public:
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
 
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
+  void mark_evol_dependent_methods(InstanceKlass* dependee);
 
   const char* get_name_at(int offset) {
     return _metaspace_names + offset;
@@ -311,4 +312,4 @@ private:
 
 };
 
-#endif // SHARE_VM_AOT_AOTCODEHEAP_HPP
+#endif // SHARE_AOT_AOTCODEHEAP_HPP

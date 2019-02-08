@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4219,7 +4219,7 @@ class StubGenerator: public StubCodeGenerator {
     // save F48:F54 in temp registers
     __ movdtox(F54,G2);
     __ movdtox(F52,G3);
-    __ movdtox(F50,G6);
+    __ movdtox(F50,L6);
     __ movdtox(F48,G1);
     for ( int i = 46;  i >= 14; i -= 8 ) {
       __ aes_dround23(as_FloatRegister(i), F0, F2, F4);
@@ -4247,7 +4247,7 @@ class StubGenerator: public StubCodeGenerator {
     // re-init F48:F54 with their original values
     __ movxtod(G2,F54);
     __ movxtod(G3,F52);
-    __ movxtod(G6,F50);
+    __ movxtod(L6,F50);
     __ movxtod(G1,F48);
 
     __ movxtod(L0,F6);

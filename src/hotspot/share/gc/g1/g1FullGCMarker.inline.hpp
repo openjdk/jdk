@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1MARKSTACK_INLINE_HPP
-#define SHARE_VM_GC_G1_G1MARKSTACK_INLINE_HPP
+#ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
+#define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
@@ -173,4 +173,4 @@ inline void G1FullGCMarker::follow_cld(ClassLoaderData* cld) {
   _cld_closure.do_cld(cld);
 }
 
-#endif
+#endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

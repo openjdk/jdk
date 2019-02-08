@@ -31,10 +31,18 @@ class InstallSDE {
     }
 
     static void install(File inOutClassFile, File attrFile) throws IOException {
-        File tmpFile = new File(inOutClassFile.getPath() + "tmp");
-        new InstallSDE(inOutClassFile, attrFile, tmpFile);
-        if (!inOutClassFile.delete()) {
-            throw new IOException("inOutClassFile.delete() failed");
+        File tmpFile = new File(inOutClassFile.getPath() + "tmp-out");
+        File tmpInOutClassFile = new File(inOutClassFile.getPath() + "tmp-in");
+
+        // Workaround delayed file deletes on Windows using a tmp file name
+        if (!inOutClassFile.renameTo(tmpInOutClassFile)) {
+            throw new IOException("tmp copy of inOutClassFile failed");
+        }
+
+        new InstallSDE(tmpInOutClassFile, attrFile, tmpFile);
+
+        if (!tmpInOutClassFile.delete()) {
+            throw new IOException("tmpInOutClassFile.delete() failed");
         }
         if (!tmpFile.renameTo(inOutClassFile)) {
             throw new IOException("tmpFile.renameTo(inOutClassFile) failed");

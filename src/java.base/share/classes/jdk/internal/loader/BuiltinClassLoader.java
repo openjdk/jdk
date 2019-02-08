@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ public class BuiltinClassLoader
      * binary name. This method returns {@code null} when the class is not
      * found.
      */
-    protected Class<?> loadClassOrNull(String cn) {
+    protected final Class<?> loadClassOrNull(String cn) {
         return loadClassOrNull(cn, false);
     }
 

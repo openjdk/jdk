@@ -24,7 +24,7 @@
 // key: compiler.err.rule.completes.normally
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// options: --enable-preview -source 12
+// options: --enable-preview -source 13
 
 class RuleCompletesNormally {
     public String convert(int i) {

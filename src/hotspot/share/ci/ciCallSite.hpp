@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CICALLSITE_HPP
-#define SHARE_VM_CI_CICALLSITE_HPP
+#ifndef SHARE_CI_CICALLSITE_HPP
+#define SHARE_CI_CICALLSITE_HPP
 
 #include "ci/ciInstance.hpp"
 
@@ -38,8 +38,6 @@ public:
   bool is_call_site() const { return true; }
 
   bool is_constant_call_site();
-  bool is_mutable_call_site();
-  bool is_volatile_call_site();
 
   // Return the target MethodHandle of this CallSite.
   ciMethodHandle* get_target() const;
@@ -47,4 +45,4 @@ public:
   void print();
 };
 
-#endif // SHARE_VM_CI_CICALLSITE_HPP
+#endif // SHARE_CI_CICALLSITE_HPP

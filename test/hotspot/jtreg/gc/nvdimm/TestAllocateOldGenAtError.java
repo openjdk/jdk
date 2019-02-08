@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /* @test TestAllocateOldGenAtError.java
  * @key gc
  * @summary Test to check correct handling of non-existent directory passed to AllocateOldGenAt option
@@ -28,6 +30,7 @@
  * @requires test.vm.gc.nvdimm
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @run main gc.nvdimm.TestAllocateOldGenAtError
  */
 
 import java.io.File;

@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
-#define SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
@@ -171,4 +171,4 @@ public:
   virtual bool sink_node(PhaseIdealLoop* phase, Node* n, Node* x, Node* x_ctrl, Node* n_ctrl) const;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

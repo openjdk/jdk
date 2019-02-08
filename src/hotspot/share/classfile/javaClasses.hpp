@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_JAVACLASSES_HPP
-#define SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+#ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
+#define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -147,13 +147,16 @@ class java_lang_String : AllStatic {
   static inline unsigned int hash(oop java_string);
   static inline bool is_latin1(oop java_string);
   static inline int length(oop java_string);
+  static inline int length(oop java_string, typeArrayOop string_value);
   static int utf8_length(oop java_string);
+  static int utf8_length(oop java_string, typeArrayOop string_value);
 
   // String converters
   static char*  as_utf8_string(oop java_string);
   static char*  as_utf8_string(oop java_string, char* buf, int buflen);
   static char*  as_utf8_string(oop java_string, int start, int len);
-  static char*  as_utf8_string(oop java_string, int start, int len, char* buf, int buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
   // produce an ascii string with all other values quoted using \u####
@@ -219,7 +222,8 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
   macro(java_lang_Class, protection_domain,      object_signature,  false) \
-  macro(java_lang_Class, signers,                object_signature,  false)
+  macro(java_lang_Class, signers,                object_signature,  false) \
+  macro(java_lang_Class, source_file,            object_signature,  false) \
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
@@ -240,6 +244,8 @@ class java_lang_Class : AllStatic {
   static int _class_loader_offset;
   static int _module_offset;
   static int _component_mirror_offset;
+  static int _name_offset;
+  static int _source_file_offset;
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
@@ -309,6 +315,11 @@ class java_lang_Class : AllStatic {
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
   static oop module(oop java_class);
+
+  static oop name(Handle java_class, TRAPS);
+
+  static oop source_file(oop java_class);
+  static void set_source_file(oop java_class, oop source_file);
 
   static int oop_size(oop java_class);
   static int oop_size_raw(oop java_class);
@@ -1538,4 +1549,4 @@ class JavaClasses : AllStatic {
 
 #undef DECLARE_INJECTED_FIELD_ENUM
 
-#endif // SHARE_VM_CLASSFILE_JAVACLASSES_HPP
+#endif // SHARE_CLASSFILE_JAVACLASSES_HPP

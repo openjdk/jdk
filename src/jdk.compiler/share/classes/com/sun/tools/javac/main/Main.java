@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -307,6 +313,7 @@ public class Main {
             comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));
         }
 
+        boolean printArgsToFile = options.isSet("printArgsToFile");
         try {
             comp.compile(args.getFileObjects(), args.getClassNames(), null, List.nil());
 
@@ -338,6 +345,7 @@ public class Main {
             if (twoClassLoadersInUse(iae)) {
                 bugMessage(iae);
             }
+            printArgsToFile = true;
             return Result.ABNORMAL;
         } catch (Throwable ex) {
             // Nasty.  If we've already reported an error, compensate
@@ -345,8 +353,12 @@ public class Main {
             // exceptions.
             if (comp == null || comp.errorCount() == 0 || options.isSet("dev"))
                 bugMessage(ex);
+            printArgsToFile = true;
             return Result.ABNORMAL;
         } finally {
+            if (printArgsToFile) {
+                printArgumentsToFile(argv);
+            }
             if (comp != null) {
                 try {
                     comp.close();
@@ -354,6 +366,29 @@ public class Main {
                     throw new RuntimeException(ex.getCause());
                 }
             }
+        }
+    }
+
+    void printArgumentsToFile(String... params) {
+        Path out = Paths.get(String.format("javac.%s.args",
+                new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime())));
+        String strOut = "";
+        try {
+            try (Writer w = Files.newBufferedWriter(out)) {
+                for (String param : params) {
+                    param = param.replaceAll("\\\\", "\\\\\\\\");
+                    if (param.matches(".*\\s+.*")) {
+                        param = "\"" + param + "\"";
+                    }
+                    strOut += param + '\n';
+                }
+                w.write(strOut);
+            }
+            log.printLines(PrefixKind.JAVAC, "msg.parameters.output", out.toAbsolutePath());
+        } catch (IOException ioe) {
+            log.printLines(PrefixKind.JAVAC, "msg.parameters.output.error", out.toAbsolutePath());
+            System.err.println(strOut);
+            System.err.println();
         }
     }
 

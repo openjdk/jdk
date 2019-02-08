@@ -415,21 +415,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS],
   FLAGS_CPU_LEGACY=$OPENJDK_BUILD_CPU_LEGACY
   FLAGS_CPU_LEGACY_LIB=$OPENJDK_BUILD_CPU_LEGACY_LIB
 
-  FLAGS_SETUP_CFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_])
-
-  COMPILER_FP_CONTRACT_OFF_FLAG="-ffp-contract=off"
-  # Check that the compiler supports -ffp-contract=off flag
-  # Set FDLIBM_CFLAGS to -ffp-contract=off if it does. Empty
-  # otherwise.
-  # These flags are required for GCC-based builds of
-  # fdlibm with optimization without losing precision.
-  # Notably, -ffp-contract=off needs to be added for GCC >= 4.6.
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${COMPILER_FP_CONTRACT_OFF_FLAG}],
-	IF_TRUE: [FDLIBM_CFLAGS=${COMPILER_FP_CONTRACT_OFF_FLAG}],
-	IF_FALSE: [FDLIBM_CFLAGS=""])
-  fi
-  AC_SUBST(FDLIBM_CFLAGS)
+  FLAGS_SETUP_CFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_], [BUILD_])
 ])
 
 ################################################################################
@@ -529,15 +515,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
-    TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX (but since this gives *worse* performance, use no-strict-aliasing everywhere!)
-
-    CXXSTD_CXXFLAG="-std=gnu++98"
-    FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$CXXSTD_CXXFLAG -Werror],
-    						 IF_FALSE: [CXXSTD_CXXFLAG=""])
-    TOOLCHAIN_CFLAGS_JDK_CXXONLY="$CXXSTD_CXXFLAG"
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $CXXSTD_CXXFLAG"
-    ADLC_CXXFLAG="$CXXSTD_CXXFLAG"
-
+    # technically NOT for CXX (but since this gives *worse* performance, use
+    # no-strict-aliasing everywhere!)
+    TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     # Restrict the debug information created by Clang to avoid
@@ -560,7 +540,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS="-errshort=tags"
 
     TOOLCHAIN_CFLAGS_JDK="-mt $TOOLCHAIN_FLAGS"
-    TOOLCHAIN_CFLAGS_JDK_CONLY="-xc99=%none -xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
+    TOOLCHAIN_CFLAGS_JDK_CONLY="-xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
     TOOLCHAIN_CFLAGS_JDK_CXXONLY="-features=no%except -norunpath -xnolib" # CXX only
     TOOLCHAIN_CFLAGS_JVM="-template=no%extdef -features=no%split_init \
         -library=stlport4 -mt -features=no%except $TOOLCHAIN_FLAGS"
@@ -572,10 +552,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # Suggested additions: -qsrcmsg to get improved error reporting
-    TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt"  # add on both CFLAGS
+    TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
     TOOLCHAIN_CFLAGS_JVM="-qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
-        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"
@@ -670,15 +650,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DNEEDS_LIBRT"
     fi
   fi
-
-  # EXPORT
-  AC_SUBST(ADLC_CXXFLAG)
 ])
 
 ################################################################################
 # $1 - Either BUILD or TARGET to pick the correct OS/CPU variables to check
 #      conditionals against.
 # $2 - Optional prefix for each variable defined.
+# $3 - Optional prefix for compiler variables (either BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 [
   #### CPU DEFINES, these should (in theory) be independent on toolchain
@@ -768,6 +746,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
     fi
 
+    $1_CXXSTD_CXXFLAG="-std=gnu++98"
+    FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${$1_CXXSTD_CXXFLAG} -Werror],
+        PREFIX: $3, IF_FALSE: [$1_CXXSTD_CXXFLAG=""])
+    $1_TOOLCHAIN_CFLAGS_JDK_CXXONLY="${$1_CXXSTD_CXXFLAG}"
+    $1_TOOLCHAIN_CFLAGS_JVM="${$1_TOOLCHAIN_CFLAGS_JVM} ${$1_CXXSTD_CXXFLAG}"
+    $2ADLC_CXXFLAG="${$1_CXXSTD_CXXFLAG}"
+
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$FLAGS_OS" = xlinux; then
       # ppc test not really needed for clang
@@ -804,14 +789,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: 6, PREFIX: $2, IF_AT_LEAST: FLAGS_SETUP_GCC6_COMPILER_FLAGS($1))
+    FLAGS_SETUP_GCC6_COMPILER_FLAGS($1, $3)
     $1_TOOLCHAIN_CFLAGS="${$1_GCC6_CFLAGS}"
 
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
   # EXPORT to API
-  CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM $TOOLCHAIN_CFLAGS_JVM \
+  CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
+      $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
       $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG"
 
@@ -825,7 +811,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   CFLAGS_JDK_COMMON_CONLY="$TOOLCHAIN_CFLAGS_JDK_CONLY  \
       $WARNING_CFLAGS_JDK_CONLY ${$2EXTRA_CFLAGS}"
-  CFLAGS_JDK_COMMON_CXXONLY="$ALWAYS_DEFINES_JDK_CXXONLY $TOOLCHAIN_CFLAGS_JDK_CXXONLY \
+  CFLAGS_JDK_COMMON_CXXONLY="$ALWAYS_DEFINES_JDK_CXXONLY \
+      $TOOLCHAIN_CFLAGS_JDK_CXXONLY \
+      ${$1_TOOLCHAIN_CFLAGS_JDK_CXXONLY} \
       $WARNING_CFLAGS_JDK_CXXONLY ${$2EXTRA_CXXFLAGS}"
 
   $1_CFLAGS_JVM="${$1_DEFINES_CPU_JVM} ${$1_CFLAGS_CPU} ${$1_CFLAGS_CPU_JVM} ${$1_TOOLCHAIN_CFLAGS} ${$1_WARNING_CFLAGS_JVM}"
@@ -843,11 +831,28 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   AC_SUBST($2CFLAGS_JDKEXE)
   AC_SUBST($2CXXFLAGS_JDKLIB)
   AC_SUBST($2CXXFLAGS_JDKEXE)
+  AC_SUBST($2ADLC_CXXFLAG)
+
+  COMPILER_FP_CONTRACT_OFF_FLAG="-ffp-contract=off"
+  # Check that the compiler supports -ffp-contract=off flag
+  # Set FDLIBM_CFLAGS to -ffp-contract=off if it does. Empty
+  # otherwise.
+  # These flags are required for GCC-based builds of
+  # fdlibm with optimization without losing precision.
+  # Notably, -ffp-contract=off needs to be added for GCC >= 4.6.
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${COMPILER_FP_CONTRACT_OFF_FLAG}],
+        PREFIX: $3,
+        IF_TRUE: [$2FDLIBM_CFLAGS=${COMPILER_FP_CONTRACT_OFF_FLAG}],
+        IF_FALSE: [$2FDLIBM_CFLAGS=""])
+  fi
+  AC_SUBST($2FDLIBM_CFLAGS)
 ])
 
 # FLAGS_SETUP_GCC6_COMPILER_FLAGS([PREFIX])
 # Arguments:
 # $1 - Prefix for each variable defined.
+# $2 - Prefix for compiler variables (either BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
 [
   # These flags are required for GCC 6 builds as undefined behaviour in OpenJDK code
@@ -855,14 +860,11 @@ AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
   # Notably, value range propagation now assumes that the this pointer of C++
   # member functions is non-null.
   NO_DELETE_NULL_POINTER_CHECKS_CFLAG="-fno-delete-null-pointer-checks"
-  dnl Argument check is disabled until FLAGS_COMPILER_CHECK_ARGUMENTS handles cross-compilation
-  dnl FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_DELETE_NULL_POINTER_CHECKS_CFLAG -Werror],
-  dnl					     IF_FALSE: [NO_DELETE_NULL_POINTER_CHECKS_CFLAG=""])
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_DELETE_NULL_POINTER_CHECKS_CFLAG -Werror],
+      PREFIX: $2, IF_FALSE: [NO_DELETE_NULL_POINTER_CHECKS_CFLAG=""])
   NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
-  dnl Argument check is disabled until FLAGS_COMPILER_CHECK_ARGUMENTS handles cross-compilation
-  dnl FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG -Werror],
-  dnl					     IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
-  AC_MSG_NOTICE([GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLAG} and ${NO_LIFETIME_DSE_CFLAG}])
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG -Werror],
+      PREFIX: $2, IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
   $1_GCC6_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG} ${NO_LIFETIME_DSE_CFLAG}"
 ])
 

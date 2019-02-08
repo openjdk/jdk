@@ -21,15 +21,17 @@
  * questions.
  */
 
+package gc.epsilon;
+
 /**
  * @test TestUpdateCountersSteps
  * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Test EpsilonUpdateCountersStep works
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=1    TestUpdateCountersSteps
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=10   TestUpdateCountersSteps
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=100  TestUpdateCountersSteps
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=1000 TestUpdateCountersSteps
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=1    gc.epsilon.TestUpdateCountersSteps
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=10   gc.epsilon.TestUpdateCountersSteps
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=100  gc.epsilon.TestUpdateCountersSteps
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=1000 gc.epsilon.TestUpdateCountersSteps
  */
 
 public class TestUpdateCountersSteps {

@@ -198,8 +198,8 @@ AccessBridgeJavaVMInstance::sendPackage(char *buffer, long bufsize) {
     toCopy.cbData = bufsize;
     toCopy.lpData = buffer;
 
-    PrintDebugString("In AccessBridgeVMInstance::sendPackage");
-    PrintDebugString("    javaAccessBridgeWindow: %p", javaAccessBridgeWindow);
+    PrintDebugString("[INFO]: In AccessBridgeVMInstance::sendPackage");
+    PrintDebugString("[INFO]:     javaAccessBridgeWindow: %p", javaAccessBridgeWindow);
     /* This was SendMessage.  Normally that is a blocking call.  However, if
      * SendMessage is sent to another process, e.g. another JVM and an incoming
      * SendMessage is pending, control will be passed to the DialogProc to handle
@@ -280,7 +280,7 @@ AccessBridgeJavaVMInstance::sendMemoryPackage(char *buffer, long bufsize) {
             char *done = &memoryMappedView[bufsize];
             *done = 0;
 
-            PrintDebugString("    javaAccessBridgeWindow: %p", javaAccessBridgeWindow);
+            PrintDebugString("[INFO]:     javaAccessBridgeWindow: %p", javaAccessBridgeWindow);
             // See the comment above the call to SendMessageTimeout in SendPackage method above.
             UINT flags = SMTO_BLOCK | SMTO_NOTIMEOUTIFNOTHUNG;
             DWORD_PTR out; // not used
@@ -309,7 +309,7 @@ AccessBridgeJavaVMInstance::sendMemoryPackage(char *buffer, long bufsize) {
  */
 HWND
 AccessBridgeJavaVMInstance::findAccessBridgeWindow(long javaVMID) {
-    PrintDebugString("In findAccessBridgeWindow");
+    PrintDebugString("[INFO]: In findAccessBridgeWindow");
     // no need to recurse really
     if (vmID == javaVMID) {
         return javaAccessBridgeWindow;
@@ -338,7 +338,7 @@ AccessBridgeJavaVMInstance::findAccessBridgeWindow(long javaVMID) {
  */
 AccessBridgeJavaVMInstance *
 AccessBridgeJavaVMInstance::findABJavaVMInstanceFromJavaHWND(HWND window) {
-    PrintDebugString("In findABJavaInstanceFromJavaHWND");
+    PrintDebugString("[INFO]: In findABJavaInstanceFromJavaHWND");
     // no need to recurse really
     if (javaAccessBridgeWindow == window) {
         return this;

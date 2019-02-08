@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_HEAPREGIONMANAGER_HPP
-#define SHARE_VM_GC_G1_HEAPREGIONMANAGER_HPP
+#ifndef SHARE_GC_G1_HEAPREGIONMANAGER_HPP
+#define SHARE_GC_G1_HEAPREGIONMANAGER_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
@@ -295,4 +295,4 @@ class HeapRegionClaimer : public StackObj {
   // Claim the given region, returns true if successfully claimed.
   bool claim_region(uint region_index);
 };
-#endif // SHARE_VM_GC_G1_HEAPREGIONMANAGER_HPP
+#endif // SHARE_GC_G1_HEAPREGIONMANAGER_HPP

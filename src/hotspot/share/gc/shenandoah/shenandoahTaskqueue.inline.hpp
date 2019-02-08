@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,14 +21,15 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "utilities/stack.inline.hpp"
 
 template <class E, MEMFLAGS F, unsigned int N>
-bool BufferedOverflowTaskQueue<E, F, N>::pop(E &t)
-{
+bool BufferedOverflowTaskQueue<E, F, N>::pop(E &t) {
   if (!_buf_empty) {
     t = _elem;
     _buf_empty = true;
@@ -43,8 +44,7 @@ bool BufferedOverflowTaskQueue<E, F, N>::pop(E &t)
 }
 
 template <class E, MEMFLAGS F, unsigned int N>
-inline bool BufferedOverflowTaskQueue<E, F, N>::push(E t)
-{
+inline bool BufferedOverflowTaskQueue<E, F, N>::push(E t) {
   if (_buf_empty) {
     _elem = t;
     _buf_empty = false;
@@ -56,4 +56,12 @@ inline bool BufferedOverflowTaskQueue<E, F, N>::push(E t)
   return true;
 }
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
+template <class E, MEMFLAGS F, unsigned int N>
+void BufferedOverflowTaskQueue<E, F, N>::clear() {
+    _buf_empty = true;
+    taskqueue_t::set_empty();
+    taskqueue_t::overflow_stack()->clear();
+}
+
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP

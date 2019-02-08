@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_METHODOOP_HPP
-#define SHARE_VM_OOPS_METHODOOP_HPP
+#ifndef SHARE_OOPS_METHOD_HPP
+#define SHARE_OOPS_METHOD_HPP
 
 #include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
@@ -66,6 +66,7 @@ class ConstMethod;
 class InlineTableSizes;
 class KlassSizeStats;
 class CompiledMethod;
+class InterpreterOopMap;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -968,7 +969,7 @@ class Method : public Metadata {
 #endif
 
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods, bool idempotent = false, bool set_idnums = true);
+  static void sort_methods(Array<Method*>* methods, bool set_idnums = true);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);
@@ -1175,4 +1176,4 @@ class ExceptionTable : public StackObj {
   }
 };
 
-#endif // SHARE_VM_OOPS_METHODOOP_HPP
+#endif // SHARE_OOPS_METHOD_HPP

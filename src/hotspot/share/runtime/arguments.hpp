@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_ARGUMENTS_HPP
-#define SHARE_VM_RUNTIME_ARGUMENTS_HPP
+#ifndef SHARE_RUNTIME_ARGUMENTS_HPP
+#define SHARE_RUNTIME_ARGUMENTS_HPP
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
@@ -346,7 +346,6 @@ class Arguments : AllStatic {
 
   // Late-binding agents not started via arguments
   static void add_loaded_agent(AgentLibrary *agentLib);
-  static void add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib);
 
   // Operation modi
   static Mode _mode;
@@ -368,7 +367,6 @@ class Arguments : AllStatic {
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
-  static bool _CIDynamicCompilePriority;
   static intx _Tier3InvokeNotifyFreqLog;
   static intx _Tier4InvocationThreshold;
 
@@ -665,4 +663,4 @@ do {                                                     \
   }                                                      \
 } while(0)
 
-#endif // SHARE_VM_RUNTIME_ARGUMENTS_HPP
+#endif // SHARE_RUNTIME_ARGUMENTS_HPP

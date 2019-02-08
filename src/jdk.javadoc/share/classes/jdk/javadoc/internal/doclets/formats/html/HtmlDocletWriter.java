@@ -196,7 +196,7 @@ public class HtmlDocletWriter {
         this.contents = configuration.contents;
         this.messages = configuration.messages;
         this.resources = configuration.resources;
-        this.links = new Links(path, configuration.htmlVersion);
+        this.links = new Links(path);
         this.utils = configuration.utils;
         this.path = path;
         this.pathToRoot = path.parent().invert();
@@ -427,20 +427,37 @@ public class HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem writing the file
      */
     public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
-            Content body) throws DocFileIOException {
-        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+                                  Content body) throws DocFileIOException {
+        printHtmlDocument(metakeywords, includeScript, new ContentBuilder(), body);
+    }
+
+    /**
+     * Generates the HTML document tree and prints it out.
+     *
+     * @param metakeywords Array of String keywords for META tag. Each element
+     *                     of the array is assigned to a separate META tag.
+     *                     Pass in null for no array
+     * @param includeScript true if printing windowtitle script
+     *                      false for files that appear in the left-hand frames
+     * @param extraContent any additional content to be included in the HEAD element
+     * @param body the body htmltree to be included in the document
+     * @throws DocFileIOException if there is a problem writing the file
+     */
+    public void printHtmlDocument(List<String> metakeywords, boolean includeScript, Content extraContent,
+                                  Content body) throws DocFileIOException {
         Content htmlComment = contents.newPage;
-        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+        Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(!configuration.notimestamp)
                 .setTitle(winTitle)
                 .setCharset(configuration.charset)
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
                 .setUseModuleDirectories(configuration.useModuleDirectories)
-                .setIndex(configuration.createindex, mainBodyScript);
+                .setIndex(configuration.createindex, mainBodyScript)
+                .addContent(extraContent);
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
@@ -986,8 +1003,7 @@ public class HtmlDocletWriter {
     }
 
     public String anchorName(Element member) {
-        if (member.getKind() == ElementKind.CONSTRUCTOR
-                && configuration.isOutputHtml5()) {
+        if (member.getKind() == ElementKind.CONSTRUCTOR) {
             return "<init>";
         } else {
             return utils.getSimpleName(member);
@@ -2141,21 +2157,5 @@ public class HtmlDocletWriter {
 
     Script getMainBodyScript() {
         return mainBodyScript;
-    }
-
-    /**
-     * Creates the HTML tag if the tag is supported by this specific HTML version
-     * otherwise return the Content instance provided by Supplier ifNotSupported.
-     * @param tag the HTML tag
-     * @param ifSupported create this instance if HTML tag is supported
-     * @param ifNotSupported create this instance if HTML tag is not supported
-     * @return
-     */
-    protected Content createTagIfAllowed(HtmlTag tag, Supplier<Content> ifSupported, Supplier<Content> ifNotSupported) {
-        if (configuration.allowTag(tag)) {
-            return ifSupported.get();
-        } else {
-            return ifNotSupported.get();
-        }
     }
 }

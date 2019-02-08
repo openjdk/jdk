@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_UTILITIES_JFRTYPES_HPP
-#define SHARE_VM_JFR_UTILITIES_JFRTYPES_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRTYPES_HPP
+#define SHARE_JFR_UTILITIES_JFRTYPES_HPP
 
 #include "jfrfiles/jfrEventIds.hpp"
 #include "memory/allocation.hpp"
@@ -39,4 +39,4 @@ enum EventStartTime {
   TIMED
 };
 
-#endif // SHARE_VM_JFR_UTILITIES_JFRTYPES_HPP
+#endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP

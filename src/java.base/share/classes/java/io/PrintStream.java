@@ -575,7 +575,7 @@ public class PrintStream extends FilterOutputStream
      * stream occur as promptly as with the original PrintStream.
      */
 
-    private void write(char buf[]) {
+    private void write(char[] buf) {
         try {
             synchronized (this) {
                 ensureOpen();
@@ -584,9 +584,33 @@ public class PrintStream extends FilterOutputStream
                 charOut.flushBuffer();
                 if (autoFlush) {
                     for (int i = 0; i < buf.length; i++)
-                        if (buf[i] == '\n')
+                        if (buf[i] == '\n') {
                             out.flush();
+                            break;
+                        }
                 }
+            }
+        } catch (InterruptedIOException x) {
+            Thread.currentThread().interrupt();
+        } catch (IOException x) {
+            trouble = true;
+        }
+    }
+
+    // Used to optimize away back-to-back flushing and synchronization when
+    // using println, but since subclasses could exist which depend on
+    // observing a call to print followed by newLine() we only use this if
+    // getClass() == PrintStream.class to avoid compatibility issues.
+    private void writeln(char[] buf) {
+        try {
+            synchronized (this) {
+                ensureOpen();
+                textOut.write(buf);
+                textOut.newLine();
+                textOut.flushBuffer();
+                charOut.flushBuffer();
+                if (autoFlush)
+                    out.flush();
             }
         }
         catch (InterruptedIOException x) {
@@ -605,6 +629,30 @@ public class PrintStream extends FilterOutputStream
                 textOut.flushBuffer();
                 charOut.flushBuffer();
                 if (autoFlush && (s.indexOf('\n') >= 0))
+                    out.flush();
+            }
+        }
+        catch (InterruptedIOException x) {
+            Thread.currentThread().interrupt();
+        }
+        catch (IOException x) {
+            trouble = true;
+        }
+    }
+
+    // Used to optimize away back-to-back flushing and synchronization when
+    // using println, but since subclasses could exist which depend on
+    // observing a call to print followed by newLine we only use this if
+    // getClass() == PrintStream.class to avoid compatibility issues.
+    private void writeln(String s) {
+        try {
+            synchronized (this) {
+                ensureOpen();
+                textOut.write(s);
+                textOut.newLine();
+                textOut.flushBuffer();
+                charOut.flushBuffer();
+                if (autoFlush)
                     out.flush();
             }
         }
@@ -780,9 +828,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code boolean} to be printed
      */
     public void println(boolean x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -794,9 +846,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code char} to be printed.
      */
     public void println(char x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -808,9 +864,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code int} to be printed.
      */
     public void println(int x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -822,9 +882,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  a The {@code long} to be printed.
      */
     public void println(long x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -836,9 +900,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code float} to be printed.
      */
     public void println(float x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -850,9 +918,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code double} to be printed.
      */
     public void println(double x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -863,10 +935,14 @@ public class PrintStream extends FilterOutputStream
      *
      * @param x  an array of chars to print.
      */
-    public void println(char x[]) {
-        synchronized (this) {
-            print(x);
-            newLine();
+    public void println(char[] x) {
+        if (getClass() == PrintStream.class) {
+            writeln(x);
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -878,9 +954,13 @@ public class PrintStream extends FilterOutputStream
      * @param x  The {@code String} to be printed.
      */
     public void println(String x) {
-        synchronized (this) {
-            print(x);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            writeln(String.valueOf(x));
+        } else {
+            synchronized (this) {
+                print(x);
+                newLine();
+            }
         }
     }
 
@@ -895,9 +975,15 @@ public class PrintStream extends FilterOutputStream
      */
     public void println(Object x) {
         String s = String.valueOf(x);
-        synchronized (this) {
-            print(s);
-            newLine();
+        if (getClass() == PrintStream.class) {
+            // need to apply String.valueOf again since first invocation
+            // might return null
+            writeln(String.valueOf(s));
+        } else {
+            synchronized (this) {
+                print(s);
+                newLine();
+            }
         }
     }
 

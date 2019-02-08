@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_SYMBOL_HPP
-#define SHARE_VM_OOPS_SYMBOL_HPP
+#ifndef SHARE_OOPS_SYMBOL_HPP
+#define SHARE_OOPS_SYMBOL_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/exceptions.hpp"
@@ -164,9 +164,6 @@ class Symbol : public MetaspaceObj {
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
 
-  // For symbol table alternate hashing
-  unsigned int new_hash(juint seed);
-
   // Reference counting.  See comments above this class for when to use.
   int refcount() const { return extract_refcount(_length_and_refcount); }
   bool try_increment_refcount();
@@ -274,4 +271,4 @@ int Symbol::fast_compare(const Symbol* other) const {
  return (((uintptr_t)this < (uintptr_t)other) ? -1
    : ((uintptr_t)this == (uintptr_t) other) ? 0 : 1);
 }
-#endif // SHARE_VM_OOPS_SYMBOL_HPP
+#endif // SHARE_OOPS_SYMBOL_HPP

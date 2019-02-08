@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_METAPROGRAMMING_ENABLEIF_HPP
-#define SHARE_VM_METAPROGRAMMING_ENABLEIF_HPP
+#ifndef SHARE_METAPROGRAMMING_ENABLEIF_HPP
+#define SHARE_METAPROGRAMMING_ENABLEIF_HPP
 
 #include "memory/allocation.hpp"
 
@@ -44,4 +44,4 @@ struct EnableIf<true, T>: AllStatic {
   typedef T type;
 };
 
-#endif // SHARE_VM_METAPROGRAMMING_ENABLEIF_HPP
+#endif // SHARE_METAPROGRAMMING_ENABLEIF_HPP

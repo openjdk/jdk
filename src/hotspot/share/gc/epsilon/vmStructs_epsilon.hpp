@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_EPSILON_VMSTRUCTS_HPP
-#define SHARE_GC_EPSILON_VMSTRUCTS_HPP
+#ifndef SHARE_GC_EPSILON_VMSTRUCTS_EPSILON_HPP
+#define SHARE_GC_EPSILON_VMSTRUCTS_EPSILON_HPP
 
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/shared/space.hpp"
@@ -43,4 +43,4 @@
 #define VM_INT_CONSTANTS_EPSILONGC(declare_constant,                \
                                   declare_constant_with_value)
 
-#endif // SHARE_GC_EPSILON_VMSTRUCTS_HPP
+#endif // SHARE_GC_EPSILON_VMSTRUCTS_EPSILON_HPP

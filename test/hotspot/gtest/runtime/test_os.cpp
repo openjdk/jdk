@@ -153,6 +153,30 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
 }
 #endif
 
+TEST(os, test_print_hex_dump) {
+  ResourceMark rm;
+  stringStream ss;
+  outputStream* out = &ss;
+//  outputStream* out = tty; // enable for printout
+
+  // Test dumping unreadable memory does not fail
+  os::print_hex_dump(out, (address)0, (address)100, 1);
+  os::print_hex_dump(out, (address)0, (address)100, 2);
+  os::print_hex_dump(out, (address)0, (address)100, 4);
+  os::print_hex_dump(out, (address)0, (address)100, 8);
+
+  // Test dumping readable memory does not fail
+  char arr[100];
+  for (int c = 0; c < 100; c++) {
+    arr[c] = c;
+  }
+  address addr = (address)&arr;
+  os::print_hex_dump(out, addr, addr + 100, 1);
+  os::print_hex_dump(out, addr, addr + 100, 2);
+  os::print_hex_dump(out, addr, addr + 100, 4);
+  os::print_hex_dump(out, addr, addr + 100, 8);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Test os::vsnprintf and friends.
 

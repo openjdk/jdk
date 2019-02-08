@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_DICTIONARY_HPP
-#define SHARE_VM_CLASSFILE_DICTIONARY_HPP
+#ifndef SHARE_CLASSFILE_DICTIONARY_HPP
+#define SHARE_CLASSFILE_DICTIONARY_HPP
 
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -50,8 +50,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   ClassLoaderData* loader_data() const { return _loader_data; }
 
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
-
-  void clean_cached_protection_domains(DictionaryEntry* probe);
 
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
@@ -304,4 +302,4 @@ public:
     return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
   }
 };
-#endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP
+#endif // SHARE_CLASSFILE_DICTIONARY_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,11 +159,6 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
-bool Klass::compute_is_subtype_of(Klass* k) {
-  assert(k->is_klass(), "argument must be a class");
-  return is_subclass_of(k);
-}
-
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."
@@ -236,11 +231,6 @@ bool Klass::can_be_primary_super_slow() const {
 }
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
-  if (FastSuperclassLimit == 0) {
-    // None of the other machinery matters.
-    set_super(k);
-    return;
-  }
   if (k == NULL) {
     set_super(NULL);
     _primary_supers[0] = this;

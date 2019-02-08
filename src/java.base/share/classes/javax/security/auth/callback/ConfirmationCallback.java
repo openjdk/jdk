@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public static final int YES_NO_OPTION               = 0;
 
     /**
-     * YES/NO/CANCEL confirmation confirmation option.
+     * YES/NO/CANCEL confirmation option.
      *
      * <p> An underlying security service specifies this as the
      * {@code optionType} to a {@code ConfirmationCallback}
@@ -68,7 +68,7 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public static final int YES_NO_CANCEL_OPTION        = 1;
 
     /**
-     * OK/CANCEL confirmation confirmation option.
+     * OK/CANCEL confirmation option.
      *
      * <p> An underlying security service specifies this as the
      * {@code optionType} to a {@code ConfirmationCallback}

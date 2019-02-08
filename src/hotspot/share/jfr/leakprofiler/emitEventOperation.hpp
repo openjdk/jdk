@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_LEAKPROFILER_EMITEVENTOPERATION_HPP
-#define SHARE_VM_LEAKPROFILER_EMITEVENTOPERATION_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP
+#define SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP
 
 #include "runtime/vmOperations.hpp"
 
@@ -33,6 +33,8 @@ class EdgeQueue;
 class JfrThreadData;
 class ObjectSample;
 class ObjectSampler;
+
+class VMThread;
 
 // Safepoint operation for emitting object sample events
 class EmitEventOperation : public VM_Operation {
@@ -66,4 +68,4 @@ class EmitEventOperation : public VM_Operation {
   virtual void doit();
 };
 
-#endif // SHARE_VM_LEAKPROFILER_EMITEVENTOPERATION_HPP
+#endif // SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP

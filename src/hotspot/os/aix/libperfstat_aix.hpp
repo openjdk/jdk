@@ -29,8 +29,8 @@
 // AIX-specific library which only exists on AIX, not on PASE. If I want to
 // share binaries between AIX and PASE, I cannot directly link against libperfstat.so.
 
-#ifndef OS_AIX_VM_LIBPERFSTAT_AIX_HPP
-#define OS_AIX_VM_LIBPERFSTAT_AIX_HPP
+#ifndef OS_AIX_LIBPERFSTAT_AIX_HPP
+#define OS_AIX_LIBPERFSTAT_AIX_HPP
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -966,4 +966,4 @@ public:
   static bool get_wparinfo(wparinfo_t* pwi);
 };
 
-#endif // OS_AIX_VM_LIBPERFSTAT_AIX_HPP
+#endif // OS_AIX_LIBPERFSTAT_AIX_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,12 @@ final class P11DSAKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_SUBPRIME),
                 new CK_ATTRIBUTE(CKA_BASE),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
+            } finally {
+                key.releaseKeyID();
+            }
             KeySpec spec = new DSAPublicKeySpec(
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger(),
@@ -242,7 +247,12 @@ final class P11DSAKeyFactory extends P11KeyFactory {
                 new CK_ATTRIBUTE(CKA_SUBPRIME),
                 new CK_ATTRIBUTE(CKA_BASE),
             };
-            token.p11.C_GetAttributeValue(session[0].id(), key.keyID, attributes);
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
+            } finally {
+                key.releaseKeyID();
+            }
             KeySpec spec = new DSAPrivateKeySpec(
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger(),

@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_EPSILON_COLLECTEDHEAP_HPP
-#define SHARE_VM_GC_EPSILON_COLLECTEDHEAP_HPP
+#ifndef SHARE_GC_EPSILON_EPSILONHEAP_HPP
+#define SHARE_GC_EPSILON_EPSILONHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
@@ -147,6 +147,10 @@ public:
   virtual void print_on(outputStream* st) const;
   virtual void print_tracing_info() const;
 
+private:
+  void print_heap_info(size_t used) const;
+  void print_metaspace_info() const;
+
 };
 
-#endif // SHARE_VM_GC_EPSILON_COLLECTEDHEAP_HPP
+#endif // SHARE_GC_EPSILON_EPSILONHEAP_HPP

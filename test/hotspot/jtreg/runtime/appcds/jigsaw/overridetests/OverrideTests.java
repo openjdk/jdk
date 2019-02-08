@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,11 +159,10 @@ public class OverrideTests {
         boolean isAppLoader = loaderName.equals("app");
         int upgradeModIdx = isAppLoader ? 0 : 1;
         String expectedException = "java.lang.module.FindException: Unable to compute the hash";
-        String prefix[] = new String[4];
-        prefix[0] = "-cp";
-        prefix[1] = "\"\"";
-        prefix[2] = "--add-modules";
-        prefix[3] = "java.net.http";
+        String prefix[] = new String[3];
+        prefix[0] = "-Djava.class.path=";
+        prefix[1] = "--add-modules";
+        prefix[2] = "java.net.http";
 
         // Run the test with --upgrade-module-path set to alternate location of archiveClass
         // The alternate version of archiveClass SHOULD be found.

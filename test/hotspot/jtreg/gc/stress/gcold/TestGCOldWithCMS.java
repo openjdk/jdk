@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  *
  */
 
+package gc.stress.gcold;
+
 /*
  * @test TestGCOldWithCMS
  * @key gc
+ * @library /
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Stress the CMS GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm -Xmx384M -XX:+UseConcMarkSweepGC TestGCOldWithCMS 50 1 20 10 10000
+ * @run main/othervm -Xmx384M -XX:+UseConcMarkSweepGC gc.stress.gcold.TestGCOldWithCMS 50 1 20 10 10000
  */
 public class TestGCOldWithCMS {
     public static void main(String[] args) {

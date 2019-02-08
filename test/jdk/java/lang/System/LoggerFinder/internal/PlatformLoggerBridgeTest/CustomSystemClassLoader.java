@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.security.AllPermission;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -39,7 +41,7 @@ import java.security.ProtectionDomain;
 public class CustomSystemClassLoader extends ClassLoader {
 
 
-    Class<?> loggerFinderClass = null;
+    final ConcurrentHashMap<String, Class<?>> classes = new ConcurrentHashMap<>();
 
     public CustomSystemClassLoader() {
         super();
@@ -50,8 +52,11 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     private Class<?> defineFinderClass(String name)
         throws ClassNotFoundException {
+        Class<?> loggerFinderClass = classes.get(name);
+        if (loggerFinderClass != null) return loggerFinderClass;
         final Object obj = getClassLoadingLock(name);
         synchronized(obj) {
+            loggerFinderClass = classes.get(name);
             if (loggerFinderClass != null) return loggerFinderClass;
 
             URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
@@ -66,6 +71,7 @@ public class CustomSystemClassLoader extends ClassLoader {
                             this.getClass().getProtectionDomain().getCodeSource(),
                             perms));
                     System.out.println("Loaded " + name);
+                    classes.put(name, loggerFinderClass);
                     return loggerFinderClass;
                 } catch (Throwable ex) {
                     ex.printStackTrace();
@@ -80,7 +86,7 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     @Override
     public synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name.endsWith("$LogProducerFinder")) {
+        if (name.equals("LogProducerFinder") || name.startsWith("LogProducerFinder$")) {
             Class<?> c = defineFinderClass(name);
             if (resolve) {
                 resolveClass(c);
@@ -92,7 +98,7 @@ public class CustomSystemClassLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if (name.endsWith("$$LogProducerFinder")) {
+        if (name.equals("LogProducerFinder") || name.startsWith("LogProducerFinder$")) {
             return defineFinderClass(name);
         }
         return super.findClass(name);

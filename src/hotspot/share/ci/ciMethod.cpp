@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER2
@@ -89,6 +90,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _is_c2_compilable   = !h_m()->is_not_c2_compilable();
   _can_be_parsed      = true;
   _has_reserved_stack_access = h_m()->has_reserved_stack_access();
+  _is_overpass        = h_m()->is_overpass();
   // Lazy fields, filled in on demand.  Require allocation.
   _code               = NULL;
   _exception_handlers = NULL;
@@ -402,12 +404,14 @@ MethodLivenessResult ciMethod::raw_liveness_at_bci(int bci) {
 // will return true for all locals in some cases to improve debug
 // information.
 MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
-  MethodLivenessResult result = raw_liveness_at_bci(bci);
   if (CURRENT_ENV->should_retain_local_variables() || DeoptimizeALot) {
     // Keep all locals live for the user's edification and amusement.
-    result.at_put_range(0, result.size(), true);
+    MethodLivenessResult result(_max_locals);
+    result.set_range(0, _max_locals);
+    result.set_is_valid();
+    return result;
   }
-  return result;
+  return raw_liveness_at_bci(bci);
 }
 
 // ciMethod::live_local_oops_at_bci
@@ -716,7 +720,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   VM_ENTRY_MARK;
 
   // Disable CHA for default methods for now
-  if (root_m->get_Method()->is_default_method()) {
+  if (root_m->is_default_method()) {
     return NULL;
   }
 
@@ -756,6 +760,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     // with the same name but different vtable indexes.
     return NULL;
   }
+  assert(!target()->is_abstract(), "not allowed");
   return CURRENT_THREAD_ENV->get_method(target());
 }
 
@@ -869,6 +874,14 @@ ciMethod* ciMethod::get_method_at_bci(int bci, bool &will_link, ciSignature* *de
   iter.reset_to_bci(bci);
   iter.next();
   return iter.get_method(will_link, declared_signature);
+}
+
+// ------------------------------------------------------------------
+ciKlass* ciMethod::get_declared_method_holder_at_bci(int bci) {
+  ciBytecodeStream iter(this);
+  iter.reset_to_bci(bci);
+  iter.next();
+  return iter.get_declared_method_holder();
 }
 
 // ------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_VM_ASSEMBLER_AARCH64_HPP
-#define CPU_AARCH64_VM_ASSEMBLER_AARCH64_HPP
+#ifndef CPU_AARCH64_ASSEMBLER_AARCH64_HPP
+#define CPU_AARCH64_ASSEMBLER_AARCH64_HPP
 
 #include "asm/register.hpp"
 
@@ -1118,7 +1118,7 @@ public:
     Register Rn, enum operand_size sz, int op, bool ordered) {
     starti;
     f(sz, 31, 30), f(0b001000, 29, 24), f(op, 23, 21);
-    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), srf(Rn, 5), rf(Rt1, 0);
+    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), srf(Rn, 5), zrf(Rt1, 0);
   }
 
   void load_exclusive(Register dst, Register addr,
@@ -1826,12 +1826,16 @@ public:
   INSN(fdivs, 0b000, 0b00, 0b0001);
   INSN(fadds, 0b000, 0b00, 0b0010);
   INSN(fsubs, 0b000, 0b00, 0b0011);
+  INSN(fmaxs, 0b000, 0b00, 0b0100);
+  INSN(fmins, 0b000, 0b00, 0b0101);
   INSN(fnmuls, 0b000, 0b00, 0b1000);
 
   INSN(fmuld, 0b000, 0b01, 0b0000);
   INSN(fdivd, 0b000, 0b01, 0b0001);
   INSN(faddd, 0b000, 0b01, 0b0010);
   INSN(fsubd, 0b000, 0b01, 0b0011);
+  INSN(fmaxd, 0b000, 0b01, 0b0100);
+  INSN(fmind, 0b000, 0b01, 0b0101);
   INSN(fnmuld, 0b000, 0b01, 0b1000);
 
 #undef INSN
@@ -2750,4 +2754,4 @@ class BiasedLockingCounters;
 
 extern "C" void das(uint64_t start, int len);
 
-#endif // CPU_AARCH64_VM_ASSEMBLER_AARCH64_HPP
+#endif // CPU_AARCH64_ASSEMBLER_AARCH64_HPP

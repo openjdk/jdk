@@ -352,7 +352,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // If this does safepoint polling, then do it here
   if (do_polling() && ra_->C->is_method_compilation()) {
     // mov_slow here is usually one or two instruction
-    __ mov_address(Rtemp, (address)os::get_polling_page(), symbolic_Relocation::polling_page_reference);
+    __ mov_address(Rtemp, (address)os::get_polling_page());
     __ relocate(relocInfo::poll_return_type);
     __ ldr(Rtemp, Address(Rtemp));
   }

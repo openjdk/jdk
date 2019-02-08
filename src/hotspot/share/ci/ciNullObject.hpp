@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CINULLOBJECT_HPP
-#define SHARE_VM_CI_CINULLOBJECT_HPP
+#ifndef SHARE_CI_CINULLOBJECT_HPP
+#define SHARE_CI_CINULLOBJECT_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
@@ -42,9 +42,6 @@ private:
   void print_impl(outputStream* st);
 
 public:
-  // Is this ciObject a Java Language Object?  That is,
-  // is the ciObject an instance or an array
-  bool is_java_object() { return true; }
 
   // What kind of ciObject is this?
   bool is_null_object() const { return true; }
@@ -54,4 +51,4 @@ public:
   static ciNullObject* make();
 };
 
-#endif // SHARE_VM_CI_CINULLOBJECT_HPP
+#endif // SHARE_CI_CINULLOBJECT_HPP

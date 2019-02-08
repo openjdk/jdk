@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -55,72 +56,6 @@ public:
   }
 };
 
-// Represents a set of free small integer ids.
-class FreeIdSet : public CHeapObj<mtGC> {
-  enum {
-    end_of_list = UINT_MAX,
-    claimed = UINT_MAX - 1
-  };
-
-  uint _size;
-  Monitor* _mon;
-
-  uint* _ids;
-  uint _hd;
-  uint _waiters;
-  uint _claimed;
-
-public:
-  FreeIdSet(uint size, Monitor* mon);
-  ~FreeIdSet();
-
-  // Returns an unclaimed parallel id (waiting for one to be released if
-  // necessary).
-  uint claim_par_id();
-
-  void release_par_id(uint id);
-};
-
-FreeIdSet::FreeIdSet(uint size, Monitor* mon) :
-  _size(size), _mon(mon), _hd(0), _waiters(0), _claimed(0)
-{
-  guarantee(size != 0, "must be");
-  _ids = NEW_C_HEAP_ARRAY(uint, size, mtGC);
-  for (uint i = 0; i < size - 1; i++) {
-    _ids[i] = i+1;
-  }
-  _ids[size-1] = end_of_list; // end of list.
-}
-
-FreeIdSet::~FreeIdSet() {
-  FREE_C_HEAP_ARRAY(uint, _ids);
-}
-
-uint FreeIdSet::claim_par_id() {
-  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  while (_hd == end_of_list) {
-    _waiters++;
-    _mon->wait(Mutex::_no_safepoint_check_flag);
-    _waiters--;
-  }
-  uint res = _hd;
-  _hd = _ids[res];
-  _ids[res] = claimed;  // For debugging.
-  _claimed++;
-  return res;
-}
-
-void FreeIdSet::release_par_id(uint id) {
-  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  assert(_ids[id] == claimed, "Precondition.");
-  _ids[id] = _hd;
-  _hd = id;
-  _claimed--;
-  if (_waiters > 0) {
-    _mon->notify_all();
-  }
-}
-
 DirtyCardQueue::DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
@@ -137,9 +72,15 @@ DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
-  _processed_buffers_mut(0), _processed_buffers_rs_thread(0)
+  _processed_buffers_mut(0),
+  _processed_buffers_rs_thread(0),
+  _cur_par_buffer_node(NULL)
 {
   _all_active = true;
+}
+
+DirtyCardQueueSet::~DirtyCardQueueSet() {
+  delete _free_ids;
 }
 
 // Determines how many mutator threads can process the buffers in parallel.
@@ -154,7 +95,7 @@ void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
   PtrQueueSet::initialize(cbl_mon, allocator);
   _shared_dirty_card_queue.set_lock(lock);
   if (init_free_ids) {
-    _free_ids = new FreeIdSet(num_par_ids(), _cbl_mon);
+    _free_ids = new G1FreeIdSet(0, num_par_ids());
   }
 }
 
@@ -215,29 +156,6 @@ bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   return result;
 }
 
-
-BufferNode* DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
-  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-
-  if (_n_completed_buffers <= stop_at) {
-    return NULL;
-  }
-
-  assert(_n_completed_buffers > 0, "invariant");
-  assert(_completed_buffers_head != NULL, "invariant");
-  assert(_completed_buffers_tail != NULL, "invariant");
-
-  BufferNode* nd = _completed_buffers_head;
-  _completed_buffers_head = nd->next();
-  _n_completed_buffers--;
-  if (_completed_buffers_head == NULL) {
-    assert(_n_completed_buffers == 0, "Invariant");
-    _completed_buffers_tail = NULL;
-  }
-  DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
-  return nd;
-}
-
 bool DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size_t stop_at) {
   G1RefineCardConcurrentlyClosure cl;
   return apply_closure_to_completed_buffer(&cl, worker_i, stop_at, false);
@@ -265,7 +183,7 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
     } else {
       // Return partially processed buffer to the queue.
       guarantee(!during_pause, "Should never stop early");
-      enqueue_complete_buffer(nd);
+      enqueue_completed_buffer(nd);
     }
     return true;
   }
@@ -286,32 +204,9 @@ void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntr
   }
 }
 
-// Deallocates any completed log buffers
-void DirtyCardQueueSet::clear() {
-  BufferNode* buffers_to_delete = NULL;
-  {
-    MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-    while (_completed_buffers_head != NULL) {
-      BufferNode* nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next();
-      nd->set_next(buffers_to_delete);
-      buffers_to_delete = nd;
-    }
-    _n_completed_buffers = 0;
-    _completed_buffers_tail = NULL;
-    DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
-  }
-  while (buffers_to_delete != NULL) {
-    BufferNode* nd = buffers_to_delete;
-    buffers_to_delete = nd->next();
-    deallocate_buffer(nd);
-  }
-
-}
-
 void DirtyCardQueueSet::abandon_logs() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  clear();
+  abandon_completed_buffers();
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
@@ -331,10 +226,11 @@ void DirtyCardQueueSet::concatenate_logs() {
   // the global list of logs.  Temporarily turn off the limit on the number
   // of outstanding buffers.
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  SizeTFlagSetting local_max(_max_completed_buffers,
-                             MaxCompletedBuffersUnlimited);
+  size_t old_limit = max_completed_buffers();
+  set_max_completed_buffers(MaxCompletedBuffersUnlimited);
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
   }
   concatenate_log(_shared_dirty_card_queue);
+  set_max_completed_buffers(old_limit);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug      8185194 8182765
  * @summary  Test anchor for package description in package summary page
-  * @library  ../lib/
+  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester TestPackageDescription
+ * @build    javadoc.tester.* TestPackageDescription
  * @run main TestPackageDescription
  */
+
+import javadoc.tester.JavadocTester;
 
 public class TestPackageDescription extends JavadocTester {
 
@@ -39,7 +41,7 @@ public class TestPackageDescription extends JavadocTester {
     }
 
     @Test
-    void test1() {
+    public void test1() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
@@ -47,21 +49,6 @@ public class TestPackageDescription extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 "<a id=\"package.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<div class=\"block\">package description</div>\n");
-    }
-
-    @Test
-    void test2() {
-        javadoc("-d", "out-2",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/package-summary.html", true,
-                "<a name=\"package.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">package description</div>\n");

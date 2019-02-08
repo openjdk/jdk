@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,17 +43,6 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
-
-bool TypeArrayKlass::compute_is_subtype_of(Klass* k) {
-  if (!k->is_typeArray_klass()) {
-    return ArrayKlass::compute_is_subtype_of(k);
-  }
-
-  TypeArrayKlass* tak = TypeArrayKlass::cast(k);
-  if (dimension() != tak->dimension()) return false;
-
-  return element_type() == tak->element_type();
-}
 
 TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {

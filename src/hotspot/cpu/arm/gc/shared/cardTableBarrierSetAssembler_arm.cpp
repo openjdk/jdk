@@ -61,7 +61,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ sub(count, count, addr); // nb of cards
 
   // warning: Rthread has not been preserved
-  __ mov_address(tmp, (address) ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  __ mov_address(tmp, (address) ct->byte_map_base());
   __ add(addr,tmp, addr);
 
   Register zero = __ zero_register(tmp);
@@ -119,7 +119,7 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
      Possible cause is a cache miss (card table base address resides in a
      rarely accessed area of thread descriptor).
   */
-  __ mov_address(card_table_base, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  __ mov_address(card_table_base, (address)ct->byte_map_base());
 }
 
 // The 2nd part of the store check.

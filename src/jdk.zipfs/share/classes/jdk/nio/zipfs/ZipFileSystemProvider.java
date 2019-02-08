@@ -25,27 +25,33 @@
 
 package jdk.nio.zipfs;
 
-import java.io.*;
-import java.nio.channels.*;
-import java.nio.file.*;
-import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.attribute.*;
-import java.nio.file.spi.FileSystemProvider;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.*;
+import java.nio.file.DirectoryStream.Filter;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.spi.FileSystemProvider;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipException;
 import java.util.concurrent.ExecutorService;
+import java.util.zip.ZipException;
 
-/*
- *
- * @author  Xueming Shen, Rajendra Gutupalli, Jaya Hangal
+/**
+ * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
-
 public class ZipFileSystemProvider extends FileSystemProvider {
-
 
     private final Map<Path, ZipFileSystem> filesystems = new HashMap<>();
 
@@ -202,7 +208,6 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
@@ -315,7 +320,13 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     //////////////////////////////////////////////////////////////
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            zfpath = zfpath.toRealPath();
+            Path tempPath = zfpath;
+            PrivilegedExceptionAction<Path> action = tempPath::toRealPath;
+            try {
+                zfpath = AccessController.doPrivileged(action);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getException();
+            }
             if (filesystems.get(zfpath) == zfs)
                 filesystems.remove(zfpath);
         }

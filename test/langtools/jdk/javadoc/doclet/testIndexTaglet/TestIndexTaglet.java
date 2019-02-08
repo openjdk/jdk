@@ -25,9 +25,9 @@
  * @test
  * @bug 8202462
  * @summary {@index} may cause duplicate labels
- * @library /tools/lib ../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester toolbox.ToolBox builder.ClassBuilder
+ * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
  * @run main TestIndexTaglet
  */
 
@@ -38,6 +38,8 @@ import java.nio.file.Paths;
 import builder.ClassBuilder;
 import builder.ClassBuilder.MethodBuilder;
 import toolbox.ToolBox;
+
+import javadoc.tester.JavadocTester;
 
 public class TestIndexTaglet extends JavadocTester {
 
@@ -53,7 +55,7 @@ public class TestIndexTaglet extends JavadocTester {
     }
 
     @Test
-    void test(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -83,7 +85,7 @@ public class TestIndexTaglet extends JavadocTester {
     }
 
     @Test
-    void testIndexWithinATag(Path base) throws Exception {
+    public void testIndexWithinATag(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 

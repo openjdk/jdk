@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_CPPINTERPRETER_ZERO_HPP
-#define CPU_ZERO_VM_CPPINTERPRETER_ZERO_HPP
+#ifndef CPU_ZERO_CPPINTERPRETER_ZERO_HPP
+#define CPU_ZERO_CPPINTERPRETER_ZERO_HPP
 
  protected:
   // Size of interpreter code
@@ -49,4 +49,4 @@
   static intptr_t* calculate_unwind_sp(ZeroStack* stack, oop method_handle);
   static void throw_exception(JavaThread* thread, Symbol* name,char *msg=NULL);
 
-#endif // CPU_ZERO_VM_CPPINTERPRETER_ZERO_HPP
+#endif // CPU_ZERO_CPPINTERPRETER_ZERO_HPP

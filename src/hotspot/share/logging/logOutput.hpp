@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_LOGGING_LOGOUTPUT_HPP
-#define SHARE_VM_LOGGING_LOGOUTPUT_HPP
+#ifndef SHARE_LOGGING_LOGOUTPUT_HPP
+#define SHARE_LOGGING_LOGOUTPUT_HPP
 
 #include "logging/logDecorators.hpp"
 #include "logging/logLevel.hpp"
@@ -101,4 +101,4 @@ class LogOutput : public CHeapObj<mtLogging> {
   virtual int write(LogMessageBuffer::Iterator msg_iterator) = 0;
 };
 
-#endif // SHARE_VM_LOGGING_LOGOUTPUT_HPP
+#endif // SHARE_LOGGING_LOGOUTPUT_HPP

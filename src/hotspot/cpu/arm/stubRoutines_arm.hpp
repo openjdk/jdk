@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ARM_VM_STUBROUTINES_ARM_HPP
-#define CPU_ARM_VM_STUBROUTINES_ARM_HPP
+#ifndef CPU_ARM_STUBROUTINES_ARM_HPP
+#define CPU_ARM_STUBROUTINES_ARM_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
@@ -60,4 +60,4 @@ class Arm {
   static address atomic_store_long_entry()                 { return _atomic_store_long_entry; }
 
 
-#endif // CPU_ARM_VM_STUBROUTINES_ARM_HPP
+#endif // CPU_ARM_STUBROUTINES_ARM_HPP

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 include GensrcCommonJdk.gmk
 
 include GensrcLocaleData.gmk
-include GensrcCLDR.gmk
 include GensrcCharacterData.gmk
 include GensrcMisc.gmk
 include GensrcCharsetMapping.gmk
@@ -35,6 +34,33 @@ include GensrcBuffer.gmk
 include GensrcExceptions.gmk
 include GensrcVarHandles.gmk
 include GensrcModuleLoaderMap.gmk
+
+################################################################################
+
+CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
+GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
+CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
+TZ_DATA_DIR := $(TOPDIR)/make/data/tzdata
+ZONENAME_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/java/time/format/ZoneName.java.template
+
+$(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
+    $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
+    $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
+    $(wildcard $(TZ_DATA_DIR)/*) \
+    $(ZONENAME_TEMPLATE) \
+    $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(GENSRC_DIR))
+	$(call LogInfo, Processing CLDR data for java.base)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_CLDRCONVERTER) -base $(CLDR_DATA_DIR) \
+	    -baselocales "en-US" \
+	    -o $(GENSRC_DIR) \
+	    -basemodule \
+	    -zntempfile $(ZONENAME_TEMPLATE) \
+	    -tzdatadir $(TZ_DATA_DIR))
+	$(TOUCH) $@
+
+GENSRC_JAVA_BASE += $(CLDR_GEN_DONE)
 
 ################################################################################
 

@@ -39,16 +39,19 @@ class SpinYield : public StackObj {
   uint _yields;
   uint _spin_limit;
   uint _yield_limit;
+  uint _sleep_ns;
 
   void yield_or_sleep();
 
 public:
   static const uint default_spin_limit = 4096;
   static const uint default_yield_limit = 64;
+  static const uint default_sleep_ns = 1000;
 
   // spin_limit is ignored (treated as zero) when !os::is_MP().
   explicit SpinYield(uint spin_limit = default_spin_limit,
-                     uint yield_limit = default_yield_limit);
+                     uint yield_limit = default_yield_limit,
+                     uint sleep_ns = default_sleep_ns);
 
   // Perform next round of delay.
   void wait() {

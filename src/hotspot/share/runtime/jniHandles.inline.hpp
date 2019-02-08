@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
 inline oop JNIHandles::resolve(jobject handle) {
   oop result = NULL;
   if (handle != NULL) {
-    result = resolve_impl<0 /* decorators */, false /* external_guard */>(handle);
+    result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);
   }
   return result;
 }
@@ -89,7 +89,7 @@ inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
 
 inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(handle != NULL, "JNI handle should not be null");
-  oop result = resolve_impl<0 /* decorators */, false /* external_guard */>(handle);
+  oop result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);
   assert(result != NULL, "NULL read from jni handle");
   return result;
 }
@@ -102,4 +102,3 @@ inline void JNIHandles::destroy_local(jobject handle) {
 }
 
 #endif // SHARE_RUNTIME_JNIHANDLES_INLINE_HPP
-

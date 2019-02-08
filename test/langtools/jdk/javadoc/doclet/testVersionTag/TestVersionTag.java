@@ -25,9 +25,9 @@
  * @test
  * @bug      8202947
  * @summary  test the at-version tag, and corresponding option
- * @library  /tools/lib ../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox JavadocTester
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestVersionTag
  */
 
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 public class TestVersionTag extends JavadocTester {
@@ -58,7 +59,7 @@ public class TestVersionTag extends JavadocTester {
     }
 
     @Test
-    void testVersion() {
+    public void testVersion() {
         javadoc("-d", "out-version",
                 "-sourcepath", src.toString(),
                 "-version",
@@ -69,7 +70,7 @@ public class TestVersionTag extends JavadocTester {
     }
 
     @Test
-    void testNoVersion() {
+    public void testNoVersion() {
         javadoc("-d", "out-noversion",
                 "-sourcepath", src.toString(),
                 "pkg");

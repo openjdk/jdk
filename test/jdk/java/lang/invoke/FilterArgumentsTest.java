@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ public class FilterArgumentsTest {
 
         void run(List<String> expected) throws Throwable {
             filters.clear();
-            assertEquals("x-0-z", (String)mh.invokeExact("x", 0, 'z'));
-            assertEquals(expected, filters);
+            assertEquals((String)mh.invokeExact("x", 0, 'z'), "x-0-z");
+            assertEquals(filters, expected);
         }
 
         static String filterA(String s) {

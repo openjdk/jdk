@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.cms;
+
 /*
  * @test TestCMSScavengeBeforeRemark
  * @key gc
  * @bug 8139868
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Run CMS with CMSScavengeBeforeRemark
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrent -Xmx256m -Xlog:gc=debug TestCMSScavengeBeforeRemark
+ * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrent -Xmx256m -Xlog:gc=debug gc.cms.TestCMSScavengeBeforeRemark
  */
 
 public class TestCMSScavengeBeforeRemark {

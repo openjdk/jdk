@@ -592,63 +592,18 @@ void ShenandoahBarrierSetAssembler::resolve(MacroAssembler* masm, DecoratorSet d
 #ifndef _LP64
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval,
-                                                bool exchange, bool encode, Register tmp1, Register tmp2) {
+                                                bool exchange, Register tmp1, Register tmp2) {
   // Shenandoah has no 32-bit version for this.
   Unimplemented();
 }
 #else
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval,
-                                                bool exchange, bool encode, Register tmp1, Register tmp2) {
-  if (!ShenandoahCASBarrier) {
-#ifdef _LP64
-    if (UseCompressedOops) {
-      if (encode) {
-        __ encode_heap_oop(oldval);
-        __ mov(rscratch1, newval);
-        __ encode_heap_oop(rscratch1);
-        newval = rscratch1;
-      }
-      if (os::is_MP()) {
-        __ lock();
-      }
-      // oldval (rax) is implicitly used by this instruction
-      __ cmpxchgl(newval, addr);
-    } else
-#endif
-      {
-        if (os::is_MP()) {
-          __ lock();
-        }
-        __ cmpxchgptr(newval, addr);
-      }
-
-    if (!exchange) {
-      assert(res != NULL, "need result register");
-      __ setb(Assembler::equal, res);
-      __ movzbl(res, res);
-    }
-    return;
-  }
-
+                                                bool exchange, Register tmp1, Register tmp2) {
   assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
 
   Label retry, done;
-
-  // Apply storeval barrier to newval.
-  if (encode) {
-    storeval_barrier(masm, newval, tmp1);
-  }
-
-  if (UseCompressedOops) {
-    if (encode) {
-      __ encode_heap_oop(oldval);
-      __ mov(rscratch1, newval);
-      __ encode_heap_oop(rscratch1);
-      newval = rscratch1;
-    }
-  }
 
   // Remember oldval for retry logic below
   if (UseCompressedOops) {

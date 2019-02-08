@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,23 +46,19 @@ private:
   ZContended<oop>      _pending_list;
   oop*                 _pending_list_tail;
 
-  void update_soft_reference_clock() const;
+  bool is_inactive(oop reference, oop referent, ReferenceType type) const;
+  bool is_strongly_live(oop referent) const;
+  bool is_softly_live(oop reference, ReferenceType type) const;
 
-  ReferenceType reference_type(oop obj) const;
-  const char* reference_type_name(ReferenceType type) const;
-  volatile oop* reference_referent_addr(oop obj) const;
-  oop reference_referent(oop obj) const;
-  bool is_reference_inactive(oop obj) const;
-  bool is_referent_strongly_alive_or_null(oop obj, ReferenceType type) const;
-  bool is_referent_softly_alive(oop obj, ReferenceType type) const;
-  bool should_drop_reference(oop obj, ReferenceType type) const;
-  bool should_mark_referent(ReferenceType type) const;
-  bool should_clear_referent(ReferenceType type) const;
-  void keep_referent_alive(oop obj, ReferenceType type) const;
+  bool should_discover(oop reference, ReferenceType type) const;
+  bool should_drop(oop reference, ReferenceType type) const;
+  void keep_alive(oop reference, ReferenceType type) const;
+  void make_inactive(oop reference, ReferenceType type) const;
 
-  void discover(oop obj, ReferenceType type);
-  oop drop(oop obj, ReferenceType type);
-  oop* keep(oop obj, ReferenceType type);
+  void discover(oop reference, ReferenceType type);
+
+  oop drop(oop reference, ReferenceType type);
+  oop* keep(oop reference, ReferenceType type);
 
   bool is_empty() const;
 

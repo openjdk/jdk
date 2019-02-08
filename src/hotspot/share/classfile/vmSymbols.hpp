@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
-#define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
+#ifndef SHARE_CLASSFILE_VMSYMBOLS_HPP
+#define SHARE_CLASSFILE_VMSYMBOLS_HPP
 
 #include "classfile/moduleEntry.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -278,9 +278,10 @@
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_HotSpotIntrinsicCandidate_signature, "Ljdk/internal/HotSpotIntrinsicCandidate;") \
-  template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
-  template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;")      \
+  template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
+  template(jdk_internal_vm_annotation_Hidden_signature,      "Ljdk/internal/vm/annotation/Hidden;") \
+  template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
@@ -304,9 +305,7 @@
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
   template(java_lang_invoke_InjectedProfile_signature, "Ljava/lang/invoke/InjectedProfile;")      \
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
-  template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, "Ljava/lang/invoke/MethodHandleNatives$CallSiteContext;") \
-  template(java_security_AccessController_Hidden_signature, "Ljava/security/AccessController$Hidden;")  \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -425,6 +424,7 @@
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
   template(protection_domain_name,                    "protection_domain")                        \
   template(signers_name,                              "signers_name")                             \
+  template(source_file_name,                          "source_file")                              \
   template(loader_data_name,                          "loader_data")                              \
   template(vmdependencies_name,                       "vmdependencies")                           \
   template(last_cleanup_name,                         "last_cleanup")                             \
@@ -748,6 +748,7 @@
   do_class(java_lang_StrictMath,          "java/lang/StrictMath")                                                       \
   do_signature(double2_double_signature,  "(DD)D")                                                                      \
   do_signature(double3_double_signature,  "(DDD)D")                                                                     \
+  do_signature(float2_float_signature,    "(FF)F")                                                                      \
   do_signature(float3_float_signature,    "(FFF)F")                                                                     \
   do_signature(int2_int_signature,        "(II)I")                                                                      \
   do_signature(long2_long_signature,      "(JJ)J")                                                                      \
@@ -794,6 +795,10 @@
   do_intrinsic(_subtractExactL,           java_lang_Math,         subtractExact_name, long2_long_signature,      F_S)   \
   do_intrinsic(_fmaD,                     java_lang_Math,         fma_name,           double3_double_signature,  F_S)   \
   do_intrinsic(_fmaF,                     java_lang_Math,         fma_name,           float3_float_signature,    F_S)   \
+  do_intrinsic(_maxF,                     java_lang_Math,         max_name,           float2_float_signature,    F_S)   \
+  do_intrinsic(_minF,                     java_lang_Math,         min_name,           float2_float_signature,    F_S)   \
+  do_intrinsic(_maxD,                     java_lang_Math,         max_name,           double2_double_signature,  F_S)   \
+  do_intrinsic(_minD,                     java_lang_Math,         min_name,           double2_double_signature,  F_S)   \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_S)   \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
@@ -1651,4 +1656,4 @@ public:
   static bool is_intrinsic_available(vmIntrinsics::ID id);
 };
 
-#endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
+#endif // SHARE_CLASSFILE_VMSYMBOLS_HPP

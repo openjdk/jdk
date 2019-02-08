@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3708,8 +3708,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_fpu_cntrl_wrd_trunc = 0x0D7F;
     // Round to nearest, 24-bit mode, exceptions masked
     StubRoutines::_fpu_cntrl_wrd_24    = 0x007F;
-    // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::_fpu_cntrl_wrd_64    = 0x037F;
     // Round to nearest, 64-bit mode, exceptions masked
     StubRoutines::_mxcsr_std           = 0x1F80;
     // Note: the following two constants are 80-bit values

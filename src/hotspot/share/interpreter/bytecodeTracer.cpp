@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,6 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
   int ilimit = constants->length();
   Bytecodes::Code code = raw_code();
 
-  ConstantPoolCache* cache = NULL;
   if (Bytecodes::uses_cp_cache(code)) {
     bool okay = true;
     switch (code) {
@@ -256,8 +255,7 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
 
 bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
-  int ilimit = constants->length(), climit = 0;
-  Bytecodes::Code code = raw_code();
+  int climit = 0;
 
   ConstantPoolCache* cache = constants->cache();
   // If rewriter hasn't run, the index is the cp_index
@@ -307,7 +305,6 @@ bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
 
 
 bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStream* st) {
-  ConstantPool* constants = method()->constants();
   assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
   i = ConstantPool::decode_invokedynamic_index(i) + ConstantPool::CPCACHE_INDEX_TAG;
 

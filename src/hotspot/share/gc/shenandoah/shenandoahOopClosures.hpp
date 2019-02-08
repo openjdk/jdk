@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
 
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -347,4 +347,4 @@ public:
   virtual bool do_metadata()        { return true; }
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP

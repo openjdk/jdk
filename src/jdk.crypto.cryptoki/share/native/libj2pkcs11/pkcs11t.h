@@ -548,6 +548,7 @@ typedef CK_ULONG          CK_ATTRIBUTE_TYPE;
 #define CKA_ALLOWED_MECHANISMS          (CKF_ARRAY_ATTRIBUTE|0x00000600)
 
 #define CKA_VENDOR_DEFINED     0x80000000
+#define CKA_NETSCAPE_DB        0xD5A0DB00
 
 
 /* CK_ATTRIBUTE is a structure that includes the type, length

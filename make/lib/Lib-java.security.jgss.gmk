@@ -44,7 +44,7 @@ TARGETS += $(BUILD_LIBJ2GSS)
 
 ifneq ($(BUILD_CRYPTO), false)
 
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
@@ -59,7 +59,7 @@ ifneq ($(BUILD_CRYPTO), false)
     TARGETS += $(BUILD_LIBW2K_LSA_AUTH)
   endif
 
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq ($(call isTargetOs, macosx), true)
     # libosxkrb5 needs to call deprecated krb5 APIs so that java
     # can use the native credentials cache.
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \

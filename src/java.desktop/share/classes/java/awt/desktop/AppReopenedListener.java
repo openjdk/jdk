@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,18 @@ package java.awt.desktop;
 
 /**
  * Implementors receive notification when the app has been asked to open again.
- *
- * This notification is useful for showing a new document when your app has no open windows.
+ * <p>
+ * This notification is useful for showing a new document when your app has no
+ * open windows.
  *
  * @since 9
  */
 public interface AppReopenedListener extends SystemEventListener {
+
     /**
-     * Called when the app has been reopened
-     * @param e the request to reopen the app
+     * Called when the app has been reopened.
+     *
+     * @param  e the request to reopen the app
      */
-    public void appReopened(final AppReopenedEvent e);
+    public void appReopened(AppReopenedEvent e);
 }

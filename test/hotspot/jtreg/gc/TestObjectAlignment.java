@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc;
+
 /**
  * @test TestObjectAlignment
  * @key gc
@@ -28,18 +30,18 @@
  * @summary G1: Concurrent marking crashes with -XX:ObjectAlignmentInBytes>=32 in 64bit VMs
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=8
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=64
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=128
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=8
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=64
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=128
- * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=8
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=64
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=128
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=8
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=64
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=128
+ * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
  */
 
 import jdk.test.lib.process.ProcessTools;

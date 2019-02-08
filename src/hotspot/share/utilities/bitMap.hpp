@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_BITMAP_HPP
-#define SHARE_VM_UTILITIES_BITMAP_HPP
+#ifndef SHARE_UTILITIES_BITMAP_HPP
+#define SHARE_UTILITIES_BITMAP_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/align.hpp"
@@ -429,12 +429,6 @@ class BitMap2D {
     return _map.size();
   }
 
-  // Returns number of full slots that have been allocated
-  idx_t size_in_slots() {
-    // Round down
-    return _map.size() / _bits_per_slot;
-  }
-
   bool is_valid_index(idx_t slot_index, idx_t bit_within_slot_index);
   bool at(idx_t slot_index, idx_t bit_within_slot_index) const;
   void set_bit(idx_t slot_index, idx_t bit_within_slot_index);
@@ -452,4 +446,4 @@ class BitMapClosure {
   virtual bool do_bit(BitMap::idx_t offset) = 0;
 };
 
-#endif // SHARE_VM_UTILITIES_BITMAP_HPP
+#endif // SHARE_UTILITIES_BITMAP_HPP

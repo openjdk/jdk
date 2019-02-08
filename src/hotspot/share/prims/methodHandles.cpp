@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -968,7 +969,6 @@ int MethodHandles::find_MemberNames(Klass* k,
   bool search_superc = ((match_flags & SEARCH_SUPERCLASSES) != 0);
   bool search_intfc  = ((match_flags & SEARCH_INTERFACES)   != 0);
   bool local_only = !(search_superc | search_intfc);
-  bool classes_only = false;
 
   if (name != NULL) {
     if (name->utf8_length() == 0)  return 0; // a match is not possible

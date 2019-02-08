@@ -216,7 +216,7 @@ public class HttpClient extends NetworkClient {
     }
 
     /* This package-only CTOR should only be used for FTP piggy-backed on HTTP
-     * HTTP URL's that use this won't take advantage of keep-alive.
+     * URL's that use this won't take advantage of keep-alive.
      * Additionally, this constructor may be used as a last resort when the
      * first HttpClient gotten through New() failed (probably b/c of a
      * Keep-Alive mismatch).

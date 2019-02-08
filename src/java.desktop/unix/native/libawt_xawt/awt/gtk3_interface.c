@@ -1612,7 +1612,11 @@ static void gtk3_paint_expander(WidgetType widget_type, GtkStateType state_type,
 
     GtkStateFlags flags = get_gtk_flags(state_type);
     if (expander_style == GTK_EXPANDER_EXPANDED) {
-        flags |= GTK_STATE_FLAG_ACTIVE;
+        if (gtk3_version_3_14) {
+            flags |= GTK_STATE_FLAG_CHECKED;
+        } else {
+            flags |= GTK_STATE_FLAG_ACTIVE;
+        }
     }
 
     fp_gtk_style_context_set_state(context, flags);

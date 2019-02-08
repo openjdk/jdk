@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,22 @@ package sun.awt;
 
 import java.awt.AWTPermission;
 import java.awt.DisplayMode;
-import java.awt.GraphicsEnvironment;
-import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.HashMap;
-
-import sun.java2d.opengl.GLXGraphicsConfig;
-import sun.java2d.xr.XRGraphicsConfig;
-import sun.java2d.loops.SurfaceType;
+import java.util.HashSet;
 
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.loops.SurfaceType;
+import sun.java2d.opengl.GLXGraphicsConfig;
+import sun.java2d.xr.XRGraphicsConfig;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single
@@ -76,12 +75,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
      */
     private static native void initIDs();
 
-    static {
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
-
     /**
      * Returns the X11 screen of the device.
      */
@@ -113,6 +106,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * @see #TYPE_PRINTER
      * @see #TYPE_IMAGE_BUFFER
      */
+    @Override
     public int getType() {
         return TYPE_RASTER_SCREEN;
     }
@@ -121,6 +115,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * Returns the identification string associated with this graphics
      * device.
      */
+    @Override
     public String getIDstring() {
         return ":0."+screen;
     }
@@ -134,6 +129,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * Returns all of the graphics
      * configurations associated with this graphics device.
      */
+    @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs == null) {
             synchronized (configLock) {
@@ -221,6 +217,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * Returns the default graphics configuration
      * associated with this graphics device.
      */
+    @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
             synchronized (configLock) {
@@ -487,6 +484,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * From the DisplayChangedListener interface; called from
      * X11GraphicsEnvironment when the display mode has been changed.
      */
+    @Override
     public synchronized void displayChanged() {
         scale = initScaleFactor();
         // On X11 the visuals do not change, and therefore we don't need
@@ -501,6 +499,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * From the DisplayChangedListener interface; devices do not need
      * to react to this event.
      */
+    @Override
     public void paletteChanged() {
     }
 

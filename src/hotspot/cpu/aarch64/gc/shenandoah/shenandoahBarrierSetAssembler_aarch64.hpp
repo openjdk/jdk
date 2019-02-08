@@ -60,13 +60,14 @@ private:
   void read_barrier_not_null_impl(MacroAssembler* masm, Register dst);
   void write_barrier(MacroAssembler* masm, Register dst);
   void write_barrier_impl(MacroAssembler* masm, Register dst);
-  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
   void asm_acmp_barrier(MacroAssembler* masm, Register op1, Register op2);
 
   address generate_shenandoah_wb(StubCodeGenerator* cgen);
 
 public:
   static address shenandoah_wb();
+
+  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
@@ -92,9 +93,7 @@ public:
                              Label& slow_case);
 
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                   bool acquire, bool release, bool weak, bool encode,
-                   Register tmp1, Register tmp2, Register tmp3 = rscratch2,
-                   Register result = noreg);
+                   bool acquire, bool release, bool weak, bool is_cae, Register result);
 
   virtual void barrier_stubs_init();
 };

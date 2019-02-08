@@ -169,11 +169,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getFieldDetails(Content fieldDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(fieldDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(fieldDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(fieldDetailsTree));
     }
 
     /**
@@ -206,15 +202,10 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        String summary =  resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Field_Summary"),
-                resources.getText("doclet.fields"));
-
         List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
                 HtmlStyle.colLast);
 
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.fields)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)

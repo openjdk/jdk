@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,6 @@ jboolean awtLockInited = JNI_FALSE;
     } while (0)
 
 struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
-struct X11GraphicsDeviceIDs x11GraphicsDeviceIDs;
 
 #ifndef HEADLESS
 int awtCreateX11Colormap(AwtGraphicsConfigDataPtr adata);
@@ -138,10 +137,6 @@ typedef XineramaScreenInfo* XineramaQueryScreensFunc(Display*, int*);
 typedef Status XineramaGetInfoFunc(Display* display, int screen_number,
          XRectangle* framebuffer_rects, unsigned char* framebuffer_hints,
          int* num_framebuffers);
-typedef Status XineramaGetCenterHintFunc(Display* display, int screen_number,
-                                         int* x, int* y);
-
-XineramaGetCenterHintFunc* XineramaSolarisCenterFunc = NULL;
 #endif
 
 Bool usingXinerama = False;
@@ -152,30 +147,18 @@ Java_sun_awt_X11GraphicsConfig_initIDs (JNIEnv *env, jclass cls)
 {
     x11GraphicsConfigIDs.aData = NULL;
     x11GraphicsConfigIDs.bitsPerPixel = NULL;
-    x11GraphicsConfigIDs.screen = NULL;
 
     x11GraphicsConfigIDs.aData = (*env)->GetFieldID (env, cls, "aData", "J");
     CHECK_NULL(x11GraphicsConfigIDs.aData);
     x11GraphicsConfigIDs.bitsPerPixel = (*env)->GetFieldID (env, cls, "bitsPerPixel", "I");
     CHECK_NULL(x11GraphicsConfigIDs.bitsPerPixel);
-    x11GraphicsConfigIDs.screen = (*env)->GetFieldID (env, cls, "screen", "Lsun/awt/X11GraphicsDevice;");
-    CHECK_NULL(x11GraphicsConfigIDs.screen);
 
     if (x11GraphicsConfigIDs.aData == NULL ||
-            x11GraphicsConfigIDs.bitsPerPixel == NULL ||
-        x11GraphicsConfigIDs.screen == NULL) {
+            x11GraphicsConfigIDs.bitsPerPixel == NULL) {
 
             JNU_ThrowNoSuchFieldError(env, "Can't find a field");
             return;
         }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_awt_X11GraphicsDevice_initIDs (JNIEnv *env, jclass cls)
-{
-    x11GraphicsDeviceIDs.screen = NULL;
-    x11GraphicsDeviceIDs.screen = (*env)->GetFieldID (env, cls, "screen", "I");
-    DASSERT(x11GraphicsDeviceIDs.screen);
 }
 
 #ifndef HEADLESS
@@ -207,6 +190,8 @@ findWithTemplate(XVisualInfo *vinfo,
     visualList = XGetVisualInfo(awt_display,
                                 mask, vinfo, &visualsMatched);
     if (visualList) {
+        int id = -1;
+        VisualID defaultVisual = XVisualIDFromVisual(DefaultVisual(awt_display, vinfo->screen));
         defaultConfig = ZALLOC(_AwtGraphicsConfigData);
         for (i = 0; i < visualsMatched; i++) {
             memcpy(&defaultConfig->awt_visInfo, &visualList[i], sizeof(XVisualInfo));
@@ -215,19 +200,30 @@ findWithTemplate(XVisualInfo *vinfo,
             /* we can't use awtJNI_CreateColorData here, because it'll pull,
                SystemColor, which in turn will cause toolkit to be reinitialized */
             if (awtCreateX11Colormap(defaultConfig)) {
-                /* Allocate white and black pixels for this visual */
-                color.flags = DoRed | DoGreen | DoBlue;
-                color.red = color.green = color.blue = 0x0000;
-                XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
-                x11Screens[visualList[i].screen].blackpixel = color.pixel;
-                color.flags = DoRed | DoGreen | DoBlue;
-                color.red = color.green = color.blue = 0xffff;
-                XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
-                x11Screens[visualList[i].screen].whitepixel = color.pixel;
-
-                XFree(visualList);
-                return defaultConfig;
+                if (visualList[i].visualid == defaultVisual) {
+                    id = i;
+                    break;
+                } else if (-1 == id) {
+                    // Keep 1st match for fallback
+                    id = i;
+                }
             }
+        }
+        if (-1 != id) {
+            memcpy(&defaultConfig->awt_visInfo, &visualList[id], sizeof(XVisualInfo));
+            defaultConfig->awt_depth = visualList[id].depth;
+            /* Allocate white and black pixels for this visual */
+            color.flags = DoRed | DoGreen | DoBlue;
+            color.red = color.green = color.blue = 0x0000;
+            XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
+            x11Screens[visualList[id].screen].blackpixel = color.pixel;
+            color.flags = DoRed | DoGreen | DoBlue;
+            color.red = color.green = color.blue = 0xffff;
+            XAllocColor(awt_display, defaultConfig->awt_cmap, &color);
+            x11Screens[visualList[id].screen].whitepixel = color.pixel;
+
+            XFree(visualList);
+            return defaultConfig;
         }
         XFree(visualList);
         free((void *)defaultConfig);
@@ -645,16 +641,12 @@ static void xinerama_init_solaris()
     int32_t locNumScr = 0;
     /* load and run XineramaGetInfo */
     char* XineramaGetInfoName = "XineramaGetInfo";
-    char* XineramaGetCenterHintName = "XineramaGetCenterHint";
     XineramaGetInfoFunc* XineramaSolarisFunc = NULL;
 
     /* load library */
     libHandle = dlopen(JNI_LIB_NAME("Xext"), RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle != NULL) {
         XineramaSolarisFunc = (XineramaGetInfoFunc*)dlsym(libHandle, XineramaGetInfoName);
-        XineramaSolarisCenterFunc =
-            (XineramaGetCenterHintFunc*)dlsym(libHandle, XineramaGetCenterHintName);
-
         if (XineramaSolarisFunc != NULL) {
             DTRACE_PRINTLN("calling XineramaGetInfo func on Solaris");
             if ((*XineramaSolarisFunc)(awt_display, 0, &fbrects[0],
@@ -1588,38 +1580,6 @@ Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama(JNIEnv *env,
     return usingXinerama ? JNI_TRUE : JNI_FALSE;
 #endif /* HEADLESS */
 }
-
-/*
- * Can return NULL.
- *
- * Class:     sun_awt_X11GraphicsEnvironment
- * Method:    getXineramaCenterPoint
- * Signature: ()Ljava/awt/Point
- */
-JNIEXPORT jobject JNICALL
-Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
-    jobject this)
-{
-    jobject point = NULL;
-#ifndef HEADLESS    /* return NULL in HEADLESS, Linux */
-#if !defined(__linux__) && !defined(MACOSX)
-    int x,y;
-
-    AWT_LOCK();
-    DASSERT(usingXinerama);
-    if (XineramaSolarisCenterFunc != NULL) {
-        (XineramaSolarisCenterFunc)(awt_display, 0, &x, &y);
-        point = JNU_NewObjectByName(env, "java/awt/Point","(II)V", x, y);
-        DASSERT(point);
-    } else {
-        DTRACE_PRINTLN("unable to call XineramaSolarisCenterFunc: symbol is null");
-    }
-    AWT_FLUSH_UNLOCK();
-#endif /* __linux __ || MACOSX */
-#endif /* HEADLESS */
-    return point;
-}
-
 
 /**
  * Begin DisplayMode/FullScreen support

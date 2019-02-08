@@ -118,7 +118,7 @@ ifeq ($(MODULE), java.base)
     endif
   endif
 else # not java.base
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     # Only java.base needs to include the MSVC*_DLLs. Make sure no other module
     # tries to include them (typically imported ones).
     ifneq ($(MSVCR_DLL), )
