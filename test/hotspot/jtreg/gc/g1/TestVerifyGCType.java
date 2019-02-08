@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;

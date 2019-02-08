@@ -42,8 +42,6 @@ import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Collections;
-
 import java.lang.management.*;
 
 // 8195115 says that for the "G1 Old Gen" MemoryPool, CollectionUsage.used

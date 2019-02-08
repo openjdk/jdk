@@ -27,9 +27,7 @@ package gc.g1;
  * Common code for string deduplication tests
  */
 
-import java.lang.management.*;
 import java.lang.reflect.*;
-import java.security.*;
 import java.util.*;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;

@@ -44,9 +44,6 @@ package gc;
  * @run main/othervm gc.TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
 public class TestObjectAlignment {
 
   public static byte[] garbage;

@@ -36,7 +36,6 @@ package gc.g1;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Platform;
 
 public class TestPeriodicLogMessages {
 

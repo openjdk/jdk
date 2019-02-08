@@ -27,7 +27,6 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
 import jtreg.SkippedException;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.lang.management.MemoryUsage;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;

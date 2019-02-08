@@ -27,7 +27,6 @@ package gc.logging;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;

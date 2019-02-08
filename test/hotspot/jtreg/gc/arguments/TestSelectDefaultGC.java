@@ -35,11 +35,8 @@ package gc.arguments;
  * @run driver gc.arguments.TestSelectDefaultGC
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
-import java.util.regex.*;
 
 public class TestSelectDefaultGC {
     public static void assertVMOption(OutputAnalyzer output, String option, boolean value) {

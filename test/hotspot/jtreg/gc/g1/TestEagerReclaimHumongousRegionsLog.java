@@ -39,12 +39,8 @@ package gc.g1;
 import sun.hotspot.WhiteBox;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jdk.test.lib.Asserts;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

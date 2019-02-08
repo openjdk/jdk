@@ -32,7 +32,6 @@ package gc.epsilon;
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestEpsilonEnabled
  */
 
-import jdk.test.lib.Platform;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 

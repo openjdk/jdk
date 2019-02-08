@@ -28,7 +28,6 @@ import java.lang.management.*;
 
 import jdk.test.lib.Platform;
 import static jdk.test.lib.Asserts.*;
-import gc.testlibrary.PerfCounter;
 import gc.testlibrary.PerfCounters;
 
 /* @test TestPerfCountersAndMemoryPools

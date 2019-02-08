@@ -41,7 +41,6 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
 
 /**

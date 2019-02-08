@@ -27,13 +27,10 @@ package gc.g1;
  * Common helpers for TestRemsetLogging* tests
  */
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
 import sun.hotspot.WhiteBox;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 
