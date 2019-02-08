@@ -47,7 +47,7 @@ class TestVerifySubSetRunSystemGC {
 public class TestVerifySubSet {
 
     private static OutputAnalyzer runTest(String subset) throws Exception {
-        ArrayList<String> vmOpts = new ArrayList();
+        ArrayList<String> vmOpts = new ArrayList<>();
 
         Collections.addAll(vmOpts, Utils.getFilteredTestJavaOpts("-Xlog.*"));
         Collections.addAll(vmOpts, new String[] {"-XX:+UnlockDiagnosticVMOptions",

@@ -139,7 +139,7 @@ public class TestObjectCollected {
 
         System.out.println(String.format("Testing %s reference behavior after %s", ref.name(), gc.name()));
 
-        Reference reference = ref.create();
+        Reference<byte[]> reference = ref.create();
         Asserts.assertNotNull(reference, "Test Bug: failed to allocate reference");
         long adr = WHITE_BOX.getObjectAddress(reference.get());
 

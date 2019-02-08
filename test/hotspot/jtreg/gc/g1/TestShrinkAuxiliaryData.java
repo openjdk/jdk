@@ -66,7 +66,7 @@ public class TestShrinkAuxiliaryData {
     }
 
     protected void test() throws Exception {
-        ArrayList<String> vmOpts = new ArrayList();
+        ArrayList<String> vmOpts = new ArrayList<>();
         Collections.addAll(vmOpts, initialOpts);
 
         int maxCacheSize = Math.max(0, Math.min(31, getMaxCacheSize()));
@@ -82,14 +82,14 @@ public class TestShrinkAuxiliaryData {
 
         // for 32 bits ObjectAlignmentInBytes is not a option
         if (Platform.is32bit()) {
-            ArrayList<String> vmOptsWithoutAlign = new ArrayList(vmOpts);
+            ArrayList<String> vmOptsWithoutAlign = new ArrayList<>(vmOpts);
             vmOptsWithoutAlign.add(ShrinkAuxiliaryDataTest.class.getName());
             performTest(vmOptsWithoutAlign);
             return;
         }
 
         for (int alignment = 3; alignment <= 8; alignment++) {
-            ArrayList<String> vmOptsWithAlign = new ArrayList(vmOpts);
+            ArrayList<String> vmOptsWithAlign = new ArrayList<>(vmOpts);
             vmOptsWithAlign.add("-XX:ObjectAlignmentInBytes="
                     + (int) Math.pow(2, alignment));
             vmOptsWithAlign.add(ShrinkAuxiliaryDataTest.class.getName());
@@ -200,8 +200,8 @@ public class TestShrinkAuxiliaryData {
 
         class GarbageObject {
 
-            private final List<byte[]> payload = new ArrayList();
-            private final List<GarbageObject> ref = new LinkedList();
+            private final List<byte[]> payload = new ArrayList<>();
+            private final List<GarbageObject> ref = new LinkedList<>();
 
             public GarbageObject(int size) {
                 payload.add(new byte[size]);
@@ -218,7 +218,7 @@ public class TestShrinkAuxiliaryData {
             }
         }
 
-        private final List<GarbageObject> garbage = new ArrayList();
+        private final List<GarbageObject> garbage = new ArrayList<>();
 
         public void test() throws IOException {
 

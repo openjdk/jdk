@@ -41,7 +41,7 @@ import java.util.Collections;
 
 public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList();
+    ArrayList<String> vmOpts = new ArrayList<>();
 
     String testVmOptsStr = System.getProperty("test.java.opts");
     if (!testVmOptsStr.isEmpty()) {

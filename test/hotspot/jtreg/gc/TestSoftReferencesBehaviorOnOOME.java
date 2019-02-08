@@ -71,9 +71,9 @@ public class TestSoftReferencesBehaviorOnOOME {
     void softReferencesOom(long minSize, long maxSize) {
         System.out.format( "minSize = %d, maxSize = %d%n", minSize, maxSize );
 
-        LinkedList<SoftReference> arrSoftRefs = new LinkedList();
+        LinkedList<SoftReference<byte[]>> arrSoftRefs = new LinkedList<>();
         staticRef = arrSoftRefs;
-        LinkedList arrObjects = new LinkedList();
+        LinkedList<byte[]> arrObjects = new LinkedList<>();
         staticRef = arrObjects;
 
         long multiplier = maxSize - minSize;
@@ -89,7 +89,7 @@ public class TestSoftReferencesBehaviorOnOOME {
             while (numSofts-- > 0) {
                 int allocationSize = ((int) (RND_GENERATOR.nextDouble() * multiplier))
                             + (int)minSize;
-                arrSoftRefs.add(new SoftReference(new byte[allocationSize]));
+                arrSoftRefs.add(new SoftReference<byte[]>(new byte[allocationSize]));
             }
 
             System.out.println("free: " + Runtime.getRuntime().freeMemory());
@@ -106,7 +106,7 @@ public class TestSoftReferencesBehaviorOnOOME {
             arrObjects = null;
             long oomSoftArraySize = arrSoftRefs.size();
 
-            for (SoftReference sr : arrSoftRefs) {
+            for (SoftReference<byte[]> sr : arrSoftRefs) {
                 Object o = sr.get();
 
                 if (o != null) {

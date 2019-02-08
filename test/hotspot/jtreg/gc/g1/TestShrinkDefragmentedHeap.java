@@ -139,7 +139,7 @@ public class TestShrinkDefragmentedHeap {
             garbage.subList(0, garbage.size() - 1).clear();
 
             // do not free last one element from last list
-            ArrayList stuff = garbage.get(garbage.size() - 1);
+            ArrayList<byte[]> stuff = garbage.get(garbage.size() - 1);
             if (stuff.size() > 1) {
                 stuff.subList(0, stuff.size() - 1).clear();
             }
@@ -159,7 +159,7 @@ public class TestShrinkDefragmentedHeap {
             );
         }
 
-        private static void allocateList(List garbage, int count, int size) {
+        private static void allocateList(List<byte[]> garbage, int count, int size) {
             for (int i = 0; i < count; i++) {
                 garbage.add(new byte[size]);
             }
