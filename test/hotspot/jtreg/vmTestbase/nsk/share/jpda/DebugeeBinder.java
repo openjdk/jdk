@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
      * Make preperation for IOPipe connection before starting debugee VM process.
      * May change options in the passed <code>argumentHandler</code>.
      */
-    protected void prepareForPipeConnection(DebugeeArgumentHandler argumentHandler) {
+    public void prepareForPipeConnection(DebugeeArgumentHandler argumentHandler) {
         if (argumentHandler.isTransportAddressDynamic()) {
             try {
                 pipeServerSocket = new ServerSocket();

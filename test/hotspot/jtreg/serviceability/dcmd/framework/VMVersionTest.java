@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.dcmd.MainClassJcmdExecutor;
 import jdk.test.lib.dcmd.FileJcmdExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import nsk.share.jdi.ArgumentHandler;
 
 import org.testng.annotations.Test;
 
@@ -34,6 +35,8 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
  * @library /test/lib
+ *          /vmTestbase
+ * @build   TestJavaProcess
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -53,7 +56,13 @@ public class VMVersionTest {
 
     @Test
     public void mainClass() {
-        run(new MainClassJcmdExecutor());
+        TestProcessLauncher t = new TestProcessLauncher(Process.class.getName());
+        try {
+            t.launch();
+            run(new MainClassJcmdExecutor(Process.class.getName()));
+        } finally {
+            t.quit();
+        }
     }
 
     @Test
@@ -65,4 +74,6 @@ public class VMVersionTest {
     public void jmx() {
         run(new JMXExecutor());
     }
+
+    private static class Process extends TestJavaProcess{}
 }
