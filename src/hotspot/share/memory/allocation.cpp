@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,8 +169,7 @@ void ResourceObj::set_allocation_type(address res, allocation_type type) {
   ResourceObj* resobj = (ResourceObj *)res;
   resobj->_allocation_t[0] = ~(allocation + type);
   if (type != STACK_OR_EMBEDDED) {
-    // Called from operator new() and CollectionSetChooser(),
-    // set verification value.
+    // Called from operator new(), set verification value.
     resobj->_allocation_t[1] = (uintptr_t)&(resobj->_allocation_t[1]) + type;
   }
 }
