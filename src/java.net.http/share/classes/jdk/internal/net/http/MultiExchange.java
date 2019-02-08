@@ -259,7 +259,7 @@ class MultiExchange<T> {
 
     private boolean bodyIsPresent(Response r) {
         HttpHeaders headers = r.headers();
-        if (headers.firstValue("Content-length").isPresent())
+        if (headers.firstValueAsLong("Content-length").orElse(0L) != 0L)
             return true;
         if (headers.firstValue("Transfer-encoding").isPresent())
             return true;
