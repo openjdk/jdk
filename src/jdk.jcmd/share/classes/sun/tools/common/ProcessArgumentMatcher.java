@@ -85,9 +85,6 @@ public class ProcessArgumentMatcher {
         ProcessHelper helper = ProcessHelper.platformProcessHelper();
         if (helper != null) {
             mainClass = helper.getMainClass(vmd.id());
-            if (mainClass == null) {
-                return false;
-            }
         }
 
         // If the main class name is still unset then retrieve it with the attach mechanism
