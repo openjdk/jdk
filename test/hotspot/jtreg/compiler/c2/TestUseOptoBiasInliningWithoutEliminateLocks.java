@@ -40,7 +40,7 @@
  *                   -XX:CompileCommand=compileonly,*.TestUseOptoBiasInliningWithoutEliminateLocks::dontinline_testMethod
  *                   -XX:CompileCommand=dontinline,*::dontinline_*
  *                   -XX:-EliminateLocks
- *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xbatch
  *                   -XX:-TieredCompilation
  *                   compiler.c2.TestUseOptoBiasInliningWithoutEliminateLocks
