@@ -2525,8 +2525,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "File of size Xmx is pre-allocated for performance reason, so"    \
           "we need that much space available")                              \
                                                                             \
-  develop(bool, VerifyMetaspace, false,                                     \
-          "Verify metaspace on chunk movements.")                           \
+  develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
+               "Run periodic metaspace verifications (0 - none, "           \
+               "1 - always, >1 every nth interval)")                        \
                                                                             \
   diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \

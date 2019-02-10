@@ -440,7 +440,6 @@ size_t MetaspaceUtils::free_chunks_total_words(Metaspace::MetadataType mdtype) {
   if (chunk_manager == NULL) {
     return 0;
   }
-  chunk_manager->slow_verify();
   return chunk_manager->free_chunks_total_words();
 }
 
@@ -793,6 +792,13 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
   out->print_cr("Number of times virtual space nodes were expanded: " UINTX_FORMAT ".", g_internal_statistics.num_committed_space_expanded);
   out->print_cr("Number of deallocations: " UINTX_FORMAT " (" UINTX_FORMAT " external).", g_internal_statistics.num_deallocs, g_internal_statistics.num_external_deallocs);
   out->print_cr("Allocations from deallocated blocks: " UINTX_FORMAT ".", g_internal_statistics.num_allocs_from_deallocated_blocks);
+  out->print_cr("Number of chunks added to freelist: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunks_added_to_freelist);
+  out->print_cr("Number of chunks removed from freelist: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunks_removed_from_freelist);
+  out->print_cr("Number of chunk merges: " UINTX_FORMAT ", split-ups: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunk_merges, g_internal_statistics.num_chunk_splits);
+
   out->cr();
 #endif
 
@@ -844,10 +850,12 @@ void MetaspaceUtils::print_metaspace_map(outputStream* out, Metaspace::MetadataT
 }
 
 void MetaspaceUtils::verify_free_chunks() {
-  Metaspace::chunk_manager_metadata()->verify();
+#ifdef ASSERT
+  Metaspace::chunk_manager_metadata()->verify(false);
   if (Metaspace::using_class_space()) {
-    Metaspace::chunk_manager_class()->verify();
+    Metaspace::chunk_manager_class()->verify(false);
   }
+#endif
 }
 
 void MetaspaceUtils::verify_metrics() {
