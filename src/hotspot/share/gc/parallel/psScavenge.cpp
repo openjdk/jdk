@@ -754,5 +754,5 @@ void PSScavenge::initialize() {
   // Cache the cardtable
   _card_table = heap->card_table();
 
-  _counters = new CollectorCounters("PSScavenge", 0);
+  _counters = new CollectorCounters("Parallel young collection pauses", 0);
 }

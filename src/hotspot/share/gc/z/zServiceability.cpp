@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t min_capacity, size_t max
                     max_capacity /* max_capacity */,
                     min_capacity /* init_capacity */),
     // gc.collector.2
-    _collector_counters("stop-the-world" /* name */,
-                        2                /* ordinal */) {}
+    _collector_counters("Z concurrent cycle pauses" /* name */,
+                        2                           /* ordinal */) {}
 
 CollectorCounters* ZServiceabilityCounters::collector_counters() {
   return &_collector_counters;
