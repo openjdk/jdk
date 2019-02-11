@@ -164,7 +164,6 @@ vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x001/TestDescription.java 8013728 gene
 vmTestbase/nsk/jdi/EventRequest/setEnabled/setenabled003/TestDescription.java 8066993 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
-vmTestbase/nsk/jdi/EventQueue/remove_l/remove_l005/TestDescription.java 8068225 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
