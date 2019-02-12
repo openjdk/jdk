@@ -803,8 +803,13 @@ final class ClientHello {
                     shc.sslConfig.getEnabledExtensions(
                             SSLHandshake.CLIENT_HELLO);
 
-            ClientHelloMessage chm =
-                    new ClientHelloMessage(shc, message, enabledExtensions);
+            ClientHelloMessage chm;
+            try {
+                chm = new ClientHelloMessage(shc, message, enabledExtensions);
+            } catch (Exception e) {
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "ClientHelloMessage failure", e);
+            }
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Consuming ClientHello handshake message", chm);
             }
