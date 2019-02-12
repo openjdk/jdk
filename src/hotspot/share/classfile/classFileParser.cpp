@@ -4991,30 +4991,30 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
 bool ClassFileParser::verify_unqualified_name(const char* name,
                                               unsigned int length,
                                               int type) {
-  for (const char* p = name; p != name + length;) {
-    jchar ch = *p;
-    if (ch < 128) {
-      if (ch == '.' || ch == ';' || ch == '[' ) {
-        return false;   // do not permit '.', ';', or '['
-      }
-      if (ch == '/') {
+  for (const char* p = name; p != name + length; p++) {
+    switch(*p) {
+      case '.':
+      case ';':
+      case '[':
+        // do not permit '.', ';', or '['
+        return false;
+      case '/':
         // check for '//' or leading or trailing '/' which are not legal
         // unqualified name must not be empty
         if (type == ClassFileParser::LegalClass) {
           if (p == name || p+1 >= name+length || *(p+1) == '/') {
-           return false;
+            return false;
           }
         } else {
           return false;   // do not permit '/' unless it's class name
         }
-      }
-      if (type == ClassFileParser::LegalMethod && (ch == '<' || ch == '>')) {
-        return false;   // do not permit '<' or '>' in method names
-      }
-      p++;
-    } else {
-      char* tmp_p = UTF8::next(p, &ch);
-      p = tmp_p;
+        break;
+      case '<':
+      case '>':
+        // do not permit '<' or '>' in method names
+        if (type == ClassFileParser::LegalMethod) {
+          return false;
+        }
     }
   }
   return true;
@@ -5026,7 +5026,7 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
 // Return NULL if no fieldname at all was found, or in the case of slash_ok
 // being true, we saw consecutive slashes (meaning we were looking for a
 // qualified path but found something that was badly-formed).
-static const char* skip_over_field_name(const char* name,
+static const char* skip_over_field_name(const char* const name,
                                         bool slash_ok,
                                         unsigned int length) {
   const char* p;
@@ -5062,28 +5062,11 @@ static const char* skip_over_field_name(const char* name,
       // Check if ch is Java identifier start or is Java identifier part
       // 4672820: call java.lang.Character methods directly without generating separate tables.
       EXCEPTION_MARK;
-
       // return value
       JavaValue result(T_BOOLEAN);
-      // Set up the arguments to isJavaIdentifierStart and isJavaIdentifierPart
+      // Set up the arguments to isJavaIdentifierStart or isJavaIdentifierPart
       JavaCallArguments args;
       args.push_int(unicode_ch);
-
-      // public static boolean isJavaIdentifierStart(char ch);
-      JavaCalls::call_static(&result,
-        SystemDictionary::Character_klass(),
-        vmSymbols::isJavaIdentifierStart_name(),
-        vmSymbols::int_bool_signature(),
-        &args,
-        THREAD);
-
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-        return 0;
-      }
-      if (result.get_jboolean()) {
-        continue;
-      }
 
       if (not_first_ch) {
         // public static boolean isJavaIdentifierPart(char ch);
@@ -5093,15 +5076,21 @@ static const char* skip_over_field_name(const char* name,
           vmSymbols::int_bool_signature(),
           &args,
           THREAD);
-
-        if (HAS_PENDING_EXCEPTION) {
-          CLEAR_PENDING_EXCEPTION;
-          return 0;
-        }
-
-        if (result.get_jboolean()) {
-          continue;
-        }
+      } else {
+        // public static boolean isJavaIdentifierStart(char ch);
+        JavaCalls::call_static(&result,
+          SystemDictionary::Character_klass(),
+          vmSymbols::isJavaIdentifierStart_name(),
+          vmSymbols::int_bool_signature(),
+          &args,
+          THREAD);
+      }
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+        return NULL;
+      }
+      if(result.get_jboolean()) {
+        continue;
       }
     }
     return (not_first_ch) ? old_p : NULL;
@@ -5142,18 +5131,12 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       }
       else {
         // Skip leading 'L' and ignore first appearance of ';'
-        length--;
         signature++;
         char* c = strchr((char*) signature, ';');
         // Format check signature
         if (c != NULL) {
-          ResourceMark rm(THREAD);
           int newlen = c - (char*) signature;
-          char* sig = NEW_RESOURCE_ARRAY(char, newlen + 1);
-          strncpy(sig, signature, newlen);
-          sig[newlen] = '\0';
-
-          bool legal = verify_unqualified_name(sig, newlen, LegalClass);
+          bool legal = verify_unqualified_name(signature, newlen, LegalClass);
           if (!legal) {
             classfile_parse_error("Class name contains illegal character "
                                   "in descriptor in class file %s",
@@ -5187,8 +5170,8 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
 void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
   if (!_need_verify || _relax_verify) { return; }
 
-  char buf[fixed_buffer_size];
-  char* bytes = name->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
+  assert(name->refcount() > 0, "symbol must be kept alive");
+  char* bytes = (char*)name->bytes();
   unsigned int length = name->utf8_length();
   bool legal = false;
 
@@ -5227,8 +5210,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
 void ClassFileParser::verify_legal_field_name(const Symbol* name, TRAPS) const {
   if (!_need_verify || _relax_verify) { return; }
 
-  char buf[fixed_buffer_size];
-  char* bytes = name->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
+  char* bytes = (char*)name->bytes();
   unsigned int length = name->utf8_length();
   bool legal = false;
 
@@ -5262,8 +5244,7 @@ void ClassFileParser::verify_legal_method_name(const Symbol* name, TRAPS) const 
   if (!_need_verify || _relax_verify) { return; }
 
   assert(name != NULL, "method name is null");
-  char buf[fixed_buffer_size];
-  char* bytes = name->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
+  char* bytes = (char*)name->bytes();
   unsigned int length = name->utf8_length();
   bool legal = false;
 
@@ -5302,8 +5283,7 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  char buf[fixed_buffer_size];
-  const char* const bytes = signature->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
+  const char* const bytes = (const char* const)signature->bytes();
   const unsigned int length = signature->utf8_length();
   const char* const p = skip_over_field_signature(bytes, false, length, CHECK);
 
@@ -5332,8 +5312,7 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
   }
 
   unsigned int args_size = 0;
-  char buf[fixed_buffer_size];
-  const char* p = signature->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
+  const char* p = (const char*)signature->bytes();
   unsigned int length = signature->utf8_length();
   const char* nextp;
 
