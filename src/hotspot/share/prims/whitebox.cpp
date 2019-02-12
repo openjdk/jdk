@@ -1544,9 +1544,6 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
       blobs.append(stub);
     }
   }
-  if (blobs.length() == 0) {
-    return NULL;
-  }
   ThreadToNativeFromVM ttn(thread);
   jobjectArray result = NULL;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
