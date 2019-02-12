@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
             }
 
             try {
-                KeyGenerator kg = JsseJce.getKeyGenerator(masterAlg);
+                KeyGenerator kg = KeyGenerator.getInstance(masterAlg);
                 kg.init(spec);
                 return kg.generateKey();
             } catch (InvalidAlgorithmParameterException |

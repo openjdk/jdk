@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ final class DHServerKeyExchange {
             Signature signer = null;
             switch (keyAlgorithm) {
                 case "DSA":
-                    signer = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
+                    signer = Signature.getInstance(JsseJce.SIGNATURE_DSA);
                     break;
                 case "RSA":
                     signer = RSASignature.getInstance();
@@ -524,7 +524,7 @@ final class DHServerKeyExchange {
             // check constraints of EC PublicKey
             DHPublicKey publicKey;
             try {
-                KeyFactory kf = JsseJce.getKeyFactory("DiffieHellman");
+                KeyFactory kf = KeyFactory.getInstance("DiffieHellman");
                 DHPublicKeySpec spec = new DHPublicKeySpec(
                         new BigInteger(1, skem.y),
                         new BigInteger(1, skem.p),

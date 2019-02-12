@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ final class EphemeralKeyManager {
             KeyPair kp = keys[index].getKeyPair();
             if (kp == null) {
                 try {
-                    KeyPairGenerator kgen = JsseJce.getKeyPairGenerator("RSA");
+                    KeyPairGenerator kgen = KeyPairGenerator.getInstance("RSA");
                     kgen.initialize(length, random);
                     keys[index] = new EphemeralKeyPair(kgen.genKeyPair());
                     kp = keys[index].getKeyPair();

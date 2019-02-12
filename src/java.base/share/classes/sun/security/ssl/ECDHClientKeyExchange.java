@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
+import sun.security.util.ECUtil;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -78,7 +79,7 @@ final class ECDHClientKeyExchange {
 
             ECPoint point = publicKey.getW();
             ECParameterSpec params = publicKey.getParams();
-            encodedPoint = JsseJce.encodePoint(point, params.getCurve());
+            encodedPoint = ECUtil.encodePoint(point, params.getCurve());
         }
 
         ECDHClientKeyExchangeMessage(HandshakeContext handshakeContext,
@@ -99,10 +100,10 @@ final class ECDHClientKeyExchange {
             try {
                 ECParameterSpec params = publicKey.getParams();
                 ECPoint point =
-                        JsseJce.decodePoint(encodedPoint, params.getCurve());
+                        ECUtil.decodePoint(encodedPoint, params.getCurve());
                 ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
 
-                KeyFactory kf = JsseJce.getKeyFactory("EC");
+                KeyFactory kf = KeyFactory.getInstance("EC");
                 ECPublicKey peerPublicKey =
                         (ECPublicKey)kf.generatePublic(spec);
 
@@ -319,10 +320,10 @@ final class ECDHClientKeyExchange {
             // create the credentials
             try {
                 ECPoint point =
-                    JsseJce.decodePoint(cke.encodedPoint, params.getCurve());
+                    ECUtil.decodePoint(cke.encodedPoint, params.getCurve());
                 ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
 
-                KeyFactory kf = JsseJce.getKeyFactory("EC");
+                KeyFactory kf = KeyFactory.getInstance("EC");
                 ECPublicKey peerPublicKey =
                         (ECPublicKey)kf.generatePublic(spec);
 
@@ -493,10 +494,10 @@ final class ECDHClientKeyExchange {
             // create the credentials
             try {
                 ECPoint point =
-                    JsseJce.decodePoint(cke.encodedPoint, params.getCurve());
+                    ECUtil.decodePoint(cke.encodedPoint, params.getCurve());
                 ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
 
-                KeyFactory kf = JsseJce.getKeyFactory("EC");
+                KeyFactory kf = KeyFactory.getInstance("EC");
                 ECPublicKey peerPublicKey =
                         (ECPublicKey)kf.generatePublic(spec);
 

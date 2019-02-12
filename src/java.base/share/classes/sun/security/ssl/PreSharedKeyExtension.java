@@ -765,7 +765,7 @@ final class PreSharedKeyExtension {
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
             try {
-                Mac hmac = JsseJce.getMac(hmacAlg);
+                Mac hmac = Mac.getInstance(hmacAlg);
                 hmac.init(finishedKey);
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {

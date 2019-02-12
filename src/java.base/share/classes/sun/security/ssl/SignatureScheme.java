@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ enum SignatureScheme {
 
             boolean mediator = true;
             try {
-                Signature signer = JsseJce.getSignature("RSASSA-PSS");
+                Signature signer = Signature.getInstance("RSASSA-PSS");
                 signer.setParameter(pssParamSpec);
             } catch (InvalidAlgorithmParameterException |
                     NoSuchAlgorithmException exp) {
@@ -275,7 +275,7 @@ enum SignatureScheme {
             mediator = signAlgParamSpec.isAvailable;
         } else {
             try {
-                JsseJce.getSignature(algorithm);
+                Signature.getInstance(algorithm);
             } catch (Exception e) {
                 mediator = false;
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -466,7 +466,7 @@ enum SignatureScheme {
             return null;
         }
 
-        Signature signer = JsseJce.getSignature(algorithm);
+        Signature signer = Signature.getInstance(algorithm);
         if (key instanceof PublicKey) {
             signer.initVerify((PublicKey)(key));
         } else {

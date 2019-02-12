@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,14 +85,14 @@ final class ECDHKeyExchange {
             }
 
             ECParameterSpec parameters =
-                    JsseJce.getECParameterSpec(namedGroup.oid);
+                    ECUtil.getECParameterSpec(null, namedGroup.oid);
             if (parameters == null) {
                 return null;
             }
 
-            ECPoint point = JsseJce.decodePoint(
+            ECPoint point = ECUtil.decodePoint(
                     encodedPoint, parameters.getCurve());
-            KeyFactory factory = JsseJce.getKeyFactory("EC");
+            KeyFactory factory = KeyFactory.getInstance("EC");
             ECPublicKey publicKey = (ECPublicKey)factory.generatePublic(
                     new ECPublicKeySpec(point, parameters));
             return new ECDHECredentials(publicKey, namedGroup);
@@ -106,7 +106,7 @@ final class ECDHKeyExchange {
 
         ECDHEPossession(NamedGroup namedGroup, SecureRandom random) {
             try {
-                KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("EC");
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
                 ECGenParameterSpec params =
                         (ECGenParameterSpec)namedGroup.getParameterSpec();
                 kpg.initialize(params, random);
@@ -124,7 +124,7 @@ final class ECDHKeyExchange {
         ECDHEPossession(ECDHECredentials credentials, SecureRandom random) {
             ECParameterSpec params = credentials.popPublicKey.getParams();
             try {
-                KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("EC");
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
                 kpg.initialize(params, random);
                 KeyPair kp = kpg.generateKeyPair();
                 privateKey = kp.getPrivate();
@@ -149,7 +149,7 @@ final class ECDHKeyExchange {
                 PublicKey peerPublicKey) throws SSLHandshakeException {
 
             try {
-                KeyAgreement ka = JsseJce.getKeyAgreement("ECDH");
+                KeyAgreement ka = KeyAgreement.getInstance("ECDH");
                 ka.init(privateKey);
                 ka.doPhase(peerPublicKey, true);
                 return ka.generateSecret("TlsPremasterSecret");
@@ -165,8 +165,8 @@ final class ECDHKeyExchange {
             try {
                 ECParameterSpec params = publicKey.getParams();
                 ECPoint point =
-                        JsseJce.decodePoint(encodedPoint, params.getCurve());
-                KeyFactory kf = JsseJce.getKeyFactory("EC");
+                        ECUtil.decodePoint(encodedPoint, params.getCurve());
+                KeyFactory kf = KeyFactory.getInstance("EC");
                 ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
                 PublicKey peerPublicKey = kf.generatePublic(spec);
                 return getAgreedSecret(peerPublicKey);
@@ -183,10 +183,10 @@ final class ECDHKeyExchange {
 
                 ECParameterSpec params = publicKey.getParams();
                 ECPoint point =
-                        JsseJce.decodePoint(encodedPoint, params.getCurve());
+                        ECUtil.decodePoint(encodedPoint, params.getCurve());
                 ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
 
-                KeyFactory kf = JsseJce.getKeyFactory("EC");
+                KeyFactory kf = KeyFactory.getInstance("EC");
                 ECPublicKey pubKey = (ECPublicKey)kf.generatePublic(spec);
 
                 // check constraints of ECPublicKey
@@ -424,7 +424,7 @@ final class ECDHKeyExchange {
         private SecretKey t12DeriveKey(String algorithm,
                 AlgorithmParameterSpec params) throws IOException {
             try {
-                KeyAgreement ka = JsseJce.getKeyAgreement("ECDH");
+                KeyAgreement ka = KeyAgreement.getInstance("ECDH");
                 ka.init(localPrivateKey);
                 ka.doPhase(peerPublicKey, true);
                 SecretKey preMasterSecret =
@@ -451,7 +451,7 @@ final class ECDHKeyExchange {
         private SecretKey t13DeriveKey(String algorithm,
                 AlgorithmParameterSpec params) throws IOException {
             try {
-                KeyAgreement ka = JsseJce.getKeyAgreement("ECDH");
+                KeyAgreement ka = KeyAgreement.getInstance("ECDH");
                 ka.init(localPrivateKey);
                 ka.doPhase(peerPublicKey, true);
                 SecretKey sharedSecret =

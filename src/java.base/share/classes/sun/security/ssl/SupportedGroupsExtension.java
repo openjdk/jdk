@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import static sun.security.ssl.SSLExtension.EE_SUPPORTED_GROUPS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.util.ECUtil;
 
 /**
  * Pack of the "supported_groups" extensions [RFC 4492/7919].
@@ -158,15 +159,23 @@ final class SupportedGroupsExtension {
     }
 
     static enum NamedGroupType {
-        NAMED_GROUP_ECDHE,          // Elliptic Curve Groups (ECDHE)
-        NAMED_GROUP_FFDHE,          // Finite Field Groups (DHE)
-        NAMED_GROUP_XDH,            // Finite Field Groups (XDH)
-        NAMED_GROUP_ARBITRARY,      // arbitrary prime and curves (ECDHE)
-        NAMED_GROUP_NONE;           // Not predefined named group
+        NAMED_GROUP_ECDHE     ("EC"),
+        NAMED_GROUP_FFDHE     ("DiffieHellman"),
+        NAMED_GROUP_X25519    ("x25519"),
+        NAMED_GROUP_X448      ("x448"),
+        NAMED_GROUP_ARBITRARY ("EC"),
+        NAMED_GROUP_NONE      ("");
+
+        private final String algorithm;
+
+        private NamedGroupType(String algorithm) {
+            this.algorithm = algorithm;
+        }
 
         boolean isSupported(List<CipherSuite> cipherSuites) {
             for (CipherSuite cs : cipherSuites) {
-                if (cs.keyExchange == null || cs.keyExchange.groupType == this) {
+                if (cs.keyExchange == null ||
+                        cs.keyExchange.groupType == this) {
                     return true;
                 }
             }
@@ -180,108 +189,142 @@ final class SupportedGroupsExtension {
         //
         // See sun.security.util.CurveDB for the OIDs
         // NIST K-163
-        SECT163_K1  (0x0001, "sect163k1", "1.3.132.0.1", true,
+        SECT163_K1  (0x0001, "sect163k1", "1.3.132.0.1",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECT163_R1  (0x0002, "sect163r1", "1.3.132.0.2", false,
+        SECT163_R1  (0x0002, "sect163r1", "1.3.132.0.2",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST B-163
-        SECT163_R2  (0x0003, "sect163r2", "1.3.132.0.15", true,
+        SECT163_R2  (0x0003, "sect163r2", "1.3.132.0.15",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECT193_R1  (0x0004, "sect193r1", "1.3.132.0.24", false,
+        SECT193_R1  (0x0004, "sect193r1", "1.3.132.0.24",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECT193_R2  (0x0005, "sect193r2", "1.3.132.0.25", false,
+        SECT193_R2  (0x0005, "sect193r2", "1.3.132.0.25",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST K-233
-        SECT233_K1  (0x0006, "sect233k1", "1.3.132.0.26", true,
+        SECT233_K1  (0x0006, "sect233k1", "1.3.132.0.26",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST B-233
-        SECT233_R1  (0x0007, "sect233r1", "1.3.132.0.27", true,
+        SECT233_R1  (0x0007, "sect233r1", "1.3.132.0.27",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECT239_K1  (0x0008, "sect239k1", "1.3.132.0.3", false,
+        SECT239_K1  (0x0008, "sect239k1", "1.3.132.0.3",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST K-283
-        SECT283_K1  (0x0009, "sect283k1", "1.3.132.0.16", true,
+        SECT283_K1  (0x0009, "sect283k1", "1.3.132.0.16",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST B-283
-        SECT283_R1  (0x000A, "sect283r1", "1.3.132.0.17", true,
+        SECT283_R1  (0x000A, "sect283r1", "1.3.132.0.17",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST K-409
-        SECT409_K1  (0x000B, "sect409k1", "1.3.132.0.36", true,
+        SECT409_K1  (0x000B, "sect409k1", "1.3.132.0.36",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST B-409
-        SECT409_R1  (0x000C, "sect409r1", "1.3.132.0.37", true,
+        SECT409_R1  (0x000C, "sect409r1", "1.3.132.0.37",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST K-571
-        SECT571_K1  (0x000D, "sect571k1", "1.3.132.0.38", true,
+        SECT571_K1  (0x000D, "sect571k1", "1.3.132.0.38",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST B-571
-        SECT571_R1  (0x000E, "sect571r1", "1.3.132.0.39", true,
+        SECT571_R1  (0x000E, "sect571r1", "1.3.132.0.39",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP160_K1  (0x000F, "secp160k1", "1.3.132.0.9", false,
+        SECP160_K1  (0x000F, "secp160k1", "1.3.132.0.9",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP160_R1  (0x0010, "secp160r1", "1.3.132.0.8", false,
+        SECP160_R1  (0x0010, "secp160r1", "1.3.132.0.8",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP160_R2  (0x0011, "secp160r2", "1.3.132.0.30", false,
+        SECP160_R2  (0x0011, "secp160r2", "1.3.132.0.30",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP192_K1  (0x0012, "secp192k1", "1.3.132.0.31", false,
+        SECP192_K1  (0x0012, "secp192k1", "1.3.132.0.31",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST P-192
-        SECP192_R1  (0x0013, "secp192r1", "1.2.840.10045.3.1.1", true,
+        SECP192_R1  (0x0013, "secp192r1", "1.2.840.10045.3.1.1",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP224_K1  (0x0014, "secp224k1", "1.3.132.0.32", false,
+        SECP224_K1  (0x0014, "secp224k1", "1.3.132.0.32",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
         // NIST P-224
-        SECP224_R1  (0x0015, "secp224r1", "1.3.132.0.33", true,
+        SECP224_R1  (0x0015, "secp224r1", "1.3.132.0.33",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        SECP256_K1  (0x0016, "secp256k1", "1.3.132.0.10", false,
+        SECP256_K1  (0x0016, "secp256k1", "1.3.132.0.10",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_12),
 
         // NIST P-256
-        SECP256_R1  (0x0017, "secp256r1", "1.2.840.10045.3.1.7", true,
+        SECP256_R1  (0x0017, "secp256r1", "1.2.840.10045.3.1.7",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
 
         // NIST P-384
-        SECP384_R1  (0x0018, "secp384r1", "1.3.132.0.34", true,
+        SECP384_R1  (0x0018, "secp384r1", "1.3.132.0.34",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
 
         // NIST P-521
-        SECP521_R1  (0x0019, "secp521r1", "1.3.132.0.35", true,
+        SECP521_R1  (0x0019, "secp521r1", "1.3.132.0.35",
+                            NamedGroupType.NAMED_GROUP_ECDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
 
         // x25519 and x448
-        X25519      (0x001D, "x25519", true, "x25519",
+        X25519      (0x001D, "x25519", null,
+                            NamedGroupType.NAMED_GROUP_X25519,
                             ProtocolVersion.PROTOCOLS_TO_13),
-        X448        (0x001E, "x448", true, "x448",
+        X448        (0x001E, "x448", null,
+                            NamedGroupType.NAMED_GROUP_X448,
                             ProtocolVersion.PROTOCOLS_TO_13),
 
         // Finite Field Diffie-Hellman Ephemeral Parameters (RFC 7919)
-        FFDHE_2048  (0x0100, "ffdhe2048",  true,
+        FFDHE_2048  (0x0100, "ffdhe2048", null,
+                            NamedGroupType.NAMED_GROUP_FFDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
-        FFDHE_3072  (0x0101, "ffdhe3072",  true,
+        FFDHE_3072  (0x0101, "ffdhe3072", null,
+                            NamedGroupType.NAMED_GROUP_FFDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
-        FFDHE_4096  (0x0102, "ffdhe4096",  true,
+        FFDHE_4096  (0x0102, "ffdhe4096", null,
+                            NamedGroupType.NAMED_GROUP_FFDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
-        FFDHE_6144  (0x0103, "ffdhe6144",  true,
+        FFDHE_6144  (0x0103, "ffdhe6144", null,
+                            NamedGroupType.NAMED_GROUP_FFDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
-        FFDHE_8192  (0x0104, "ffdhe8192",  true,
+        FFDHE_8192  (0x0104, "ffdhe8192", null,
+                            NamedGroupType.NAMED_GROUP_FFDHE,
                             ProtocolVersion.PROTOCOLS_TO_13),
 
         // Elliptic Curves (RFC 4492)
         //
         // arbitrary prime and characteristic-2 curves
-        ARBITRARY_PRIME  (0xFF01, "arbitrary_explicit_prime_curves",
+        ARBITRARY_PRIME  (0xFF01, "arbitrary_explicit_prime_curves", null,
+                            NamedGroupType.NAMED_GROUP_ARBITRARY,
                             ProtocolVersion.PROTOCOLS_TO_12),
-        ARBITRARY_CHAR2  (0xFF02, "arbitrary_explicit_char2_curves",
+        ARBITRARY_CHAR2  (0xFF02, "arbitrary_explicit_char2_curves", null,
+                            NamedGroupType.NAMED_GROUP_ARBITRARY,
                             ProtocolVersion.PROTOCOLS_TO_12);
 
         final int id;               // hash + signature
@@ -289,55 +332,16 @@ final class SupportedGroupsExtension {
         final String name;          // literal name
         final String oid;           // object identifier of the named group
         final String algorithm;     // signature algorithm
-        final boolean isFips;       // can be used in FIPS mode?
         final ProtocolVersion[] supportedProtocols;
 
-        // Constructor used for Elliptic Curve Groups (ECDHE)
-        private NamedGroup(int id, String name, String oid, boolean isFips,
+        private NamedGroup(int id, String name, String oid,
+                NamedGroupType namedGroupType,
                 ProtocolVersion[] supportedProtocols) {
             this.id = id;
-            this.type = NamedGroupType.NAMED_GROUP_ECDHE;
+            this.type = namedGroupType;
             this.name = name;
             this.oid = oid;
-            this.algorithm = "EC";
-            this.isFips = isFips;
-            this.supportedProtocols = supportedProtocols;
-        }
-
-        // Constructor used for Elliptic Curve Groups (XDH)
-        private NamedGroup(int id, String name,
-                boolean isFips, String algorithm,
-                ProtocolVersion[] supportedProtocols) {
-            this.id = id;
-            this.type = NamedGroupType.NAMED_GROUP_XDH;
-            this.name = name;
-            this.oid = null;
-            this.algorithm = algorithm;
-            this.isFips = isFips;
-            this.supportedProtocols = supportedProtocols;
-        }
-
-        // Constructor used for Finite Field Diffie-Hellman Groups (FFDHE)
-        private NamedGroup(int id, String name, boolean isFips,
-                ProtocolVersion[] supportedProtocols) {
-            this.id = id;
-            this.type = NamedGroupType.NAMED_GROUP_FFDHE;
-            this.name = name;
-            this.oid = null;
-            this.algorithm = "DiffieHellman";
-            this.isFips = isFips;
-            this.supportedProtocols = supportedProtocols;
-        }
-
-        // Constructor used for arbitrary prime and curves (ECDHE)
-        private NamedGroup(int id, String name,
-                ProtocolVersion[] supportedProtocols) {
-            this.id = id;
-            this.type = NamedGroupType.NAMED_GROUP_ARBITRARY;
-            this.name = name;
-            this.oid = null;
-            this.algorithm = "EC";
-            this.isFips = false;
+            this.algorithm = namedGroupType.algorithm;
             this.supportedProtocols = supportedProtocols;
         }
 
@@ -352,7 +356,7 @@ final class SupportedGroupsExtension {
         }
 
         static NamedGroup valueOf(ECParameterSpec params) {
-            String oid = JsseJce.getNamedCurveOid(params);
+            String oid = ECUtil.getCurveName(null, params);
             if ((oid != null) && (!oid.isEmpty())) {
                 for (NamedGroup group : NamedGroup.values()) {
                     if ((group.type == NamedGroupType.NAMED_GROUP_ECDHE) &&
@@ -472,8 +476,6 @@ final class SupportedGroupsExtension {
         static final NamedGroup[] supportedNamedGroups;
 
         static {
-            boolean requireFips = SunJSSE.isFIPS();
-
             // The value of the System Property defines a list of enabled named
             // groups in preference order, separated with comma.  For example:
             //
@@ -499,8 +501,7 @@ final class SupportedGroupsExtension {
                     group = group.trim();
                     if (!group.isEmpty()) {
                         NamedGroup namedGroup = NamedGroup.nameOf(group);
-                        if (namedGroup != null &&
-                                (!requireFips || namedGroup.isFips)) {
+                        if (namedGroup != null) {
                             if (isAvailableGroup(namedGroup)) {
                                 groupList.add(namedGroup);
                             }
@@ -514,29 +515,7 @@ final class SupportedGroupsExtension {
                             property + ") contains no supported named groups");
                 }
             } else {        // default groups
-                NamedGroup[] groups;
-                if (requireFips) {
-                    groups = new NamedGroup[] {
-                        // only NIST curves in FIPS mode
-                        NamedGroup.SECP256_R1,
-                        NamedGroup.SECP384_R1,
-                        NamedGroup.SECP521_R1,
-                        NamedGroup.SECT283_K1,
-                        NamedGroup.SECT283_R1,
-                        NamedGroup.SECT409_K1,
-                        NamedGroup.SECT409_R1,
-                        NamedGroup.SECT571_K1,
-                        NamedGroup.SECT571_R1,
-
-                        // FFDHE 2048
-                        NamedGroup.FFDHE_2048,
-                        NamedGroup.FFDHE_3072,
-                        NamedGroup.FFDHE_4096,
-                        NamedGroup.FFDHE_6144,
-                        NamedGroup.FFDHE_8192,
-                    };
-                } else {
-                    groups = new NamedGroup[] {
+                NamedGroup[] groups = new NamedGroup[] {
                         // NIST curves first
                         NamedGroup.SECP256_R1,
                         NamedGroup.SECP384_R1,
@@ -558,7 +537,6 @@ final class SupportedGroupsExtension {
                         NamedGroup.FFDHE_6144,
                         NamedGroup.FFDHE_8192,
                     };
-                }
 
                 groupList = new ArrayList<>(groups.length);
                 for (NamedGroup group : groups) {
@@ -587,7 +565,7 @@ final class SupportedGroupsExtension {
             if (namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
                 if (namedGroup.oid != null) {
                     try {
-                        params = JsseJce.getAlgorithmParameters("EC");
+                        params = AlgorithmParameters.getInstance("EC");
                         spec = new ECGenParameterSpec(namedGroup.oid);
                     } catch (NoSuchAlgorithmException e) {
                         return false;
@@ -595,7 +573,7 @@ final class SupportedGroupsExtension {
                 }
             } else if (namedGroup.type == NamedGroupType.NAMED_GROUP_FFDHE) {
                 try {
-                    params = JsseJce.getAlgorithmParameters("DiffieHellman");
+                    params = AlgorithmParameters.getInstance("DiffieHellman");
                     spec = getFFDHEDHParameterSpec(namedGroup);
                 } catch (NoSuchAlgorithmException e) {
                     return false;
