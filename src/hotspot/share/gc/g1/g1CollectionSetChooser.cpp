@@ -87,7 +87,7 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
     uint volatile _cur_claim_idx;
 
     // Calculates the maximum array size that will be used.
-    static uint required_array_size(uint num_regions, uint num_workers, uint chunk_size) {
+    static uint required_array_size(uint num_regions, uint chunk_size, uint num_workers) {
       uint const max_waste = num_workers * chunk_size;
       // The array should be aligned with respect to chunk_size.
       uint const aligned_num_regions = ((num_regions + chunk_size - 1) / chunk_size) * chunk_size;
@@ -96,8 +96,8 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
     }
 
   public:
-    G1BuildCandidateArray(uint max_num_regions, uint num_workers, uint chunk_size) :
-      _max_size(required_array_size(max_num_regions, num_workers, chunk_size)),
+    G1BuildCandidateArray(uint max_num_regions, uint chunk_size, uint num_workers) :
+      _max_size(required_array_size(max_num_regions, chunk_size, num_workers)),
       _chunk_size(chunk_size),
       _data(NEW_C_HEAP_ARRAY(HeapRegion*, _max_size, mtGC)),
       _cur_claim_idx(0) {
