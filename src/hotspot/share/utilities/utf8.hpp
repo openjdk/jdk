@@ -54,9 +54,11 @@ class UTF8 : AllStatic {
   // converts a utf8 string to quoted ascii
   static void as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen);
 
+#ifndef PRODUCT
   // converts a quoted ascii string to utf8 string.  returns the original
   // string unchanged if nothing needs to be done.
   static const char* from_quoted_ascii(const char* quoted_ascii_string);
+#endif
 
   // decodes the current utf8 character, stores the result in value,
   // and returns the end of the current utf8 chararacter.

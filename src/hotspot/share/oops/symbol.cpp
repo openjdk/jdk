@@ -131,19 +131,6 @@ char* Symbol::as_C_string() const {
   return as_C_string(str, len + 1);
 }
 
-char* Symbol::as_C_string_flexible_buffer(Thread* t,
-                                                 char* buf, int size) const {
-  char* str;
-  int len = utf8_length();
-  int buf_len = len + 1;
-  if (size < buf_len) {
-    str = NEW_RESOURCE_ARRAY(char, buf_len);
-  } else {
-    str = buf;
-  }
-  return as_C_string(str, buf_len);
-}
-
 void Symbol::print_utf8_on(outputStream* st) const {
   st->print("%s", as_C_string());
 }
