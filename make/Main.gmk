@@ -766,6 +766,8 @@ else
   $(foreach m, $(GENSRC_MODULES), $(eval $m-libs-compile-commands: $m-gensrc))
   $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs-compile-commands: $m-java))
 
+  $(COMPILE_COMMANDS_TARGETS_HOTSPOT): clean-compile-commands
+  $(COMPILE_COMMANDS_TARGETS_JDK): clean-compile-commands
   compile-commands-hotspot: $(COMPILE_COMMANDS_TARGETS_HOTSPOT)
   compile-commands: $(COMPILE_COMMANDS_TARGETS_HOTSPOT) $(COMPILE_COMMANDS_TARGETS_JDK)
 
@@ -1139,6 +1141,9 @@ clean: $(CLEAN_DIR_TARGETS)
 clean-docs:
 	$(call CleanDocs)
 
+clean-compile-commands:
+	$(call CleanMakeSupportDir,compile-commands)
+
 $(CLEAN_DIR_TARGETS):
 	$(call CleanDir,$(patsubst clean-%, %, $@))
 
@@ -1181,9 +1186,9 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean clean-docs dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_SUPPORT_DIR_TARGETS) \
-    $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) \
-    $(CLEAN_MODULE_PHASE_TARGETS)
+ALL_TARGETS += clean clean-docs clean-compile-commands dist-clean $(CLEAN_DIR_TARGETS) \
+    $(CLEAN_SUPPORT_DIR_TARGETS) $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) \
+    $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
 # Declare *-only targets for each normal target

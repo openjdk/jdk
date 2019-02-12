@@ -54,6 +54,13 @@ define CleanSupportDir
 	@$(PRINTF) " done\n"
 endef
 
+define CleanMakeSupportDir
+	@$(PRINTF) "Cleaning $(strip $1) make support artifacts ..."
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
 define CleanTest
 	@$(PRINTF) "Cleaning test $(strip $1) ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
