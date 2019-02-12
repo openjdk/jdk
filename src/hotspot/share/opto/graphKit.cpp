@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3886,10 +3886,6 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
-  // String.value field is known to be @Stable.
-  if (UseImplicitStableValues) {
-    load = cast_array_to_stable(load, value_type);
-  }
   return load;
 }
 
@@ -3901,7 +3897,6 @@ Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
-  int coder_field_idx = C->get_alias_index(coder_field_type);
 
   Node* p = basic_plus_adr(str, str, coder_offset);
   Node* load = access_load_at(str, p, coder_field_type, TypeInt::BYTE, T_BYTE,
@@ -4038,10 +4033,4 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
     return makecon(con_type);
   }
   return NULL;
-}
-
-Node* GraphKit::cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type) {
-  // Reify the property as a CastPP node in Ideal graph to comply with monotonicity
-  // assumption of CCP analysis.
-  return _gvn.transform(new CastPPNode(ary, ary_type->cast_to_stable(true)));
 }
