@@ -36,6 +36,9 @@ CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
+# Path to autoconf if overriden by the user, to be used by "make reconfigure"
+AUTOCONF := @AUTOCONF@
+
 # SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
 # some definitions here, and are needed if MakeBase.gmk is not included before
 # this file.

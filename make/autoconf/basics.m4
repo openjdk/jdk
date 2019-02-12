@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -406,6 +406,8 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
+  AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
   ORIGINAL_PATH="$PATH"
   AC_SUBST(ORIGINAL_PATH)
