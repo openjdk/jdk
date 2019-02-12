@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
@@ -358,8 +359,12 @@ public abstract class JDIBreakpointTest extends MlvmTest {
             }
         }.go();
 
-        if (!debuggee.terminated())
-            debuggee.endDebugee();
+        if (!debuggee.terminated()) {
+            try {
+                debuggee.dispose();
+            } catch (VMDisconnectedException ignore) {
+            }
+        }
 
         debuggee.waitFor();
         return true;
