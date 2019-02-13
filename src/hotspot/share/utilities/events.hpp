@@ -165,9 +165,17 @@ class StringEventLog : public EventLogBase<StringLogMessage> {
     logv(thread, format, ap);
     va_end(ap);
   }
-
 };
 
+class InstanceKlass;
+
+// Event log for class unloading events to materialize the class name in place in the log stream.
+class UnloadingEventLog : public EventLogBase<StringLogMessage> {
+ public:
+  UnloadingEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase<StringLogMessage>(name, count) {}
+
+  void log(Thread* thread, InstanceKlass* ik);
+};
 
 
 class Events : AllStatic {
@@ -189,6 +197,8 @@ class Events : AllStatic {
   // Redefinition related messages
   static StringEventLog* _redefinitions;
 
+  // Class unloading events
+  static UnloadingEventLog* _class_unloading;
  public:
   static void print_all(outputStream* out);
 
@@ -202,6 +212,8 @@ class Events : AllStatic {
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_class_unloading(Thread* thread, InstanceKlass* ik);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -233,6 +245,12 @@ inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
     va_start(ap, format);
     _redefinitions->logv(thread, format, ap);
     va_end(ap);
+  }
+}
+
+inline void Events::log_class_unloading(Thread* thread, InstanceKlass* ik) {
+  if (LogEvents) {
+    _class_unloading->log(thread, ik);
   }
 }
 
