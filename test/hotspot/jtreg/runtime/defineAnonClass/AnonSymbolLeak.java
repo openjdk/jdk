@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,7 @@
  * questions.
  */
 
-/*
- * @test DefineAnon
- * @bug 8058575
- * @library /testlibrary
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.management
- *          java.base/jdk.internal.misc
- * @compile -XDignore.symbol.file=true DefineAnon.java
- * @run main/othervm p1.DefineAnon
- */
+// This is copied from DefineAnon to test Symbol Refcounting for the package prepended name.
 
 package p1;
 
@@ -47,7 +38,7 @@ class T {
     static             private void test3() { System.out.println("test3 (private)"); }
 }
 
-public class DefineAnon {
+public class AnonSymbolLeak {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -71,55 +62,14 @@ public class DefineAnon {
         return invokerClass;
     }
 
-    public static void main(String[] args) throws Throwable {
-        Throwable fail = null;
-
-        // Anonymous class has the privileges of its host class, so test[0123] should all work.
+    public static void test() throws Throwable {
+        // AnonClass is injected into package p1.
         System.out.println("Injecting from the same package (p1):");
-        Class<?> p1cls = getAnonClass(T.class, "p1/AnonClass");
-        try {
-            p1cls.getMethod("test").invoke(null);
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            fail = ex;  // throw this to make test fail, since subtest failed
-        }
+        Class<?> p1cls = getAnonClass(T.class, "AnonClass");
+        p1cls.getMethod("test").invoke(null);
+    }
 
-        // Anonymous class has different package name from host class.  Should throw
-        // IllegalArgumentException.
-        System.out.println("Injecting from the wrong package (p2):");
-        try {
-            Class<?> p2cls = getAnonClass(DefineAnon.class, "p2/AnonClass");
-            p2cls.getMethod("test").invoke(null);
-            System.out.println("Failed, did not get expected IllegalArgumentException");
-        } catch (java.lang.IllegalArgumentException e) {
-            if (e.getMessage().contains("Host class p1/DefineAnon and anonymous class p2/AnonClass")) {
-                System.out.println("Got expected IllegalArgumentException: " + e.getMessage());
-            } else {
-                throw new RuntimeException("Unexpected message: " + e.getMessage());
-            }
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            fail = ex;  // throw this to make test fail, since subtest failed
-        }
-
-        // Inject a class in the unnamed package into p1.T.  It should be able
-        // to access all methods in p1.T.
-        System.out.println("Injecting unnamed package into correct host class:");
-        try {
-            Class<?> p3cls = getAnonClass(T.class, "AnonClass");
-            p3cls.getMethod("test").invoke(null);
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            fail = ex;  // throw this to make test fail, since subtest failed
-        }
-
-        // Try using an array class as the host class.  This should throw IllegalArgumentException.
-        try {
-            Class<?> p3cls = getAnonClass(String[].class, "AnonClass");
-            throw new RuntimeException("Expected IllegalArgumentException not thrown");
-        } catch (IllegalArgumentException ex) {
-        }
-
-        if (fail != null) throw fail;  // make test fail, since subtest failed
+    public static void main(java.lang.String[] unused) throws Throwable {
+        test();
     }
 }

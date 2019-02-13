@@ -5720,9 +5720,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
 void ClassFileParser::update_class_name(Symbol* new_class_name) {
   // Decrement the refcount in the old name, since we're clobbering it.
-  if (_class_name != NULL) {
-    _class_name->decrement_refcount();
-  }
+  _class_name->decrement_refcount();
+
   _class_name = new_class_name;
   // Increment the refcount of the new name.
   // Now the ClassFileParser owns this name and will decrement in
@@ -5753,11 +5752,16 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anon
     // characters.  So, do a strncpy instead of using sprintf("%s...").
     strncpy(new_anon_name + host_pkg_len + 1, (char *)_class_name->base(), class_name_len);
 
+    // Decrement old _class_name to avoid leaking.
+    _class_name->decrement_refcount();
+
     // Create a symbol and update the anonymous class name.
-    Symbol* new_name = SymbolTable::new_symbol(new_anon_name,
+    // The new class name is created with a refcount of one. When installed into the InstanceKlass,
+    // it'll be two and when the ClassFileParser destructor runs, it'll go back to one and get deleted
+    // when the class is unloaded.
+    _class_name = SymbolTable::new_symbol(new_anon_name,
                                           (int)host_pkg_len + 1 + class_name_len,
                                           CHECK);
-    update_class_name(new_name);
   }
 }
 
@@ -5861,7 +5865,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_vanilla_constructor(false),
   _max_bootstrap_specifier_index(-1) {
 
-  update_class_name(name != NULL ? name : vmSymbols::unknown_class_name());
+  _class_name = name != NULL ? name : vmSymbols::unknown_class_name();
+  _class_name->increment_refcount();
 
   assert(THREAD->is_Java_thread(), "invariant");
   assert(_loader_data != NULL, "invariant");
@@ -6086,8 +6091,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   Symbol* const class_name_in_cp = cp->klass_name_at(_this_class_index);
   assert(class_name_in_cp != NULL, "class_name can't be null");
 
-  // Update _class_name which could be null previously
-  // to reflect the name in the constant pool
+  // Update _class_name to reflect the name in the constant pool
   update_class_name(class_name_in_cp);
 
   // Don't need to check whether this class name is legal or not.
