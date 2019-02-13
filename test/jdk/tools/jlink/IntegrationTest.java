@@ -49,7 +49,7 @@ import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.PostProcessor;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
+import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 
 import tests.Helper;
 import tests.JImageGenerator;
@@ -168,7 +168,7 @@ public class IntegrationTest {
         //Strip debug
         {
             Map<String, String> config1 = new HashMap<>();
-            config1.put(StripDebugPlugin.NAME, "");
+            config1.put(DefaultStripDebugPlugin.NAME, "");
             Plugin strip = Jlink.newPlugin("strip-debug", config1, null);
             lst.add(strip);
         }
