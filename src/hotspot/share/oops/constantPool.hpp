@@ -797,8 +797,7 @@ class ConstantPool : public Metadata {
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool    has_method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop         method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the

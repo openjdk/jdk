@@ -159,19 +159,12 @@ class Rewriter: public StackObj {
     return ref_index;
   }
 
-  // add a new entries to the resolved_references map (for invokedynamic and invokehandle only)
-  int add_invokedynamic_resolved_references_entries(int cp_index, int cache_index) {
+  // add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
+  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
-    int ref_index = -1;
-    for (int entry = 0; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
-      const int index = _resolved_references_map.append(cp_index);  // many-to-one
-      assert(index >= _resolved_reference_limit, "");
-      if (entry == 0) {
-        ref_index = index;
-      }
-      assert((index - entry) == ref_index, "entries must be consecutive");
-      _invokedynamic_references_map.at_put_grow(index, cache_index, -1);
-    }
+    int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
+    assert(ref_index >= _resolved_reference_limit, "");
+    _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
     return ref_index;
   }
 

@@ -1241,7 +1241,6 @@ C2V_VMENTRY(jint, isResolvedInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci
       vmassert(MethodHandles::is_signature_polymorphic_method(resolved_method()),"!");
       vmassert(!MethodHandles::is_signature_polymorphic_static(resolved_method->intrinsic_id()), "!");
       vmassert(cp_cache_entry->appendix_if_resolved(cp) == NULL, "!");
-      vmassert(cp_cache_entry->method_type_if_resolved(cp) == NULL, "!");
 
       methodHandle m(LinkResolver::linktime_resolve_virtual_method_or_null(link_info));
       vmassert(m == resolved_method, "!!");
