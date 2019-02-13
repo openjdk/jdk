@@ -100,6 +100,12 @@ class constantTag {
   bool is_dynamic_constant() const  { return _tag == JVM_CONSTANT_Dynamic; }
   bool is_invoke_dynamic() const    { return _tag == JVM_CONSTANT_InvokeDynamic; }
 
+  bool has_bootstrap() const {
+    return (_tag == JVM_CONSTANT_Dynamic ||
+            _tag == JVM_CONSTANT_DynamicInError ||
+            _tag == JVM_CONSTANT_InvokeDynamic);
+  }
+
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
             is_method_type() || is_method_handle() || is_dynamic_constant() ||

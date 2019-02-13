@@ -512,11 +512,11 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_InvokeDynamic:
     {
       // Index of the bootstrap specifier in the operands array
-      int old_bs_i = scratch_cp->invoke_dynamic_bootstrap_specifier_index(scratch_i);
+      int old_bs_i = scratch_cp->bootstrap_methods_attribute_index(scratch_i);
       int new_bs_i = find_or_append_operand(scratch_cp, old_bs_i, merge_cp_p,
                                             merge_cp_length_p, THREAD);
       // The bootstrap method NameAndType_info index
-      int old_ref_i = scratch_cp->invoke_dynamic_name_and_type_ref_index_at(scratch_i);
+      int old_ref_i = scratch_cp->bootstrap_name_and_type_ref_index_at(scratch_i);
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                     merge_cp_length_p, THREAD);
       if (new_bs_i != old_bs_i) {

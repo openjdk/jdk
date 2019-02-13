@@ -564,7 +564,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_Dynamic: {
         const int name_and_type_ref_index =
-          cp->invoke_dynamic_name_and_type_ref_index_at(index);
+          cp->bootstrap_name_and_type_ref_index_at(index);
 
         check_property(valid_cp_range(name_and_type_ref_index, length) &&
           cp->tag_at(name_and_type_ref_index).is_name_and_type(),
@@ -579,7 +579,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_InvokeDynamic: {
         const int name_and_type_ref_index =
-          cp->invoke_dynamic_name_and_type_ref_index_at(index);
+          cp->bootstrap_name_and_type_ref_index_at(index);
 
         check_property(valid_cp_range(name_and_type_ref_index, length) &&
           cp->tag_at(name_and_type_ref_index).is_name_and_type(),
