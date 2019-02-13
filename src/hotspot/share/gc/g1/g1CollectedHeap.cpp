@@ -37,6 +37,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -107,7 +108,7 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // apply to TLAB allocation, which is not part of this interface: it
 // is done by clients of this interface.)
 
-class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
+class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
  private:
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
@@ -124,7 +125,7 @@ class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
   }
 
  public:
-  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : CardTableEntryClosure(),
+  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : G1CardTableEntryClosure(),
     _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
@@ -1811,7 +1812,7 @@ jint G1CollectedHeap::initialize() {
   }
 
   {
-    DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
     dcqs.set_process_completed_buffers_threshold(concurrent_refine()->yellow_zone());
     dcqs.set_max_completed_buffers(concurrent_refine()->red_zone());
   }
@@ -1954,12 +1955,12 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
   return _hrm->total_free_bytes();
 }
 
-void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i) {
+void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_i) {
   _hot_card_cache->drain(cl, worker_i);
 }
 
-void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i) {
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
@@ -2605,10 +2606,10 @@ void G1CollectedHeap::do_concurrent_mark() {
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
-    DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(curr);
+    G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(curr);
     extra_cards += dcq.size();
   }
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
 
@@ -2630,7 +2631,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   size_t _total_humongous;
   size_t _candidate_humongous;
 
-  DirtyCardQueue _dcq;
+  G1DirtyCardQueue _dcq;
 
   bool humongous_region_is_candidate(G1CollectedHeap* g1h, HeapRegion* region) const {
     assert(region->is_starts_humongous(), "Must start a humongous object");
@@ -3410,10 +3411,10 @@ void G1CollectedHeap::string_dedup_cleaning(BoolObjectClosure* is_alive,
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
  private:
-  DirtyCardQueueSet* _queue;
+  G1DirtyCardQueueSet* _queue;
   G1CollectedHeap* _g1h;
  public:
-  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue, G1CollectedHeap* g1h) : AbstractGangTask("Redirty Cards"),
+  G1RedirtyLoggedCardsTask(G1DirtyCardQueueSet* queue, G1CollectedHeap* g1h) : AbstractGangTask("Redirty Cards"),
     _queue(queue), _g1h(g1h) { }
 
   virtual void work(uint worker_id) {
@@ -3434,7 +3435,7 @@ void G1CollectedHeap::redirty_logged_cards() {
   dirty_card_queue_set().reset_for_par_iteration();
   workers()->run_task(&redirty_task);
 
-  DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
 

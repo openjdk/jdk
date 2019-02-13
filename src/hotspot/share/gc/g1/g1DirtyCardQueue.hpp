@@ -22,20 +22,20 @@
  *
  */
 
-#ifndef SHARE_GC_G1_DIRTYCARDQUEUE_HPP
-#define SHARE_GC_G1_DIRTYCARDQUEUE_HPP
+#ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
+#define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
-class DirtyCardQueueSet;
+class G1DirtyCardQueueSet;
 class G1FreeIdSet;
 class JavaThread;
 class Monitor;
 
 // A closure class for processing card table entries.  Note that we don't
 // require these closure objects to be stack-allocated.
-class CardTableEntryClosure: public CHeapObj<mtGC> {
+class G1CardTableEntryClosure: public CHeapObj<mtGC> {
 public:
   // Process the card whose card table entry is "card_ptr".  If returns
   // "false", terminate the iteration early.
@@ -43,25 +43,25 @@ public:
 };
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
-class DirtyCardQueue: public PtrQueue {
+class G1DirtyCardQueue: public PtrQueue {
 public:
-  DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent = false);
+  G1DirtyCardQueue(G1DirtyCardQueueSet* qset, bool permanent = false);
 
   // Flush before destroying; queue may be used to capture pending work while
   // doing something else, with auto-flush on completion.
-  ~DirtyCardQueue();
+  ~G1DirtyCardQueue();
 
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
-    return PtrQueue::byte_offset_of_index<DirtyCardQueue>();
+    return PtrQueue::byte_offset_of_index<G1DirtyCardQueue>();
   }
   using PtrQueue::byte_width_of_index;
 
   static ByteSize byte_offset_of_buf() {
-    return PtrQueue::byte_offset_of_buf<DirtyCardQueue>();
+    return PtrQueue::byte_offset_of_buf<G1DirtyCardQueue>();
   }
   using PtrQueue::byte_width_of_buf;
 
@@ -69,8 +69,8 @@ public:
 
 
 
-class DirtyCardQueueSet: public PtrQueueSet {
-  DirtyCardQueue _shared_dirty_card_queue;
+class G1DirtyCardQueueSet: public PtrQueueSet {
+  G1DirtyCardQueue _shared_dirty_card_queue;
 
   // Apply the closure to the elements of "node" from it's index to
   // buffer_size.  If all closure applications return true, then
@@ -79,7 +79,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
   // function.  If "consume" is true, the node's index is updated to
   // exclude the processed elements, e.g. up to the element for which
   // the closure returned false.
-  bool apply_closure_to_buffer(CardTableEntryClosure* cl,
+  bool apply_closure_to_buffer(G1CardTableEntryClosure* cl,
                                BufferNode* node,
                                bool consume,
                                uint worker_i = 0);
@@ -96,7 +96,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
   //
   // If during_pause is true, stop_at must be zero, and the closure
   // must never return false.
-  bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
+  bool apply_closure_to_completed_buffer(G1CardTableEntryClosure* cl,
                                          uint worker_i,
                                          size_t stop_at,
                                          bool during_pause);
@@ -113,11 +113,11 @@ class DirtyCardQueueSet: public PtrQueueSet {
   // Current buffer node used for parallel iteration.
   BufferNode* volatile _cur_par_buffer_node;
 
-  void concatenate_log(DirtyCardQueue& dcq);
+  void concatenate_log(G1DirtyCardQueue& dcq);
 
 public:
-  DirtyCardQueueSet(bool notify_when_complete = true);
-  ~DirtyCardQueueSet();
+  G1DirtyCardQueueSet(bool notify_when_complete = true);
+  ~G1DirtyCardQueueSet();
 
   void initialize(Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
@@ -136,15 +136,15 @@ public:
 
   // Apply the given closure to all completed buffers. The given closure's do_card_ptr
   // must never return false. Must only be called during GC.
-  bool apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i);
+  bool apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i);
 
   void reset_for_par_iteration() { _cur_par_buffer_node = completed_buffers_head(); }
   // Applies the current closure to all completed buffers, non-consumptively.
   // Can be used in parallel, all callers using the iteration state initialized
   // by reset_for_par_iteration.
-  void par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl);
+  void par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl);
 
-  DirtyCardQueue* shared_dirty_card_queue() {
+  G1DirtyCardQueue* shared_dirty_card_queue() {
     return &_shared_dirty_card_queue;
   }
 
@@ -164,4 +164,4 @@ public:
 
 };
 
-#endif // SHARE_GC_G1_DIRTYCARDQUEUE_HPP
+#endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

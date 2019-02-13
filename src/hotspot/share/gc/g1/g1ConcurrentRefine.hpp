@@ -29,7 +29,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Forward decl
-class CardTableEntryClosure;
 class G1ConcurrentRefine;
 class G1ConcurrentRefineThread;
 class outputStream;

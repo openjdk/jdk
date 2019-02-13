@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1REMSET_HPP
 #define SHARE_GC_G1_G1REMSET_HPP
 
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"

@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -42,7 +42,7 @@
 // point into the collection set while the mutator is running.
 // Assumed to be only executed concurrently with the mutator. Yields via
 // SuspendibleThreadSet after every card.
-class G1RefineCardConcurrentlyClosure: public CardTableEntryClosure {
+class G1RefineCardConcurrentlyClosure: public G1CardTableEntryClosure {
 public:
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
@@ -56,19 +56,19 @@ public:
   }
 };
 
-DirtyCardQueue::DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent) :
+G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset, bool permanent) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
   PtrQueue(qset, permanent, true /* active */)
 { }
 
-DirtyCardQueue::~DirtyCardQueue() {
+G1DirtyCardQueue::~G1DirtyCardQueue() {
   if (!is_permanent()) {
     flush();
   }
 }
 
-DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
+G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
@@ -79,19 +79,19 @@ DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   _all_active = true;
 }
 
-DirtyCardQueueSet::~DirtyCardQueueSet() {
+G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
   delete _free_ids;
 }
 
 // Determines how many mutator threads can process the buffers in parallel.
-uint DirtyCardQueueSet::num_par_ids() {
+uint G1DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
 }
 
-void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
-                                   BufferNode::Allocator* allocator,
-                                   Mutex* lock,
-                                   bool init_free_ids) {
+void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
+                                     BufferNode::Allocator* allocator,
+                                     Mutex* lock,
+                                     bool init_free_ids) {
   PtrQueueSet::initialize(cbl_mon, allocator);
   _shared_dirty_card_queue.set_lock(lock);
   if (init_free_ids) {
@@ -99,14 +99,14 @@ void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
   }
 }
 
-void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
+void G1DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
 }
 
-bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
-                                                BufferNode* node,
-                                                bool consume,
-                                                uint worker_i) {
+bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
+                                                  BufferNode* node,
+                                                  bool consume,
+                                                  uint worker_i) {
   if (cl == NULL) return true;
   bool result = true;
   void** buf = BufferNode::make_buffer_from_node(node);
@@ -141,7 +141,7 @@ bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
   } while (0)
 #endif // ASSERT
 
-bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
+bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
 
   uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
@@ -156,20 +156,20 @@ bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   return result;
 }
 
-bool DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size_t stop_at) {
+bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size_t stop_at) {
   G1RefineCardConcurrentlyClosure cl;
   return apply_closure_to_completed_buffer(&cl, worker_i, stop_at, false);
 }
 
-bool DirtyCardQueueSet::apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i) {
+bool G1DirtyCardQueueSet::apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i) {
   assert_at_safepoint();
   return apply_closure_to_completed_buffer(cl, worker_i, 0, true);
 }
 
-bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
-                                                          uint worker_i,
-                                                          size_t stop_at,
-                                                          bool during_pause) {
+bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClosure* cl,
+                                                            uint worker_i,
+                                                            size_t stop_at,
+                                                            bool during_pause) {
   assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
   BufferNode* nd = get_completed_buffer(stop_at);
   if (nd == NULL) {
@@ -189,7 +189,7 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
   }
 }
 
-void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
+void G1DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl) {
   BufferNode* nd = _cur_par_buffer_node;
   while (nd != NULL) {
     BufferNode* next = nd->next();
@@ -204,7 +204,7 @@ void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntr
   }
 }
 
-void DirtyCardQueueSet::abandon_logs() {
+void G1DirtyCardQueueSet::abandon_logs() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   abandon_completed_buffers();
   // Since abandon is done only at safepoints, we can safely manipulate
@@ -215,13 +215,13 @@ void DirtyCardQueueSet::abandon_logs() {
   shared_dirty_card_queue()->reset();
 }
 
-void DirtyCardQueueSet::concatenate_log(DirtyCardQueue& dcq) {
+void G1DirtyCardQueueSet::concatenate_log(G1DirtyCardQueue& dcq) {
   if (!dcq.is_empty()) {
     dcq.flush();
   }
 }
 
-void DirtyCardQueueSet::concatenate_logs() {
+void G1DirtyCardQueueSet::concatenate_logs() {
   // Iterate over all the threads, if we find a partial log add it to
   // the global list of logs.  Temporarily turn off the limit on the number
   // of outstanding buffers.

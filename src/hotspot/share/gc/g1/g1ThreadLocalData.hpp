@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #ifndef SHARE_GC_G1_G1THREADLOCALDATA_HPP
 #define SHARE_GC_G1_G1THREADLOCALDATA_HPP
 
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
@@ -33,8 +33,8 @@
 
 class G1ThreadLocalData {
 private:
-  SATBMarkQueue  _satb_mark_queue;
-  DirtyCardQueue _dirty_card_queue;
+  SATBMarkQueue _satb_mark_queue;
+  G1DirtyCardQueue _dirty_card_queue;
 
   G1ThreadLocalData() :
       _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
@@ -66,7 +66,7 @@ public:
     return data(thread)->_satb_mark_queue;
   }
 
-  static DirtyCardQueue& dirty_card_queue(Thread* thread) {
+  static G1DirtyCardQueue& dirty_card_queue(Thread* thread) {
     return data(thread)->_dirty_card_queue;
   }
 
@@ -83,11 +83,11 @@ public:
   }
 
   static ByteSize dirty_card_queue_index_offset() {
-    return dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index();
+    return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_index();
   }
 
   static ByteSize dirty_card_queue_buffer_offset() {
-    return dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf();
+    return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_buf();
   }
 };
 

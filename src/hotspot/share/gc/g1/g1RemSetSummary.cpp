@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -53,7 +54,7 @@ public:
 
 void G1RemSetSummary::update() {
   _num_conc_refined_cards = _rem_set->num_conc_refined_cards();
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   _num_processed_buf_mutator = dcqs.processed_buffers_mut();
   _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
 

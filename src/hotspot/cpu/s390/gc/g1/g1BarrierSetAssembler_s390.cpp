@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -587,7 +588,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(restart);
 
-  // Get the index into the update buffer. DirtyCardQueue::_index is
+  // Get the index into the update buffer. G1DirtyCardQueue::_index is
   // a size_t so z_ltg is appropriate here.
   __ z_ltg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
 
@@ -607,7 +608,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ bind(refill);
   save_volatile_registers(sasm);
   __ z_lgr(idx, addr_card); // Save addr_card, tmp3 must be non-volatile.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, DirtyCardQueueSet::handle_zero_index_for_thread),
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread),
                                    Z_thread);
   __ z_lgr(addr_card, idx);
   restore_volatile_registers(sasm); // Restore addr_card.
