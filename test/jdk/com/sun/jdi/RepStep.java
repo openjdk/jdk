@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary RepStep detects missed step events due to lack of
  * frame pop events (in back-end).
  * @author Robert Field
+ * @library /test/lib
  *
  * @run compile -g RepStepTarg.java
  * @run build VMConnection RepStep
@@ -37,6 +38,7 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import com.sun.jdi.connect.*;
+import jdk.test.lib.process.StreamPumper;
 
 import java.util.*;
 
@@ -90,6 +92,7 @@ public class RepStep {
             EventSet set = queue.remove();
             for (EventIterator it = set.eventIterator(); it.hasNext(); ) {
                 Event event = it.nextEvent();
+                System.out.println("event: " + String.valueOf(event));
                 if (event instanceof VMStartEvent) {
                     // get thread for setting step later
                     thread = ((VMStartEvent)event).thread();
@@ -165,6 +168,23 @@ public class RepStep {
         optionsArg.setValue(VMConnection.getDebuggeeVMOptions());
 
         vm = launcher.launch(connectorArgs);
+        // redirect stdout/stderr
+        new StreamPumper(vm.process().getInputStream())
+                .addPump(new StreamPumper.LinePump() {
+                    @Override
+                    protected void processLine(String line) {
+                        System.out.println("[debugee_stdout] " + line);
+                    }
+                })
+                .process();
+        new StreamPumper(vm.process().getErrorStream())
+                .addPump(new StreamPumper.LinePump() {
+                    @Override
+                    protected void processLine(String line) {
+                        System.err.println("[debugee_stderr] " + line);
+                    }
+                })
+                .process();
         System.out.println("launched: " + TARGET);
     }
 
