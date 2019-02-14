@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,15 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import java.awt.image.VolatileImage;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 /**
  * @test
- * @bug 4917097 8019816
+ * @bug 4917097 8019816 8198411
+ * @key headful
  * @summary 1.4.1 REGRESSION: BasicStroke Dashes don't show when scale * line width = 1.0
  * @run main/othervm -Dsun.java2d.uiScale=1 DashScaleMinWidth
  */
@@ -46,13 +48,13 @@ public final class DashScaleMinWidth  {
         draw(img);
         validate(img);
 
-        if (GraphicsEnvironment.isHeadless()) {
-            return;
-        }
-
         GraphicsConfiguration gc =
                 GraphicsEnvironment.getLocalGraphicsEnvironment()
                         .getDefaultScreenDevice().getDefaultConfiguration();
+        if (gc.getColorModel() instanceof IndexColorModel) {
+            System.err.println("Skipping VolatileImage because of IndexColorModel");
+            return;
+        }
 
         VolatileImage vi = gc.createCompatibleVolatileImage(200, 40);
         BufferedImage snapshot;

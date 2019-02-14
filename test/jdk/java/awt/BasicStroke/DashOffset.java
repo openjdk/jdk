@@ -29,6 +29,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,8 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
- * @bug 4469881 8217263
+ * @bug 4469881 8217263 8218682
+ * @key headful
  * @summary Verifies that dashed rectangles drawn to the screen line
  *          up with their undashed counterparts
  * @author flar
@@ -79,16 +81,16 @@ public class DashOffset {
             }
         }
 
-        if (GraphicsEnvironment.isHeadless()) {
-            return;
-        }
-
         BufferedImage snapshot = null;
         try {
             final GraphicsConfiguration gc =
                     GraphicsEnvironment.getLocalGraphicsEnvironment()
                                        .getDefaultScreenDevice()
                                        .getDefaultConfiguration();
+            if (gc.getColorModel() instanceof IndexColorModel) {
+                System.err.println("Skipping VolatileImage because of IndexColorModel");
+                return;
+            }
 
             VolatileImage vi = gc.createCompatibleVolatileImage(WIDTH, HEIGHT);
             int attempt = 0;
@@ -102,7 +104,7 @@ public class DashOffset {
             }
             validate(snapshot);
         } finally {
-            if (saveImage) {
+            if (saveImage && snapshot != null) {
                 save(snapshot, "volatileImage.png");
             }
         }
