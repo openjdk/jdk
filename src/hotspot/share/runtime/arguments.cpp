@@ -546,6 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ProfileVM",                     JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfileIntervals",              JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfileIntervalsTicks",         JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerCheckIntervals",        JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfilerNumberOfInterpretedMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfilerNumberOfCompiledMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfilerNumberOfStubMethods",   JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },

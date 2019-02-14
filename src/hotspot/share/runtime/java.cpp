@@ -291,9 +291,6 @@ void print_statistics() {
   if (TimeOopMap) {
     GenerateOopMap::print_time();
   }
-  if (ProfilerCheckIntervals) {
-    PeriodicTask::print_intervals();
-  }
   if (PrintSymbolTableSizeHistogram) {
     SymbolTable::print_histogram();
   }

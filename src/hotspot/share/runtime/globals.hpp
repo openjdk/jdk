@@ -749,9 +749,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
-  notproduct(bool, ProfilerCheckIntervals, false,                           \
-          "Collect and print information on spacing of profiler ticks")     \
-                                                                            \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
