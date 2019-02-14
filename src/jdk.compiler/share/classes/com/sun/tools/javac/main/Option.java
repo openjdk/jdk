@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Collator;
@@ -752,14 +753,18 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             if (option.endsWith(".java") ) {
-                Path p = Paths.get(option);
-                if (!Files.exists(p)) {
-                    throw helper.newInvalidValueException(Errors.FileNotFound(p.toString()));
+                try {
+                    Path p = Paths.get(option);
+                    if (!Files.exists(p)) {
+                        throw helper.newInvalidValueException(Errors.FileNotFound(p.toString()));
+                    }
+                    if (!Files.isRegularFile(p)) {
+                        throw helper.newInvalidValueException(Errors.FileNotFile(p));
+                    }
+                    helper.addFile(p);
+                } catch (InvalidPathException ex) {
+                    throw helper.newInvalidValueException(Errors.InvalidPath(option));
                 }
-                if (!Files.isRegularFile(p)) {
-                    throw helper.newInvalidValueException(Errors.FileNotFile(p));
-                }
-                helper.addFile(p);
             } else {
                 helper.addClassName(option);
             }
