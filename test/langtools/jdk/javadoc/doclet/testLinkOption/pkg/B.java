@@ -31,7 +31,7 @@ import java.io.File;
 public class B {
     /**
      * A method with html tag the method {@link ClassLoader#getSystemClassLoader()
-     * <tt>getSystemClassLoader()</tt>} as the parent class loader.
+     * <b>getSystemClassLoader()</b>} as the parent class loader.
      */
     public void  method1() {}
 

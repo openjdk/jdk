@@ -88,14 +88,14 @@ public class TestLinkOption extends JavadocTester {
         checkOutput("pkg/B.html", true,
                 "<div class=\"block\">A method with html tag the method "
                 + "<a href=\"" + url + "java/lang/ClassLoader.html?is-external=true#getSystemClassLoader()\""
-                + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><tt>getSystemClassLoader()</tt>"
+                + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><b>getSystemClassLoader()</b>"
                 + "</code></a> as the parent class loader.</div>",
                 "<div class=\"block\">is equivalent to invoking <code>"
                 + "<a href=\"#createTempFile(java.lang.String,java.lang.String,java.io.File)\">"
                 + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>",
                 "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Link-Plain to String Class</a>",
-                "<code><tt>getSystemClassLoader()</tt></code>",
+                "<code><b>getSystemClassLoader()</b></code>",
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
                 "<dd><a href=\"http://www.ietf.org/rfc/rfc2279.txt\"><i>RFC&nbsp;2279: UTF-8, a\n" +
                 " transformation format of ISO 10646</i></a>, <br><a " +
