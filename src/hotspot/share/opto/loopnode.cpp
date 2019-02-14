@@ -2712,8 +2712,6 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   bool do_split_ifs = (mode == LoopOptsDefault || mode == LoopOptsLastRound);
   bool skip_loop_opts = (mode == LoopOptsNone);
 
-  ResourceMark rm;
-
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
 

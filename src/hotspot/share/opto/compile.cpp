@@ -2112,7 +2112,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
         // PhaseIdealLoop is expensive so we only try it once we are
         // out of live nodes and we only try it again if the previous
         // helped got the number of nodes down significantly
-        PhaseIdealLoop ideal_loop(igvn, LoopOptsNone);
+        PhaseIdealLoop::optimize(igvn, LoopOptsNone);
         if (failing())  return;
         low_live_nodes = live_nodes();
         _major_progress = true;
@@ -2160,7 +2160,7 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
     while(major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop(igvn, mode);
+      PhaseIdealLoop::optimize(igvn, mode);
       _loop_opts_cnt--;
       if (failing())  return false;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
@@ -2282,7 +2282,7 @@ void Compile::Optimize() {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop(igvn, LoopOptsNone);
+      PhaseIdealLoop::optimize(igvn, LoopOptsNone);
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
@@ -2316,7 +2316,7 @@ void Compile::Optimize() {
   if((_loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop(igvn, LoopOptsDefault);
+      PhaseIdealLoop::optimize(igvn, LoopOptsDefault);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
@@ -2324,7 +2324,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
+      PhaseIdealLoop::optimize(igvn, LoopOptsSkipSplitIf);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
       if (failing())  return;
@@ -2332,7 +2332,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
+      PhaseIdealLoop::optimize(igvn, LoopOptsSkipSplitIf);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
     }
