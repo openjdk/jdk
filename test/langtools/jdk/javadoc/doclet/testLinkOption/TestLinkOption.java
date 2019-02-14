@@ -69,9 +69,7 @@ public class TestLinkOption extends JavadocTester {
                 "-linkoffline", url, testSrc + "/jdk",
                 "-package",
                 "pkg", "mylib.lang");
-        checkExit(Exit.ERROR);
-        checkOutput(Output.OUT, true,
-                "tag not supported in the generated HTML version: tt");
+        checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
                 "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
