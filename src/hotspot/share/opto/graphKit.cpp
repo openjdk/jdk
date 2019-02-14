@@ -1489,18 +1489,19 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           LoadNode::ControlDependency control_dependency,
                           bool require_atomic_access,
                           bool unaligned,
-                          bool mismatched) {
+                          bool mismatched,
+                          bool unsafe) {
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = NULL; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched);
+    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe);
   } else if (require_atomic_access && bt == T_DOUBLE) {
-    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched);
+    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe);
   } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched);
+    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched, unsafe);
   }
   ld = _gvn.transform(ld);
   if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
@@ -1515,7 +1516,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 MemNode::MemOrd mo,
                                 bool require_atomic_access,
                                 bool unaligned,
-                                bool mismatched) {
+                                bool mismatched,
+                                bool unsafe) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1533,6 +1535,9 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   }
   if (mismatched) {
     st->as_Store()->set_mismatched_access();
+  }
+  if (unsafe) {
+    st->as_Store()->set_unsafe_access();
   }
   st = _gvn.transform(st);
   set_memory(st, adr_idx);

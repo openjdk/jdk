@@ -75,6 +75,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
+  bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
   bool in_native = (decorators & IN_NATIVE) != 0;
@@ -93,7 +94,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
-                                     access.addr().type(), mo, requires_atomic_access, unaligned, mismatched);
+                                     access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
     access.set_raw_access(store);
   } else {
     assert(!requires_atomic_access, "not yet supported");
@@ -132,6 +133,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
   bool control_dependent = (decorators & C2_CONTROL_DEPENDENT_LOAD) != 0;
   bool pinned = (decorators & C2_PINNED_LOAD) != 0;
+  bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
 
   bool in_native = (decorators & IN_NATIVE) != 0;
 
@@ -148,7 +150,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
       load = kit->make_load(control, adr, val_type, access.type(), mo);
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
-                            dep, requires_atomic_access, unaligned, mismatched);
+                            dep, requires_atomic_access, unaligned, mismatched, unsafe);
     }
     access.set_raw_access(load);
   } else {
