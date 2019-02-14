@@ -990,7 +990,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
 Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
-  AllocateNode* ld_alloc = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
+  Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
+  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base, phase);
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
   Compile::AliasType* atp = (tp != NULL) ? phase->C->alias_type(tp) : NULL;
   // This is more general than load from boxing objects.
@@ -1043,16 +1044,21 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     if (st->is_Store()) {
       Node* st_adr = st->in(MemNode::Address);
       if (!phase->eqv(st_adr, ld_adr)) {
-        // Try harder before giving up...  Match raw and non-raw pointers.
+        // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
-        AllocateNode* alloc = AllocateNode::Ideal_allocation(st_adr, phase, st_off);
-        if (alloc == NULL)       return NULL;
-        if (alloc != ld_alloc)   return NULL;
-        if (ld_off != st_off)    return NULL;
+        Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
+        if (ld_base == NULL)                        return NULL;
+        if (st_base == NULL)                        return NULL;
+        if (ld_base->uncast() != st_base->uncast()) return NULL;
+        if (ld_off != st_off)                       return NULL;
+        if (ld_off == Type::OffsetBot)              return NULL;
+        // Same base, same offset.
+        // Possible improvement for arrays: check index value instead of absolute offset.
+
         // At this point we have proven something like this setup:
-        //  A = Allocate(...)
-        //  L = LoadQ(,  AddP(CastPP(, A.Parm),, #Off))
-        //  S = StoreQ(, AddP(,        A.Parm  , #Off), V)
+        //   B = << base >>
+        //   L =  LoadQ(AddP(Check/CastPP(B), #Off))
+        //   S = StoreQ(AddP(             B , #Off), V)
         // (Actually, we haven't yet proven the Q's are the same.)
         // In other words, we are loading from a casted version of
         // the same pointer-and-offset that we stored to.
