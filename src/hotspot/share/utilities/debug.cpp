@@ -61,6 +61,7 @@
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
+#include <stdarg.h>
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -244,6 +245,22 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
     context = g_assertion_context;
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+#ifdef ASSERT
+  if (detail_fmt != NULL && ExecutingUnitTests) {
+    // Special handling for the sake of gtest death tests which expect the assert
+    // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
+    // cannot be tweaked to accept our normal assert message.
+    va_list detail_args_copy;
+    va_copy(detail_args_copy, detail_args);
+    ::fputs("assert failed: ", stderr);
+    ::vfprintf(stderr, detail_fmt, detail_args_copy);
+    ::fputs("\n", stderr);
+    ::fflush(stderr);
+    va_end(detail_args_copy);
+  }
+#endif
+
   VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
   va_end(detail_args);
 }
@@ -292,21 +309,6 @@ void report_should_not_reach_here(const char* file, int line) {
 void report_unimplemented(const char* file, int line) {
   report_vm_error(file, line, "Unimplemented()");
 }
-
-#ifdef ASSERT
-bool is_executing_unit_tests() {
-  return ExecutingUnitTests;
-}
-
-void report_assert_msg(const char* msg, ...) {
-  va_list ap;
-  va_start(ap, msg);
-
-  fprintf(stderr, "assert failed: %s\n", err_msg(FormatBufferDummy(), msg, ap).buffer());
-
-  va_end(ap);
-}
-#endif // ASSERT
 
 void report_untested(const char* file, int line, const char* message) {
 #ifndef PRODUCT
