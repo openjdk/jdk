@@ -328,45 +328,8 @@ void ZHeap::mark_flush_and_free(Thread* thread) {
   _mark.flush_and_free(thread);
 }
 
-class ZFixupPartialLoadsClosure : public ZRootsIteratorClosure {
-public:
-  virtual void do_oop(oop* p) {
-    ZBarrier::mark_barrier_on_root_oop_field(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZFixupPartialLoadsTask : public ZTask {
-private:
-  ZThreadRootsIterator _thread_roots;
-
-public:
-  ZFixupPartialLoadsTask() :
-      ZTask("ZFixupPartialLoadsTask"),
-      _thread_roots() {}
-
-  virtual void work() {
-    ZFixupPartialLoadsClosure cl;
-    _thread_roots.oops_do(&cl);
-  }
-};
-
-void ZHeap::fixup_partial_loads() {
-  ZFixupPartialLoadsTask task;
-  _workers.run_parallel(&task);
-}
-
 bool ZHeap::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  // C2 can generate code where a safepoint poll is inserted
-  // between a load and the associated load barrier. To handle
-  // this case we need to rescan the thread stack here to make
-  // sure such oops are marked.
-  fixup_partial_loads();
 
   // Try end marking
   if (!_mark.end()) {

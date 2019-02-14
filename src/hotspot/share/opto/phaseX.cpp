@@ -1003,9 +1003,6 @@ PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
         n->is_Mem() )
       add_users_to_worklist(n);
   }
-
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->add_users_to_worklist(&_worklist);
 }
 
 /**

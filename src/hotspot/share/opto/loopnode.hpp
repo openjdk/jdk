@@ -824,6 +824,7 @@ public:
   // pull such a subsumed block out of the array, we write back the final
   // correct block.
   Node *get_ctrl( Node *i ) {
+
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
     _nodes.map( i->_idx, (Node*)((intptr_t)n + 1) );
@@ -1306,9 +1307,9 @@ public:
 
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
-  void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack, bool last_round );
+  void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
   Node *split_if_with_blocks_pre ( Node *n );
-  void  split_if_with_blocks_post( Node *n, bool last_round );
+  void  split_if_with_blocks_post( Node *n );
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).

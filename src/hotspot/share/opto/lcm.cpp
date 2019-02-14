@@ -171,7 +171,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_LoadL:
     case Op_LoadP:
     case Op_LoadBarrierSlowReg:
-    case Op_LoadBarrierWeakSlowReg:
     case Op_LoadN:
     case Op_LoadS:
     case Op_LoadKlass:

@@ -52,6 +52,7 @@ class C2Compiler;
 class CallGenerator;
 class CloneMap;
 class ConnectionGraph;
+class IdealGraphPrinter;
 class InlineTree;
 class Int_Array;
 class LoadBarrierNode;
@@ -95,9 +96,9 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsShenandoahExpand,
   LoopOptsShenandoahPostExpand,
+  LoopOptsZBarrierInsertion,
   LoopOptsSkipSplitIf,
-  LoopOptsVerify,
-  LoopOptsLastRound
+  LoopOptsVerify
 };
 
 typedef unsigned int node_idx_t;
@@ -658,6 +659,7 @@ class Compile : public Phase {
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
   void          set_major_progress()            { _major_progress++; }
+  void          restore_major_progress(int progress) { _major_progress += progress; }
   void        clear_major_progress()            { _major_progress = 0; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
@@ -747,7 +749,15 @@ class Compile : public Phase {
     C->_latest_stage_start_counter.stamp();
   }
 
-  void print_method(CompilerPhaseType cpt, int level = 1) {
+  bool should_print(int level = 1) {
+#ifndef PRODUCT
+    return (_printer && _printer->should_print(level));
+#else
+    return false;
+#endif
+  }
+
+  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0) {
     EventCompilerPhase event;
     if (event.should_commit()) {
       event.set_starttime(C->_latest_stage_start_counter);
@@ -757,10 +767,15 @@ class Compile : public Phase {
       event.commit();
     }
 
-
 #ifndef PRODUCT
-    if (_printer && _printer->should_print(level)) {
-      _printer->print_method(CompilerPhaseTypeHelper::to_string(cpt), level);
+    if (should_print(level)) {
+      char output[1024];
+      if (idx != 0) {
+        sprintf(output, "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
+      } else {
+        sprintf(output, "%s", CompilerPhaseTypeHelper::to_string(cpt));
+      }
+      _printer->print_method(output, level);
     }
 #endif
     C->_latest_stage_start_counter.stamp();

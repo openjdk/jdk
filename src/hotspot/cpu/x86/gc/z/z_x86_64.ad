@@ -21,6 +21,12 @@
 // questions.
 //
 
+source_hpp %{
+
+#include "gc/z/c2/zBarrierSetC2.hpp"
+
+%}
+
 source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
@@ -45,7 +51,7 @@ instruct zLoadBarrierSlowRegXmmAndYmm(rRegP dst, memory src, rFlagsReg cr,
                                       rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
 
   match(Set dst (LoadBarrierSlowReg src));
-  predicate(UseAVX <= 2);
+  predicate((UseAVX <= 2) && !n->as_LoadBarrierSlowReg()->is_weak());
 
   effect(DEF dst, KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
@@ -74,7 +80,7 @@ instruct zLoadBarrierSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
                                 rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
 
   match(Set dst (LoadBarrierSlowReg src));
-  predicate(UseAVX == 3);
+  predicate((UseAVX == 3) && !n->as_LoadBarrierSlowReg()->is_weak());
 
   effect(DEF dst, KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
@@ -102,8 +108,8 @@ instruct zLoadBarrierWeakSlowRegXmmAndYmm(rRegP dst, memory src, rFlagsReg cr,
                                           rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
                                           rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
 
-  match(Set dst (LoadBarrierWeakSlowReg src));
-  predicate(UseAVX <= 2);
+  match(Set dst (LoadBarrierSlowReg src));
+  predicate((UseAVX <= 2) && n->as_LoadBarrierSlowReg()->is_weak());
 
   effect(DEF dst, KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
@@ -131,8 +137,8 @@ instruct zLoadBarrierWeakSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
                                     rxmm24 x24, rxmm25 x25, rxmm26 x26, rxmm27 x27,
                                     rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
 
-  match(Set dst (LoadBarrierWeakSlowReg src));
-  predicate(UseAVX == 3);
+  match(Set dst (LoadBarrierSlowReg src));
+  predicate((UseAVX == 3) && n->as_LoadBarrierSlowReg()->is_weak());
 
   effect(DEF dst, KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
@@ -151,4 +157,59 @@ instruct zLoadBarrierWeakSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
   %}
 
   ins_pipe(pipe_slow);
+%}
+
+// Specialized versions of compareAndExchangeP that adds a keepalive that is consumed
+// but doesn't affect output.
+
+instruct z_compareAndExchangeP(
+        memory mem_ptr,
+        rax_RegP oldval, rRegP newval, rRegP keepalive,
+        rFlagsReg cr) %{
+    predicate(VM_Version::supports_cx8());
+    match(Set oldval (ZCompareAndExchangeP (Binary mem_ptr keepalive) (Binary oldval newval)));
+    effect(KILL cr);
+
+    format %{ "cmpxchgq $mem_ptr,$newval\t# "
+              "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
+    opcode(0x0F, 0xB1);
+    ins_encode(lock_prefix,
+            REX_reg_mem_wide(newval, mem_ptr),
+            OpcP, OpcS,
+            reg_mem(newval, mem_ptr)  // lock cmpxchg
+    );
+    ins_pipe( pipe_cmpxchg );
+%}
+
+instruct z_compareAndSwapP(rRegI res,
+                         memory mem_ptr,
+                         rax_RegP oldval, rRegP newval, rRegP keepalive,
+                         rFlagsReg cr) %{
+  predicate(VM_Version::supports_cx8());
+  match(Set res (ZCompareAndSwapP (Binary mem_ptr keepalive) (Binary oldval newval)));
+  match(Set res (ZWeakCompareAndSwapP (Binary mem_ptr keepalive) (Binary oldval newval)));
+  effect(KILL cr, KILL oldval);
+
+  format %{ "cmpxchgq $mem_ptr,$newval\t# "
+            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
+            "sete    $res\n\t"
+            "movzbl  $res, $res" %}
+  opcode(0x0F, 0xB1);
+  ins_encode(lock_prefix,
+          REX_reg_mem_wide(newval, mem_ptr),
+          OpcP, OpcS,
+          reg_mem(newval, mem_ptr),
+          REX_breg(res), Opcode(0x0F), Opcode(0x94), reg(res), // sete
+          REX_reg_breg(res, res), // movzbl
+          Opcode(0xF), Opcode(0xB6), reg_reg(res, res));
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct z_xchgP( memory mem, rRegP newval, rRegP keepalive) %{
+  match(Set newval (ZGetAndSetP mem (Binary newval keepalive)));
+  format %{ "XCHGQ  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgq($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
 %}

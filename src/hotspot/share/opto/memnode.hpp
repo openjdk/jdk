@@ -164,6 +164,7 @@ public:
     Pinned,
     DependsOnlyOnTest
   };
+
 private:
   // LoadNode::hash() doesn't take the _control_dependency field
   // into account: If the graph already has a non-pinned LoadNode and
@@ -182,6 +183,8 @@ private:
   // this field.
   const MemOrd _mo;
 
+  uint _barrier; // Bit field with barrier information
+
 protected:
   virtual bool cmp(const Node &n) const;
   virtual uint size_of() const; // Size is bigger
@@ -193,7 +196,7 @@ protected:
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
-    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _type(rt) {
+    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _barrier(0), _type(rt) {
     init_class_id(Class_Load);
   }
   inline bool is_unordered() const { return !is_acquire(); }
@@ -261,6 +264,10 @@ public:
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
+
+  void copy_barrier_info(const Node* src) { _barrier = src->as_Load()->_barrier; }
+  uint barrier_data() { return _barrier; }
+  void set_barrier_data(uint barrier_data) { _barrier |= barrier_data; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -810,6 +817,7 @@ class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
+  bool _has_barrier;
   virtual uint size_of() const; // Size is bigger
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
@@ -822,6 +830,8 @@ public:
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
+  void set_has_barrier() { _has_barrier = true; };
+  bool has_barrier() const { return _has_barrier; };
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {

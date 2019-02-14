@@ -978,7 +978,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
         wq.push(u);
         bool found_sfpt = false;
         for (uint next = 0; next < wq.size() && !found_sfpt; next++) {
-          Node *n = wq.at(next);
+          Node* n = wq.at(next);
           for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax && !found_sfpt; i++) {
             Node* u = n->fast_out(i);
             if (u == sfpt) {
@@ -992,6 +992,19 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
         assert(found_sfpt, "no node in loop that's not input to safepoint");
       }
     }
+
+    if (UseZGC && !inner_out->in(0)->is_CountedLoopEnd()) {
+      // In some very special cases there can be a load that has no other uses than the
+      // counted loop safepoint. Then its loadbarrier will be placed between the inner
+      // loop exit and the safepoint. This is very rare
+
+      Node* ifnode = inner_out->in(1)->in(0);
+      // Region->IfTrue->If == Region->Iffalse->If
+      if (ifnode == inner_out->in(2)->in(0)) {
+        inner_out = ifnode->in(0);
+      }
+    }
+
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
     assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
@@ -2761,7 +2774,7 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
-  bool do_split_ifs = (mode == LoopOptsDefault || mode == LoopOptsLastRound);
+  bool do_split_ifs = (mode == LoopOptsDefault);
   bool skip_loop_opts = (mode == LoopOptsNone);
 
   int old_progress = C->major_progress();
@@ -2921,9 +2934,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   build_loop_late( visited, worklist, nstack );
 
   if (_verify_only) {
-    // restore major progress flag
-    for (int i = 0; i < old_progress; i++)
-      C->set_major_progress();
+    C->restore_major_progress(old_progress);
     assert(C->unique() == unique, "verification mode made Nodes? ? ?");
     assert(_igvn._worklist.size() == orig_worklist_size, "shouldn't push anything");
     return;
@@ -2967,9 +2978,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   if (skip_loop_opts) {
     // restore major progress flag
-    for (int i = 0; i < old_progress; i++) {
-      C->set_major_progress();
-    }
+    C->restore_major_progress(old_progress);
 
     // Cleanup any modified bits
     _igvn.optimize();
@@ -3018,11 +3027,8 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   // that require basic-block info (like cloning through Phi's)
   if( SplitIfBlocks && do_split_ifs ) {
     visited.Clear();
-    split_if_with_blocks( visited, nstack, mode == LoopOptsLastRound );
+    split_if_with_blocks( visited, nstack);
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
-    if (mode == LoopOptsLastRound) {
-      C->set_major_progress();
-    }
   }
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
@@ -3157,8 +3163,7 @@ void PhaseIdealLoop::verify() const {
   _ltree_root->verify_tree(loop_verify._ltree_root, NULL);
   // Reset major-progress.  It was cleared by creating a verify version of
   // PhaseIdealLoop.
-  for( int i=0; i<old_progress; i++ )
-    C->set_major_progress();
+  C->restore_major_progress(old_progress);
 }
 
 //------------------------------verify_compare---------------------------------
@@ -4288,7 +4293,6 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_LoadS:
     case Op_LoadP:
     case Op_LoadBarrierSlowReg:
-    case Op_LoadBarrierWeakSlowReg:
     case Op_LoadN:
     case Op_LoadRange:
     case Op_LoadD_unaligned:

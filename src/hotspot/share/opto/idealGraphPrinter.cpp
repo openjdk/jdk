@@ -350,14 +350,6 @@ void IdealGraphPrinter::end_method() {
   _xml->flush();
 }
 
-// Print indent
-void IdealGraphPrinter::print_indent() {
-  tty->print_cr("printing indent %d", _depth);
-  for (int i = 0; i < _depth; i++) {
-    _xml->print("%s", INDENT);
-  }
-}
-
 bool IdealGraphPrinter::traverse_outs() {
   return _traverse_outs;
 }
@@ -663,14 +655,16 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
   }
 }
 
-void IdealGraphPrinter::print_method(const char *name, int level, bool clear_nodes) {
-  print(name, (Node *)C->root(), level, clear_nodes);
+void IdealGraphPrinter::print_method(const char *name, int level) {
+  if (should_print(level)) {
+    print(name, (Node *) C->root());
+  }
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char *name, Node *node, int level, bool clear_nodes) {
+void IdealGraphPrinter::print(const char *name, Node *node) {
 
-  if (!_current_method || !_should_send_method || !should_print(level)) return;
+  if (!_current_method || !_should_send_method) return;
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();

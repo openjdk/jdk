@@ -152,6 +152,12 @@ class GenericGrowableArray : public ResourceObj {
 template<class E> class GrowableArrayIterator;
 template<class E, class UnaryPredicate> class GrowableArrayFilterIterator;
 
+template<class E>
+class CompareClosure : public Closure {
+public:
+    virtual int do_compare(const E&, const E&) = 0;
+};
+
 template<class E> class GrowableArray : public GenericGrowableArray {
   friend class VMStructs;
 
@@ -432,6 +438,37 @@ template<class E> class GrowableArray : public GenericGrowableArray {
       int mid = (int)(((uint)max + min) / 2);
       E value = at(mid);
       int diff = compare(key, value);
+      if (diff > 0) {
+        min = mid + 1;
+      } else if (diff < 0) {
+        max = mid - 1;
+      } else {
+        found = true;
+        return mid;
+      }
+    }
+    return min;
+  }
+
+  E insert_sorted(CompareClosure<E>* cc, const E& key) {
+    bool found;
+    int location = find_sorted(cc, key, found);
+    if (!found) {
+      insert_before(location, key);
+    }
+    return at(location);
+  }
+
+  template<typename K>
+  int find_sorted(CompareClosure<E>* cc, const K& key, bool& found) {
+    found = false;
+    int min = 0;
+    int max = length() - 1;
+
+    while (max >= min) {
+      int mid = (int)(((uint)max + min) / 2);
+      E value = at(mid);
+      int diff = cc->do_compare(key, value);
       if (diff > 0) {
         min = mid + 1;
       } else if (diff < 0) {
