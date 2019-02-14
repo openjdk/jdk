@@ -226,6 +226,4 @@ org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 
 org.graalvm.compiler.hotspot.test.ReservedStackAccessTest        8213567   windows-all
 
-org.graalvm.compiler.replacements.test.StringCompressInflateTest 8214947
-
 org.graalvm.compiler.hotspot.test.CheckGraalIntrinsics           8218698
