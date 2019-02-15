@@ -2360,6 +2360,11 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
 
     init_containers();
 
+    if (widget_type == TEXT_FIELD && state_type == GTK_STATE_SELECTED &&
+        color_type == TEXT_BACKGROUND) {
+        widget_type = TEXT_AREA;
+    }
+
     gtk3_widget = gtk3_get_widget(widget_type);
 
     GtkStyleContext* context = fp_gtk_widget_get_style_context(gtk3_widget);
