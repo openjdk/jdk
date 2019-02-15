@@ -739,7 +739,8 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.TOOL_BAR_DRAG_WINDOW ||
               region == Region.TOOL_TIP ||
               region == Region.TREE ||
-              region == Region.VIEWPORT) {
+              region == Region.VIEWPORT ||
+              region == Region.TEXT_PANE) {
             return true;
         }
         if (!GTKLookAndFeel.is3()) {
@@ -747,8 +748,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                   region == Region.FORMATTED_TEXT_FIELD ||
                   region == Region.PASSWORD_FIELD ||
                   region == Region.SPINNER ||
-                  region == Region.TEXT_FIELD ||
-                  region == Region.TEXT_PANE) {
+                  region == Region.TEXT_FIELD) {
                 return true;
             }
         }
