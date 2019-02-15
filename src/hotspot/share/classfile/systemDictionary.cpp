@@ -2114,7 +2114,7 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
         ss.print(" wants to load %s %s.",
                  k->external_kind(), k->external_name());
         Klass *existing_klass = constraints()->find_constrained_klass(name, class_loader);
-        if (existing_klass->class_loader() != class_loader()) {
+        if (existing_klass != NULL && existing_klass->class_loader() != class_loader()) {
           ss.print(" A different %s with the same name was previously loaded by %s. (%s)",
                    existing_klass->external_kind(),
                    existing_klass->class_loader_data()->loader_name_and_id(),
