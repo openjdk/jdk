@@ -270,6 +270,10 @@ public class RemoveMicroBenchmark {
             });
     }
 
+    String goodClassName(Object x) {
+        return goodClassName(x.getClass());
+    }
+
     static List<Integer> makeSubList(List<Integer> list) {
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int size = rnd.nextInt(4);
@@ -369,7 +373,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> collectionJobs(Collection<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
             new Job(klazz + " removeIf") {
                 public void work() throws Throwable {
@@ -422,7 +426,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> iteratorRemoveJobs(Collection<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
              new Job(klazz + " Iterator.remove") {
                 public void work() throws Throwable {
@@ -460,7 +464,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> queueJobs(Queue<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
             new Job(klazz + " poll()") {
                 public void work() throws Throwable {
@@ -474,7 +478,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> dequeJobs(Deque<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
             new Job(klazz + " descendingIterator().remove") {
                 public void work() throws Throwable {
@@ -509,7 +513,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> blockingQueueJobs(BlockingQueue<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
             new Job(klazz + " timed poll()") {
                 public void work() throws Throwable {
@@ -545,7 +549,7 @@ public class RemoveMicroBenchmark {
     }
 
     Stream<Job> blockingDequeJobs(BlockingDeque<Integer> x) {
-        final String klazz = goodClassName(x.getClass());
+        final String klazz = goodClassName(x);
         return Stream.of(
             new Job(klazz + " timed pollFirst()") {
                 public void work() throws Throwable {
