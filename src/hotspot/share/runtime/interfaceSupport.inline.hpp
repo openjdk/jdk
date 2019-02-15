@@ -314,10 +314,10 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
 
-    thread->set_thread_state((JavaThreadState)(_thread_in_vm + 1));
-    InterfaceSupport::serialize_thread_state_with_handler(thread);
-
-    SafepointMechanism::callback_if_safepoint(thread);
+    // All unsafe states are treated the same by the VMThread
+    // so we can skip the _thread_in_vm_trans state here. Since
+    // we don't read poll, it's enough to order the stores.
+    OrderAccess::storestore();
 
     thread->set_thread_state(_thread_blocked);
 
@@ -325,23 +325,13 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
   }
   ~ThreadBlockInVMWithDeadlockCheck() {
     // Change to transition state
-    _thread->set_thread_state((JavaThreadState)(_thread_blocked + 1));
+    _thread->set_thread_state((JavaThreadState)(_thread_blocked_trans));
 
     InterfaceSupport::serialize_thread_state_with_handler(_thread);
 
     if (SafepointMechanism::should_block(_thread)) {
       release_monitor();
-      SafepointMechanism::callback_if_safepoint(_thread);
-      // The VMThread might have read that we were in a _thread_blocked state
-      // and proceeded to process a handshake for us. If that's the case then
-      // we need to block.
-      // By doing this we are also making the current thread process its own
-      // handshake if there is one pending and the VMThread didn't try to process
-      // it yet. This is more of a side-effect and not really necessary; the
-      // handshake could be processed later on.
-      if (_thread->has_handshake()) {
-        _thread->handshake_process_by_self();
-      }
+      SafepointMechanism::block_if_requested(_thread);
     }
 
     _thread->set_thread_state(_thread_in_vm);

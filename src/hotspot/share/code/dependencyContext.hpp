@@ -107,7 +107,7 @@ class DependencyContext : public StackObj {
       _safepoint_counter(SafepointSynchronize::safepoint_counter()) {}
 
   ~DependencyContext() {
-    assert(_safepoint_counter == SafepointSynchronize::safepoint_counter(), "safepoint happened");
+    assert(SafepointSynchronize::is_same_safepoint(_safepoint_counter), "must be the same safepoint");
   }
 #else
   DependencyContext(nmethodBucket* volatile* bucket_addr, volatile uint64_t* last_cleanup_addr)

@@ -56,10 +56,7 @@ class Monitor : public CHeapObj<mtInternal> {
   // (except for "event" and "access") for the deadlock detection to work correctly.
   // The rank native is only for use in Mutex's created by JVM_RawMonitorCreate,
   // which being external to the VM are not subject to deadlock detection.
-  // The rank safepoint is used only for synchronization in reaching a
-  // safepoint and leaving a safepoint.  It is only used for the Safepoint_lock
-  // currently.  While at a safepoint no mutexes of rank safepoint are held
-  // by any thread.
+  // While at a safepoint no mutexes of rank safepoint are held by any thread.
   // The rank named "leaf" is probably historical (and should
   // be changed) -- mutexes of this rank aren't really leaf mutexes
   // at all.

@@ -82,10 +82,6 @@ static void prepare_for_emergency_dump(Thread* thread) {
     Heap_lock->unlock();
   }
 
-  if (Safepoint_lock->owned_by_self()) {
-    Safepoint_lock->unlock();
-  }
-
   if (VMOperationQueue_lock->owned_by_self()) {
     VMOperationQueue_lock->unlock();
   }
