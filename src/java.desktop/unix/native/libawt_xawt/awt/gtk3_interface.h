@@ -162,6 +162,7 @@ typedef void GtkAdjustment;
 typedef void GtkRange;
 typedef void GtkProgressBar;
 typedef void GtkProgress;
+typedef void GtkWidgetPath;
 
 /* Some real structures */
 typedef struct
@@ -237,7 +238,6 @@ typedef struct {
   GType    value_type;
   GType    owner_type;
 } GParamSpec;
-
 
 static gchar* (*fp_glib_check_version)(guint required_major,
                            guint required_minor, guint required_micro);
@@ -573,5 +573,18 @@ static void (*fp_gtk_arrow_set)(GtkWidget* arrow,
 static void (*fp_gtk_widget_size_request)(GtkWidget *widget,
                                           GtkRequisition *requisition);
 static GtkAdjustment* (*fp_gtk_range_get_adjustment)(GtkRange* range);
+static GtkWidgetPath* (*fp_gtk_widget_path_copy)
+        (const GtkWidgetPath *path);
+static const GtkWidgetPath* (*fp_gtk_style_context_get_path)
+        (GtkStyleContext *context);
+static GtkWidgetPath* (*fp_gtk_widget_path_new) (void);
+static gint (*fp_gtk_widget_path_append_type)
+        (GtkWidgetPath *path, GType type);
+static void (*fp_gtk_widget_path_iter_set_object_name)
+        (GtkWidgetPath *path, gint pos, const char *name);
+static void (*fp_gtk_style_context_set_path)
+        (GtkStyleContext *context, GtkWidgetPath *path);
+static void (*fp_gtk_widget_path_unref) (GtkWidgetPath *path);
+static GtkStyleContext* (*fp_gtk_style_context_new) (void);
 
 #endif /* !_GTK3_INTERFACE_H */

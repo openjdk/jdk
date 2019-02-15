@@ -767,6 +767,14 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         if (classKey != null) {
             Object value = getClassSpecificValue(classKey);
             if (value != null) {
+                //This is a workaround as the "slider-length" property has been
+                //deprecated for GtkScale from gtk 3.20, so default value of 31
+                //is used and makes redering of slider wrong. Value 14 is being
+                //used as default value for Slider.thumbHeight is 14 and making
+                //width 14 as well makes slider thumb render in proper shape
+                if ("Slider.thumbWidth".equals(key) && value.equals(31)) {
+                    return 14;
+                }
                 return value;
             }
         }
@@ -779,8 +787,15 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             return getColorForState(context, ColorType.FOREGROUND);
         }
         else if (key == "ScrollBar.minimumThumbSize") {
+            //This is a workaround as the "min-slider-length" property has been
+            //deprecated for GtkScrollBar from gtk 3.20, so default value of 21
+            //is used and makes ScrollBar thumb very small. Value 40 is being
+            //used as this is the value mentioned in css files
             int len =
                 getClassSpecificIntValue(context, "min-slider-length", 21);
+            if (len == 21) {
+                len = 40;
+            }
             JScrollBar sb = (JScrollBar)context.getComponent();
             if (sb.getOrientation() == JScrollBar.HORIZONTAL) {
                 return new DimensionUIResource(len, 0);
