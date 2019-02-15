@@ -5020,7 +5020,8 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
   return true;
 }
 
-// Take pointer to a string. Skip over the longest part of the string that could
+// Take pointer to a UTF8 byte string (not NUL-terminated).
+// Skip over the longest part of the string that could
 // be taken as a fieldname. Allow '/' if slash_ok is true.
 // Return a pointer to just past the fieldname.
 // Return NULL if no fieldname at all was found, or in the case of slash_ok
@@ -5098,7 +5099,8 @@ static const char* skip_over_field_name(const char* const name,
   return (not_first_ch) ? p : NULL;
 }
 
-// Take pointer to a string. Skip over the longest part of the string that could
+// Take pointer to a UTF8 byte string (not NUL-terminated).
+// Skip over the longest part of the string that could
 // be taken as a field signature. Allow "void" if void_ok.
 // Return a pointer to just past the signature.
 // Return NULL if no legal signature is found.
@@ -5132,7 +5134,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       else {
         // Skip leading 'L' and ignore first appearance of ';'
         signature++;
-        char* c = strchr((char*) signature, ';');
+        const char* c = (const char*) memchr(signature, ';', length - 1);
         // Format check signature
         if (c != NULL) {
           int newlen = c - (char*) signature;
@@ -5199,7 +5201,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
-      "Illegal class name \"%s\" in class file %s", bytes,
+      "Illegal class name \"%.*s\" in class file %s", length, bytes,
       _class_name->as_C_string()
     );
     return;
@@ -5232,7 +5234,7 @@ void ClassFileParser::verify_legal_field_name(const Symbol* name, TRAPS) const {
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
-      "Illegal field name \"%s\" in class %s", bytes,
+      "Illegal field name \"%.*s\" in class %s", length, bytes,
       _class_name->as_C_string()
     );
     return;
@@ -5269,7 +5271,7 @@ void ClassFileParser::verify_legal_method_name(const Symbol* name, TRAPS) const 
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
-      "Illegal method name \"%s\" in class %s", bytes,
+      "Illegal method name \"%.*s\" in class %s", length, bytes,
       _class_name->as_C_string()
     );
     return;
