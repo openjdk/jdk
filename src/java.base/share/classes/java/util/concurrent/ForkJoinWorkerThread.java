@@ -236,7 +236,8 @@ public class ForkJoinWorkerThread extends Thread {
 
         @Override // paranoically
         public void setContextClassLoader(ClassLoader cl) {
-            throw new SecurityException("setContextClassLoader");
+            if (cl != null && ClassLoader.getSystemClassLoader() != cl)
+                throw new SecurityException("setContextClassLoader");
         }
     }
 }
