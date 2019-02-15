@@ -1687,7 +1687,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Helper for generating a dynamic type check.
-  // Smashes rscratch1.
+  // Smashes rscratch1, rscratch2.
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
@@ -1979,6 +1979,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos    = c_rarg3;  // destination position
     const Register length     = c_rarg4;
 
+
+    // Registers used as temps
+    const Register dst_klass  = c_rarg5;
+
     __ align(CodeEntryAlignment);
 
     StubCodeMark mark(this, "StubRoutines", name);
@@ -2184,8 +2188,7 @@ class StubGenerator: public StubCodeGenerator {
       arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
                              r18, L_failed);
 
-      const Register rscratch2_dst_klass = rscratch2;
-      __ load_klass(rscratch2_dst_klass, dst); // reload
+      __ load_klass(dst_klass, dst); // reload
 
       // Marshal the base address arguments now, freeing registers.
       __ lea(from, Address(src, src_pos, Address::lsl(LogBytesPerHeapOop)));
@@ -2195,24 +2198,25 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(count, length);           // length (reloaded)
       Register sco_temp = c_rarg3;      // this register is free now
       assert_different_registers(from, to, count, sco_temp,
-                                 rscratch2_dst_klass, scratch_src_klass);
+                                 dst_klass, scratch_src_klass);
       // assert_clean_int(count, sco_temp);
 
       // Generate the type check.
       const int sco_offset = in_bytes(Klass::super_check_offset_offset());
-      __ ldrw(sco_temp, Address(rscratch2_dst_klass, sco_offset));
-      // assert_clean_int(sco_temp, r18);
-      generate_type_check(scratch_src_klass, sco_temp, rscratch2_dst_klass, L_plain_copy);
+      __ ldrw(sco_temp, Address(dst_klass, sco_offset));
+
+      // Smashes rscratch1, rscratch2
+      generate_type_check(scratch_src_klass, sco_temp, dst_klass, L_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-      __ ldr(rscratch2_dst_klass, Address(rscratch2_dst_klass, ek_offset));
-      __ ldrw(sco_temp, Address(rscratch2_dst_klass, sco_offset));
+      __ ldr(dst_klass, Address(dst_klass, ek_offset));
+      __ ldrw(sco_temp, Address(dst_klass, sco_offset));
 
       // the checkcast_copy loop needs two extra arguments:
       assert(c_rarg3 == sco_temp, "#3 already in place");
       // Set up arguments for checkcast_copy_entry.
-      __ mov(c_rarg4, rscratch2_dst_klass);  // dst.klass.element_klass
+      __ mov(c_rarg4, dst_klass);  // dst.klass.element_klass
       __ b(RuntimeAddress(checkcast_copy_entry));
     }
 
