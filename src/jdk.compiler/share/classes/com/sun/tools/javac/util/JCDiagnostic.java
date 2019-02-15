@@ -429,9 +429,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         RECOVERABLE,
         NON_DEFERRABLE,
         COMPRESSED,
-        /** Print multiple errors for same source locations.
+        /** Flag for diagnostics that were reported through API methods.
          */
-        MULTIPLE,
+        API,
         /** Flag for not-supported-in-source-X errors.
          */
         SOURCE_LEVEL;

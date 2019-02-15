@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,37 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8217381
+ * @summary Check error are convenient when AP generates a source file and
+ *          an error in the same round
+ * @library /tools/javac/lib
+ * @modules jdk.compiler
+ * @build JavacTestingAbstractProcessor GenerateAndError
+ * @compile/fail/ref=GenerateAndError.out -XDrawDiagnostics -processor GenerateAndError GenerateAndErrorTest.java
+ */
+
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
+
 import javax.annotation.processing.*;
-import javax.lang.model.*;
 import javax.lang.model.element.*;
-import static javax.tools.Diagnostic.Kind.*;
+import javax.tools.Diagnostic.Kind;
 
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
-
-public class TestProcessor extends JavacTestingAbstractProcessor {
-   private int round = 0;
-
-   public boolean process(Set<? extends TypeElement> annotations,
-                  RoundEnvironment roundEnv) {
-        if (++round == 1) {
-            messager.printMessage(ERROR, "Deliberate Error");
-            Trees trees = Trees.instance(processingEnv);
-            TreePath elPath = trees.getPath(roundEnv.getRootElements().iterator().next());
-            trees.printMessage(ERROR, "Deliberate Error on Trees",
-                               elPath.getLeaf(), elPath.getCompilationUnit());
+public class GenerateAndError extends JavacTestingAbstractProcessor {
+    int round = 0;
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (round++ == 0) {
+            try (Writer w = processingEnv.getFiler().createSourceFile("Extra").openWriter()) {
+                w.write("public class Extra {}");
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+            processingEnv.getMessager().printMessage(Kind.ERROR, "error");
         }
         return false;
-   }
+    }
 }
-

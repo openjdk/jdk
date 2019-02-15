@@ -76,7 +76,7 @@ public class TestLog
         Set<DiagnosticFlag> defaultErrorFlags =
                 (Set<DiagnosticFlag>) defaultErrorFlagsField.get(diagnosticFactory);
 
-        defaultErrorFlags.add(DiagnosticFlag.MULTIPLE);
+        defaultErrorFlags.add(DiagnosticFlag.API);
 
         JavacFileManager.preRegister(context);
         ParserFactory pfac = ParserFactory.instance(context);
