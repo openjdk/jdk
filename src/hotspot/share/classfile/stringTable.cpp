@@ -334,6 +334,10 @@ oop StringTable::intern(Handle string_or_null_h, const jchar* name, int len, TRA
   if (StringTable::_alt_hash) {
     hash = hash_string(name, len, true);
   }
+  found_string = StringTable::the_table()->do_lookup(name, len, hash);
+  if (found_string != NULL) {
+    return found_string;
+  }
   return StringTable::the_table()->do_intern(string_or_null_h, name, len,
                                              hash, CHECK_NULL);
 }
