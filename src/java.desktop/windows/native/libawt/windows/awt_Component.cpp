@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3869,6 +3869,11 @@ void AwtComponent::SetCompositionWindow(RECT& r)
         return;
     }
     COMPOSITIONFORM cf = {CFS_DEFAULT, {0, 0}, {0, 0, 0, 0}};
+    LOGFONT lf;
+    HFONT hFont = (HFONT) GetStockObject(DEFAULT_GUI_FONT);
+    if (GetObject(hFont, sizeof(lf), (LPVOID)&lf) == sizeof(lf)) {
+        ImmSetCompositionFont(hIMC, &lf);
+    }
     ImmSetCompositionWindow(hIMC, &cf);
     ImmReleaseContext(hwnd, hIMC);
 }

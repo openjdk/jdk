@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,6 +526,23 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
     return locales;
 
     CATCH_BAD_ALLOC_RET(NULL);
+}
+
+/*
+ * Class:     sun_awt_windows_WInputMethod
+ * Method:    isCompositionStringAvailable
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_isCompositionStringAvailable
+  (JNIEnv *env, jobject self, jint context)
+{
+    LONG length;
+    length = ImmGetCompositionString((HIMC)IntToPtr(context), GCS_COMPSTR, NULL, 0);
+    if (length > 0) {
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
 }
 
 /**
