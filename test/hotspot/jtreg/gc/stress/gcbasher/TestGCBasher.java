@@ -38,14 +38,15 @@ public class TestGCBasher {
         HashMap<String, ClassInfo> deps = new HashMap<>();
 
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        Stream<Path> s = Files.walk(fs.getPath("/"));
-        for (Path p : (Iterable<Path>)s::iterator) {
-            if (p.toString().endsWith(".class") &&
-                !p.getFileName().toString().equals("module-info.class")) {
-                byte[] data = Files.readAllBytes(p);
-                Decompiler d = new Decompiler(data);
-                ClassInfo ci = d.getClassInfo();
-                deps.put(ci.getName(), ci);
+        try (Stream<Path> s = Files.walk(fs.getPath("/"))) {
+            for (Path p : (Iterable<Path>)s::iterator) {
+                if (p.toString().endsWith(".class") &&
+                    !p.getFileName().toString().equals("module-info.class")) {
+                    byte[] data = Files.readAllBytes(p);
+                    Decompiler d = new Decompiler(data);
+                    ClassInfo ci = d.getClassInfo();
+                    deps.put(ci.getName(), ci);
+                }
             }
         }
     }
