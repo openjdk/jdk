@@ -561,7 +561,7 @@ bool FileMapInfo::init_from_file(int fd) {
 // Read the FileMapInfo information from the file.
 bool FileMapInfo::open_for_read() {
   _full_path = Arguments::GetSharedArchivePath();
-  int fd = open(_full_path, O_RDONLY | O_BINARY, 0);
+  int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
       // Not locating the shared archive is ok.
@@ -596,7 +596,7 @@ void FileMapInfo::open_for_write() {
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
     fail_stop("Unable to create shared archive file %s: (%s).", _full_path,
               os::strerror(errno));

@@ -1062,7 +1062,7 @@ int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char
 
   snprintf(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
 
-  int fd = open(buf, O_RDONLY);
+  int fd = os::open(buf, O_RDONLY, 0);
   if (fd == -1) {
     return -1;
   }

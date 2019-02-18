@@ -74,7 +74,7 @@ static int get_info(const char* path, void* info, size_t s, off_t o) {
 
   int fd = -1;
 
-  if ((fd = open(path, O_RDONLY)) < 0) {
+  if ((fd = os::open(path, O_RDONLY, 0)) < 0) {
     return OS_ERR;
   }
   if (pread(fd, info, s, o) != s) {
