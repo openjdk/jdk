@@ -2761,7 +2761,7 @@ CMSPhaseAccounting::CMSPhaseAccounting(CMSCollector *collector,
 CMSPhaseAccounting::~CMSPhaseAccounting() {
   _collector->gc_timer_cm()->register_gc_concurrent_end();
   _collector->stopTimer();
-  log_debug(gc)("Concurrent active time: %.3fms", TimeHelper::counter_to_seconds(_collector->timerTicks()));
+  log_debug(gc)("Concurrent active time: %.3fms", TimeHelper::counter_to_millis(_collector->timerTicks()));
   log_trace(gc)(" (CMS %s yielded %d times)", _title, _collector->yields());
 }
 
