@@ -57,7 +57,6 @@
 
 class ClassLoaderData;
 class MetaspaceTracer;
-class MetaWord;
 class Mutex;
 class outputStream;
 

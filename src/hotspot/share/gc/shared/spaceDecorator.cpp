@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 // pattern.
 bool SpaceMangler::is_mangled(HeapWord* q) {
   // This test loses precision but is good enough
-  return badHeapWord == (max_juint & (uintptr_t) q->value());
+  return badHeapWord == (max_juint & reinterpret_cast<uintptr_t>(*q));
 }
 
 

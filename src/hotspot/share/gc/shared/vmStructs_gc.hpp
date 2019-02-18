@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,6 @@
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _young_gen_spec,                               GenerationSpec*)                       \
   nonstatic_field(GenCollectedHeap,            _old_gen_spec,                                 GenerationSpec*)                       \
-                                                                                                                                     \
-  nonstatic_field(HeapWord,                    i,                                             char*)                                 \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \

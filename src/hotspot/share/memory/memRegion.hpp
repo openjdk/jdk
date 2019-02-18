@@ -40,8 +40,6 @@
 // create MemRegions (in CardTableBarrierSet) in heap so operator
 // new and operator new [] added for this special case.
 
-class MetaWord;
-
 class MemRegion {
   friend class VMStructs;
 private:

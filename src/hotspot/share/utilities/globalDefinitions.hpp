@@ -165,29 +165,18 @@ const int BitsPerSize_t      = size_tSize * BitsPerByte;
 // Size of a char[] needed to represent a jint as a string in decimal.
 const int jintAsStringSize = 12;
 
-// An opaque struct of heap-word width, so that HeapWord* can be a generic
-// pointer into the heap.  We require that object sizes be measured in
-// units of heap words, so that that
-//   HeapWord* hw;
+// An opaque type, so that HeapWord* can be a generic pointer into the heap.
+// We require that object sizes be measured in units of heap words (e.g.
+// pointer-sized values), so that given HeapWord* hw,
 //   hw += oop(hw)->foo();
 // works, where foo is a method (like size or scavenge) that returns the
 // object size.
-class HeapWord {
-  friend class VMStructs;
- private:
-  char* i;
-#ifndef PRODUCT
- public:
-  char* value() { return i; }
-#endif
-};
+class HeapWordImpl;             // Opaque, never defined.
+typedef HeapWordImpl* HeapWord;
 
-// Analogous opaque struct for metadata allocated from
-// metaspaces.
-class MetaWord {
- private:
-  char* i;
-};
+// Analogous opaque struct for metadata allocated from metaspaces.
+class MetaWordImpl;             // Opaque, never defined.
+typedef MetaWordImpl* MetaWord;
 
 // HeapWordSize must be 2^LogHeapWordSize.
 const int HeapWordSize        = sizeof(HeapWord);
